@@ -12,12 +12,56 @@ export const signIn = async ({ email, password }: { email: string; password: str
   return await supabase.auth.signInWithPassword({ email, password });
 };
 
+export const signUp = async ({ email, password, name }: { email: string; password: string; name: string }) => {
+  // Registra o usuário na autenticação do Supabase
+  const { data, error } = await supabase.auth.signUp({ 
+    email, 
+    password,
+    options: {
+      data: {
+        name
+      }
+    }
+  });
+  
+  if (error) {
+    return { data, error };
+  }
+  
+  // Se o registro na autenticação for bem-sucedido, cria o perfil do usuário na tabela users
+  if (data.user) {
+    const newUser = {
+      email: data.user.email,
+      name: name || data.user.email?.split('@')[0] || 'Usuário',
+      role: 'operador', // Papel padrão
+    };
+    
+    const { error: userError } = await supabase
+      .from('users')
+      .insert(newUser);
+      
+    if (userError) {
+      console.error("Erro ao criar perfil do usuário:", userError);
+      // Não retornamos o erro aqui para não impedir o registro,
+      // já que o usuário foi criado com sucesso na autenticação
+    }
+  }
+  
+  return { data, error };
+};
+
 export const signOut = async () => {
   return await supabase.auth.signOut();
 };
 
 export const getCurrentUser = async () => {
   return await supabase.auth.getUser();
+};
+
+export const resetPassword = async (email: string) => {
+  return await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + '/reset-password',
+  });
 };
 
 // Vehicles
