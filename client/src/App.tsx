@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import DashboardNew from "@/pages/DashboardNew";
 import SignIn from "@/pages/SignIn";
-import Register from "@/pages/Register";
+import RegisterNew from "@/pages/RegisterNew";
 
 function App() {
   return (
@@ -15,7 +15,7 @@ function App() {
           <SignIn />
         </Route>
         <Route path="/register">
-          <Register />
+          <RegisterNew />
         </Route>
         <Route path="/">
           <DashboardNew />
