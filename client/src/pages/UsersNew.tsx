@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Table, 
   TableBody, 
@@ -139,6 +140,7 @@ const UsersNew: React.FC = () => {
   const [users, setUsers] = useState<User[]>(mockUsers);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const { toast } = useToast();
   const [newUser, setNewUser] = useState<Partial<User>>({
     name: '',
     email: '',
@@ -148,6 +150,8 @@ const UsersNew: React.FC = () => {
     lastLogin: null,
     isActive: true
   });
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   // Filtrar usuários com base no termo de busca
   const filteredUsers = users.filter(
@@ -178,16 +182,68 @@ const UsersNew: React.FC = () => {
   };
 
   // Adicionar novo usuário
-  const handleAddUser = () => {
-    if (newUser.name && newUser.email) {
+  const handleAddUser = async () => {
+    // Validar dados
+    if (!newUser.name || !newUser.email) {
+      toast({
+        title: "Erro ao adicionar usuário",
+        description: "Nome e e-mail são obrigatórios",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!password) {
+      toast({
+        title: "Erro ao adicionar usuário",
+        description: "A senha é obrigatória",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast({
+        title: "Erro ao adicionar usuário",
+        description: "As senhas não coincidem",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Fazer a requisição para a API de registro
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: newUser.email,
+          password: password,
+          name: newUser.name,
+          role: newUser.role
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao registrar usuário');
+      }
+
+      const userData = await response.json();
+      
+      // Adicionar à lista local
       const user = {
         ...newUser,
-        id: users.length + 1,
+        id: userData.id,
         lastLogin: null
       } as User;
       
       setUsers([...users, user]);
       setIsAddDialogOpen(false);
+      
+      // Limpar formulário
       setNewUser({
         name: '',
         email: '',
@@ -196,6 +252,20 @@ const UsersNew: React.FC = () => {
         baseName: null,
         lastLogin: null,
         isActive: true
+      });
+      setPassword('');
+      setConfirmPassword('');
+      
+      toast({
+        title: "Usuário adicionado",
+        description: "Usuário criado com sucesso!",
+      });
+    } catch (error: any) {
+      console.error('Erro ao adicionar usuário:', error);
+      toast({
+        title: "Erro ao adicionar usuário",
+        description: error.message || "Ocorreu um erro ao tentar criar o usuário.",
+        variant: "destructive"
       });
     }
   };
@@ -295,6 +365,32 @@ const UsersNew: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="password" className="text-right">
+                    Senha
+                  </Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="col-span-3"
+                    placeholder="Senha"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="confirmPassword" className="text-right">
+                    Confirmar Senha
+                  </Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="col-span-3"
+                    placeholder="Confirmar senha"
+                  />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="isActive" className="text-right">
