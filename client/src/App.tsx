@@ -14,49 +14,41 @@ import UsersNew from "@/pages/UsersNew";
 import FleetManagementNew from "@/pages/FleetManagementNew";
 import SignIn from "@/pages/SignIn";
 import RegisterNew from "@/pages/RegisterNew";
+import { ProtectedRoute, AccessDeniedPage } from "@/components/permission/ProtectedRoute";
+import { AuthProvider } from "@/context/AuthContext";
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Switch>
-        <Route path="/login">
-          <SignIn />
-        </Route>
-        <Route path="/register">
-          <RegisterNew />
-        </Route>
-        <Route path="/">
-          <DashboardNew />
-        </Route>
-        <Route path="/vehicles">
-          <VehiclesNew />
-        </Route>
-        <Route path="/maintenance">
-          <MaintenanceNew />
-        </Route>
-        <Route path="/tires">
-          <TiresNew />
-        </Route>
-        <Route path="/refueling">
-          <RefuelingNew />
-        </Route>
-        <Route path="/fines">
-          <FinesNew />
-        </Route>
-        <Route path="/line-hall">
-          <LineHallNew />
-        </Route>
-        <Route path="/fleet-management">
-          <FleetManagementNew />
-        </Route>
-        <Route path="/users">
-          <UsersNew />
-        </Route>
-        <Route>
-          <NotFound />
-        </Route>
-      </Switch>
-      <Toaster />
+      <AuthProvider>
+        <Switch>
+          <Route path="/login">
+            <SignIn />
+          </Route>
+          <Route path="/register">
+            <RegisterNew />
+          </Route>
+          <Route path="/acesso-negado">
+            <AccessDeniedPage />
+          </Route>
+          
+          {/* Rotas protegidas com verificação de permissão de base */}
+          <ProtectedRoute path="/" component={DashboardNew} />
+          <ProtectedRoute path="/vehicles" component={VehiclesNew} />
+          <ProtectedRoute path="/maintenance" component={MaintenanceNew} />
+          <ProtectedRoute path="/tires" component={TiresNew} />
+          <ProtectedRoute path="/refueling" component={RefuelingNew} />
+          <ProtectedRoute path="/fines" component={FinesNew} />
+          <ProtectedRoute path="/line-hall" component={LineHallNew} />
+          <ProtectedRoute path="/fleet-management" component={FleetManagementNew} />
+          <ProtectedRoute path="/users" component={UsersNew} />
+          
+          <Route>
+            <NotFound />
+          </Route>
+        </Switch>
+        <Toaster />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

@@ -61,7 +61,7 @@ const mockUsers: User[] = [
     email: 'joao@muricionfleet.com',
     role: 'gestor',
     baseId: 1,
-    baseName: 'São Paulo',
+    baseName: 'Multas',
     lastLogin: '2025-04-14T14:15:00Z',
     isActive: true
   },
@@ -70,8 +70,8 @@ const mockUsers: User[] = [
     name: 'Carlos Santos',
     email: 'carlos@muricionfleet.com',
     role: 'operador',
-    baseId: 1,
-    baseName: 'São Paulo',
+    baseId: 2,
+    baseName: 'Pneus',
     lastLogin: '2025-04-15T08:45:00Z',
     isActive: true
   },
@@ -80,8 +80,8 @@ const mockUsers: User[] = [
     name: 'Ana Souza',
     email: 'ana@muricionfleet.com',
     role: 'gestor',
-    baseId: 2,
-    baseName: 'Rio de Janeiro',
+    baseId: 3,
+    baseName: 'Line Hall',
     lastLogin: '2025-04-10T09:20:00Z',
     isActive: true
   },
@@ -90,19 +90,19 @@ const mockUsers: User[] = [
     name: 'Marcos Oliveira',
     email: 'marcos@muricionfleet.com',
     role: 'operador',
-    baseId: 3,
-    baseName: 'Belo Horizonte',
-    lastLogin: null,
-    isActive: false
+    baseId: 4,
+    baseName: 'Gestão de Frotas',
+    lastLogin: '2025-04-13T11:35:00Z',
+    isActive: true
   }
 ];
 
 // Bases disponíveis (para o select de bases)
 const availableBases = [
-  { id: 1, name: 'São Paulo' },
-  { id: 2, name: 'Rio de Janeiro' },
-  { id: 3, name: 'Belo Horizonte' },
-  { id: 4, name: 'Curitiba' }
+  { id: 1, name: 'Multas' },
+  { id: 2, name: 'Pneus' },
+  { id: 3, name: 'Line Hall' },
+  { id: 4, name: 'Gestão de Frotas' }
 ];
 
 // Função para traduzir os tipos de perfil
