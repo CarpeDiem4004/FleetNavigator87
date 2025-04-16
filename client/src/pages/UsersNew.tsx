@@ -257,7 +257,7 @@ const UsersNew: React.FC = () => {
                   </Label>
                   <div className="col-span-3">
                     <Select 
-                      value={newUser.role}
+                      defaultValue={newUser.role}
                       onValueChange={(value: 'admin' | 'gestor' | 'operador') => 
                         setNewUser({...newUser, role: value})
                       }
@@ -279,7 +279,7 @@ const UsersNew: React.FC = () => {
                   </Label>
                   <div className="col-span-3">
                     <Select 
-                      value={newUser.baseId?.toString() || '0'}
+                      defaultValue={newUser.baseId?.toString() || '0'}
                       onValueChange={handleBaseChange}
                     >
                       <SelectTrigger>
@@ -302,7 +302,7 @@ const UsersNew: React.FC = () => {
                   </Label>
                   <div className="col-span-3">
                     <Select 
-                      value={newUser.isActive ? 'active' : 'inactive'}
+                      defaultValue={newUser.isActive ? 'active' : 'inactive'}
                       onValueChange={(value) => 
                         setNewUser({...newUser, isActive: value === 'active'})
                       }
