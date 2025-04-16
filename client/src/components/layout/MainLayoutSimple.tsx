@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { 
   LayoutDashboard, 
@@ -15,7 +15,25 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { useMediaQuery } from '../../hooks/use-media-query';
+
+// Hook interno para substituir o useMediaQuery
+function useResponsiveDisplay(query: string): boolean {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    if (media.matches !== matches) {
+      setMatches(media.matches);
+    }
+
+    const listener = () => setMatches(media.matches);
+    media.addEventListener('change', listener);
+
+    return () => media.removeEventListener('change', listener);
+  }, [matches, query]);
+
+  return matches;
+}
 
 interface MainLayoutSimpleProps {
   children: React.ReactNode;
@@ -48,7 +66,7 @@ const NavItem: React.FC<NavItemProps> = ({ href, icon, title, isActive, onClick 
 
 const MainLayoutSimple: React.FC<MainLayoutSimpleProps> = ({ children }) => {
   const [location] = useLocation();
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isMobile = useResponsiveDisplay("(max-width: 768px)");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const closeSidebar = () => {
