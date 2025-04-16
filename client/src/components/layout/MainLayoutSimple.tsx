@@ -83,6 +83,7 @@ const MainLayoutSimple: React.FC<MainLayoutSimpleProps> = ({ children }) => {
     { href: '/refueling', icon: <Fuel className="h-5 w-5" />, title: 'Abastecimentos' },
     { href: '/fines', icon: <FileWarning className="h-5 w-5" />, title: 'Multas' },
     { href: '/line-hall', icon: <MapPin className="h-5 w-5" />, title: 'Line Hall' },
+    { href: '/fleet-management', icon: <Truck className="h-5 w-5" />, title: 'Gestão de Frota' },
     { href: '/users', icon: <Users className="h-5 w-5" />, title: 'Usuários' },
   ];
 

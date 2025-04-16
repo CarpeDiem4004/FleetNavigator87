@@ -11,6 +11,7 @@ import RefuelingNew from "@/pages/RefuelingNew";
 import FinesNew from "@/pages/FinesNew";
 import LineHallNew from "@/pages/LineHallNew";
 import UsersNew from "@/pages/UsersNew";
+import FleetManagementNew from "@/pages/FleetManagementNew";
 import SignIn from "@/pages/SignIn";
 import RegisterNew from "@/pages/RegisterNew";
 
@@ -44,6 +45,9 @@ function App() {
         </Route>
         <Route path="/line-hall">
           <LineHallNew />
+        </Route>
+        <Route path="/fleet-management">
+          <FleetManagementNew />
         </Route>
         <Route path="/users">
           <UsersNew />
