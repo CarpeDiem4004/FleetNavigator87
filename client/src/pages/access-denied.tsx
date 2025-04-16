@@ -24,9 +24,9 @@ const AccessDeniedPage: React.FC = () => {
             Você não tem permissão para acessar esta página. Este recurso está disponível apenas para usuários com acesso à base correspondente.
           </p>
           
-          {user?.baseId && user?.baseName && (
+          {user?.baseId && user?.basename && (
             <p className="text-muted-foreground">
-              Seu acesso está limitado à base: <span className="font-medium">{user.baseName}</span>
+              Seu acesso está limitado à base: <span className="font-medium">{user.basename}</span>
             </p>
           )}
           

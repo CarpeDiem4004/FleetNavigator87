@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 interface User {
   role?: string;
   baseId?: number;
-  baseName?: string;
+  basename?: string;
   bases?: {
     id: number;
     name: string;
@@ -96,8 +96,8 @@ export const useBasePermission = (): BasePermissionHook => {
       return { id: null, name: null };
     }
     
-    // Tenta obter o nome da base da relação ou do campo baseName
-    const baseName = user.bases?.name || user.baseName;
+    // Tenta obter o nome da base da relação ou do campo basename
+    const baseName = user.bases?.name || user.basename;
     
     return {
       id: user.baseId,

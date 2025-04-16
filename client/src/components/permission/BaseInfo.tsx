@@ -5,7 +5,7 @@ import { Building2 } from 'lucide-react';
 // Definindo o tipo específico para o componente
 interface User {
   baseId?: number;
-  baseName?: string;
+  basename?: string;
   bases?: {
     id: number;
     name: string;
@@ -19,7 +19,7 @@ export const BaseInfo: React.FC = () => {
   const userWithBase = user as User | null;
   
   // Verifica se o usuário tem base associada
-  const baseName = userWithBase?.bases?.name || userWithBase?.baseName;
+  const baseName = userWithBase?.bases?.name || userWithBase?.basename;
   
   if (!userWithBase?.baseId || !baseName) {
     return (
