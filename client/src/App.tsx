@@ -3,7 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
-import Dashboard from "@/pages/Dashboard";
+import DashboardNew from "@/pages/DashboardNew";
 import SignIn from "@/pages/SignIn";
 import Register from "@/pages/Register";
 
@@ -18,7 +18,7 @@ function App() {
           <Register />
         </Route>
         <Route path="/">
-          <Dashboard />
+          <DashboardNew />
         </Route>
         <Route>
           <NotFound />

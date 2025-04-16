@@ -1,10 +1,10 @@
 import React from 'react';
-import { Truck, Bolt, Fuel, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLocation } from 'wouter';
 
-const Dashboard: React.FC = () => {
+const DashboardNew: React.FC = () => {
   const [_, navigate] = useLocation();
 
   return (
@@ -83,4 +83,4 @@ const Dashboard: React.FC = () => {
   );
 };
 
-export default Dashboard;
+export default DashboardNew;
