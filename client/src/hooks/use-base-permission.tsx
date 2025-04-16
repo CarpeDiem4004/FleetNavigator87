@@ -16,19 +16,19 @@ type BaseIdArray = Array<number | null>;
 
 // Mapeamento de rotas para bases
 const baseRouteMap: Record<string, BaseIdArray> = {
-  '/multas': [1], // Base Multas (id: 1)
-  '/fines': [1], // Alias para Multas
+  '/multas': [9], // Base Multas (id: 9)
+  '/fines': [9], // Alias para Multas
   
-  '/pneus': [2], // Base Pneus (id: 2)
-  '/tires': [2], // Alias para Pneus
+  '/pneus': [10], // Base Pneus (id: 10)
+  '/tires': [10], // Alias para Pneus
   
-  '/line-hall': [3], // Base Line Hall (id: 3)
+  '/line-hall': [11], // Base Line Hall (id: 11)
   
-  '/gestao-de-frotas': [4], // Base Gestão de Frotas (id: 4)
-  '/fleet-management': [4], // Alias para Gestão de Frotas
+  '/gestao-de-frotas': [12], // Base Gestão de Frotas (id: 12)
+  '/fleet-management': [12], // Alias para Gestão de Frotas
   
   // Rotas comuns (disponíveis para Gestão de Frotas e admin)
-  '/maintenance': [4], // Apenas Gestão de Frotas
+  '/maintenance': [12], // Apenas Gestão de Frotas
   '/vehicles': [0], // Disponível para todas as bases
   '/refueling': [0], // Disponível para todas as bases
   
