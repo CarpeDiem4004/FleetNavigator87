@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import DashboardNew from "@/pages/DashboardNew";
+import VehiclesNew from "@/pages/VehiclesNew";
 import SignIn from "@/pages/SignIn";
 import RegisterNew from "@/pages/RegisterNew";
 
@@ -17,8 +18,11 @@ function App() {
         <Route path="/register">
           <RegisterNew />
         </Route>
-        <Route path="/">
+        <Route path="/" exact>
           <DashboardNew />
+        </Route>
+        <Route path="/vehicles">
+          <VehiclesNew />
         </Route>
         <Route>
           <NotFound />
