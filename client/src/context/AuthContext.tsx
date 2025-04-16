@@ -38,11 +38,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const { toast } = useToast();
 
   useEffect(() => {
+    let isMounted = true;
+    
     // Check if user is logged in on page load
     const checkAuth = async () => {
       try {
         console.log("Verificando autenticação...");
         const { data, error } = await getCurrentUser();
+        
+        // Verificação crítica: se o componente foi desmontado, não atualize o estado
+        if (!isMounted) return;
         
         if (error) {
           // AuthSessionMissingError é esperado quando não há sessão, 
@@ -115,7 +120,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       } catch (error) {
         console.error('Auth check error:', error);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          console.log("Verificação de autenticação completa, isLoading=false");
+          setIsLoading(false);
+        }
       }
     };
 
@@ -180,11 +188,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setUser(null);
         }
         
-        setIsLoading(false);
+        if (isMounted) {
+          console.log("Auth state change processado, isLoading=false");
+          setIsLoading(false);
+        }
       }
     );
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -352,8 +364,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  // Garantindo que todos os valores são exportados corretamente
+  const contextValue: AuthContextType = {
+    user,
+    isLoading,
+    login,
+    register,
+    logout
+  };
+  
+  // Verificação para debug
+  console.log("AuthContext Provider valores:", 
+    Object.keys(contextValue).map(key => `${key}: ${typeof contextValue[key as keyof AuthContextType]}`)
+  );
+  
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
