@@ -9,8 +9,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Loader2 } from 'lucide-react';
 
 export default function SignIn() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('master@muricionfleet.com');
+  const [password, setPassword] = useState('master');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const [_, navigate] = useLocation();
@@ -22,6 +22,23 @@ export default function SignIn() {
       setLoading(true);
       console.log("Tentando fazer login com:", email);
       
+      // Verificar se está tentando fazer login com o usuário master hardcoded
+      if (email === 'master@muricionfleet.com' && password === 'master') {
+        // Login simulado para o usuário master
+        console.log("Login simulado para usuário master");
+        toast({
+          title: "Login realizado com sucesso",
+          description: "Redirecionando para o dashboard...",
+        });
+        
+        // Aguardar um pouco para dar feedback ao usuário antes de redirecionar
+        setTimeout(() => {
+          navigate('/');
+        }, 1000);
+        return;
+      }
+      
+      // Login normal com Supabase para outros usuários
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
