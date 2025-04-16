@@ -1,0 +1,128 @@
+Crie um projeto de gestão de frotas utilizando React para a parte visual, TailwindCSS para o estilo e Supabase para o backend. A estrutura deve ser organizada da seguinte forma:
+
+1. Criação do Supabase:
+Crie um projeto no Supabase com todas as tabelas necessárias. As tabelas já devem ter sido estruturadas previamente, mas vou descrever abaixo o modelo de tabelas.
+
+Tabelas no Supabase:
+Veículos
+
+Campos: id (PK), placa, modelo, tipo_veiculo, status, base_id (FK)
+
+Manutenções
+
+Campos: id (PK), placa_veiculo (FK), data, tipo_manutencao, status, custo
+
+Pneus
+
+Campos: id (PK), numero_pneu, data_troca, km_troca, status
+
+Abastecimentos
+
+Campos: id (PK), placa_veiculo (FK), tipo_combustivel (ARLA/DIESEL), litros, km, base_id (FK), nome_motorista
+
+Multas
+
+Campos: id (PK), placa_veiculo (FK), tipo_infracao, motorista, data, status, valor
+
+Line Hall
+
+Campos: id (PK), placa_cavalo, placa_carreta1, placa_carreta2 (opcional), horario_carregamento, destino, status_viagem
+
+Bases
+
+Campos: id (PK), nome, localizacao
+
+Usuários
+
+Campos: id (PK), nome, email, senha, role (admin, gestor, etc.)
+
+Políticas de Segurança (RLS):
+Aplique políticas de Row Level Security no Supabase para garantir que cada base só veja os dados da sua própria base.
+
+Exemplo: Para a tabela de veículos, a consulta de um veículo deve estar filtrada pela base do usuário.
+
+2. Configuração do Frontend (Replit com React + TailwindCSS)
+Instalar dependências necessárias:
+
+React Router para navegação entre as páginas.
+
+TailwindCSS para o estilo.
+
+Supabase para conectar ao backend.
+
+bash
+Copiar
+Editar
+npm install react-router-dom @supabase/supabase-js tailwindcss
+Configuração do TailwindCSS:
+
+No arquivo tailwind.config.js, configure o Tailwind para garantir que o seu CSS seja aplicado corretamente.
+
+Não se esqueça de importar as diretrizes do Tailwind no arquivo index.css.
+
+Criação de Componentes:
+
+Dashboard: Visão geral, incluindo gráficos de desempenho.
+
+Veículos: Exibição de todos os veículos em uma tabela, com filtro por base.
+
+Manutenções: Exibição de todas as manutenções realizadas.
+
+Abastecimentos: Tabela de abastecimentos, com a opção de registrar novos abastecimentos.
+
+Line Hall: Tabela de viagens de carretas, incluindo horários de carregamento e veículos parados.
+
+Exemplo de Página com Tabela:
+
+Para a página de veículos (usando a tabela de veículos como exemplo):
+
+jsx
+Copiar
+Editar
+import { useState, useEffect } from 'react';
+import { supabase } from './supabaseClient';
+
+const Veiculos = () => {
+  const [veiculos, setVeiculos] = useState([]);
+
+  useEffect(() => {
+    const fetchVeiculos = async () => {
+      const { data, error } = await supabase
+        .from('veiculos')
+        .select('*')
+        .filter('base_id', 'eq', 1);  // Base id filtrado para o usuário logado
+      if (error) console.error(error);
+      else setVeiculos(data);
+    };
+
+    fetchVeiculos();
+  }, []);
+
+  return (
+    <div>
+      <h1>Veículos</h1>
+      <table className="min-w-full bg-white border border-gray-200">
+        <thead>
+          <tr className="bg-gray-100">
+            <th className="py-2 px-4">Placa</th>
+            <th className="py-2 px-4">Modelo</th>
+            <th className="py-2 px-4">Tipo</th>
+            <th className="py-2 px-4">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {veiculos.map((veiculo) => (
+            <tr key={veiculo.id}>
+              <td className="py-2 px-4">{veiculo.placa}</td>
+              <td className="py-2 px-4">{veiculo.modelo}</td>
+              <td className="py-2 px-4">{veiculo.tipo_veiculo}</td>
+              <td className="py-2 px-4">{veiculo.status}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default Veiculos;
