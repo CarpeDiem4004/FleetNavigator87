@@ -255,61 +255,67 @@ const UsersNew: React.FC = () => {
                   <Label htmlFor="role" className="text-right">
                     Perfil
                   </Label>
-                  <Select 
-                    value={newUser.role}
-                    onValueChange={(value: 'admin' | 'gestor' | 'operador') => 
-                      setNewUser({...newUser, role: value})
-                    }
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Selecione o perfil" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Administrador</SelectItem>
-                      <SelectItem value="gestor">Gestor</SelectItem>
-                      <SelectItem value="operador">Operador</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="col-span-3">
+                    <Select 
+                      value={newUser.role}
+                      onValueChange={(value: 'admin' | 'gestor' | 'operador') => 
+                        setNewUser({...newUser, role: value})
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o perfil" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Administrador</SelectItem>
+                        <SelectItem value="gestor">Gestor</SelectItem>
+                        <SelectItem value="operador">Operador</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="base" className="text-right">
                     Base
                   </Label>
-                  <Select 
-                    value={newUser.baseId?.toString() || '0'}
-                    onValueChange={handleBaseChange}
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Selecione a base (opcional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0">Nenhuma (Global)</SelectItem>
-                      {availableBases.map(base => (
-                        <SelectItem key={base.id} value={base.id.toString()}>
-                          {base.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="col-span-3">
+                    <Select 
+                      value={newUser.baseId?.toString() || '0'}
+                      onValueChange={handleBaseChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a base (opcional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">Nenhuma (Global)</SelectItem>
+                        {availableBases.map(base => (
+                          <SelectItem key={base.id} value={base.id.toString()}>
+                            {base.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="isActive" className="text-right">
                     Status
                   </Label>
-                  <Select 
-                    value={newUser.isActive ? 'active' : 'inactive'}
-                    onValueChange={(value) => 
-                      setNewUser({...newUser, isActive: value === 'active'})
-                    }
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Ativo</SelectItem>
-                      <SelectItem value="inactive">Inativo</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="col-span-3">
+                    <Select 
+                      value={newUser.isActive ? 'active' : 'inactive'}
+                      onValueChange={(value) => 
+                        setNewUser({...newUser, isActive: value === 'active'})
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Ativo</SelectItem>
+                        <SelectItem value="inactive">Inativo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
               <DialogFooter>
