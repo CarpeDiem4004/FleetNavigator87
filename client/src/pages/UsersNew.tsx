@@ -159,6 +159,15 @@ const UsersNew: React.FC = () => {
 
   // Atualizar o nome da base ao selecionar uma base
   const handleBaseChange = (baseId: string) => {
+    if (baseId === "0") {
+      setNewUser({
+        ...newUser,
+        baseId: null,
+        baseName: null
+      });
+      return;
+    }
+    
     const id = parseInt(baseId);
     const base = availableBases.find(b => b.id === id);
     setNewUser({
@@ -267,14 +276,14 @@ const UsersNew: React.FC = () => {
                     Base
                   </Label>
                   <Select 
-                    value={newUser.baseId?.toString() || ''}
+                    value={newUser.baseId?.toString() || '0'}
                     onValueChange={handleBaseChange}
                   >
                     <SelectTrigger className="col-span-3">
                       <SelectValue placeholder="Selecione a base (opcional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nenhuma (Global)</SelectItem>
+                      <SelectItem value="0">Nenhuma (Global)</SelectItem>
                       {availableBases.map(base => (
                         <SelectItem key={base.id} value={base.id.toString()}>
                           {base.name}
