@@ -58,15 +58,15 @@ const Vehicles: React.FC = () => {
   });
   
   const { data: vehicles, isLoading } = useQuery({
-    queryKey: ['/api/vehicles', filters],
+    queryKey: ['/api/supabase/vehicles', filters],
   });
   
   const { data: bases } = useQuery({
-    queryKey: ['/api/bases'],
+    queryKey: ['/api/supabase/bases'],
   });
   
   const filteredVehicles = React.useMemo(() => {
-    if (!vehicles) return [];
+    if (!vehicles || !Array.isArray(vehicles)) return [];
     
     return vehicles.filter((vehicle: any) => {
       return (
@@ -147,7 +147,7 @@ const Vehicles: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Todas</SelectItem>
-                  {bases?.map((base: any) => (
+                  {Array.isArray(bases) && bases.map((base: any) => (
                     <SelectItem key={base.id} value={base.id.toString()}>
                       {base.name} ({base.location})
                     </SelectItem>
@@ -248,7 +248,7 @@ const Vehicles: React.FC = () => {
                       {getStatusBadge(vehicle.status as VehicleStatusType)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {bases?.find((base: any) => base.id === vehicle.baseId)?.name || '-'}
+                      {Array.isArray(bases) && bases.find((base: any) => base.id === vehicle.baseId)?.name || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-3">
@@ -358,7 +358,7 @@ const Vehicles: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    {bases?.map((base: any) => (
+                    {Array.isArray(bases) && bases.map((base: any) => (
                       <SelectItem key={base.id} value={base.id.toString()}>
                         {base.name} ({base.location})
                       </SelectItem>
