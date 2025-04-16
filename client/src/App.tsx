@@ -13,6 +13,7 @@ import LineHall from "@/pages/LineHall";
 import Bases from "@/pages/Bases";
 import Users from "@/pages/Users";
 import Login from "@/pages/Login";
+import Register from "@/pages/Register";
 import MainLayout from "@/components/layout/MainLayout";
 import { useAuth } from "@/context/AuthContext";
 import { Loader2 } from "lucide-react";
@@ -44,14 +45,15 @@ function Router() {
     );
   }
 
-  // If user is logged in and tries to access login page, redirect to dashboard
-  if (user && window.location.pathname === "/login") {
+  // If user is logged in and tries to access login or register page, redirect to dashboard
+  if (user && (window.location.pathname === "/login" || window.location.pathname === "/register")) {
     return <Redirect to="/" />;
   }
 
   return (
     <Switch>
       <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
       
       {/* Protected routes */}
       {!user ? (

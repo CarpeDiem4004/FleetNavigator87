@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useLocation, Link } from 'wouter';
+import { useLocation } from 'wouter';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,34 +9,43 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Loader2 } from 'lucide-react';
+import { Link } from 'wouter';
 
-const loginSchema = z.object({
+const registerSchema = z.object({
+  name: z.string().min(3, { message: 'O nome deve ter pelo menos 3 caracteres' }),
   email: z.string().email({ message: 'E-mail inválido' }),
   password: z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres' }),
+  confirmPassword: z.string().min(6, { message: 'A confirmação de senha deve ter pelo menos 6 caracteres' }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "As senhas não coincidem",
+  path: ["confirmPassword"],
 });
 
-type LoginFormValues = z.infer<typeof loginSchema>;
+type RegisterFormValues = z.infer<typeof registerSchema>;
 
-export default function Login() {
+export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { register } = useAuth();
   const [_, setLocation] = useLocation();
 
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
     defaultValues: {
+      name: '',
       email: '',
       password: '',
+      confirmPassword: '',
     },
   });
 
-  const onSubmit = async (data: LoginFormValues) => {
+  const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
     try {
-      await login(data.email, data.password);
-      setLocation('/');
+      await register(data.email, data.password, data.name);
+      // Redireciona para a página de login após registro bem-sucedido
+      setLocation('/login');
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('Registro falhou:', error);
     } finally {
       setIsLoading(false);
     }
@@ -47,15 +56,33 @@ export default function Login() {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
-            Sistema de Gestão de Frotas
+            Criar uma nova conta
           </CardTitle>
           <CardDescription className="text-center">
-            Entre com suas credenciais para acessar o sistema
+            Preencha os dados abaixo para se cadastrar no sistema
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Seu nome" 
+                        autoComplete="name"
+                        disabled={isLoading} 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="email"
@@ -85,7 +112,26 @@ export default function Login() {
                       <Input 
                         placeholder="Sua senha" 
                         type="password" 
-                        autoComplete="current-password"
+                        autoComplete="new-password"
+                        disabled={isLoading} 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirmar Senha</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Confirme sua senha" 
+                        type="password" 
+                        autoComplete="new-password"
                         disabled={isLoading} 
                         {...field} 
                       />
@@ -98,10 +144,10 @@ export default function Login() {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Entrando...
+                    Cadastrando...
                   </>
                 ) : (
-                  'Entrar'
+                  'Cadastrar'
                 )}
               </Button>
             </form>
@@ -109,9 +155,9 @@ export default function Login() {
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
           <div className="text-sm text-center">
-            Não tem uma conta? <Link href="/register" className="text-primary hover:underline">Cadastre-se</Link>
+            Já tem uma conta? <Link href="/login" className="text-primary hover:underline">Faça login</Link>
           </div>
-          <p className="text-xs text-center text-gray-500">
+          <p className="mt-2 text-xs text-center text-gray-500">
             Este é um sistema de gerenciamento de frota desenvolvido para fins de demonstração.
           </p>
         </CardFooter>
