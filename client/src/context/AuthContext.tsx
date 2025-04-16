@@ -8,6 +8,7 @@ interface User {
   email: string;
   role: string;
   baseId?: number;
+  baseName?: string;
 }
 
 interface AuthContextType {

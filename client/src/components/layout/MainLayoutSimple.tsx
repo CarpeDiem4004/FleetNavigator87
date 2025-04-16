@@ -11,10 +11,14 @@ import {
   Users,
   LogOut,
   Menu,
-  X
+  X,
+  Building2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/context/AuthContext';
+import { useBasePermission } from '@/hooks/use-base-permission';
+import { BaseInfo } from '@/components/permission/BaseInfo';
 
 // Hook interno para substituir o useMediaQuery
 function useResponsiveDisplay(query: string): boolean {
@@ -68,14 +72,26 @@ const MainLayoutSimple: React.FC<MainLayoutSimpleProps> = ({ children }) => {
   const [location] = useLocation();
   const isMobile = useResponsiveDisplay("(max-width: 768px)");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const { hasPermission } = useBasePermission();
 
   const closeSidebar = () => {
     if (isMobile) {
       setSidebarOpen(false);
     }
   };
+  
+  const handleLogout = async () => {
+    try {
+      await logout();
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
+  };
 
-  const navItems = [
+  // Todos os itens de navegação possíveis
+  const allNavItems = [
     { href: '/', icon: <LayoutDashboard className="h-5 w-5" />, title: 'Dashboard' },
     { href: '/vehicles', icon: <Truck className="h-5 w-5" />, title: 'Veículos' },
     { href: '/maintenance', icon: <Wrench className="h-5 w-5" />, title: 'Manutenções' },
@@ -86,6 +102,9 @@ const MainLayoutSimple: React.FC<MainLayoutSimpleProps> = ({ children }) => {
     { href: '/fleet-management', icon: <Truck className="h-5 w-5" />, title: 'Gestão de Frota' },
     { href: '/users', icon: <Users className="h-5 w-5" />, title: 'Usuários' },
   ];
+
+  // Filtra os itens de navegação com base nas permissões do usuário
+  const navItems = allNavItems.filter(item => hasPermission(item.href));
 
   return (
     <div className="flex min-h-screen">
@@ -141,10 +160,19 @@ const MainLayoutSimple: React.FC<MainLayoutSimpleProps> = ({ children }) => {
               ))}
             </nav>
           </div>
-          <div className="border-t p-3">
-            <Button variant="outline" className="w-full justify-start" onClick={() => {
-              window.location.href = '/login';
-            }}>
+          <div className="border-t p-3 space-y-3">
+            {/* Informações da Base do Usuário */}
+            <div className="p-2 rounded bg-muted">
+              <BaseInfo />
+              {user && (
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {user.name} ({user.role})
+                </div>
+              )}
+            </div>
+            
+            {/* Botão de Logout */}
+            <Button variant="outline" className="w-full justify-start" onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
               Sair
             </Button>

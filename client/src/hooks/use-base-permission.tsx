@@ -18,14 +18,15 @@ const baseRouteMap: Record<string, BaseIdArray> = {
   
   // Rotas comuns (disponíveis para Gestão de Frotas e admin)
   '/maintenance': [4], // Apenas Gestão de Frotas
-  '/vehicles': [null], // Disponível para todas as bases
-  '/refueling': [null], // Disponível para todas as bases
+  '/vehicles': [0], // Disponível para todas as bases
+  '/refueling': [0], // Disponível para todas as bases
   
   // Dashboard e usuários disponíveis apenas para admin ou bases específicas
-  '/': [null], // Dashboard disponível para todos
-  '/users': [null], // Usuários apenas para admin
+  '/': [0], // Dashboard disponível para todos
+  '/users': [0], // Usuários apenas para admin
 };
 
+// Hook para verificação de permissões baseadas na base do usuário
 export function useBasePermission() {
   const { user } = useAuth();
   
@@ -42,15 +43,15 @@ export function useBasePermission() {
       return false;
     }
     
-    // Se o mapeamento da rota for null, a rota está disponível para todas as bases
-    if (baseRouteMap[route].includes(null)) {
+    // Se a rota está marcada com 0, significa que está disponível para todas as bases
+    if (baseRouteMap[route].includes(0)) {
       return true;
     }
     
     // Se o usuário não tiver uma base associada, verifica se a rota está disponível
     // apenas para usuários sem base
     if (!user?.baseId) {
-      return baseRouteMap[route].includes(0);
+      return false;
     }
     
     // Verifica se a baseId do usuário está na lista de bases permitidas para a rota
