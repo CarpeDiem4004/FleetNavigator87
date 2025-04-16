@@ -8,6 +8,9 @@ import VehiclesNew from "@/pages/VehiclesNew";
 import MaintenanceNew from "@/pages/MaintenanceNew";
 import TiresNew from "@/pages/TiresNew";
 import RefuelingNew from "@/pages/RefuelingNew";
+import FinesNew from "@/pages/FinesNew";
+import LineHallNew from "@/pages/LineHallNew";
+import UsersNew from "@/pages/UsersNew";
 import SignIn from "@/pages/SignIn";
 import RegisterNew from "@/pages/RegisterNew";
 
@@ -35,6 +38,15 @@ function App() {
         </Route>
         <Route path="/refueling">
           <RefuelingNew />
+        </Route>
+        <Route path="/fines">
+          <FinesNew />
+        </Route>
+        <Route path="/line-hall">
+          <LineHallNew />
+        </Route>
+        <Route path="/users">
+          <UsersNew />
         </Route>
         <Route>
           <NotFound />
