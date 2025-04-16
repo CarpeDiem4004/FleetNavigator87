@@ -41,6 +41,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Check if user is logged in on page load
     const checkAuth = async () => {
       try {
+        console.log("Verificando autenticação...");
         const { data, error } = await getCurrentUser();
         
         if (error) {
@@ -48,12 +49,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           // então não precisamos logar esse erro específico
           if (error.name !== 'AuthSessionMissingError') {
             console.error('Auth check error:', error);
+          } else {
+            console.log('Nenhuma sessão de usuário encontrada');
           }
           setIsLoading(false);
           return;
         }
         
         if (data?.user) {
+          console.log("Usuário encontrado na autenticação:", data.user.email);
           try {
             // Fetch additional user data from Supabase
             const { data: userData, error: userError } = await supabase
@@ -68,17 +72,45 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 // Isso pode acontecer se o usuário foi criado pela autenticação
                 // mas não foi criado na tabela users ainda
                 console.log('Usuário autenticado, mas não encontrado na tabela de usuários');
+                
+                // Vamos criar o usuário automaticamente
+                if (data.user.email) {
+                  try {
+                    const newUser = {
+                      email: data.user.email,
+                      name: data.user.user_metadata?.name || data.user.email.split('@')[0],
+                      role: 'operador', // Papel padrão para novos usuários
+                    };
+                    
+                    console.log("Criando novo usuário na tabela:", newUser);
+                    const { data: createdUser, error: createError } = await supabase
+                      .from('users')
+                      .insert(newUser)
+                      .select()
+                      .single();
+                      
+                    if (createError) {
+                      console.error('Erro ao criar usuário na tabela users:', createError);
+                    } else if (createdUser) {
+                      console.log("Usuário criado com sucesso:", createdUser);
+                      setUser(createdUser);
+                    }
+                  } catch (createErr) {
+                    console.error("Erro ao processar criação de usuário:", createErr);
+                  }
+                }
               } else {
                 console.error('User data fetch error:', userError);
               }
-              setIsLoading(false);
-              return;
+            } else if (userData) {
+              console.log("Dados do usuário encontrados na tabela:", userData);
+              setUser(userData);
             }
-            
-            setUser(userData);
           } catch (err) {
             console.error('User data processing error:', err);
           }
+        } else {
+          console.log("Nenhum usuário autenticado encontrado");
         }
       } catch (error) {
         console.error('Auth check error:', error);
@@ -92,9 +124,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log("Auth state changed:", event);
         setIsLoading(true);
         
         if (event === 'SIGNED_IN' && session) {
+          console.log("Usuário fez login:", session.user.email);
           try {
             // Fetch user data from Supabase
             const { data: userData, error: userError } = await supabase
@@ -108,8 +142,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 // Usuário autenticado, mas não encontrado na tabela users
                 console.log('Usuário autenticado via sessão, mas não encontrado na tabela de usuários');
                 
-                // Se quisermos, podemos criar um registro na tabela users com informações básicas
-                // Este bloco é opcional e depende das regras de negócio
+                // Vamos criar o usuário automaticamente
                 const authUser = session.user;
                 if (authUser && authUser.email) {
                   const newUser = {
@@ -118,6 +151,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                     role: 'operador', // Papel padrão para novos usuários
                   };
                   
+                  console.log("Criando usuário na tabela após login:", newUser);
                   const { data: createdUser, error: createError } = await supabase
                     .from('users')
                     .insert(newUser)
@@ -125,8 +159,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                     .single();
                     
                   if (!createError && createdUser) {
+                    console.log('Usuário criado automaticamente na tabela users:', createdUser);
                     setUser(createdUser);
-                    console.log('Usuário criado automaticamente na tabela users');
                   } else {
                     console.error('Erro ao criar usuário na tabela users:', createError);
                   }
@@ -135,12 +169,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 console.error('User data fetch error on auth state change:', userError);
               }
             } else if (userData) {
+              console.log("Dados do usuário encontrados após login:", userData);
               setUser(userData);
             }
           } catch (err) {
             console.error('Error processing auth state change:', err);
           }
         } else if (event === 'SIGNED_OUT') {
+          console.log("Usuário fez logout");
           setUser(null);
         }
         
