@@ -228,7 +228,7 @@ const LineHallNew: React.FC = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold mb-2">Linha de Transporte</h1>
+            <h1 className="text-2xl font-bold mb-2">Line Hall</h1>
             <p className="text-gray-500">
               Gestão de viagens e transporte de carga
             </p>
