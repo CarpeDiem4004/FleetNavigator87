@@ -1,12 +1,14 @@
 import React from 'react';
-import { useBasePermission } from '@/hooks/use-base-permission';
+import { useAuth } from '@/context/AuthContext';
 import { Building2 } from 'lucide-react';
 
 export const BaseInfo: React.FC = () => {
-  const { getUserBase } = useBasePermission();
-  const { id, name } = getUserBase();
+  const { user } = useAuth();
   
-  if (!id || !name) {
+  // Verifica se o usuário tem base associada
+  const baseName = user?.bases?.name || user?.baseName;
+  
+  if (!user?.baseId || !baseName) {
     return (
       <div className="flex items-center text-sm text-muted-foreground">
         <Building2 className="mr-1 h-4 w-4" />
@@ -18,7 +20,7 @@ export const BaseInfo: React.FC = () => {
   return (
     <div className="flex items-center text-sm text-muted-foreground">
       <Building2 className="mr-1 h-4 w-4" />
-      <span>Base: {name}</span>
+      <span>Base: {baseName}</span>
     </div>
   );
 };

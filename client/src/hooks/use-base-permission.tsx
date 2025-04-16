@@ -70,10 +70,18 @@ export function useBasePermission() {
   };
   
   // Obtém a base do usuário atual
-  const getUserBase = (): {id: number | null, name: string | null} => {
+  const getUserBase = () => {
+    // Se o usuário não existir ou não tiver base, retorna null
+    if (!user || !user.baseId) {
+      return { id: null, name: null };
+    }
+    
+    // Tenta obter o nome da base da relação ou do campo baseName
+    const baseName = user.bases?.name || user.baseName;
+    
     return {
-      id: user?.baseId || null,
-      name: user?.baseName || null
+      id: user.baseId,
+      name: baseName || null
     };
   };
 

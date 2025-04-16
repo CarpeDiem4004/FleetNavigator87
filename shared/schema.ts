@@ -91,6 +91,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   role: userRoleEnum("role").notNull(),
   baseId: integer("base_id").references(() => bases.id),
+  baseName: text("baseName"),
 });
 
 // Relations
@@ -124,6 +125,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   role: true,
   baseId: true,
+  baseName: true,
 });
 
 // Types

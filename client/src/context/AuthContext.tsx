@@ -9,6 +9,11 @@ interface User {
   role: string;
   baseId?: number;
   baseName?: string;
+  // Relação com a base
+  bases?: {
+    id: number;
+    name: string;
+  };
 }
 
 interface AuthContextType {
@@ -65,10 +70,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         if (data?.user) {
           console.log("Usuário encontrado na autenticação:", data.user.email);
           try {
-            // Fetch additional user data from Supabase
+            // Fetch additional user data from Supabase with base information
             const { data: userData, error: userError } = await supabase
               .from('users')
-              .select('*')
+              .select(`
+                *,
+                bases:base_id (
+                  id,
+                  name
+                )
+              `)
               .eq('email', data.user.email)
               .single();
               
@@ -139,10 +150,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         if (event === 'SIGNED_IN' && session) {
           console.log("Usuário fez login:", session.user.email);
           try {
-            // Fetch user data from Supabase
+            // Fetch user data from Supabase with base information
             const { data: userData, error: userError } = await supabase
               .from('users')
-              .select('*')
+              .select(`
+                *,
+                bases:base_id (
+                  id,
+                  name
+                )
+              `)
               .eq('email', session.user.email)
               .single();
               
@@ -213,10 +230,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       if (data.user) {
         try {
-          // Fetch additional user data from Supabase
+          // Fetch additional user data from Supabase with base information
           const { data: userData, error: userError } = await supabase
             .from('users')
-            .select('*')
+            .select(`
+              *,
+              bases:base_id (
+                id,
+                name
+              )
+            `)
             .eq('email', data.user.email)
             .single();
             
