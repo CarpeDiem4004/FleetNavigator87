@@ -13,6 +13,7 @@ import LineHall from "@/pages/LineHall";
 import Bases from "@/pages/Bases";
 import Users from "@/pages/Users";
 import Login from "@/pages/Login";
+import SignIn from "@/pages/SignIn";
 import Register from "@/pages/Register";
 import MainLayout from "@/components/layout/MainLayout";
 import { useAuth } from "@/context/AuthContext";
@@ -38,7 +39,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/login">
-        <Login />
+        <SignIn />
       </Route>
       <Route path="/register">
         <Register />
