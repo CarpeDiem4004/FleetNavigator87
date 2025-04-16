@@ -1,200 +1,236 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Truck, Wrench, AlertTriangle, Fuel } from 'lucide-react';
+import { 
+  Table, 
+  TableBody, 
+  TableCaption, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { 
+  Truck, 
+  Wrench, 
+  Fuel, 
+  FileWarning, 
+  MapPin,
+  AlertCircle
+} from 'lucide-react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 
-// Componente de cartão estatístico
+// Tipo para item de manutenção na tabela
+interface MaintenanceItem {
+  id: number;
+  vehiclePlate: string;
+  type: 'preventiva' | 'corretiva';
+  description: string;
+  date: string;
+  status: 'concluida' | 'em_andamento' | 'aguardando_pecas';
+}
+
+// Dados mockados para a tabela de manutenções
+const pendingMaintenance: MaintenanceItem[] = [
+  {
+    id: 1,
+    vehiclePlate: 'ABC-1234',
+    type: 'preventiva',
+    description: 'Troca de óleo e filtros',
+    date: '2025-04-18',
+    status: 'em_andamento'
+  },
+  {
+    id: 2,
+    vehiclePlate: 'DEF-5678',
+    type: 'corretiva',
+    description: 'Reparo do sistema de freios',
+    date: '2025-04-16',
+    status: 'aguardando_pecas'
+  },
+  {
+    id: 3,
+    vehiclePlate: 'GHI-9012',
+    type: 'corretiva',
+    description: 'Substituição da embreagem',
+    date: '2025-04-17',
+    status: 'em_andamento'
+  },
+  {
+    id: 4,
+    vehiclePlate: 'JKL-3456',
+    type: 'preventiva',
+    description: 'Alinhamento e balanceamento',
+    date: '2025-04-19',
+    status: 'em_andamento'
+  }
+];
+
+// Dados estatísticos para os cards
+const stats = {
+  totalVehicles: 32,
+  vehiclesInOperation: 27,
+  vehiclesInMaintenance: 5,
+  pendingMaintenance: 8,
+  activeTires: 180,
+  fuelConsumed: 5250
+};
+
+// Função para traduzir os tipos de manutenção
+const translateMaintenanceType = (type: string): string => {
+  const types: Record<string, string> = {
+    preventiva: 'Preventiva',
+    corretiva: 'Corretiva'
+  };
+  return types[type] || type;
+};
+
+// Função para traduzir os status de manutenção
+const translateMaintenanceStatus = (status: string): string => {
+  const statuses: Record<string, string> = {
+    concluida: 'Concluída',
+    em_andamento: 'Em Andamento',
+    aguardando_pecas: 'Aguardando Peças'
+  };
+  return statuses[status] || status;
+};
+
+// Função para obter a classe CSS para o badge de status
+const getStatusBadgeClass = (status: string): string => {
+  const classes: Record<string, string> = {
+    concluida: 'bg-green-100 text-green-800',
+    em_andamento: 'bg-yellow-100 text-yellow-800',
+    aguardando_pecas: 'bg-red-100 text-red-800'
+  };
+  return classes[status] || 'bg-gray-100 text-gray-800';
+};
+
+// Componente para o card de estatística
 interface StatCardProps {
   title: string;
   value: string | number;
   icon: React.ReactNode;
+  description: string;
   color: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color }) => {
+const StatCard: React.FC<StatCardProps> = ({ title, value, icon, description, color }) => {
   return (
     <Card>
-      <CardContent className="p-6">
+      <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-500">{title}</p>
-            <h4 className="mt-2 text-2xl font-bold">{value}</h4>
-          </div>
-          <div className={`p-3 rounded-full ${color}`}>
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            {title}
+          </CardTitle>
+          <div className={`rounded-full p-2 ${color}`}>
             {icon}
           </div>
         </div>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        <p className="text-xs text-muted-foreground mt-1">{description}</p>
       </CardContent>
     </Card>
   );
 };
 
-const DashboardNew: React.FC = () => {
-  // Dados mockados para o dashboard
-  const stats = [
-    { 
-      title: 'Total de Veículos', 
-      value: '42', 
-      icon: <Truck className="h-6 w-6 text-white" />, 
-      color: 'bg-blue-500' 
-    },
-    { 
-      title: 'Manutenções Pendentes', 
-      value: '7', 
-      icon: <Wrench className="h-6 w-6 text-white" />, 
-      color: 'bg-yellow-500' 
-    },
-    { 
-      title: 'Multas a Pagar', 
-      value: 'R$ 2.450,00', 
-      icon: <AlertTriangle className="h-6 w-6 text-white" />, 
-      color: 'bg-red-500' 
-    },
-    { 
-      title: 'Consumo de Diesel', 
-      value: '4.230 L', 
-      icon: <Fuel className="h-6 w-6 text-white" />, 
-      color: 'bg-green-500' 
-    }
-  ];
+// Função para formatar datas
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('pt-BR').format(date);
+};
 
+const DashboardNew: React.FC = () => {
   return (
     <MainLayoutSimple>
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold mb-2">Dashboard</h1>
           <p className="text-gray-500">
-            Visão geral das operações da frota
+            Visão geral da frota e operações
           </p>
         </div>
 
-        {/* Cartões de estatísticas */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat, index) => (
-            <StatCard 
-              key={index}
-              title={stat.title}
-              value={stat.value}
-              icon={stat.icon}
-              color={stat.color}
-            />
-          ))}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <StatCard
+            title="Total de Veículos"
+            value={stats.totalVehicles}
+            icon={<Truck className="h-4 w-4 text-blue-700" />}
+            description="Veículos cadastrados na frota"
+            color="bg-blue-100"
+          />
+          <StatCard
+            title="Em Operação"
+            value={stats.vehiclesInOperation}
+            icon={<Truck className="h-4 w-4 text-green-700" />}
+            description="Veículos atualmente em operação"
+            color="bg-green-100"
+          />
+          <StatCard
+            title="Em Manutenção"
+            value={stats.vehiclesInMaintenance}
+            icon={<Wrench className="h-4 w-4 text-yellow-700" />}
+            description="Veículos em manutenção"
+            color="bg-yellow-100"
+          />
+          <StatCard
+            title="Manutenções Pendentes"
+            value={stats.pendingMaintenance}
+            icon={<AlertCircle className="h-4 w-4 text-red-700" />}
+            description="Manutenções agendadas ou em andamento"
+            color="bg-red-100"
+          />
+          <StatCard
+            title="Pneus Ativos"
+            value={stats.activeTires}
+            icon={<MapPin className="h-4 w-4 text-purple-700" />}
+            description="Pneus em uso ou em estoque"
+            color="bg-purple-100"
+          />
+          <StatCard
+            title="Combustível (L)"
+            value={stats.fuelConsumed.toLocaleString('pt-BR')}
+            icon={<Fuel className="h-4 w-4 text-orange-700" />}
+            description="Litros consumidos no mês"
+            color="bg-orange-100"
+          />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Sistema de Gestão de Frotas</CardTitle>
-              <CardDescription>
-                Seu sistema completo para gerenciar sua frota de veículos
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>A aplicação conta com os seguintes módulos:</p>
-              <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>Gestão de Veículos</li>
-                <li>Controle de Manutenção</li>
-                <li>Monitoramento de Pneus</li>
-                <li>Registro de Abastecimentos</li>
-                <li>Controle de Multas</li>
-                <li>Gestão de Transporte (Line Haul)</li>
-                <li>Gerenciamento de Bases</li>
-                <li>Administração de Usuários</li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Status do Desenvolvimento</CardTitle>
-              <CardDescription>
-                Acompanhe o progresso da implementação
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                <li className="flex items-center">
-                  <div className="h-4 w-4 rounded-full bg-green-500 mr-2"></div>
-                  <span>Estrutura da aplicação implementada</span>
-                </li>
-                <li className="flex items-center">
-                  <div className="h-4 w-4 rounded-full bg-green-500 mr-2"></div>
-                  <span>Modelagem do banco de dados completa</span>
-                </li>
-                <li className="flex items-center">
-                  <div className="h-4 w-4 rounded-full bg-green-500 mr-2"></div>
-                  <span>Implementação da autenticação concluída</span>
-                </li>
-                <li className="flex items-center">
-                  <div className="h-4 w-4 rounded-full bg-yellow-500 mr-2"></div>
-                  <span>Implementação dos componentes do dashboard</span>
-                </li>
-                <li className="flex items-center">
-                  <div className="h-4 w-4 rounded-full bg-gray-300 mr-2"></div>
-                  <span>Integração com APIs de serviços externos</span>
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Tabela de Últimas Manutenções */}
         <Card>
           <CardHeader>
-            <CardTitle>Últimas Manutenções</CardTitle>
+            <CardTitle>Manutenções Pendentes</CardTitle>
             <CardDescription>
-              Registro das manutenções mais recentes na frota
+              Manutenções programadas e em andamento
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3">Veículo</th>
-                    <th className="px-6 py-3">Tipo</th>
-                    <th className="px-6 py-3">Data</th>
-                    <th className="px-6 py-3">Status</th>
-                    <th className="px-6 py-3">Custo</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="bg-white border-b">
-                    <td className="px-6 py-4 font-medium">ABC-1234</td>
-                    <td className="px-6 py-4">Preventiva</td>
-                    <td className="px-6 py-4">10/04/2025</td>
-                    <td className="px-6 py-4">
-                      <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                        Concluída
+            <Table>
+              <TableCaption>Lista de manutenções pendentes</TableCaption>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Veículo</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingMaintenance.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">{item.vehiclePlate}</TableCell>
+                    <TableCell>{translateMaintenanceType(item.type)}</TableCell>
+                    <TableCell>{item.description}</TableCell>
+                    <TableCell>{formatDate(item.date)}</TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(item.status)}`}>
+                        {translateMaintenanceStatus(item.status)}
                       </span>
-                    </td>
-                    <td className="px-6 py-4">R$ 850,00</td>
-                  </tr>
-                  <tr className="bg-gray-50 border-b">
-                    <td className="px-6 py-4 font-medium">DEF-5678</td>
-                    <td className="px-6 py-4">Corretiva</td>
-                    <td className="px-6 py-4">08/04/2025</td>
-                    <td className="px-6 py-4">
-                      <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
-                        Em andamento
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">R$ 1.250,00</td>
-                  </tr>
-                  <tr className="bg-white border-b">
-                    <td className="px-6 py-4 font-medium">GHI-9012</td>
-                    <td className="px-6 py-4">Corretiva</td>
-                    <td className="px-6 py-4">05/04/2025</td>
-                    <td className="px-6 py-4">
-                      <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">
-                        Aguardando peças
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">R$ 2.100,00</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </div>
