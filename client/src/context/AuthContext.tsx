@@ -8,7 +8,7 @@ interface User {
   email: string;
   role: string;
   baseId?: number;
-  baseName?: string;
+  basename?: string;
   // Relação com a base
   bases?: {
     id: number;
