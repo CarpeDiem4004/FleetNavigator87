@@ -34,9 +34,27 @@ function ProtectedRoute({ component: Component, ...rest }: { component: React.Co
 }
 
 function Router() {
+  // Versão simplificada do router para resolver problemas de login
+  return (
+    <Switch>
+      <Route path="/login">
+        <Login />
+      </Route>
+      <Route path="/register">
+        <Register />
+      </Route>
+      <Route path="*">
+        <AuthCheck />
+      </Route>
+    </Switch>
+  );
+}
+
+// Componente separado para lidar com verificação de autenticação
+function AuthCheck() {
   const { user, isLoading } = useAuth();
   
-  console.log("Router - estado de autenticação:", { isLoading, user });
+  console.log("AuthCheck - estado:", { isLoading, user });
 
   // Mostra tela de carregamento enquanto verifica autenticação
   if (isLoading) {
@@ -50,42 +68,49 @@ function Router() {
     );
   }
 
-  // Usuário autenticado
-  if (user) {
-    const path = window.location.pathname;
-    // Redireciona para o dashboard se tentar acessar login/registro
-    if (path === "/login" || path === "/register") {
-      return <Redirect to="/" />;
-    }
-    
-    // Rotas protegidas com layout para usuários autenticados
-    return (
-      <MainLayout>
-        <Switch>
-          <Route path="/" component={Dashboard} />
-          <Route path="/vehicles" component={Vehicles} />
-          <Route path="/maintenance" component={Maintenance} />
-          <Route path="/tires" component={Tires} />
-          <Route path="/refueling" component={Refueling} />
-          <Route path="/fines" component={Fines} />
-          <Route path="/line-hall" component={LineHall} />
-          <Route path="/bases" component={Bases} />
-          <Route path="/users" component={Users} />
-          <Route component={NotFound} />
-        </Switch>
-      </MainLayout>
-    );
+  // Se não estiver autenticado, redireciona para login
+  if (!user) {
+    console.log("Usuário não autenticado, redirecionando para login");
+    return <Redirect to="/login" />;
   }
   
-  // Usuário não autenticado - mostra apenas login e registro
+  // Se estiver autenticado, mostra as rotas protegidas
+  console.log("Usuário autenticado, mostrando rotas protegidas");
   return (
-    <Switch>
-      <Route path="/login" component={Login} />
-      <Route path="/register" component={Register} />
-      <Route path="*">
-        <Redirect to="/login" />
-      </Route>
-    </Switch>
+    <MainLayout>
+      <Switch>
+        <Route path="/">
+          <Dashboard />
+        </Route>
+        <Route path="/vehicles">
+          <Vehicles />
+        </Route>
+        <Route path="/maintenance">
+          <Maintenance />
+        </Route>
+        <Route path="/tires">
+          <Tires />
+        </Route>
+        <Route path="/refueling">
+          <Refueling />
+        </Route>
+        <Route path="/fines">
+          <Fines />
+        </Route>
+        <Route path="/line-hall">
+          <LineHall />
+        </Route>
+        <Route path="/bases">
+          <Bases />
+        </Route>
+        <Route path="/users">
+          <Users />
+        </Route>
+        <Route>
+          <NotFound />
+        </Route>
+      </Switch>
+    </MainLayout>
   );
 }
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, Link } from 'wouter';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,9 +18,17 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function Login() {
-  const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
-  const [_, setLocation] = useLocation();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { login, user, isLoading } = useAuth();
+  const [_, navigate] = useLocation();
+
+  // Efeito para redirecionar se já estiver logado
+  useEffect(() => {
+    if (user && !isLoading) {
+      console.log("Login: usuário já autenticado, redirecionando para /");
+      navigate("/");
+    }
+  }, [user, isLoading, navigate]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -31,14 +39,17 @@ export default function Login() {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    setIsLoading(true);
+    console.log("Tentando fazer login com:", data.email);
+    setIsSubmitting(true);
     try {
       await login(data.email, data.password);
-      setLocation('/');
+      console.log("Login bem-sucedido, redirecionando...");
+      navigate('/');
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('Login falhou:', error);
+      // O toast error já é mostrado no contexto de autenticação
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -67,7 +78,7 @@ export default function Login() {
                         placeholder="seu.email@exemplo.com" 
                         type="email" 
                         autoComplete="email"
-                        disabled={isLoading} 
+                        disabled={isSubmitting} 
                         {...field} 
                       />
                     </FormControl>
@@ -86,7 +97,7 @@ export default function Login() {
                         placeholder="Sua senha" 
                         type="password" 
                         autoComplete="current-password"
-                        disabled={isLoading} 
+                        disabled={isSubmitting} 
                         {...field} 
                       />
                     </FormControl>
@@ -94,8 +105,8 @@ export default function Login() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Entrando...
