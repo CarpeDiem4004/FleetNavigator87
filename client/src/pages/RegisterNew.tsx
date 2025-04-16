@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,9 +12,10 @@ export default function RegisterNew() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [_, navigate] = useLocation();
   const { toast } = useToast();
+  const { register, isLoading } = useAuth();
+  const loading = isLoading;
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,31 +39,17 @@ export default function RegisterNew() {
     }
 
     try {
-      setLoading(true);
       console.log("Tentando registrar usuário:", email);
       
-      // Registra o usuário no Supabase Auth
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-          }
-        }
-      });
+      // Registra o usuário usando o AuthContext
+      await register(email, password, name);
 
-      if (error) {
-        throw error;
-      }
-
-      console.log("Registro bem-sucedido:", data);
       toast({
         title: "Registro realizado com sucesso",
-        description: "Redirecionando para o login...",
+        description: "Usuário criado com sucesso!",
       });
       
-      navigate('/login');
+      navigate('/');
     } catch (error: any) {
       console.error('Erro ao registrar usuário:', error);
       toast({
@@ -70,8 +57,6 @@ export default function RegisterNew() {
         description: error.message || "Ocorreu um erro ao tentar criar sua conta.",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
   };
 

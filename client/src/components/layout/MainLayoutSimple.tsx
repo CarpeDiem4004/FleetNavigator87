@@ -53,17 +53,16 @@ interface NavItemProps {
 
 const NavItem: React.FC<NavItemProps> = ({ href, icon, title, isActive, onClick }) => {
   return (
-    <Link href={href}>
-      <a
-        className={cn(
-          "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary",
-          isActive ? "bg-muted font-medium text-primary" : "text-muted-foreground"
-        )}
-        onClick={onClick}
-      >
-        {icon}
-        <span>{title}</span>
-      </a>
+    <Link 
+      href={href}
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary",
+        isActive ? "bg-muted font-medium text-primary" : "text-muted-foreground"
+      )}
+    >
+      {icon}
+      <span>{title}</span>
     </Link>
   );
 };
