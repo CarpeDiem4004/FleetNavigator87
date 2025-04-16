@@ -1,5 +1,16 @@
 import { useAuth } from "@/context/AuthContext";
 
+// Definindo o tipo User para uso interno do hook
+interface User {
+  role?: string;
+  baseId?: number;
+  baseName?: string;
+  bases?: {
+    id: number;
+    name: string;
+  };
+}
+
 // Definindo tipo para permitir null em array de bases
 type BaseIdArray = Array<number | null>;
 
@@ -26,9 +37,18 @@ const baseRouteMap: Record<string, BaseIdArray> = {
   '/users': [0], // Usuários apenas para admin
 };
 
+// Interface para o retorno do hook
+interface BasePermissionHook {
+  hasPermission: (route: string) => boolean;
+  getAccessibleRoutes: () => string[];
+  isUserFromBase: (baseId: number) => boolean;
+  getUserBase: () => {id: number | null, name: string | null};
+}
+
 // Hook para verificação de permissões baseadas na base do usuário
-export function useBasePermission() {
-  const { user } = useAuth();
+export const useBasePermission = (): BasePermissionHook => {
+  const { user: authUser } = useAuth();
+  const user = authUser as User | null;
   
   // Verifica se o usuário tem permissão para acessar a rota
   const hasPermission = (route: string): boolean => {

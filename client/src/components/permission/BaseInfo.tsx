@@ -2,13 +2,26 @@ import React from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Building2 } from 'lucide-react';
 
+// Definindo o tipo específico para o componente
+interface User {
+  baseId?: number;
+  baseName?: string;
+  bases?: {
+    id: number;
+    name: string;
+  };
+}
+
 export const BaseInfo: React.FC = () => {
   const { user } = useAuth();
   
-  // Verifica se o usuário tem base associada
-  const baseName = user?.bases?.name || user?.baseName;
+  // Cast para o tipo que esperamos
+  const userWithBase = user as User | null;
   
-  if (!user?.baseId || !baseName) {
+  // Verifica se o usuário tem base associada
+  const baseName = userWithBase?.bases?.name || userWithBase?.baseName;
+  
+  if (!userWithBase?.baseId || !baseName) {
     return (
       <div className="flex items-center text-sm text-muted-foreground">
         <Building2 className="mr-1 h-4 w-4" />

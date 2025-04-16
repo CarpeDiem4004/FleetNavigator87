@@ -14,7 +14,8 @@ import UsersNew from "@/pages/UsersNew";
 import FleetManagementNew from "@/pages/FleetManagementNew";
 import SignIn from "@/pages/SignIn";
 import RegisterNew from "@/pages/RegisterNew";
-import { ProtectedRoute, AccessDeniedPage } from "@/components/permission/ProtectedRoute";
+import AccessDeniedPage from "@/pages/access-denied";
+import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
 import { AuthProvider } from "@/context/AuthContext";
 
 function App() {
