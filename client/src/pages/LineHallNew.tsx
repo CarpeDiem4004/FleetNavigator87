@@ -36,15 +36,16 @@ interface Trip {
   id: number;
   origin: string;
   destination: string;
-  distance: number;
-  vehiclePlate: string;
+  truckPlate: string;
+  trailer1Plate: string;
+  trailer2Plate: string | null;
   driver: string;
-  startDate: string;
-  estimatedArrival: string;
-  actualArrival: string | null;
-  status: 'programada' | 'carregando' | 'aguardando_carga' | 'em_transito' | 'finalizada';
-  cargo: string;
-  cargoWeight: number;
+  phone: string;
+  departureDate: string;
+  loadingTime: string;
+  arrivalDate: string;
+  unloadingTime: string;
+  status: 'no_show' | 'cancelada_pelo_cliente' | 'concluida';
   notes: string | null;
 }
 
@@ -54,87 +55,90 @@ const mockTrips: Trip[] = [
     id: 1,
     origin: 'São Paulo, SP',
     destination: 'Rio de Janeiro, RJ',
-    distance: 430,
-    vehiclePlate: 'ABC-1234',
+    truckPlate: 'ABC-1234',
+    trailer1Plate: 'XYZ-9876',
+    trailer2Plate: null,
     driver: 'João Silva',
-    startDate: '2025-04-15',
-    estimatedArrival: '2025-04-16',
-    actualArrival: null,
-    status: 'em_transito',
-    cargo: 'Produtos Eletrônicos',
-    cargoWeight: 12500,
+    phone: '(11) 98765-4321',
+    departureDate: '2025-04-15',
+    loadingTime: '08:00',
+    arrivalDate: '2025-04-16',
+    unloadingTime: '14:30',
+    status: 'concluida',
     notes: null
   },
   {
     id: 2,
     origin: 'Belo Horizonte, MG',
     destination: 'Brasília, DF',
-    distance: 740,
-    vehiclePlate: 'DEF-5678',
+    truckPlate: 'DEF-5678',
+    trailer1Plate: 'UVW-5432',
+    trailer2Plate: 'RST-1098',
     driver: 'Carlos Santos',
-    startDate: '2025-04-16',
-    estimatedArrival: '2025-04-18',
-    actualArrival: null,
-    status: 'programada',
-    cargo: 'Produtos Alimentícios',
-    cargoWeight: 18000,
-    notes: 'Carga refrigerada'
+    phone: '(31) 99876-5432',
+    departureDate: '2025-04-16',
+    loadingTime: '07:30',
+    arrivalDate: '2025-04-18',
+    unloadingTime: '10:00',
+    status: 'no_show',
+    notes: 'Motorista não compareceu no horário agendado'
   },
   {
     id: 3,
     origin: 'Curitiba, PR',
     destination: 'Porto Alegre, RS',
-    distance: 540,
-    vehiclePlate: 'GHI-9012',
+    truckPlate: 'GHI-9012',
+    trailer1Plate: 'JKL-6543',
+    trailer2Plate: null,
     driver: 'Marcos Oliveira',
-    startDate: '2025-04-10',
-    estimatedArrival: '2025-04-11',
-    actualArrival: '2025-04-11',
-    status: 'finalizada',
-    cargo: 'Peças Automotivas',
-    cargoWeight: 15000,
+    phone: '(41) 98888-7777',
+    departureDate: '2025-04-10',
+    loadingTime: '09:00',
+    arrivalDate: '2025-04-11',
+    unloadingTime: '15:45',
+    status: 'concluida',
     notes: null
   },
   {
     id: 4,
     origin: 'Salvador, BA',
     destination: 'Recife, PE',
-    distance: 850,
-    vehiclePlate: 'JKL-3456',
+    truckPlate: 'JKL-3456',
+    trailer1Plate: 'MNO-2109',
+    trailer2Plate: null,
     driver: 'Ana Souza',
-    startDate: '2025-04-14',
-    estimatedArrival: '2025-04-16',
-    actualArrival: null,
-    status: 'carregando',
-    cargo: 'Produtos Têxteis',
-    cargoWeight: 9000,
-    notes: 'Atraso no carregamento'
+    phone: '(71) 99999-8888',
+    departureDate: '2025-04-14',
+    loadingTime: '06:45',
+    arrivalDate: '2025-04-16',
+    unloadingTime: '11:30',
+    status: 'cancelada_pelo_cliente',
+    notes: 'Cliente cancelou devido a problemas no estoque'
   },
   {
     id: 5,
     origin: 'São Paulo, SP',
     destination: 'Goiânia, GO',
-    distance: 920,
-    vehiclePlate: 'MNO-7890',
+    truckPlate: 'MNO-7890',
+    trailer1Plate: 'PQR-3456',
+    trailer2Plate: 'STU-7654',
     driver: 'Pedro Costa',
-    startDate: '2025-04-13',
-    estimatedArrival: '2025-04-15',
-    actualArrival: null,
-    status: 'aguardando_carga',
-    cargo: 'Produtos Diversos',
-    cargoWeight: 14000,
-    notes: 'Aguardando liberação da mercadoria'
+    phone: '(11) 97777-6666',
+    departureDate: '2025-04-13',
+    loadingTime: '08:15',
+    arrivalDate: '2025-04-15',
+    unloadingTime: '16:00',
+    status: 'concluida',
+    notes: null
   }
 ];
 
 // Função para traduzir os status de viagem
 const translateTripStatus = (status: string): string => {
   const statuses: Record<string, string> = {
-    programada: 'Programada',
-    carregando: 'Carregando',
-    aguardando_carga: 'Aguardando Carga',
-    em_transito: 'Em Trânsito',
-    finalizada: 'Finalizada'
+    no_show: 'No Show',
+    cancelada_pelo_cliente: 'Cancelada pelo Cliente',
+    concluida: 'Concluída'
   };
   return statuses[status] || status;
 };
@@ -142,11 +146,9 @@ const translateTripStatus = (status: string): string => {
 // Função para obter a classe CSS para o badge de status
 const getStatusBadgeClass = (status: string): string => {
   const classes: Record<string, string> = {
-    programada: 'bg-blue-100 text-blue-800',
-    carregando: 'bg-purple-100 text-purple-800',
-    aguardando_carga: 'bg-yellow-100 text-yellow-800',
-    em_transito: 'bg-orange-100 text-orange-800',
-    finalizada: 'bg-green-100 text-green-800'
+    no_show: 'bg-red-100 text-red-800',
+    cancelada_pelo_cliente: 'bg-yellow-100 text-yellow-800',
+    concluida: 'bg-green-100 text-green-800'
   };
   return classes[status] || 'bg-gray-100 text-gray-800';
 };
@@ -171,15 +173,16 @@ const LineHallNew: React.FC = () => {
   const [newTrip, setNewTrip] = useState<Partial<Trip>>({
     origin: '',
     destination: '',
-    distance: 0,
-    vehiclePlate: '',
+    truckPlate: '',
+    trailer1Plate: '',
+    trailer2Plate: null,
     driver: '',
-    startDate: new Date().toISOString().split('T')[0],
-    estimatedArrival: new Date(Date.now() + 2*24*60*60*1000).toISOString().split('T')[0], // 2 dias à frente
-    actualArrival: null,
-    status: 'programada',
-    cargo: '',
-    cargoWeight: 0,
+    phone: '',
+    departureDate: new Date().toISOString().split('T')[0],
+    loadingTime: '08:00',
+    arrivalDate: new Date(Date.now() + 2*24*60*60*1000).toISOString().split('T')[0],
+    unloadingTime: '16:00',
+    status: 'concluida',
     notes: null
   });
 
@@ -188,14 +191,13 @@ const LineHallNew: React.FC = () => {
     (trip) => 
       trip.origin.toLowerCase().includes(searchTerm.toLowerCase()) || 
       trip.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      trip.vehiclePlate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      trip.driver.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      trip.cargo.toLowerCase().includes(searchTerm.toLowerCase())
+      trip.truckPlate.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      trip.driver.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Adicionar nova viagem
   const handleAddTrip = () => {
-    if (newTrip.origin && newTrip.destination && newTrip.vehiclePlate && newTrip.driver) {
+    if (newTrip.origin && newTrip.destination && newTrip.truckPlate && newTrip.trailer1Plate && newTrip.driver) {
       const trip = {
         ...newTrip,
         id: trips.length + 1
@@ -206,15 +208,16 @@ const LineHallNew: React.FC = () => {
       setNewTrip({
         origin: '',
         destination: '',
-        distance: 0,
-        vehiclePlate: '',
+        truckPlate: '',
+        trailer1Plate: '',
+        trailer2Plate: null,
         driver: '',
-        startDate: new Date().toISOString().split('T')[0],
-        estimatedArrival: new Date(Date.now() + 2*24*60*60*1000).toISOString().split('T')[0],
-        actualArrival: null,
-        status: 'programada',
-        cargo: '',
-        cargoWeight: 0,
+        phone: '',
+        departureDate: new Date().toISOString().split('T')[0],
+        loadingTime: '08:00',
+        arrivalDate: new Date(Date.now() + 2*24*60*60*1000).toISOString().split('T')[0],
+        unloadingTime: '16:00',
+        status: 'concluida',
         notes: null
       });
     }
@@ -271,27 +274,39 @@ const LineHallNew: React.FC = () => {
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="distance" className="text-right">
-                    Distância (km)
+                  <Label htmlFor="truckPlate" className="text-right">
+                    Placa Cavalo
                   </Label>
                   <Input
-                    id="distance"
-                    type="number"
-                    value={newTrip.distance}
-                    onChange={(e) => setNewTrip({...newTrip, distance: parseInt(e.target.value)})}
+                    id="truckPlate"
+                    value={newTrip.truckPlate}
+                    onChange={(e) => setNewTrip({...newTrip, truckPlate: e.target.value})}
                     className="col-span-3"
+                    placeholder="ABC-1234"
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="vehiclePlate" className="text-right">
-                    Veículo
+                  <Label htmlFor="trailer1Plate" className="text-right">
+                    Placa 1ª Carreta
                   </Label>
                   <Input
-                    id="vehiclePlate"
-                    value={newTrip.vehiclePlate}
-                    onChange={(e) => setNewTrip({...newTrip, vehiclePlate: e.target.value})}
+                    id="trailer1Plate"
+                    value={newTrip.trailer1Plate}
+                    onChange={(e) => setNewTrip({...newTrip, trailer1Plate: e.target.value})}
                     className="col-span-3"
-                    placeholder="Placa do veículo"
+                    placeholder="XYZ-9876"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="trailer2Plate" className="text-right">
+                    Placa 2ª Carreta
+                  </Label>
+                  <Input
+                    id="trailer2Plate"
+                    value={newTrip.trailer2Plate || ''}
+                    onChange={(e) => setNewTrip({...newTrip, trailer2Plate: e.target.value || null})}
+                    className="col-span-3"
+                    placeholder="Opcional"
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -307,26 +322,62 @@ const LineHallNew: React.FC = () => {
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="startDate" className="text-right">
-                    Data de Saída
+                  <Label htmlFor="phone" className="text-right">
+                    Telefone
                   </Label>
                   <Input
-                    id="startDate"
+                    id="phone"
+                    value={newTrip.phone}
+                    onChange={(e) => setNewTrip({...newTrip, phone: e.target.value})}
+                    className="col-span-3"
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="departureDate" className="text-right">
+                    Data Saída
+                  </Label>
+                  <Input
+                    id="departureDate"
                     type="date"
-                    value={newTrip.startDate}
-                    onChange={(e) => setNewTrip({...newTrip, startDate: e.target.value})}
+                    value={newTrip.departureDate}
+                    onChange={(e) => setNewTrip({...newTrip, departureDate: e.target.value})}
                     className="col-span-3"
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="estimatedArrival" className="text-right">
-                    Chegada Prevista
+                  <Label htmlFor="loadingTime" className="text-right">
+                    Horário Carregamento
                   </Label>
                   <Input
-                    id="estimatedArrival"
+                    id="loadingTime"
+                    type="time"
+                    value={newTrip.loadingTime}
+                    onChange={(e) => setNewTrip({...newTrip, loadingTime: e.target.value})}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="arrivalDate" className="text-right">
+                    Data Chegada
+                  </Label>
+                  <Input
+                    id="arrivalDate"
                     type="date"
-                    value={newTrip.estimatedArrival}
-                    onChange={(e) => setNewTrip({...newTrip, estimatedArrival: e.target.value})}
+                    value={newTrip.arrivalDate}
+                    onChange={(e) => setNewTrip({...newTrip, arrivalDate: e.target.value})}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="unloadingTime" className="text-right">
+                    Horário Descarregamento
+                  </Label>
+                  <Input
+                    id="unloadingTime"
+                    type="time"
+                    value={newTrip.unloadingTime}
+                    onChange={(e) => setNewTrip({...newTrip, unloadingTime: e.target.value})}
                     className="col-span-3"
                   />
                 </div>
@@ -336,7 +387,7 @@ const LineHallNew: React.FC = () => {
                   </Label>
                   <Select 
                     value={newTrip.status}
-                    onValueChange={(value: 'programada' | 'carregando' | 'aguardando_carga' | 'em_transito' | 'finalizada') => 
+                    onValueChange={(value: 'no_show' | 'cancelada_pelo_cliente' | 'concluida') => 
                       setNewTrip({...newTrip, status: value})
                     }
                   >
@@ -344,52 +395,12 @@ const LineHallNew: React.FC = () => {
                       <SelectValue placeholder="Selecione o status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="programada">Programada</SelectItem>
-                      <SelectItem value="carregando">Carregando</SelectItem>
-                      <SelectItem value="aguardando_carga">Aguardando Carga</SelectItem>
-                      <SelectItem value="em_transito">Em Trânsito</SelectItem>
-                      <SelectItem value="finalizada">Finalizada</SelectItem>
+                      <SelectItem value="no_show">No Show</SelectItem>
+                      <SelectItem value="cancelada_pelo_cliente">Cancelada pelo Cliente</SelectItem>
+                      <SelectItem value="concluida">Concluída</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="cargo" className="text-right">
-                    Carga
-                  </Label>
-                  <Input
-                    id="cargo"
-                    value={newTrip.cargo}
-                    onChange={(e) => setNewTrip({...newTrip, cargo: e.target.value})}
-                    className="col-span-3"
-                    placeholder="Tipo de carga"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="cargoWeight" className="text-right">
-                    Peso (kg)
-                  </Label>
-                  <Input
-                    id="cargoWeight"
-                    type="number"
-                    value={newTrip.cargoWeight}
-                    onChange={(e) => setNewTrip({...newTrip, cargoWeight: parseInt(e.target.value)})}
-                    className="col-span-3"
-                  />
-                </div>
-                {newTrip.status === 'finalizada' && (
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="actualArrival" className="text-right">
-                      Chegada Real
-                    </Label>
-                    <Input
-                      id="actualArrival"
-                      type="date"
-                      value={newTrip.actualArrival || ''}
-                      onChange={(e) => setNewTrip({...newTrip, actualArrival: e.target.value})}
-                      className="col-span-3"
-                    />
-                  </div>
-                )}
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="notes" className="text-right">
                     Observações
@@ -437,10 +448,9 @@ const LineHallNew: React.FC = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Rota</TableHead>
-                  <TableHead>Veículo</TableHead>
+                  <TableHead>Veículos</TableHead>
                   <TableHead>Motorista</TableHead>
                   <TableHead>Datas</TableHead>
-                  <TableHead>Carga</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
@@ -458,30 +468,43 @@ const LineHallNew: React.FC = () => {
                           <MapPin className="h-3 w-3 mr-1 text-red-500" />
                           <span>{trip.destination}</span>
                         </div>
-                        <div className="text-xs text-muted-foreground mt-1">{trip.distance} km</div>
                       </div>
                     </TableCell>
-                    <TableCell>{trip.vehiclePlate}</TableCell>
-                    <TableCell>{trip.driver}</TableCell>
                     <TableCell>
                       <div className="flex flex-col">
                         <div className="text-xs">
-                          <span className="font-medium">Saída:</span> {formatDate(trip.startDate)}
+                          <span className="font-medium">Cavalo:</span> {trip.truckPlate}
                         </div>
                         <div className="text-xs mt-1">
-                          <span className="font-medium">Chegada Prev.:</span> {formatDate(trip.estimatedArrival)}
+                          <span className="font-medium">1ª Carreta:</span> {trip.trailer1Plate}
                         </div>
-                        {trip.actualArrival && (
+                        {trip.trailer2Plate && (
                           <div className="text-xs mt-1">
-                            <span className="font-medium">Chegada Real:</span> {formatDate(trip.actualArrival)}
+                            <span className="font-medium">2ª Carreta:</span> {trip.trailer2Plate}
                           </div>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <div className="text-sm">{trip.cargo}</div>
-                        <div className="text-xs text-muted-foreground">{formatWeight(trip.cargoWeight)}</div>
+                        <div>{trip.driver}</div>
+                        <div className="text-xs text-muted-foreground">{trip.phone}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <div className="text-xs">
+                          <span className="font-medium">Saída:</span> {formatDate(trip.departureDate)}
+                        </div>
+                        <div className="text-xs">
+                          <span className="font-medium">Carregamento:</span> {trip.loadingTime}
+                        </div>
+                        <div className="text-xs mt-1">
+                          <span className="font-medium">Chegada:</span> {formatDate(trip.arrivalDate)}
+                        </div>
+                        <div className="text-xs">
+                          <span className="font-medium">Descarregamento:</span> {trip.unloadingTime}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
