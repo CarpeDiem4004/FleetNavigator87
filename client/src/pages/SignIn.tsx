@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-import { apiRequest } from '@/lib/queryClient';
 
 export default function SignIn() {
   const [email, setEmail] = useState('admin@muricionfleet.com');
@@ -24,36 +23,14 @@ export default function SignIn() {
       setLoading(true);
       console.log("Tentando fazer login com:", email);
       
-      // Fazer login com o banco de dados PostgreSQL
-      const response = await apiRequest('POST', '/api/login', {
-        username: email,
-        password: password
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Falha na autenticação');
-      }
-      
-      const userData = await response.json();
-      console.log("Login bem-sucedido:", userData);
-      
-      toast({
-        title: "Login realizado com sucesso",
-        description: `Bem-vindo, ${userData.name}!`,
-      });
+      // Usar o hook de autenticação para fazer login
+      await login(email, password);
       
       // Redirecionar após login bem-sucedido
-      setTimeout(() => {
-        navigate('/');
-      }, 1000);
+      navigate('/');
     } catch (error: any) {
       console.error('Erro ao fazer login:', error);
-      toast({
-        title: "Erro no login",
-        description: error.message || "Credenciais inválidas. Verifique seu email e senha.",
-        variant: "destructive"
-      });
+      // Não é necessário mostrar toast aqui pois o componente AuthContext já faz isso
     } finally {
       setLoading(false);
     }
