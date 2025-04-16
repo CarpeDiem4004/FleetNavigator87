@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -143,7 +143,7 @@ export default function RegisterNew() {
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
           <div className="text-sm text-center">
-            Já tem uma conta? <a href="/login" className="text-primary hover:underline">Faça login</a>
+            Já tem uma conta? <Link href="/login" className="text-primary hover:underline">Faça login</Link>
           </div>
           <p className="text-xs text-center text-gray-500">
             Este é um sistema de gerenciamento de frota desenvolvido para fins de demonstração.
