@@ -12,7 +12,7 @@ import FinesNew from "@/pages/FinesNew";
 import LineHallNew from "@/pages/LineHallNew";
 import UsersNew from "@/pages/UsersNew";
 import FleetManagementNew from "@/pages/FleetManagementNew";
-import LoginPage from "@/pages/login";
+import SignIn from "@/pages/SignIn";
 import RegisterNew from "@/pages/RegisterNew";
 import AccessDeniedPage from "@/pages/access-denied";
 import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
@@ -31,7 +31,6 @@ import PostoSorocaba from "@/pages/postos/Sorocaba";
 import HistoricoGeralPage from "@/pages/postos/HistoricoGeralPage";
 import HistoricoPatioPage from "@/pages/postos/HistoricoPatioPage";
 import SupabaseDiagnostico from "@/pages/diagnostico/SupabaseDiagnostico";
-import BasesPage from "@/pages/BasesPage";
 
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
@@ -48,7 +47,7 @@ function App() {
       <AuthProvider>
         <Switch>
           <Route path="/login">
-            <LoginPage />
+            <SignIn />
           </Route>
           <Route path="/register">
             <RegisterNew />
@@ -84,7 +83,6 @@ function App() {
           <ProtectedRoute path="/postos/historico-geral" component={HistoricoGeralPage} />
           <ProtectedRoute path="/postos/historico-patio" component={HistoricoPatioPage} />
           <ProtectedRoute path="/diagnostico/supabase" component={SupabaseDiagnostico} />
-          <ProtectedRoute path="/bases" component={BasesPage} />
           
           {/* Rotas públicas para os postos de abastecimento - sem proteção e sem status de tanques */}
           <Route path="/posto/osasco/public">

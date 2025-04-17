@@ -6,9 +6,7 @@ import {
   insertTireSchema, insertRefuelingSchema, insertFineSchema,
   insertLineHallSchema, insertUserSchema
 } from "@shared/schema";
-import { setupAuth, createDefaultAdminUser } from "./auth";
-import basesRoutes from "./routes/bases";
-import { WebSocketServer } from "ws";
+import { setupAuth } from "./auth";
 
 // Middleware para verificar autenticação em rotas protegidas
 const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
@@ -30,11 +28,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Configuração do passport para autenticação
   setupAuth(app);
   
-  // Cria o usuário admin padrão se não existir
-  await createDefaultAdminUser();
+  // Base routes
+  app.get("/api/bases", isAuthenticated, async (req, res) => {
+    try {
+      const bases = await storage.getAllBases();
+      return res.status(200).json(bases);
+    } catch (error) {
+      console.error("Error fetching bases:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
   
-  // Registra as rotas de bases utilizando o módulo separado
-  basesRoutes(app);
+  app.get("/api/bases/:id", isAuthenticated, async (req, res) => {
+    try {
+      const base = await storage.getBase(parseInt(req.params.id));
+      if (!base) {
+        return res.status(404).json({ message: "Base not found" });
+      }
+      return res.status(200).json(base);
+    } catch (error) {
+      console.error("Error fetching base:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  app.post("/api/bases", isAdmin, async (req, res) => {
+    try {
+      const result = insertBaseSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid base data", errors: result.error.format() });
+      }
+      
+      const newBase = await storage.createBase(result.data);
+      return res.status(201).json(newBase);
+    } catch (error) {
+      console.error("Error creating base:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  app.put("/api/bases/:id", isAdmin, async (req, res) => {
+    try {
+      const result = insertBaseSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid base data", errors: result.error.format() });
+      }
+      
+      const updatedBase = await storage.updateBase(parseInt(req.params.id), result.data);
+      if (!updatedBase) {
+        return res.status(404).json({ message: "Base not found" });
+      }
+      
+      return res.status(200).json(updatedBase);
+    } catch (error) {
+      console.error("Error updating base:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  app.delete("/api/bases/:id", isAdmin, async (req, res) => {
+    try {
+      const success = await storage.deleteBase(parseInt(req.params.id));
+      if (!success) {
+        return res.status(404).json({ message: "Base not found" });
+      }
+      
+      return res.status(200).json({ message: "Base deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting base:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
   
   // Vehicle routes
   app.get("/api/vehicles", isAuthenticated, async (req, res) => {
@@ -275,59 +339,5 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
-  
-  // Setup WebSocket server
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-  
-  wss.on('connection', (ws) => {
-    console.log('Nova conexão WebSocket estabelecida');
-    
-    // Enviar mensagem de boas-vindas
-    ws.send(JSON.stringify({
-      type: 'connected',
-      message: 'Conectado ao servidor WebSocket do Muricion Fleet'
-    }));
-    
-    // Manipular mensagens recebidas
-    ws.on('message', (message) => {
-      try {
-        const data = JSON.parse(message.toString());
-        console.log('Mensagem WebSocket recebida:', data);
-        
-        // Processar diferentes tipos de mensagens
-        switch (data.type) {
-          case 'ping':
-            ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
-            break;
-          
-          case 'auth':
-            // Autenticação via WebSocket (para implementação futura)
-            break;
-          
-          case 'subscribe':
-            // Inscrição em canais de eventos (para implementação futura)
-            break;
-          
-          default:
-            ws.send(JSON.stringify({ 
-              type: 'error', 
-              message: 'Tipo de mensagem não reconhecido' 
-            }));
-        }
-      } catch (error) {
-        console.error('Erro ao processar mensagem WebSocket:', error);
-        ws.send(JSON.stringify({ 
-          type: 'error', 
-          message: 'Formato de mensagem inválido' 
-        }));
-      }
-    });
-    
-    // Manipular desconexão
-    ws.on('close', () => {
-      console.log('Conexão WebSocket encerrada');
-    });
-  });
-  
   return httpServer;
 }

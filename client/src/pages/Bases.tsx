@@ -51,6 +51,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Building2, Loader2, Plus, Edit, Trash2, Award, Download, Upload, DatabaseIcon } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { insertBaseSchema } from '@shared/schema';
+import AppLayout from '@/components/layout/AppLayout';
 
 // Interface para a base
 interface Base {
@@ -73,10 +74,6 @@ export default function BasesPage() {
   const [baseToDelete, setBaseToDelete] = useState<Base | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
-  const [importMessage, setImportMessage] = useState<string | null>(null);
-  const [importSuccess, setImportSuccess] = useState<boolean | null>(null);
   const { toast } = useToast();
 
   // Formulário para adicionar/editar base
@@ -91,12 +88,9 @@ export default function BasesPage() {
   });
 
   // Query para buscar as bases
-  const { data: bases = [], isLoading, refetch } = useQuery<Base[]>({
+  const { data: bases, isLoading, refetch } = useQuery<Base[]>({
     queryKey: ['/api/bases'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/bases');
-      return response || [];
-    },
+    queryFn: () => apiRequest('GET', '/api/bases'),
   });
 
   // Mutation para adicionar uma nova base
@@ -172,49 +166,6 @@ export default function BasesPage() {
     },
   });
 
-  // Função para importar bases em massa
-  const handleImportBases = async () => {
-    try {
-      setIsImporting(true);
-      setImportMessage("Importando bases...");
-      setImportSuccess(null);
-      
-      const result = await importBasesToSystem(apiRequest);
-      
-      if (result.success) {
-        setImportMessage(`${result.message} (${result.newBases} de ${result.totalBases} bases importadas)`);
-        setImportSuccess(true);
-        queryClient.invalidateQueries({ queryKey: ['/api/bases'] });
-        
-        toast({
-          title: 'Bases importadas com sucesso',
-          description: result.message,
-        });
-      } else {
-        setImportMessage(result.message);
-        setImportSuccess(false);
-        
-        toast({
-          title: 'Erro ao importar bases',
-          description: result.message,
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
-      setImportMessage(`Erro ao importar: ${errorMsg}`);
-      setImportSuccess(false);
-      
-      toast({
-        title: 'Erro ao importar bases',
-        description: errorMsg,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsImporting(false);
-    }
-  };
-
   // Função para abrir o diálogo de edição
   const handleEdit = (base: Base) => {
     form.reset({
@@ -259,103 +210,19 @@ export default function BasesPage() {
     }
   };
 
-  // Agrupar bases por operação
-  const basesByOperation = bases.reduce((acc, base) => {
-    const operation = base.operation || 'Sem Operação';
-    if (!acc[operation]) {
-      acc[operation] = [];
-    }
-    acc[operation].push(base);
-    return acc;
-  }, {} as Record<string, Base[]>);
-
-  // Contar operações únicas
-  const uniqueOperations = Object.keys(basesByOperation).length;
-
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center">
-            <Building2 className="mr-2 h-8 w-8" />
-            Gerenciamento de Bases
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Gerencie as bases e suas respectivas operações
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {/* Botão Importar Bases */}
-          <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Upload className="h-4 w-4" />
-                Importar Bases
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[525px]">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <DatabaseIcon className="h-5 w-5" />
-                  Importar Bases em Massa
-                </DialogTitle>
-                <DialogDescription>
-                  Importe todas as bases cadastradas no arquivo com suas respectivas operações
-                </DialogDescription>
-              </DialogHeader>
-              <div className="py-4">
-                <div className="rounded-lg border p-4 bg-muted/50">
-                  <h3 className="font-medium mb-2">Informações da importação</h3>
-                  <p className="text-sm">
-                    Serão importadas todas as bases com suas operações do arquivo fornecido.
-                    Este processo importará bases como:
-                  </p>
-                  <ul className="text-sm mt-2 space-y-1 list-disc list-inside">
-                    <li>COCA COLA (ABC) - Operação: COCA COLA</li>
-                    <li>GP01 VARGEM GRANDE (GRUPO PEREIRA) - Operação: GRUPO PEREIRA</li>
-                    <li>SC (BAHIA SALVADOR) SBA1 - Operação: MERCADO LIVRE</li>
-                  </ul>
-                  <p className="text-sm mt-2">
-                    Aproximadamente {parseBasesData().length} bases serão importadas.
-                  </p>
-                </div>
-                
-                {importMessage && (
-                  <div className={`mt-4 p-3 rounded-md ${
-                    importSuccess === true ? 'bg-green-50 text-green-800' : 
-                    importSuccess === false ? 'bg-red-50 text-red-800' : 
-                    'bg-blue-50 text-blue-800'
-                  }`}>
-                    {importMessage}
-                  </div>
-                )}
-              </div>
-              
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsImportDialogOpen(false)}
-                  disabled={isImporting}
-                >
-                  Cancelar
-                </Button>
-                <Button 
-                  onClick={handleImportBases} 
-                  disabled={isImporting}
-                  className="gap-2"
-                >
-                  {isImporting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <DatabaseIcon className="h-4 w-4" />
-                  )}
-                  {isImporting ? 'Importando...' : 'Iniciar Importação'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-          
-          {/* Botão Adicionar Base */}
+    <AppLayout>
+      <div className="container mx-auto py-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center">
+              <Building2 className="mr-2 h-8 w-8" />
+              Gerenciamento de Bases
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Gerencie as bases e suas respectivas operações
+            </p>
+          </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2" onClick={() => {
@@ -404,14 +271,7 @@ export default function BasesPage() {
                       <FormItem>
                         <FormLabel>Localização</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="Ex: São Paulo, SP" 
-                            value={field.value || ''} 
-                            onChange={field.onChange}
-                            onBlur={field.onBlur}
-                            name={field.name}
-                            ref={field.ref}
-                          />
+                          <Input placeholder="Ex: São Paulo, SP" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -424,14 +284,7 @@ export default function BasesPage() {
                       <FormItem>
                         <FormLabel>Operação</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="Ex: COCA COLA" 
-                            value={field.value || ''} 
-                            onChange={field.onChange}
-                            onBlur={field.onBlur}
-                            name={field.name}
-                            ref={field.ref}
-                          />
+                          <Input placeholder="Ex: COCA COLA" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -450,7 +303,7 @@ export default function BasesPage() {
                         </div>
                         <FormControl>
                           <Switch
-                            checked={field.value === true}
+                            checked={field.value}
                             onCheckedChange={field.onChange}
                           />
                         </FormControl>
@@ -470,163 +323,117 @@ export default function BasesPage() {
             </DialogContent>
           </Dialog>
         </div>
-      </div>
 
-      {/* Cards de estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        {/* Dialog de confirmação de exclusão */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Confirmação de Exclusão</DialogTitle>
+              <DialogDescription>
+                Você está prestes a excluir a base "{baseToDelete?.name}".
+                Esta ação não pode ser desfeita.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button variant="destructive" onClick={confirmDelete} disabled={deleteBaseMutation.isPending}>
+                {deleteBaseMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Excluir
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Tabela de bases */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total de Bases
-            </CardTitle>
+          <CardHeader>
+            <CardTitle>Bases Cadastradas</CardTitle>
+            <CardDescription>
+              Lista de todas as bases e suas operações
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : bases.length}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Operações Ativas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : uniqueOperations}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Bases Ativas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {isLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                bases.filter(base => base.active).length
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Dialog de confirmação de exclusão */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Confirmação de Exclusão</DialogTitle>
-            <DialogDescription>
-              Você está prestes a excluir a base "{baseToDelete?.name}".
-              Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button variant="destructive" onClick={confirmDelete} disabled={deleteBaseMutation.isPending}>
-              {deleteBaseMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Excluir
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Tabela de bases */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Bases Cadastradas</CardTitle>
-          <CardDescription>
-            Lista de todas as bases e suas operações
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center items-center h-40">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableCaption>Lista de bases cadastradas no sistema</TableCaption>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Localização</TableHead>
-                    <TableHead>Operação</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Data de Cadastro</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {bases.length > 0 ? (
-                    bases.map((base) => (
-                      <TableRow key={base.id}>
-                        <TableCell className="font-medium">{base.id}</TableCell>
-                        <TableCell>{base.name}</TableCell>
-                        <TableCell>{base.location || '-'}</TableCell>
-                        <TableCell>
-                          {base.operation ? (
-                            <div className="flex items-center gap-2">
-                              <Award className="h-4 w-4 text-primary" />
-                              {base.operation}
+            {isLoading ? (
+              <div className="flex justify-center items-center h-40">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableCaption>Lista de bases cadastradas no sistema</TableCaption>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Localização</TableHead>
+                      <TableHead>Operação</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Data de Cadastro</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {bases && bases.length > 0 ? (
+                      bases.map((base) => (
+                        <TableRow key={base.id}>
+                          <TableCell className="font-medium">{base.id}</TableCell>
+                          <TableCell>{base.name}</TableCell>
+                          <TableCell>{base.location || '-'}</TableCell>
+                          <TableCell>
+                            {base.operation ? (
+                              <div className="flex items-center gap-2">
+                                <Award className="h-4 w-4 text-primary" />
+                                {base.operation}
+                              </div>
+                            ) : (
+                              '-'
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${base.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                              {base.active ? 'Ativa' : 'Inativa'}
+                            </span>
+                          </TableCell>
+                          <TableCell>{formatDate(base.created_at)}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => handleEdit(base)}
+                              >
+                                <Edit className="h-4 w-4" />
+                                <span className="sr-only">Editar</span>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="text-destructive hover:bg-destructive/10"
+                                onClick={() => handleDelete(base)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Excluir</span>
+                              </Button>
                             </div>
-                          ) : (
-                            '-'
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${base.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                            {base.active ? 'Ativa' : 'Inativa'}
-                          </span>
-                        </TableCell>
-                        <TableCell>{formatDate(base.created_at)}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => handleEdit(base)}
-                            >
-                              <Edit className="h-4 w-4" />
-                              <span className="sr-only">Editar</span>
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="text-destructive hover:bg-destructive/10"
-                              onClick={() => handleDelete(base)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Excluir</span>
-                            </Button>
-                          </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                          Nenhuma base cadastrada
                         </TableCell>
                       </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
-                        Nenhuma base cadastrada
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </AppLayout>
   );
 }

@@ -31,36 +31,6 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
-// Função auxiliar para criar o usuário administrador inicial
-export async function createDefaultAdminUser() {
-  try {
-    // Verificar se já existe um usuário administrador
-    const adminUser = await storage.getUserByEmail('admin@muricionfleet.com');
-    
-    if (!adminUser) {
-      console.log('Criando usuário administrador padrão...');
-      
-      // Criar um novo usuário administrador
-      const newAdmin = {
-        email: 'admin@muricionfleet.com',
-        password: 'admin123', // Em produção, usar uma senha mais forte e hashPassword()
-        name: 'Administrador',
-        role: 'admin' as const
-      };
-      
-      const user = await storage.createUser(newAdmin);
-      console.log(`Usuário administrador padrão criado: ${user.id}`);
-      return user;
-    } else {
-      console.log('Usuário administrador já existe');
-      return adminUser;
-    }
-  } catch (error) {
-    console.error('Erro ao criar usuário administrador padrão:', error);
-    return null;
-  }
-}
-
 export function setupAuth(app: Express) {
   // Configuração da sessão
   const MemoryStore = createMemoryStore(session);
