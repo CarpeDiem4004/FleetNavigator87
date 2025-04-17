@@ -173,11 +173,60 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
     return passesSearch && passesDateFilter;
   });
   
+  // Função para limpar todo o histórico de abastecimentos
+  const handleLimparHistorico = async () => {
+    if (window.confirm('Tem certeza que deseja limpar todo o histórico de abastecimentos? Esta ação não pode ser desfeita.')) {
+      try {
+        setIsLoading(true);
+        
+        // Preparamos uma condição para apagar apenas registros do posto atual
+        const filtroPostoAtual = `posto=eq.${postId}`;
+        
+        console.log("[LIMPAR HISTÓRICO] Iniciando limpeza para o posto:", postId);
+        
+        // Usamos a função enviarParaSupabase para fazer a requisição DELETE com filtro
+        // para garantir que apenas dados deste posto sejam apagados
+        const resultado = await enviarParaSupabase(
+          `${ENDPOINTS.ABASTECIMENTOS}?${filtroPostoAtual}`,
+          {},
+          'DELETE'
+        );
+        
+        console.log("[LIMPAR HISTÓRICO] Resultado da operação:", resultado);
+        
+        // Limpa todos os abastecimentos localmente
+        setAbastecimentos([]);
+        
+        alert('Histórico de abastecimentos limpo com sucesso!');
+      } catch (error) {
+        console.error('Erro ao limpar histórico:', error);
+        alert('Erro ao limpar o histórico. Tente novamente.');
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      console.log("[LIMPAR HISTÓRICO] Operação cancelada pelo usuário");
+    }
+  };
+  
   return (
     <div className="w-full">
       <div>
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Histórico de Abastecimentos</h2>
+          <div className="flex items-center gap-4">
+            <h2 className="text-2xl font-bold">Histórico de Abastecimentos</h2>
+            
+            <button 
+              className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 flex items-center gap-1"
+              onClick={handleLimparHistorico}
+              disabled={isLoading}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Limpar Histórico
+            </button>
+          </div>
           
           <div className="relative w-64">
             <input
