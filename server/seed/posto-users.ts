@@ -1,6 +1,5 @@
 import { storage } from '../storage';
 import { userRoleEnum } from '@shared/schema';
-import { criarBasesIniciais } from './base-seed';
 
 const SENHA_PADRAO = 'murici@2025';
 
@@ -8,18 +7,14 @@ const SENHA_PADRAO = 'murici@2025';
 export async function criarUsuariosPosto() {
   console.log('Iniciando criação de usuários para postos...');
   
-  // Primeiro vamos criar ou verificar as bases
-  const baseIds = await criarBasesIniciais();
-  console.log('IDs das bases:', baseIds);
-  
   const postos = [
-    { nome: 'osasco', displayName: 'Osasco' },
-    { nome: 'guarulhos', displayName: 'Guarulhos' },
-    { nome: 'saopaulo', displayName: 'São Paulo' },
-    { nome: 'campinas', displayName: 'Campinas' },
-    { nome: 'abc', displayName: 'ABC' },
-    { nome: 'socorro', displayName: 'Socorro' },
-    { nome: 'sorocaba', displayName: 'Sorocaba' },
+    { id: 1, nome: 'osasco', displayName: 'Osasco' },
+    { id: 2, nome: 'guarulhos', displayName: 'Guarulhos' },
+    { id: 3, nome: 'saopaulo', displayName: 'São Paulo' },
+    { id: 4, nome: 'campinas', displayName: 'Campinas' },
+    { id: 5, nome: 'abc', displayName: 'ABC' },
+    { id: 6, nome: 'socorro', displayName: 'Socorro' },
+    { id: 7, nome: 'sorocaba', displayName: 'Sorocaba' },
   ];
   
   for (const posto of postos) {
@@ -28,28 +23,16 @@ export async function criarUsuariosPosto() {
     const userExistente = await storage.getUserByEmail(email);
     
     if (!userExistente) {
-      const baseId = baseIds[posto.nome];
-      
-      if (!baseId) {
-        console.error(`Base com basename ${posto.nome} não encontrada. Não é possível criar usuário.`);
-        continue;
-      }
-      
-      console.log(`Criando usuário para posto ${posto.displayName} associado à base ID ${baseId}...`);
-      
-      try {
-        await storage.createUser({
-          name: posto.displayName,
-          email: email,
-          password: SENHA_PADRAO,
-          role: userRoleEnum.enumValues[1], // gestor
-          baseId: baseId,
-          basename: posto.nome
-        });
-        console.log(`Usuário para posto ${posto.displayName} criado com sucesso!`);
-      } catch (error) {
-        console.error(`Erro ao criar usuário para posto ${posto.displayName}:`, error);
-      }
+      console.log(`Criando usuário para posto ${posto.displayName}...`);
+      await storage.createUser({
+        name: posto.displayName,
+        email: email,
+        password: SENHA_PADRAO,
+        role: userRoleEnum.enumValues[1], // gestor
+        baseId: posto.id,
+        basename: posto.nome
+      });
+      console.log(`Usuário para posto ${posto.displayName} criado com sucesso!`);
     } else {
       console.log(`Usuário para posto ${posto.displayName} já existe.`);
     }

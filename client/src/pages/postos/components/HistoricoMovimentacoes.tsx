@@ -6,7 +6,7 @@ import { Truck, ArrowUpRight, ArrowDownLeft, Settings } from 'lucide-react';
 import { ENDPOINTS, buscarDadosSupabase } from '@/constants/supabase';
 
 interface HistoricoMovimentacoesProps {
-  postoCode: string;
+  postId: string;
 }
 
 interface Movimentacao {
@@ -19,7 +19,7 @@ interface Movimentacao {
   created_at: string;
 }
 
-export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ postoCode }) => {
+export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ postId }) => {
   const [movimentacoes, setMovimentacoes] = useState<Movimentacao[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -28,7 +28,7 @@ export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ 
       try {
         setIsLoading(true);
         // Usando a nova função buscarDadosSupabase
-        const queryParams = `posto=eq.${postoCode}&order=created_at.desc&limit=10`;
+        const queryParams = `posto=eq.${postId}&order=created_at.desc&limit=10`;
         const data = await buscarDadosSupabase(ENDPOINTS.MOVIMENTACOES, queryParams);
         setMovimentacoes(data);
       } catch (error) {
@@ -41,7 +41,7 @@ export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ 
     }
     
     fetchMovimentacoes();
-  }, [postoCode]);
+  }, [postId]);
   
   const formatarData = (dataString: string) => {
     const data = new Date(dataString);

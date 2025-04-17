@@ -51,9 +51,9 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
                   </TabsTrigger>
                 </TabsList>
                 
-                <FormularioAbastecimento postoCode={id} />
-                <FormularioRecebimento postoCode={id} />
-                <FormularioControlePatio postoCode={id} />
+                <FormularioAbastecimento postId={id} />
+                <FormularioRecebimento postId={id} />
+                <FormularioControlePatio postId={id} />
               </Tabs>
             </CardContent>
           </Card>
@@ -66,8 +66,8 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
             Históricos
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <HistoricoAbastecimentos postoCode={id} />
-            <HistoricoMovimentacoes postoCode={id} />
+            <HistoricoAbastecimentos postId={id} />
+            <HistoricoMovimentacoes postId={id} />
           </div>
         </div>
       </div>

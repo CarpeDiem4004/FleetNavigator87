@@ -1,4 +1,4 @@
-import { Switch, Route, Redirect } from "wouter";
+import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -28,8 +28,6 @@ import PostoCampinas from "@/pages/postos/Campinas";
 import PostoABC from "@/pages/postos/ABC";
 import PostoSocorro from "@/pages/postos/Socorro";
 import PostoSorocaba from "@/pages/postos/Sorocaba";
-import PostoLoginPage from "@/pages/postos/PostoLoginPage";
-import PostoDashboard from "@/pages/postos/PostoDashboard";
 
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
@@ -39,11 +37,6 @@ import CampinasPublic from "@/pages/postos/public/CampinasPublic";
 import ABCPublic from "@/pages/postos/public/ABCPublic";
 import SocorroPublic from "@/pages/postos/public/SocorroPublic";
 import SorocabaPublic from "@/pages/postos/public/SorocabaPublic";
-
-// Importação dos componentes simplificados de posto
-import PostoLoginSimples from "@/pages/postos/login/PostoLoginSimples";
-import PostoFormSimples from "@/pages/postos/PostoFormSimples";
-import PostoRedirectHandler from "@/components/redirects/PostoRedirectHandler";
 
 function App() {
   return (
@@ -85,38 +78,28 @@ function App() {
           <ProtectedRoute path="/posto/socorro" component={PostoSocorro} />
           <ProtectedRoute path="/posto/sorocaba" component={PostoSorocaba} />
           
-          {/* Rotas para login e dashboard dos postos - DEVE VIR ANTES DAS ROTAS PROTEGIDAS */}
-          <Route path="/posto/:postoCode">
-            <PostoLoginSimples />
+          {/* Rotas públicas para os postos de abastecimento - sem proteção e sem status de tanques */}
+          <Route path="/public/posto/osasco">
+            <OsascoPublic />
           </Route>
-          <ProtectedRoute path="/posto/:postoCode/dashboard" component={PostoFormSimples} />
-          
-          {/* Rotas públicas para os postos com redirecionamento direto */}
-          <Route path="/public/posto/:postoCode">
-            <PostoRedirectHandler />
+          <Route path="/public/posto/guarulhos">
+            <GuarulhosPublic />
           </Route>
-          
-          {/* Rota direta para acessar páginas estáticas HTML - sem processamento React */}
-          <Route path="/posto/:postoCode/static">
-            <div>
-              {(() => {
-                // Extrai o código do posto da URL
-                const path = window.location.pathname;
-                const matches = path.match(/\/posto\/([^\/]+)\/static/);
-                const postoCode = matches ? matches[1] : 'abc';
-                
-                // Redireciona para a página HTML estática
-                setTimeout(() => {
-                  window.location.href = `/posto/${postoCode}.html`;
-                }, 100);
-                
-                return <div>Redirecionando para página estática...</div>;
-              })()}
-            </div>
+          <Route path="/public/posto/saopaulo">
+            <SaoPauloPublic />
           </Route>
-          
-          {/* Rotas para interfaces simplificadas dos postos (quando já autenticados) */}
-          <ProtectedRoute path="/posto/:postoCode/public" component={PostoDashboard} />
+          <Route path="/public/posto/campinas">
+            <CampinasPublic />
+          </Route>
+          <Route path="/public/posto/abc">
+            <ABCPublic />
+          </Route>
+          <Route path="/public/posto/socorro">
+            <SocorroPublic />
+          </Route>
+          <Route path="/public/posto/sorocaba">
+            <SorocabaPublic />
+          </Route>
           
           <Route>
             <NotFound />

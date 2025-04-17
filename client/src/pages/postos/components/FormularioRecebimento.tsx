@@ -26,10 +26,10 @@ const recebimentoSchema = z.object({
 type RecebimentoValues = z.infer<typeof recebimentoSchema>;
 
 interface FormularioRecebimentoProps {
-  postoCode: string;
+  postId: string;
 }
 
-export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ postoCode }) => {
+export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ postId }) => {
   const { toast } = useToast();
   
   const form = useForm<RecebimentoValues>({
@@ -48,7 +48,7 @@ export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ po
         tipo_produto: data.tipo,
         litros_recebidos: Number(data.quantidade),
         nome_operador: data.operador,
-        posto: postoCode
+        posto: postId
       };
       
       console.log('Dados a enviar:', recebimentoData);
@@ -82,7 +82,7 @@ export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ po
             Recebimento de Combustível no Tanque
           </CardTitle>
           <CardDescription>
-            Registre o recebimento de combustível no tanque do posto {postoCode}.
+            Registre o recebimento de combustível no tanque do posto {postId}.
           </CardDescription>
         </CardHeader>
         <CardContent>

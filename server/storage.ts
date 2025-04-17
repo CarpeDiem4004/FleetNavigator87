@@ -19,7 +19,6 @@ export interface IStorage {
   
   // Base operations
   getBase(id: number): Promise<Base | undefined>;
-  getBaseByName(basename: string): Promise<Base | undefined>;
   getAllBases(): Promise<Base[]>;
   createBase(base: InsertBase): Promise<Base>;
   updateBase(id: number, base: Partial<InsertBase>): Promise<Base | undefined>;
@@ -110,11 +109,6 @@ export class DatabaseStorage implements IStorage {
   // Base operations
   async getBase(id: number): Promise<Base | undefined> {
     const [base] = await db.select().from(bases).where(eq(bases.id, id));
-    return base || undefined;
-  }
-  
-  async getBaseByName(basename: string): Promise<Base | undefined> {
-    const [base] = await db.select().from(bases).where(eq(bases.basename, basename));
     return base || undefined;
   }
 

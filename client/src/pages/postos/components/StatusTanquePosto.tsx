@@ -18,7 +18,7 @@ import { ENDPOINTS, buscarDadosSupabase, enviarParaSupabase } from '@/constants/
 import { useToast } from "@/hooks/use-toast";
 
 interface StatusTanqueProps {
-  postoCode: string;
+  postId: string;
 }
 
 interface AbastecimentoData {
@@ -59,7 +59,7 @@ interface ConfiguracaoTanques {
   updated_at?: string;
 }
 
-export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postoCode }) => {
+export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
   const { toast } = useToast();
   
   const [statusTanque, setStatusTanque] = useState<StatusTanque>({
@@ -119,7 +119,7 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postoCode }) =>
   const fetchConfigTanques = async () => {
     try {
       // Primeiro tentamos buscar do localStorage
-      const configLocal = getStoredConfig(postoCode);
+      const configLocal = getStoredConfig(postId);
       
       if (configLocal) {
         console.log("Configuração carregada do localStorage:", configLocal);
@@ -142,7 +142,7 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postoCode }) =>
       // Se não encontrar local, tenta buscar da API
       try {
         // Buscar configuração atual dos tanques para este posto
-        const queryParamsConfig = `posto=eq.${postoCode}`;
+        const queryParamsConfig = `posto=eq.${postId}`;
         const configTanques = await buscarDadosSupabase(ENDPOINTS.CONFIG_TANQUES, queryParamsConfig);
         
         if (configTanques && configTanques.length > 0) {
@@ -198,7 +198,7 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postoCode }) =>
       }
       
       const dadosConfig: ConfiguracaoTanques = {
-        posto: postoCode,
+        posto: postId,
         diesel_capacidade: capacidadeDiesel,
         diesel_nivel: nivelDiesel,
         arla_capacidade: capacidadeArla,
@@ -207,7 +207,7 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postoCode }) =>
       };
       
       // Salvar localmente primeiro (independente da API)
-      const savedLocally = saveStoredConfig(postoCode, dadosConfig);
+      const savedLocally = saveStoredConfig(postId, dadosConfig);
       
       let apiSuccess = false;
       // Tentar salvar na API (se disponível)
@@ -296,9 +296,9 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postoCode }) =>
         setIsLoading(true);
         
         // Primeiro tenta carregar as configurações locais
-        const configLocal = getStoredConfig(postoCode);
+        const configLocal = getStoredConfig(postId);
         if (configLocal) {
-          console.log("Usando configuração armazenada localmente para:", postoCode);
+          console.log("Usando configuração armazenada localmente para:", postId);
           
           // Atualizar o estado principal com as configurações locais
           setStatusTanque({
@@ -332,11 +332,11 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postoCode }) =>
         
         try {
           // Buscar abastecimentos usando a nova função
-          const queryParamsAbastecimentos = `posto=eq.${postoCode}&order=created_at.desc&limit=50`;
+          const queryParamsAbastecimentos = `posto=eq.${postId}&order=created_at.desc&limit=50`;
           abastecimentos = await buscarDadosSupabase(ENDPOINTS.ABASTECIMENTOS, queryParamsAbastecimentos) || [];
           
           // Buscar recebimentos usando a nova função
-          const queryParamsRecebimentos = `posto=eq.${postoCode}&order=created_at.desc&limit=50`;
+          const queryParamsRecebimentos = `posto=eq.${postId}&order=created_at.desc&limit=50`;
           recebimentos = await buscarDadosSupabase(ENDPOINTS.RECEBIMENTOS, queryParamsRecebimentos) || [];
         } catch (apiError) {
           console.log("Erro ao buscar dados da API, usando apenas configurações locais:", apiError);
@@ -422,7 +422,7 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postoCode }) =>
     }
     
     fetchDados();
-  }, [postoCode]);
+  }, [postId]);
   
   const formatarNumero = (valor: number) => {
     return new Intl.NumberFormat('pt-BR').format(Math.round(valor));

@@ -24,24 +24,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
       </div>
     );
   }
-
-  // Para rotas públicas de postos, usaremos uma abordagem diferente:
-  // Não usamos mais este redirecionamento aqui para evitar conflitos com a rota nomeada de posto
-  // O redirecionamento agora é feito diretamente pelo acesso à URL, com a rota de posto tendo prioridade
   
   // Se o usuário não estiver autenticado, redireciona para login
   if (!user) {
-    console.log(`Redirecionando de ${path} para /login (não autenticado)`);
-    return <Route path={path}><Redirect to="/login" /></Route>;
+    return <Redirect to="/login" />;
   }
   
   // Verifica se o usuário tem permissão para acessar a rota
   if (!hasPermission(path)) {
-    console.log(`Redirecionando de ${path} para /acesso-negado (sem permissão)`);
-    return <Route path={path}><Redirect to="/acesso-negado" /></Route>;
+    return <Redirect to="/acesso-negado" />;
   }
   
   // Usuário autenticado e com permissão, renderiza o componente
-  console.log(`Renderizando componente para ${path} (usuário autenticado)`);
-  return <Route path={path}><Component /></Route>;
+  return <Component />;
 };
