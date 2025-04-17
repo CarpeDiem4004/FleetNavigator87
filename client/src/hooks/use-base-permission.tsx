@@ -17,23 +17,23 @@ type BaseIdArray = Array<number | null>;
 // Mapeamento de rotas para bases
 const baseRouteMap: Record<string, BaseIdArray> = {
   // Rotas específicas por base
-  '/multas': [1], // Base Multas (id: 1)
-  '/fines': [1], // Alias para Multas
+  '/multas': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], // Base Multas
+  '/fines': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], // Alias para Multas
   
-  '/pneus': [2], // Base Pneus (id: 2)
-  '/tires': [2], // Alias para Pneus
+  '/pneus': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], // Base Pneus
+  '/tires': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], // Alias para Pneus
   
-  '/line-hall': [3], // Base Line Hall (id: 3)
+  '/line-hall': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], // Base Line Hall
   
-  '/gestao-de-frotas': [4], // Base Gestão de Frotas (id: 4)
-  '/fleet-management': [4], // Alias para Gestão de Frotas
-  '/maintenance': [4], // Apenas Gestão de Frotas
+  '/gestao-de-frotas': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], // Base Gestão de Frotas
+  '/fleet-management': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], // Alias para Gestão de Frotas
+  '/maintenance': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], // Gestão de Frotas
   
   // Rotas globais (disponíveis apenas para admin)
-  '/vehicles': [null], // Apenas admin ou sem restrição de base
-  '/refueling': [null], // Apenas admin ou sem restrição de base
-  '/': [null], // Dashboard disponível apenas para admin ou sem restrição
-  '/users': [null], // Usuários apenas para admin ou sem restrição
+  '/vehicles': [null], // Apenas admin
+  '/refueling': [null], // Apenas admin
+  '/': [null], // Dashboard apenas para admin
+  '/users': [null], // Usuários apenas para admin
 };
 
 // Interface para o retorno do hook
@@ -56,25 +56,57 @@ export function useBasePermission(): BasePermissionHook {
       return true;
     }
     
-    // Verifica se a rota existe no mapeamento
-    if (!baseRouteMap[route]) {
-      // Se a rota não estiver no mapeamento, consideramos permissão negada
-      return false;
-    }
-    
-    // Se a rota inclui null, significa que é apenas para admin (que já verificamos acima)
-    // ou para usuários sem restrição específica de base
-    if (baseRouteMap[route].includes(null)) {
-      return false; // Usuários não-admin não têm acesso a rotas com null
-    }
-    
-    // Se o usuário não tiver uma base associada, não tem acesso a rotas específicas de base
+    // Se o usuário não tiver uma base associada, só pode acessar rotas sem restrição
     if (!user?.baseId) {
-      return false;
+      // Por enquanto, permitir acesso a dashboard e veículos para todos
+      return route === '/' || route === '/vehicles';
     }
     
-    // Verifica se a baseId do usuário está na lista de bases permitidas para a rota
-    return baseRouteMap[route].includes(user.baseId);
+    // Rotas administrativas restritas
+    if (route === '/users') {
+      return false; // Somente para admin
+    }
+    
+    // Map route to expected baseId
+    // Multas - baseId 1
+    if ((route === '/multas' || route === '/fines') && user.baseId === 1) {
+      return true;
+    }
+    
+    // Pneus - baseId 2
+    if ((route === '/pneus' || route === '/tires') && user.baseId === 2) {
+      return true;
+    }
+    
+    // Line Hall - baseId 3 
+    if (route === '/line-hall' && user.baseId === 3) {
+      return true;
+    }
+    
+    // Gestão de Frotas - baseId 4
+    if ((route === '/gestao-de-frotas' || route === '/fleet-management' || route === '/maintenance') 
+      && user.baseId === 4) {
+      return true;
+    }
+    
+    // Se o baseId não for exatamente 1, 2, 3 ou 4, permitir acesso a rota com mesmo nome
+    const baseName = user.basename?.toLowerCase() || '';
+    if (baseName === 'line hall' && route === '/line-hall') {
+      return true;
+    }
+    if (baseName === 'multas' && (route === '/multas' || route === '/fines')) {
+      return true;
+    }
+    if (baseName === 'pneus' && (route === '/pneus' || route === '/tires')) {
+      return true;
+    }
+    if (baseName === 'gestao de frotas' && 
+        (route === '/gestao-de-frotas' || route === '/fleet-management' || route === '/maintenance')) {
+      return true;
+    }
+    
+    // Caso contrário, permitir acesso ao dashboard, veículos e abastecimentos para todos
+    return route === '/' || route === '/vehicles' || route === '/refueling';
   };
   
   // Obtém todas as rotas que o usuário tem permissão para acessar
