@@ -43,8 +43,12 @@ export async function fetchDashboardData(): Promise<DashboardData> {
         typeof response === 'object' && 
         'kpis' in response &&
         'timeSeriesData' in response &&
-        'fleetAvailability' in response) {
-      return response as DashboardData;
+        'fleetAvailability' in response &&
+        'costPerKm' in response &&
+        'maintenanceTime' in response &&
+        'fuelEfficiency' in response &&
+        'kmPerBase' in response) {
+      return response as unknown as DashboardData;
     }
     // Se não tiver o formato esperado, use dados simulados
     console.log('API de dashboard não retornou dados no formato esperado, usando dados simulados.');

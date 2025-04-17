@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { DashboardData } from '@/types/dashboard';
+import { DashboardData, KPI } from '@/types/dashboard';
 import { fetchDashboardData } from '@/utils/dashboardData';
 import AppLayout from '@/components/layout/AppLayout';
 import KPIGroupSection from '@/components/dashboard/KPIGroupSection';
