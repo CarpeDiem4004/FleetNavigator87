@@ -68,13 +68,26 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
   };
   
   const handleExcluirAbastecimento = async (id: number) => {
+    console.log("Chamada função de exclusão para ID:", id);
+    
     if (window.confirm('Tem certeza que deseja excluir este registro?')) {
       try {
         setIsDeleting(true);
-        await enviarParaSupabase(`${ENDPOINTS.ABASTECIMENTOS}?id=eq.${id}`, {}, 'DELETE');
+        // Verificação adicional na requisição
+        console.log("Iniciando requisição DELETE para:", ENDPOINTS.ABASTECIMENTOS, "com ID:", id);
+        
+        // Usando o endpoint correto formato para Supabase
+        const endpoint = `${ENDPOINTS.ABASTECIMENTOS}?id=eq.${id}`;
+        console.log("Endpoint completo:", endpoint);
+        
+        await enviarParaSupabase(endpoint, {}, 'DELETE');
+        console.log("Delete requisição completada com sucesso");
         
         // Atualizar a lista localmente removendo o item excluído
-        setAbastecimentos(prev => prev.filter(item => item.id !== id));
+        setAbastecimentos(prev => {
+          console.log("Atualizando estado: removendo item com ID", id);
+          return prev.filter(item => item.id !== id);
+        });
         
         alert('Registro excluído com sucesso!');
       } catch (error) {
@@ -83,6 +96,8 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
       } finally {
         setIsDeleting(false);
       }
+    } else {
+      console.log("Exclusão cancelada pelo usuário");
     }
   };
   
