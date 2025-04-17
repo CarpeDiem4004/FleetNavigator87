@@ -153,6 +153,79 @@ export async function checkConnection(): Promise<boolean> {
 }
 
 /**
+ * Verifica todas as conexões com o Supabase testando acesso a diversas tabelas
+ * @returns Objeto com os resultados de cada teste
+ */
+export async function checkAllConnections(): Promise<{ [key: string]: boolean }> {
+  const results: { [key: string]: boolean } = {};
+  const tables = [
+    'controle_tanques',
+    'abastecimentos_postos',
+    'movimentacoes_patio',
+    'status_tanques',
+    'entradas_combustivel',
+    'veiculos'
+  ];
+  
+  console.log('[Supabase] Iniciando verificação completa de todas as conexões...');
+  
+  for (const table of tables) {
+    try {
+      console.log(`[Supabase] Testando conexão com tabela ${table}...`);
+      const { data, error } = await supabaseAdmin
+        .from(table)
+        .select('id')
+        .limit(1);
+      
+      if (error) {
+        console.error(`[Supabase] Erro ao conectar com tabela ${table}:`, error);
+        results[table] = false;
+      } else {
+        console.log(`[Supabase] Conexão com tabela ${table} bem-sucedida`);
+        results[table] = true;
+      }
+    } catch (error) {
+      console.error(`[Supabase] Exceção ao conectar com tabela ${table}:`, error);
+      results[table] = false;
+    }
+  }
+  
+  // Teste se consegue executar RPC
+  try {
+    console.log('[Supabase] Testando conexão RPC...');
+    const { data, error } = await supabaseAdmin.rpc('version');
+    results['rpc'] = !error;
+    if (error) {
+      console.error('[Supabase] Erro ao testar RPC:', error);
+    } else {
+      console.log('[Supabase] Conexão RPC bem-sucedida');
+    }
+  } catch (error) {
+    console.error('[Supabase] Exceção ao testar RPC:', error);
+    results['rpc'] = false;
+  }
+  
+  // Teste se consegue fazer autenticação anônima
+  try {
+    console.log('[Supabase] Testando cliente anônimo...');
+    const { data, error } = await supabase.from('controle_tanques').select('id').limit(1);
+    results['anon_client'] = !error;
+    if (error) {
+      console.error('[Supabase] Erro com cliente anônimo:', error);
+    } else {
+      console.log('[Supabase] Cliente anônimo funcionando corretamente');
+    }
+  } catch (error) {
+    console.error('[Supabase] Exceção com cliente anônimo:', error);
+    results['anon_client'] = false;
+  }
+  
+  // Resultado geral
+  console.log('[Supabase] Resultado completo dos testes de conexão:', results);
+  return results;
+}
+
+/**
  * Alias para fetchData para compatibilidade com código existente
  */
 export const fetchRecords = fetchData;
