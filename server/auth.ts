@@ -127,7 +127,7 @@ export function setupAuth(app: Express) {
   // Rotas de autenticação
   app.post("/api/register", async (req, res, next) => {
     try {
-      const { username, password, name, role = 'operador' } = req.body;
+      const { username, password, name, role = 'operador', baseId, basename } = req.body;
       
       console.log(`Tentativa de registro para: ${username}`);
       
@@ -148,8 +148,17 @@ export function setupAuth(app: Express) {
         name,
         role
       };
+      
+      // Adicionar baseId e basename se fornecidos
+      if (baseId) {
+        Object.assign(newUser, { 
+          baseId: parseInt(baseId.toString()),
+          basename
+        });
+        console.log(`Usuário sendo associado à base: ${basename} (ID: ${baseId})`);
+      }
 
-      console.log(`Criando novo usuário: ${username}`);
+      console.log(`Criando novo usuário: ${username}`, newUser);
       const user = await storage.createUser(newUser);
       console.log(`Usuário criado: ${user.id} (${username})`);
 
