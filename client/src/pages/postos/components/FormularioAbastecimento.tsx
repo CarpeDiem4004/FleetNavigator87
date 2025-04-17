@@ -104,6 +104,12 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         description: `Veículo ${data.placa} abastecido com sucesso.`,
       });
       
+      // Aguarda um breve momento antes de redirecionar para mostrar o toast
+      setTimeout(() => {
+        // Redireciona para a página inicial de postos
+        window.location.href = "/postos";
+      }, 1500);
+      
       form.reset();
     } catch (error: any) {
       console.error('Erro ao registrar abastecimento:', error);
