@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -51,7 +51,13 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     },
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   async function onSubmit(data: AbastecimentoValues) {
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
+    
     try {
       // Prepara os dados no formato esperado pela API
       const abastecimentoData = {
@@ -73,9 +79,14 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       }
       
       // Verifica conectividade com Supabase antes de tentar enviar
+      toast({
+        title: 'Verificando conexão',
+        description: 'Aguarde enquanto verificamos a conexão com o servidor...',
+      });
+      
       const conexaoSupabase = await verificarConexaoSupabase();
       if (!conexaoSupabase) {
-        throw new Error('Não foi possível conectar ao servidor Supabase. Verifique sua conexão e tente novamente.');
+        throw new Error('Não foi possível conectar ao servidor Supabase. Verifique sua conexão e tente novamente mais tarde.');
       }
       
       // Envia os dados para o Supabase
@@ -94,8 +105,10 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       // Mensagem de erro mais específica
       let errorMessage = 'Verifique sua conexão e tente novamente.';
       
-      // Tentativa de melhorar a mensagem de erro
-      if (error.message && error.message.includes('Failed to fetch')) {
+      // Tentativa de melhorar a mensagem de erro com base no tipo
+      if (error.name === 'AbortError') {
+        errorMessage = 'O servidor demorou muito para responder. Tente novamente mais tarde.';
+      } else if (error.message && error.message.includes('Failed to fetch')) {
         errorMessage = 'Falha na conexão com o servidor. Verifique se você tem acesso à internet.';
       } else if (error.message) {
         errorMessage = error.message;
@@ -106,6 +119,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         description: errorMessage,
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 

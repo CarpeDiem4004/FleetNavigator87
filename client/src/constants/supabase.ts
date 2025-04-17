@@ -144,23 +144,45 @@ export async function verificarConexaoSupabase(): Promise<boolean> {
   try {
     // Verifica se há conexão com a internet
     if (!navigator.onLine) {
+      console.log("Sem conexão com a internet");
       return false;
     }
     
-    // Tenta fazer uma requisição simples para verificar a conectividade
+    // Tenta fazer uma requisição simples para verificar a conectividade usando um endpoint existente
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos de timeout
     
-    const response = await fetch(`${SUPABASE_URL}/health`, {
-      method: 'HEAD',
-      headers: {
-        "apikey": API_KEY,
-      },
-      signal: controller.signal
-    });
-    
-    clearTimeout(timeoutId);
-    return response.ok;
+    try {
+      // Usamos o endpoint de configuração de tanques como teste de conexão
+      const response = await fetch(`${SUPABASE_URL}/${ENDPOINTS.CONFIG_TANQUES}?limit=1`, {
+        method: 'GET',
+        headers: {
+          "apikey": API_KEY,
+          "Authorization": `Bearer ${API_KEY}`
+        },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      // Registra o status para depuração
+      console.log("Teste de conexão com Supabase:", response.status, response.ok);
+      
+      return response.ok;
+    } catch (error) {
+      // Cast seguro para Error pois todos os erros de fetch herdam de Error
+      const fetchError = error instanceof Error ? error : new Error(String(error));
+      console.error("Erro na requisição de teste ao Supabase:", fetchError);
+      
+      // Verificamos se o erro é devido a timeout ou falha de rede
+      if (fetchError.name === 'AbortError') {
+        console.log("Timeout ao conectar com Supabase");
+      } else if (fetchError.message && fetchError.message.includes('Failed to fetch')) {
+        console.log("Falha na conexão com Supabase");
+      }
+      
+      return false;
+    }
   } catch (error) {
     console.error("Erro ao verificar conexão com Supabase:", error);
     return false;
