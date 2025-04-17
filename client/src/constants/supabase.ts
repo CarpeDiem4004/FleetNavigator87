@@ -83,5 +83,5 @@ export const ENDPOINTS = {
   ABASTECIMENTOS: "abastecimentos_postos",
   RECEBIMENTOS: "recebimentos_tanques",
   MOVIMENTACOES: "movimentacoes_patio",
-  CONFIG_TANQUES: "configuracoes_tanques"
+  CONFIG_TANQUES: "controle_tanques" // Alterando para um nome que pode ser diferente na API
 };

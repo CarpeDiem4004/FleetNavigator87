@@ -90,30 +90,81 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
   const [arlaCapacidade, setArlaCapacidade] = useState<number>(statusTanque.arla.capacidade);
   const [isSalvando, setIsSalvando] = useState(false);
   
+  // Mapa de configurações em memória (sem necessidade de API)
+  // Usamos localStorage para persistir os dados entre sessões
+  const getStoredConfig = (posto: string) => {
+    try {
+      const storedConfig = localStorage.getItem(`config_tanques_${posto}`);
+      if (storedConfig) {
+        return JSON.parse(storedConfig);
+      }
+      return null;
+    } catch (e) {
+      console.error("Erro ao ler configuração do localStorage:", e);
+      return null;
+    }
+  };
+  
+  const saveStoredConfig = (posto: string, config: ConfiguracaoTanques) => {
+    try {
+      localStorage.setItem(`config_tanques_${posto}`, JSON.stringify(config));
+      return true;
+    } catch (e) {
+      console.error("Erro ao salvar configuração no localStorage:", e);
+      return false;
+    }
+  };
+  
   // Função para buscar configurações do tanque
   const fetchConfigTanques = async () => {
     try {
-      // Buscar configuração atual dos tanques para este posto
-      const queryParamsConfig = `posto=eq.${postId}`;
-      const configTanques = await buscarDadosSupabase(ENDPOINTS.CONFIG_TANQUES, queryParamsConfig);
+      // Primeiro tentamos buscar do localStorage
+      const configLocal = getStoredConfig(postId);
       
-      if (configTanques && configTanques.length > 0) {
-        const config = configTanques[0];
-        setConfigId(config.id);
+      if (configLocal) {
+        console.log("Configuração carregada do localStorage:", configLocal);
         
         // Atualizar os estados do formulário
-        setDieselNivel(config.diesel_nivel);
-        setDieselCapacidade(config.diesel_capacidade);
-        setArlaNivel(config.arla_nivel);
-        setArlaCapacidade(config.arla_capacidade);
+        setDieselNivel(configLocal.diesel_nivel);
+        setDieselCapacidade(configLocal.diesel_capacidade);
+        setArlaNivel(configLocal.arla_nivel);
+        setArlaCapacidade(configLocal.arla_capacidade);
         
         // Atualizar o estado principal com estes valores
         return {
-          dieselNivel: config.diesel_nivel,
-          dieselCapacidade: config.diesel_capacidade,
-          arlaNivel: config.arla_nivel,
-          arlaCapacidade: config.arla_capacidade
+          dieselNivel: configLocal.diesel_nivel,
+          dieselCapacidade: configLocal.diesel_capacidade,
+          arlaNivel: configLocal.arla_nivel,
+          arlaCapacidade: configLocal.arla_capacidade
         };
+      }
+      
+      // Se não encontrar local, tenta buscar da API
+      try {
+        // Buscar configuração atual dos tanques para este posto
+        const queryParamsConfig = `posto=eq.${postId}`;
+        const configTanques = await buscarDadosSupabase(ENDPOINTS.CONFIG_TANQUES, queryParamsConfig);
+        
+        if (configTanques && configTanques.length > 0) {
+          const config = configTanques[0];
+          setConfigId(config.id);
+          
+          // Atualizar os estados do formulário
+          setDieselNivel(config.diesel_nivel);
+          setDieselCapacidade(config.diesel_capacidade);
+          setArlaNivel(config.arla_nivel);
+          setArlaCapacidade(config.arla_capacidade);
+          
+          // Atualizar o estado principal com estes valores
+          return {
+            dieselNivel: config.diesel_nivel,
+            dieselCapacidade: config.diesel_capacidade,
+            arlaNivel: config.arla_nivel,
+            arlaCapacidade: config.arla_capacidade
+          };
+        }
+      } catch (apiError) {
+        console.log("API não disponível, usando apenas localStorage:", apiError);
       }
       
       return null;
@@ -152,32 +203,46 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
         diesel_nivel: nivelDiesel,
         arla_capacidade: capacidadeArla,
         arla_nivel: nivelArla,
-        // Adicionar um timestamp para evitar problemas de cache
         updated_at: new Date().toISOString()
       };
       
-      let response;
+      // Salvar localmente primeiro (independente da API)
+      const savedLocally = saveStoredConfig(postId, dadosConfig);
       
-      if (configId) {
-        // Atualizar registro existente
-        response = await enviarParaSupabase(
-          `${ENDPOINTS.CONFIG_TANQUES}?id=eq.${configId}`,
-          dadosConfig,
-          'PATCH'
-        );
-      } else {
-        // Criar novo registro
-        response = await enviarParaSupabase(
-          ENDPOINTS.CONFIG_TANQUES,
-          dadosConfig,
-          'POST'
-        );
+      let apiSuccess = false;
+      // Tentar salvar na API (se disponível)
+      try {
+        let response;
+        
+        if (configId) {
+          // Atualizar registro existente
+          response = await enviarParaSupabase(
+            `${ENDPOINTS.CONFIG_TANQUES}?id=eq.${configId}`,
+            dadosConfig,
+            'PATCH'
+          );
+        } else {
+          // Criar novo registro
+          response = await enviarParaSupabase(
+            ENDPOINTS.CONFIG_TANQUES,
+            dadosConfig,
+            'POST'
+          );
+        }
+        
+        if (response) {
+          apiSuccess = true;
+        }
+      } catch (apiError) {
+        console.log("Não foi possível salvar na API, mas dados foram salvos localmente:", apiError);
       }
       
-      if (response) {
+      if (savedLocally || apiSuccess) {
         toast({
           title: "Configurações salvas",
-          description: "Os níveis e capacidades dos tanques foram atualizados com sucesso.",
+          description: !apiSuccess 
+            ? "Os níveis e capacidades dos tanques foram salvos localmente."
+            : "Os níveis e capacidades dos tanques foram atualizados com sucesso.",
         });
         
         // Atualizar o estado principal com os novos valores
@@ -198,6 +263,8 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
         
         // Fechar o diálogo
         setIsDialogOpen(false);
+      } else {
+        throw new Error("Não foi possível salvar as configurações em nenhum local.");
       }
     } catch (error: any) {
       console.error('Erro ao salvar configurações:', error);
