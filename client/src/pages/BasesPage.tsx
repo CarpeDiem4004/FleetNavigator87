@@ -51,6 +51,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Building2, Loader2, Plus, Edit, Trash2, Award, Download, Upload, DatabaseIcon } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { insertBaseSchema } from '@shared/schema';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
 
 // Interface para a base
 interface Base {
@@ -78,6 +79,7 @@ export default function BasesPage() {
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<boolean | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Formulário para adicionar/editar base
   const form = useForm<z.infer<typeof baseFormSchema>>({
@@ -273,7 +275,7 @@ export default function BasesPage() {
   const uniqueOperations = Object.keys(basesByOperation).length;
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold flex items-center">
