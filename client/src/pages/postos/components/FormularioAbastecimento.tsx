@@ -24,6 +24,7 @@ const abastecimentoSchema = z.object({
   quantidade: z.string().min(1, 'A quantidade é obrigatória').refine((val) => !isNaN(Number(val)), {
     message: 'Quantidade deve ser um número válido',
   }),
+  projeto: z.string().min(2, 'O projeto é obrigatório'),
   motorista: z.string().min(3, 'O nome do motorista deve ter no mínimo 3 caracteres'),
   operador: z.string().min(3, 'O nome do operador deve ter no mínimo 3 caracteres'),
 });
@@ -44,6 +45,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       km: '',
       tipo: undefined,
       quantidade: '',
+      projeto: '',
       motorista: '',
       operador: '',
     },
@@ -57,6 +59,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         km_atual: Number(data.km),
         tipo_combustivel: data.tipo,
         litros: Number(data.quantidade),
+        projeto: data.projeto,
         nome_motorista: data.motorista,
         nome_operador: data.operador,
         posto: postId
@@ -170,6 +173,36 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
                       </FormControl>
                       <FormDescription>
                         Digite a quantidade em litros
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="projeto"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Projeto</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o projeto" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="CCR">CCR</SelectItem>
+                          <SelectItem value="MRV">MRV</SelectItem>
+                          <SelectItem value="Ambev">Ambev</SelectItem>
+                          <SelectItem value="Vale">Vale</SelectItem>
+                          <SelectItem value="Petrobras">Petrobras</SelectItem>
+                          <SelectItem value="CSN">CSN</SelectItem>
+                          <SelectItem value="Outro">Outro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Selecione o projeto ao qual o veículo pertence
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
