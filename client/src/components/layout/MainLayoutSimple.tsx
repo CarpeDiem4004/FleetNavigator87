@@ -12,13 +12,16 @@ import {
   LogOut,
   Menu,
   X,
-  Building2
+  Building2,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { useBasePermission } from '@/hooks/use-base-permission';
 import { BaseInfo } from '@/components/permission/BaseInfo';
+import { POSTOS_INFO } from '@/constants/postos';
 
 // Hook interno para substituir o useMediaQuery
 function useResponsiveDisplay(query: string): boolean {
@@ -49,9 +52,60 @@ interface NavItemProps {
   title: string;
   isActive: boolean;
   onClick?: () => void;
+  hasSubmenu?: boolean;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ href, icon, title, isActive, onClick }) => {
+interface NavSubmenuProps {
+  title: string;
+  icon: React.ReactNode;
+  isOpen: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+  isActive?: boolean;
+}
+
+const NavSubmenu: React.FC<NavSubmenuProps> = ({ 
+  title, 
+  icon, 
+  isOpen, 
+  onToggle, 
+  children,
+  isActive
+}) => {
+  return (
+    <div className="flex flex-col">
+      <button
+        onClick={onToggle}
+        className={cn(
+          "flex items-center justify-between gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary w-full text-left",
+          isActive ? "bg-muted font-medium text-primary" : "text-muted-foreground"
+        )}
+      >
+        <div className="flex items-center gap-3">
+          {icon}
+          <span>{title}</span>
+        </div>
+        {isOpen ? (
+          <ChevronDown className="h-4 w-4" />
+        ) : (
+          <ChevronRight className="h-4 w-4" />
+        )}
+      </button>
+      
+      {isOpen && (
+        <div className="ml-7 mt-1 border-l pl-3 space-y-1">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const NavItem: React.FC<NavItemProps> = ({ href, icon, title, isActive, onClick, hasSubmenu }) => {
+  if (hasSubmenu) {
+    return null; // Renderizado separadamente
+  }
+  
   return (
     <Link 
       href={href}
@@ -71,6 +125,7 @@ const MainLayoutSimple: React.FC<MainLayoutSimpleProps> = ({ children }) => {
   const [location] = useLocation();
   const isMobile = useResponsiveDisplay("(max-width: 768px)");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [postosSubmenuOpen, setPostosSubmenuOpen] = useState(false);
   const { user, logout } = useAuth();
   const { hasPermission } = useBasePermission();
 
@@ -89,13 +144,36 @@ const MainLayoutSimple: React.FC<MainLayoutSimpleProps> = ({ children }) => {
     }
   };
 
+  // Função para verificar se a localização atual é um posto
+  const isCurrentLocationPosto = () => {
+    return location.startsWith('/posto/');
+  };
+
+  // Função para obter o ID do posto atual da URL
+  const getCurrentPostoId = () => {
+    if (isCurrentLocationPosto()) {
+      return location.replace('/posto/', '');
+    }
+    return null;
+  };
+  
+  // Toggle para o submenu de postos
+  const togglePostosSubmenu = () => {
+    setPostosSubmenuOpen(!postosSubmenuOpen);
+  };
+
   // Todos os itens de navegação possíveis
   const allNavItems = [
     { href: '/', icon: <LayoutDashboard className="h-5 w-5" />, title: 'Dashboard' },
     { href: '/vehicles', icon: <Truck className="h-5 w-5" />, title: 'Veículos' },
     { href: '/maintenance', icon: <Wrench className="h-5 w-5" />, title: 'Manutenções' },
     { href: '/tires', icon: <DiscAlbum className="h-5 w-5" />, title: 'Pneus' },
-    { href: '/refueling', icon: <Fuel className="h-5 w-5" />, title: 'Abastecimentos' },
+    { 
+      href: '/refueling', 
+      icon: <Fuel className="h-5 w-5" />, 
+      title: 'Abastecimentos',
+      hasSubmenu: true  // Indica que este item tem submenu
+    },
     { href: '/fines', icon: <FileWarning className="h-5 w-5" />, title: 'Multas' },
     { href: '/line-hall', icon: <MapPin className="h-5 w-5" />, title: 'Line Hall' },
     { href: '/fleet-management', icon: <Truck className="h-5 w-5" />, title: 'Gestão de Frota' },
