@@ -19,6 +19,13 @@ import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
 import LineHallRedirect from "@/components/permission/LineHallRedirect";
 import { AuthProvider } from "@/context/AuthContext";
 
+// Importação das páginas de postos
+import IndexPostos from "@/pages/postos/IndexPostos";
+import PostoOsasco from "@/pages/postos/Osasco";
+import PostoGuarulhos from "@/pages/postos/Guarulhos";
+import PostoSaoPaulo from "@/pages/postos/SaoPaulo";
+import PostoCampinas from "@/pages/postos/Campinas";
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -48,6 +55,20 @@ function App() {
           <ProtectedRoute path="/line-hall" component={LineHallNew} />
           <ProtectedRoute path="/fleet-management" component={FleetManagementNew} />
           <ProtectedRoute path="/users" component={UsersNew} />
+          
+          {/* Rotas para os postos de abastecimento */}
+          <Route path="/posto/osasco">
+            <PostoOsasco />
+          </Route>
+          <Route path="/posto/guarulhos">
+            <PostoGuarulhos />
+          </Route>
+          <Route path="/posto/saopaulo">
+            <PostoSaoPaulo />
+          </Route>
+          <Route path="/posto/campinas">
+            <PostoCampinas />
+          </Route>
           
           <Route>
             <NotFound />
