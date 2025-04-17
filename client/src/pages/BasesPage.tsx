@@ -93,11 +93,20 @@ export default function BasesPage() {
   });
 
   // Query para buscar as bases
-  const { data: bases = [], isLoading, refetch } = useQuery<Base[]>({
+  const { data: bases = [], isLoading, error, refetch } = useQuery<Base[]>({
     queryKey: ['/api/bases'],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/bases');
-      return response || [];
+      try {
+        const response = await apiRequest('GET', '/api/bases');
+        if (!response.ok) {
+          throw new Error(`Erro ao buscar bases: ${response.status}`);
+        }
+        const data = await response.json();
+        return data || [];
+      } catch (error) {
+        console.error('Erro ao buscar bases:', error);
+        return [];
+      }
     },
   });
 

@@ -12,7 +12,7 @@ import FinesNew from "@/pages/FinesNew";
 import LineHallNew from "@/pages/LineHallNew";
 import UsersNew from "@/pages/UsersNew";
 import FleetManagementNew from "@/pages/FleetManagementNew";
-import SignIn from "@/pages/SignIn";
+import LoginPage from "@/pages/login";
 import RegisterNew from "@/pages/RegisterNew";
 import AccessDeniedPage from "@/pages/access-denied";
 import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
@@ -48,7 +48,7 @@ function App() {
       <AuthProvider>
         <Switch>
           <Route path="/login">
-            <SignIn />
+            <LoginPage />
           </Route>
           <Route path="/register">
             <RegisterNew />
