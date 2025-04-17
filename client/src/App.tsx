@@ -41,7 +41,7 @@ import SocorroPublic from "@/pages/postos/public/SocorroPublic";
 import SorocabaPublic from "@/pages/postos/public/SorocabaPublic";
 
 // Importação do componente de redirecionamento
-import RedirectToPostoLogin from "@/pages/RedirectToPostoLogin";
+import PostoRedirectHandler from "@/components/redirects/PostoRedirectHandler";
 
 function App() {
   return (
@@ -91,7 +91,7 @@ function App() {
           
           {/* Rotas públicas para os postos com redirecionamento direto */}
           <Route path="/public/posto/:postoCode">
-            <RedirectToPostoLogin />
+            <PostoRedirectHandler />
           </Route>
           
           {/* Rotas para interfaces simplificadas dos postos (quando já autenticados) */}
