@@ -44,12 +44,17 @@ export const FormularioControlePatio: React.FC<FormularioControlePatioProp> = ({
   async function onSubmit(data: ControlePatiocientes) {
     try {
       // Prepara os dados no formato esperado pela API
+      // Capitaliza a primeira letra do posto
+      const formatPosto = (posto: string) => {
+        return posto.charAt(0).toUpperCase() + posto.slice(1);
+      };
+      
       const movimentoData = {
         placa: data.placa.toUpperCase(),
         tipo_movimento: data.tipoMovimento,
         nome_motorista: data.motorista,
         nome_operador: data.operador,
-        posto: postId
+        posto: formatPosto(postId) // Primeira letra maiúscula
       };
       
       console.log('Dados a enviar:', movimentoData);

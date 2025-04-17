@@ -60,6 +60,11 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     
     try {
       // Prepara os dados no formato esperado pela API
+      // Capitaliza a primeira letra do posto
+      const formatPosto = (posto: string) => {
+        return posto.charAt(0).toUpperCase() + posto.slice(1);
+      };
+      
       const abastecimentoData = {
         placa: data.placa.toUpperCase(),
         km_atual: Number(data.km),
@@ -68,7 +73,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         projeto: data.projeto,
         nome_motorista: data.motorista,
         nome_operador: data.operador,
-        posto: postId,
+        posto: formatPosto(postId), // Primeira letra maiúscula
         data_hora: new Date().toISOString() // Adiciona a data e hora atual
       };
       

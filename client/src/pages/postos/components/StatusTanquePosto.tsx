@@ -324,9 +324,14 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
         let recebimentos = [];
         
         try {
+          // Capitaliza a primeira letra do posto
+          const formatPosto = (posto: string) => {
+            return posto.charAt(0).toUpperCase() + posto.slice(1);
+          };
+          
           // Buscar abastecimentos usando o novo cliente Supabase
           abastecimentos = await fetchRecords('abastecimentos_postos', {
-            equals: { posto: postId },
+            equals: { posto: formatPosto(postId) },
             order: { created_at: 'desc' },
             limit: 50
           }) || [];
@@ -334,7 +339,7 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
           // Buscar recebimentos usando o novo cliente Supabase
           try {
             recebimentos = await fetchRecords('recebimentos_combustivel', {
-              equals: { posto: postId },
+              equals: { posto: formatPosto(postId) },
               order: { created_at: 'desc' },
               limit: 50
             }) || [];
