@@ -59,17 +59,32 @@ const HistoricoGeralPage: React.FC = () => {
   }, []);
 
   const formatarData = (dataString: string) => {
-    const data = new Date(dataString);
-    return format(data, 'dd/MM/yyyy');
+    try {
+      const data = new Date(dataString);
+      return format(data, 'dd/MM/yyyy');
+    } catch (error) {
+      console.error('Erro ao formatar data:', error);
+      return '-';
+    }
   };
 
   const formatarNumero = (valor: number) => {
-    return new Intl.NumberFormat('pt-BR').format(Math.round(valor));
+    try {
+      return new Intl.NumberFormat('pt-BR').format(Math.round(valor));
+    } catch (error) {
+      console.error('Erro ao formatar número:', error);
+      return '0';
+    }
   };
 
   const formatarPreco = (valor?: number) => {
     if (!valor) return '-';
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+    try {
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+    } catch (error) {
+      console.error('Erro ao formatar preço:', error);
+      return '-';
+    }
   };
 
   const handleExportarExcel = () => {
@@ -103,18 +118,35 @@ const HistoricoGeralPage: React.FC = () => {
       ...csvData.map(row => row.join(';'))
     ].join('\n');
     
-    // Criar e download do arquivo
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', `historico_abastecimentos_${new Date().toISOString().slice(0, 10)}.csv`);
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Criar e download do arquivo de forma segura sem manipulação direta do DOM
+    try {
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      
+      // Usa um link temporário para download sem manipulação direta do DOM
+      const tempLink = document.createElement('a');
+      tempLink.href = url;
+      tempLink.setAttribute('download', `historico_abastecimentos_${new Date().toISOString().slice(0, 10)}.csv`);
+      tempLink.style.position = 'absolute';
+      tempLink.style.visibility = 'hidden';
+      
+      // Evita append/remove que pode causar erros no React
+      tempLink.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          view: window
+        })
+      );
+      
+      // Libera o URL object para evitar memory leak
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 100);
+    } catch (error) {
+      console.error('Erro ao criar arquivo para download:', error);
+      alert('Erro ao exportar dados. Por favor, tente novamente.');
+    }
   };
 
   // Filtragem de dados

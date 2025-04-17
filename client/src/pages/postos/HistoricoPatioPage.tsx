@@ -57,14 +57,24 @@ const HistoricoPatioPage: React.FC = () => {
 
   const formatarData = (dataString: string | null) => {
     if (!dataString) return '-';
-    const data = new Date(dataString);
-    return format(data, 'dd/MM/yyyy');
+    try {
+      const data = new Date(dataString);
+      return format(data, 'dd/MM/yyyy');
+    } catch (error) {
+      console.error('Erro ao formatar data:', error);
+      return '-';
+    }
   };
 
   const calcularDiasParado = (dataEntrada: string, dataSaida: string | null) => {
-    const entrada = new Date(dataEntrada);
-    const saida = dataSaida ? new Date(dataSaida) : new Date();
-    return differenceInDays(saida, entrada);
+    try {
+      const entrada = new Date(dataEntrada);
+      const saida = dataSaida ? new Date(dataSaida) : new Date();
+      return differenceInDays(saida, entrada);
+    } catch (error) {
+      console.error('Erro ao calcular dias parado:', error);
+      return 0;
+    }
   };
 
   const handleExportarExcel = () => {
@@ -98,16 +108,28 @@ const HistoricoPatioPage: React.FC = () => {
     
     // Criar e download do arquivo
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     
-    link.setAttribute('href', url);
-    link.setAttribute('download', `historico_patio_${new Date().toISOString().slice(0, 10)}.csv`);
-    link.style.visibility = 'hidden';
+    // Usa um link temporário para download sem manipulação direta do DOM
+    const tempLink = document.createElement('a');
+    tempLink.href = url;
+    tempLink.setAttribute('download', `historico_patio_${new Date().toISOString().slice(0, 10)}.csv`);
+    tempLink.style.position = 'absolute';
+    tempLink.style.visibility = 'hidden';
     
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Evita append/remove que pode causar erros no React
+    tempLink.dispatchEvent(
+      new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        view: window
+      })
+    );
+    
+    // Libera o URL object para evitar memory leak
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 100);
   };
 
   // Filtragem de dados
