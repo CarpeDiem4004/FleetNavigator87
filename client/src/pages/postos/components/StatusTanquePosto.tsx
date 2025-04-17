@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Fuel, Droplet } from 'lucide-react';
-import { SUPABASE_URL, API_KEY } from '@/constants/supabase';
+import { ENDPOINTS, buscarDadosSupabase } from '@/constants/supabase';
 
 interface StatusTanqueProps {
   postId: string;
@@ -60,48 +60,30 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
       try {
         setIsLoading(true);
         
-        // Buscar abastecimentos
-        const resAbastecimentos = await fetch(
-          `${SUPABASE_URL}/abastecimentos_postos?posto=eq.${postId}&order=created_at.desc&limit=50`, 
-          {
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`
-            }
-          }
-        );
+        // Buscar abastecimentos usando a nova função
+        const queryParamsAbastecimentos = `posto=eq.${postId}&order=created_at.desc&limit=50`;
+        const abastecimentos = await buscarDadosSupabase(ENDPOINTS.ABASTECIMENTOS, queryParamsAbastecimentos);
         
-        const abastecimentos: AbastecimentoData[] = await resAbastecimentos.json();
-        
-        // Buscar recebimentos
-        const resRecebimentos = await fetch(
-          `${SUPABASE_URL}/recebimentos_tanques?posto=eq.${postId}&order=created_at.desc&limit=50`, 
-          {
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`
-            }
-          }
-        );
-        
-        const recebimentos: RecebimentoData[] = await resRecebimentos.json();
+        // Buscar recebimentos usando a nova função
+        const queryParamsRecebimentos = `posto=eq.${postId}&order=created_at.desc&limit=50`;
+        const recebimentos = await buscarDadosSupabase(ENDPOINTS.RECEBIMENTOS, queryParamsRecebimentos);
         
         // Calcular totais
         const totalDieselAbastecido = abastecimentos
-          .filter(a => a.tipo_combustivel === 'Diesel')
-          .reduce((acc, curr) => acc + curr.litros, 0);
+          .filter((a: AbastecimentoData) => a.tipo_combustivel === 'Diesel')
+          .reduce((acc: number, curr: AbastecimentoData) => acc + curr.litros, 0);
           
         const totalArlaAbastecido = abastecimentos
-          .filter(a => a.tipo_combustivel === 'ARLA')
-          .reduce((acc, curr) => acc + curr.litros, 0);
+          .filter((a: AbastecimentoData) => a.tipo_combustivel === 'ARLA')
+          .reduce((acc: number, curr: AbastecimentoData) => acc + curr.litros, 0);
           
         const totalDieselRecebido = recebimentos
-          .filter(r => r.tipo_produto === 'Diesel')
-          .reduce((acc, curr) => acc + curr.litros_recebidos, 0);
+          .filter((r: RecebimentoData) => r.tipo_produto === 'Diesel')
+          .reduce((acc: number, curr: RecebimentoData) => acc + curr.litros_recebidos, 0);
           
         const totalArlaRecebido = recebimentos
-          .filter(r => r.tipo_produto === 'ARLA')
-          .reduce((acc, curr) => acc + curr.litros_recebidos, 0);
+          .filter((r: RecebimentoData) => r.tipo_produto === 'ARLA')
+          .reduce((acc: number, curr: RecebimentoData) => acc + curr.litros_recebidos, 0);
         
         // Calcular níveis atuais e porcentagens
         const nivelDiesel = Math.min(statusTanque.diesel.capacidade, 5000 - totalDieselAbastecido + totalDieselRecebido);
@@ -128,6 +110,7 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
         });
       } catch (error) {
         console.error('Erro ao buscar dados de tanques:', error);
+        // Em caso de erro, manter os valores padrão
       } finally {
         setIsLoading(false);
       }

@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Fuel, Droplet } from 'lucide-react';
-import { SUPABASE_URL, API_KEY } from '@/constants/supabase';
+import { ENDPOINTS, buscarDadosSupabase } from '@/constants/supabase';
 
 interface HistoricoAbastecimentosProps {
   postId: string;
@@ -29,24 +29,14 @@ export const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = (
     async function fetchAbastecimentos() {
       try {
         setIsLoading(true);
-        const res = await fetch(
-          `${SUPABASE_URL}/abastecimentos_postos?posto=eq.${postId}&order=created_at.desc&limit=10`, 
-          {
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`
-            }
-          }
-        );
-        
-        if (!res.ok) {
-          throw new Error(`Erro ao buscar abastecimentos: ${res.status}`);
-        }
-        
-        const data: Abastecimento[] = await res.json();
+        // Usando a nova função buscarDadosSupabase
+        const queryParams = `posto=eq.${postId}&order=created_at.desc&limit=10`;
+        const data = await buscarDadosSupabase(ENDPOINTS.ABASTECIMENTOS, queryParams);
         setAbastecimentos(data);
       } catch (error) {
         console.error('Erro ao buscar histórico de abastecimentos:', error);
+        // Em caso de erro, inicializa com array vazio para evitar erro de renderização
+        setAbastecimentos([]);
       } finally {
         setIsLoading(false);
       }

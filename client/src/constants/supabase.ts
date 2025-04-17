@@ -27,6 +27,32 @@ export async function enviarParaSupabase(endpoint: string, dados: any) {
   }
 }
 
+// Função para buscar dados dos endpoints do Supabase
+export async function buscarDadosSupabase(endpoint: string, queryParams: string = "") {
+  try {
+    const url = `${SUPABASE_URL}/${endpoint}${queryParams ? `?${queryParams}` : ""}`;
+    console.log("Buscando dados em:", url);
+    
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": API_KEY,
+        "Authorization": `Bearer ${API_KEY}`
+      }
+    });
+    
+    if (!res.ok) {
+      throw new Error(`Erro ao buscar dados: ${res.status}`);
+    }
+    
+    return await res.json();
+  } catch (error) {
+    console.error(`Erro ao buscar dados de ${endpoint}:`, error);
+    throw error;
+  }
+}
+
 // Endpoints disponíveis
 export const ENDPOINTS = {
   ABASTECIMENTOS: "abastecimentos_postos",

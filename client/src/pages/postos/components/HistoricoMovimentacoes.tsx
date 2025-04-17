@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Truck, ArrowUpRight, ArrowDownLeft, Settings } from 'lucide-react';
-import { SUPABASE_URL, API_KEY } from '@/constants/supabase';
+import { ENDPOINTS, buscarDadosSupabase } from '@/constants/supabase';
 
 interface HistoricoMovimentacoesProps {
   postId: string;
@@ -27,24 +27,14 @@ export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ 
     async function fetchMovimentacoes() {
       try {
         setIsLoading(true);
-        const res = await fetch(
-          `${SUPABASE_URL}/movimentacoes_patio?posto=eq.${postId}&order=created_at.desc&limit=10`, 
-          {
-            headers: {
-              'apikey': API_KEY,
-              'Authorization': `Bearer ${API_KEY}`
-            }
-          }
-        );
-        
-        if (!res.ok) {
-          throw new Error(`Erro ao buscar movimentações: ${res.status}`);
-        }
-        
-        const data: Movimentacao[] = await res.json();
+        // Usando a nova função buscarDadosSupabase
+        const queryParams = `posto=eq.${postId}&order=created_at.desc&limit=10`;
+        const data = await buscarDadosSupabase(ENDPOINTS.MOVIMENTACOES, queryParams);
         setMovimentacoes(data);
       } catch (error) {
         console.error('Erro ao buscar histórico de movimentações:', error);
+        // Em caso de erro, inicializa com array vazio para evitar erro de renderização
+        setMovimentacoes([]);
       } finally {
         setIsLoading(false);
       }
