@@ -14,7 +14,7 @@ import {
   DialogTrigger 
 } from "@/components/ui/dialog";
 import { Fuel, Droplet, Settings, Edit, Save } from 'lucide-react';
-import { ENDPOINTS, buscarDadosSupabase, enviarParaSupabase } from '@/constants/supabase';
+import { fetchRecords, insertData, updateData, checkConnection } from '@/lib/supabase-client';
 import { useToast } from "@/hooks/use-toast";
 
 interface StatusTanqueProps {
@@ -141,9 +141,10 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
       
       // Se não encontrar local, tenta buscar da API
       try {
-        // Buscar configuração atual dos tanques para este posto
-        const queryParamsConfig = `posto=eq.${postId}`;
-        const configTanques = await buscarDadosSupabase(ENDPOINTS.CONFIG_TANQUES, queryParamsConfig);
+        // Buscar configuração atual dos tanques para este posto usando o novo cliente Supabase
+        const configTanques = await fetchRecords('configuracao_tanques', {
+          equals: { posto: postId }
+        });
         
         if (configTanques && configTanques.length > 0) {
           const config = configTanques[0];
@@ -215,19 +216,11 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
         let response;
         
         if (configId) {
-          // Atualizar registro existente
-          response = await enviarParaSupabase(
-            `${ENDPOINTS.CONFIG_TANQUES}?id=eq.${configId}`,
-            dadosConfig,
-            'PATCH'
-          );
+          // Atualizar registro existente usando o novo cliente Supabase
+          response = await updateData('configuracao_tanques', configId, dadosConfig);
         } else {
-          // Criar novo registro
-          response = await enviarParaSupabase(
-            ENDPOINTS.CONFIG_TANQUES,
-            dadosConfig,
-            'POST'
-          );
+          // Criar novo registro usando o novo cliente Supabase
+          response = await insertData('configuracao_tanques', dadosConfig);
         }
         
         if (response) {
@@ -331,13 +324,19 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
         let recebimentos = [];
         
         try {
-          // Buscar abastecimentos usando a nova função
-          const queryParamsAbastecimentos = `posto=eq.${postId}&order=created_at.desc&limit=50`;
-          abastecimentos = await buscarDadosSupabase(ENDPOINTS.ABASTECIMENTOS, queryParamsAbastecimentos) || [];
+          // Buscar abastecimentos usando o novo cliente Supabase
+          abastecimentos = await fetchRecords('abastecimentos_postos', {
+            equals: { posto: postId },
+            order: { created_at: 'desc' },
+            limit: 50
+          }) || [];
           
-          // Buscar recebimentos usando a nova função
-          const queryParamsRecebimentos = `posto=eq.${postId}&order=created_at.desc&limit=50`;
-          recebimentos = await buscarDadosSupabase(ENDPOINTS.RECEBIMENTOS, queryParamsRecebimentos) || [];
+          // Buscar recebimentos usando o novo cliente Supabase
+          recebimentos = await fetchRecords('recebimentos_combustivel', {
+            equals: { posto: postId },
+            order: { created_at: 'desc' },
+            limit: 50
+          }) || [];
         } catch (apiError) {
           console.log("Erro ao buscar dados da API, usando apenas configurações locais:", apiError);
           // Continue com arrays vazios se a API falhar
