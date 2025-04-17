@@ -3,6 +3,9 @@ import { useAuth } from "@/context/AuthContext";
 
 // Definindo o tipo User para uso interno do hook
 interface User {
+  id?: number;
+  name?: string;
+  email?: string;
   role?: string;
   baseId?: number;
   basename?: string;
@@ -64,9 +67,11 @@ export function useBasePermission(): BasePermissionHook {
       return route === '/' || route === '/vehicles' || route === '/refueling';
     }
     
-    // Se tiver basename = "Line Hall", permitir acesso a line-hall
-    if (user.basename?.toLowerCase() === 'line hall') {
+    // Se tiver basename "Line Hall" ou baseId=11, permitir acesso a line-hall
+    if (user.basename?.toLowerCase() === 'line hall' || user.baseId === 11) {
+      // Agora damos acesso explícito ao Line Hall
       if (route === '/line-hall') {
+        console.log("LIBERANDO ACESSO A LINE HALL para usuário:", user.email);
         return true;
       }
     }
@@ -93,7 +98,9 @@ export function useBasePermission(): BasePermissionHook {
     }
     
     // Permitir acesso a rotas básicas para todos os usuários
-    return route === '/' || route === '/vehicles' || route === '/refueling';
+    const hasBasicAccess = route === '/' || route === '/vehicles' || route === '/refueling';
+    console.log(`Verificando acesso para rota ${route}: ${hasBasicAccess}`);
+    return hasBasicAccess;
   }, [user]);
   
   // Obtém todas as rotas que o usuário tem permissão para acessar
