@@ -53,9 +53,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   // Links de navegação
   const navLinks = [
     { href: '/', label: 'Dashboard', icon: BarChart4 },
-    { href: '/veiculos', label: 'Veículos', icon: Car },
-    { href: '/manutencoes', label: 'Manutenções', icon: Wrench },
-    { href: '/pneus', label: 'Pneus', icon: CircleDollarSign },
+    { href: '/vehicles', label: 'Veículos', icon: Car },
+    { href: '/maintenance', label: 'Manutenções', icon: Wrench },
+    { href: '/tires', label: 'Pneus', icon: CircleDollarSign },
     { 
       href: '#', 
       label: 'Abastecimento',
@@ -64,29 +64,29 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       expanded: postosExpanded,
       toggle: () => setPostosExpanded(!postosExpanded),
       submenu: [
-        { href: '/postos/osasco', label: 'Posto Osasco' },
-        { href: '/postos/guarulhos', label: 'Posto Guarulhos' },
-        { href: '/postos/saopaulo', label: 'Posto São Paulo' },
-        { href: '/postos/campinas', label: 'Posto Campinas' },
-        { href: '/postos/abc', label: 'Posto ABC' },
-        { href: '/postos/socorro', label: 'Posto Socorro' },
-        { href: '/postos/sorocaba', label: 'Posto Sorocaba' },
-        { href: '/postos/historico', label: 'Histórico Geral' },
+        { href: '/posto/osasco', label: 'Posto Osasco' },
+        { href: '/posto/guarulhos', label: 'Posto Guarulhos' },
+        { href: '/posto/saopaulo', label: 'Posto São Paulo' },
+        { href: '/posto/campinas', label: 'Posto Campinas' },
+        { href: '/posto/abc', label: 'Posto ABC' },
+        { href: '/posto/socorro', label: 'Posto Socorro' },
+        { href: '/posto/sorocaba', label: 'Posto Sorocaba' },
+        { href: '/postos/historico-geral', label: 'Histórico Geral' },
         { href: '/postos/historico-patio', label: 'Histórico Pátio' },
       ]
     },
-    { href: '/multas', label: 'Multas', icon: ReceiptText },
-    { href: '/linehall', label: 'Line Hall', icon: Truck },
-    { href: '/usuarios', label: 'Usuários', icon: Users },
+    { href: '/fines', label: 'Multas', icon: ReceiptText },
+    { href: '/line-hall', label: 'Line Hall', icon: Truck },
+    { href: '/users', label: 'Usuários', icon: Users },
     { href: '/bases', label: 'Bases', icon: Building2 },
   ];
 
   // Expandir automaticamente Abastecimento se estivermos em uma página de posto
   React.useEffect(() => {
-    if (location.startsWith('/postos') && !postosExpanded) {
+    if ((location.startsWith('/postos') || location.startsWith('/posto/')) && !postosExpanded) {
       setPostosExpanded(true);
     }
-  }, [location]);
+  }, [location, postosExpanded]);
 
   // Verificar se o link está ativo
   const isActive = (href: string) => {
