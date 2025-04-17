@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { ENDPOINTS, buscarDadosSupabase } from '@/constants/supabase';
 import { deleteRecord, deleteRecords, fetchRecords } from '@/lib/supabase-client';
 
 interface HistoricoAbastecimentosProps {
@@ -35,10 +34,8 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
       console.log("[FETCH] Buscando abastecimentos para o posto:", postId);
       
       // Usando o cliente Supabase para buscar dados
-      const data = await fetchRecords(ENDPOINTS.ABASTECIMENTOS, {
-        filterColumn: 'posto',
-        filterValue: postId,
-        // Removemos ordenação temporariamente devido ao erro de nome de coluna
+      const data = await fetchRecords('abastecimentos_postos', {
+        equals: { posto: postId },
         limit: 100
       });
       
@@ -101,7 +98,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
         console.log("Iniciando exclusão do registro com ID:", id);
         
         // Usando o cliente Supabase para excluir o registro
-        await deleteRecord(ENDPOINTS.ABASTECIMENTOS, id);
+        await deleteRecord('abastecimentos_postos', id);
         
         console.log("Registro excluído com sucesso");
         
@@ -224,8 +221,18 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
         setIsLoading(true);
         console.log("[LIMPAR HISTÓRICO] Iniciando limpeza para o posto:", postId);
         
-        // Usando o cliente Supabase para apagar registros com base no filtro de posto
-        await deleteRecords(ENDPOINTS.ABASTECIMENTOS, 'posto', postId);
+        // Busca todos os IDs de abastecimentos para este posto
+        const registros = await fetchRecords('abastecimentos_postos', {
+          equals: { posto: postId }
+        });
+        
+        if (registros.length > 0) {
+          // Extrai os IDs para excluir
+          const ids = registros.map(reg => reg.id);
+          
+          // Exclui todos os registros de uma vez
+          await deleteRecords('abastecimentos_postos', ids);
+        }
         
         console.log("[LIMPAR HISTÓRICO] Registros excluídos com sucesso");
         
