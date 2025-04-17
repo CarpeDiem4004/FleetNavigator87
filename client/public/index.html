@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Murici On Fleet - Sistema de Gestão de Frotas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f7fa;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      padding: 2rem;
+      max-width: 800px;
+      width: 100%;
+      text-align: center;
+    }
+    h1 {
+      color: #1f2937;
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+    }
+    p {
+      color: #4b5563;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+    .postos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .posto-card {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 1.25rem;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .posto-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    .posto-name {
+      color: #3b82f6;
+      font-weight: 600;
+      font-size: 1.2rem;
+      margin-top: 0.5rem;
+    }
+    .icon {
+      font-size: 2rem;
+      color: #3b82f6;
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Sistema de Abastecimento Murici On Fleet</h1>
+      <p>Selecione o posto para acessar o sistema de abastecimento:</p>
+      
+      <div class="postos-grid">
+        <a href="/posto/osasco.html" class="posto-card">
+          <div class="icon">⛽</div>
+          <div class="posto-name">Osasco</div>
+        </a>
+        <a href="/posto/guarulhos.html" class="posto-card">
+          <div class="icon">⛽</div>
+          <div class="posto-name">Guarulhos</div>
+        </a>
+        <a href="/posto/saopaulo.html" class="posto-card">
+          <div class="icon">⛽</div>
+          <div class="posto-name">São Paulo</div>
+        </a>
+        <a href="/posto/campinas.html" class="posto-card">
+          <div class="icon">⛽</div>
+          <div class="posto-name">Campinas</div>
+        </a>
+        <a href="/posto/abc.html" class="posto-card">
+          <div class="icon">⛽</div>
+          <div class="posto-name">ABC</div>
+        </a>
+        <a href="/posto/socorro.html" class="posto-card">
+          <div class="icon">⛽</div>
+          <div class="posto-name">Socorro</div>
+        </a>
+        <a href="/posto/sorocaba.html" class="posto-card">
+          <div class="icon">⛽</div>
+          <div class="posto-name">Sorocaba</div>
+        </a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
