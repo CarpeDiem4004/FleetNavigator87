@@ -34,6 +34,11 @@ import HistoricoGeralPage from "@/pages/postos/HistoricoGeralPage";
 import HistoricoPatioPage from "@/pages/postos/HistoricoPatioPage";
 import SupabaseDiagnostico from "@/pages/diagnostico/SupabaseDiagnostico";
 
+// Importação das novas páginas
+import FleetManagement from "@/pages/fleet-management";
+import Accidents from "@/pages/accidents";
+import WorkSafety from "@/pages/work-safety";
+
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
 import GuarulhosPublic from "@/pages/postos/public/GuarulhosPublic";

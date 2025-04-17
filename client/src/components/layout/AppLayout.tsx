@@ -13,7 +13,9 @@ import {
   BarChart4,
   MenuIcon,
   X,
-  LogOut
+  LogOut,
+  AlertCircle,
+  ShieldCheck
 } from 'lucide-react';
 import backgroundImage from '../../assets/background.jpeg';
 import { Button } from '@/components/ui/button';
@@ -53,6 +55,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   // Links de navegação
   const navLinks = [
     { href: '/', label: 'Dashboard', icon: BarChart4 },
+    { href: '/fleet-management', label: 'Gestão de Frota', icon: Truck },
     { href: '/vehicles', label: 'Veículos', icon: Car },
     { href: '/maintenance', label: 'Manutenções', icon: Wrench },
     { href: '/tires', label: 'Pneus', icon: CircleDollarSign },
@@ -77,6 +80,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     },
     { href: '/fines', label: 'Multas', icon: ReceiptText },
     { href: '/line-hall', label: 'Line Hall', icon: Truck },
+    { href: '/accidents', label: 'Sinistros e Roubos', icon: AlertCircle },
+    { href: '/work-safety', label: 'Segurança do Trabalho', icon: ShieldCheck },
     { href: '/users', label: 'Usuários', icon: Users },
     { href: '/bases', label: 'Bases', icon: Building2 },
   ];
