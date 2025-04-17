@@ -40,7 +40,9 @@ import ABCPublic from "@/pages/postos/public/ABCPublic";
 import SocorroPublic from "@/pages/postos/public/SocorroPublic";
 import SorocabaPublic from "@/pages/postos/public/SorocabaPublic";
 
-// Importação do componente de redirecionamento
+// Importação dos componentes simplificados de posto
+import PostoLoginSimples from "@/pages/postos/login/PostoLoginSimples";
+import PostoFormSimples from "@/pages/postos/PostoFormSimples";
 import PostoRedirectHandler from "@/components/redirects/PostoRedirectHandler";
 
 function App() {
@@ -85,9 +87,9 @@ function App() {
           
           {/* Rotas para login e dashboard dos postos - DEVE VIR ANTES DAS ROTAS PROTEGIDAS */}
           <Route path="/posto/:postoCode">
-            <PostoLoginPage />
+            <PostoLoginSimples />
           </Route>
-          <ProtectedRoute path="/posto/:postoCode/dashboard" component={PostoDashboard} />
+          <ProtectedRoute path="/posto/:postoCode/dashboard" component={PostoFormSimples} />
           
           {/* Rotas públicas para os postos com redirecionamento direto */}
           <Route path="/public/posto/:postoCode">
