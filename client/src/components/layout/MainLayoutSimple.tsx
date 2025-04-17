@@ -146,7 +146,9 @@ const MainLayoutSimple: React.FC<MainLayoutSimpleProps> = ({ children }) => {
 
   // Função para verificar se a localização atual é um posto ou página relacionada
   const isCurrentLocationPosto = () => {
-    return location.startsWith('/posto/') || location === '/postos/historico-geral';
+    return location.startsWith('/posto/') || 
+           location === '/postos/historico-geral' || 
+           location === '/postos/historico-patio';
   };
 
   // Função para obter o ID do posto atual da URL
@@ -261,7 +263,19 @@ const MainLayoutSimple: React.FC<MainLayoutSimpleProps> = ({ children }) => {
                             location === "/postos/historico-geral" ? "font-medium text-primary" : "text-muted-foreground"
                           )}
                         >
-                          <span>Histórico Unificado</span>
+                          <span>Histórico de Abastecimentos</span>
+                        </Link>
+                        
+                        {/* Link para histórico do pátio */}
+                        <Link 
+                          href="/postos/historico-patio"
+                          onClick={closeSidebar}
+                          className={cn(
+                            "flex items-center gap-2 rounded-md px-2 py-1 text-sm transition-all hover:text-primary",
+                            location === "/postos/historico-patio" ? "font-medium text-primary" : "text-muted-foreground"
+                          )}
+                        >
+                          <span>Histórico do Pátio</span>
                         </Link>
                         
                         {/* Links para todos os postos */}
