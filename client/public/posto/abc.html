@@ -173,54 +173,174 @@
       </div>
       
       <form id="postoForm">
-        <div class="form-group">
-          <label for="placa">Placa do Veículo</label>
-          <input type="text" id="placa" name="placa" placeholder="Ex: ABC1234" required>
+        <div style="margin-bottom: 24px; border-bottom: 1px solid #e5e7eb; padding-bottom: 16px;">
+          <h3 style="font-size: 18px; font-weight: 600; color: #1e3a8a; margin-bottom: 16px;">Identificação do Veículo</h3>
+          
+          <div class="grid grid-2">
+            <div class="form-group">
+              <label for="placa">Placa do Veículo</label>
+              <input type="text" id="placa" name="placa" placeholder="Ex: ABC1234" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="motorista">Nome do Motorista</label>
+              <input type="text" id="motorista" name="motorista" placeholder="Nome completo" required>
+            </div>
+          </div>
+          
+          <div class="grid grid-2">
+            <div class="form-group">
+              <label for="km">KM Atual</label>
+              <input type="number" id="km" name="km" placeholder="Ex: 12500" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="tipoVeiculo">Tipo de Veículo</label>
+              <select id="tipoVeiculo" name="tipoVeiculo" required>
+                <option value="cavalo_mecanico">Cavalo Mecânico</option>
+                <option value="carreta">Carreta</option>
+                <option value="van">Van</option>
+                <option value="utilitario">Utilitário</option>
+              </select>
+            </div>
+          </div>
         </div>
         
-        <div class="form-group">
-          <label for="motorista">Nome do Motorista</label>
-          <input type="text" id="motorista" name="motorista" placeholder="Nome completo" required>
-        </div>
-        
-        <div class="grid grid-2">
-          <div class="form-group">
-            <label for="km">KM Atual</label>
-            <input type="number" id="km" name="km" placeholder="Ex: 12500" required>
+        <div style="margin-bottom: 24px; border-bottom: 1px solid #e5e7eb; padding-bottom: 16px;">
+          <h3 style="font-size: 18px; font-weight: 600; color: #1e3a8a; margin-bottom: 16px;">Registro de Abastecimento</h3>
+          
+          <div class="grid grid-2">
+            <div class="form-group">
+              <label for="litros">Litros Abastecidos</label>
+              <input type="number" id="litros" name="litros" step="0.01" placeholder="Ex: 150.5" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="tipo">Tipo de Combustível</label>
+              <select id="tipo" name="tipo" required>
+                <option value="diesel">Diesel</option>
+                <option value="arla">ARLA</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="grid grid-2">
+            <div class="form-group">
+              <label for="valorLitro">Valor por Litro (R$)</label>
+              <input type="number" id="valorLitro" name="valorLitro" step="0.01" placeholder="Ex: 4.89">
+            </div>
+            
+            <div class="form-group">
+              <label for="bomba">Identificação da Bomba</label>
+              <input type="text" id="bomba" name="bomba" placeholder="Ex: Bomba 01">
+            </div>
           </div>
           
           <div class="form-group">
-            <label for="litros">Litros Abastecidos</label>
-            <input type="number" id="litros" name="litros" step="0.01" placeholder="Ex: 150.5" required>
+            <label for="observacaoAbastecimento">Observações do Abastecimento</label>
+            <input type="text" id="observacaoAbastecimento" name="observacaoAbastecimento" placeholder="Observações adicionais">
           </div>
         </div>
         
-        <div class="grid grid-2">
-          <div class="form-group">
-            <label for="tipo">Tipo de Combustível</label>
-            <select id="tipo" name="tipo" required>
-              <option value="diesel">Diesel</option>
-              <option value="arla">ARLA</option>
-            </select>
+        <div style="margin-bottom: 24px; border-bottom: 1px solid #e5e7eb; padding-bottom: 16px;">
+          <h3 style="font-size: 18px; font-weight: 600; color: #1e3a8a; margin-bottom: 16px;">Movimentação de Pátio</h3>
+          
+          <div class="grid grid-2">
+            <div class="form-group">
+              <label for="movimento">Tipo de Movimentação</label>
+              <select id="movimento" name="movimento" required>
+                <option value="entrada">Entrada (pernoite)</option>
+                <option value="saida_rota">Saída para Rota</option>
+                <option value="saida_manutencao">Saída para Manutenção</option>
+                <option value="transferencia">Transferência</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="dataMovimento">Data/Hora</label>
+              <input type="datetime-local" id="dataMovimento" name="dataMovimento">
+            </div>
+          </div>
+          
+          <div class="grid grid-2">
+            <div class="form-group">
+              <label for="origem">Origem</label>
+              <input type="text" id="origem" name="origem" placeholder="Ex: Centro de Distribuição">
+            </div>
+            
+            <div class="form-group">
+              <label for="destino">Destino</label>
+              <input type="text" id="destino" name="destino" placeholder="Ex: São Paulo">
+            </div>
           </div>
           
           <div class="form-group">
-            <label for="movimento">Tipo de Movimentação</label>
-            <select id="movimento" name="movimento" required>
-              <option value="entrada">Entrada (pernoite)</option>
-              <option value="saida_rota">Saída para Rota</option>
-              <option value="saida_manutencao">Saída para Manutenção</option>
-            </select>
+            <label for="observacaoMovimento">Observações da Movimentação</label>
+            <input type="text" id="observacaoMovimento" name="observacaoMovimento" placeholder="Observações adicionais">
           </div>
         </div>
         
-        <div class="form-group">
-          <label for="destino">Destino (opcional)</label>
-          <input type="text" id="destino" name="destino" placeholder="Ex: São Paulo">
+        <div style="margin-bottom: 24px;">
+          <h3 style="font-size: 18px; font-weight: 600; color: #1e3a8a; margin-bottom: 16px;">Recebimento de Combustível</h3>
+          
+          <div class="form-group">
+            <label>Houve recebimento de combustível hoje?</label>
+            <div style="display: flex; margin-top: 8px;">
+              <label style="margin-right: 16px; display: flex; align-items: center;">
+                <input type="radio" name="houveFornecimento" value="sim" style="width: auto; margin-right: 8px;"> Sim
+              </label>
+              <label style="display: flex; align-items: center;">
+                <input type="radio" name="houveFornecimento" value="nao" style="width: auto; margin-right: 8px;" checked> Não
+              </label>
+            </div>
+          </div>
+          
+          <div id="fornecimentoFields" style="display: none; margin-top: 16px; padding: 16px; background-color: #f8fafc; border-radius: 4px; border: 1px solid #e5e7eb;">
+            <div class="grid grid-2">
+              <div class="form-group">
+                <label for="tipoFornecimento">Tipo de Combustível</label>
+                <select id="tipoFornecimento" name="tipoFornecimento">
+                  <option value="diesel">Diesel</option>
+                  <option value="arla">ARLA</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="qtdLitrosFornecimento">Quantidade em Litros</label>
+                <input type="number" id="qtdLitrosFornecimento" name="qtdLitrosFornecimento" step="0.01" placeholder="Ex: 5000">
+              </div>
+            </div>
+            
+            <div class="grid grid-2">
+              <div class="form-group">
+                <label for="fornecedor">Fornecedor</label>
+                <input type="text" id="fornecedor" name="fornecedor" placeholder="Ex: Petrobras">
+              </div>
+              
+              <div class="form-group">
+                <label for="notaFiscal">Nota Fiscal</label>
+                <input type="text" id="notaFiscal" name="notaFiscal" placeholder="Ex: NF-e 12345">
+              </div>
+            </div>
+          </div>
         </div>
         
         <button type="submit" class="btn" id="submitBtn">Enviar Registro</button>
       </form>
+      
+      <script>
+        // Toggle para exibir/ocultar campos de fornecimento
+        document.querySelectorAll('input[name="houveFornecimento"]').forEach(radio => {
+          radio.addEventListener('change', function() {
+            const fornecimentoFields = document.getElementById('fornecimentoFields');
+            if (this.value === 'sim') {
+              fornecimentoFields.style.display = 'block';
+            } else {
+              fornecimentoFields.style.display = 'none';
+            }
+          });
+        });
+      </script>
     </div>
     
     <div class="card">
@@ -259,11 +379,65 @@
             const data = new Date(item.createdAt).toLocaleString();
             const div = document.createElement('div');
             div.className = 'history-item';
-            div.innerHTML = `
-              <p><strong>Placa:</strong> ${item.placa} | <strong>Motorista:</strong> ${item.motorista}</p>
-              <p><strong>Litros:</strong> ${item.litros} | <strong>Tipo:</strong> ${item.tipo.toUpperCase()}</p>
-              <p class="text-small">${data}</p>
+            
+            // Determinar a cor do cabeçalho com base no tipo de movimento
+            let headerColor = '#4b5563'; // Cor padrão (cinza)
+            if (item.movimento === 'entrada') {
+              headerColor = '#15803d'; // Verde para entrada
+            } else if (item.movimento === 'saida_rota') {
+              headerColor = '#0369a1'; // Azul para saída em rota
+            } else if (item.movimento === 'saida_manutencao') {
+              headerColor = '#b91c1c'; // Vermelho para saída em manutenção
+            }
+            
+            // Formatar detalhes do movimento
+            let movimentoTexto = 'Desconhecido';
+            switch(item.movimento) {
+              case 'entrada': movimentoTexto = 'Entrada (pernoite)'; break;
+              case 'saida_rota': movimentoTexto = 'Saída para Rota'; break;
+              case 'saida_manutencao': movimentoTexto = 'Saída para Manutenção'; break;
+              case 'transferencia': movimentoTexto = 'Transferência'; break;
+            }
+            
+            // Construir HTML
+            let htmlContent = `
+              <div style="border-left: 4px solid ${headerColor}; padding-left: 10px; margin-bottom: 8px;">
+                <strong style="font-size: 15px;">${item.placa} - ${item.motorista}</strong>
+                <span style="float: right; font-size: 12px; color: #6b7280;">${data}</span>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                <div>
+                  <p><strong>Veículo:</strong> ${item.tipoVeiculo || 'Não especificado'}</p>
+                  <p><strong>KM:</strong> ${item.km || '0'}</p>
+                </div>
+                <div>
+                  <p><strong>Movimento:</strong> ${movimentoTexto}</p>
+                  <p><strong>Destino:</strong> ${item.destino || 'Não especificado'}</p>
+                </div>
+              </div>
+              <div style="background-color: #f9fafb; padding: 8px; border-radius: 4px; margin-top: 4px;">
+                <p><strong>Abastecimento:</strong> ${item.litros} litros (${item.tipo.toUpperCase()}) - Bomba: ${item.bomba || 'N/A'}</p>
             `;
+            
+            // Adicionar informações de recebimento se houver
+            if (item.houveFornecimento && item.recebimento) {
+              htmlContent += `
+                <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e5e7eb;">
+                  <p><strong>Recebimento:</strong> ${item.recebimento.qtdLitrosFornecimento} litros de ${item.recebimento.tipoFornecimento.toUpperCase()}</p>
+                  <p><strong>Fornecedor:</strong> ${item.recebimento.fornecedor || 'Não especificado'} | <strong>NF:</strong> ${item.recebimento.notaFiscal || 'N/A'}</p>
+                </div>
+              `;
+            }
+            
+            // Fechar a div de fundo cinza
+            htmlContent += `</div>`;
+            
+            // Adicionar um indicador se o registro foi criado offline
+            if (item.offlineMode) {
+              htmlContent += `<p class="text-small" style="margin-top: 6px; color: #dc2626; font-style: italic;">⚠️ Criado em modo offline - aguardando sincronização</p>`;
+            }
+            
+            div.innerHTML = htmlContent;
             historicoEl.appendChild(div);
           });
         } catch (error) {
@@ -309,20 +483,49 @@
         
         // Coletar dados do formulário
         const formData = new FormData(form);
+        
+        // Obter valores do recebimento (se aplicável)
+        const houveFornecimento = formData.get('houveFornecimento') === 'sim';
+        
+        // Preparar dados básicos
         const dados = {
           id: Date.now(),
+          // Dados do veículo
           placa: formData.get('placa'),
           motorista: formData.get('motorista'),
           km: formData.get('km'),
+          tipoVeiculo: formData.get('tipoVeiculo'),
+          
+          // Dados de abastecimento
           litros: formData.get('litros'),
           tipo: formData.get('tipo'),
+          valorLitro: formData.get('valorLitro') || null,
+          bomba: formData.get('bomba') || '',
+          observacaoAbastecimento: formData.get('observacaoAbastecimento') || '',
+          
+          // Dados de movimentação
           movimento: formData.get('movimento'),
+          dataMovimento: formData.get('dataMovimento') || new Date().toISOString(),
+          origem: formData.get('origem') || '',
           destino: formData.get('destino') || '',
+          observacaoMovimento: formData.get('observacaoMovimento') || '',
+          
+          // Dados de recebimento (se aplicável)
+          houveFornecimento: houveFornecimento,
+          recebimento: houveFornecimento ? {
+            tipoFornecimento: formData.get('tipoFornecimento'),
+            qtdLitrosFornecimento: formData.get('qtdLitrosFornecimento'),
+            fornecedor: formData.get('fornecedor') || '',
+            notaFiscal: formData.get('notaFiscal') || ''
+          } : null,
+          
+          // Metadados
           postoId: 'abc',
           postoNome: 'ABC',
           data: new Date().toISOString(),
           createdAt: new Date().toISOString(),
-          usuarioNome: 'Operador Posto'
+          usuarioNome: 'Operador Posto',
+          offlineMode: true
         };
         
         // Simular um pequeno atraso para feedback
