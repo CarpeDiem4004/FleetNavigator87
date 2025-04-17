@@ -1,11 +1,27 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { storage } from '../storage';
 import { z } from 'zod';
 import { insertBaseSchema } from '@shared/schema';
 
+// Middleware para verificar autenticação em rotas protegidas
+const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ message: "Não autenticado" });
+};
+
+// Middleware para verificar se o usuário é admin
+const isAdmin = (req: Request, res: Response, next: NextFunction) => {
+  if (req.isAuthenticated() && req.user && req.user.role === 'admin') {
+    return next();
+  }
+  res.status(403).json({ message: "Acesso negado. Permissão de administrador necessária." });
+};
+
 const router = (app: any) => {
   // Obter todas as bases
-  app.get('/api/bases', async (req: Request, res: Response) => {
+  app.get('/api/bases', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const bases = await storage.getAllBases();
       res.json(bases);
@@ -16,7 +32,7 @@ const router = (app: any) => {
   });
 
   // Obter uma base específica
-  app.get('/api/bases/:id', async (req: Request, res: Response) => {
+  app.get('/api/bases/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const base = await storage.getBase(id);
@@ -33,7 +49,7 @@ const router = (app: any) => {
   });
 
   // Criar uma nova base
-  app.post('/api/bases', async (req: Request, res: Response) => {
+  app.post('/api/bases', isAdmin, async (req: Request, res: Response) => {
     try {
       const baseData = insertBaseSchema.parse(req.body);
       const newBase = await storage.createBase(baseData);
@@ -48,7 +64,7 @@ const router = (app: any) => {
   });
 
   // Atualizar uma base existente
-  app.patch('/api/bases/:id', async (req: Request, res: Response) => {
+  app.patch('/api/bases/:id', isAdmin, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const baseData = insertBaseSchema.partial().parse(req.body);
@@ -70,7 +86,7 @@ const router = (app: any) => {
   });
 
   // Excluir uma base
-  app.delete('/api/bases/:id', async (req: Request, res: Response) => {
+  app.delete('/api/bases/:id', isAdmin, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const deleted = await storage.deleteBase(id);

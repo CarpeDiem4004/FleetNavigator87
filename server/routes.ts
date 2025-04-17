@@ -7,6 +7,7 @@ import {
   insertLineHallSchema, insertUserSchema
 } from "@shared/schema";
 import { setupAuth } from "./auth";
+import basesRoutes from "./routes/bases";
 
 // Middleware para verificar autenticação em rotas protegidas
 const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
@@ -28,77 +29,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Configuração do passport para autenticação
   setupAuth(app);
   
-  // Base routes
-  app.get("/api/bases", isAuthenticated, async (req, res) => {
-    try {
-      const bases = await storage.getAllBases();
-      return res.status(200).json(bases);
-    } catch (error) {
-      console.error("Error fetching bases:", error);
-      return res.status(500).json({ message: "Server error" });
-    }
-  });
-  
-  app.get("/api/bases/:id", isAuthenticated, async (req, res) => {
-    try {
-      const base = await storage.getBase(parseInt(req.params.id));
-      if (!base) {
-        return res.status(404).json({ message: "Base not found" });
-      }
-      return res.status(200).json(base);
-    } catch (error) {
-      console.error("Error fetching base:", error);
-      return res.status(500).json({ message: "Server error" });
-    }
-  });
-  
-  app.post("/api/bases", isAdmin, async (req, res) => {
-    try {
-      const result = insertBaseSchema.safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({ message: "Invalid base data", errors: result.error.format() });
-      }
-      
-      const newBase = await storage.createBase(result.data);
-      return res.status(201).json(newBase);
-    } catch (error) {
-      console.error("Error creating base:", error);
-      return res.status(500).json({ message: "Server error" });
-    }
-  });
-  
-  app.put("/api/bases/:id", isAdmin, async (req, res) => {
-    try {
-      const result = insertBaseSchema.partial().safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({ message: "Invalid base data", errors: result.error.format() });
-      }
-      
-      const updatedBase = await storage.updateBase(parseInt(req.params.id), result.data);
-      if (!updatedBase) {
-        return res.status(404).json({ message: "Base not found" });
-      }
-      
-      return res.status(200).json(updatedBase);
-    } catch (error) {
-      console.error("Error updating base:", error);
-      return res.status(500).json({ message: "Server error" });
-    }
-  });
-  
-  app.delete("/api/bases/:id", isAdmin, async (req, res) => {
-    try {
-      const success = await storage.deleteBase(parseInt(req.params.id));
-      if (!success) {
-        return res.status(404).json({ message: "Base not found" });
-      }
-      
-      return res.status(200).json({ message: "Base deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting base:", error);
-      return res.status(500).json({ message: "Server error" });
-    }
-  });
+  // Registra as rotas de bases utilizando o módulo separado
+  basesRoutes(app);
   
   // Vehicle routes
   app.get("/api/vehicles", isAuthenticated, async (req, res) => {
