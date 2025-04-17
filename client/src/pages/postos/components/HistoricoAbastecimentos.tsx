@@ -1,30 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { DatePicker } from "@/components/ui/date-picker";
-import { 
-  Fuel, 
-  Droplet, 
-  RefreshCw, 
-  Download, 
-  Search, 
-  FileSpreadsheet,
-  CalendarIcon
-} from 'lucide-react';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import React, { useState, useEffect } from 'react';
 import { ENDPOINTS, buscarDadosSupabase } from '@/constants/supabase';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 interface HistoricoAbastecimentosProps {
   postId: string;
