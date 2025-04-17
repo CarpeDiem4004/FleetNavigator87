@@ -106,8 +106,16 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       
       // Aguarda um breve momento antes de redirecionar para mostrar o toast
       setTimeout(() => {
-        // Redireciona para a página inicial de postos
-        window.location.href = "/postos";
+        // Verifica se está em uma URL pública
+        const isPublicPage = window.location.pathname.includes('/public');
+        
+        if (isPublicPage) {
+          // Se for uma página pública, volta para a página inicial dos postos públicos
+          window.location.href = "/";
+        } else {
+          // Se for uma página protegida, volta para a área de postos admin
+          window.location.href = "/postos";
+        }
       }, 1500);
       
       form.reset();
