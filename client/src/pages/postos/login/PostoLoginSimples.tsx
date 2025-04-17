@@ -1,23 +1,12 @@
-import React, { useState } from 'react';
-import { useParams, useLocation } from 'wouter';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useParams } from 'wouter';
 import { useAuth } from '@/context/AuthContext';
-import { Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-
-type PostoLoginParams = {
-  postoCode: string;
-};
+import ErrorPage from '@/pages/ErrorPage';
 
 // Mapeamento de códigos para nomes dos postos
 const postoNomes: Record<string, string> = {
@@ -30,95 +19,126 @@ const postoNomes: Record<string, string> = {
   sorocaba: 'Sorocaba'
 };
 
+type PostoParams = {
+  postoCode: string;
+};
+
 const PostoLoginSimples: React.FC = () => {
-  const params = useParams<PostoLoginParams>();
+  const [_, navigate] = useLocation();
+  const params = useParams<PostoParams>();
   const postoCode = params.postoCode?.toLowerCase() || '';
   const postoNome = postoNomes[postoCode] || postoCode.toUpperCase();
   
-  const [_, navigate] = useLocation();
-  const { login } = useAuth();
+  const { user, login, isLoading } = useAuth();
   const { toast } = useToast();
   
-  const [senha, setSenha] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [username, setUsername] = useState(postoCode);
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [connectError, setConnectError] = useState(false);
   
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    // Se o usuário já estiver autenticado, redireciona para o dashboard
+    if (user) {
+      navigate(`/posto/${postoCode}/dashboard`);
+    }
+  }, [user, postoCode, navigate]);
+  
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError('');
     
-    if (!postoCode) {
-      toast({
-        title: "Erro",
-        description: "Código do posto não identificado",
-        variant: "destructive"
-      });
+    if (!username.trim() || !password.trim()) {
+      setError('Preencha todos os campos.');
       return;
     }
     
-    setLoading(true);
-    
     try {
-      // Usando o código do posto como nome de usuário
-      await login(postoCode, senha);
-      
-      // Se o login for bem-sucedido, redireciona para o dashboard do posto
-      navigate(`/posto/${postoCode}/dashboard`);
-      
-      toast({
-        title: "Login realizado com sucesso",
-        description: `Bem-vindo ao sistema do posto ${postoNome}`,
-      });
-    } catch (error) {
-      console.error("Erro no login:", error);
-      toast({
-        title: "Falha no login",
-        description: "Senha incorreta. Por favor, tente novamente.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
+      await login(username, password);
+      // O redirecionamento será feito no useEffect quando o usuário for definido
+    } catch (err: any) {
+      if (err.message?.includes('ERR_CONNECTION_REFUSED') || 
+          err.message?.includes('Failed to fetch')) {
+        setConnectError(true);
+      } else {
+        setError(err.message || 'Falha no login. Verifique suas credenciais.');
+        toast({
+          title: "Erro de login",
+          description: err.message || 'Falha no login. Verifique suas credenciais.',
+          variant: "destructive"
+        });
+      }
     }
   };
   
+  if (connectError) {
+    return (
+      <ErrorPage 
+        title="Erro de Conexão"
+        message="Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente."
+        code="ERR_CONNECTION_REFUSED"
+      />
+    );
+  }
+  
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-background to-accent/20 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold">Posto {postoNome}</CardTitle>
-          <CardDescription>
-            Digite a senha para acessar o sistema de abastecimento
-          </CardDescription>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-2xl text-center font-bold">
+            Posto {postoNome}
+          </CardTitle>
+          <p className="text-center text-gray-500 text-sm">
+            Acesso ao sistema de abastecimento
+          </p>
         </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="senha">Senha</Label>
+              <Label htmlFor="username">Usuário do Posto</Label>
               <Input
-                id="senha"
-                type="password"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                placeholder="Digite sua senha"
-                required
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Nome do usuário"
+                autoComplete="username"
+                disabled={isLoading}
               />
             </div>
-          </CardContent>
-          <CardFooter>
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading}
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">Senha</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Sua senha"
+                autoComplete="current-password"
+                disabled={isLoading}
+              />
+            </div>
+            
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+                {error}
+              </div>
+            )}
+            
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isLoading}
             >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Entrando...
-                </>
-              ) : (
-                "Entrar"
-              )}
+              {isLoading ? "Entrando..." : "Entrar"}
             </Button>
-          </CardFooter>
-        </form>
+            
+            <div className="text-center text-sm text-gray-500">
+              <p>Usuário: nome do posto (ex: osasco)</p>
+              <p>Senha padrão: murici@2025</p>
+            </div>
+          </form>
+        </CardContent>
       </Card>
     </div>
   );
