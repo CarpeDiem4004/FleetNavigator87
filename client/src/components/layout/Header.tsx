@@ -80,21 +80,11 @@ const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen }) => {
           </div>
           <div className="relative">
             <span className="text-sm font-medium">Base: </span>
-            <Select defaultValue={user?.baseId?.toString() || "1"}>
-              <SelectTrigger className="bg-gray-100 border border-gray-300 text-gray-700 py-1 px-3 rounded-md text-sm w-44">
-                <SelectValue placeholder="Selecione uma base" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Bases</SelectLabel>
-                  {bases?.map((base: any) => (
-                    <SelectItem key={base.id} value={base.id.toString()}>
-                      {base.name} ({base.location})
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+            {user?.baseId ? (
+              <span className="text-sm ml-1">{user.basename || 'Global'}</span>
+            ) : (
+              <span className="text-sm ml-1">Global</span>
+            )}
           </div>
         </div>
       </div>
