@@ -25,6 +25,9 @@ import PostoOsasco from "@/pages/postos/Osasco";
 import PostoGuarulhos from "@/pages/postos/Guarulhos";
 import PostoSaoPaulo from "@/pages/postos/SaoPaulo";
 import PostoCampinas from "@/pages/postos/Campinas";
+import PostoABC from "@/pages/postos/ABC";
+import PostoSocorro from "@/pages/postos/Socorro";
+import PostoSorocaba from "@/pages/postos/Sorocaba";
 
 function App() {
   return (
@@ -71,6 +74,15 @@ function App() {
           </Route>
           <Route path="/posto/campinas">
             <PostoCampinas />
+          </Route>
+          <Route path="/posto/abc">
+            <PostoABC />
+          </Route>
+          <Route path="/posto/socorro">
+            <PostoSocorro />
+          </Route>
+          <Route path="/posto/sorocaba">
+            <PostoSorocaba />
           </Route>
           
           <Route>

@@ -38,8 +38,12 @@ const PostoLayout: React.FC<PostoLayoutProps> = ({ children, nomePosto }) => {
       
       {/* Conteúdo principal */}
       <main className="container py-6">
-        <Tabs defaultValue="abastecimento" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs defaultValue="status" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="status" className="flex items-center gap-2">
+              <Fuel className="h-4 w-4" />
+              Status do Tanque
+            </TabsTrigger>
             <TabsTrigger value="abastecimento" className="flex items-center gap-2">
               <Fuel className="h-4 w-4" />
               Abastecimento
