@@ -16,6 +16,7 @@ import SignIn from "@/pages/SignIn";
 import RegisterNew from "@/pages/RegisterNew";
 import AccessDeniedPage from "@/pages/access-denied";
 import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
+import LineHallRedirect from "@/components/permission/LineHallRedirect";
 import { AuthProvider } from "@/context/AuthContext";
 
 function App() {
@@ -33,8 +34,12 @@ function App() {
             <AccessDeniedPage />
           </Route>
           
+          {/* Componente que redirecionará usuários Line Hall para a página correta */}
+          <Route path="/">
+            <LineHallRedirect />
+          </Route>
+          
           {/* Rotas protegidas com verificação de permissão de base */}
-          <ProtectedRoute path="/" component={DashboardNew} />
           <ProtectedRoute path="/vehicles" component={VehiclesNew} />
           <ProtectedRoute path="/maintenance" component={MaintenanceNew} />
           <ProtectedRoute path="/tires" component={TiresNew} />

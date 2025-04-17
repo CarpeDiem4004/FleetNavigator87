@@ -89,15 +89,11 @@ export function useBasePermission(): BasePermissionHook {
       return false;
     }
     
-    // Handle Line Hall explicitamente - ACESSO EXCLUSIVO sem dashboard/veículos
+    // Line Hall - permite acesso somente ao Line Hall e bloqueia outras rotas
     if (user.basename === "Line Hall" || user.baseId === 11) {
-      // Usuário da base Line Hall só pode acessar Line Hall
-      if (route === '/line-hall') {
-        console.log("Liberando acesso ao Line Hall para:", user.email);
-        return true;
-      }
-      console.log("Usuário Line Hall tentando acessar rota não permitida:", route);
-      return false; // Bloqueia acesso a qualquer outra rota
+      // Se o usuário for Line Hall, só mostra Line Hall no menu
+      console.log("Verificando permissões do usuário Line Hall para rota:", route, user.basename, user.baseId);
+      return route === '/line-hall';
     }
     
     // Verificar se o usuário tem uma base associada e se a rota corresponde a essa base
