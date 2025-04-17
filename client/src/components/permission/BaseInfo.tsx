@@ -19,7 +19,7 @@ export const BaseInfo: React.FC = () => {
   const userWithBase = user as User | null;
   
   // Verifica se o usuário tem base associada
-  const baseName = userWithBase?.bases?.name || userWithBase?.basename;
+  const baseName = userWithBase?.basename || (userWithBase?.bases ? userWithBase.bases.name : undefined);
   
   if (!userWithBase?.baseId || !baseName) {
     return (
