@@ -70,7 +70,7 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
             Históricos
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <HistoricoAbastecimentos postId={id} />
+            <HistoricoAbastecimentos postId={id} showLimparButton={false} />
             <HistoricoMovimentacoes postId={id} />
           </div>
         </div>

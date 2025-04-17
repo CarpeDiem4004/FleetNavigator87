@@ -3,6 +3,7 @@ import { deleteRecord, deleteRecords, fetchRecords } from '@/lib/supabase-client
 
 interface HistoricoAbastecimentosProps {
   postId: string;
+  showLimparButton?: boolean;
 }
 
 interface Abastecimento {
@@ -20,7 +21,7 @@ interface Abastecimento {
   created_at: string;
 }
 
-const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postId }) => {
+const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postId, showLimparButton = true }) => {
   const [abastecimentos, setAbastecimentos] = useState<Abastecimento[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -270,16 +271,18 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
           <div className="flex items-center gap-4">
             <h2 className="text-2xl font-bold">Histórico de Abastecimentos</h2>
             
-            <button 
-              className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 flex items-center gap-1"
-              onClick={handleLimparHistorico}
-              disabled={isLoading}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              Limpar Histórico
-            </button>
+            {showLimparButton && (
+              <button 
+                className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 flex items-center gap-1"
+                onClick={handleLimparHistorico}
+                disabled={isLoading}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Limpar Histórico
+              </button>
+            )}
           </div>
           
           <div className="relative w-64">
@@ -320,7 +323,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
                   <th className="py-3 px-4 text-left font-medium text-gray-600">Projeto</th>
                   <th className="py-3 px-4 text-left font-medium text-gray-600">Posto</th>
                   <th className="py-3 px-4 text-left font-medium text-gray-600">Motorista</th>
-                  <th className="py-3 px-4 text-left font-medium text-gray-600">Ações</th>
+                  {showLimparButton && <th className="py-3 px-4 text-left font-medium text-gray-600">Ações</th>}
                 </tr>
               </thead>
               <tbody>
@@ -334,27 +337,29 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
                     <td className="py-3 px-4">{abast.project || '-'}</td>
                     <td className="py-3 px-4">{abast.posto}</td>
                     <td className="py-3 px-4">{abast.nome_motorista}</td>
-                    <td className="py-3 px-4">
-                      <div className="flex space-x-1">
-                        <button 
-                          className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-                          aria-label="Editar abastecimento"
-                        >
-                          Editar
-                        </button>
-                        <button 
-                          className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
-                          onClick={() => {
-                            console.log("Botão Excluir clicado para ID:", abast.id);
-                            handleExcluirAbastecimento(abast.id);
-                          }}
-                          disabled={isDeleting}
-                          aria-label="Excluir abastecimento"
-                        >
-                          Excluir
-                        </button>
-                      </div>
-                    </td>
+                    {showLimparButton && (
+                      <td className="py-3 px-4">
+                        <div className="flex space-x-1">
+                          <button 
+                            className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                            aria-label="Editar abastecimento"
+                          >
+                            Editar
+                          </button>
+                          <button 
+                            className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+                            onClick={() => {
+                              console.log("Botão Excluir clicado para ID:", abast.id);
+                              handleExcluirAbastecimento(abast.id);
+                            }}
+                            disabled={isDeleting}
+                            aria-label="Excluir abastecimento"
+                          >
+                            Excluir
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
