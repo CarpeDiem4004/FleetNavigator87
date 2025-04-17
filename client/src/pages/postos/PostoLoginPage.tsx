@@ -43,20 +43,30 @@ const PostoLoginPage: React.FC = () => {
   };
 
   useEffect(() => {
+    console.log("PostoLoginPage: Params recebidos:", params);
+    
     if (user) {
       // Se o usuário já estiver autenticado, redirecionar para a página do posto
       const postoCode = params?.postoCode;
+      console.log("PostoLoginPage: Usuário autenticado, redirecionando. postoCode:", postoCode);
+      
       if (postoCode && postosMap[postoCode]) {
+        console.log(`PostoLoginPage: Redirecionando para dashboard do posto ${postoCode}`);
         setLocation(`/posto/${postoCode}/dashboard`);
       } else {
+        console.log("PostoLoginPage: Posto não encontrado ou inválido, redirecionando para home");
         setLocation('/');
       }
     } else {
       const postoCode = params?.postoCode;
+      console.log("PostoLoginPage: Usuário não autenticado, preparando formulário. postoCode:", postoCode);
+      
       if (postoCode && postosMap[postoCode]) {
+        console.log(`PostoLoginPage: Configurando formulário para posto ${postoCode}`);
         setPostoInfo(postosMap[postoCode]);
         setPassword(SENHA_PADRAO); // Pré-preencher a senha padrão
       } else {
+        console.log("PostoLoginPage: Posto inválido ou não encontrado:", postoCode);
         toast({
           title: "Posto não encontrado",
           description: "O código do posto especificado não é válido.",

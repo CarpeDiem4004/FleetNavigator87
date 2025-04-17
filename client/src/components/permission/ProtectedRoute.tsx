@@ -30,19 +30,23 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
   if (publicPostoMatch && !user) {
     // Extrair o nome do posto da URL e redirecionar para a página de login do posto
     const postoCode = publicPostoMatch[1];
-    return <Redirect to={`/posto/${postoCode}`} />;
+    console.log(`Redirecionando de ${path} para /posto/${postoCode}`);
+    return <Route path={path}><Redirect to={`/posto/${postoCode}`} /></Route>;
   }
   
   // Se o usuário não estiver autenticado, redireciona para login
   if (!user) {
-    return <Redirect to="/login" />;
+    console.log(`Redirecionando de ${path} para /login (não autenticado)`);
+    return <Route path={path}><Redirect to="/login" /></Route>;
   }
   
   // Verifica se o usuário tem permissão para acessar a rota
   if (!hasPermission(path)) {
-    return <Redirect to="/acesso-negado" />;
+    console.log(`Redirecionando de ${path} para /acesso-negado (sem permissão)`);
+    return <Route path={path}><Redirect to="/acesso-negado" /></Route>;
   }
   
   // Usuário autenticado e com permissão, renderiza o componente
-  return <Component />;
+  console.log(`Renderizando componente para ${path} (usuário autenticado)`);
+  return <Route path={path}><Component /></Route>;
 };
