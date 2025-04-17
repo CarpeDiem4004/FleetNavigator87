@@ -35,8 +35,8 @@ const KPICard: React.FC<KPICardProps> = ({ kpi }) => {
   };
 
   return (
-    <Card>
-      <CardContent className="p-4">
+    <Card className="relative z-20">
+      <CardContent className="p-4 relative z-20">
         <div className="flex flex-col">
           <div className="flex justify-between items-start">
             <h3 className="text-sm font-medium text-muted-foreground mb-1">{name}</h3>
@@ -59,7 +59,7 @@ const KPICard: React.FC<KPICardProps> = ({ kpi }) => {
             </div>
             
             <div className={cn(
-              "flex items-center px-2 py-1 rounded-full",
+              "flex items-center px-2 py-1 rounded-full relative z-20",
               isPositive 
                 ? "bg-green-100 text-green-700" 
                 : "bg-red-100 text-red-700"

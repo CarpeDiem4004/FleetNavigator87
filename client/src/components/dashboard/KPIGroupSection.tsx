@@ -8,9 +8,9 @@ interface KPIGroupSectionProps {
 
 const KPIGroupSection: React.FC<KPIGroupSectionProps> = ({ group }) => {
   return (
-    <div className="mb-6">
-      <h2 className="text-lg font-semibold mb-3">{group.title}</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    <div className="mb-6 relative z-20">
+      <h2 className="text-lg font-semibold mb-3 relative z-20">{group.title}</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 relative z-20">
         {group.metrics.map((kpi, index) => (
           <KPICard key={`${group.title}-${index}`} kpi={kpi} />
         ))}

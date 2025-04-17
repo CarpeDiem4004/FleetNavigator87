@@ -113,18 +113,18 @@ const DashboardPage: React.FC = () => {
               Análise de desempenho da frota e indicadores estratégicos
             </p>
           </div>
-          <div className="mt-4 md:mt-0">
+          <div className="mt-4 md:mt-0 relative z-20">
             <Tabs defaultValue="kpis">
-              <TabsList>
-                <TabsTrigger value="kpis" className="flex items-center gap-2">
+              <TabsList className="relative z-20">
+                <TabsTrigger value="kpis" className="flex items-center gap-2 relative z-20">
                   <TrendingUp className="h-4 w-4" />
                   <span>KPIs</span>
                 </TabsTrigger>
-                <TabsTrigger value="charts" className="flex items-center gap-2">
+                <TabsTrigger value="charts" className="flex items-center gap-2 relative z-20">
                   <BarChart className="h-4 w-4" />
                   <span>Gráficos</span>
                 </TabsTrigger>
-                <TabsTrigger value="all" className="flex items-center gap-2">
+                <TabsTrigger value="all" className="flex items-center gap-2 relative z-20">
                   <PieChart className="h-4 w-4" />
                   <span>Todos</span>
                 </TabsTrigger>
@@ -134,10 +134,10 @@ const DashboardPage: React.FC = () => {
         </div>
 
         {/* Resumo de KPIs principais */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 relative z-20">
           {mainKPIs.map((kpi, index) => (
-            <Card key={`main-kpi-${index}`}>
-              <CardContent className="p-4">
+            <Card key={`main-kpi-${index}`} className="relative z-20">
+              <CardContent className="p-4 relative z-20">
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2">
                     {getIconForKPI(kpi.name)}
@@ -180,18 +180,24 @@ const DashboardPage: React.FC = () => {
         </div>
 
         {/* Conteúdo com abas */}
-        <Tabs defaultValue="all" className="mb-6">
-          <TabsContent value="kpis" className="mt-0">
+        <Tabs defaultValue="all" className="mb-6 relative z-20">
+          <TabsList className="relative z-20">
+            <TabsTrigger value="kpis" className="relative z-20">KPIs</TabsTrigger>
+            <TabsTrigger value="charts" className="relative z-20">Gráficos</TabsTrigger>
+            <TabsTrigger value="all" className="relative z-20">Todos</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="kpis" className="mt-4 relative z-20">
             {data.kpis.map((group, index) => (
               <KPIGroupSection key={`group-${index}`} group={group} />
             ))}
           </TabsContent>
           
-          <TabsContent value="charts" className="mt-0">
+          <TabsContent value="charts" className="mt-4 relative z-20">
             <DashboardCharts data={data} />
           </TabsContent>
           
-          <TabsContent value="all" className="mt-0">
+          <TabsContent value="all" className="mt-4 relative z-20">
             {/* Seções de KPIs */}
             {data.kpis.map((group, index) => (
               <KPIGroupSection key={`group-${index}`} group={group} />
