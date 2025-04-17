@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { NativeSelect } from '@/components/ui/native-select';
 
 // Tipo para usuários
 interface User {
