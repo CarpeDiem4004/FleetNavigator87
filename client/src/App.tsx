@@ -57,6 +57,9 @@ function App() {
           <ProtectedRoute path="/users" component={UsersNew} />
           
           {/* Rotas para os postos de abastecimento */}
+          <Route path="/postos">
+            <IndexPostos />
+          </Route>
           <Route path="/posto/osasco">
             <PostoOsasco />
           </Route>
