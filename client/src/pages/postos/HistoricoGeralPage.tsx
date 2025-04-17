@@ -120,21 +120,13 @@ const HistoricoGeralPage: React.FC = () => {
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       
-      // Usa um link temporário para download sem manipulação direta do DOM
-      const tempLink = document.createElement('a');
-      tempLink.href = url;
-      tempLink.setAttribute('download', `historico_abastecimentos_${new Date().toISOString().slice(0, 10)}.csv`);
-      tempLink.style.position = 'absolute';
-      tempLink.style.visibility = 'hidden';
+      // Criar um link de download diretamente como um elemento <a> no DOM
+      const downloadLink = document.createElement('a');
+      downloadLink.href = url;
+      downloadLink.download = `historico_abastecimentos_${new Date().toISOString().slice(0, 10)}.csv`;
       
-      // Evita append/remove que pode causar erros no React
-      tempLink.dispatchEvent(
-        new MouseEvent('click', {
-          bubbles: true,
-          cancelable: true,
-          view: window
-        })
-      );
+      // Importante: Não adicionar o elemento ao DOM para evitar falhas de removeChild
+      downloadLink.click();
       
       // Libera o URL object para evitar memory leak
       setTimeout(() => {

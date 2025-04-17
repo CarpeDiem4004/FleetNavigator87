@@ -104,30 +104,27 @@ const HistoricoPatioPage: React.FC = () => {
       ...csvData.map(row => row.join(';'))
     ].join('\n');
     
-    // Criar e download do arquivo
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    
-    // Usa um link temporário para download sem manipulação direta do DOM
-    const tempLink = document.createElement('a');
-    tempLink.href = url;
-    tempLink.setAttribute('download', `historico_patio_${new Date().toISOString().slice(0, 10)}.csv`);
-    tempLink.style.position = 'absolute';
-    tempLink.style.visibility = 'hidden';
-    
-    // Evita append/remove que pode causar erros no React
-    tempLink.dispatchEvent(
-      new MouseEvent('click', {
-        bubbles: true,
-        cancelable: true,
-        view: window
-      })
-    );
-    
-    // Libera o URL object para evitar memory leak
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 100);
+    // Criar e download do arquivo de forma segura sem manipulação direta do DOM
+    try {
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      
+      // Criar um link de download diretamente como um elemento <a> no DOM
+      const downloadLink = document.createElement('a');
+      downloadLink.href = url;
+      downloadLink.download = `historico_patio_${new Date().toISOString().slice(0, 10)}.csv`;
+      
+      // Importante: Não adicionar o elemento ao DOM para evitar falhas de removeChild
+      downloadLink.click();
+      
+      // Libera o URL object para evitar memory leak
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 100);
+    } catch (error) {
+      console.error('Erro ao criar arquivo para download:', error);
+      alert('Erro ao exportar dados. Por favor, tente novamente.');
+    }
   };
 
   // Filtragem de dados
