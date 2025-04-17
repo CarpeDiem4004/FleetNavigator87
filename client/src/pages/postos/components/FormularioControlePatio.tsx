@@ -129,18 +129,18 @@ export const FormularioControlePatio: React.FC<FormularioControlePatioProp> = ({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipo de Movimento</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o tipo de movimento" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Entrada para pernoite">Entrada para pernoite</SelectItem>
-                          <SelectItem value="Saída para rota">Saída para rota</SelectItem>
-                          <SelectItem value="Saída para manutenção">Saída para manutenção</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <select
+                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          value={field.value || ""}
+                          onChange={e => field.onChange(e.target.value)}
+                        >
+                          <option value="">Selecione o tipo de movimento</option>
+                          <option value="Entrada para pernoite">Entrada para pernoite</option>
+                          <option value="Saída para rota">Saída para rota</option>
+                          <option value="Saída para manutenção">Saída para manutenção</option>
+                        </select>
+                      </FormControl>
                       <FormDescription>
                         Selecione o tipo de movimento do veículo
                       </FormDescription>
