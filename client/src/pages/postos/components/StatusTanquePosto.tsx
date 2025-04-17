@@ -141,9 +141,14 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
       
       // Se não encontrar local, tenta buscar da API
       try {
-        // Buscar configuração atual dos tanques para este posto usando o novo cliente Supabase
+        // Capitaliza a primeira letra do posto
+      const formatPosto = (posto: string) => {
+        return posto.charAt(0).toUpperCase() + posto.slice(1);
+      };
+      
+      // Buscar configuração atual dos tanques para este posto usando o novo cliente Supabase
         const configTanques = await fetchRecords('configuracao_tanques', {
-          equals: { posto: postId }
+          equals: { posto: formatPosto(postId) }
         });
         
         if (configTanques && configTanques.length > 0) {
@@ -198,8 +203,13 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
         throw new Error("O nível de ARLA não pode ser maior que a capacidade.");
       }
       
+      // Capitaliza a primeira letra do posto
+      const formatPosto = (posto: string) => {
+        return posto.charAt(0).toUpperCase() + posto.slice(1);
+      };
+      
       const dadosConfig: ConfiguracaoTanques = {
-        posto: postId,
+        posto: formatPosto(postId), // Primeira letra maiúscula
         diesel_capacidade: capacidadeDiesel,
         diesel_nivel: nivelDiesel,
         arla_capacidade: capacidadeArla,
