@@ -40,7 +40,14 @@ const PostoLoginSimples: React.FC = () => {
   useEffect(() => {
     // Se o usuário já estiver autenticado, redireciona para o dashboard
     if (user) {
-      navigate(`/posto/${postoCode}/dashboard`);
+      try {
+        console.log(`Usuário autenticado, redirecionando para /posto/${postoCode}/dashboard`);
+        navigate(`/posto/${postoCode}/dashboard`);
+      } catch (err) {
+        console.error('Erro ao redirecionar após autenticação:', err);
+        // Em caso de erro no redirecionamento, tenta um redirecionamento direto com window.location
+        window.location.href = `/posto/${postoCode}/dashboard`;
+      }
     }
   }, [user, postoCode, navigate]);
   

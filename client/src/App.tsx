@@ -96,6 +96,25 @@ function App() {
             <PostoRedirectHandler />
           </Route>
           
+          {/* Rota direta para acessar páginas estáticas HTML - sem processamento React */}
+          <Route path="/posto/:postoCode/static">
+            <div>
+              {(() => {
+                // Extrai o código do posto da URL
+                const path = window.location.pathname;
+                const matches = path.match(/\/posto\/([^\/]+)\/static/);
+                const postoCode = matches ? matches[1] : 'abc';
+                
+                // Redireciona para a página HTML estática
+                setTimeout(() => {
+                  window.location.href = `/posto/${postoCode}.html`;
+                }, 100);
+                
+                return <div>Redirecionando para página estática...</div>;
+              })()}
+            </div>
+          </Route>
+          
           {/* Rotas para interfaces simplificadas dos postos (quando já autenticados) */}
           <ProtectedRoute path="/posto/:postoCode/public" component={PostoDashboard} />
           
