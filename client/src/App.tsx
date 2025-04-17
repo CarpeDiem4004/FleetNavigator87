@@ -80,28 +80,14 @@ function App() {
           <ProtectedRoute path="/posto/socorro" component={PostoSocorro} />
           <ProtectedRoute path="/posto/sorocaba" component={PostoSorocaba} />
           
-          {/* Rotas públicas para os postos de abastecimento - sem proteção e sem status de tanques */}
-          <Route path="/public/posto/osasco">
-            <OsascoPublic />
-          </Route>
-          <Route path="/public/posto/guarulhos">
-            <GuarulhosPublic />
-          </Route>
-          <Route path="/public/posto/saopaulo">
-            <SaoPauloPublic />
-          </Route>
-          <Route path="/public/posto/campinas">
-            <CampinasPublic />
-          </Route>
-          <Route path="/public/posto/abc">
-            <ABCPublic />
-          </Route>
-          <Route path="/public/posto/socorro">
-            <SocorroPublic />
-          </Route>
-          <Route path="/public/posto/sorocaba">
-            <SorocabaPublic />
-          </Route>
+          {/* Rotas protegidas para os postos de abastecimento sem status de tanques */}
+          <ProtectedRoute path="/public/posto/osasco" component={() => <OsascoPublic />} />
+          <ProtectedRoute path="/public/posto/guarulhos" component={() => <GuarulhosPublic />} />
+          <ProtectedRoute path="/public/posto/saopaulo" component={() => <SaoPauloPublic />} />
+          <ProtectedRoute path="/public/posto/campinas" component={() => <CampinasPublic />} />
+          <ProtectedRoute path="/public/posto/abc" component={() => <ABCPublic />} />
+          <ProtectedRoute path="/public/posto/socorro" component={() => <SocorroPublic />} />
+          <ProtectedRoute path="/public/posto/sorocaba" component={() => <SorocabaPublic />} />
           
           {/* Rotas para login e dashboard dos postos */}
           <Route path="/posto/:postoCode">
