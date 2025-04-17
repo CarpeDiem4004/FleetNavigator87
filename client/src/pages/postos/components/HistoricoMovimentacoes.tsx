@@ -25,14 +25,20 @@ export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ 
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   
+  // Função para capitalizar a primeira letra
+  const formatPosto = (posto: string) => {
+    return posto.charAt(0).toUpperCase() + posto.slice(1);
+  };
+  
   const fetchMovimentacoes = async () => {
     try {
       setIsLoading(true);
       console.log("[FETCH] Buscando movimentações de pátio para o posto:", postId);
+      console.log("[FETCH] Usando nome capitalizado:", formatPosto(postId));
       
       // Usando o cliente Supabase para buscar dados com permissões administrativas
       const data = await fetchRecords('movimentacoes_patio', {
-        equals: { posto: postId },
+        equals: { posto: formatPosto(postId) },
         order: { created_at: 'desc' },
         limit: 20
       });

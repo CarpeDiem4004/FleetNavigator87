@@ -28,14 +28,20 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
   const [dateEnd, setDateEnd] = useState<string>('');
   const [isDeleting, setIsDeleting] = useState(false);
   
+  // Função para capitalizar a primeira letra
+  const formatPosto = (posto: string) => {
+    return posto.charAt(0).toUpperCase() + posto.slice(1);
+  };
+  
   const fetchAbastecimentos = async () => {
     try {
       setIsLoading(true);
       console.log("[FETCH] Buscando abastecimentos para o posto:", postId);
+      console.log("[FETCH] Usando nome capitalizado:", formatPosto(postId));
       
       // Usando o cliente Supabase para buscar dados
       const data = await fetchRecords('abastecimentos_postos', {
-        equals: { posto: postId },
+        equals: { posto: formatPosto(postId) },
         limit: 100
       });
       
@@ -215,7 +221,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
         
         // Busca todos os IDs de abastecimentos para este posto
         const registros = await fetchRecords('abastecimentos_postos', {
-          equals: { posto: postId }
+          equals: { posto: formatPosto(postId) }
         });
         
         if (registros.length > 0) {
