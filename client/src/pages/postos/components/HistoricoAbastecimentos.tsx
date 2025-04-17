@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ENDPOINTS, buscarDadosSupabase, enviarParaSupabase } from '@/constants/supabase';
+import { ENDPOINTS, buscarDadosSupabase } from '@/constants/supabase';
+import { deleteRecord, deleteRecords, fetchRecords } from '@/lib/supabase-client';
 
 interface HistoricoAbastecimentosProps {
   postId: string;
@@ -31,8 +32,18 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
   const fetchAbastecimentos = async () => {
     try {
       setIsLoading(true);
-      const queryParams = `posto=eq.${postId}&order=created_at.desc&limit=100`;
-      const data = await buscarDadosSupabase(ENDPOINTS.ABASTECIMENTOS, queryParams);
+      console.log("[FETCH] Buscando abastecimentos para o posto:", postId);
+      
+      // Usando o cliente Supabase para buscar dados
+      const data = await fetchRecords(ENDPOINTS.ABASTECIMENTOS, {
+        filterColumn: 'posto',
+        filterValue: postId,
+        orderBy: 'created_at',
+        ascending: false,
+        limit: 100
+      });
+      
+      console.log("[FETCH] Dados recuperados:", data.length);
       setAbastecimentos(data);
     } catch (error) {
       console.error('Erro ao buscar histórico de abastecimentos:', error);
@@ -73,15 +84,12 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
     if (window.confirm('Tem certeza que deseja excluir este registro?')) {
       try {
         setIsDeleting(true);
-        // Verificação adicional na requisição
-        console.log("Iniciando requisição DELETE para:", ENDPOINTS.ABASTECIMENTOS, "com ID:", id);
+        console.log("Iniciando exclusão do registro com ID:", id);
         
-        // Usando o endpoint correto formato para Supabase
-        const endpoint = `${ENDPOINTS.ABASTECIMENTOS}?id=eq.${id}`;
-        console.log("Endpoint completo:", endpoint);
+        // Usando o cliente Supabase para excluir o registro
+        await deleteRecord(ENDPOINTS.ABASTECIMENTOS, id);
         
-        await enviarParaSupabase(endpoint, {}, 'DELETE');
-        console.log("Delete requisição completada com sucesso");
+        console.log("Registro excluído com sucesso");
         
         // Atualizar a lista localmente removendo o item excluído
         setAbastecimentos(prev => {
@@ -178,21 +186,12 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
     if (window.confirm('Tem certeza que deseja limpar todo o histórico de abastecimentos? Esta ação não pode ser desfeita.')) {
       try {
         setIsLoading(true);
-        
-        // Preparamos uma condição para apagar apenas registros do posto atual
-        const filtroPostoAtual = `posto=eq.${postId}`;
-        
         console.log("[LIMPAR HISTÓRICO] Iniciando limpeza para o posto:", postId);
         
-        // Usamos a função enviarParaSupabase para fazer a requisição DELETE com filtro
-        // para garantir que apenas dados deste posto sejam apagados
-        const resultado = await enviarParaSupabase(
-          `${ENDPOINTS.ABASTECIMENTOS}?${filtroPostoAtual}`,
-          {},
-          'DELETE'
-        );
+        // Usando o cliente Supabase para apagar registros com base no filtro de posto
+        await deleteRecords(ENDPOINTS.ABASTECIMENTOS, 'posto', postId);
         
-        console.log("[LIMPAR HISTÓRICO] Resultado da operação:", resultado);
+        console.log("[LIMPAR HISTÓRICO] Registros excluídos com sucesso");
         
         // Limpa todos os abastecimentos localmente
         setAbastecimentos([]);
