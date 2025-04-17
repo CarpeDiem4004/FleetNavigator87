@@ -4,7 +4,7 @@ import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, Tabl
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Truck, ArrowUpRight, ArrowDownLeft, Settings, RefreshCw } from 'lucide-react';
-import { ENDPOINTS, buscarDadosSupabase } from '@/constants/supabase';
+import { fetchRecords } from '@/lib/supabase-client';
 
 interface HistoricoMovimentacoesProps {
   postId: string;
@@ -28,9 +28,17 @@ export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ 
   const fetchMovimentacoes = async () => {
     try {
       setIsLoading(true);
-      const queryParams = `posto=eq.${postId}&order=created_at.desc&limit=20`;
-      const data = await buscarDadosSupabase(ENDPOINTS.MOVIMENTACOES, queryParams);
-      setMovimentacoes(data);
+      console.log("[FETCH] Buscando movimentações de pátio para o posto:", postId);
+      
+      // Usando o cliente Supabase para buscar dados com permissões administrativas
+      const data = await fetchRecords('movimentacoes_patio', {
+        equals: { posto: postId },
+        order: { created_at: 'desc' },
+        limit: 20
+      });
+      
+      console.log("[FETCH] Movimentações recuperadas:", data?.length || 0);
+      setMovimentacoes(data || []);
       setLastUpdated(new Date());
     } catch (error) {
       console.error('Erro ao buscar histórico de movimentações:', error);

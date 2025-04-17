@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { TruckIcon } from 'lucide-react';
 import { TabsContent } from '@/components/ui/tabs';
-import { enviarParaSupabase, ENDPOINTS } from '@/constants/supabase';
+import { insertData, checkConnection } from '@/lib/supabase-client';
 
 // Schema de validação para o formulário de recebimento de combustível
 const recebimentoSchema = z.object({
@@ -53,8 +53,19 @@ export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ po
       
       console.log('Dados a enviar:', recebimentoData);
       
-      // Envia os dados para o Supabase
-      const response = await enviarParaSupabase(ENDPOINTS.RECEBIMENTOS, recebimentoData);
+      // Verifica conexão com Supabase antes de tentar enviar
+      toast({
+        title: 'Verificando conexão',
+        description: 'Aguarde enquanto verificamos a conexão com o servidor...',
+      });
+      
+      const conexaoSupabase = await checkConnection();
+      if (!conexaoSupabase) {
+        throw new Error('Não foi possível conectar ao servidor Supabase. Verifique sua conexão e tente novamente mais tarde.');
+      }
+      
+      // Envia os dados para o Supabase usando o cliente de serviço (contorna RLS)
+      const response = await insertData('recebimentos_combustivel', recebimentoData);
       console.log('Resposta do servidor:', response);
       
       toast({
@@ -67,7 +78,7 @@ export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ po
       console.error('Erro ao registrar recebimento:', error);
       toast({
         title: 'Erro ao registrar recebimento',
-        description: 'Verifique sua conexão e tente novamente.',
+        description: error instanceof Error ? error.message : 'Verifique sua conexão e tente novamente.',
         variant: 'destructive',
       });
     }
