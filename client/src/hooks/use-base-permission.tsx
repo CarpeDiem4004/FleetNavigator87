@@ -16,25 +16,24 @@ type BaseIdArray = Array<number | null>;
 
 // Mapeamento de rotas para bases
 const baseRouteMap: Record<string, BaseIdArray> = {
-  '/multas': [9], // Base Multas (id: 9)
-  '/fines': [9], // Alias para Multas
+  // Rotas específicas por base
+  '/multas': [1], // Base Multas (id: 1)
+  '/fines': [1], // Alias para Multas
   
-  '/pneus': [10], // Base Pneus (id: 10)
-  '/tires': [10], // Alias para Pneus
+  '/pneus': [2], // Base Pneus (id: 2)
+  '/tires': [2], // Alias para Pneus
   
-  '/line-hall': [11], // Base Line Hall (id: 11)
+  '/line-hall': [3], // Base Line Hall (id: 3)
   
-  '/gestao-de-frotas': [12], // Base Gestão de Frotas (id: 12)
-  '/fleet-management': [12], // Alias para Gestão de Frotas
+  '/gestao-de-frotas': [4], // Base Gestão de Frotas (id: 4)
+  '/fleet-management': [4], // Alias para Gestão de Frotas
+  '/maintenance': [4], // Apenas Gestão de Frotas
   
-  // Rotas comuns (disponíveis para Gestão de Frotas e admin)
-  '/maintenance': [12], // Apenas Gestão de Frotas
-  '/vehicles': [0], // Disponível para todas as bases
-  '/refueling': [0], // Disponível para todas as bases
-  
-  // Dashboard e usuários disponíveis apenas para admin ou bases específicas
-  '/': [0], // Dashboard disponível para todos
-  '/users': [0], // Usuários apenas para admin
+  // Rotas globais (disponíveis apenas para admin)
+  '/vehicles': [null], // Apenas admin ou sem restrição de base
+  '/refueling': [null], // Apenas admin ou sem restrição de base
+  '/': [null], // Dashboard disponível apenas para admin ou sem restrição
+  '/users': [null], // Usuários apenas para admin ou sem restrição
 };
 
 // Interface para o retorno do hook
@@ -46,7 +45,7 @@ interface BasePermissionHook {
 }
 
 // Hook para verificação de permissões baseadas na base do usuário
-export const useBasePermission = (): BasePermissionHook => {
+export function useBasePermission(): BasePermissionHook {
   const { user: authUser } = useAuth();
   const user = authUser as User | null;
   
@@ -63,13 +62,13 @@ export const useBasePermission = (): BasePermissionHook => {
       return false;
     }
     
-    // Se a rota está marcada com 0, significa que está disponível para todas as bases
-    if (baseRouteMap[route].includes(0)) {
-      return true;
+    // Se a rota inclui null, significa que é apenas para admin (que já verificamos acima)
+    // ou para usuários sem restrição específica de base
+    if (baseRouteMap[route].includes(null)) {
+      return false; // Usuários não-admin não têm acesso a rotas com null
     }
     
-    // Se o usuário não tiver uma base associada, verifica se a rota está disponível
-    // apenas para usuários sem base
+    // Se o usuário não tiver uma base associada, não tem acesso a rotas específicas de base
     if (!user?.baseId) {
       return false;
     }

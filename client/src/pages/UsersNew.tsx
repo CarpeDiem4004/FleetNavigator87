@@ -213,17 +213,30 @@ const UsersNew: React.FC = () => {
 
     try {
       // Fazer a requisição para a API de registro
+      // Preparar dados para envio, incluindo baseId se existir
+      const registerData = {
+        username: newUser.email,
+        password: password,
+        name: newUser.name,
+        role: newUser.role
+      };
+      
+      // Adicionar baseId apenas se não for null
+      if (newUser.baseId) {
+        Object.assign(registerData, { 
+          baseId: newUser.baseId,
+          basename: newUser.baseName
+        });
+      }
+      
+      console.log('Enviando dados de usuário:', { ...registerData, password: '***' });
+      
       const response = await fetch('/api/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          username: newUser.email,
-          password: password,
-          name: newUser.name,
-          role: newUser.role
-        }),
+        body: JSON.stringify(registerData),
       });
 
       if (!response.ok) {
@@ -231,12 +244,12 @@ const UsersNew: React.FC = () => {
         throw new Error(errorData.message || 'Erro ao registrar usuário');
       }
 
-      const userData = await response.json();
+      const createdUser = await response.json();
       
       // Adicionar à lista local
       const user = {
         ...newUser,
-        id: userData.id,
+        id: createdUser.id,
         lastLogin: null
       } as User;
       
