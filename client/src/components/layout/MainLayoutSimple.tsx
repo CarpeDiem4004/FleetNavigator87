@@ -225,16 +225,65 @@ const MainLayoutSimple: React.FC<MainLayoutSimpleProps> = ({ children }) => {
           </div>
           <div className="flex-1 overflow-auto py-4 px-3">
             <nav className="flex flex-col gap-1">
-              {navItems.map((item) => (
-                <NavItem
-                  key={item.href}
-                  href={item.href}
-                  icon={item.icon}
-                  title={item.title}
-                  isActive={location === item.href}
-                  onClick={closeSidebar}
-                />
-              ))}
+              {navItems.map((item) => {
+                // Renderiza o submenu para Abastecimentos
+                if (item.hasSubmenu && item.title === 'Abastecimentos') {
+                  const abastecimentoItem = item;
+                  const isAbastecimentoActive = location === abastecimentoItem.href || isCurrentLocationPosto();
+                  
+                  return (
+                    <div key={abastecimentoItem.href}>
+                      <NavSubmenu
+                        title={abastecimentoItem.title}
+                        icon={abastecimentoItem.icon}
+                        isOpen={postosSubmenuOpen || isCurrentLocationPosto()}
+                        onToggle={togglePostosSubmenu}
+                        isActive={isAbastecimentoActive}
+                      >
+                        {/* Item para a página principal de abastecimentos */}
+                        <Link 
+                          href={abastecimentoItem.href}
+                          onClick={closeSidebar}
+                          className={cn(
+                            "flex items-center gap-2 rounded-md px-2 py-1 text-sm transition-all hover:text-primary",
+                            location === abastecimentoItem.href ? "font-medium text-primary" : "text-muted-foreground"
+                          )}
+                        >
+                          <span>Visão Geral</span>
+                        </Link>
+                        
+                        {/* Links para todos os postos */}
+                        {POSTOS_INFO.map((posto) => (
+                          <Link 
+                            key={posto.id}
+                            href={`/posto/${posto.id}`}
+                            onClick={closeSidebar}
+                            className={cn(
+                              "flex items-center gap-2 rounded-md px-2 py-1 text-sm transition-all hover:text-primary",
+                              location === `/posto/${posto.id}` ? "font-medium text-primary" : "text-muted-foreground"
+                            )}
+                          >
+                            <span>{posto.nome}</span>
+                          </Link>
+                        ))}
+                      </NavSubmenu>
+                    </div>
+                  );
+                }
+                
+                // Renderiza itens normais do menu
+                return (
+                  <NavItem
+                    key={item.href}
+                    href={item.href}
+                    icon={item.icon}
+                    title={item.title}
+                    isActive={location === item.href}
+                    onClick={closeSidebar}
+                    hasSubmenu={item.hasSubmenu}
+                  />
+                );
+              })}
             </nav>
           </div>
           <div className="border-t p-3 space-y-3">
