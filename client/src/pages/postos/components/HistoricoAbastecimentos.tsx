@@ -161,10 +161,15 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
     
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      passesSearch = 
-        item.placa.toLowerCase().includes(term) ||
-        item.nome_motorista.toLowerCase().includes(term) ||
-        (item.project && item.project.toLowerCase().includes(term));
+      const placaMatch = item.placa.toLowerCase().includes(term);
+      const motoristaMatch = item.nome_motorista.toLowerCase().includes(term);
+      let projectMatch = false;
+      
+      if (item.project) {
+        projectMatch = item.project.toLowerCase().includes(term);
+      }
+      
+      passesSearch = placaMatch || motoristaMatch || projectMatch;
     }
     
     if (dateStart) {

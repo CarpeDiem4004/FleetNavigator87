@@ -1,8 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, API_KEY } from '../constants/supabase';
 
+// Ajusta a URL removendo /rest/v1 para o formato esperado pelo cliente Supabase
+const supabaseUrl = SUPABASE_URL.replace('/rest/v1', '');
+
 // Inicializa o cliente Supabase
-export const supabase = createClient(SUPABASE_URL.replace('/rest/v1', ''), API_KEY);
+export const supabase = createClient(supabaseUrl, API_KEY);
 
 // Função para excluir um registro por ID
 export async function deleteRecord(table: string, id: number) {
