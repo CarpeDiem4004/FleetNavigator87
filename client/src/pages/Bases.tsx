@@ -182,6 +182,8 @@ export default function BasesPage() {
       location: base.location || '',
       operation: base.operation || '',
       active: base.active,
+      hasMaintenance: base.hasMaintenance || false,
+      hasTires: base.hasTires || false,
     });
     setIsEditing(true);
     setBaseToDelete(base);
@@ -360,6 +362,8 @@ export default function BasesPage() {
                   location: '',
                   operation: '',
                   active: true,
+                  hasMaintenance: false,
+                  hasTires: false,
                 });
               }}>
                 <Plus className="h-4 w-4" />
@@ -438,6 +442,59 @@ export default function BasesPage() {
                       </FormItem>
                     )}
                   />
+
+                  <div className="space-y-4">
+                    <h3 className="font-medium text-sm">Configurações da Base</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="hasMaintenance"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-2">
+                                <Wrench className="h-4 w-4 text-blue-600" />
+                                <FormLabel>Manutenção</FormLabel>
+                              </div>
+                              <FormDescription>
+                                Habilitar solicitações de manutenção
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="hasTires"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-2">
+                                <DatabaseIcon className="h-4 w-4 text-green-600" />
+                                <FormLabel>Pneus</FormLabel>
+                              </div>
+                              <FormDescription>
+                                Habilitar gerenciamento de pneus
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
                   <DialogFooter>
                     <Button type="submit" disabled={createBaseMutation.isPending || updateBaseMutation.isPending}>
                       {(createBaseMutation.isPending || updateBaseMutation.isPending) && (
