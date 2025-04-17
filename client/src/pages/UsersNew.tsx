@@ -101,10 +101,18 @@ const mockUsers: User[] = [
 
 // Bases disponíveis (para o select de bases)
 const availableBases = [
-  { id: 1, name: 'Multas' },
-  { id: 2, name: 'Pneus' },
-  { id: 3, name: 'Line Hall' },
-  { id: 4, name: 'Gestão de Frotas' }
+  { id: 9, name: 'Multas' },
+  { id: 10, name: 'Pneus' },
+  { id: 11, name: 'Line Hall' },
+  { id: 12, name: 'Gestão de Frotas' },
+  { id: 31, name: 'Osasco' },
+  { id: 32, name: 'Guarulhos' },
+  { id: 33, name: 'São Paulo' },
+  { id: 34, name: 'Campinas' },
+  { id: 35, name: 'ABC' },
+  { id: 36, name: 'Socorro' },
+  { id: 37, name: 'Sorocaba' },
+  { id: 88, name: 'ABC (Coca Cola)' }
 ];
 
 // Função para traduzir os tipos de perfil
