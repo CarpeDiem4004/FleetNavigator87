@@ -6,7 +6,7 @@ import { Fuel, Droplet } from 'lucide-react';
 import { ENDPOINTS, buscarDadosSupabase } from '@/constants/supabase';
 
 interface HistoricoAbastecimentosProps {
-  postId: string;
+  postoCode: string;
 }
 
 interface Abastecimento {
@@ -21,7 +21,7 @@ interface Abastecimento {
   created_at: string;
 }
 
-export const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postId }) => {
+export const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postoCode }) => {
   const [abastecimentos, setAbastecimentos] = useState<Abastecimento[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -30,7 +30,7 @@ export const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = (
       try {
         setIsLoading(true);
         // Usando a nova função buscarDadosSupabase
-        const queryParams = `posto=eq.${postId}&order=created_at.desc&limit=10`;
+        const queryParams = `posto=eq.${postoCode}&order=created_at.desc&limit=10`;
         const data = await buscarDadosSupabase(ENDPOINTS.ABASTECIMENTOS, queryParams);
         setAbastecimentos(data);
       } catch (error) {
@@ -43,7 +43,7 @@ export const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = (
     }
     
     fetchAbastecimentos();
-  }, [postId]);
+  }, [postoCode]);
   
   const formatarData = (dataString: string) => {
     const data = new Date(dataString);
