@@ -91,6 +91,8 @@ export default function BasesPage() {
       location: '',
       operation: '',
       active: true,
+      hasMaintenance: false,
+      hasTires: false,
     },
   });
 
@@ -217,6 +219,49 @@ export default function BasesPage() {
     }
   };
 
+  // Função para lidar com a importação de bases
+  const handleImportPreview = () => {
+    if (!importText.trim()) {
+      toast({
+        title: "Texto vazio",
+        description: "Por favor, insira o texto com as bases para importar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const parsedBases = parseBasesData(importText);
+    setImportPreview(parsedBases);
+  };
+
+  // Função para confirmar a importação de bases
+  const handleImportConfirm = async () => {
+    if (importPreview.length === 0) {
+      return;
+    }
+
+    setImportingBases(true);
+    try {
+      const importedCount = await importBasesToSystem(importPreview);
+      toast({
+        title: "Importação concluída",
+        description: `${importedCount} bases foram importadas com sucesso`,
+      });
+      setIsImportDialogOpen(false);
+      setImportText('');
+      setImportPreview([]);
+      queryClient.invalidateQueries({ queryKey: ['/api/bases'] });
+    } catch (error) {
+      toast({
+        title: "Erro na importação",
+        description: "Ocorreu um erro ao importar as bases",
+        variant: "destructive"
+      });
+    } finally {
+      setImportingBases(false);
+    }
+  };
+
   return (
     <AppLayout>
       <div className="container mx-auto py-6">
@@ -230,7 +275,83 @@ export default function BasesPage() {
               Gerencie as bases e suas respectivas operações
             </p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <div className="flex gap-2">
+            <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <FileUp className="h-4 w-4" />
+                  Importar Bases
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                  <DialogTitle>Importar Bases</DialogTitle>
+                  <DialogDescription>
+                    Cole a lista de bases para importar. As bases SC serão configuradas automaticamente com suporte a 
+                    solicitação de manutenção e pneus.
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="grid gap-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="import-text">Texto para importação</Label>
+                    <Textarea
+                      id="import-text"
+                      placeholder="Cole a lista de bases aqui..."
+                      value={importText}
+                      onChange={(e) => setImportText(e.target.value)}
+                      rows={10}
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                </div>
+
+                {importPreview.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h4 className="text-sm font-medium">Preview ({importPreview.length} bases)</h4>
+                    </div>
+                    <div className="border rounded-md max-h-40 overflow-y-auto p-2">
+                      <ul className="text-sm space-y-1">
+                        {importPreview.map((base, idx) => (
+                          <li key={idx} className="flex items-center justify-between">
+                            <span className="font-medium">{base.name}</span>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              {base.hasMaintenance && (
+                                <div className="flex items-center gap-1 text-blue-600">
+                                  <Wrench className="h-3 w-3" />
+                                  <span>Manutenção</span>
+                                </div>
+                              )}
+                              {base.hasTires && (
+                                <div className="flex items-center gap-1 text-green-600">
+                                  <DatabaseIcon className="h-3 w-3" />
+                                  <span>Pneus</span>
+                                </div>
+                              )}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+                
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => handleImportPreview()} disabled={!importText.trim() || importingBases}>
+                    Visualizar
+                  </Button>
+                  <Button 
+                    onClick={() => handleImportConfirm()}
+                    disabled={importPreview.length === 0 || importingBases}
+                  >
+                    {importingBases && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Importar
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2" onClick={() => {
                 setIsEditing(false);
@@ -377,6 +498,8 @@ export default function BasesPage() {
                       <TableHead>Localização</TableHead>
                       <TableHead>Operação</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Manutenção</TableHead>
+                      <TableHead>Pneus</TableHead>
                       <TableHead>Data de Cadastro</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
@@ -402,6 +525,26 @@ export default function BasesPage() {
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${base.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                               {base.active ? 'Ativa' : 'Inativa'}
                             </span>
+                          </TableCell>
+                          <TableCell>
+                            {base.hasMaintenance ? (
+                              <div className="flex items-center gap-1 text-blue-600">
+                                <Wrench className="h-4 w-4" />
+                                <span>Habilitado</span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">Não habilitado</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {base.hasTires ? (
+                              <div className="flex items-center gap-1 text-green-600">
+                                <DatabaseIcon className="h-4 w-4" />
+                                <span>Habilitado</span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">Não habilitado</span>
+                            )}
                           </TableCell>
                           <TableCell>{formatDate(base.created_at)}</TableCell>
                           <TableCell className="text-right">
@@ -429,7 +572,7 @@ export default function BasesPage() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                        <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
                           Nenhuma base cadastrada
                         </TableCell>
                       </TableRow>
