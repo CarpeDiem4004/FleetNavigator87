@@ -1,228 +1,118 @@
-// Função para processar e normalizar as bases da Coca-Cola e outras operações
-export const importBases = `
-BASE	COCA COLA (ABC)	OPERAÇÃO	COCA COLA
-BASE	COCA COLA (IPATINGA)	OPERAÇÃO	COCA COLA
-BASE	COCA COLA SANTOS	OPERAÇÃO	COCA COLA
-BASE	COCA COLA (IPATINGA)	OPERAÇÃO	COCA COLA
-BASE	COCA COLA (MARIANA)	OPERAÇÃO	COCA COLA
-BASE	COCA COLA (CRICIUMA)	OPERAÇÃO	COCA COLA
-BASE	COCA COLA (PONTE NOVA)	OPERAÇÃO	COCA COLA
-BASE	COCA COLA (PINHEIROS)	OPERAÇÃO	COCA COLA
-BASE	COCA COLA (APARECIDA)	OPERAÇÃO	COCA COLA
-BASE	COCA COLA (JURUBATUBA)	OPERAÇÃO	COCA COLA
-BASE	COCA COLA (ABC)	OPERAÇÃO	COCA COLA
-BASE	COCA COLA (ABC)	OPERAÇÃO	COCA COLA
-BASE	COCA COLA (PQ Novo Mundo)	OPERAÇÃO	COCA COLA
-BASE	COCA COLA SANTOS	OPERAÇÃO	COCA COLA
-BASE	COCA COLA (APARECIDA)	OPERAÇÃO	COCA COLA
-BASE	COCA COLA (CRICIUMA)	OPERAÇÃO	COCA COLA
-BASE	COCA COLA (IPATINGA)	OPERAÇÃO	COCA COLA
-BASE	COCA COLA (JURUBATUBA)	OPERAÇÃO	COCA COLA
-BASE	COCA COLA (MARIANA)	OPERAÇÃO	COCA COLA
-BASE	GP02 JACAREI (GRUPO PEREIRA)	OPERAÇÃO	GRUPO PEREIRA
-BASE	BASE GPV	OPERAÇÃO	GRUPO PEREIRA
-BASE	GP01 VARGEM GRANDE (GRUPO PEREIRA)	OPERAÇÃO	GRUPO PEREIRA
-BASE	GP03 HORTOLANDIA (GRUPO PEREIRA)	OPERAÇÃO	GRUPO PEREIRA
-BASE	GP01 VARGEM GRANDE (GRUPO PEREIRA)	OPERAÇÃO	GRUPO PERREIRA
-BASE	GP02 JACAREI (GRUPO PEREIRA)	OPERAÇÃO	GRUPO PERREIRA
-BASE	GP03 HORTOLANDIA (GRUPO PEREIRA)	OPERAÇÃO	GRUPO PERREIRA
-BASE	LHM08 (XPT CHAPADINHA MELI)	OPERAÇÃO	LH MERCADO LIVRE
-BASE	LHM09 (XPT SANTO ANTONIO DA PLATINA MELI)	OPERAÇÃO	LH MERCADO LIVRE
-BASE	LHM11 ( FRANCISCO BELTRAO MELI)	OPERAÇÃO	LH MERCADO LIVRE
-BASE	LHM13 (BRASILIANDIA)	OPERAÇÃO	LH MERCADO LIVRE
-BASE	MADEIRA MADEIRA OSASCO	OPERAÇÃO	MADEIRA MADEIRA
-BASE	MM03 (ARUJA)	OPERAÇÃO	MADEIRA MADEIRA
-BASE	MM01 (CAJAMAR)	OPERAÇÃO	MADEIRA MADEIRA
-BASE	MM04 (JUNDIAI)	OPERAÇÃO	MADEIRA MADEIRA
-BASE	MAG01 (PORTO ALEGRE)	OPERAÇÃO	MAGALU
-BASE	MM03 (ARUJA)	OPERAÇÃO	MAGALU
-BASE	MM01 (CAJAMAR)	OPERAÇÃO	MAGALU
-BASE	SC (SAPUCAIA) SRS4	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (SAPUCAIA) SRS5	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (SAPUCAIA) SRS6	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (SAPUCAIA) SRS7	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (SAPUCAIA) SRS8	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (COTIA) SSP34	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (FORTALEZA) SCE1	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (MOOCA CENTRO) SSP21	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (FLORIANOPOLIS) SSC2	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (ATIBAIA) SSP25	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (ARENA BARUERI) SSP5	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (CARAGUATATUBA) SSP16	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (RIBEIRAO PRETO) SSP4	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (MARILIA) SSP13	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (SJ RIO PRETO) SSP12	OPERAÇÃO	MERCADO LIVRE
-BASE	XPT (SAO MATEUS DO SUL) EPR6/SPR7	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (BAHIA SALVADOR) SBA1	OPERAÇÃO	MERCADO LIVRE
-BASE	XPT (TRES LAGOAS ) EMS4/SSP10	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (PQ NOVO MUNDO) SSP40	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (CURITIBA) SPR1	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (CRICIUMA) SSC5	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (AVARE) SSP24	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (FRANCA) SSP26	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (FULL FILMENTE) FULL	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (PORTO ALEGRE) SRS1	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (GOIANIA) SGO1	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (LAJEADO) SRS10	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (1CAMPINAS) SSP3	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (ITUPEVA) SSP38	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (MEGA GUARULHOS) SSP30	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (SOROCABA) SSP20	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (BAURU) SSP14	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (CAMPINA GRANDE DO SUL) SPR8	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (Z SUL) SC_ZS	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (JALES) SSP28	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (JOINVILLE) SSC1	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (SAO CARLOS) SSP22	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (ABC) SSP17	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (ITAPETININGA) SSP27	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (CHAPECO) SSC4	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (SAO JOSE DOS CAMPOS) SSP8	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (ARAÇATUBA) SSP10	OPERAÇÃO	MERCADO LIVRE
-BASE	LHM13 (BRASILIANDIA)	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (CONTAGEM) SMG1	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (DIVINÓPOLIS)	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (NOVA LIMA) SMG14	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (PASSO FUNDO) SRS5	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (VITORIA) SES1	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (BRASILIA) SDF1	OPERAÇÃO	MERCADO LIVRE
-BASE	LMS37 JARDIM CAJAZEIRAS (BA)	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (PRESIDENTE PRUDENTE) SSP11	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (BLUMENAU) SSC3	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (CASCAVEL) SPR3	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (CUIABA) SMR1	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (GUARAPUAVA) SPR5	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (LONDRINA) SPR2	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (MARINGA) SPR6	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (PIRACICABA) SSP36	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (POÇOS DE CALDAS) SMG5	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (RECIFE) SPE1	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (SANTOS) SSP15	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (VESPASIANO-BH ZONA NORTE) SMG8	OPERAÇÃO	MERCADO LIVRE
-BASE	XPT (ALTA FLORESTA) EMR5/SMR2	OPERAÇÃO	MERCADO LIVRE
-BASE	XPT (ERECHIM) ERS6/SPR5	OPERAÇÃO	MERCADO LIVRE
-BASE	XPT (FREDERICO WESTPHALEN) ERS3/SPR5	OPERAÇÃO	MERCADO LIVRE
-BASE	XPT (UMUARAMA) EPR8/SPR6	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (Z LESTE) SSP6	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (PATO BRANCO) SPR4	OPERAÇÃO	MERCADO LIVRE
-BASE	XPT (FRANCISCO BELTRAO) EPR9/SPR4	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (SANTA MARIA) SRS3	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (PELOTAS) SRS2	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (BELEM) SPA1	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (POUSO ALEGRE) SMG3	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (CAMPO GRANDE) SMS1	OPERAÇÃO	MERCADO LIVRE
-BASE	XPT (MANOEL RIBAS) EPR13/SPR5	OPERAÇÃO	MERCADO LIVRE
-BASE	MM03 (ARUJA)	OPERAÇÃO	MERCADO LIVRE
-BASE	XPT (SANTO ANTONIO DA PLATINA) EPR7/SPR2	OPERAÇÃO	MERCADO LIVRE
-BASE	MM03 (ARUJA)	OPERAÇÃO	MERCADO LIVRE
-BASE	XPT (CHAPADINHA) EMN3/SMN1	OPERAÇÃO	MERCADO LIVRE
-BASE	XPT (VIÇOSA) EMG15/SRJ12	OPERAÇÃO	MERCADO LIVRE
-BASE	LHM16 (XPT AMERICANOPOLIS)	OPERAÇÃO	MERCADO LIVRE
-BASE	LHS2 (RIMES)	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (2 CAMPINAS ) SSP37	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (BARRA RJ) SRJ10	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (CABO FRIO) SRJ9	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (CAMPOS DOS GOYTACAZES) SRJ4	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (CORDOVIL) SRJ1	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (CRICIUMA) SSC5-SDD	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (DIVINOPOLIS) SMG10	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (IJUÍ) SRS7	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (ITAPERUNA) SRJ12	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (ITAQUERA) SSP45	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (ITUPEVA) SSP38-SDD	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (LAJEADO) SRS10-SDD	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (LIMEIRA) SSP9-SDD	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (MACAE) SRJ7	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (MANAUS) SAM1	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (MENDANHA RJ METRO) SRJ6	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (MOGI DAS CRUZES) SSP23	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (NITEROÍ) SRJ8	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (PASSO FUNDO) SRS5-SDD	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (PATOS MINAS) SMG11-SDD	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (PETRÓPOLIS) SRJ5	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (PONTA GROSSA) SPR7	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (QUEIMADOS) SRJ2	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (SANTOS) SSP15-SDD	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (SAO LUIS) SMN1	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (VESPASIANO-BH ZONA NORTE) SMG8-SDD	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (VITORIA) SES1-SDD	OPERAÇÃO	MERCADO LIVRE
-BASE	SC (VOLTA REDONDA) SRJ3	OPERAÇÃO	MERCADO LIVRE
-BASE	XPT (AMERICANOPOLIS) ESP12/SSP17	OPERAÇÃO	MERCADO LIVRE
-BASE	XPT (ANAPOLIS) EGO4/SGO1	OPERAÇÃO	MERCADO LIVRE
-BASE	XPT (BOM JESUS DA LAPA) EBA18/SBA7	OPERAÇÃO	MERCADO LIVRE
-BASE	XPT (BRASILANDIA) ESP13/SSP5	OPERAÇÃO	MERCADO LIVRE
-BASE	XPT (CARINHANHA) EBA20/SBA7	OPERAÇÃO	MERCADO LIVRE
-BASE	XPT (ERECHIM) ERS6/SRS5	OPERAÇÃO	MERCADO LIVRE
-BASE	XPT (FREDERICO WESTPHALEN) ERS3/SRS5	OPERAÇÃO	MERCADO LIVRE
-BASE	NAT01 (LONDRINA) NATURA	OPERAÇÃO	NATURA
-BASE	NAT02 (MARINGA DIALOGO I-MILLE)	OPERAÇÃO	NATURA
-BASE	OXXO1 (CAJAMAR)	OPERAÇÃO	OXXO
-BASE	PTL01 BELEM (PETLOVE)	OPERAÇÃO	PETLOVE
-BASE	PTL02 JUNDIA (PETLOVE)	OPERAÇÃO	PETLOVE
-BASE	FMS09 SÃO PAULO (SP)	OPERAÇÃO	SHOPEE
-BASE	LHS BR (SHOPEE)	OPERAÇÃO	SHOPEE
-BASE	LHS BR (SHOPEE)	OPERAÇÃO	SHOPEE
-`;
+import { Base } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
 
-/**
- * Função para processar o texto e extrair as bases
- * @returns Array de objetos com nome e operação de cada base
- */
-export function parseBasesData() {
-  const lines = importBases.trim().split('\n');
-  const uniqueBases = new Map();
-  
-  lines.forEach(line => {
-    const parts = line.split('\t');
-    if (parts.length >= 4) {
-      const name = parts[1].trim();
-      const operation = parts[3].trim();
-      
-      // Usar o nome como chave para garantir unicidade
-      uniqueBases.set(name, { name, operation });
-    }
-  });
-  
-  // Converter o Map para um array de objetos
-  return Array.from(uniqueBases.values());
+interface BasesConfig {
+  [key: string]: {
+    hasMaintenance?: boolean;
+    hasTires?: boolean;
+  };
 }
 
-/**
- * Função para criar as bases no sistema
- * @param apiRequest - Função para fazer requisições API
- */
-export async function importBasesToSystem(apiRequestFn: Function) {
-  const bases = parseBasesData();
+export function parseBasesData(data: string): Partial<Base>[] {
+  // Implementação para analisar dados de bases em formato de texto
+  const lines = data.trim().split('\n');
+  const bases: Partial<Base>[] = [];
   
-  try {
-    // Verificar primeiro as bases existentes para evitar duplicações
-    const existingBases = await apiRequestFn('GET', '/api/bases');
-    const existingBaseNames = new Set(existingBases.map((base: any) => base.name));
-    
-    // Processar apenas as bases que ainda não existem no sistema
-    const newBases = bases.filter(base => !existingBaseNames.has(base.name));
-    
-    // Inserir as novas bases
-    for (const base of newBases) {
-      await apiRequestFn('POST', '/api/bases', {
-        name: base.name,
-        location: '',  // Podemos deixar em branco ou extrair da string do nome
-        operation: base.operation,
-        active: true
-      });
+  // Configuração personalizada para bases específicas
+  const basesConfig: BasesConfig = {
+    "FMS09 SÃO PAULO": { hasMaintenance: true, hasTires: true },
+    "GP01 VARGEM GRANDE": { hasMaintenance: true, hasTires: true },
+    "GP02 JACAREI": { hasMaintenance: true, hasTires: true },
+    "GP03 HORTOLANDIA": { hasMaintenance: true, hasTires: true },
+    "LHM08": { hasMaintenance: true, hasTires: true },
+    "LHM09": { hasMaintenance: true, hasTires: true },
+    "LHM11": { hasMaintenance: true, hasTires: true },
+    "LHM13": { hasMaintenance: true, hasTires: true },
+    "LHS2": { hasMaintenance: true, hasTires: true },
+    "MM01": { hasMaintenance: true, hasTires: true },
+    "MM03": { hasMaintenance: true, hasTires: true },
+    "MM04": { hasMaintenance: true, hasTires: true },
+    "NAT02": { hasMaintenance: true, hasTires: true },
+    "OXXO1": { hasMaintenance: true, hasTires: true },
+    "PTL01 BELEM": { hasMaintenance: true, hasTires: true },
+    "PTL02 JUNDIA": { hasMaintenance: true, hasTires: true },
+  };
+  
+  // Todas as bases com SC são configuradas automaticamente com manutenção e pneus
+  
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    if (trimmedLine) {
+      // Possíveis formatos:
+      // 1. Nome da Base
+      // 2. Nome da Base (Local)
+      // 3. Nome da Base - Operação
+      // 4. Nome da Base (Local) - Operação
+      
+      let name = trimmedLine;
+      let location = '';
+      let operation = '';
+      
+      // Verificar se há informação de local entre parênteses
+      const locationMatch = trimmedLine.match(/^(.*?)\s*\((.*?)\)(.*)$/);
+      if (locationMatch) {
+        name = locationMatch[1].trim();
+        location = locationMatch[2].trim();
+        
+        // Se houver algo após o parêntese, pode ser a operação
+        if (locationMatch[3]) {
+          const opMatch = locationMatch[3].match(/^\s*-\s*(.*)$/);
+          if (opMatch) {
+            operation = opMatch[1].trim();
+          }
+        }
+      } else {
+        // Verificar se há informação de operação após hífen
+        const opMatch = trimmedLine.match(/^(.*?)\s*-\s*(.*)$/);
+        if (opMatch) {
+          name = opMatch[1].trim();
+          operation = opMatch[2].trim();
+        }
+      }
+      
+      // Adicionar base apenas se houver um nome válido
+      if (name) {
+        // Determinar se a base tem solicitação de manutenção e pneus habilitada
+        let hasMaintenance = false;
+        let hasTires = false;
+        
+        // Verificar configuração específica da base
+        const baseConfig = Object.entries(basesConfig).find(([key]) => name.includes(key));
+        if (baseConfig) {
+          hasMaintenance = baseConfig[1].hasMaintenance || false;
+          hasTires = baseConfig[1].hasTires || false;
+        } else if (name.includes("SC")) {
+          // Todas as bases SC têm manutenção e pneus habilitados
+          hasMaintenance = true;
+          hasTires = true;
+        }
+        
+        bases.push({
+          name,
+          location: location || undefined,
+          operation: operation || undefined,
+          active: true,
+          hasMaintenance,
+          hasTires
+        });
+      }
     }
-    
-    return {
-      success: true,
-      message: `${newBases.length} bases importadas com sucesso.`,
-      totalBases: bases.length,
-      newBases: newBases.length
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: 'Erro ao importar bases: ' + (error instanceof Error ? error.message : String(error)),
-      error
-    };
   }
+  
+  return bases;
+}
+
+export async function importBasesToSystem(bases: Partial<Base>[]): Promise<number> {
+  let importedCount = 0;
+  
+  for (const base of bases) {
+    try {
+      await apiRequest('POST', '/api/bases', base);
+      importedCount++;
+    } catch (error) {
+      console.error(`Erro ao importar base ${base.name}:`, error);
+    }
+  }
+  
+  return importedCount;
 }

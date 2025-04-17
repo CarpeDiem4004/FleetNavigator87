@@ -21,6 +21,8 @@ export const bases = pgTable("bases", {
   location: text("location"),
   operation: text("operation"),
   active: boolean("active").default(true),
+  hasMaintenance: boolean("has_maintenance").default(false),
+  hasTires: boolean("has_tires").default(false),
   created_at: timestamp("created_at").defaultNow(),
 });
 

@@ -48,9 +48,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Building2, Loader2, Plus, Edit, Trash2, Award, Download, Upload, DatabaseIcon } from 'lucide-react';
+import { Building2, Loader2, Plus, Edit, Trash2, Award, Download, Upload, DatabaseIcon, Wrench, FileUp } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { insertBaseSchema } from '@shared/schema';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/components/layout/AppLayout';
 
 // Interface para a base
@@ -60,6 +61,8 @@ interface Base {
   location?: string;
   operation?: string;
   active: boolean;
+  hasMaintenance?: boolean;
+  hasTires?: boolean;
   created_at: string;
 }
 
@@ -73,7 +76,11 @@ export default function BasesPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [baseToDelete, setBaseToDelete] = useState<Base | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [importingBases, setImportingBases] = useState(false);
+  const [importPreview, setImportPreview] = useState<Partial<Base>[]>([]);
   const { toast } = useToast();
 
   // Formulário para adicionar/editar base
