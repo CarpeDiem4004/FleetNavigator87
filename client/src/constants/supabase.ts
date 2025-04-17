@@ -10,6 +10,8 @@ export async function enviarParaSupabase(endpoint: string, dados: any, method: s
       throw new Error("Sem conexão com a internet. Verifique sua rede e tente novamente.");
     }
     
+    console.log(`[SUPABASE] Iniciando requisição ${method} para ${endpoint}`);
+    
     const options: RequestInit = {
       method: method,
       headers: {
@@ -23,17 +25,19 @@ export async function enviarParaSupabase(endpoint: string, dados: any, method: s
     };
     
     // Só adiciona o body para métodos que o requerem
-    if (method !== "GET" && method !== "HEAD") {
+    if (method !== "GET" && method !== "HEAD" && method !== "DELETE") {
       options.body = JSON.stringify(dados);
     }
     
-    console.log(`Enviando para: ${SUPABASE_URL}/${endpoint}`, {
-      method,
-      body: options.body ? JSON.parse(options.body as string) : null
-    });
+    const url = `${SUPABASE_URL}/${endpoint}`;
+    console.log(`[SUPABASE] URL completa: ${url}`);
+    console.log(`[SUPABASE] Método: ${method}`);
+    console.log(`[SUPABASE] Cabeçalhos:`, options.headers);
     
     try {
-      const res = await fetch(`${SUPABASE_URL}/${endpoint}`, options);
+      console.log(`[SUPABASE] Executando fetch...`);
+      const res = await fetch(url, options);
+      console.log(`[SUPABASE] Resposta recebida. Status:`, res.status);
       
       if (!res.ok) {
         // Tentar obter mais detalhes sobre o erro
@@ -45,31 +49,37 @@ export async function enviarParaSupabase(endpoint: string, dados: any, method: s
           errorDetail = await res.text();
         }
         
+        console.error(`[SUPABASE] Erro na resposta:`, res.status, errorDetail);
         throw new Error(`Erro ao enviar dados: ${res.status} - ${errorDetail}`);
       }
       
       // Algumas requisições (como DELETE) podem não retornar conteúdo
       if (res.status === 204) {
+        console.log(`[SUPABASE] Requisição completada com sucesso (204 No Content)`);
         return true;
       }
       
+      console.log(`[SUPABASE] Requisição completada com sucesso`);
       return await res.json();
     } catch (fetchError: any) {
       // Tratamento para erros específicos de timeout
       if (fetchError.name === 'TimeoutError' || fetchError.message?.includes('timeout')) {
+        console.error(`[SUPABASE] Erro de timeout:`, fetchError);
         throw new Error("Tempo limite excedido ao conectar com o servidor. Verifique sua conexão e tente novamente.");
       }
       
       // Verifica se o erro é por falta de conexão
       if (fetchError.message?.includes('Failed to fetch')) {
+        console.error(`[SUPABASE] Erro de conexão:`, fetchError);
         throw new Error("Falha na conexão com o servidor. Verifique se você tem acesso à internet.");
       }
       
       // Repassar o erro original se não for um dos casos específicos
+      console.error(`[SUPABASE] Erro no fetch:`, fetchError);
       throw fetchError;
     }
   } catch (error) {
-    console.error(`Erro na requisição (${method}):`, error);
+    console.error(`[SUPABASE] Erro na requisição (${method}):`, error);
     throw error;
   }
 }
