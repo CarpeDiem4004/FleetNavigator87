@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Truck, ArrowUpRight, ArrowDownLeft, Settings } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Truck, ArrowUpRight, ArrowDownLeft, Settings, RefreshCw } from 'lucide-react';
 import { ENDPOINTS, buscarDadosSupabase } from '@/constants/supabase';
 
 interface HistoricoMovimentacoesProps {
@@ -22,25 +23,32 @@ interface Movimentacao {
 export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ postId }) => {
   const [movimentacoes, setMovimentacoes] = useState<Movimentacao[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  
+  const fetchMovimentacoes = async () => {
+    try {
+      setIsLoading(true);
+      const queryParams = `posto=eq.${postId}&order=created_at.desc&limit=20`;
+      const data = await buscarDadosSupabase(ENDPOINTS.MOVIMENTACOES, queryParams);
+      setMovimentacoes(data);
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error('Erro ao buscar histórico de movimentações:', error);
+      setMovimentacoes([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   useEffect(() => {
-    async function fetchMovimentacoes() {
-      try {
-        setIsLoading(true);
-        // Usando a nova função buscarDadosSupabase
-        const queryParams = `posto=eq.${postId}&order=created_at.desc&limit=10`;
-        const data = await buscarDadosSupabase(ENDPOINTS.MOVIMENTACOES, queryParams);
-        setMovimentacoes(data);
-      } catch (error) {
-        console.error('Erro ao buscar histórico de movimentações:', error);
-        // Em caso de erro, inicializa com array vazio para evitar erro de renderização
-        setMovimentacoes([]);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    
     fetchMovimentacoes();
+    
+    // Atualiza os dados a cada 2 minutos
+    const interval = setInterval(() => {
+      fetchMovimentacoes();
+    }, 120000);
+    
+    return () => clearInterval(interval);
   }, [postId]);
   
   const formatarData = (dataString: string) => {
@@ -70,62 +78,86 @@ export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ 
     }
   };
   
+  const handleRefresh = () => {
+    fetchMovimentacoes();
+  };
+  
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Truck className="h-5 w-5" />
-          Movimentações de Pátio
-        </CardTitle>
+    <Card className="shadow-md">
+      <CardHeader className="bg-gradient-to-r from-green-50 to-slate-50 border-b">
+        <div className="flex justify-between items-center">
+          <CardTitle className="flex items-center gap-2 text-green-700">
+            <Truck className="h-5 w-5" />
+            Movimentações de Pátio
+          </CardTitle>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefresh} 
+            disabled={isLoading}
+            className="h-8 gap-1"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Atualizar</span>
+          </Button>
+        </div>
         <CardDescription>
           Registros recentes de entrada e saída de veículos
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         {isLoading ? (
           <div className="flex items-center justify-center p-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
         ) : movimentacoes.length === 0 ? (
-          <div className="text-center p-6 text-muted-foreground">
-            Nenhuma movimentação registrada.
+          <div className="text-center p-8 text-muted-foreground">
+            <div className="flex flex-col items-center gap-2">
+              <Truck className="h-12 w-12 text-muted-foreground opacity-20" />
+              <p>Nenhuma movimentação registrada.</p>
+              <p className="text-sm">Os registros aparecerão aqui após a primeira movimentação.</p>
+            </div>
           </div>
         ) : (
-          <Table>
-            <TableCaption>Lista das 10 últimas movimentações</TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Placa</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Motorista</TableHead>
-                <TableHead className="hidden md:table-cell">Operador</TableHead>
-                <TableHead className="hidden md:table-cell">Data/Hora</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {movimentacoes.map((mov) => (
-                <TableRow key={mov.id}>
-                  <TableCell className="font-medium">{mov.placa}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {getTipoIcon(mov.tipo_movimento)}
-                      <span className="hidden md:inline">{getTipoBadge(mov.tipo_movimento)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{mov.nome_motorista}</TableCell>
-                  <TableCell className="hidden md:table-cell">{mov.nome_operador}</TableCell>
-                  <TableCell className="hidden md:table-cell">{formatarData(mov.created_at)}</TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableCaption>Lista das últimas 20 movimentações</TableCaption>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead>Placa</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Motorista</TableHead>
+                  <TableHead className="hidden md:table-cell">Operador</TableHead>
+                  <TableHead className="hidden md:table-cell">Data/Hora</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {movimentacoes.map((mov) => (
+                  <TableRow key={mov.id} className="hover:bg-muted/30">
+                    <TableCell className="font-medium">{mov.placa}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {getTipoIcon(mov.tipo_movimento)}
+                        <span className="hidden md:inline">{getTipoBadge(mov.tipo_movimento)}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{mov.nome_motorista}</TableCell>
+                    <TableCell className="hidden md:table-cell">{mov.nome_operador}</TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
+                      {formatarData(mov.created_at)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </CardContent>
-      <CardFooter className="text-xs text-muted-foreground pt-2 border-t">
+      <CardFooter className="text-xs text-muted-foreground py-3 border-t bg-muted/20">
         {!isLoading && (
-          <div className="w-full flex justify-between">
+          <div className="w-full flex justify-between items-center">
             <span>Total: {movimentacoes.length} movimentações</span>
-            <span>Última atualização: {new Date().toLocaleTimeString()}</span>
+            <span>Última atualização: {lastUpdated.toLocaleTimeString('pt-BR')}</span>
           </div>
         )}
       </CardFooter>
