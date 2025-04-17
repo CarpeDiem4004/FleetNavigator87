@@ -192,12 +192,16 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="CCR">CCR</SelectItem>
-                          <SelectItem value="MRV">MRV</SelectItem>
-                          <SelectItem value="Ambev">Ambev</SelectItem>
-                          <SelectItem value="Vale">Vale</SelectItem>
-                          <SelectItem value="Petrobras">Petrobras</SelectItem>
-                          <SelectItem value="CSN">CSN</SelectItem>
+                          <SelectItem value="GRUPO PEREIRA">GRUPO PEREIRA</SelectItem>
+                          <SelectItem value="COCA COLA">COCA COLA</SelectItem>
+                          <SelectItem value="SHOPEE">SHOPEE</SelectItem>
+                          <SelectItem value="MERCADO LIVRE">MERCADO LIVRE</SelectItem>
+                          <SelectItem value="LINE HALL">LINE HALL</SelectItem>
+                          <SelectItem value="MADEIRA MADEIRA">MADEIRA MADEIRA</SelectItem>
+                          <SelectItem value="MAGALU">MAGALU</SelectItem>
+                          <SelectItem value="NATURA">NATURA</SelectItem>
+                          <SelectItem value="OXXO">OXXO</SelectItem>
+                          <SelectItem value="PETLOVE">PETLOVE</SelectItem>
                           <SelectItem value="Outro">Outro</SelectItem>
                         </SelectContent>
                       </Select>
