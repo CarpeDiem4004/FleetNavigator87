@@ -79,25 +79,25 @@ function App() {
           <ProtectedRoute path="/posto/sorocaba" component={PostoSorocaba} />
           
           {/* Rotas públicas para os postos de abastecimento - sem proteção e sem status de tanques */}
-          <Route path="/public/posto/osasco">
+          <Route path="/posto/osasco/public">
             <OsascoPublic />
           </Route>
-          <Route path="/public/posto/guarulhos">
+          <Route path="/posto/guarulhos/public">
             <GuarulhosPublic />
           </Route>
-          <Route path="/public/posto/saopaulo">
+          <Route path="/posto/saopaulo/public">
             <SaoPauloPublic />
           </Route>
-          <Route path="/public/posto/campinas">
+          <Route path="/posto/campinas/public">
             <CampinasPublic />
           </Route>
-          <Route path="/public/posto/abc">
+          <Route path="/posto/abc/public">
             <ABCPublic />
           </Route>
-          <Route path="/public/posto/socorro">
+          <Route path="/posto/socorro/public">
             <SocorroPublic />
           </Route>
-          <Route path="/public/posto/sorocaba">
+          <Route path="/posto/sorocaba/public">
             <SorocabaPublic />
           </Route>
           
