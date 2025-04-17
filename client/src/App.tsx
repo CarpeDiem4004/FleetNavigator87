@@ -28,6 +28,7 @@ import PostoCampinas from "@/pages/postos/Campinas";
 import PostoABC from "@/pages/postos/ABC";
 import PostoSocorro from "@/pages/postos/Socorro";
 import PostoSorocaba from "@/pages/postos/Sorocaba";
+import HistoricoGeralPage from "@/pages/postos/HistoricoGeralPage";
 
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
@@ -77,6 +78,7 @@ function App() {
           <ProtectedRoute path="/posto/abc" component={PostoABC} />
           <ProtectedRoute path="/posto/socorro" component={PostoSocorro} />
           <ProtectedRoute path="/posto/sorocaba" component={PostoSorocaba} />
+          <ProtectedRoute path="/postos/historico-geral" component={HistoricoGeralPage} />
           
           {/* Rotas públicas para os postos de abastecimento - sem proteção e sem status de tanques */}
           <Route path="/posto/osasco/public">
