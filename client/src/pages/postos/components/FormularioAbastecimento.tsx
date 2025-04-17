@@ -165,7 +165,11 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipo de Combustível</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione o combustível" />
@@ -207,7 +211,11 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Projeto</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value} 
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione o projeto" />
