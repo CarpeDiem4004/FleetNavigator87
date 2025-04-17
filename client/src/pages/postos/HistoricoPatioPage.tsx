@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { format, differenceInDays } from 'date-fns';
 import { fetchRecords } from '@/lib/supabase-client';
-import { ENDPOINTS } from '@/constants/supabase';
 
 interface MovimentacaoPatio {
   id: number;
@@ -29,8 +28,7 @@ const HistoricoPatioPage: React.FC = () => {
       console.log("[FETCH] Buscando todas as movimentações de pátio");
       
       // Buscar todas as movimentações sem filtro de posto
-      const data = await fetchRecords(ENDPOINTS.MOVIMENTACOES, {
-        // Não usamos orderBy por enquanto para evitar problemas com nome de coluna
+      const data = await fetchRecords('movimentacoes_patio', {
         limit: 500 // Aumentamos o limite para trazer mais registros
       });
       
