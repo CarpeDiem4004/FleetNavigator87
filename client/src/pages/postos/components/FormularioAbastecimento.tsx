@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Fuel } from 'lucide-react';
 import { TabsContent } from '@/components/ui/tabs';
-import { enviarParaSupabase, ENDPOINTS } from '@/constants/supabase';
+import { enviarParaSupabase, ENDPOINTS, verificarConexaoSupabase } from '@/constants/supabase';
 
 // Schema de validação para o formulário de abastecimento
 const abastecimentoSchema = z.object({
@@ -67,6 +67,17 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       
       console.log('Dados a enviar:', abastecimentoData);
       
+      // Verifica conexão com a internet antes de enviar
+      if (!navigator.onLine) {
+        throw new Error('Sem conexão com a internet. Verifique sua rede e tente novamente.');
+      }
+      
+      // Verifica conectividade com Supabase antes de tentar enviar
+      const conexaoSupabase = await verificarConexaoSupabase();
+      if (!conexaoSupabase) {
+        throw new Error('Não foi possível conectar ao servidor Supabase. Verifique sua conexão e tente novamente.');
+      }
+      
       // Envia os dados para o Supabase
       const response = await enviarParaSupabase(ENDPOINTS.ABASTECIMENTOS, abastecimentoData);
       console.log('Resposta do servidor:', response);
@@ -77,11 +88,22 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       });
       
       form.reset();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao registrar abastecimento:', error);
+      
+      // Mensagem de erro mais específica
+      let errorMessage = 'Verifique sua conexão e tente novamente.';
+      
+      // Tentativa de melhorar a mensagem de erro
+      if (error.message && error.message.includes('Failed to fetch')) {
+        errorMessage = 'Falha na conexão com o servidor. Verifique se você tem acesso à internet.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: 'Erro ao registrar abastecimento',
-        description: 'Verifique sua conexão e tente novamente.',
+        description: errorMessage,
         variant: 'destructive',
       });
     }
