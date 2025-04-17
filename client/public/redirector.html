@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirecionando...</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f8f9fa;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      padding: 32px;
+      max-width: 500px;
+      width: 100%;
+    }
+    
+    h1 {
+      color: #1e3a8a;
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+    
+    p {
+      color: #555;
+      margin-bottom: 24px;
+    }
+    
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top: 4px solid #1e3a8a;
+      width: 36px;
+      height: 36px;
+      margin: 0 auto 20px;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .links {
+      margin-top: 24px;
+    }
+    
+    .button {
+      background-color: #1e3a8a;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 10px 16px;
+      font-size: 16px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      margin: 8px;
+    }
+    
+    .button:hover {
+      background-color: #1e40af;
+    }
+    
+    #count {
+      font-weight: bold;
+      color: #1e3a8a;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="spinner"></div>
+    <h1>Redirecionando para o Sistema de Posto</h1>
+    <p>Você será redirecionado em <span id="count">5</span> segundos.</p>
+    <p>Se o redirecionamento não ocorrer automaticamente, selecione um posto abaixo:</p>
+    
+    <div class="links">
+      <a href="/posto/abc.html" class="button">Posto ABC</a>
+      <a href="/posto/socorro.html" class="button">Posto Socorro</a>
+      <a href="/posto/sorocaba.html" class="button">Posto Sorocaba</a>
+    </div>
+  </div>
+  
+  <script>
+    // Contador de 5 segundos
+    let count = 5;
+    const countEl = document.getElementById('count');
+    
+    const timer = setInterval(() => {
+      count--;
+      countEl.textContent = count;
+      
+      if (count <= 0) {
+        clearInterval(timer);
+        // Redirecionar automaticamente para o Posto ABC
+        window.location.href = '/posto/abc.html';
+      }
+    }, 1000);
+  </script>
+</body>
+</html>

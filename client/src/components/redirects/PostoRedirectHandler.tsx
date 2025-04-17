@@ -1,132 +1,93 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useLocation } from 'wouter';
-import { Card, CardContent } from '@/components/ui/card';
+import { useParams } from 'wouter';
 import { Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import ErrorPage from '@/pages/ErrorPage';
-
-// Mapeamento de códigos para nomes dos postos
-const postoNomes: Record<string, string> = {
-  osasco: 'Osasco',
-  guarulhos: 'Guarulhos',
-  saopaulo: 'São Paulo',
-  campinas: 'Campinas',
-  abc: 'ABC',
-  socorro: 'Socorro',
-  sorocaba: 'Sorocaba'
-};
 
 type PostoParams = {
   postoCode: string;
 };
 
 const PostoRedirectHandler: React.FC = () => {
-  const [, setLocation] = useLocation();
   const params = useParams<PostoParams>();
   const postoCode = params.postoCode?.toLowerCase() || '';
-  const postoNome = postoNomes[postoCode] || postoCode.toUpperCase();
-  
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [connectionError, setConnectionError] = useState(false);
+  const [redirectStatus, setRedirectStatus] = useState<'pending' | 'failed' | 'complete'>('pending');
+  const [count, setCount] = useState(3);
   
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    if (!postoCode) {
+      setRedirectStatus('failed');
+      return;
+    }
     
-    const redirectToPosto = () => {
+    console.log(`Preparando redirecionamento para página do posto ${postoCode}...`);
+    
+    // Usar setTimeout para garantir que o redirecionamento aconteça após renderização
+    const timer = setTimeout(() => {
       try {
-        if (!postoCode) {
-          setError('Código do posto não especificado na URL.');
-          setLoading(false);
-          return;
-        }
+        console.log(`Redirecionando para página estática do posto ${postoCode}...`);
         
-        if (!Object.keys(postoNomes).includes(postoCode)) {
-          setError(`Posto "${postoCode}" não encontrado.`);
-          setLoading(false);
-          return;
-        }
+        // Criar URL com base no domínio atual
+        const protocol = window.location.protocol;
+        const host = window.location.host;
+        const postoUrl = `${protocol}//${host}/posto/${postoCode}.html`;
         
-        // Realizar verificação básica de conexão antes de redirecionar
-        fetch('/api/user')
-          .then(response => {
-            console.log(`Redirecionando para /posto/${postoCode}`);
-            setLocation(`/posto/${postoCode}`);
-          })
-          .catch(err => {
-            console.error('Erro de conexão ao verificar API:', err);
-            setConnectionError(true);
-            setLoading(false);
-          });
-        
-      } catch (err) {
-        console.error('Erro ao redirecionar:', err);
-        setError('Ocorreu um erro ao redirecionar. Tente novamente.');
-        setLoading(false);
+        // Redirecionar usando window.location
+        window.location.href = postoUrl;
+        setRedirectStatus('complete');
+      } catch (error) {
+        console.error("Erro ao redirecionar:", error);
+        setRedirectStatus('failed');
       }
-    };
+    }, 1000);
     
-    // Atraso pequeno para permitir que a interface seja renderizada
-    timeoutId = setTimeout(redirectToPosto, 1000);
-    
-    // Limite de tempo para exibir um erro caso o redirecionamento não funcione
-    const errorTimeoutId = setTimeout(() => {
-      setLoading(false);
-      setError('Tempo esgotado ao redirecionar. Clique no botão abaixo para tentar novamente.');
-    }, 10000);
+    // Countdown timer
+    const countdown = setInterval(() => {
+      setCount(c => {
+        if (c <= 1) {
+          clearInterval(countdown);
+          return 0;
+        }
+        return c - 1;
+      });
+    }, 1000);
     
     return () => {
-      clearTimeout(timeoutId);
-      clearTimeout(errorTimeoutId);
+      clearTimeout(timer);
+      clearInterval(countdown);
     };
-  }, [postoCode, setLocation]);
+  }, [postoCode]);
   
-  const handleRedirectClick = () => {
-    setLocation(`/posto/${postoCode}`);
-  };
-  
-  // Se houver erro de conexão, exibir página de erro
-  if (connectionError) {
+  if (redirectStatus === 'failed') {
     return (
-      <ErrorPage 
-        title="Erro de Conexão" 
-        message="Não foi possível conectar ao servidor da aplicação. Verifique sua conexão e tente novamente."
-        code="ERR_CONNECTION_REFUSED"
-      />
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center p-8 bg-red-50 border border-red-200 rounded-lg max-w-md">
+          <h2 className="text-xl font-bold text-red-700 mb-2">Erro de Redirecionamento</h2>
+          <p className="text-gray-700 mb-4">
+            Não foi possível redirecionar para a página do posto {postoCode}.
+          </p>
+          <p className="text-sm text-gray-600">
+            Tente acessar diretamente: <br />
+            <code className="bg-gray-100 p-1 rounded">/posto/{postoCode}.html</code>
+          </p>
+        </div>
+      </div>
     );
   }
   
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardContent className="flex flex-col items-center justify-center p-6">
-          <h1 className="text-2xl font-bold mb-4 text-center">
-            {loading ? 'Redirecionando...' : (error ? 'Erro' : `Posto ${postoNome}`)}
-          </h1>
-          
-          {loading ? (
-            <div className="flex flex-col items-center">
-              <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-              <p className="text-muted-foreground">
-                Você está sendo redirecionado para o sistema do posto {postoNome}
-              </p>
-            </div>
-          ) : error ? (
-            <div className="text-center">
-              <div className="bg-red-50 text-red-600 p-4 rounded-md mb-4">
-                {error}
-              </div>
-              <Button onClick={handleRedirectClick}>
-                Tentar Novamente
-              </Button>
-            </div>
-          ) : null}
-          
-          <div className="mt-6 text-center text-sm text-gray-500">
-            <p>Se o redirecionamento não funcionar, <a href={`/posto/${postoCode}`} className="text-primary hover:underline">clique aqui</a>.</p>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center p-8 bg-blue-50 border border-blue-200 rounded-lg max-w-md">
+        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+        <h2 className="text-xl font-bold text-blue-700 mb-2">Redirecionando</h2>
+        <p className="text-gray-700 mb-2">
+          Acessando página do posto {postoCode.toUpperCase()}...
+        </p>
+        <p className="text-sm text-gray-500">
+          Aguarde {count} segundos ou clique <a 
+            href={`/posto/${postoCode}.html`} 
+            className="text-blue-600 hover:underline"
+          >aqui</a> para continuar.
+        </p>
+      </div>
     </div>
   );
 };
