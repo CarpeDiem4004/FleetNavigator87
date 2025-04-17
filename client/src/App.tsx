@@ -13,6 +13,7 @@ import FinesNew from "@/pages/FinesNew";
 import LineHallNew from "@/pages/LineHallNew";
 import UsersNew from "@/pages/UsersNew";
 import FleetManagementNew from "@/pages/FleetManagementNew";
+import Bases from "@/pages/Bases";
 import SignIn from "@/pages/SignIn";
 import RegisterNew from "@/pages/RegisterNew";
 import AccessDeniedPage from "@/pages/access-denied";
@@ -74,6 +75,7 @@ function App() {
           <ProtectedRoute path="/line-hall" component={LineHallNew} />
           <ProtectedRoute path="/fleet-management" component={FleetManagementNew} />
           <ProtectedRoute path="/users" component={UsersNew} />
+          <ProtectedRoute path="/bases" component={Bases} />
           
           {/* Rotas para os postos de abastecimento - protegidas */}
           <ProtectedRoute path="/postos" component={IndexPostos} />

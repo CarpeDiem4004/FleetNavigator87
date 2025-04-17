@@ -1,19 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { apiRequest } from '@/lib/queryClient';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { parseBasesData, importBasesToSystem } from '@/utils/importBases';
+import { apiRequest } from '@/lib/queryClient';
+import { Base, insertBaseSchema } from '@shared/schema';
+import AppLayout from '@/components/layout/AppLayout';
+import { useToast } from '@/hooks/use-toast';
 
 import { 
   Card, 
   CardContent, 
   CardDescription, 
-  CardFooter, 
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
@@ -34,7 +36,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -43,28 +46,22 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Button } from '@/components/ui/button';
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { Building2, Loader2, Plus, Edit, Trash2, Award, Download, Upload, DatabaseIcon, Wrench, FileUp } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
-import { insertBaseSchema } from '@shared/schema';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import AppLayout from '@/components/layout/AppLayout';
-
-// Interface para a base
-interface Base {
-  id: number;
-  name: string;
-  location?: string;
-  operation?: string;
-  active: boolean;
-  hasMaintenance?: boolean;
-  hasTires?: boolean;
-  created_at: string;
-}
+import { 
+  Building2, 
+  Plus, 
+  Edit, 
+  Trash2, 
+  Loader2, 
+  Award, 
+  FileUp,
+  Wrench,
+  Database as DatabaseIcon
+} from 'lucide-react';
 
 // Schema para o formulário, estendendo o schema existente
 const baseFormSchema = insertBaseSchema.extend({
@@ -99,14 +96,14 @@ export default function BasesPage() {
   // Query para buscar as bases
   const { data: bases, isLoading, refetch } = useQuery<Base[]>({
     queryKey: ['/api/bases'],
-    queryFn: () => apiRequest('GET', '/api/bases'),
+    queryFn: () => apiRequest('GET', '/api/bases').then(res => res.json()),
   });
 
   // Mutation para adicionar uma nova base
   const createBaseMutation = useMutation({
     mutationFn: async (data: z.infer<typeof baseFormSchema>) => {
       const response = await apiRequest('POST', '/api/bases', data);
-      return response;
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -130,7 +127,7 @@ export default function BasesPage() {
   const updateBaseMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<z.infer<typeof baseFormSchema>> }) => {
       const response = await apiRequest('PATCH', `/api/bases/${id}`, data);
-      return response;
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -155,7 +152,7 @@ export default function BasesPage() {
   const deleteBaseMutation = useMutation({
     mutationFn: async (id: number) => {
       const response = await apiRequest('DELETE', `/api/bases/${id}`);
-      return response;
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -354,159 +351,160 @@ export default function BasesPage() {
               </DialogContent>
             </Dialog>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2" onClick={() => {
-                setIsEditing(false);
-                form.reset({
-                  name: '',
-                  location: '',
-                  operation: '',
-                  active: true,
-                  hasMaintenance: false,
-                  hasTires: false,
-                });
-              }}>
-                <Plus className="h-4 w-4" />
-                Adicionar Base
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[525px]">
-              <DialogHeader>
-                <DialogTitle>
-                  {isEditing ? 'Editar Base' : 'Nova Base'}
-                </DialogTitle>
-                <DialogDescription>
-                  {isEditing
-                    ? 'Atualize as informações da base selecionada'
-                    : 'Preencha as informações para adicionar uma nova base'}
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome da Base</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Ex: Base São Paulo" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Localização</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Ex: São Paulo, SP" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="operation"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Operação</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Ex: COCA COLA" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="active"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                        <div className="space-y-0.5">
-                          <FormLabel>Status</FormLabel>
-                          <FormDescription>
-                            Determine se a base está ativa ou inativa
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="space-y-4">
-                    <h3 className="font-medium text-sm">Configurações da Base</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="hasMaintenance"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                            <div className="space-y-0.5">
-                              <div className="flex items-center gap-2">
-                                <Wrench className="h-4 w-4 text-blue-600" />
-                                <FormLabel>Manutenção</FormLabel>
-                              </div>
-                              <FormDescription>
-                                Habilitar solicitações de manutenção
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="hasTires"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                            <div className="space-y-0.5">
-                              <div className="flex items-center gap-2">
-                                <DatabaseIcon className="h-4 w-4 text-green-600" />
-                                <FormLabel>Pneus</FormLabel>
-                              </div>
-                              <FormDescription>
-                                Habilitar gerenciamento de pneus
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button type="submit" disabled={createBaseMutation.isPending || updateBaseMutation.isPending}>
-                      {(createBaseMutation.isPending || updateBaseMutation.isPending) && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <DialogTrigger asChild>
+                <Button className="gap-2" onClick={() => {
+                  setIsEditing(false);
+                  form.reset({
+                    name: '',
+                    location: '',
+                    operation: '',
+                    active: true,
+                    hasMaintenance: false,
+                    hasTires: false,
+                  });
+                }}>
+                  <Plus className="h-4 w-4" />
+                  Adicionar Base
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[525px]">
+                <DialogHeader>
+                  <DialogTitle>
+                    {isEditing ? 'Editar Base' : 'Nova Base'}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {isEditing
+                      ? 'Atualize as informações da base selecionada'
+                      : 'Preencha as informações para adicionar uma nova base'}
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome da Base</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ex: Base São Paulo" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
                       )}
-                      {isEditing ? 'Atualizar' : 'Adicionar'}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+                    />
+                    <FormField
+                      control={form.control}
+                      name="location"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Localização</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ex: São Paulo, SP" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="operation"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Operação</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ex: COCA COLA" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="active"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                          <div className="space-y-0.5">
+                            <FormLabel>Status</FormLabel>
+                            <FormDescription>
+                              Determine se a base está ativa ou inativa
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="space-y-4">
+                      <h3 className="font-medium text-sm">Configurações da Base</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="hasMaintenance"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                              <div className="space-y-0.5">
+                                <div className="flex items-center gap-2">
+                                  <Wrench className="h-4 w-4 text-blue-600" />
+                                  <FormLabel>Manutenção</FormLabel>
+                                </div>
+                                <FormDescription>
+                                  Habilitar solicitações de manutenção
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="hasTires"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                              <div className="space-y-0.5">
+                                <div className="flex items-center gap-2">
+                                  <DatabaseIcon className="h-4 w-4 text-green-600" />
+                                  <FormLabel>Pneus</FormLabel>
+                                </div>
+                                <FormDescription>
+                                  Habilitar gerenciamento de pneus
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button type="submit" disabled={createBaseMutation.isPending || updateBaseMutation.isPending}>
+                        {(createBaseMutation.isPending || updateBaseMutation.isPending) && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        {isEditing ? 'Atualizar' : 'Adicionar'}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* Dialog de confirmação de exclusão */}
