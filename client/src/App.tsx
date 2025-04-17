@@ -40,6 +40,15 @@ import ABCPublic from "@/pages/postos/public/ABCPublic";
 import SocorroPublic from "@/pages/postos/public/SocorroPublic";
 import SorocabaPublic from "@/pages/postos/public/SorocabaPublic";
 
+// Importação dos componentes de redirecionamento
+import OsascoRedirect from "@/components/redirects/OsascoRedirect";
+import GuarulhosRedirect from "@/components/redirects/GuarulhosRedirect";
+import SaoPauloRedirect from "@/components/redirects/SaoPauloRedirect";
+import CampinasRedirect from "@/components/redirects/CampinasRedirect";
+import ABCRedirect from "@/components/redirects/ABCRedirect";
+import SocorroRedirect from "@/components/redirects/SocorroRedirect";
+import SorocabaRedirect from "@/components/redirects/SorocabaRedirect";
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -86,48 +95,27 @@ function App() {
           </Route>
           <ProtectedRoute path="/posto/:postoCode/dashboard" component={PostoDashboard} />
           
-          {/* Rotas públicas para os postos com redirecionamento via componente */}
+          {/* Rotas públicas para os postos com redirecionamento via componentes específicos */}
           <Route path="/public/posto/osasco">
-            {() => {
-              window.location.href = "/posto/osasco";
-              return null;
-            }}
+            <OsascoRedirect />
           </Route>
           <Route path="/public/posto/guarulhos">
-            {() => {
-              window.location.href = "/posto/guarulhos";
-              return null;
-            }}
+            <GuarulhosRedirect />
           </Route>
           <Route path="/public/posto/saopaulo">
-            {() => {
-              window.location.href = "/posto/saopaulo";
-              return null;
-            }}
+            <SaoPauloRedirect />
           </Route>
           <Route path="/public/posto/campinas">
-            {() => {
-              window.location.href = "/posto/campinas";
-              return null;
-            }}
+            <CampinasRedirect />
           </Route>
           <Route path="/public/posto/abc">
-            {() => {
-              window.location.href = "/posto/abc";
-              return null;
-            }}
+            <ABCRedirect />
           </Route>
           <Route path="/public/posto/socorro">
-            {() => {
-              window.location.href = "/posto/socorro";
-              return null;
-            }}
+            <SocorroRedirect />
           </Route>
           <Route path="/public/posto/sorocaba">
-            {() => {
-              window.location.href = "/posto/sorocaba";
-              return null;
-            }}
+            <SorocabaRedirect />
           </Route>
           
           {/* Rotas para interfaces simplificadas dos postos (quando já autenticados) */}
