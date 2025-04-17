@@ -18,7 +18,7 @@ import { ENDPOINTS, buscarDadosSupabase, enviarParaSupabase } from '@/constants/
 import { useToast } from "@/hooks/use-toast";
 
 interface StatusTanqueProps {
-  postId: string;
+  postoCode: string;
 }
 
 interface AbastecimentoData {
@@ -59,7 +59,7 @@ interface ConfiguracaoTanques {
   updated_at?: string;
 }
 
-export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
+export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postoCode }) => {
   const { toast } = useToast();
   
   const [statusTanque, setStatusTanque] = useState<StatusTanque>({

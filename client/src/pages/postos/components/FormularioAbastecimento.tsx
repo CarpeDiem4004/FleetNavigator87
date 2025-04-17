@@ -32,10 +32,10 @@ const abastecimentoSchema = z.object({
 type AbastecimentoValues = z.infer<typeof abastecimentoSchema>;
 
 interface FormularioAbastecimentoProps {
-  postId: string;
+  postoCode: string;
 }
 
-export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = ({ postId }) => {
+export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = ({ postoCode }) => {
   const { toast } = useToast();
   
   const form = useForm<AbastecimentoValues>({
@@ -68,7 +68,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         projeto: data.projeto,
         nome_motorista: data.motorista,
         nome_operador: data.operador,
-        posto: postId
+        posto: postoCode
       };
       
       console.log('Dados a enviar:', abastecimentoData);
@@ -133,7 +133,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
             Registro de Abastecimento
           </CardTitle>
           <CardDescription>
-            Preencha todos os campos para registrar um abastecimento no posto {postId}.
+            Preencha todos os campos para registrar um abastecimento no posto {postoCode}.
           </CardDescription>
         </CardHeader>
         <CardContent>
