@@ -64,9 +64,37 @@ export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ po
         throw new Error('Não foi possível conectar ao servidor Supabase. Verifique sua conexão e tente novamente mais tarde.');
       }
       
-      // Envia os dados para o Supabase usando o cliente de serviço (contorna RLS)
-      const response = await insertData('recebimentos_combustivel', recebimentoData);
-      console.log('Resposta do servidor:', response);
+      // Tenta criar a tabela, se necessário, usando localStorage como fallback
+      try {
+        // Envia os dados para o Supabase usando o cliente de serviço (contorna RLS)
+        const response = await insertData('recebimentos_combustivel', recebimentoData);
+        console.log('Resposta do servidor:', response);
+      } catch (error: any) {
+        console.error('Erro ao inserir no Supabase:', error);
+        
+        // Se a tabela não existir, salvamos localmente e mostramos uma mensagem
+        if (error.code === '42P01' || (error.message && error.message.includes("relation") && error.message.includes("does not exist"))) {
+          // Salvar no localStorage como fallback
+          const localKey = `recebimentos_combustivel_${postId}`;
+          const storedData = localStorage.getItem(localKey);
+          const recebimentos = storedData ? JSON.parse(storedData) : [];
+          
+          // Adicionar o novo recebimento com um ID gerado e timestamp
+          recebimentos.push({
+            ...recebimentoData,
+            id: Date.now(),
+            created_at: new Date().toISOString()
+          });
+          
+          // Salvar de volta no localStorage
+          localStorage.setItem(localKey, JSON.stringify(recebimentos));
+          
+          console.log('Dados salvos localmente como fallback:', recebimentos);
+          throw new Error('A tabela de recebimentos não existe no servidor. Os dados foram salvos localmente como fallback.');
+        } else {
+          throw error; // Propagar outros erros
+        }
+      }
       
       toast({
         title: 'Recebimento registrado!',

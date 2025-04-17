@@ -332,11 +332,31 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
           }) || [];
           
           // Buscar recebimentos usando o novo cliente Supabase
-          recebimentos = await fetchRecords('recebimentos_combustivel', {
-            equals: { posto: postId },
-            order: { created_at: 'desc' },
-            limit: 50
-          }) || [];
+          try {
+            recebimentos = await fetchRecords('recebimentos_combustivel', {
+              equals: { posto: postId },
+              order: { created_at: 'desc' },
+              limit: 50
+            }) || [];
+          } catch (recebimentosError) {
+            console.log("[Supabase] Erro ao buscar recebimentos de combustível:", recebimentosError);
+            
+            // Tentar buscar do localStorage como fallback
+            try {
+              const localKey = `recebimentos_combustivel_${postId}`;
+              const storedData = localStorage.getItem(localKey);
+              
+              if (storedData) {
+                recebimentos = JSON.parse(storedData);
+                console.log("[Local] Recuperados recebimentos de combustível do localStorage:", recebimentos.length);
+              } else {
+                recebimentos = []; // Se não houver dados locais, use um array vazio
+              }
+            } catch (localError) {
+              console.error("[Local] Erro ao ler recebimentos do localStorage:", localError);
+              recebimentos = []; // Em caso de erro de leitura do localStorage, use um array vazio
+            }
+          }
         } catch (apiError) {
           console.log("Erro ao buscar dados da API, usando apenas configurações locais:", apiError);
           // Continue com arrays vazios se a API falhar
