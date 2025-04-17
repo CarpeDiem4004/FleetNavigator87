@@ -59,31 +59,15 @@ function App() {
           <ProtectedRoute path="/fleet-management" component={FleetManagementNew} />
           <ProtectedRoute path="/users" component={UsersNew} />
           
-          {/* Rotas para os postos de abastecimento */}
-          <Route path="/postos">
-            <IndexPostos />
-          </Route>
-          <Route path="/posto/osasco">
-            <PostoOsasco />
-          </Route>
-          <Route path="/posto/guarulhos">
-            <PostoGuarulhos />
-          </Route>
-          <Route path="/posto/saopaulo">
-            <PostoSaoPaulo />
-          </Route>
-          <Route path="/posto/campinas">
-            <PostoCampinas />
-          </Route>
-          <Route path="/posto/abc">
-            <PostoABC />
-          </Route>
-          <Route path="/posto/socorro">
-            <PostoSocorro />
-          </Route>
-          <Route path="/posto/sorocaba">
-            <PostoSorocaba />
-          </Route>
+          {/* Rotas para os postos de abastecimento - protegidas */}
+          <ProtectedRoute path="/postos" component={IndexPostos} />
+          <ProtectedRoute path="/posto/osasco" component={PostoOsasco} />
+          <ProtectedRoute path="/posto/guarulhos" component={PostoGuarulhos} />
+          <ProtectedRoute path="/posto/saopaulo" component={PostoSaoPaulo} />
+          <ProtectedRoute path="/posto/campinas" component={PostoCampinas} />
+          <ProtectedRoute path="/posto/abc" component={PostoABC} />
+          <ProtectedRoute path="/posto/socorro" component={PostoSocorro} />
+          <ProtectedRoute path="/posto/sorocaba" component={PostoSorocaba} />
           
           <Route>
             <NotFound />

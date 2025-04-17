@@ -295,39 +295,100 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
       try {
         setIsLoading(true);
         
-        // Buscar configurações de tanques
+        // Primeiro tenta carregar as configurações locais
+        const configLocal = getStoredConfig(postId);
+        if (configLocal) {
+          console.log("Usando configuração armazenada localmente para:", postId);
+          
+          // Atualizar o estado principal com as configurações locais
+          setStatusTanque({
+            diesel: {
+              capacidade: configLocal.diesel_capacidade,
+              nivel: configLocal.diesel_nivel,
+              porcentagem: (configLocal.diesel_nivel / configLocal.diesel_capacidade) * 100,
+              ultimosAbastecimentos: 0,
+              ultimosRecebimentos: 0
+            },
+            arla: {
+              capacidade: configLocal.arla_capacidade,
+              nivel: configLocal.arla_nivel,
+              porcentagem: (configLocal.arla_nivel / configLocal.arla_capacidade) * 100,
+              ultimosAbastecimentos: 0,
+              ultimosRecebimentos: 0
+            }
+          });
+          
+          setIsLoading(false);
+          
+          // Continue tentando buscar dados da API em segundo plano
+        }
+        
+        // Buscar configurações de tanques da API
         const config = await fetchConfigTanques();
         
-        // Buscar abastecimentos usando a nova função
-        const queryParamsAbastecimentos = `posto=eq.${postId}&order=created_at.desc&limit=50`;
-        const abastecimentos = await buscarDadosSupabase(ENDPOINTS.ABASTECIMENTOS, queryParamsAbastecimentos);
+        // Tenta buscar abastecimentos e recebimentos da API
+        let abastecimentos = [];
+        let recebimentos = [];
         
-        // Buscar recebimentos usando a nova função
-        const queryParamsRecebimentos = `posto=eq.${postId}&order=created_at.desc&limit=50`;
-        const recebimentos = await buscarDadosSupabase(ENDPOINTS.RECEBIMENTOS, queryParamsRecebimentos);
+        try {
+          // Buscar abastecimentos usando a nova função
+          const queryParamsAbastecimentos = `posto=eq.${postId}&order=created_at.desc&limit=50`;
+          abastecimentos = await buscarDadosSupabase(ENDPOINTS.ABASTECIMENTOS, queryParamsAbastecimentos) || [];
+          
+          // Buscar recebimentos usando a nova função
+          const queryParamsRecebimentos = `posto=eq.${postId}&order=created_at.desc&limit=50`;
+          recebimentos = await buscarDadosSupabase(ENDPOINTS.RECEBIMENTOS, queryParamsRecebimentos) || [];
+        } catch (apiError) {
+          console.log("Erro ao buscar dados da API, usando apenas configurações locais:", apiError);
+          // Continue com arrays vazios se a API falhar
+        }
         
-        // Calcular totais
-        const totalDieselAbastecido = abastecimentos
-          .filter((a: AbastecimentoData) => a.tipo_combustivel === 'Diesel')
-          .reduce((acc: number, curr: AbastecimentoData) => acc + curr.litros, 0);
+        // Calcular totais (se houver dados da API)
+        const totalDieselAbastecido = Array.isArray(abastecimentos) 
+          ? abastecimentos
+              .filter((a: AbastecimentoData) => a.tipo_combustivel === 'Diesel')
+              .reduce((acc: number, curr: AbastecimentoData) => acc + curr.litros, 0)
+          : 0;
           
-        const totalArlaAbastecido = abastecimentos
-          .filter((a: AbastecimentoData) => a.tipo_combustivel === 'ARLA')
-          .reduce((acc: number, curr: AbastecimentoData) => acc + curr.litros, 0);
+        const totalArlaAbastecido = Array.isArray(abastecimentos)
+          ? abastecimentos
+              .filter((a: AbastecimentoData) => a.tipo_combustivel === 'ARLA')
+              .reduce((acc: number, curr: AbastecimentoData) => acc + curr.litros, 0)
+          : 0;
           
-        const totalDieselRecebido = recebimentos
-          .filter((r: RecebimentoData) => r.tipo_produto === 'Diesel')
-          .reduce((acc: number, curr: RecebimentoData) => acc + curr.litros_recebidos, 0);
+        const totalDieselRecebido = Array.isArray(recebimentos)
+          ? recebimentos
+              .filter((r: RecebimentoData) => r.tipo_produto === 'Diesel')
+              .reduce((acc: number, curr: RecebimentoData) => acc + curr.litros_recebidos, 0)
+          : 0;
           
-        const totalArlaRecebido = recebimentos
-          .filter((r: RecebimentoData) => r.tipo_produto === 'ARLA')
-          .reduce((acc: number, curr: RecebimentoData) => acc + curr.litros_recebidos, 0);
+        const totalArlaRecebido = Array.isArray(recebimentos)
+          ? recebimentos
+              .filter((r: RecebimentoData) => r.tipo_produto === 'ARLA')
+              .reduce((acc: number, curr: RecebimentoData) => acc + curr.litros_recebidos, 0)
+          : 0;
         
         // Determinar capacidade e nível base com base nas configurações ou valores padrão
-        const dieselCapacidade = config ? config.dieselCapacidade : statusTanque.diesel.capacidade;
-        const nivelDieselBase = config ? config.dieselNivel : 5000;
-        const arlaCapacidade = config ? config.arlaCapacidade : statusTanque.arla.capacidade;
-        const nivelArlaBase = config ? config.arlaNivel : 1000;
+        // Prioridade: 1) Configuração da API, 2) Configuração local, 3) Valores padrão
+        const dieselCapacidade = 
+          (config && config.dieselCapacidade) || 
+          (configLocal && configLocal.diesel_capacidade) || 
+          statusTanque.diesel.capacidade;
+          
+        const nivelDieselBase = 
+          (config && config.dieselNivel) || 
+          (configLocal && configLocal.diesel_nivel) || 
+          5000;
+          
+        const arlaCapacidade = 
+          (config && config.arlaCapacidade) || 
+          (configLocal && configLocal.arla_capacidade) || 
+          statusTanque.arla.capacidade;
+          
+        const nivelArlaBase = 
+          (config && config.arlaNivel) || 
+          (configLocal && configLocal.arla_nivel) || 
+          1000;
         
         // Calcular níveis atuais e porcentagens
         const nivelDiesel = Math.min(dieselCapacidade, nivelDieselBase - totalDieselAbastecido + totalDieselRecebido);
