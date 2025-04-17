@@ -141,9 +141,9 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
   return (
     <div className="w-full">
       <div>
-        <h2 className="text-2xl font-bold mb-4">Histórico de Abastecimentos</h2>
-        
-        <div className="mb-4 flex justify-end">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold">Histórico de Abastecimentos</h2>
+          
           <div className="relative w-64">
             <input
               type="text"
@@ -165,36 +165,51 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
         ) : filteredData.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <p>Nenhum abastecimento encontrado.</p>
-            {(searchTerm || dateStart || dateEnd) && (
-              <p className="text-sm mt-2">Tente ajustar os filtros de busca.</p>
+            {searchTerm && (
+              <p className="text-sm mt-2">Tente ajustar o termo de busca.</p>
             )}
           </div>
         ) : (
           <div className="overflow-auto">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-gray-100 border-b">
-                  <th className="py-2 px-4 text-left">Data</th>
-                  <th className="py-2 px-4 text-left">Placa</th>
-                  <th className="py-2 px-4 text-left">KM</th>
-                  <th className="py-2 px-4 text-left">Combustível</th>
-                  <th className="py-2 px-4 text-left">Litros</th>
-                  <th className="py-2 px-4 text-left">Projeto</th>
-                  <th className="py-2 px-4 text-left">Posto</th>
-                  <th className="py-2 px-4 text-left">Motorista</th>
+                <tr className="border-b border-gray-200">
+                  <th className="py-3 px-4 text-left font-medium text-gray-600">Data</th>
+                  <th className="py-3 px-4 text-left font-medium text-gray-600">Veículo</th>
+                  <th className="py-3 px-4 text-left font-medium text-gray-600">KM</th>
+                  <th className="py-3 px-4 text-left font-medium text-gray-600">Combustível</th>
+                  <th className="py-3 px-4 text-left font-medium text-gray-600">Litros</th>
+                  <th className="py-3 px-4 text-left font-medium text-gray-600">Projeto</th>
+                  <th className="py-3 px-4 text-left font-medium text-gray-600">Posto</th>
+                  <th className="py-3 px-4 text-left font-medium text-gray-600">Motorista</th>
+                  <th className="py-3 px-4 text-left font-medium text-gray-600">Ações</th>
                 </tr>
               </thead>
-              <tbody className="bg-white">
+              <tbody>
                 {filteredData.map((abast) => (
-                  <tr key={abast.id} className="border-b hover:bg-gray-50">
-                    <td className="py-2 px-4">{formatarData(abast.created_at)}</td>
-                    <td className="py-2 px-4">{abast.placa}</td>
-                    <td className="py-2 px-4">{formatarNumero(abast.km_atual)}</td>
-                    <td className="py-2 px-4">{abast.tipo_combustivel}</td>
-                    <td className="py-2 px-4">{formatarNumero(abast.litros)}</td>
-                    <td className="py-2 px-4">{abast.project || '-'}</td>
-                    <td className="py-2 px-4">{abast.posto}</td>
-                    <td className="py-2 px-4">{abast.nome_motorista}</td>
+                  <tr key={abast.id} className="border-b border-gray-200 hover:bg-gray-50">
+                    <td className="py-3 px-4">{formatarData(abast.created_at)}</td>
+                    <td className="py-3 px-4 font-medium">{abast.placa}</td>
+                    <td className="py-3 px-4">{formatarNumero(abast.km_atual)}</td>
+                    <td className="py-3 px-4">{abast.tipo_combustivel}</td>
+                    <td className="py-3 px-4">{formatarNumero(abast.litros)}</td>
+                    <td className="py-3 px-4">{abast.project || '-'}</td>
+                    <td className="py-3 px-4">{abast.posto}</td>
+                    <td className="py-3 px-4">{abast.nome_motorista}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex space-x-1">
+                        <button className="p-1 text-blue-600 hover:text-blue-800">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          </svg>
+                        </button>
+                        <button className="p-1 text-red-600 hover:text-red-800">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
