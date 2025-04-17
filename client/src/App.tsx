@@ -29,6 +29,15 @@ import PostoABC from "@/pages/postos/ABC";
 import PostoSocorro from "@/pages/postos/Socorro";
 import PostoSorocaba from "@/pages/postos/Sorocaba";
 
+// Importação das páginas públicas de postos
+import OsascoPublic from "@/pages/postos/public/OsascoPublic";
+import GuarulhosPublic from "@/pages/postos/public/GuarulhosPublic";
+import SaoPauloPublic from "@/pages/postos/public/SaoPauloPublic";
+import CampinasPublic from "@/pages/postos/public/CampinasPublic";
+import ABCPublic from "@/pages/postos/public/ABCPublic";
+import SocorroPublic from "@/pages/postos/public/SocorroPublic";
+import SorocabaPublic from "@/pages/postos/public/SorocabaPublic";
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -68,6 +77,29 @@ function App() {
           <ProtectedRoute path="/posto/abc" component={PostoABC} />
           <ProtectedRoute path="/posto/socorro" component={PostoSocorro} />
           <ProtectedRoute path="/posto/sorocaba" component={PostoSorocaba} />
+          
+          {/* Rotas públicas para os postos de abastecimento - sem proteção e sem status de tanques */}
+          <Route path="/public/posto/osasco">
+            <OsascoPublic />
+          </Route>
+          <Route path="/public/posto/guarulhos">
+            <GuarulhosPublic />
+          </Route>
+          <Route path="/public/posto/saopaulo">
+            <SaoPauloPublic />
+          </Route>
+          <Route path="/public/posto/campinas">
+            <CampinasPublic />
+          </Route>
+          <Route path="/public/posto/abc">
+            <ABCPublic />
+          </Route>
+          <Route path="/public/posto/socorro">
+            <SocorroPublic />
+          </Route>
+          <Route path="/public/posto/sorocaba">
+            <SorocabaPublic />
+          </Route>
           
           <Route>
             <NotFound />
