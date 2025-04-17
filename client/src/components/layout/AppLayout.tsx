@@ -201,7 +201,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     <div className="flex h-screen bg-background">
       {/* Background image */}
       <div 
-        className="fixed inset-0 z-0 opacity-5" 
+        className="fixed inset-0 z-0 opacity-30" 
         style={{ 
           backgroundImage: `url(${backgroundImage})`,
           backgroundSize: 'cover',
