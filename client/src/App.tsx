@@ -28,6 +28,8 @@ import PostoCampinas from "@/pages/postos/Campinas";
 import PostoABC from "@/pages/postos/ABC";
 import PostoSocorro from "@/pages/postos/Socorro";
 import PostoSorocaba from "@/pages/postos/Sorocaba";
+import PostoLoginPage from "@/pages/postos/PostoLoginPage";
+import PostoDashboard from "@/pages/postos/PostoDashboard";
 
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
@@ -100,6 +102,12 @@ function App() {
           <Route path="/public/posto/sorocaba">
             <SorocabaPublic />
           </Route>
+          
+          {/* Rotas para login e dashboard dos postos */}
+          <Route path="/posto/:postoCode">
+            <PostoLoginPage />
+          </Route>
+          <ProtectedRoute path="/posto/:postoCode/dashboard" component={PostoDashboard} />
           
           <Route>
             <NotFound />
