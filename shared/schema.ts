@@ -18,7 +18,10 @@ export const userRoleEnum = pgEnum('user_role', ['admin', 'gestor', 'operador'])
 export const bases = pgTable("bases", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  location: text("location").notNull(),
+  location: text("location"),
+  operation: text("operation"),
+  active: boolean("active").default(true),
+  created_at: timestamp("created_at").defaultNow(),
 });
 
 // Create the vehicles table
