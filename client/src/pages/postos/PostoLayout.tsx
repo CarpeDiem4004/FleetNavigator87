@@ -1,75 +1,69 @@
 import React from 'react';
-import { Link, useLocation } from 'wouter';
-import { cn } from '@/lib/utils';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Fuel, Truck, TruckIcon } from 'lucide-react';
+import { Fuel, TruckIcon, Truck } from 'lucide-react';
+import FormularioAbastecimento from './components/FormularioAbastecimento';
+import FormularioRecebimento from './components/FormularioRecebimento';
+import FormularioControlePatio from './components/FormularioControlePatio';
+import StatusTanquePosto from './components/StatusTanquePosto';
 
-// Layout principal para as páginas de postos
 interface PostoLayoutProps {
-  children: React.ReactNode;
+  id: string;
   nomePosto: string;
 }
 
-const PostoLayout: React.FC<PostoLayoutProps> = ({ children, nomePosto }) => {
-  const [location] = useLocation();
-  
+export const PostoLayout: React.FC<PostoLayoutProps> = ({ id, nomePosto }) => {
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center">
-          <div className="mr-4 flex">
-            <Link href="/" className="flex items-center space-x-2">
-              <span className="font-bold text-xl">Murícion Fleet</span>
-            </Link>
-          </div>
-          <div className="flex-1 flex justify-center">
-            <h1 className="text-2xl font-bold text-center text-primary">
-              Posto de Abastecimento - {nomePosto}
-            </h1>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground">
-              Área Administrativa
-            </Link>
-          </div>
+    <div className="w-full p-4 md:p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">Posto {nomePosto}</h1>
+          <p className="text-muted-foreground">
+            Gerencie as operações do posto de combustível {nomePosto}
+          </p>
         </div>
-      </header>
-      
-      {/* Conteúdo principal */}
-      <main className="container py-6">
-        <Tabs defaultValue="status" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="status" className="flex items-center gap-2">
-              <Fuel className="h-4 w-4" />
-              Status do Tanque
-            </TabsTrigger>
-            <TabsTrigger value="abastecimento" className="flex items-center gap-2">
-              <Fuel className="h-4 w-4" />
-              Abastecimento
-            </TabsTrigger>
-            <TabsTrigger value="recebimento" className="flex items-center gap-2">
-              <TruckIcon className="h-4 w-4" />
-              Recebimento
-            </TabsTrigger>
-            <TabsTrigger value="patio" className="flex items-center gap-2">
-              <Truck className="h-4 w-4" />
-              Controle de Pátio
-            </TabsTrigger>
-          </TabsList>
-          
-          {children}
-        </Tabs>
-      </main>
-      
-      {/* Footer */}
-      <footer className="border-t bg-background py-6">
-        <div className="container flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row md:py-0">
-          <div className="text-center text-sm leading-loose text-muted-foreground md:text-left">
-            © {new Date().getFullYear()} Murícion Fleet. Todos os direitos reservados.
-          </div>
+        
+        {/* Status dos Tanques */}
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold mb-3">Status dos Tanques</h2>
+          <StatusTanquePosto postId={id} />
         </div>
-      </footer>
+        
+        {/* Formulários */}
+        <div>
+          <h2 className="text-xl font-semibold mb-3">Operações</h2>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle>Registrar Operações</CardTitle>
+              <CardDescription>
+                Selecione o tipo de operação que deseja registrar
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="abastecimento" className="w-full">
+                <TabsList className="grid w-full grid-cols-1 md:grid-cols-3">
+                  <TabsTrigger value="abastecimento" className="flex items-center gap-2">
+                    <Fuel className="h-4 w-4" />
+                    <span>Abastecimento</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="recebimento" className="flex items-center gap-2">
+                    <TruckIcon className="h-4 w-4" />
+                    <span>Recebimento</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="patio" className="flex items-center gap-2">
+                    <Truck className="h-4 w-4" />
+                    <span>Controle de Pátio</span>
+                  </TabsTrigger>
+                </TabsList>
+                
+                <FormularioAbastecimento postId={id} />
+                <FormularioRecebimento postId={id} />
+                <FormularioControlePatio postId={id} />
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };
