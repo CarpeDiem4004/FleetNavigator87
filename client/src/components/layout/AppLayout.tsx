@@ -15,6 +15,7 @@ import {
   X,
   LogOut
 } from 'lucide-react';
+import backgroundImage from '../../assets/background.jpeg';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -198,15 +199,26 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <div className="flex h-screen bg-background">
+      {/* Background image */}
+      <div 
+        className="fixed inset-0 z-0 opacity-5" 
+        style={{ 
+          backgroundImage: `url(${backgroundImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      ></div>
+      
       {/* Sidebar para desktop */}
       {!isMobile && (
-        <div className="w-64 hidden md:block">
+        <div className="w-64 hidden md:block relative z-10">
           <Sidebar />
         </div>
       )}
       
       {/* Conteúdo principal */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
         {/* Header para mobile */}
         {isMobile && (
           <header className="border-b bg-card p-4 flex items-center justify-between">
