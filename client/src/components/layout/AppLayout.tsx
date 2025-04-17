@@ -199,9 +199,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Background image */}
+      {/* Camada de fundo branca com transparência */}
       <div 
-        className="fixed inset-0 z-0 opacity-30" 
+        className="fixed inset-0 pointer-events-none opacity-30"
         style={{ 
           backgroundImage: `url(${backgroundImage})`,
           backgroundSize: 'cover',
@@ -212,7 +212,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       
       {/* Sidebar para desktop */}
       {!isMobile && (
-        <div className="w-64 hidden md:block relative z-10">
+        <div className="w-64 hidden md:block z-10">
           <Sidebar />
         </div>
       )}
