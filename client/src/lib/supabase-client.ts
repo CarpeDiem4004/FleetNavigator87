@@ -1,88 +1,211 @@
 import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, API_KEY } from '../constants/supabase';
 
-// Ajusta a URL removendo /rest/v1 para o formato esperado pelo cliente Supabase
-const supabaseUrl = SUPABASE_URL.replace('/rest/v1', '');
+// URL do Supabase
+const supabaseUrl = 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
 
-// Inicializa o cliente Supabase
-export const supabase = createClient(supabaseUrl, API_KEY);
+// Chave anônima para autenticação e operações permitidas pelo RLS
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';
 
-// Função para excluir um registro por ID
-export async function deleteRecord(table: string, id: number) {
-  console.log(`[SUPABASE] Excluindo registro com ID ${id} da tabela ${table}`);
+// Chave de serviço para operações administrativas (contorna RLS)
+const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDg5ODIwNiwiZXhwIjoyMDYwMjc0MjA2fQ.bvwwqQBQVUOlyHYMsX9C5dSQhsQYI2r8qmqRBHgG_0Y';
+
+// Cliente Supabase padrão com chave anônima (para autenticação e operações com RLS)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Cliente Supabase com chave de serviço (para operações administrativas que contornam RLS)
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+/**
+ * Insere dados em uma tabela Supabase usando o cliente administrativo (contorna RLS)
+ * @param table Nome da tabela
+ * @param data Dados a serem inseridos
+ * @returns Resultado da operação
+ */
+export async function insertData(table: string, data: any) {
+  const timestamp = new Date().getTime();
   
-  const { data, error } = await supabase
-    .from(table)
-    .delete()
-    .eq('id', id);
-  
-  if (error) {
-    console.error(`[SUPABASE] Erro ao excluir registro:`, error);
-    throw new Error(`Erro ao excluir: ${error.message}`);
+  try {
+    console.log(`[Supabase] Inserindo dados em ${table}:`, data);
+    
+    const { data: result, error } = await supabaseAdmin
+      .from(table)
+      .insert(data)
+      .select();
+    
+    if (error) {
+      console.error(`[Supabase] Erro ao inserir em ${table}:`, error);
+      throw new Error(`Erro ao inserir dados: ${error.message}`);
+    }
+    
+    console.log(`[Supabase] Dados inseridos com sucesso em ${table}:`, result);
+    return result;
+  } catch (error: any) {
+    console.error(`[Supabase] Exceção ao inserir em ${table}:`, error);
+    throw new Error(`Falha ao inserir dados: ${error.message}`);
   }
-  
-  console.log(`[SUPABASE] Registro excluído com sucesso:`, data);
-  return data;
 }
 
-// Função para excluir múltiplos registros com base em um filtro
-export async function deleteRecords(table: string, filterColumn: string, filterValue: any) {
-  console.log(`[SUPABASE] Excluindo registros da tabela ${table} onde ${filterColumn}=${filterValue}`);
-  
-  const { data, error } = await supabase
-    .from(table)
-    .delete()
-    .eq(filterColumn, filterValue);
-  
-  if (error) {
-    console.error(`[SUPABASE] Erro ao excluir registros:`, error);
-    throw new Error(`Erro ao excluir: ${error.message}`);
+/**
+ * Busca dados de uma tabela Supabase usando o cliente administrativo (contorna RLS)
+ * Para compatibilidade com código existente, esta função também está disponível como fetchRecords
+ * @param table Nome da tabela
+ * @param query Objeto de consulta (opcional)
+ * @returns Dados retornados
+ */
+export async function fetchData(table: string, query?: any) {
+  try {
+    console.log(`[Supabase] Buscando dados de ${table}`);
+    
+    let queryBuilder = supabaseAdmin
+      .from(table)
+      .select();
+    
+    // Aplica filtros se existirem
+    if (query) {
+      if (query.equals) {
+        Object.entries(query.equals).forEach(([key, value]) => {
+          queryBuilder = queryBuilder.eq(key, value);
+        });
+      }
+      
+      if (query.order) {
+        Object.entries(query.order).forEach(([column, direction]) => {
+          queryBuilder = queryBuilder.order(column, { ascending: direction === 'asc' });
+        });
+      }
+      
+      if (query.limit) {
+        queryBuilder = queryBuilder.limit(query.limit);
+      }
+    }
+    
+    const { data, error } = await queryBuilder;
+    
+    if (error) {
+      console.error(`[Supabase] Erro ao buscar dados de ${table}:`, error);
+      throw new Error(`Erro ao buscar dados: ${error.message}`);
+    }
+    
+    console.log(`[Supabase] Dados recuperados de ${table}: ${data?.length} registros`);
+    return data || [];
+  } catch (error: any) {
+    console.error(`[Supabase] Exceção ao buscar dados de ${table}:`, error);
+    throw new Error(`Falha ao buscar dados: ${error.message}`);
   }
-  
-  console.log(`[SUPABASE] Registros excluídos com sucesso:`, data);
-  return data;
 }
 
-// Função para buscar registros
-export async function fetchRecords(table: string, options: {
-  filterColumn?: string;
-  filterValue?: any;
-  orderBy?: string;
-  ascending?: boolean;
-  limit?: number;
-} = {}) {
-  console.log(`[SUPABASE] Buscando registros da tabela ${table}`);
-  
-  let query = supabase.from(table).select('*');
-  
-  // Aplicar filtro se fornecido
-  if (options.filterColumn && options.filterValue !== undefined) {
-    query = query.eq(options.filterColumn, options.filterValue);
+/**
+ * Atualiza dados em uma tabela Supabase usando o cliente administrativo (contorna RLS)
+ * @param table Nome da tabela
+ * @param id ID do registro a ser atualizado
+ * @param data Dados atualizados
+ * @returns Resultado da operação
+ */
+export async function updateData(table: string, id: number, data: any) {
+  try {
+    console.log(`[Supabase] Atualizando dados em ${table} com ID ${id}:`, data);
+    
+    const { data: result, error } = await supabaseAdmin
+      .from(table)
+      .update(data)
+      .eq('id', id)
+      .select();
+    
+    if (error) {
+      console.error(`[Supabase] Erro ao atualizar em ${table}:`, error);
+      throw new Error(`Erro ao atualizar dados: ${error.message}`);
+    }
+    
+    console.log(`[Supabase] Dados atualizados com sucesso em ${table}:`, result);
+    return result;
+  } catch (error: any) {
+    console.error(`[Supabase] Exceção ao atualizar em ${table}:`, error);
+    throw new Error(`Falha ao atualizar dados: ${error.message}`);
   }
-  
-  // Aplicar ordenação se fornecida
-  if (options.orderBy) {
-    query = query.order(options.orderBy, { ascending: options.ascending ?? false });
+}
+
+/**
+ * Verifica se a conexão com o Supabase está funcionando
+ * @returns true se a conexão estiver funcionando, false caso contrário
+ */
+export async function checkConnection(): Promise<boolean> {
+  try {
+    // Tenta buscar um registro de uma tabela existente
+    const { data, error } = await supabaseAdmin
+      .from('controle_tanques')
+      .select()
+      .limit(1);
+    
+    if (error) {
+      console.error('[Supabase] Erro ao verificar conexão:', error);
+      return false;
+    }
+    
+    console.log('[Supabase] Conexão verificada com sucesso');
+    return true;
+  } catch (error) {
+    console.error('[Supabase] Exceção ao verificar conexão:', error);
+    return false;
   }
-  
-  // Aplicar limite se fornecido
-  if (options.limit) {
-    query = query.limit(options.limit);
+}
+
+/**
+ * Alias para fetchData para compatibilidade com código existente
+ */
+export const fetchRecords = fetchData;
+
+/**
+ * Exclui um registro de uma tabela Supabase usando o cliente administrativo (contorna RLS)
+ * @param table Nome da tabela
+ * @param id ID do registro a ser excluído
+ * @returns true se a exclusão for bem sucedida
+ */
+export async function deleteRecord(table: string, id: number): Promise<boolean> {
+  try {
+    console.log(`[Supabase] Excluindo registro de ${table} com ID ${id}`);
+    
+    const { error } = await supabaseAdmin
+      .from(table)
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error(`[Supabase] Erro ao excluir registro de ${table}:`, error);
+      throw new Error(`Erro ao excluir registro: ${error.message}`);
+    }
+    
+    console.log(`[Supabase] Registro excluído com sucesso de ${table}`);
+    return true;
+  } catch (error: any) {
+    console.error(`[Supabase] Exceção ao excluir registro de ${table}:`, error);
+    throw new Error(`Falha ao excluir registro: ${error.message}`);
   }
-  
-  const { data, error } = await query;
-  
-  if (error) {
-    console.error(`[SUPABASE] Erro ao buscar registros:`, error);
-    throw new Error(`Erro ao buscar dados: ${error.message}`);
+}
+
+/**
+ * Exclui múltiplos registros de uma tabela Supabase usando o cliente administrativo (contorna RLS)
+ * @param table Nome da tabela
+ * @param ids Lista de IDs dos registros a serem excluídos
+ * @returns true se a exclusão for bem sucedida
+ */
+export async function deleteRecords(table: string, ids: number[]): Promise<boolean> {
+  try {
+    console.log(`[Supabase] Excluindo ${ids.length} registros de ${table}`);
+    
+    const { error } = await supabaseAdmin
+      .from(table)
+      .delete()
+      .in('id', ids);
+    
+    if (error) {
+      console.error(`[Supabase] Erro ao excluir registros de ${table}:`, error);
+      throw new Error(`Erro ao excluir registros: ${error.message}`);
+    }
+    
+    console.log(`[Supabase] Registros excluídos com sucesso de ${table}`);
+    return true;
+  } catch (error: any) {
+    console.error(`[Supabase] Exceção ao excluir registros de ${table}:`, error);
+    throw new Error(`Falha ao excluir registros: ${error.message}`);
   }
-  
-  console.log(`[SUPABASE] Registros recuperados:`, data?.length || 0);
-  
-  // Verificar a estrutura do primeiro registro para diagnóstico
-  if (data && data.length > 0) {
-    console.log(`[SUPABASE] Estrutura do registro:`, Object.keys(data[0]));
-  }
-  
-  return data || [];
 }

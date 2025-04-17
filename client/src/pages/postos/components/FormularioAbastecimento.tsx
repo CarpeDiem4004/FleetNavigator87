@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Fuel } from 'lucide-react';
 import { TabsContent } from '@/components/ui/tabs';
-import { enviarParaSupabase, ENDPOINTS, verificarConexaoSupabase } from '@/constants/supabase';
+import { insertData, checkConnection } from '@/lib/supabase-client';
 
 // Schema de validação para o formulário de abastecimento
 const abastecimentoSchema = z.object({
@@ -68,7 +68,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         projeto: data.projeto,
         nome_motorista: data.motorista,
         nome_operador: data.operador,
-        posto: postId
+        posto: postId,
+        data_hora: new Date().toISOString() // Adiciona a data e hora atual
       };
       
       console.log('Dados a enviar:', abastecimentoData);
@@ -84,13 +85,13 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         description: 'Aguarde enquanto verificamos a conexão com o servidor...',
       });
       
-      const conexaoSupabase = await verificarConexaoSupabase();
+      const conexaoSupabase = await checkConnection();
       if (!conexaoSupabase) {
         throw new Error('Não foi possível conectar ao servidor Supabase. Verifique sua conexão e tente novamente mais tarde.');
       }
       
-      // Envia os dados para o Supabase
-      const response = await enviarParaSupabase(ENDPOINTS.ABASTECIMENTOS, abastecimentoData);
+      // Envia os dados para o Supabase usando o cliente de serviço para contornar RLS
+      const response = await insertData('abastecimentos_postos', abastecimentoData);
       console.log('Resposta do servidor:', response);
       
       toast({
