@@ -48,10 +48,12 @@ export const PostoLayout: React.FC<PostoLayoutProps> = ({ id, nomePosto }) => {
                     <Fuel className="h-4 w-4" />
                     <span>Abastecimento</span>
                   </TabsTrigger>
-                  <TabsTrigger value="recebimento" className="flex items-center gap-2">
+                  {/* Temporariamente desativado 
+                <TabsTrigger value="recebimento" className="flex items-center gap-2">
                     <TruckIcon className="h-4 w-4" />
                     <span>Recebimento</span>
                   </TabsTrigger>
+                */}
                   <TabsTrigger value="patio" className="flex items-center gap-2">
                     <Truck className="h-4 w-4" />
                     <span>Controle de Pátio</span>
@@ -59,7 +61,9 @@ export const PostoLayout: React.FC<PostoLayoutProps> = ({ id, nomePosto }) => {
                 </TabsList>
                 
                 <FormularioAbastecimento postId={id} />
+                {/* Temporariamente desativado 
                 <FormularioRecebimento postId={id} />
+                */}
                 <FormularioControlePatio postId={id} />
               </Tabs>
             </CardContent>
