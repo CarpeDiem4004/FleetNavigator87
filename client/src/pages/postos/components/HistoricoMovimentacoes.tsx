@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Truck, ArrowUpRight, ArrowDownLeft, Settings, RefreshCw } from 'lucide-react';
+import { Truck, ArrowUpRight, ArrowDownLeft, Settings, RefreshCw, Download } from 'lucide-react';
 import { fetchRecords } from '@/lib/supabase-client';
 
 interface HistoricoMovimentacoesProps {
@@ -96,6 +96,59 @@ export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ 
     fetchMovimentacoes();
   };
   
+  const handleExportarExcel = () => {
+    if (movimentacoes.length === 0) return;
+    
+    // Preparar dados para CSV
+    const headers = [
+      'Placa', 'Tipo de Movimento', 'Motorista', 'Operador',
+      'Posto', 'Data/Hora'
+    ];
+    
+    const csvData = movimentacoes.map(item => [
+      item.placa,
+      item.tipo_movimento,
+      item.nome_motorista,
+      item.nome_operador,
+      item.posto,
+      formatarData(item.created_at)
+    ]);
+    
+    // Combinar headers e dados
+    const csvContent = [
+      headers.join(';'),
+      ...csvData.map(row => row.join(';'))
+    ].join('\n');
+    
+    // Criar e download do arquivo usando uma abordagem segura
+    try {
+      // Criar Blob com os dados CSV
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      
+      // Para navegadores modernos
+      const url = URL.createObjectURL(blob);
+      
+      // Criar link para download sem anexá-lo ao DOM
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `movimentacoes_patio_${formatPosto(postId)}_${new Date().toISOString().slice(0, 10)}.csv`;
+      
+      // Esta abordagem funciona sem problemas de removeChild
+      document.body.appendChild(a);
+      a.click();
+      
+      // Remover o elemento e liberar o recurso
+      window.setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+    } catch (error) {
+      console.error('Erro ao criar arquivo para download:', error);
+      alert('Erro ao exportar dados. Por favor, tente novamente.');
+    }
+  };
+  
   return (
     <Card className="shadow-md">
       <CardHeader className="bg-gradient-to-r from-green-50 to-slate-50 border-b">
@@ -104,16 +157,28 @@ export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ 
             <Truck className="h-5 w-5" />
             Movimentações de Pátio
           </CardTitle>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRefresh} 
-            disabled={isLoading}
-            className="h-8 gap-1"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Atualizar</span>
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleExportarExcel} 
+              disabled={isLoading || movimentacoes.length === 0}
+              className="h-8 gap-1"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Exportar</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRefresh} 
+              disabled={isLoading}
+              className="h-8 gap-1"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Atualizar</span>
+            </Button>
+          </div>
         </div>
         <CardDescription>
           Registros recentes de entrada e saída de veículos
