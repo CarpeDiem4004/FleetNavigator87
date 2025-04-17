@@ -78,7 +78,9 @@ function App() {
           <ProtectedRoute path="/refueling" component={RefuelingNew} />
           <ProtectedRoute path="/fines" component={FinesNew} />
           <ProtectedRoute path="/line-hall" component={LineHallNew} />
-          <ProtectedRoute path="/fleet-management" component={FleetManagementNew} />
+          <ProtectedRoute path="/fleet-management" component={FleetManagement} />
+          <ProtectedRoute path="/accidents" component={Accidents} />
+          <ProtectedRoute path="/work-safety" component={WorkSafety} />
           <ProtectedRoute path="/users" component={UsersNew} />
           <ProtectedRoute path="/bases" component={Bases} />
           
