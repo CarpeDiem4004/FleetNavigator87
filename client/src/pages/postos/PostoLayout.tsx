@@ -28,7 +28,7 @@ export const PostoLayout: React.FC<PostoLayoutProps> = ({ id, nomePosto }) => {
         {/* Status dos Tanques */}
         <div className="mb-6">
           <h2 className="text-xl font-semibold mb-3">Status dos Tanques</h2>
-          <StatusTanquePosto postId={id} />
+          <StatusTanquePosto postoCode={id} />
         </div>
         
         {/* Formulários */}
@@ -58,9 +58,9 @@ export const PostoLayout: React.FC<PostoLayoutProps> = ({ id, nomePosto }) => {
                   </TabsTrigger>
                 </TabsList>
                 
-                <FormularioAbastecimento postId={id} />
-                <FormularioRecebimento postId={id} />
-                <FormularioControlePatio postId={id} />
+                <FormularioAbastecimento postoCode={id} />
+                <FormularioRecebimento postoCode={id} />
+                <FormularioControlePatio postoCode={id} />
               </Tabs>
             </CardContent>
           </Card>
@@ -73,8 +73,8 @@ export const PostoLayout: React.FC<PostoLayoutProps> = ({ id, nomePosto }) => {
             Históricos
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <HistoricoAbastecimentos postId={id} />
-            <HistoricoMovimentacoes postId={id} />
+            <HistoricoAbastecimentos postoCode={id} />
+            <HistoricoMovimentacoes postoCode={id} />
           </div>
         </div>
       </div>

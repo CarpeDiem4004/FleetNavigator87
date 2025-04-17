@@ -422,7 +422,7 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postoCode }) =>
     }
     
     fetchDados();
-  }, [postId]);
+  }, [postoCode]);
   
   const formatarNumero = (valor: number) => {
     return new Intl.NumberFormat('pt-BR').format(Math.round(valor));
