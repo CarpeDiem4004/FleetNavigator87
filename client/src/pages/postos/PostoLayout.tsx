@@ -1,11 +1,13 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Fuel, TruckIcon, Truck } from 'lucide-react';
+import { Fuel, TruckIcon, Truck, History } from 'lucide-react';
 import FormularioAbastecimento from './components/FormularioAbastecimento';
 import FormularioRecebimento from './components/FormularioRecebimento';
 import FormularioControlePatio from './components/FormularioControlePatio';
 import StatusTanquePosto from './components/StatusTanquePosto';
+import HistoricoMovimentacoes from './components/HistoricoMovimentacoes';
+import HistoricoAbastecimentos from './components/HistoricoAbastecimentos';
 
 interface PostoLayoutProps {
   id: string;
@@ -30,7 +32,7 @@ export const PostoLayout: React.FC<PostoLayoutProps> = ({ id, nomePosto }) => {
         </div>
         
         {/* Formulários */}
-        <div>
+        <div className="mb-6">
           <h2 className="text-xl font-semibold mb-3">Operações</h2>
           <Card>
             <CardHeader className="pb-3">
@@ -62,6 +64,18 @@ export const PostoLayout: React.FC<PostoLayoutProps> = ({ id, nomePosto }) => {
               </Tabs>
             </CardContent>
           </Card>
+        </div>
+        
+        {/* Históricos */}
+        <div>
+          <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+            <History className="h-5 w-5" />
+            Históricos
+          </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <HistoricoAbastecimentos postId={id} />
+            <HistoricoMovimentacoes postId={id} />
+          </div>
         </div>
       </div>
     </div>

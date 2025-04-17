@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Registro - Posto</title>
+  <script>
+    const SUPABASE_URL = "https://hvsmxxqkuyjhpsiojupb.supabase.co/rest/v1";
+    const API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA";
+    const POSTO = "ABC";
+
+
+    async function enviar(endpoint, dados) {
+      const res = await fetch(`${SUPABASE_URL}/${endpoint}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": API_KEY,
+          "Authorization": `Bearer ${API_KEY}`,
+          "Prefer": "return=representation"
+        },
+        body: JSON.stringify(dados)
+      });
+      const resposta = await res.json();
+      alert("Registro enviado com sucesso!");
+      console.log(resposta);
+    }
+
+    function enviarAbastecimento() {
+      const dados = {
+        placa: document.getElementById("placa").value,
+        km_atual: parseFloat(document.getElementById("km").value),
+        tipo_combustivel: document.getElementById("tipo").value,
+        litros: parseFloat(document.getElementById("litros").value),
+        nome_motorista: document.getElementById("motorista").value,
+        nome_operador: document.getElementById("operador").value,
+        posto: POSTO
+      };
+      enviar("abastecimentos_postos", dados);
+    }
+
+    function enviarRecebimento() {
+      const dados = {
+        tipo_produto: document.getElementById("tipo_recebido").value,
+        litros_recebidos: parseFloat(document.getElementById("litros_recebido").value),
+        nome_operador: document.getElementById("operador_recebimento").value,
+        posto: POSTO
+      };
+      enviar("recebimentos_tanques", dados);
+    }
+
+    function enviarMovimentacao() {
+      const dados = {
+        placa: document.getElementById("placa_mov").value,
+        tipo_movimento: document.getElementById("tipo_mov").value,
+        nome_motorista: document.getElementById("motorista_mov").value,
+        nome_operador: document.getElementById("operador_mov").value,
+        posto: POSTO
+      };
+      enviar("movimentacoes_patio", dados);
+    }
+  </script>
+</head>
+<body style="font-family: sans-serif; padding: 20px;">
+  <h1>Registro - Posto <script>document.write(POSTO)</script></h1>
+
+  <h2>Abastecimento</h2>
+  <input id="placa" placeholder="Placa" /><br>
+  <input id="km" type="number" placeholder="KM Atual" /><br>
+  <input id="litros" type="number" placeholder="Litros" /><br>
+  <select id="tipo">
+    <option value="Diesel">Diesel</option>
+    <option value="ARLA">ARLA</option>
+  </select><br>
+  <input id="motorista" placeholder="Nome do Motorista" /><br>
+  <input id="operador" placeholder="Nome do Operador" /><br>
+  <button onclick="enviarAbastecimento()">Enviar Abastecimento</button>
+
+  <hr>
+
+  <h2>Recebimento de Diesel / ARLA</h2>
+  <select id="tipo_recebido">
+    <option value="Diesel">Diesel</option>
+    <option value="ARLA">ARLA</option>
+  </select><br>
+  <input id="litros_recebido" type="number" placeholder="Litros Recebidos" /><br>
+  <input id="operador_recebimento" placeholder="Nome do Operador" /><br>
+  <button onclick="enviarRecebimento()">Enviar Recebimento</button>
+
+  <hr>
+
+  <h2>Movimentação de Pátio</h2>
+  <input id="placa_mov" placeholder="Placa" /><br>
+  <select id="tipo_mov">
+    <option value="Entrada para pernoite">Entrada para pernoite</option>
+    <option value="Saída para rota">Saída para rota</option>
+    <option value="Saída para manutenção">Saída para manutenção</option>
+  </select><br>
+  <input id="motorista_mov" placeholder="Nome do Motorista" /><br>
+  <input id="operador_mov" placeholder="Nome do Operador" /><br>
+  <button onclick="enviarMovimentacao()">Enviar Movimentação</button>
+</body>
+</html>

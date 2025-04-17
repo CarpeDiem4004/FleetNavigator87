@@ -1,0 +1,146 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Truck, ArrowUpRight, ArrowDownLeft, Settings } from 'lucide-react';
+import { SUPABASE_URL, API_KEY } from '@/constants/supabase';
+
+interface HistoricoMovimentacoesProps {
+  postId: string;
+}
+
+interface Movimentacao {
+  id: number;
+  placa: string;
+  tipo_movimento: string;
+  nome_motorista: string;
+  nome_operador: string;
+  posto: string;
+  created_at: string;
+}
+
+export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ postId }) => {
+  const [movimentacoes, setMovimentacoes] = useState<Movimentacao[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    async function fetchMovimentacoes() {
+      try {
+        setIsLoading(true);
+        const res = await fetch(
+          `${SUPABASE_URL}/movimentacoes_patio?posto=eq.${postId}&order=created_at.desc&limit=10`, 
+          {
+            headers: {
+              'apikey': API_KEY,
+              'Authorization': `Bearer ${API_KEY}`
+            }
+          }
+        );
+        
+        if (!res.ok) {
+          throw new Error(`Erro ao buscar movimentações: ${res.status}`);
+        }
+        
+        const data: Movimentacao[] = await res.json();
+        setMovimentacoes(data);
+      } catch (error) {
+        console.error('Erro ao buscar histórico de movimentações:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    fetchMovimentacoes();
+  }, [postId]);
+  
+  const formatarData = (dataString: string) => {
+    const data = new Date(dataString);
+    return data.toLocaleDateString('pt-BR') + ' ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  };
+  
+  const getTipoIcon = (tipo: string) => {
+    if (tipo.includes('Entrada')) {
+      return <ArrowDownLeft className="h-4 w-4 text-green-500" />;
+    } else if (tipo.includes('Saída')) {
+      return <ArrowUpRight className="h-4 w-4 text-blue-500" />;
+    } else {
+      return <Settings className="h-4 w-4 text-orange-500" />;
+    }
+  };
+  
+  const getTipoBadge = (tipo: string) => {
+    if (tipo.includes('Entrada')) {
+      return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Entrada</Badge>;
+    } else if (tipo.includes('Saída para rota')) {
+      return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Saída Rota</Badge>;
+    } else if (tipo.includes('Saída para manutenção')) {
+      return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">Saída Manutenção</Badge>;
+    } else {
+      return <Badge variant="outline">{tipo}</Badge>;
+    }
+  };
+  
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Truck className="h-5 w-5" />
+          Movimentações de Pátio
+        </CardTitle>
+        <CardDescription>
+          Registros recentes de entrada e saída de veículos
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex items-center justify-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : movimentacoes.length === 0 ? (
+          <div className="text-center p-6 text-muted-foreground">
+            Nenhuma movimentação registrada.
+          </div>
+        ) : (
+          <Table>
+            <TableCaption>Lista das 10 últimas movimentações</TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Placa</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Motorista</TableHead>
+                <TableHead className="hidden md:table-cell">Operador</TableHead>
+                <TableHead className="hidden md:table-cell">Data/Hora</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {movimentacoes.map((mov) => (
+                <TableRow key={mov.id}>
+                  <TableCell className="font-medium">{mov.placa}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {getTipoIcon(mov.tipo_movimento)}
+                      <span className="hidden md:inline">{getTipoBadge(mov.tipo_movimento)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{mov.nome_motorista}</TableCell>
+                  <TableCell className="hidden md:table-cell">{mov.nome_operador}</TableCell>
+                  <TableCell className="hidden md:table-cell">{formatarData(mov.created_at)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+      <CardFooter className="text-xs text-muted-foreground pt-2 border-t">
+        {!isLoading && (
+          <div className="w-full flex justify-between">
+            <span>Total: {movimentacoes.length} movimentações</span>
+            <span>Última atualização: {new Date().toLocaleTimeString()}</span>
+          </div>
+        )}
+      </CardFooter>
+    </Card>
+  );
+};
+
+export default HistoricoMovimentacoes;
