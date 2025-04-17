@@ -6,8 +6,9 @@ import {
   insertTireSchema, insertRefuelingSchema, insertFineSchema,
   insertLineHallSchema, insertUserSchema
 } from "@shared/schema";
-import { setupAuth } from "./auth";
+import { setupAuth, createDefaultAdminUser } from "./auth";
 import basesRoutes from "./routes/bases";
+import { WebSocketServer } from "ws";
 
 // Middleware para verificar autenticação em rotas protegidas
 const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
@@ -28,6 +29,9 @@ const isAdmin = (req: Request, res: Response, next: NextFunction) => {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Configuração do passport para autenticação
   setupAuth(app);
+  
+  // Cria o usuário admin padrão se não existir
+  await createDefaultAdminUser();
   
   // Registra as rotas de bases utilizando o módulo separado
   basesRoutes(app);
@@ -271,5 +275,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // Setup WebSocket server
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  wss.on('connection', (ws) => {
+    console.log('Nova conexão WebSocket estabelecida');
+    
+    // Enviar mensagem de boas-vindas
+    ws.send(JSON.stringify({
+      type: 'connected',
+      message: 'Conectado ao servidor WebSocket do Muricion Fleet'
+    }));
+    
+    // Manipular mensagens recebidas
+    ws.on('message', (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        console.log('Mensagem WebSocket recebida:', data);
+        
+        // Processar diferentes tipos de mensagens
+        switch (data.type) {
+          case 'ping':
+            ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
+            break;
+          
+          case 'auth':
+            // Autenticação via WebSocket (para implementação futura)
+            break;
+          
+          case 'subscribe':
+            // Inscrição em canais de eventos (para implementação futura)
+            break;
+          
+          default:
+            ws.send(JSON.stringify({ 
+              type: 'error', 
+              message: 'Tipo de mensagem não reconhecido' 
+            }));
+        }
+      } catch (error) {
+        console.error('Erro ao processar mensagem WebSocket:', error);
+        ws.send(JSON.stringify({ 
+          type: 'error', 
+          message: 'Formato de mensagem inválido' 
+        }));
+      }
+    });
+    
+    // Manipular desconexão
+    ws.on('close', () => {
+      console.log('Conexão WebSocket encerrada');
+    });
+  });
+  
   return httpServer;
 }
