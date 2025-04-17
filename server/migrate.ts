@@ -72,6 +72,28 @@ async function migrate() {
       console.log('Coluna has_tires já existe.');
     }
     
+    // Verificar se a coluna created_at existe
+    const hasCreatedAtColumn = await db.execute(sql`
+      SELECT EXISTS (
+        SELECT 1 
+        FROM information_schema.columns 
+        WHERE table_name = 'bases' AND column_name = 'created_at'
+      );
+    `);
+    
+    const createdAtExists = hasCreatedAtColumn.rows[0].exists;
+    
+    if (!createdAtExists) {
+      console.log('Adicionando coluna created_at à tabela bases...');
+      await db.execute(sql`
+        ALTER TABLE bases 
+        ADD COLUMN created_at timestamp DEFAULT CURRENT_TIMESTAMP;
+      `);
+      console.log('Coluna created_at adicionada com sucesso.');
+    } else {
+      console.log('Coluna created_at já existe.');
+    }
+    
     console.log('Migração concluída com sucesso!');
   } catch (error) {
     console.error('Erro durante a migração:', error);
