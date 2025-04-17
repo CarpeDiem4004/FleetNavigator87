@@ -340,21 +340,17 @@ const UsersNew: React.FC = () => {
                     Perfil
                   </Label>
                   <div className="col-span-3">
-                    <Select 
+                    <NativeSelect
+                      id="role"
                       value={newUser.role}
-                      onValueChange={(value: 'admin' | 'gestor' | 'operador') => 
-                        setNewUser({...newUser, role: value})
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o perfil" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="admin">Administrador</SelectItem>
-                        <SelectItem value="gestor">Gestor</SelectItem>
-                        <SelectItem value="operador">Operador</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      onChange={(e) => setNewUser({...newUser, role: e.target.value as 'admin' | 'gestor' | 'operador'})}
+                      options={[
+                        { value: 'admin', label: 'Administrador' },
+                        { value: 'gestor', label: 'Gestor' },
+                        { value: 'operador', label: 'Operador' }
+                      ]}
+                      placeholder="Selecione o perfil"
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -362,22 +358,19 @@ const UsersNew: React.FC = () => {
                     Base
                   </Label>
                   <div className="col-span-3">
-                    <Select 
+                    <NativeSelect
+                      id="base"
                       value={newUser.baseId?.toString() || '0'}
-                      onValueChange={handleBaseChange}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a base (opcional)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="0">Nenhuma (Global)</SelectItem>
-                        {availableBases.map(base => (
-                          <SelectItem key={base.id} value={base.id.toString()}>
-                            {base.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onChange={(e) => handleBaseChange(e.target.value)}
+                      options={[
+                        { value: '0', label: 'Nenhuma (Global)' },
+                        ...availableBases.map(base => ({
+                          value: base.id.toString(),
+                          label: base.name
+                        }))
+                      ]}
+                      placeholder="Selecione a base (opcional)"
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -411,20 +404,18 @@ const UsersNew: React.FC = () => {
                     Status
                   </Label>
                   <div className="col-span-3">
-                    <Select 
+                    <NativeSelect
+                      id="isActive"
                       value={newUser.isActive ? 'active' : 'inactive'}
-                      onValueChange={(value) => 
-                        setNewUser({...newUser, isActive: value === 'active'})
+                      onChange={(e) => 
+                        setNewUser({...newUser, isActive: e.target.value === 'active'})
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Ativo</SelectItem>
-                        <SelectItem value="inactive">Inativo</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      options={[
+                        { value: 'active', label: 'Ativo' },
+                        { value: 'inactive', label: 'Inativo' }
+                      ]}
+                      placeholder="Selecione o status"
+                    />
                   </div>
                 </div>
               </div>
