@@ -7,7 +7,6 @@ import {
   insertLineHallSchema, insertUserSchema
 } from "@shared/schema";
 import { setupAuth } from "./auth";
-import { criarUsuariosPosto } from "./seed/posto-users";
 
 // Middleware para verificar autenticação em rotas protegidas
 const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
@@ -28,13 +27,6 @@ const isAdmin = (req: Request, res: Response, next: NextFunction) => {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Configuração do passport para autenticação
   setupAuth(app);
-  
-  // Criar usuários de posto padrão
-  try {
-    await criarUsuariosPosto();
-  } catch (error) {
-    console.error("Erro ao criar usuários de posto:", error);
-  }
   
   // Base routes
   app.get("/api/bases", isAuthenticated, async (req, res) => {
