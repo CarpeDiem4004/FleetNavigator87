@@ -25,14 +25,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
     );
   }
 
-  // Verificar se é uma rota de posto público
-  const publicPostoMatch = path.match(/^\/public\/posto\/(\w+)$/);
-  if (publicPostoMatch && !user) {
-    // Extrair o nome do posto da URL e redirecionar para a página de login do posto
-    const postoCode = publicPostoMatch[1];
-    console.log(`Redirecionando de ${path} para /posto/${postoCode}`);
-    return <Route path={path}><Redirect to={`/posto/${postoCode}`} /></Route>;
-  }
+  // Para rotas públicas de postos, usaremos uma abordagem diferente:
+  // Não usamos mais este redirecionamento aqui para evitar conflitos com a rota nomeada de posto
+  // O redirecionamento agora é feito diretamente pelo acesso à URL, com a rota de posto tendo prioridade
   
   // Se o usuário não estiver autenticado, redireciona para login
   if (!user) {

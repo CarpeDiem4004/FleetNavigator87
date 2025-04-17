@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -80,20 +80,58 @@ function App() {
           <ProtectedRoute path="/posto/socorro" component={PostoSocorro} />
           <ProtectedRoute path="/posto/sorocaba" component={PostoSorocaba} />
           
-          {/* Rotas para interfaces simplificadas dos postos (requerem autenticação) */}
-          <ProtectedRoute path="/public/posto/osasco" component={OsascoPublic} />
-          <ProtectedRoute path="/public/posto/guarulhos" component={GuarulhosPublic} />
-          <ProtectedRoute path="/public/posto/saopaulo" component={SaoPauloPublic} />
-          <ProtectedRoute path="/public/posto/campinas" component={CampinasPublic} />
-          <ProtectedRoute path="/public/posto/abc" component={ABCPublic} />
-          <ProtectedRoute path="/public/posto/socorro" component={SocorroPublic} />
-          <ProtectedRoute path="/public/posto/sorocaba" component={SorocabaPublic} />
-          
-          {/* Rotas para login e dashboard dos postos */}
+          {/* Rotas para login e dashboard dos postos - DEVE VIR ANTES DAS ROTAS PROTEGIDAS */}
           <Route path="/posto/:postoCode">
             <PostoLoginPage />
           </Route>
           <ProtectedRoute path="/posto/:postoCode/dashboard" component={PostoDashboard} />
+          
+          {/* Rotas públicas para os postos com redirecionamento via componente */}
+          <Route path="/public/posto/osasco">
+            {() => {
+              window.location.href = "/posto/osasco";
+              return null;
+            }}
+          </Route>
+          <Route path="/public/posto/guarulhos">
+            {() => {
+              window.location.href = "/posto/guarulhos";
+              return null;
+            }}
+          </Route>
+          <Route path="/public/posto/saopaulo">
+            {() => {
+              window.location.href = "/posto/saopaulo";
+              return null;
+            }}
+          </Route>
+          <Route path="/public/posto/campinas">
+            {() => {
+              window.location.href = "/posto/campinas";
+              return null;
+            }}
+          </Route>
+          <Route path="/public/posto/abc">
+            {() => {
+              window.location.href = "/posto/abc";
+              return null;
+            }}
+          </Route>
+          <Route path="/public/posto/socorro">
+            {() => {
+              window.location.href = "/posto/socorro";
+              return null;
+            }}
+          </Route>
+          <Route path="/public/posto/sorocaba">
+            {() => {
+              window.location.href = "/posto/sorocaba";
+              return null;
+            }}
+          </Route>
+          
+          {/* Rotas para interfaces simplificadas dos postos (quando já autenticados) */}
+          <ProtectedRoute path="/posto/:postoCode/public" component={PostoDashboard} />
           
           <Route>
             <NotFound />
