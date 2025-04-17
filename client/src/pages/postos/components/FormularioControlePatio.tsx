@@ -25,10 +25,10 @@ const controlePatiocientema = z.object({
 type ControlePatiocientes = z.infer<typeof controlePatiocientema>;
 
 interface FormularioControlePatioProp {
-  postId: string;
+  postoCode: string;
 }
 
-export const FormularioControlePatio: React.FC<FormularioControlePatioProp> = ({ postId }) => {
+export const FormularioControlePatio: React.FC<FormularioControlePatioProp> = ({ postoCode }) => {
   const { toast } = useToast();
   
   const form = useForm<ControlePatiocientes>({
@@ -49,7 +49,7 @@ export const FormularioControlePatio: React.FC<FormularioControlePatioProp> = ({
         tipo_movimento: data.tipoMovimento,
         nome_motorista: data.motorista,
         nome_operador: data.operador,
-        posto: postId
+        posto: postoCode
       };
       
       console.log('Dados a enviar:', movimentoData);
@@ -83,7 +83,7 @@ export const FormularioControlePatio: React.FC<FormularioControlePatioProp> = ({
             Controle de Pátio
           </CardTitle>
           <CardDescription>
-            Registre a entrada e saída de veículos no pátio do posto {postId}.
+            Registre a entrada e saída de veículos no pátio do posto {postoCode}.
           </CardDescription>
         </CardHeader>
         <CardContent>
