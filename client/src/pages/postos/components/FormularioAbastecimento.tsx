@@ -37,6 +37,7 @@ interface FormularioAbastecimentoProps {
 
 export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = ({ postId }) => {
   const { toast } = useToast();
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
   const form = useForm<AbastecimentoValues>({
     resolver: zodResolver(abastecimentoSchema),
@@ -104,19 +105,14 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         description: `Veículo ${data.placa} abastecido com sucesso.`,
       });
       
-      // Aguarda um breve momento antes de redirecionar para mostrar o toast
+      // Exibimos o toast de sucesso e resetamos o formulário sem redirecionar
+      // Isso permite que o usuário faça um novo registro imediatamente
+      setSuccessMessage('Abastecimento registrado com sucesso. Formulário resetado para um novo registro.');
+      
+      // Limpa a mensagem de sucesso após 5 segundos
       setTimeout(() => {
-        // Verifica se está em uma URL pública
-        const isPublicPage = window.location.pathname.includes('/public');
-        
-        if (isPublicPage) {
-          // Se for uma página pública, volta para a página inicial dos postos públicos
-          window.location.href = "/";
-        } else {
-          // Se for uma página protegida, volta para a área de postos admin
-          window.location.href = "/postos";
-        }
-      }, 1500);
+        setSuccessMessage(null);
+      }, 5000);
       
       form.reset();
     } catch (error: any) {
@@ -159,6 +155,19 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {successMessage && (
+                <div className="col-span-full mb-4">
+                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-4 text-sm text-green-800 dark:text-green-400">
+                    <div className="flex items-center">
+                      <svg className="h-4 w-4 mr-2 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                      </svg>
+                      {successMessage}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
