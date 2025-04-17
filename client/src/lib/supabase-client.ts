@@ -78,5 +78,11 @@ export async function fetchRecords(table: string, options: {
   }
   
   console.log(`[SUPABASE] Registros recuperados:`, data?.length || 0);
+  
+  // Verificar a estrutura do primeiro registro para diagnóstico
+  if (data && data.length > 0) {
+    console.log(`[SUPABASE] Estrutura do registro:`, Object.keys(data[0]));
+  }
+  
   return data || [];
 }

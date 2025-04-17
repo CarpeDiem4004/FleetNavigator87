@@ -38,8 +38,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
       const data = await fetchRecords(ENDPOINTS.ABASTECIMENTOS, {
         filterColumn: 'posto',
         filterValue: postId,
-        orderBy: 'created_at',
-        ascending: false,
+        // Removemos ordenação temporariamente devido ao erro de nome de coluna
         limit: 100
       });
       

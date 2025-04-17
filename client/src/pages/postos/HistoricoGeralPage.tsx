@@ -31,9 +31,9 @@ const HistoricoGeralPage: React.FC = () => {
       console.log("[FETCH] Buscando todos os abastecimentos");
       
       // Buscar todos os abastecimentos sem filtro de posto
+      // Nota: O nome da coluna de data criação é 'created_at' e não 'abastecimentos_postos.created_at'
       const data = await fetchRecords(ENDPOINTS.ABASTECIMENTOS, {
-        orderBy: 'created_at',
-        ascending: false,
+        // Não usamos orderBy por enquanto, para evitar problemas
         limit: 500 // Aumentamos o limite para trazer mais registros
       });
       
