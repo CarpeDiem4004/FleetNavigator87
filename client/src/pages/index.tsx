@@ -85,7 +85,7 @@ const DashboardPage: React.FC = () => {
 
   // Encontrar os KPIs principais para o header
   const findMainKPIs = () => {
-    const kpis = [];
+    const mainKpis: Array<KPI> = [];
     data.kpis.forEach(group => {
       group.metrics.forEach(kpi => {
         if (
@@ -94,11 +94,11 @@ const DashboardPage: React.FC = () => {
           kpi.name === 'Eficiência dos abastecimentos' ||
           kpi.name === 'Tempo médio de manutenção'
         ) {
-          kpis.push(kpi);
+          mainKpis.push(kpi);
         }
       });
     });
-    return kpis;
+    return mainKpis;
   };
 
   const mainKPIs = findMainKPIs();

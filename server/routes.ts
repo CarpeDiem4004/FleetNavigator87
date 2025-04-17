@@ -7,6 +7,7 @@ import {
   insertLineHallSchema, insertUserSchema
 } from "@shared/schema";
 import { setupAuth } from "./auth";
+import { getDashboardKPIs } from "./dashboardApi";
 
 // Middleware para verificar autenticação em rotas protegidas
 const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
@@ -337,6 +338,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Server error" });
     }
   });
+
+  // Dashboard API
+  app.get("/api/dashboard/kpis", isAuthenticated, getDashboardKPIs);
 
   const httpServer = createServer(app);
   return httpServer;

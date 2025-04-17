@@ -38,7 +38,17 @@ export async function fetchDashboardData(): Promise<DashboardData> {
   try {
     // Tentar buscar da API
     const response = await apiRequest('GET', '/api/dashboard/kpis');
-    return response;
+    // Verificar se a resposta tem o formato esperado
+    if (response && 
+        typeof response === 'object' && 
+        'kpis' in response &&
+        'timeSeriesData' in response &&
+        'fleetAvailability' in response) {
+      return response as DashboardData;
+    }
+    // Se não tiver o formato esperado, use dados simulados
+    console.log('API de dashboard não retornou dados no formato esperado, usando dados simulados.');
+    return generateDashboardData();
   } catch (error) {
     console.log('API de dashboard não disponível, usando dados simulados.');
     return generateDashboardData();

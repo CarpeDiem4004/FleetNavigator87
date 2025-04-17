@@ -58,9 +58,12 @@ function App() {
           </Route>
           
           {/* Componente que redirecionará usuários Line Hall para a página correta */}
-          <Route path="/">
+          <Route path="/old-dashboard">
             <LineHallRedirect />
           </Route>
+          
+          {/* Novo Dashboard com KPIs */}
+          <ProtectedRoute path="/" component={Dashboard} />
           
           {/* Rotas protegidas com verificação de permissão de base */}
           <ProtectedRoute path="/vehicles" component={VehiclesNew} />
