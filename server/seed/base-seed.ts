@@ -31,7 +31,8 @@ export async function criarBasesIniciais() {
           name: base.nome,
           basename: base.basename,
           type: base.tipo,
-          active: true
+          active: true,
+          location: `Localização de ${base.nome}`
         });
         
         baseIds[base.basename] = novaBASE.id;
