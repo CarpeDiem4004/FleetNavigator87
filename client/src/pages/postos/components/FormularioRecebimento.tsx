@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { TruckIcon } from 'lucide-react';
 import { TabsContent } from '@/components/ui/tabs';
+import { enviarParaSupabase, ENDPOINTS } from '@/constants/supabase';
 
 // Schema de validação para o formulário de recebimento de combustível
 const recebimentoSchema = z.object({
@@ -42,18 +43,19 @@ export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ po
 
   async function onSubmit(data: RecebimentoValues) {
     try {
-      // Adiciona data/hora e identificação do posto
+      // Prepara os dados no formato esperado pela API
       const recebimentoData = {
-        ...data,
-        quantidade: Number(data.quantidade),
-        posto: postId,
-        dataHora: new Date().toISOString(),
+        tipo_produto: data.tipo,
+        litros_recebidos: Number(data.quantidade),
+        nome_operador: data.operador,
+        posto: postId
       };
       
       console.log('Dados a enviar:', recebimentoData);
       
-      // Aqui seria feita a integração com a API Supabase
-      // const response = await supabase.from('recebimentos_tanques').insert(recebimentoData);
+      // Envia os dados para o Supabase
+      const response = await enviarParaSupabase(ENDPOINTS.RECEBIMENTOS, recebimentoData);
+      console.log('Resposta do servidor:', response);
       
       toast({
         title: 'Recebimento registrado!',
@@ -65,7 +67,7 @@ export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ po
       console.error('Erro ao registrar recebimento:', error);
       toast({
         title: 'Erro ao registrar recebimento',
-        description: 'Tente novamente mais tarde.',
+        description: 'Verifique sua conexão e tente novamente.',
         variant: 'destructive',
       });
     }

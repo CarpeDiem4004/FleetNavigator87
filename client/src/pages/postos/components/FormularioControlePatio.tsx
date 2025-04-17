@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Truck } from 'lucide-react';
 import { TabsContent } from '@/components/ui/tabs';
+import { enviarParaSupabase, ENDPOINTS } from '@/constants/supabase';
 
 // Schema de validação para o formulário de controle de pátio
 const controlePatiocientema = z.object({
@@ -42,17 +43,20 @@ export const FormularioControlePatio: React.FC<FormularioControlePatioProp> = ({
 
   async function onSubmit(data: ControlePatiocientes) {
     try {
-      // Adiciona data/hora e identificação do posto
+      // Prepara os dados no formato esperado pela API
       const movimentoData = {
-        ...data,
-        posto: postId,
-        dataHora: new Date().toISOString(),
+        placa: data.placa.toUpperCase(),
+        tipo_movimento: data.tipoMovimento,
+        nome_motorista: data.motorista,
+        nome_operador: data.operador,
+        posto: postId
       };
       
       console.log('Dados a enviar:', movimentoData);
       
-      // Aqui seria feita a integração com a API Supabase
-      // const response = await supabase.from('movimentacoes_patio').insert(movimentoData);
+      // Envia os dados para o Supabase
+      const response = await enviarParaSupabase(ENDPOINTS.MOVIMENTACOES, movimentoData);
+      console.log('Resposta do servidor:', response);
       
       toast({
         title: 'Movimento registrado!',
@@ -64,7 +68,7 @@ export const FormularioControlePatio: React.FC<FormularioControlePatioProp> = ({
       console.error('Erro ao registrar movimento:', error);
       toast({
         title: 'Erro ao registrar movimento',
-        description: 'Tente novamente mais tarde.',
+        description: 'Verifique sua conexão e tente novamente.',
         variant: 'destructive',
       });
     }

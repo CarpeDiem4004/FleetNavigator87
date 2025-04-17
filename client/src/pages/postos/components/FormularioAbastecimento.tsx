@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Fuel } from 'lucide-react';
 import { TabsContent } from '@/components/ui/tabs';
+import { enviarParaSupabase, ENDPOINTS } from '@/constants/supabase';
 
 // Schema de validação para o formulário de abastecimento
 const abastecimentoSchema = z.object({
@@ -50,19 +51,22 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
 
   async function onSubmit(data: AbastecimentoValues) {
     try {
-      // Adiciona data/hora e identificação do posto
+      // Prepara os dados no formato esperado pela API
       const abastecimentoData = {
-        ...data,
-        km: Number(data.km),
-        quantidade: Number(data.quantidade),
-        posto: postId,
-        dataHora: new Date().toISOString(),
+        placa: data.placa.toUpperCase(),
+        km_atual: Number(data.km),
+        tipo_combustivel: data.tipo,
+        litros: Number(data.quantidade),
+        nome_motorista: data.motorista,
+        nome_operador: data.operador,
+        posto: postId
       };
       
       console.log('Dados a enviar:', abastecimentoData);
       
-      // Aqui seria feita a integração com a API Supabase
-      // const response = await supabase.from('abastecimentos_postos').insert(abastecimentoData);
+      // Envia os dados para o Supabase
+      const response = await enviarParaSupabase(ENDPOINTS.ABASTECIMENTOS, abastecimentoData);
+      console.log('Resposta do servidor:', response);
       
       toast({
         title: 'Abastecimento registrado!',
@@ -74,7 +78,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       console.error('Erro ao registrar abastecimento:', error);
       toast({
         title: 'Erro ao registrar abastecimento',
-        description: 'Tente novamente mais tarde.',
+        description: 'Verifique sua conexão e tente novamente.',
         variant: 'destructive',
       });
     }
