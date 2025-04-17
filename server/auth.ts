@@ -142,19 +142,17 @@ export function setupAuth(app: Express) {
       const hashedPassword = await hashPassword(password);
       
       // Criar o novo usuário
-      const newUser = {
+      const newUser: any = {
         email: username,
         password: hashedPassword,
         name,
         role
       };
       
-      // Adicionar baseId e basename se fornecidos
-      if (baseId) {
-        Object.assign(newUser, { 
-          baseId: parseInt(baseId.toString()),
-          basename
-        });
+      // Adicionar baseId e basename se fornecidos e válidos
+      if (baseId && typeof baseId === 'number' && baseId > 0) {
+        newUser.baseId = baseId;
+        newUser.basename = basename;
         console.log(`Usuário sendo associado à base: ${basename} (ID: ${baseId})`);
       }
 

@@ -213,21 +213,24 @@ const UsersNew: React.FC = () => {
     }
 
     try {
+      toast({
+        title: "Processando",
+        description: "Criando novo usuário...",
+      });
+      
       // Fazer a requisição para a API de registro
       // Preparar dados para envio, incluindo baseId se existir
-      const registerData = {
+      const registerData: any = {
         username: newUser.email,
         password: password,
         name: newUser.name,
         role: newUser.role
       };
       
-      // Adicionar baseId apenas se não for null
-      if (newUser.baseId) {
-        Object.assign(registerData, { 
-          baseId: newUser.baseId,
-          basename: newUser.baseName
-        });
+      // Adicionar baseId apenas se não for null e maior que 0
+      if (newUser.baseId && newUser.baseId > 0) {
+        registerData.baseId = newUser.baseId;
+        registerData.basename = newUser.baseName;
       }
       
       console.log('Enviando dados de usuário:', { ...registerData, password: '***' });
