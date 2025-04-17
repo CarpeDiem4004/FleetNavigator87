@@ -1,76 +1,115 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Redirecionando para Posto ABC - Murici On Fleet</title>
+  <title>Posto ABC - Redirecionamento</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f5f5f5;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
       height: 100vh;
       margin: 0;
-      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    }
-    .redirect-container {
-      background-color: white;
-      border-radius: 12px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-      padding: 2.5rem;
+      padding: 20px;
+      background-color: #f8f9fa;
+      color: #343a40;
       text-align: center;
+    }
+    
+    .container {
       max-width: 500px;
-      width: 90%;
+      padding: 30px;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
-    .logo {
-      max-width: 180px;
-      margin-bottom: 1.5rem;
+    
+    h1 {
+      margin-bottom: 20px;
+      font-size: 24px;
+      color: #0f6c43;
     }
+    
+    p {
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    
     .loader {
-      border: 5px solid #f3f3f3;
-      border-top: 5px solid #3b82f6;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #0f6c43;
       border-radius: 50%;
-      width: 60px;
-      height: 60px;
-      animation: spin 1.2s linear infinite;
-      margin: 1.5rem auto;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
     }
+    
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    h1 {
-      color: #1f2937;
-      font-size: 1.8rem;
-      margin-bottom: 1rem;
-      font-weight: 600;
+    
+    .error {
+      display: none;
+      color: #e74c3c;
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #e74c3c;
+      border-radius: 5px;
+      background-color: #fde6e6;
     }
-    p {
-      color: #4b5563;
-      line-height: 1.6;
-      font-size: 1.1rem;
-      margin-bottom: 1.5rem;
+    
+    button {
+      padding: 10px 15px;
+      background-color: #0f6c43;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 10px;
     }
-    .posto-name {
-      font-weight: 700;
-      color: #3b82f6;
+    
+    button:hover {
+      background-color: #0d5936;
     }
   </style>
 </head>
 <body>
-  <div class="redirect-container">
-    <h1>Redirecionando para o Sistema</h1>
+  <div class="container">
+    <h1>Posto ABC</h1>
+    <p>Você está sendo redirecionado para o sistema de controle do posto...</p>
     <div class="loader"></div>
-    <p>Aguarde enquanto você é redirecionado para a página de login do posto <span class="posto-name">ABC</span>.</p>
+    <div id="errorMessage" class="error">
+      Ocorreu um erro ao redirecionar. Por favor, verifique sua conexão ou tente acessar diretamente:
+      <button onclick="redirectNow()">Acessar Agora</button>
+    </div>
   </div>
 
   <script>
-    // Redirecionar após um pequeno delay
-    setTimeout(function() {
-      window.location.href = "/posto/abc";
-    }, 1500);
+    // Informações para redirecionamento
+    const postoCode = 'abc';
+    const applicationUrl = window.location.protocol + '//' + window.location.host;
+    const targetUrl = `${applicationUrl}/posto/${postoCode}`;
+    
+    // Função para redirecionar
+    function redirectNow() {
+      window.location.href = targetUrl;
+    }
+    
+    // Mostrar erro após tempo limite
+    setTimeout(() => {
+      document.getElementById('errorMessage').style.display = 'block';
+    }, 5000);
+    
+    // Redirecionamento automático
+    window.onload = function() {
+      setTimeout(redirectNow, 1500);
+    };
   </script>
 </body>
 </html>
