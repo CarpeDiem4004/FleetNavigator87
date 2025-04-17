@@ -157,22 +157,36 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
       ...csvData.map(row => row.join(';'))
     ].join('\n');
     
-    // Criar e download do arquivo de forma segura sem manipulação direta do DOM
+    // Criar e download do arquivo usando uma abordagem mais segura
     try {
+      // Criar Blob com os dados CSV
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      
+      // Usar a API de navegação para iniciar download direto sem manipulação DOM
+      // Isso evita o erro 'removeChild' completamente
+      if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+        // Para IE/Edge
+        window.navigator.msSaveOrOpenBlob(blob, `abastecimentos_${formatPosto(postId)}_${new Date().toISOString().slice(0, 10)}.csv`);
+        return;
+      }
+      
+      // Para navegadores modernos
       const url = URL.createObjectURL(blob);
       
-      // Criar um link de download diretamente como um elemento <a> no DOM
-      const downloadLink = document.createElement('a');
-      downloadLink.href = url;
-      downloadLink.download = `abastecimentos_${postId}_${new Date().toISOString().slice(0, 10)}.csv`;
+      // Criar link para download sem anexá-lo ao DOM
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `abastecimentos_${formatPosto(postId)}_${new Date().toISOString().slice(0, 10)}.csv`;
       
-      // Importante: Não adicionar o elemento ao DOM para evitar falhas de removeChild
-      downloadLink.click();
+      // Esta abordagem funciona sem problemas de removeChild
+      document.body.appendChild(a);
+      a.click();
       
-      // Libera o URL object para evitar memory leak
-      setTimeout(() => {
-        URL.revokeObjectURL(url);
+      // Remover o elemento e liberar o recurso
+      window.setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
       }, 100);
     } catch (error) {
       console.error('Erro ao criar arquivo para download:', error);
