@@ -180,21 +180,18 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipo de Combustível</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o combustível" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Diesel">Diesel</SelectItem>
-                          <SelectItem value="ARLA">ARLA</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <select
+                          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          value={field.value}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                        >
+                          <option value="" disabled>Selecione o combustível</option>
+                          <option value="Diesel">Diesel</option>
+                          <option value="ARLA">ARLA</option>
+                        </select>
+                      </FormControl>
                       <FormDescription>
                         Selecione o tipo de combustível abastecido
                       </FormDescription>
@@ -226,30 +223,27 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Projeto</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value} 
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o projeto" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="GRUPO PEREIRA">GRUPO PEREIRA</SelectItem>
-                          <SelectItem value="COCA COLA">COCA COLA</SelectItem>
-                          <SelectItem value="SHOPEE">SHOPEE</SelectItem>
-                          <SelectItem value="MERCADO LIVRE">MERCADO LIVRE</SelectItem>
-                          <SelectItem value="LINE HALL SHOPEE">LINE HALL SHOPEE</SelectItem>
-                          <SelectItem value="MADEIRA MADEIRA">MADEIRA MADEIRA</SelectItem>
-                          <SelectItem value="MAGALU">MAGALU</SelectItem>
-                          <SelectItem value="NATURA">NATURA</SelectItem>
-                          <SelectItem value="OXXO">OXXO</SelectItem>
-                          <SelectItem value="PETLOVE">PETLOVE</SelectItem>
-                          <SelectItem value="Outro">Outro</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <select
+                          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          value={field.value}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                        >
+                          <option value="" disabled>Selecione o projeto</option>
+                          <option value="GRUPO PEREIRA">GRUPO PEREIRA</option>
+                          <option value="COCA COLA">COCA COLA</option>
+                          <option value="SHOPEE">SHOPEE</option>
+                          <option value="MERCADO LIVRE">MERCADO LIVRE</option>
+                          <option value="LINE HALL SHOPEE">LINE HALL SHOPEE</option>
+                          <option value="MADEIRA MADEIRA">MADEIRA MADEIRA</option>
+                          <option value="MAGALU">MAGALU</option>
+                          <option value="NATURA">NATURA</option>
+                          <option value="OXXO">OXXO</option>
+                          <option value="PETLOVE">PETLOVE</option>
+                          <option value="Outro">Outro</option>
+                        </select>
+                      </FormControl>
                       <FormDescription>
                         Selecione o projeto ao qual o veículo pertence
                       </FormDescription>
@@ -294,8 +288,20 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               </div>
               
               <div className="flex justify-end">
-                <Button type="submit" size="lg" className="w-full md:w-auto">
-                  Registrar Abastecimento
+                <Button 
+                  type="submit" 
+                  size="lg" 
+                  className="w-full md:w-auto"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent"></span>
+                      Enviando...
+                    </>
+                  ) : (
+                    'Registrar Abastecimento'
+                  )}
                 </Button>
               </div>
             </form>
