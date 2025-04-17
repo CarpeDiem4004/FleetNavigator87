@@ -79,6 +79,7 @@ export default function BasesPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<boolean | null>(null);
+  const [showCocaColaImporter, setShowCocaColaImporter] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -286,6 +287,21 @@ export default function BasesPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
+      {showCocaColaImporter && (
+        <CocaColaBasesList 
+          existingBases={bases} 
+          onComplete={() => {
+            setShowCocaColaImporter(false);
+            queryClient.invalidateQueries({ queryKey: ['/api/bases'] });
+            
+            toast({
+              title: "Importação finalizada",
+              description: "As bases foram importadas com sucesso.",
+            });
+          }} 
+        />
+      )}
+      
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold flex items-center">
@@ -297,12 +313,22 @@ export default function BasesPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          {/* Botão Importar Bases */}
+          {/* Botão Importar Bases Coca-Cola */}
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            onClick={() => setShowCocaColaImporter(true)}
+          >
+            <Upload className="h-4 w-4" />
+            Importar por Operação
+          </Button>
+        
+          {/* Botão Importar Bases (Legado) */}
           <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2">
                 <Upload className="h-4 w-4" />
-                Importar Bases
+                Importar de Arquivo
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[525px]">
