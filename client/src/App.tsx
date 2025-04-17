@@ -40,14 +40,8 @@ import ABCPublic from "@/pages/postos/public/ABCPublic";
 import SocorroPublic from "@/pages/postos/public/SocorroPublic";
 import SorocabaPublic from "@/pages/postos/public/SorocabaPublic";
 
-// Importação dos componentes de redirecionamento
-import OsascoRedirect from "@/components/redirects/OsascoRedirect";
-import GuarulhosRedirect from "@/components/redirects/GuarulhosRedirect";
-import SaoPauloRedirect from "@/components/redirects/SaoPauloRedirect";
-import CampinasRedirect from "@/components/redirects/CampinasRedirect";
-import ABCRedirect from "@/components/redirects/ABCRedirect";
-import SocorroRedirect from "@/components/redirects/SocorroRedirect";
-import SorocabaRedirect from "@/components/redirects/SorocabaRedirect";
+// Importação do componente de redirecionamento
+import RedirectToPostoLogin from "@/pages/RedirectToPostoLogin";
 
 function App() {
   return (
@@ -95,27 +89,9 @@ function App() {
           </Route>
           <ProtectedRoute path="/posto/:postoCode/dashboard" component={PostoDashboard} />
           
-          {/* Rotas públicas para os postos com redirecionamento via componentes específicos */}
-          <Route path="/public/posto/osasco">
-            <OsascoRedirect />
-          </Route>
-          <Route path="/public/posto/guarulhos">
-            <GuarulhosRedirect />
-          </Route>
-          <Route path="/public/posto/saopaulo">
-            <SaoPauloRedirect />
-          </Route>
-          <Route path="/public/posto/campinas">
-            <CampinasRedirect />
-          </Route>
-          <Route path="/public/posto/abc">
-            <ABCRedirect />
-          </Route>
-          <Route path="/public/posto/socorro">
-            <SocorroRedirect />
-          </Route>
-          <Route path="/public/posto/sorocaba">
-            <SorocabaRedirect />
+          {/* Rotas públicas para os postos com redirecionamento direto */}
+          <Route path="/public/posto/:postoCode">
+            <RedirectToPostoLogin />
           </Route>
           
           {/* Rotas para interfaces simplificadas dos postos (quando já autenticados) */}
