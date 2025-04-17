@@ -20,10 +20,24 @@ export async function enviarParaSupabase(endpoint: string, dados: any, method: s
       options.body = JSON.stringify(dados);
     }
     
+    console.log(`Enviando para: ${SUPABASE_URL}/${endpoint}`, {
+      method,
+      body: options.body ? JSON.parse(options.body as string) : null
+    });
+    
     const res = await fetch(`${SUPABASE_URL}/${endpoint}`, options);
     
     if (!res.ok) {
-      throw new Error(`Erro ao enviar dados: ${res.status}`);
+      // Tentar obter mais detalhes sobre o erro
+      let errorDetail = "";
+      try {
+        const errorResponse = await res.json();
+        errorDetail = JSON.stringify(errorResponse);
+      } catch (parseError) {
+        errorDetail = await res.text();
+      }
+      
+      throw new Error(`Erro ao enviar dados: ${res.status} - ${errorDetail}`);
     }
     
     // Algumas requisições (como DELETE) podem não retornar conteúdo

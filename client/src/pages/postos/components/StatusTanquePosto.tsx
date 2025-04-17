@@ -55,6 +55,8 @@ interface ConfiguracaoTanques {
   diesel_nivel: number;
   arla_capacidade: number;
   arla_nivel: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
@@ -126,12 +128,32 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
     try {
       setIsSalvando(true);
       
+      // Verificar se todos os números são positivos
+      const nivelDiesel = Number(dieselNivel);
+      const capacidadeDiesel = Number(dieselCapacidade);
+      const nivelArla = Number(arlaNivel);
+      const capacidadeArla = Number(arlaCapacidade);
+      
+      if (nivelDiesel < 0 || capacidadeDiesel <= 0 || nivelArla < 0 || capacidadeArla <= 0) {
+        throw new Error("Todos os valores devem ser números positivos e as capacidades devem ser maiores que zero.");
+      }
+      
+      if (nivelDiesel > capacidadeDiesel) {
+        throw new Error("O nível de diesel não pode ser maior que a capacidade.");
+      }
+      
+      if (nivelArla > capacidadeArla) {
+        throw new Error("O nível de ARLA não pode ser maior que a capacidade.");
+      }
+      
       const dadosConfig: ConfiguracaoTanques = {
         posto: postId,
-        diesel_capacidade: Number(dieselCapacidade),
-        diesel_nivel: Number(dieselNivel),
-        arla_capacidade: Number(arlaCapacidade),
-        arla_nivel: Number(arlaNivel)
+        diesel_capacidade: capacidadeDiesel,
+        diesel_nivel: nivelDiesel,
+        arla_capacidade: capacidadeArla,
+        arla_nivel: nivelArla,
+        // Adicionar um timestamp para evitar problemas de cache
+        updated_at: new Date().toISOString()
       };
       
       let response;
@@ -162,27 +184,27 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
         setStatusTanque({
           diesel: {
             ...statusTanque.diesel,
-            nivel: Number(dieselNivel),
-            capacidade: Number(dieselCapacidade),
-            porcentagem: (Number(dieselNivel) / Number(dieselCapacidade)) * 100,
+            nivel: nivelDiesel,
+            capacidade: capacidadeDiesel,
+            porcentagem: (nivelDiesel / capacidadeDiesel) * 100,
           },
           arla: {
             ...statusTanque.arla,
-            nivel: Number(arlaNivel),
-            capacidade: Number(arlaCapacidade),
-            porcentagem: (Number(arlaNivel) / Number(arlaCapacidade)) * 100,
+            nivel: nivelArla,
+            capacidade: capacidadeArla,
+            porcentagem: (nivelArla / capacidadeArla) * 100,
           }
         });
         
         // Fechar o diálogo
         setIsDialogOpen(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao salvar configurações:', error);
       toast({
         variant: "destructive",
         title: "Erro ao salvar",
-        description: "Não foi possível salvar as configurações dos tanques.",
+        description: error.message || "Não foi possível salvar as configurações dos tanques."
       });
     } finally {
       setIsSalvando(false);
