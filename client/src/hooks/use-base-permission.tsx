@@ -1,4 +1,4 @@
-import React from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 
 // Definindo o tipo User para uso interno do hook
@@ -39,13 +39,41 @@ const allRoutes = [
   '/users'            // Usuários (só admin)
 ];
 
-// Hook para verificação de permissões baseadas na base do usuário
+// Regras de correspondência entre bases e rotas
+const baseRouteMapping = {
+  'line hall': ['/line-hall'],
+  'multas': ['/multas', '/fines'],
+  'pneus': ['/pneus', '/tires'],
+  'gestão de frotas': ['/gestao-de-frotas', '/fleet-management', '/maintenance'],
+  'frota': ['/gestao-de-frotas', '/fleet-management', '/maintenance']
+};
+
+// Rotas básicas que todos os usuários têm acesso
+const basicRoutes = ['/', '/vehicles', '/refueling'];
+
 export function useBasePermission(): BasePermissionHook {
   const { user: authUser } = useAuth();
   const user = authUser as User | null;
   
+  // Esta função verifica se uma rota está na lista de rotas para uma base específica
+  const isRouteForBase = useCallback((route: string, basename: string): boolean => {
+    const baseLower = basename.toLowerCase();
+    
+    // Verificar todas as chaves possíveis de baseRouteMapping
+    for (const base in baseRouteMapping) {
+      if (baseLower.includes(base)) {
+        const routesForBase = baseRouteMapping[base as keyof typeof baseRouteMapping];
+        if (routesForBase.includes(route)) {
+          console.log(`Rota ${route} permitida para base: ${baseLower}`);
+          return true;
+        }
+      }
+    }
+    return false;
+  }, []);
+  
   // Verifica se o usuário tem permissão para acessar a rota
-  const hasPermission = React.useCallback((route: string): boolean => {
+  const hasPermission = useCallback((route: string): boolean => {
     // Se não houver usuário, não tem permissão para nada
     if (!user) {
       return false;
@@ -61,61 +89,42 @@ export function useBasePermission(): BasePermissionHook {
       return false;
     }
     
-    // Verificar se o usuário tem uma base associada
-    if (!user.baseId && !user.basename) {
-      // Sem base específica, permitir apenas acesso ao dashboard e veículos (básico)
-      return route === '/' || route === '/vehicles' || route === '/refueling';
-    }
-    
-    // Se tiver basename "Line Hall" ou baseId=11, permitir acesso a line-hall
-    if (user.basename?.toLowerCase() === 'line hall' || user.baseId === 11) {
-      // Agora damos acesso explícito ao Line Hall
+    // Handle Line Hall explicitamente
+    if (user.basename === "Line Hall" || user.baseId === 11) {
       if (route === '/line-hall') {
-        console.log("LIBERANDO ACESSO A LINE HALL para usuário:", user.email);
+        console.log("Liberando acesso ao Line Hall para:", user.email);
         return true;
       }
     }
     
-    // Se tiver basename = "Multas", permitir acesso a multas/fines
-    if (user.basename?.toLowerCase() === 'multas') {
-      if (route === '/multas' || route === '/fines') {
-        return true;
-      }
-    }
-    
-    // Se tiver basename = "Pneus", permitir acesso a pneus/tires
-    if (user.basename?.toLowerCase() === 'pneus') {
-      if (route === '/pneus' || route === '/tires') {
-        return true;
-      }
-    }
-    
-    // Se tiver basename = "Gestão de Frotas", permitir acesso a gestão de frotas e manutenção
-    if (user.basename?.toLowerCase().includes('frota')) {
-      if (route === '/gestao-de-frotas' || route === '/fleet-management' || route === '/maintenance') {
+    // Verificar se o usuário tem uma base associada e se a rota corresponde a essa base
+    if (user.basename) {
+      if (isRouteForBase(route, user.basename)) {
         return true;
       }
     }
     
     // Permitir acesso a rotas básicas para todos os usuários
-    const hasBasicAccess = route === '/' || route === '/vehicles' || route === '/refueling';
-    console.log(`Verificando acesso para rota ${route}: ${hasBasicAccess}`);
-    return hasBasicAccess;
-  }, [user]);
+    if (basicRoutes.includes(route)) {
+      return true;
+    }
+    
+    return false;
+  }, [user, isRouteForBase]);
   
   // Obtém todas as rotas que o usuário tem permissão para acessar
-  const getAccessibleRoutes = React.useCallback((): string[] => {
+  const getAccessibleRoutes = useCallback((): string[] => {
     return allRoutes.filter(route => hasPermission(route));
   }, [hasPermission]);
   
   // Verifica se o usuário pertence a uma base específica
-  const isUserFromBase = React.useCallback((baseId: number): boolean => {
+  const isUserFromBase = useCallback((baseId: number): boolean => {
     if (user?.role === 'admin') return true;
     return user?.baseId === baseId;
   }, [user]);
   
   // Obtém a base do usuário atual
-  const getUserBase = React.useCallback(() => {
+  const getUserBase = useCallback(() => {
     // Se o usuário não existir ou não tiver base, retorna null
     if (!user || (!user.baseId && !user.basename)) {
       return { id: null, name: null };
