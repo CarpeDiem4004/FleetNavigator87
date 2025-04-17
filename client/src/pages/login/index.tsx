@@ -21,8 +21,7 @@ export default function LoginPage() {
   const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
 
   // Obtenha o parâmetro de redirecionamento da URL, se existir
   const params = new URLSearchParams(location.split('?')[1]);
@@ -51,7 +50,7 @@ export default function LoginPage() {
         description: 'Bem-vindo ao sistema de gerenciamento de frotas',
       });
       
-      navigate(redirectTo);
+      setLocation(redirectTo);
     } catch (error) {
       console.error('Erro no login:', error);
       // Já exibimos o toast no hook useAuth em caso de erro

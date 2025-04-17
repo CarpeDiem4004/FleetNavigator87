@@ -8,6 +8,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { parseBasesData, importBasesToSystem } from '@/utils/importBases';
+import CocaColaBasesList from '@/components/bases/CocaColaBasesList';
 
 import { 
   Card, 
