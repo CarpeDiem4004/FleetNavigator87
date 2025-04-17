@@ -48,7 +48,7 @@ const baseRouteMapping = {
   'frota': ['/gestao-de-frotas', '/fleet-management', '/maintenance']
 };
 
-// Rotas básicas que todos os usuários têm acesso
+// Rotas básicas que todos os usuários têm acesso (exceto os que têm base específica)
 const basicRoutes = ['/', '/vehicles', '/refueling'];
 
 export function useBasePermission(): BasePermissionHook {
@@ -89,12 +89,15 @@ export function useBasePermission(): BasePermissionHook {
       return false;
     }
     
-    // Handle Line Hall explicitamente
+    // Handle Line Hall explicitamente - ACESSO EXCLUSIVO sem dashboard/veículos
     if (user.basename === "Line Hall" || user.baseId === 11) {
+      // Usuário da base Line Hall só pode acessar Line Hall
       if (route === '/line-hall') {
         console.log("Liberando acesso ao Line Hall para:", user.email);
         return true;
       }
+      console.log("Usuário Line Hall tentando acessar rota não permitida:", route);
+      return false; // Bloqueia acesso a qualquer outra rota
     }
     
     // Verificar se o usuário tem uma base associada e se a rota corresponde a essa base
@@ -104,8 +107,8 @@ export function useBasePermission(): BasePermissionHook {
       }
     }
     
-    // Permitir acesso a rotas básicas para todos os usuários
-    if (basicRoutes.includes(route)) {
+    // Se o usuário não tem base específica, permitir acesso a rotas básicas
+    if (!user.baseId && !user.basename && basicRoutes.includes(route)) {
       return true;
     }
     
