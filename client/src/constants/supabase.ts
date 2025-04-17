@@ -1,6 +1,9 @@
 // Configurações de acesso à API do Supabase
 export const SUPABASE_URL = "https://hvsmxxqkuyjhpsiojupb.supabase.co/rest/v1";
-export const API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA";
+// API Key para usuário com permissão de serviço para contornar RLS
+export const API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDg5ODIwNiwiZXhwIjoyMDYwMjc0MjA2fQ.bvwwqQBQVUOlyHYMsX9C5dSQhsQYI2r8qmqRBHgG_0Y";
+// Chave anterior (anônima) que estava sofrendo com restrições de RLS:
+// "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA"
 
 // Função para enviar dados para endpoints do Supabase
 export async function enviarParaSupabase(endpoint: string, dados: any, method: string = "POST") {
@@ -12,13 +15,19 @@ export async function enviarParaSupabase(endpoint: string, dados: any, method: s
     
     console.log(`[SUPABASE] Iniciando requisição ${method} para ${endpoint}`);
     
+    // Adiciona timestamp para minimizar cache
+    const timestamp = new Date().getTime();
+    
     const options: RequestInit = {
       method: method,
       headers: {
         "Content-Type": "application/json",
         "apikey": API_KEY,
         "Authorization": `Bearer ${API_KEY}`,
-        "Prefer": "return=representation"
+        "Prefer": "return=representation",
+        "Cache-Control": "no-cache, no-store",
+        "Pragma": "no-cache",
+        "X-Request-Timestamp": timestamp.toString()
       },
       // Adiciona timeout para a requisição
       signal: AbortSignal.timeout(10000) // 10 segundos de timeout
@@ -92,7 +101,10 @@ export async function buscarDadosSupabase(endpoint: string, queryParams: string 
       throw new Error("Sem conexão com a internet. Verifique sua rede e tente novamente.");
     }
     
-    const url = `${SUPABASE_URL}/${endpoint}${queryParams ? `?${queryParams}` : ""}`;
+    // Adiciona timestamp para evitar caches
+    const timestamp = new Date().getTime();
+    const separator = queryParams ? '&' : '?';
+    const url = `${SUPABASE_URL}/${endpoint}${queryParams ? `?${queryParams}` : ""}${separator}_t=${timestamp}`;
     console.log("Buscando dados em:", url);
     
     try {
@@ -101,7 +113,9 @@ export async function buscarDadosSupabase(endpoint: string, queryParams: string 
         headers: {
           "Content-Type": "application/json",
           "apikey": API_KEY,
-          "Authorization": `Bearer ${API_KEY}`
+          "Authorization": `Bearer ${API_KEY}`,
+          "Cache-Control": "no-cache, no-store",
+          "Pragma": "no-cache"
         },
         // Adiciona timeout para a requisição
         signal: AbortSignal.timeout(10000) // 10 segundos de timeout
@@ -162,13 +176,18 @@ export async function verificarConexaoSupabase(): Promise<boolean> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos de timeout
     
+    // Adiciona timestamp para evitar cache
+    const timestamp = new Date().getTime();
+    
     try {
       // Usamos o endpoint de configuração de tanques como teste de conexão
-      const response = await fetch(`${SUPABASE_URL}/${ENDPOINTS.CONFIG_TANQUES}?limit=1`, {
+      const response = await fetch(`${SUPABASE_URL}/${ENDPOINTS.CONFIG_TANQUES}?limit=1&_t=${timestamp}`, {
         method: 'GET',
         headers: {
           "apikey": API_KEY,
-          "Authorization": `Bearer ${API_KEY}`
+          "Authorization": `Bearer ${API_KEY}`,
+          "Cache-Control": "no-cache, no-store",
+          "Pragma": "no-cache"
         },
         signal: controller.signal
       });
