@@ -20,7 +20,20 @@ const AdminUtils = () => {
   const isAdmin = user?.role === 'admin';
 
   const tables = [
-    { name: 'abastecimentos_postos', label: 'Abastecimentos' },
+    // Tabelas principais do sistema
+    { name: 'vehicles', label: 'Veículos' },
+    { name: 'maintenance', label: 'Manutenções' },
+    { name: 'workshops', label: 'Oficinas' },
+    { name: 'tires', label: 'Pneus' },
+    { name: 'refueling', label: 'Abastecimentos' },
+    { name: 'fines', label: 'Multas' },
+    { name: 'line_hall', label: 'Line Hall' },
+    { name: 'accidents', label: 'Acidentes/Sinistros' },
+    { name: 'thefts', label: 'Roubos' },
+    { name: 'suppliers', label: 'Fornecedores' },
+    
+    // Tabelas de postos
+    { name: 'abastecimentos_postos', label: 'Abastecimentos de Postos' },
     { name: 'recebimentos_combustivel', label: 'Recebimentos de Combustível' },
     { name: 'movimentacoes_patio', label: 'Movimentações de Pátio' },
     { name: 'controle_tanques', label: 'Controle de Tanques' },
@@ -39,20 +52,34 @@ const AdminUtils = () => {
     }
 
     const confirmacao = window.confirm(
-      'ATENÇÃO: Esta operação irá limpar TODOS os dados dos postos do sistema. ' +
-      'Esta ação é irreversível e removerá todos os registros de abastecimentos, ' +
-      'recebimentos, controle de pátio e outras informações. Deseja continuar?'
+      'ATENÇÃO: Esta operação irá limpar TODOS os dados do sistema! ' +
+      'Esta ação é IRREVERSÍVEL e removerá todos os registros de:\n\n' +
+      '- Veículos e manutenções\n' +
+      '- Pneus, multas e abastecimentos\n' + 
+      '- Oficinas e fornecedores\n' +
+      '- Acidentes, sinistros e roubos\n' +
+      '- Line Hall e operações\n' +
+      '- Postos, tanques e controle de pátio\n\n' +
+      'Esta ação zerará completamente o sistema. Deseja continuar?'
     );
 
     if (!confirmacao) return;
 
     // Segunda confirmação para ter certeza
-    const segundaConfirmacao = window.confirm(
-      'ÚLTIMA CHANCE: Tem certeza que deseja apagar permanentemente TODOS os dados? ' +
-      'Digite "LIMPAR" na caixa de alerta para confirmar.'
+    const segundaConfirmacao = prompt(
+      'ÚLTIMA CHANCE: Esta ação é IRREVERSÍVEL e apagará TODOS os dados operacionais do sistema.\n\n' +
+      'Para confirmar a limpeza completa, digite "LIMPAR" (em maiúsculas) e clique em OK:'
     );
-
-    if (!segundaConfirmacao) return;
+    
+    // Verifica se o usuário digitou "LIMPAR" corretamente
+    if (segundaConfirmacao !== 'LIMPAR') {
+      toast({
+        title: "Operação cancelada",
+        description: "A limpeza dos dados foi cancelada. Nenhuma alteração foi realizada.",
+        variant: "default"
+      });
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -238,9 +265,15 @@ const AdminUtils = () => {
             </CardHeader>
             <CardContent className="pt-6">
               <p className="mb-4 text-sm">
-                Esta ferramenta permite limpar todos os dados operacionais do sistema, 
-                incluindo registros de abastecimentos, movimentações de pátio e controle de tanques.
+                Esta ferramenta permite <strong>ZERAR COMPLETAMENTE</strong> o sistema e limpar todos os dados operacionais:
               </p>
+              <ul className="list-disc ml-5 mb-4 text-sm space-y-1">
+                <li>Veículos e manutenções</li>
+                <li>Pneus, multas e abastecimentos</li>
+                <li>Acidentes, sinistros e roubos</li>
+                <li>Dados de postos e tanques</li>
+                <li>Line Hall e todas as operações</li>
+              </ul>
               <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-md mb-4">
                 <p className="text-sm font-medium text-red-800 dark:text-red-300">
                   <strong>ATENÇÃO:</strong> Esta ação é irreversível e apagará todos os dados.
