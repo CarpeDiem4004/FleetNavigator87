@@ -4,9 +4,9 @@ export interface Vehicle {
   id: number;
   plate: string;
   model: string;
-  type: string;
+  vehicleType: string;
   status: string;
-  baseId?: number;
+  baseId: number;
 }
 
 /**

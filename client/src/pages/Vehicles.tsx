@@ -38,12 +38,13 @@ import { useToast } from '@/hooks/use-toast';
 type VehicleStatusType = 'em_operacao' | 'em_manutencao' | 'parado';
 type VehicleTypeType = 'cavalo_mecanico' | 'carreta' | 'van' | 'utilitario';
 
+// Os nomes usados aqui devem corresponder exatamente ao que o schema e tabela esperam
 interface NewVehicleData {
   plate: string;
   model: string;
-  vehicleType: VehicleTypeType;
+  vehicleType: VehicleTypeType; // mapeado para vehicle_type na coluna
   status: VehicleStatusType;
-  baseId: number;
+  baseId: number; // mapeado para base_id na coluna
 }
 
 const getStatusBadge = (status: VehicleStatusType) => {
@@ -70,12 +71,13 @@ const Vehicles: React.FC = () => {
     plate: '',
   });
   
+  // Vamos garantir que a baseId seja inicializada com um valor válido
   const [newVehicle, setNewVehicle] = useState<NewVehicleData>({
     plate: '',
     model: '',
     vehicleType: 'cavalo_mecanico',
     status: 'em_operacao',
-    baseId: 0,
+    baseId: 12, // Base "Gestão de Frotas" como padrão
   });
   
   // Obter veículos da API real
@@ -105,7 +107,7 @@ const Vehicles: React.FC = () => {
         model: '',
         vehicleType: 'cavalo_mecanico',
         status: 'em_operacao',
-        baseId: 0,
+        baseId: 12, // Base padrão "Gestão de Frotas"
       });
       setIsAddDialogOpen(false);
       
