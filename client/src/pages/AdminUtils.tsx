@@ -308,6 +308,19 @@ const AdminUtils = () => {
                   Use apenas quando for realmente necessário reiniciar o sistema.
                 </p>
               </div>
+              <div className="mt-4 p-2 bg-orange-50 dark:bg-orange-900/20 rounded-md mb-2 text-center">
+                <p className="text-xs font-medium text-orange-800 dark:text-orange-300">
+                  Problemas com limpeza de dados?
+                </p>
+                <a 
+                  href="/limpar-dados" 
+                  target="_blank"
+                  rel="noopener noreferrer" 
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  Tente o limpador de dados otimizado →
+                </a>
+              </div>
             </CardContent>
             <CardFooter>
               <Button 
