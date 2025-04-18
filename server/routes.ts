@@ -663,6 +663,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Iniciando limpeza completa dos dados do sistema");
       
+      // Verificar se temos a confirmação correta
+      const { confirm } = req.body;
+      if (confirm !== 'LIMPAR') {
+        return res.status(400).json({
+          message: "Confirmação inválida. Por favor, forneça a confirmação correta para esta operação sensível.",
+          success: false
+        });
+      }
+      
       // Tabelas em ordem de limpeza (para evitar problemas de chave estrangeira)
       // As tabelas dependentes precisam ser apagadas antes das tabelas que elas referenciam
       const tables = [
@@ -745,6 +754,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             break;
         }
+      }
+      
+      // Limpar os dados do Supabase também (se disponível)
+      try {
+        const fetch = await import("node-fetch");
+        const supabaseUrl = process.env.SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
+        const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
+        
+        // Lista de tabelas Supabase para limpar
+        const supabaseTables = [
+          'abastecimentos_postos',
+          'movimentacoes_patio',
+          'entradas_combustivel',
+          'status_tanques',
+          'veiculos'
+        ];
+        
+        if (supabaseKey) {
+          console.log("Iniciando limpeza de dados do Supabase...");
+          
+          for (const table of supabaseTables) {
+            try {
+              console.log(`Limpando dados da tabela Supabase: ${table}`);
+              
+              // Usar API REST para limpar dados (DELETE sem WHERE = limpar tudo)
+              const response = await fetch.default(
+                `${supabaseUrl}/rest/v1/${table}?select=id`,
+                {
+                  method: 'DELETE',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': supabaseKey,
+                    'Authorization': `Bearer ${supabaseKey}`,
+                    'Prefer': 'return=minimal' // Não retorna os registros apagados
+                  }
+                }
+              );
+              
+              if (response.ok) {
+                console.log(`Tabela ${table} limpa com sucesso no Supabase`);
+              } else {
+                const errorText = await response.text();
+                console.error(`Erro ao limpar tabela ${table} no Supabase: ${errorText}`);
+              }
+            } catch (err) {
+              console.error(`Erro ao processar tabela ${table} no Supabase: ${err}`);
+            }
+          }
+        } else {
+          console.log("Chave do Supabase não disponível. Pulando limpeza do Supabase.");
+        }
+      } catch (supaError) {
+        console.error("Erro ao limpar dados do Supabase:", supaError);
       }
       
       console.log("Limpeza completa de dados concluída com sucesso");
