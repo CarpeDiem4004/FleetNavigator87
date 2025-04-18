@@ -666,9 +666,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Tabelas em ordem de limpeza (para evitar problemas de chave estrangeira)
       // As tabelas dependentes precisam ser apagadas antes das tabelas que elas referenciam
       const tables = [
-        'maintenance', 'refueling', 'fines', 'tires', 'line_hall',
-        'vehicles', 'workshops', 'bases'
+        'maintenance', 'refueling', 'fines', 'tires', 'line_hall', 'vehicles', 'workshops'
       ];
+      
+      // Não vamos limpar as bases para evitar problemas com chaves estrangeiras
+      // já que usuários têm referências para bases
       
       // Limpar cada tabela em sequência
       for (const table of tables) {
