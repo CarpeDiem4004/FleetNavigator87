@@ -1,15 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 
 // URL do Supabase
-const supabaseUrl = 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
+export const supabaseUrl = 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
 
 // Chave anônima para autenticação e operações permitidas pelo RLS
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';
+export const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';
 
 // Chave de serviço para operações administrativas (contorna RLS)
 // NOTA: A chave de serviço está inválida, então estamos usando temporariamente a chave anônima 
 // até que uma chave de serviço válida seja fornecida
-const supabaseServiceKey = supabaseAnonKey; // Usando a mesma chave temporariamente
+export const supabaseServiceKey = supabaseAnonKey; // Usando a mesma chave temporariamente
 
 // Cliente Supabase padrão com chave anônima (para autenticação e operações com RLS)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
