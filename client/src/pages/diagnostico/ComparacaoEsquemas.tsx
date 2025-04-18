@@ -128,42 +128,54 @@ export default function ComparacaoEsquemas() {
                   <div>
                     <h3 className="font-medium mb-2 flex items-center">
                       <Server className="h-4 w-4 mr-2 text-blue-500" />
-                      Tabelas no Replit ({results.tableComparison.replitTables.length})
+                      Tabelas no Replit ({results.tableComparison.replitTables?.length || 0})
                     </h3>
                     <ul className="list-disc ml-5 space-y-1 text-sm">
-                      {results.tableComparison.replitTables.map(table => (
-                        <li key={table} className="text-gray-700">
-                          {table}
-                        </li>
-                      ))}
+                      {results.tableComparison.replitTables && results.tableComparison.replitTables.length > 0 ? (
+                        results.tableComparison.replitTables.map(table => (
+                          <li key={table} className="text-gray-700">
+                            {table}
+                          </li>
+                        ))
+                      ) : (
+                        <li className="text-gray-500">Nenhuma tabela encontrada</li>
+                      )}
                     </ul>
                   </div>
                   
                   <div>
                     <h3 className="font-medium mb-2 flex items-center">
                       <Database className="h-4 w-4 mr-2 text-green-500" />
-                      Tabelas no Supabase ({results.tableComparison.supabaseTables.length})
+                      Tabelas no Supabase ({results.tableComparison.supabaseTables?.length || 0})
                     </h3>
                     <ul className="list-disc ml-5 space-y-1 text-sm">
-                      {results.tableComparison.supabaseTables.map(table => (
-                        <li key={table} className="text-gray-700">
-                          {table}
-                        </li>
-                      ))}
+                      {results.tableComparison.supabaseTables && results.tableComparison.supabaseTables.length > 0 ? (
+                        results.tableComparison.supabaseTables.map(table => (
+                          <li key={table} className="text-gray-700">
+                            {table}
+                          </li>
+                        ))
+                      ) : (
+                        <li className="text-gray-500">Nenhuma tabela encontrada</li>
+                      )}
                     </ul>
                   </div>
                   
                   <div>
                     <h3 className="font-medium mb-2 flex items-center">
                       <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-                      Em ambos ({results.tableComparison.inBoth.length})
+                      Em ambos ({results.tableComparison.inBoth?.length || 0})
                     </h3>
                     <ul className="list-disc ml-5 space-y-1 text-sm">
-                      {results.tableComparison.inBoth.map(table => (
-                        <li key={table} className="text-green-700">
-                          {table}
-                        </li>
-                      ))}
+                      {results.tableComparison.inBoth && results.tableComparison.inBoth.length > 0 ? (
+                        results.tableComparison.inBoth.map(table => (
+                          <li key={table} className="text-green-700">
+                            {table}
+                          </li>
+                        ))
+                      ) : (
+                        <li className="text-gray-500">Nenhuma tabela em comum</li>
+                      )}
                     </ul>
                   </div>
                 </div>
@@ -172,10 +184,10 @@ export default function ComparacaoEsquemas() {
                   <div>
                     <h3 className="font-medium mb-2 flex items-center text-orange-600">
                       <XCircle className="h-4 w-4 mr-2" />
-                      Apenas no Replit ({results.tableComparison.onlyInReplit.length})
+                      Apenas no Replit ({results.tableComparison.onlyInReplit?.length || 0})
                     </h3>
                     <ul className="list-disc ml-5 space-y-1 text-sm">
-                      {results.tableComparison.onlyInReplit.length > 0 ? (
+                      {results.tableComparison.onlyInReplit && results.tableComparison.onlyInReplit.length > 0 ? (
                         results.tableComparison.onlyInReplit.map(table => (
                           <li key={table} className="text-orange-700">
                             {table}
@@ -190,10 +202,10 @@ export default function ComparacaoEsquemas() {
                   <div>
                     <h3 className="font-medium mb-2 flex items-center text-red-600">
                       <XCircle className="h-4 w-4 mr-2" />
-                      Apenas no Supabase ({results.tableComparison.onlyInSupabase.length})
+                      Apenas no Supabase ({results.tableComparison.onlyInSupabase?.length || 0})
                     </h3>
                     <ul className="list-disc ml-5 space-y-1 text-sm">
-                      {results.tableComparison.onlyInSupabase.length > 0 ? (
+                      {results.tableComparison.onlyInSupabase && results.tableComparison.onlyInSupabase.length > 0 ? (
                         results.tableComparison.onlyInSupabase.map(table => (
                           <li key={table} className="text-red-700">
                             {table}
@@ -216,9 +228,9 @@ export default function ComparacaoEsquemas() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue={results.tableComparison.inBoth[0] || "sem-tabelas"}>
+                <Tabs defaultValue={results.tableComparison.inBoth && results.tableComparison.inBoth.length > 0 ? results.tableComparison.inBoth[0] : "sem-tabelas"}>
                   <TabsList className="mb-4 flex flex-wrap">
-                    {results.tableComparison.inBoth.length > 0 ? (
+                    {results.tableComparison.inBoth && results.tableComparison.inBoth.length > 0 ? (
                       results.tableComparison.inBoth.map(table => (
                         <TabsTrigger key={table} value={table}>
                           {table}
@@ -229,41 +241,49 @@ export default function ComparacaoEsquemas() {
                     )}
                   </TabsList>
                   
-                  {results.tableComparison.inBoth.length > 0 ? (
+                  {results.tableComparison.inBoth && results.tableComparison.inBoth.length > 0 ? (
                     results.tableComparison.inBoth.map(table => (
                       <TabsContent key={table} value={table}>
-                        {results.columnComparison[table] ? (
+                        {results.columnComparison && results.columnComparison[table] ? (
                           <div className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div>
                                 <h3 className="font-medium mb-2">Colunas no Replit</h3>
                                 <ul className="list-disc ml-5 space-y-1 text-sm">
-                                  {results.columnComparison[table].replitColumns.map(col => (
-                                    <li key={col} className={`${
-                                      results.columnComparison[table].inBoth.includes(col) 
-                                        ? 'text-green-700' 
-                                        : 'text-orange-700 font-medium'
-                                    }`}>
-                                      {col}
-                                      {!results.columnComparison[table].inBoth.includes(col) && ' (apenas Replit)'}
-                                    </li>
-                                  ))}
+                                  {results.columnComparison[table].replitColumns && results.columnComparison[table].replitColumns.length > 0 ? (
+                                    results.columnComparison[table].replitColumns.map(col => (
+                                      <li key={col} className={`${
+                                        results.columnComparison[table].inBoth && results.columnComparison[table].inBoth.includes(col) 
+                                          ? 'text-green-700' 
+                                          : 'text-orange-700 font-medium'
+                                      }`}>
+                                        {col}
+                                        {results.columnComparison[table].inBoth && !results.columnComparison[table].inBoth.includes(col) && ' (apenas Replit)'}
+                                      </li>
+                                    ))
+                                  ) : (
+                                    <li className="text-gray-500">Nenhuma coluna encontrada</li>
+                                  )}
                                 </ul>
                               </div>
                               
                               <div>
                                 <h3 className="font-medium mb-2">Colunas no Supabase</h3>
                                 <ul className="list-disc ml-5 space-y-1 text-sm">
-                                  {results.columnComparison[table].supabaseColumns.map(col => (
-                                    <li key={col} className={`${
-                                      results.columnComparison[table].inBoth.includes(col) 
-                                        ? 'text-green-700' 
-                                        : 'text-red-700 font-medium'
-                                    }`}>
-                                      {col}
-                                      {!results.columnComparison[table].inBoth.includes(col) && ' (apenas Supabase)'}
-                                    </li>
-                                  ))}
+                                  {results.columnComparison[table].supabaseColumns && results.columnComparison[table].supabaseColumns.length > 0 ? (
+                                    results.columnComparison[table].supabaseColumns.map(col => (
+                                      <li key={col} className={`${
+                                        results.columnComparison[table].inBoth && results.columnComparison[table].inBoth.includes(col) 
+                                          ? 'text-green-700' 
+                                          : 'text-red-700 font-medium'
+                                      }`}>
+                                        {col}
+                                        {results.columnComparison[table].inBoth && !results.columnComparison[table].inBoth.includes(col) && ' (apenas Supabase)'}
+                                      </li>
+                                    ))
+                                  ) : (
+                                    <li className="text-gray-500">Nenhuma coluna encontrada</li>
+                                  )}
                                 </ul>
                               </div>
                             </div>
@@ -271,19 +291,19 @@ export default function ComparacaoEsquemas() {
                             <div className="bg-muted p-4 rounded-md">
                               <h3 className="font-medium mb-2">Resumo das diferenças</h3>
                               <p>
-                                <span className="font-medium">Colunas em comum:</span> {results.columnComparison[table].inBoth.length}
+                                <span className="font-medium">Colunas em comum:</span> {results.columnComparison[table].inBoth?.length || 0}
                               </p>
                               <p>
-                                <span className="font-medium">Colunas apenas no Replit:</span> {results.columnComparison[table].onlyInReplit.length}
-                                {results.columnComparison[table].onlyInReplit.length > 0 && (
+                                <span className="font-medium">Colunas apenas no Replit:</span> {results.columnComparison[table].onlyInReplit?.length || 0}
+                                {results.columnComparison[table].onlyInReplit && results.columnComparison[table].onlyInReplit.length > 0 && (
                                   <span className="text-sm text-orange-700 ml-2">
                                     ({results.columnComparison[table].onlyInReplit.join(', ')})
                                   </span>
                                 )}
                               </p>
                               <p>
-                                <span className="font-medium">Colunas apenas no Supabase:</span> {results.columnComparison[table].onlyInSupabase.length}
-                                {results.columnComparison[table].onlyInSupabase.length > 0 && (
+                                <span className="font-medium">Colunas apenas no Supabase:</span> {results.columnComparison[table].onlyInSupabase?.length || 0}
+                                {results.columnComparison[table].onlyInSupabase && results.columnComparison[table].onlyInSupabase.length > 0 && (
                                   <span className="text-sm text-red-700 ml-2">
                                     ({results.columnComparison[table].onlyInSupabase.join(', ')})
                                   </span>

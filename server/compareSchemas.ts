@@ -105,22 +105,44 @@ async function getPostgresqlTableColumns(tableName: string): Promise<string[]> {
 }
 
 /**
- * Obtém lista de tabelas do Supabase
+ * Obtém lista de tabelas do Supabase usando a função rpc
  */
 async function getSupabaseTables(): Promise<string[]> {
   try {
     const supabase = createSupabaseClient();
-    const { data, error } = await supabase
-      .from('pg_tables')
-      .select('tablename')
-      .eq('schemaname', 'public');
     
-    if (error) {
-      console.error("Erro ao obter tabelas do Supabase:", error);
-      return [];
+    // Primeiro, tentar listar tabelas consultando diretamente as tabelas conhecidas
+    const knownTables = [
+      'abastecimentos', 
+      'bases', 
+      'controle_patio', 
+      'linehall', 
+      'manutencao', 
+      'multas', 
+      'oficinas', 
+      'pneus',
+      'recebimentos_combustivel',
+      'status_tanques',
+      'tanques',
+      'usuarios',
+      'veiculos'
+    ];
+    
+    const existingTables: string[] = [];
+    
+    // Verificar cada tabela conhecida manualmente
+    for (const table of knownTables) {
+      const { count, error } = await supabase
+        .from(table)
+        .select('*', { count: 'exact', head: true });
+      
+      // Se não houver erro, a tabela existe
+      if (!error) {
+        existingTables.push(table);
+      }
     }
     
-    return data.map(row => row.tablename).sort();
+    return existingTables.sort();
   } catch (error) {
     console.error("Erro ao obter tabelas do Supabase:", error);
     return [];
@@ -133,18 +155,41 @@ async function getSupabaseTables(): Promise<string[]> {
 async function getSupabaseTableColumns(tableName: string): Promise<string[]> {
   try {
     const supabase = createSupabaseClient();
+    
+    // Obter uma linha de exemplo da tabela para ver as colunas
     const { data, error } = await supabase
-      .from('information_schema.columns')
-      .select('column_name')
-      .eq('table_schema', 'public')
-      .eq('table_name', tableName);
+      .from(tableName)
+      .select('*')
+      .limit(1);
     
     if (error) {
       console.error(`Erro ao obter colunas da tabela ${tableName} do Supabase:`, error);
       return [];
     }
     
-    return data.map(row => row.column_name).sort();
+    // Se temos dados, podemos extrair as colunas do primeiro objeto
+    if (data && data.length > 0) {
+      return Object.keys(data[0]).sort();
+    }
+    
+    // Se não temos dados, faça uma consulta vazia para ver as definições de coluna
+    const { data: emptyData, error: emptyError } = await supabase
+      .from(tableName)
+      .select('*')
+      .limit(0);
+    
+    if (emptyError) {
+      console.error(`Erro ao obter definição da tabela ${tableName} do Supabase:`, emptyError);
+      return [];
+    }
+    
+    // Mesmo com dados vazios, o Supabase pode retornar os nomes das colunas
+    // na propriedade 'columns' do resultado
+    if (emptyData && Array.isArray(emptyData) && (emptyData as any).columns) {
+      return (emptyData as any).columns.sort();
+    }
+    
+    return [];
   } catch (error) {
     console.error(`Erro ao obter colunas da tabela ${tableName} do Supabase:`, error);
     return [];
