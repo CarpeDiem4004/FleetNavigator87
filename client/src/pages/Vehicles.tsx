@@ -56,7 +56,7 @@ const getStatusBadge = (status: VehicleStatusType) => {
     case 'parado':
       return <Badge variant="danger">Parado</Badge>;
     default:
-      return <Badge>{status}</Badge>;
+      return <Badge variant="default">{status}</Badge>;
   }
 };
 
@@ -93,38 +93,49 @@ const Vehicles: React.FC = () => {
   // Mutação para adicionar novo veículo
   const addVehicleMutation = useMutation({
     mutationFn: async (newVehicleData: NewVehicleData) => {
+      console.log("Enviando dados para criação do veículo:", JSON.stringify(newVehicleData, null, 2));
       const response = await apiRequest('POST', '/api/vehicles', newVehicleData);
+      
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Erro ao adicionar veículo");
+        const errorData = await response.json();
+        console.error("Erro retornado pela API:", errorData);
+        throw new Error(errorData.message || "Erro ao adicionar veículo");
       }
-      return await response.json();
+      
+      const resultData = await response.json();
+      console.log("Veículo criado com sucesso:", JSON.stringify(resultData, null, 2));
+      return resultData;
     },
-    onSuccess: () => {
-      // Limpar o formulário e fechar o diálogo
+    onSuccess: (data) => {
+      console.log("Mutação concluída com sucesso, dados retornados:", data);
+      
+      // Atualizar a lista de veículos após a adição bem-sucedida
+      queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
+      
+      // Fechar o diálogo de adição
+      setIsAddDialogOpen(false);
+      
+      // Limpar o formulário e definir valores padrão
       setNewVehicle({
         plate: '',
         model: '',
         vehicleType: 'cavalo_mecanico',
         status: 'em_operacao',
-        baseId: 12, // Base padrão "Gestão de Frotas"
+        baseId: 12
       });
-      setIsAddDialogOpen(false);
       
-      // Atualizar os dados
-      queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
-      
-      // Mostrar mensagem de sucesso
       toast({
         title: "Veículo adicionado com sucesso",
-        variant: "default",
+        description: `O veículo ${data.plate} foi registrado no sistema.`,
+        variant: "default"
       });
     },
     onError: (error: Error) => {
+      console.error("Erro na mutação:", error);
       toast({
         title: "Erro ao adicionar veículo",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   });
@@ -211,11 +222,15 @@ const Vehicles: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Todas</SelectItem>
-                  {Array.isArray(bases) && bases.map((base: any) => (
-                    <SelectItem key={base.id} value={base.id.toString()}>
-                      {base.name} ({base.location})
-                    </SelectItem>
-                  ))}
+                  {Array.isArray(bases) && bases.length > 0 ? (
+                    bases.map((base: any) => (
+                      <SelectItem key={base.id} value={base.id.toString()}>
+                        {base.name} {base.location ? `(${base.location})` : ''}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="12">Gestão de Frotas</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
