@@ -199,7 +199,8 @@ export default function MaintenancePage() {
   // Carregar veículos
   const { data: vehicles = [] } = useQuery<Vehicle[]>({
     queryKey: ['/api/vehicles'],
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000 // Refazer consulta a cada 30 segundos para manter lista atualizada
   });
 
   // Carregar manutenções com base no filtro e na base do usuário
@@ -653,11 +654,17 @@ export default function MaintenancePage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="default">Selecione um veículo</SelectItem>
-                      {vehicles.map((vehicle) => (
-                        <SelectItem key={vehicle.id} value={vehicle.plate}>
-                          {vehicle.plate} - {vehicle.model}
-                        </SelectItem>
-                      ))}
+                      {vehicles.length === 0 ? (
+                        <div className="flex items-center justify-center py-3 px-2 text-gray-500">
+                          <p>Carregando veículos...</p>
+                        </div>
+                      ) : (
+                        vehicles.map((vehicle) => (
+                          <SelectItem key={vehicle.id} value={vehicle.plate}>
+                            {vehicle.plate} - {vehicle.model}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
