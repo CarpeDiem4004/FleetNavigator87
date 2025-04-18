@@ -9,8 +9,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Loader2 } from 'lucide-react';
 
 export default function SignIn() {
-  const [email, setEmail] = useState('admin@muricionfleet.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('rogerio@muricionfleet.com');
+  const [password, setPassword] = useState('senha123');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const [_, navigate] = useLocation();
