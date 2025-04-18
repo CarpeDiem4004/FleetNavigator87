@@ -134,9 +134,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const baseId = req.user.baseId;
       const role = req.user.role;
       
-      // If user is admin, they can see all vehicles
+      // Se o usuário é admin OU está na base "Gestão de Frotas" (baseId: 12), 
+      // ele pode ver todos os veículos para gerenciar manutenções da frota completa
+      const isFleetManagement = baseId === 12;
+      
+      // If user is admin or Fleet Management, they can see all vehicles
       // Otherwise, filter by base
-      const vehicles = role === 'admin' 
+      const vehicles = (role === 'admin' || isFleetManagement) 
         ? await storage.getAllVehicles() 
         : (baseId ? await storage.getVehiclesByBase(baseId) : []);
         
@@ -159,8 +163,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Unauthorized" });
       }
       
+      // Se o usuário é admin OU está na base "Gestão de Frotas" (baseId: 12), 
+      // ele pode ver todos os veículos para gerenciar manutenções da frota completa
+      const isFleetManagement = req.user.baseId === 12;
+      
       // Check if user has access to this vehicle
-      if (req.user.role !== 'admin' && vehicle.baseId !== req.user.baseId) {
+      if (req.user.role !== 'admin' && !isFleetManagement && vehicle.baseId !== req.user.baseId) {
         return res.status(403).json({ message: "Access denied" });
       }
       
@@ -208,8 +216,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Vehicle not found" });
       }
       
+      // Se o usuário é admin OU está na base "Gestão de Frotas" (baseId: 12), 
+      // ele pode editar qualquer veículo
+      const isFleetManagement = req.user.baseId === 12;
+      
       // Check if user has access to edit this vehicle
-      if (req.user.role !== 'admin' && vehicle.baseId !== req.user.baseId) {
+      if (req.user.role !== 'admin' && !isFleetManagement && vehicle.baseId !== req.user.baseId) {
         return res.status(403).json({ message: "Access denied" });
       }
       
