@@ -66,6 +66,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/context/AuthContext';
+import { Vehicle, useVehicles } from '@/hooks/use-vehicles';
 
 // Interfaces
 interface Base {
@@ -77,14 +78,6 @@ interface Workshop {
   id: number;
   name: string;
   isActive: boolean;
-}
-
-interface Vehicle {
-  id: number;
-  plate: string;
-  model: string;
-  type: string;
-  status: string;
 }
 
 interface Maintenance {
@@ -196,12 +189,8 @@ export default function MaintenancePage() {
     refetchOnWindowFocus: false
   });
 
-  // Carregar veículos
-  const { data: vehicles = [] } = useQuery<Vehicle[]>({
-    queryKey: ['/api/vehicles'],
-    refetchOnWindowFocus: true,
-    refetchInterval: 30000 // Refazer consulta a cada 30 segundos para manter lista atualizada
-  });
+  // Carregar veículos usando o hook customizado para garantir consistência em todo o aplicativo
+  const { vehicles = [] } = useVehicles();
 
   // Carregar manutenções com base no filtro e na base do usuário
   const { data: maintenances = [], isLoading } = useQuery<Maintenance[]>({
@@ -395,7 +384,7 @@ export default function MaintenancePage() {
 
   // Função para encontrar detalhes do veículo pela placa
   const getVehicleDetails = (plate: string) => {
-    const vehicle = vehicles.find(v => v.plate === plate);
+    const vehicle = vehicles.find((v: Vehicle) => v.plate === plate);
     return vehicle ? `${plate} - ${vehicle.model}` : plate;
   };
 
