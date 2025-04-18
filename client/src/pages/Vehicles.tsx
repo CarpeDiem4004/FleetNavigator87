@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Edit, Eye, Trash2 } from 'lucide-react';
+import { Plus, Search, Edit, Eye, Trash2, Loader2 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { 
   Card, 
@@ -134,6 +134,42 @@ const Vehicles: React.FC = () => {
       console.error("Erro na mutação:", error);
       toast({
         title: "Erro ao adicionar veículo",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Mutação para excluir veículo
+  const deleteVehicleMutation = useMutation({
+    mutationFn: async (vehicleId: number) => {
+      console.log(`Excluindo veículo ID: ${vehicleId}`);
+      const response = await apiRequest('DELETE', `/api/vehicles/${vehicleId}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Erro retornado pela API:", errorData);
+        throw new Error(errorData.message || "Erro ao excluir veículo");
+      }
+      
+      return vehicleId;
+    },
+    onSuccess: (vehicleId) => {
+      console.log(`Veículo ID ${vehicleId} excluído com sucesso`);
+      
+      // Atualizar a lista de veículos após a exclusão bem-sucedida
+      queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
+      
+      toast({
+        title: "Veículo excluído com sucesso",
+        description: "O veículo foi removido do sistema.",
+        variant: "default"
+      });
+    },
+    onError: (error: Error) => {
+      console.error("Erro ao excluir veículo:", error);
+      toast({
+        title: "Erro ao excluir veículo",
         description: error.message,
         variant: "destructive"
       });
@@ -337,8 +373,21 @@ const Vehicles: React.FC = () => {
                         <Button variant="ghost" size="icon">
                           <Eye className="h-4 w-4 text-gray-600" />
                         </Button>
-                        <Button variant="ghost" size="icon">
-                          <Trash2 className="h-4 w-4 text-red-600" />
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => {
+                            if (window.confirm(`Tem certeza que deseja excluir o veículo ${vehicle.plate}?`)) {
+                              deleteVehicleMutation.mutate(vehicle.id);
+                            }
+                          }}
+                          disabled={deleteVehicleMutation.isPending}
+                        >
+                          {deleteVehicleMutation.isPending && deleteVehicleMutation.variables === vehicle.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-red-600" />
+                          ) : (
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          )}
                         </Button>
                       </div>
                     </td>
