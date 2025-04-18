@@ -52,6 +52,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Configuração do passport para autenticação
   setupAuth(app);
   
+  // Endpoint para diagnóstico do Supabase
+  app.get("/api/diagnostico/supabase", isAdmin, async (req, res) => {
+    try {
+      // Importar função de diagnóstico
+      const { runSupabaseDiagnostic } = await import('./supabaseDiagnostic');
+      
+      // Executar diagnóstico
+      const diagnosticResults = await runSupabaseDiagnostic();
+      
+      return res.status(200).json({
+        success: true,
+        message: "Diagnóstico Supabase concluído",
+        timestamp: new Date().toISOString(),
+        results: diagnosticResults
+      });
+    } catch (error: any) {
+      console.error("Erro no diagnóstico do Supabase:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Erro ao executar diagnóstico do Supabase",
+        error: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
+  });
+  
   // Base routes
   app.get("/api/bases", isAuthenticated, async (req, res) => {
     try {
