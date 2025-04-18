@@ -7,8 +7,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { Loader2, Trash2, RefreshCw, Database } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 
-const AdminUtils: React.FC = () => {
+const AdminUtils = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -194,160 +195,165 @@ const AdminUtils: React.FC = () => {
     }
   };
 
+  // Conteúdo principal baseado no status de admin
   if (!isAdmin) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-red-600">Acesso Restrito</CardTitle>
-            <CardDescription>
-              Esta página é restrita a administradores do sistema.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p>
-              Você não tem permissão para acessar as ferramentas administrativas.
-              Entre em contato com um administrador se precisar realizar operações de manutenção.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <MainLayoutSimple>
+        <div className="container mx-auto px-4 py-8">
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-red-600">Acesso Restrito</CardTitle>
+              <CardDescription>
+                Esta página é restrita a administradores do sistema.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p>
+                Você não tem permissão para acessar as ferramentas administrativas.
+                Entre em contato com um administrador se precisar realizar operações de manutenção.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </MainLayoutSimple>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Ferramentas Administrativas</h1>
-      
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Card de Limpeza de Dados */}
-        <Card className="shadow-lg">
-          <CardHeader className="bg-red-50 dark:bg-red-900/20">
-            <CardTitle className="flex items-center text-red-700 dark:text-red-400">
-              <Trash2 className="mr-2 h-5 w-5" />
-              Limpeza de Dados
-            </CardTitle>
-            <CardDescription className="text-red-600/80 dark:text-red-400/80">
-              Remover dados do sistema
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <p className="mb-4 text-sm">
-              Esta ferramenta permite limpar todos os dados operacionais do sistema, 
-              incluindo registros de abastecimentos, movimentações de pátio e controle de tanques.
-            </p>
-            <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-md mb-4">
-              <p className="text-sm font-medium text-red-800 dark:text-red-300">
-                <strong>ATENÇÃO:</strong> Esta ação é irreversível e apagará todos os dados.
-                Use apenas quando for realmente necessário reiniciar o sistema.
-              </p>
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button 
-              variant="destructive" 
-              className="w-full"
-              onClick={limparTodosDados}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processando...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Limpar Todos os Dados
-                </>
-              )}
-            </Button>
-          </CardFooter>
-        </Card>
+    <MainLayoutSimple>
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-2xl font-bold mb-6">Ferramentas Administrativas</h1>
         
-        {/* Card de Configuração de Tanques */}
-        <Card className="shadow-lg">
-          <CardHeader className="bg-blue-50 dark:bg-blue-900/20">
-            <CardTitle className="flex items-center text-blue-700 dark:text-blue-400">
-              <Database className="mr-2 h-5 w-5" />
-              Configuração de Tanques
-            </CardTitle>
-            <CardDescription className="text-blue-600/80 dark:text-blue-400/80">
-              Resetar níveis e capacidades
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <p className="mb-4 text-sm">
-              Esta ferramenta redefine as configurações de todos os tanques de combustível
-              e ARLA para valores padrão, permitindo um reinício limpo do monitoramento.
-            </p>
-            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md mb-4">
-              <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
-                <strong>Configurações Padrão:</strong><br />
-                - Tanque de Diesel: Capacidade 20.000L, Nível Inicial 15.000L<br />
-                - Tanque de ARLA: Capacidade 1.000L, Nível Inicial 750L
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Card de Limpeza de Dados */}
+          <Card className="shadow-lg">
+            <CardHeader className="bg-red-50 dark:bg-red-900/20">
+              <CardTitle className="flex items-center text-red-700 dark:text-red-400">
+                <Trash2 className="mr-2 h-5 w-5" />
+                Limpeza de Dados
+              </CardTitle>
+              <CardDescription className="text-red-600/80 dark:text-red-400/80">
+                Remover dados do sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <p className="mb-4 text-sm">
+                Esta ferramenta permite limpar todos os dados operacionais do sistema, 
+                incluindo registros de abastecimentos, movimentações de pátio e controle de tanques.
               </p>
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button 
-              variant="outline" 
-              className="w-full border-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30"
-              onClick={resetarStatusTanques}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processando...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Resetar Tanques
-                </>
-              )}
-            </Button>
-          </CardFooter>
-        </Card>
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-md mb-4">
+                <p className="text-sm font-medium text-red-800 dark:text-red-300">
+                  <strong>ATENÇÃO:</strong> Esta ação é irreversível e apagará todos os dados.
+                  Use apenas quando for realmente necessário reiniciar o sistema.
+                </p>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button 
+                variant="destructive" 
+                className="w-full"
+                onClick={limparTodosDados}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processando...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Limpar Todos os Dados
+                  </>
+                )}
+              </Button>
+            </CardFooter>
+          </Card>
+          
+          {/* Card de Configuração de Tanques */}
+          <Card className="shadow-lg">
+            <CardHeader className="bg-blue-50 dark:bg-blue-900/20">
+              <CardTitle className="flex items-center text-blue-700 dark:text-blue-400">
+                <Database className="mr-2 h-5 w-5" />
+                Configuração de Tanques
+              </CardTitle>
+              <CardDescription className="text-blue-600/80 dark:text-blue-400/80">
+                Resetar níveis e capacidades
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <p className="mb-4 text-sm">
+                Esta ferramenta redefine as configurações de todos os tanques de combustível
+                e ARLA para valores padrão, permitindo um reinício limpo do monitoramento.
+              </p>
+              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md mb-4">
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                  <strong>Configurações Padrão:</strong><br />
+                  - Tanque de Diesel: Capacidade 20.000L, Nível Inicial 15.000L<br />
+                  - Tanque de ARLA: Capacidade 1.000L, Nível Inicial 750L
+                </p>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button 
+                variant="outline" 
+                className="w-full border-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                onClick={resetarStatusTanques}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processando...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Resetar Tanques
+                  </>
+                )}
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+        
+        {/* Status da Operação */}
+        {isLoading && (
+          <Card className="mt-6 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-base font-medium">Status da Operação</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Progress value={progress} className="h-2 mb-2" />
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {operationStatus || "Processando..."}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+        
+        {!isLoading && operationStatus && (
+          <Card className="mt-6 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-base font-medium">Resultado da Última Operação</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm">
+                {operationStatus}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+        
+        <div className="mt-8">
+          <Separator className="my-6" />
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Estas ferramentas são destinadas apenas para administradores do sistema.
+            O uso indevido pode resultar em perda permanente de dados.
+          </p>
+        </div>
       </div>
-      
-      {/* Status da Operação */}
-      {isLoading && (
-        <Card className="mt-6 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-base font-medium">Status da Operação</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Progress value={progress} className="h-2 mb-2" />
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {operationStatus || "Processando..."}
-            </p>
-          </CardContent>
-        </Card>
-      )}
-      
-      {!isLoading && operationStatus && (
-        <Card className="mt-6 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-base font-medium">Resultado da Última Operação</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm">
-              {operationStatus}
-            </p>
-          </CardContent>
-        </Card>
-      )}
-      
-      <div className="mt-8">
-        <Separator className="my-6" />
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Estas ferramentas são destinadas apenas para administradores do sistema.
-          O uso indevido pode resultar em perda permanente de dados.
-        </p>
-      </div>
-    </div>
+    </MainLayoutSimple>
   );
 };
 
