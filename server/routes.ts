@@ -8,6 +8,9 @@ import {
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import { getDashboardKPIs } from "./dashboardApi";
+import { runSupabaseDiagnostic } from "./supabaseDiagnostic";
+import { compareSchemas } from "./compareSchemas";
+import { db } from "./db";
 
 // Middleware para verificar autenticação em rotas protegidas
 const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
@@ -59,9 +62,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Iniciando diagnóstico do Supabase via API...");
       
-      // Importar função de diagnóstico
-      const { runSupabaseDiagnostic } = await import('./supabaseDiagnostic');
-      
       // Executar diagnóstico
       const diagnosticResults = await runSupabaseDiagnostic();
       
@@ -80,6 +80,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({
         success: false,
         message: "Erro ao executar diagnóstico do Supabase",
+        error: error.message,
+        errorType: error.constructor.name,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
+  });
+  
+  // Endpoint para comparação de esquemas entre Replit e Supabase
+  app.get("/api/diagnostico/compare-schemas", isAdmin, async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    
+    try {
+      console.log("Iniciando comparação de esquemas entre Replit e Supabase...");
+      
+      // Executar comparação
+      const comparison = await compareSchemas();
+      
+      console.log("Comparação de esquemas concluída com sucesso");
+      
+      return res.status(200).json({
+        success: true,
+        message: "Comparação de esquemas concluída",
+        timestamp: new Date().toISOString(),
+        results: comparison
+      });
+    } catch (error: any) {
+      console.error("Erro na comparação de esquemas:", error);
+      
+      // Mesmo em caso de erro, retornamos uma resposta JSON válida
+      return res.status(500).json({
+        success: false,
+        message: "Erro ao comparar esquemas",
         error: error.message,
         errorType: error.constructor.name,
         stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
