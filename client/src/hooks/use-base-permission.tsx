@@ -102,24 +102,27 @@ export function useBasePermission(): BasePermissionHook {
       return true;
     }
     
-    // Usuários não-admin não podem acessar a página de usuários
-    if (route === '/users') {
-      console.log(`Permission denied for non-admin user to /users`);
+    // Usuários não-admin não podem acessar a página de usuários ou bases
+    if (route === '/users' || route === '/bases') {
+      console.log(`Permission denied for non-admin user to ${route}`);
       return false;
     }
     
-    // Line Hall - permite acesso somente ao Line Hall e bloqueia outras rotas
+    // Sempre permitir acesso à dashboard
+    if (route === '/') {
+      return true;
+    }
+    
+    // Line Hall - permite acesso somente ao Line Hall e bloqueia outras rotas específicas
     if (user.basename === "Line Hall" || user.baseId === 11) {
-      // Se o usuário for Line Hall, só mostra Line Hall no menu
-      const hasAccess = route === '/line-hall';
+      // Se o usuário for Line Hall, só mostra Line Hall no menu e dashboard
+      const hasAccess = route === '/line-hall' || route === '/';
       console.log(`Line Hall user permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'} (baseId=${user.baseId}, basename=${user.basename})`);
       return hasAccess;
     }
     
-    // Gestão de Frotas - permite acesso a todas as rotas relacionadas a frotas
+    // Gestão de Frotas - permite acesso a rotas relacionadas à frota
     if (user.basename === "Gestão de Frotas" || user.baseId === 12) {
-      console.log("VERIFICANDO USUÁRIO DE GESTÃO DE FROTAS:", user);
-      
       const frotaRoutes = [
         '/', 
         '/gestao-de-frotas', 
@@ -133,36 +136,46 @@ export function useBasePermission(): BasePermissionHook {
         '/work-safety'
       ];
       
-      // Debug - imprime todas as rotas que o usuário pode acessar
-      console.log("Rotas permitidas para Gestão de Frotas:", frotaRoutes.join(", "));
-      
       const hasAccess = frotaRoutes.includes(route);
-      console.log(`Gestão de Frotas user permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'} (baseId=${user.baseId}, basename=${user.basename})`);
       
-      // Se a rota for fleet-management, sempre permitir para usuários de Gestão de Frotas
-      if (route === '/fleet-management') {
-        console.log("ACESSO ESPECIAL GARANTIDO para /fleet-management");
+      if (hasAccess) {
+        console.log(`Acesso PERMITIDO para usuário de Gestão de Frotas à rota: ${route}`);
         return true;
+      } else {
+        console.log(`Acesso NEGADO para usuário de Gestão de Frotas à rota: ${route}`);
+        return false;
       }
-      
+    }
+    
+    // Multas - permite acesso somente às multas
+    if (user.basename === "Multas" || user.baseId === 9) {
+      const hasAccess = route === '/multas' || route === '/fines' || route === '/';
+      console.log(`Multas user permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
       return hasAccess;
     }
     
-    // Verificar se o usuário tem uma base associada e se a rota corresponde a essa base
+    // Pneus - permite acesso somente aos pneus
+    if (user.basename === "Pneus" || user.baseId === 10) {
+      const hasAccess = route === '/pneus' || route === '/tires' || route === '/';
+      console.log(`Pneus user permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
+      return hasAccess;
+    }
+    
+    // Para outras bases específicas, usar o mapeamento
     if (user.basename) {
       const hasAccess = isRouteForBase(route, user.basename);
-      console.log(`User with base "${user.basename}" permission check for route ${route} using baseRouteMapping: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
-      if (hasAccess) {
-        return true;
-      }
+      console.log(`User with base "${user.basename}" permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
+      return hasAccess;
     }
     
-    // Se o usuário não tem base específica, permitir acesso a rotas básicas
-    if (!user.baseId && !user.basename && basicRoutes.includes(route)) {
-      console.log(`Permission granted for user without base to basic route: ${route}`);
-      return true;
+    // Se o usuário não tem base específica mas não é admin, permitir apenas rotas básicas
+    if (!user.baseId && !user.basename) {
+      const hasAccess = basicRoutes.includes(route);
+      console.log(`User without specific base permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
+      return hasAccess;
     }
     
+    // Negar acesso por padrão
     console.log(`Permission denied by default for route: ${route} (user: ${user.email}, baseId: ${user.baseId}, basename: ${user.basename})`);
     return false;
   }, [user, isRouteForBase]);

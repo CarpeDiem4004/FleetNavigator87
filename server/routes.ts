@@ -25,6 +25,29 @@ const isAdmin = (req: Request, res: Response, next: NextFunction) => {
   res.status(403).json({ message: "Acesso negado. Permissão de administrador necessária." });
 };
 
+// Middleware para verificar se o usuário tem acesso à base especificada
+const hasBaseAccess = (req: Request, res: Response, next: NextFunction) => {
+  // Se o usuário for admin, permite acesso a todas as bases
+  if (req.user && req.user.role === 'admin') {
+    return next();
+  }
+  
+  // Verificar se o usuário tem uma base associada e se corresponde à base solicitada
+  const requestedBaseId = req.params.baseId || req.query.baseId;
+  
+  if (requestedBaseId && req.user && req.user.baseId !== undefined) {
+    // Se estiver solicitando uma base específica, verificar se corresponde à do usuário
+    if (parseInt(requestedBaseId as string) === req.user.baseId) {
+      return next();
+    }
+  } else if (req.user && req.user.baseId !== undefined) {
+    // Se não estiver solicitando uma base específica, continuar mas será filtrado depois
+    return next();
+  }
+  
+  res.status(403).json({ message: "Acesso negado. Você só pode acessar dados da sua própria base." });
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Configuração do passport para autenticação
   setupAuth(app);
@@ -323,23 +346,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const baseId = req.query.baseId ? parseInt(req.query.baseId as string) : null;
       const status = req.query.status as string | null;
       
-      // If both baseId and status provided, filter by both
-      if (baseId && status) {
-        const maintenance = await storage.getMaintenanceByBaseAndStatus(baseId, status);
-        return res.status(200).json(maintenance);
+      // Para usuários não-admin, forçar filtragem pela base do próprio usuário
+      if (req.user.role !== 'admin' && req.user.baseId) {
+        console.log(`Usuário não-admin id=${req.user.id}. Forçando filtro por baseId=${req.user.baseId}`);
+        
+        // Se pediu filtragem por base, verificar se coincide com a do usuário
+        if (baseId && baseId !== req.user.baseId) {
+          return res.status(403).json({ 
+            message: "Acesso negado. Você só pode ver manutenções da sua própria base." 
+          });
+        }
+        
+        // Buscar manutenções com filtro por status (se existir) e pela base do usuário
+        let maintenanceRecords;
+        if (status) {
+          maintenanceRecords = await storage.getMaintenanceByBaseAndStatus(req.user.baseId, status);
+        } else {
+          // Buscar todas e filtrar manualmente para a base do usuário
+          const allRecords = await storage.getAllMaintenance();
+          maintenanceRecords = allRecords.filter(m => m.requestBaseId === req.user!.baseId);
+        }
+        
+        return res.status(200).json(maintenanceRecords);
       }
       
-      // Otherwise get all maintenance records (with role-based filtering)
-      const maintenance = await storage.getAllMaintenance();
-      
-      // Filter by base if not admin and no specific filter provided
-      if (req.user.role !== 'admin' && !baseId && req.user.baseId) {
-        // For non-admin users, filter to only their base's maintenance records
-        const filteredMaintenance = maintenance.filter(m => m.requestBaseId === req.user!.baseId);
-        return res.status(200).json(filteredMaintenance);
+      // Administradores podem filtrar como quiserem
+      if (req.user.role === 'admin') {
+        // Se baseId e status fornecidos, filtrar por ambos
+        if (baseId && status) {
+          const maintenance = await storage.getMaintenanceByBaseAndStatus(baseId, status);
+          return res.status(200).json(maintenance);
+        } 
+        // Se só baseId fornecido
+        else if (baseId) {
+          const allRecords = await storage.getAllMaintenance();
+          const filtered = allRecords.filter(m => m.requestBaseId === baseId);
+          return res.status(200).json(filtered);
+        }
+        // Se só status fornecido
+        else if (status) {
+          const allRecords = await storage.getAllMaintenance();
+          const filtered = allRecords.filter(m => m.status === status);
+          return res.status(200).json(filtered);
+        }
+        // Sem filtros, retornar todos
+        else {
+          const maintenance = await storage.getAllMaintenance();
+          return res.status(200).json(maintenance);
+        }
       }
       
-      return res.status(200).json(maintenance);
+      // Se chegou até aqui, é um usuário sem baseId definida - retornar lista vazia
+      console.log(`Usuário ${req.user.id} sem baseId definida - retornando lista vazia`);
+      return res.status(200).json([]);
     } catch (error) {
       console.error("Error fetching maintenance:", error);
       return res.status(500).json({ message: "Server error" });

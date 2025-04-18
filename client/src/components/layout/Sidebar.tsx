@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/context/AuthContext';
+import { useBasePermission } from '@/hooks/use-base-permission';
 
 // Icons
 import { 
@@ -24,12 +25,14 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const { hasPermission } = useBasePermission();
 
   if (!user) {
     return null;
   }
-
-  const navItems = [
+  
+  // Lista completa de itens de navegação disponíveis
+  const allNavItems = [
     { name: 'Dashboard', href: '/', icon: Gauge },
     { name: 'Veículos', href: '/vehicles', icon: Truck },
     { name: 'Manutenções', href: '/maintenance', icon: Wrench },
@@ -40,6 +43,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Bases', href: '/bases', icon: Warehouse },
     { name: 'Usuários', href: '/users', icon: Users },
   ];
+  
+  // Filtrando itens de navegação com base nas permissões do usuário
+  const navItems = allNavItems.filter(item => hasPermission(item.href));
 
   const closeSidebar = () => {
     if (window.innerWidth < 768) {
