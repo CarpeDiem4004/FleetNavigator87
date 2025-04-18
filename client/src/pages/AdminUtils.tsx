@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, Trash2, Database, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabaseAdmin, deleteRecords, fetchRecords } from "@/lib/supabase-client";
+import { deleteRecords, fetchRecords, insertData, supabase } from "@/lib/supabase-client";
 import MainLayoutSimple from "@/components/layout/MainLayoutSimple";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -110,7 +110,7 @@ const AdminUtils = () => {
         
         // Busca todos os registros da tabela
         try {
-          const registros = await fetchRecords(table.name, {});
+          const registros = await fetchRecords(table.name);
           
           if (registros.length > 0) {
             setOperationStatus(`Apagando ${registros.length} registros de ${table.label}...`);
@@ -193,29 +193,39 @@ const AdminUtils = () => {
         setOperationStatus(`Configurando tanques para o posto ${posto}...`);
         
         // Verificar se já existe uma configuração para este posto
-        const existingConfig = await fetchRecords('controle_tanques', {
-          equals: { posto }
-        });
+        // Usamos a API REST já que não temos acesso direto ao supabaseAdmin no cliente
+        const existingConfig = await fetchRecords('controle_tanques');
+        const postoConfig = existingConfig.filter(config => config.posto === posto);
         
-        if (existingConfig.length > 0) {
-          // Atualizar configuração existente
-          const { data, error } = await supabaseAdmin
-            .from('controle_tanques')
-            .update({
+        if (postoConfig.length > 0) {
+          // Atualizar configuração existente através da API REST
+          try {
+            const configId = postoConfig[0].id;
+            const tankUpdateData = {
               diesel_capacidade: defaultDieselCapacidade,
               diesel_nivel: defaultDieselNivel,
               arla_capacidade: defaultArlaCacacidade,
               arla_nivel: defaultArlaNivel,
               updated_at: new Date().toISOString()
-            })
-            .eq('posto', posto);
+            };
             
-          if (error) throw new Error(`Erro ao atualizar tanques para posto ${posto}: ${error.message}`);
+            // Usando diretamente o cliente Supabase
+            const { data: result, error } = await supabase
+              .from('controle_tanques')
+              .update(tankUpdateData)
+              .eq('id', configId)
+              .select();
+            
+            if (error) throw error;
+            
+            if (!result) throw new Error(`Erro ao atualizar tanques para posto ${posto}`);
+          } catch (error: any) {
+            throw new Error(`Erro ao atualizar tanques para posto ${posto}: ${error.message || 'Erro desconhecido'}`);
+          }
         } else {
-          // Criar nova configuração
-          const { data, error } = await supabaseAdmin
-            .from('controle_tanques')
-            .insert({
+          // Criar nova configuração através da API REST
+          try {
+            const newConfig = {
               posto,
               diesel_capacidade: defaultDieselCapacidade,
               diesel_nivel: defaultDieselNivel,
@@ -223,9 +233,15 @@ const AdminUtils = () => {
               arla_nivel: defaultArlaNivel,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
-            });
+            };
             
-          if (error) throw new Error(`Erro ao criar tanques para posto ${posto}: ${error.message}`);
+            // Usando a função insertData que já temos
+            const result = await insertData('controle_tanques', newConfig);
+            
+            if (!result) throw new Error(`Erro ao criar tanques para posto ${posto}`);
+          } catch (error: any) {
+            throw new Error(`Erro ao criar tanques para posto ${posto}: ${error.message || 'Erro desconhecido'}`);
+          }
         }
       }
 

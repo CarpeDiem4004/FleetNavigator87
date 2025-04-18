@@ -8,18 +8,8 @@ export const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Cliente Supabase para operações administrativas (quando disponível)
-// Para ser inicializado quando necessário, por exemplo
-// `supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);`
-export let supabaseAdmin: SupabaseClient | null = null;
-
-// Inicializa cliente admin se a chave de serviço estiver disponível
-// No ambiente do cliente, usamos import.meta.env ao invés de process.env
-if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_SERVICE_KEY) {
-  supabaseAdmin = createClient(
-    supabaseUrl,
-    import.meta.env.VITE_SUPABASE_SERVICE_KEY
-  );
-}
+// No cliente web, não inicializamos o admin client - deixamos isso para o servidor
+export const supabaseAdmin: SupabaseClient | null = null;
 
 // Função para buscar registros de uma tabela Supabase
 export async function fetchRecords(table: string) {
@@ -66,26 +56,15 @@ export async function deleteRecords(table: string, ids?: number[]) {
       return true;
     }
     
-    // Caso contrário, tenta excluir todos os registros
-    // Primeiro tentamos usar o cliente administrativo se disponível
-    if (supabaseAdmin) {
-      const { error } = await supabaseAdmin
-        .from(table)
-        .delete()
-        .neq('id', -1); // Truque para deletar todos (já que não existe .delete() sem where)
-      
-      if (error) throw error;
-      return true;
-    } else {
-      // Fallback para o cliente anônimo com permissões limitadas
-      const { error } = await supabase
-        .from(table)
-        .delete()
-        .neq('id', -1);
-      
-      if (error) throw error;
-      return true;
-    }
+    // Se não tem IDs, tenta excluir todos - como não temos acesso admin no cliente web, 
+    // isso deve ser feito pelo servidor ou então usar a API específica para limpar dados
+    const { error } = await supabase
+      .from(table)
+      .delete()
+      .neq('id', -1); // Truque para deletar todos (já que não existe .delete() sem where)
+    
+    if (error) throw error;
+    return true;
   } catch (error) {
     console.error(`Erro ao excluir registros da tabela ${table}:`, error);
     return false;
