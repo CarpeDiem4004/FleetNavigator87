@@ -454,22 +454,25 @@ export default function MaintenancePage() {
                   </CardDescription>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <Select 
-                    value={filterBaseId?.toString() || "all"}
-                    onValueChange={(value) => setFilterBaseId(value !== "all" ? parseInt(value) : null)}
-                  >
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Filtrar por base" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas as bases</SelectItem>
-                      {bases.map((base) => (
-                        <SelectItem key={base.id} value={base.id.toString()}>
-                          {base.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex flex-wrap gap-2">
+                    <Button 
+                      variant={filterBaseId === null ? "default" : "outline"}
+                      onClick={() => setFilterBaseId(null)}
+                      className="h-9"
+                    >
+                      Todas as bases
+                    </Button>
+                    {bases.map((base) => (
+                      <Button
+                        key={base.id}
+                        variant={filterBaseId === base.id ? "default" : "outline"}
+                        onClick={() => setFilterBaseId(base.id)}
+                        className="h-9"
+                      >
+                        {base.name}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               </div>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
