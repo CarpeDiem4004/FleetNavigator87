@@ -121,10 +121,10 @@ export function useBasePermission(): BasePermissionHook {
       return hasAccess;
     }
     
-    // Gestão de Frotas - permite acesso a rotas relacionadas à frota
+    // Gestão de Frotas - permite acesso a rotas relacionadas à frota, MAS NÃO AO DASHBOARD
     if (user.basename === "Gestão de Frotas" || user.baseId === 12) {
+      // Rotas acessíveis - removida a rota '/' (dashboard)
       const frotaRoutes = [
-        '/', 
         '/gestao-de-frotas', 
         '/fleet-management', 
         '/maintenance', 
@@ -137,6 +137,19 @@ export function useBasePermission(): BasePermissionHook {
       ];
       
       const hasAccess = frotaRoutes.includes(route);
+      
+      // Se estiver tentando acessar o dashboard, redirecionar para página de redirecionamento
+      if (route === '/') {
+        console.log(`Usuário de Gestão de Frotas tentando acessar o dashboard - redirecionando para /fleet-redirect`);
+        
+        // Redirecionar programaticamente para a página de redirecionamento
+        setTimeout(() => {
+          window.location.href = '/fleet-redirect';
+        }, 100);
+        
+        // Temporariamente permitir acesso ao dashboard enquanto redireciona
+        return true;
+      }
       
       if (hasAccess) {
         console.log(`Acesso PERMITIDO para usuário de Gestão de Frotas à rota: ${route}`);

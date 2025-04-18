@@ -18,6 +18,7 @@ import RegisterNew from "@/pages/RegisterNew";
 import AccessDeniedPage from "@/pages/access-denied";
 import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
 import LineHallRedirect from "@/components/permission/LineHallRedirect";
+import FleetManagementRedirect from "@/components/permission/FleetManagementRedirect";
 import { AuthProvider } from "@/context/AuthContext";
 
 // Importação das páginas de postos
@@ -64,9 +65,13 @@ function App() {
             <AccessDeniedPage />
           </Route>
           
-          {/* Componente que redirecionará usuários Line Hall para a página correta */}
+          {/* Componentes de redirecionamento para usuários específicos */}
           <Route path="/old-dashboard">
             <LineHallRedirect />
+          </Route>
+          
+          <Route path="/fleet-redirect">
+            <FleetManagementRedirect />
           </Route>
           
           {/* Novo Dashboard com KPIs */}
