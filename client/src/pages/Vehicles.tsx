@@ -457,7 +457,10 @@ const Vehicles: React.FC = () => {
               Cancelar
             </Button>
             <Button 
-              onClick={() => addVehicleMutation.mutate(newVehicle)}
+              onClick={() => {
+                console.log("Enviando veículo para a API:", newVehicle);
+                addVehicleMutation.mutate(newVehicle);
+              }}
               disabled={!newVehicle.plate || !newVehicle.model || !newVehicle.baseId}
             >
               {addVehicleMutation.isPending ? 'Salvando...' : 'Salvar'}
