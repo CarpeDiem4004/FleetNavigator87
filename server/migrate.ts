@@ -189,40 +189,42 @@ async function migrate() {
         const existingValues = enumValues.rows.map(row => row.enumlabel);
         console.log('Valores existentes:', existingValues);
         
-        // Adicionar valores ausentes
+        // Adicionar valores ausentes usando uma única transação
+        console.log('Adicionando valores necessários ao enum maintenance_status...');
+        
+        // Criar string de comando com todos os valores necessários
         const neededValues = ['pendente', 'aguardando_orcamento', 'cancelada'];
-        for (const value of neededValues) {
-          if (!existingValues.includes(value)) {
-            console.log(`Adicionando valor ${value} ao enum maintenance_status...`);
-            try {
-              // Tentando usar uma abordagem diferente para adicionar valores ao enum
-              await db.execute(sql`
-                ALTER TYPE maintenance_status ADD VALUE IF NOT EXISTS '${value}'
-              `);
-              console.log(`Valor ${value} adicionado com sucesso.`);
-            } catch (error) {
-              console.log(`Erro ao adicionar valor ${value}: ${error}`);
-              
-              // Se falhar, tentar com um comando SQL direto
-              try {
-                console.log(`Tentando método alternativo para adicionar o valor ${value}...`);
-                await db.execute(sql`
-                  DO $$
+        const missingValues = neededValues.filter(value => !existingValues.includes(value));
+        
+        if (missingValues.length > 0) {
+          console.log(`Valores a adicionar: ${missingValues.join(', ')}`);
+          
+          try {
+            // Criar uma sequência de comandos SQL para executar em uma transação
+            // Usar uma abordagem diferente, adicionando cada valor um a um
+            const commands = missingValues.map(value => {
+              return `
+                DO $$ 
+                BEGIN
                   BEGIN
-                    IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumlabel = '${value}' AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'maintenance_status')) THEN
-                      EXECUTE FORMAT('ALTER TYPE maintenance_status ADD VALUE %L', '${value}');
-                    END IF;
-                  END
-                  $$;
-                `);
-                console.log(`Valor ${value} adicionado com método alternativo.`);
-              } catch (innerError) {
-                console.log(`Também falhou o método alternativo: ${innerError}`);
-              }
-            }
-          } else {
-            console.log(`Valor ${value} já existe no enum maintenance_status.`);
+                    ALTER TYPE maintenance_status ADD VALUE '${value}';
+                  EXCEPTION
+                    WHEN duplicate_object THEN NULL;
+                  END;
+                END $$;
+              `;
+            }).join('\n');
+            
+            console.log('Executando comando para adicionar valores ao enum:');
+            console.log(commands);
+            
+            await db.execute(sql.raw(commands));
+            console.log('Valores adicionados com sucesso.');
+          } catch (error) {
+            console.log(`Erro ao adicionar valores ao enum: ${error}`);
           }
+        } else {
+          console.log('Não há novos valores para adicionar ao enum.');
         }
       }
       
@@ -349,40 +351,42 @@ async function migrate() {
           const existingValues = enumValues.rows.map(row => row.enumlabel);
           console.log('Valores existentes:', existingValues);
           
-          // Adicionar valores ausentes
+          // Adicionar valores ausentes usando uma única transação
+          console.log('Adicionando valores necessários ao enum maintenance_status...');
+          
+          // Criar string de comando com todos os valores necessários
           const neededValues = ['pendente', 'aguardando_orcamento', 'cancelada'];
-          for (const value of neededValues) {
-            if (!existingValues.includes(value)) {
-              console.log(`Adicionando valor ${value} ao enum maintenance_status...`);
-              try {
-                // Tentando usar uma abordagem diferente para adicionar valores ao enum
-                await db.execute(sql`
-                  ALTER TYPE maintenance_status ADD VALUE IF NOT EXISTS '${value}'
-                `);
-                console.log(`Valor ${value} adicionado com sucesso.`);
-              } catch (error) {
-                console.log(`Erro ao adicionar valor ${value}: ${error}`);
-                
-                // Se falhar, tentar com um comando SQL direto
-                try {
-                  console.log(`Tentando método alternativo para adicionar o valor ${value}...`);
-                  await db.execute(sql`
-                    DO $$
+          const missingValues = neededValues.filter(value => !existingValues.includes(value));
+          
+          if (missingValues.length > 0) {
+            console.log(`Valores a adicionar: ${missingValues.join(', ')}`);
+            
+            try {
+              // Criar uma sequência de comandos SQL para executar em uma transação
+              // Usar uma abordagem diferente, adicionando cada valor um a um
+              const commands = missingValues.map(value => {
+                return `
+                  DO $$ 
+                  BEGIN
                     BEGIN
-                      IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumlabel = '${value}' AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'maintenance_status')) THEN
-                        EXECUTE FORMAT('ALTER TYPE maintenance_status ADD VALUE %L', '${value}');
-                      END IF;
-                    END
-                    $$;
-                  `);
-                  console.log(`Valor ${value} adicionado com método alternativo.`);
-                } catch (innerError) {
-                  console.log(`Também falhou o método alternativo: ${innerError}`);
-                }
-              }
-            } else {
-              console.log(`Valor ${value} já existe no enum maintenance_status.`);
+                      ALTER TYPE maintenance_status ADD VALUE '${value}';
+                    EXCEPTION
+                      WHEN duplicate_object THEN NULL;
+                    END;
+                  END $$;
+                `;
+              }).join('\n');
+              
+              console.log('Executando comando para adicionar valores ao enum:');
+              console.log(commands);
+              
+              await db.execute(sql.raw(commands));
+              console.log('Valores adicionados com sucesso.');
+            } catch (error) {
+              console.log(`Erro ao adicionar valores ao enum: ${error}`);
             }
+          } else {
+            console.log('Não há novos valores para adicionar ao enum.');
           }
         }
         
@@ -400,13 +404,19 @@ async function migrate() {
         console.log('Valores disponíveis para status:', existingValues);
         
         // Usar um valor que existe no enum
-        const defaultStatus = existingValues.includes('pendente') ? 'pendente' : 
-                              existingValues.includes('em_andamento') ? 'em_andamento' : 
-                              existingValues[0];
+        let defaultStatus = 'em_andamento'; // Valor padrão seguro que sabemos que existe
+        if (existingValues.includes('pendente')) {
+          defaultStatus = 'pendente';
+        } else if (existingValues.includes('em_andamento')) {
+          defaultStatus = 'em_andamento';
+        } else if (existingValues.length > 0) {
+          defaultStatus = existingValues[0];
+        }
         
         console.log(`Usando ${defaultStatus} como valor padrão para status`);
         
-        await db.execute(sql`
+        // Criar um SQL com string literal para evitar problemas de binding
+        const createTableSQL = `
           CREATE TABLE maintenance (
             id SERIAL PRIMARY KEY,
             vehicle_plate TEXT NOT NULL REFERENCES vehicles(plate),
@@ -421,8 +431,11 @@ async function migrate() {
             description TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-          );
-        `);
+          )
+        `;
+        
+        console.log('Executando SQL:', createTableSQL);
+        await db.execute(sql.raw(createTableSQL));
         console.log('Tabela maintenance recriada com a nova estrutura.');
       } else {
         console.log('Tabela maintenance já está atualizada com a nova estrutura.');
