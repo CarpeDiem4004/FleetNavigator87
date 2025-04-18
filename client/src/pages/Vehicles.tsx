@@ -394,7 +394,7 @@ const Vehicles: React.FC = () => {
               <div className="flex flex-col space-y-1.5">
                 <label htmlFor="type" className="text-sm font-medium">Tipo</label>
                 <Select
-                  value={newVehicle.vehicleType}
+                  value={newVehicle.vehicleType || "cavalo_mecanico"}
                   onValueChange={(value: VehicleTypeType) => setNewVehicle({...newVehicle, vehicleType: value})}
                 >
                   <SelectTrigger id="type">
@@ -413,7 +413,7 @@ const Vehicles: React.FC = () => {
               <div className="flex flex-col space-y-1.5">
                 <label htmlFor="status" className="text-sm font-medium">Status</label>
                 <Select
-                  value={newVehicle.status}
+                  value={newVehicle.status || "em_operacao"}
                   onValueChange={(value: VehicleStatusType) => setNewVehicle({...newVehicle, status: value})}
                 >
                   <SelectTrigger id="status">
@@ -433,7 +433,7 @@ const Vehicles: React.FC = () => {
             <div className="flex flex-col space-y-1.5">
               <label htmlFor="base" className="text-sm font-medium">Base</label>
               <Select
-                value={newVehicle.baseId.toString()}
+                value={newVehicle.baseId ? newVehicle.baseId.toString() : "12"}
                 onValueChange={(value) => setNewVehicle({...newVehicle, baseId: parseInt(value)})}
               >
                 <SelectTrigger id="base">
@@ -441,11 +441,14 @@ const Vehicles: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    {Array.isArray(bases) && bases.map((base: any) => (
-                      <SelectItem key={base.id} value={base.id.toString()}>
-                        {base.name} ({base.location})
-                      </SelectItem>
-                    ))}
+                    {Array.isArray(bases) && bases.length > 0 ? 
+                      bases.map((base: any) => (
+                        <SelectItem key={base.id} value={base.id.toString()}>
+                          {base.name} {base.location ? `(${base.location})` : ''}
+                        </SelectItem>
+                      )) : 
+                      <SelectItem value="12">Gestão de Frotas</SelectItem>
+                    }
                   </SelectGroup>
                 </SelectContent>
               </Select>
