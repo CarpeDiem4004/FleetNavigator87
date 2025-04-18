@@ -585,7 +585,7 @@ export default function MaintenancePage() {
 
       {/* Diálogo para criar nova manutenção */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Registrar Nova Manutenção</DialogTitle>
             <DialogDescription>
@@ -593,17 +593,18 @@ export default function MaintenancePage() {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <Label htmlFor="vehiclePlate" className="text-right">
-                    Veículo *
+            <div className="py-4">
+              <div className="space-y-4">
+                {/* Veículo */}
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="vehiclePlate">
+                    Veículo <span className="text-red-500">*</span>
                   </Label>
                   <Select 
                     value={formData.vehiclePlate || "default"} 
                     onValueChange={(value) => handleSelectChange('vehiclePlate', value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-10">
                       <SelectValue placeholder="Selecione o veículo" />
                     </SelectTrigger>
                     <SelectContent>
@@ -616,112 +617,130 @@ export default function MaintenancePage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="col-span-2">
-                  <Label htmlFor="workshopId" className="text-right">
-                    Oficina *
-                  </Label>
-                  <Select 
-                    value={formData.workshopId ? formData.workshopId.toString() : "0"} 
-                    onValueChange={(value) => handleSelectChange('workshopId', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a oficina" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0">Selecione uma oficina</SelectItem>
-                      {workshops.map((workshop) => (
-                        <SelectItem key={workshop.id} value={workshop.id.toString()}>
-                          {workshop.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Oficina */}
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="workshopId">
+                      Oficina <span className="text-red-500">*</span>
+                    </Label>
+                    <Select 
+                      value={formData.workshopId ? formData.workshopId.toString() : "0"} 
+                      onValueChange={(value) => handleSelectChange('workshopId', value)}
+                    >
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder="Selecione a oficina" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">Selecione uma oficina</SelectItem>
+                        {workshops.map((workshop) => (
+                          <SelectItem key={workshop.id} value={workshop.id.toString()}>
+                            {workshop.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Base Solicitante */}
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="requestBaseId">
+                      Base Solicitante <span className="text-red-500">*</span>
+                    </Label>
+                    <Select 
+                      value={formData.requestBaseId ? formData.requestBaseId.toString() : "0"} 
+                      onValueChange={(value) => handleSelectChange('requestBaseId', value)}
+                    >
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder="Selecione a base" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">Selecione uma base</SelectItem>
+                        {bases.map((base) => (
+                          <SelectItem key={base.id} value={base.id.toString()}>
+                            {base.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="type" className="text-right">
-                    Tipo de Manutenção *
-                  </Label>
-                  <Select 
-                    value={formData.type || "corretiva"} 
-                    onValueChange={(value) => handleSelectChange('type', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="preventiva">Preventiva</SelectItem>
-                      <SelectItem value="corretiva">Corretiva</SelectItem>
-                    </SelectContent>
-                  </Select>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Tipo de Manutenção */}
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="type">
+                      Tipo de Manutenção <span className="text-red-500">*</span>
+                    </Label>
+                    <Select 
+                      value={formData.type || "corretiva"} 
+                      onValueChange={(value) => handleSelectChange('type', value)}
+                    >
+                      <SelectTrigger className="h-10">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="preventiva">Preventiva</SelectItem>
+                        <SelectItem value="corretiva">Corretiva</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Data de Entrada */}
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="entryDate">
+                      Data de Entrada <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="entryDate"
+                      name="entryDate"
+                      type="date"
+                      value={formData.entryDate}
+                      onChange={handleInputChange}
+                      className="h-10"
+                      required
+                    />
+                  </div>
+
+                  {/* Previsão de Saída */}
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="expectedExitDate">
+                      Previsão de Saída <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="expectedExitDate"
+                      name="expectedExitDate"
+                      type="date"
+                      value={formData.expectedExitDate}
+                      onChange={handleInputChange}
+                      className="h-10"
+                      required
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="requestBaseId" className="text-right">
-                    Base Solicitante *
-                  </Label>
-                  <Select 
-                    value={formData.requestBaseId ? formData.requestBaseId.toString() : "0"} 
-                    onValueChange={(value) => handleSelectChange('requestBaseId', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a base" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0">Selecione uma base</SelectItem>
-                      {bases.map((base) => (
-                        <SelectItem key={base.id} value={base.id.toString()}>
-                          {base.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="entryDate" className="text-right">
-                    Data de Entrada *
-                  </Label>
-                  <Input
-                    id="entryDate"
-                    name="entryDate"
-                    type="date"
-                    value={formData.entryDate}
-                    onChange={handleInputChange}
-                    className="mt-1"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="expectedExitDate" className="text-right">
-                    Previsão de Saída *
-                  </Label>
-                  <Input
-                    id="expectedExitDate"
-                    name="expectedExitDate"
-                    type="date"
-                    value={formData.expectedExitDate}
-                    onChange={handleInputChange}
-                    className="mt-1"
-                    required
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label htmlFor="description" className="text-right">
-                    Descrição do Serviço *
+
+                {/* Descrição do Serviço */}
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="description">
+                    Descrição do Serviço <span className="text-red-500">*</span>
                   </Label>
                   <Textarea
                     id="description"
                     name="description"
                     value={formData.description}
                     onChange={handleInputChange}
-                    className="mt-1"
                     rows={3}
+                    placeholder="Descreva o serviço a ser realizado"
                     required
                   />
                 </div>
-                <div className="col-span-2">
-                  <Label htmlFor="cost" className="text-right">
+
+                {/* Custo Estimado */}
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="cost">
                     Custo Estimado (R$)
                   </Label>
-                  <div className="relative mt-1">
+                  <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </div>
@@ -733,20 +752,20 @@ export default function MaintenancePage() {
                       min="0"
                       value={formData.cost?.toString() || ''}
                       onChange={handleNumberInputChange}
-                      className="pl-9"
+                      className="pl-9 h-10"
                       placeholder="0,00"
                     />
                   </div>
                 </div>
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="gap-2 flex-wrap">
               <Button type="button" variant="outline" onClick={closeDialog}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={createMaintenanceMutation.isPending}>
+              <Button type="submit" disabled={createMaintenanceMutation.isPending} className="min-w-[150px]">
                 {createMaintenanceMutation.isPending ? (
-                  <span className="flex items-center">
+                  <span className="flex items-center justify-center">
                     <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-white rounded-full"></span>
                     Processando...
                   </span>
@@ -761,25 +780,30 @@ export default function MaintenancePage() {
 
       {/* Diálogo para atualizar status */}
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Atualizar Status</DialogTitle>
+            <DialogTitle>Atualizar Status da Manutenção</DialogTitle>
             <DialogDescription>
-              Altere o status da manutenção do veículo {selectedMaintenance?.vehiclePlate}
+              {selectedMaintenance && (
+                <div className="mt-2">
+                  <span className="font-medium">Veículo:</span> {getVehicleDetails(selectedMaintenance.vehiclePlate)}
+                </div>
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <div className="flex flex-col gap-4">
-              <div>
-                <Label htmlFor="current-status" className="text-right">
+            <div className="space-y-4">
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="current-status">
                   Status Atual
                 </Label>
-                <div className="mt-2">
+                <div className="flex items-center h-10 pl-3 border rounded-md border-input bg-muted/50">
                   {selectedMaintenance && <StatusBadge status={selectedMaintenance.status} />}
                 </div>
               </div>
-              <div>
-                <Label className="text-right mb-2 block">
+              
+              <div className="flex flex-col space-y-1.5">
+                <Label className="mb-2">
                   Selecione o Novo Status
                 </Label>
                 <div className="grid grid-cols-1 gap-2">
@@ -788,7 +812,7 @@ export default function MaintenancePage() {
                       key={status}
                       type="button"
                       variant={selectedStatus === status ? "default" : "outline"}
-                      className="justify-start"
+                      className="justify-start h-10"
                       onClick={() => setSelectedStatus(status)}
                     >
                       <div className="flex items-center">
@@ -806,16 +830,30 @@ export default function MaintenancePage() {
                     </Button>
                   ))}
                 </div>
+                
                 {selectedStatus === 'cancelada' && (
-                  <p className="text-xs text-red-500 mt-2">
-                    <AlertTriangle className="h-3 w-3 inline mr-1" />
-                    Atenção: Cancelar uma manutenção não pode ser desfeito.
-                  </p>
+                  <div className="flex items-start p-3 mt-2 text-sm rounded-md bg-red-50 text-red-700 border border-red-200">
+                    <AlertTriangle className="h-5 w-5 mr-2 text-red-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium">Atenção</p>
+                      <p>Cancelar uma manutenção não pode ser desfeito e o veículo voltará ao status "em operação".</p>
+                    </div>
+                  </div>
+                )}
+                
+                {selectedStatus === 'concluida' && (
+                  <div className="flex items-start p-3 mt-2 text-sm rounded-md bg-green-50 text-green-700 border border-green-200">
+                    <CheckCircle2 className="h-5 w-5 mr-2 text-green-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium">Concluindo manutenção</p>
+                      <p>Ao marcar como concluída, o veículo terá seu status alterado para "em operação".</p>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2 flex-wrap">
             <Button type="button" variant="outline" onClick={() => setStatusDialogOpen(false)}>
               Cancelar
             </Button>
@@ -823,9 +861,10 @@ export default function MaintenancePage() {
               type="button" 
               onClick={handleStatusChange}
               disabled={!selectedStatus || updateMaintenanceStatusMutation.isPending}
+              className="min-w-[150px]"
             >
               {updateMaintenanceStatusMutation.isPending ? (
-                <span className="flex items-center">
+                <span className="flex items-center justify-center">
                   <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-white rounded-full"></span>
                   Processando...
                 </span>
