@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Edit, Eye, Trash2 } from 'lucide-react';
+import { apiRequest } from '@/lib/queryClient';
 import { 
   Card, 
   CardContent 
@@ -32,8 +33,18 @@ import {
   PaginationPrevious 
 } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 
 type VehicleStatusType = 'em_operacao' | 'em_manutencao' | 'parado';
+type VehicleTypeType = 'cavalo_mecanico' | 'carreta' | 'van' | 'utilitario';
+
+interface NewVehicleData {
+  plate: string;
+  model: string;
+  vehicleType: VehicleTypeType;
+  status: VehicleStatusType;
+  baseId: number;
+}
 
 const getStatusBadge = (status: VehicleStatusType) => {
   switch (status) {
@@ -49,6 +60,8 @@ const getStatusBadge = (status: VehicleStatusType) => {
 };
 
 const Vehicles: React.FC = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [filters, setFilters] = useState({
     status: '',
@@ -57,12 +70,61 @@ const Vehicles: React.FC = () => {
     plate: '',
   });
   
-  const { data: vehicles, isLoading } = useQuery({
-    queryKey: ['/api/supabase/vehicles', filters],
+  const [newVehicle, setNewVehicle] = useState<NewVehicleData>({
+    plate: '',
+    model: '',
+    vehicleType: 'cavalo_mecanico',
+    status: 'em_operacao',
+    baseId: 0,
   });
   
+  // Obter veículos da API real
+  const { data: vehicles, isLoading } = useQuery({
+    queryKey: ['/api/vehicles'],
+  });
+  
+  // Obter bases da API real
   const { data: bases } = useQuery({
-    queryKey: ['/api/supabase/bases'],
+    queryKey: ['/api/bases'],
+  });
+  
+  // Mutação para adicionar novo veículo
+  const addVehicleMutation = useMutation({
+    mutationFn: async (newVehicleData: NewVehicleData) => {
+      const response = await apiRequest('POST', '/api/vehicles', newVehicleData);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Erro ao adicionar veículo");
+      }
+      return await response.json();
+    },
+    onSuccess: () => {
+      // Limpar o formulário e fechar o diálogo
+      setNewVehicle({
+        plate: '',
+        model: '',
+        vehicleType: 'cavalo_mecanico',
+        status: 'em_operacao',
+        baseId: 0,
+      });
+      setIsAddDialogOpen(false);
+      
+      // Atualizar os dados
+      queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
+      
+      // Mostrar mensagem de sucesso
+      toast({
+        title: "Veículo adicionado com sucesso",
+        variant: "default",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao adicionar veículo",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   });
   
   const filteredVehicles = React.useMemo(() => {
@@ -308,18 +370,31 @@ const Vehicles: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col space-y-1.5">
                 <label htmlFor="plate" className="text-sm font-medium">Placa</label>
-                <Input id="plate" placeholder="ABC1234" />
+                <Input 
+                  id="plate" 
+                  placeholder="ABC1234" 
+                  value={newVehicle.plate}
+                  onChange={(e) => setNewVehicle({...newVehicle, plate: e.target.value})}
+                />
               </div>
               <div className="flex flex-col space-y-1.5">
                 <label htmlFor="model" className="text-sm font-medium">Modelo</label>
-                <Input id="model" placeholder="Volvo FH 540" />
+                <Input 
+                  id="model" 
+                  placeholder="Volvo FH 540"
+                  value={newVehicle.model}
+                  onChange={(e) => setNewVehicle({...newVehicle, model: e.target.value})}
+                />
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col space-y-1.5">
                 <label htmlFor="type" className="text-sm font-medium">Tipo</label>
-                <Select>
+                <Select
+                  value={newVehicle.vehicleType}
+                  onValueChange={(value: VehicleTypeType) => setNewVehicle({...newVehicle, vehicleType: value})}
+                >
                   <SelectTrigger id="type">
                     <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
@@ -335,7 +410,10 @@ const Vehicles: React.FC = () => {
               </div>
               <div className="flex flex-col space-y-1.5">
                 <label htmlFor="status" className="text-sm font-medium">Status</label>
-                <Select>
+                <Select
+                  value={newVehicle.status}
+                  onValueChange={(value: VehicleStatusType) => setNewVehicle({...newVehicle, status: value})}
+                >
                   <SelectTrigger id="status">
                     <SelectValue placeholder="Selecione o status" />
                   </SelectTrigger>
@@ -352,7 +430,10 @@ const Vehicles: React.FC = () => {
             
             <div className="flex flex-col space-y-1.5">
               <label htmlFor="base" className="text-sm font-medium">Base</label>
-              <Select>
+              <Select
+                value={newVehicle.baseId.toString()}
+                onValueChange={(value) => setNewVehicle({...newVehicle, baseId: parseInt(value)})}
+              >
                 <SelectTrigger id="base">
                   <SelectValue placeholder="Selecione a base" />
                 </SelectTrigger>
@@ -373,7 +454,12 @@ const Vehicles: React.FC = () => {
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button>Salvar</Button>
+            <Button 
+              onClick={() => addVehicleMutation.mutate(newVehicle)}
+              disabled={!newVehicle.plate || !newVehicle.model || !newVehicle.baseId}
+            >
+              {addVehicleMutation.isPending ? 'Salvando...' : 'Salvar'}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
