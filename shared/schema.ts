@@ -59,6 +59,7 @@ export const maintenance = pgTable("maintenance", {
   maintenanceType: maintenanceTypeEnum("maintenance_type").notNull(),
   cost: decimal("cost", { precision: 10, scale: 2 }),
   description: text("description").notNull(),
+  responsiblePerson: text("responsible_person"),  // Campo para quem está cuidando da manutenção
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
