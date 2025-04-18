@@ -30,6 +30,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
     return <Redirect to="/login" />;
   }
   
+  // Verificação especial para o usuário da Gestão de Frotas na rota de dashboard
+  if (path === "/" && user && (user.basename === "Gestão de Frotas" || user.baseId === 12)) {
+    console.log("Usuário da Gestão de Frotas tentando acessar o dashboard - redirecionando...");
+    return <Redirect to="/fleet-redirect" />;
+  }
+  
   // Verifica se o usuário tem permissão para acessar a rota
   const hasRoutePermission = hasPermission(path);
   console.log(`Verificação de permissão para ${path}: ${hasRoutePermission ? 'PERMITIDO' : 'NEGADO'}`);

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/context/AuthContext';
-import { Loader2 } from 'lucide-react';
+import { Loader2, TruckIcon } from 'lucide-react';
 
 /**
  * Componente para redirecionar usuários da Gestão de Frotas para a página correta
@@ -12,27 +12,31 @@ export const FleetManagementRedirect: React.FC = () => {
   const { user } = useAuth();
   
   useEffect(() => {
-    // Verificar se é usuário de Gestão de Frotas
-    if (user && (user.basename === "Gestão de Frotas" || user.baseId === 12)) {
-      console.log("Redirecionando usuário de Gestão de Frotas para /fleet-management");
-      
-      // Adicionar um pequeno delay para garantir que a navegação aconteça
-      const redirectTimer = setTimeout(() => {
-        navigate('/fleet-management');
-      }, 500);
-      
-      return () => clearTimeout(redirectTimer);
-    }
-  }, [user, navigate]);
+    console.log("Componente de redirecionamento ativo para Gestão de Frotas");
+    
+    // Redirecionar imediatamente para área de gestão de frotas
+    const redirectTimer = setTimeout(() => {
+      navigate('/fleet-management');
+    }, 1000);
+    
+    return () => clearTimeout(redirectTimer);
+  }, [navigate]);
   
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="flex flex-col items-center space-y-4 text-center">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <h2 className="text-2xl font-semibold">Redirecionando...</h2>
-        <p className="text-muted-foreground">
-          Estamos direcionando você para a área de gestão de frotas.
-        </p>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-blue-50 to-white">
+      <div className="flex flex-col items-center space-y-6 text-center p-8 rounded-lg border border-gray-100 shadow-sm bg-white">
+        <div className="relative">
+          <Loader2 className="h-16 w-16 animate-spin text-primary" />
+          <TruckIcon className="h-8 w-8 text-primary-foreground absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+        </div>
+        
+        <div className="space-y-2">
+          <h2 className="text-2xl font-semibold text-gray-800">Redirecionando...</h2>
+          <p className="text-muted-foreground max-w-md">
+            Você está sendo direcionado para a área de <strong>Gestão de Frotas</strong>, 
+            conforme as permissões do seu perfil.
+          </p>
+        </div>
       </div>
     </div>
   );

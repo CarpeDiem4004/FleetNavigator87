@@ -81,7 +81,7 @@ export function setupAuth(app: Express) {
           }
           
           // Credenciais simplificadas para o usuário Rogério
-          if (username === 'rogerio@muricionfleet.com' && password === 'senha123') {
+          if (username === 'rogerio@muricionfleet.com' && password === 'Murici@rogerio25') {
             console.log('Login do usuário Rogério com credenciais simplificadas');
             const rogerioUser = await storage.getUserByEmail(username);
             if (rogerioUser) {
