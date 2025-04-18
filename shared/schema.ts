@@ -7,7 +7,7 @@ import { relations } from "drizzle-orm";
 export const vehicleTypeEnum = pgEnum('vehicle_type', ['cavalo_mecanico', 'carreta', 'van', 'utilitario']);
 export const vehicleStatusEnum = pgEnum('vehicle_status', ['em_operacao', 'em_manutencao', 'parado']);
 export const maintenanceTypeEnum = pgEnum('maintenance_type', ['preventiva', 'corretiva']);
-export const maintenanceStatusEnum = pgEnum('maintenance_status', ['concluida', 'em_andamento', 'aguardando_pecas']);
+export const maintenanceStatusEnum = pgEnum('maintenance_status', ['pendente', 'aguardando_orcamento', 'em_andamento', 'concluida', 'cancelada']);
 export const tireStatusEnum = pgEnum('tire_status', ['em_uso', 'estoque', 'descartado']);
 export const fuelTypeEnum = pgEnum('fuel_type', ['arla', 'diesel']);
 export const fineStatusEnum = pgEnum('fine_status', ['pendente', 'paga', 'contestada']);
@@ -36,14 +36,31 @@ export const vehicles = pgTable("vehicles", {
   baseId: integer("base_id").notNull().references(() => bases.id),
 });
 
+// Create the workshops table
+export const workshops = pgTable("workshops", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  address: text("address"),
+  phone: text("phone"),
+  isActive: boolean("is_active").default(true),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
 // Create the maintenance table
 export const maintenance = pgTable("maintenance", {
   id: serial("id").primaryKey(),
   vehiclePlate: text("vehicle_plate").notNull().references(() => vehicles.plate),
-  date: date("date").notNull(),
-  maintenanceType: maintenanceTypeEnum("maintenance_type").notNull(),
+  workshopId: integer("workshop_id").notNull().references(() => workshops.id),
+  requestBaseId: integer("request_base_id").notNull().references(() => bases.id),
+  entryDate: date("entry_date").notNull(),
+  expectedExitDate: date("expected_exit_date"),
+  actualExitDate: date("actual_exit_date"),
   status: maintenanceStatusEnum("status").notNull(),
-  cost: decimal("cost", { precision: 10, scale: 2 }).notNull(),
+  maintenanceType: maintenanceTypeEnum("maintenance_type").notNull(),
+  cost: decimal("cost", { precision: 10, scale: 2 }),
+  description: text("description").notNull(),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 // Create the tires table
@@ -114,6 +131,27 @@ export const basesRelations = relations(bases, ({ many }) => ({
   vehicles: many(vehicles),
   refueling: many(refueling),
   users: many(users),
+  maintenance: many(maintenance, { relationName: "requestedMaintenance" }),
+}));
+
+export const maintenanceRelations = relations(maintenance, ({ one }) => ({
+  vehicle: one(vehicles, {
+    fields: [maintenance.vehiclePlate],
+    references: [vehicles.plate],
+  }),
+  workshop: one(workshops, {
+    fields: [maintenance.workshopId],
+    references: [workshops.id],
+  }),
+  requestBase: one(bases, {
+    fields: [maintenance.requestBaseId],
+    references: [bases.id],
+    relationName: "requestedMaintenance"
+  }),
+}));
+
+export const workshopsRelations = relations(workshops, ({ many }) => ({
+  maintenance: many(maintenance),
 }));
 
 // Insert schemas
