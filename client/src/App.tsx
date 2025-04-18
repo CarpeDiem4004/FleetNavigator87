@@ -37,6 +37,8 @@ import SupabaseDiagnostico from "@/pages/diagnostico/SupabaseDiagnostico";
 import FleetManagement from "@/pages/fleet-management";
 import Accidents from "@/pages/accidents";
 import WorkSafety from "@/pages/work-safety";
+import WorkshopsPage from "@/pages/fleet-management/WorkshopsPage";
+import MaintenancePage from "@/pages/fleet-management/MaintenancePage";
 
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
@@ -78,6 +80,8 @@ function App() {
           <ProtectedRoute path="/fines" component={FinesNew} />
           <ProtectedRoute path="/line-hall" component={LineHallNew} />
           <ProtectedRoute path="/fleet-management" component={FleetManagement} />
+          <ProtectedRoute path="/fleet-management/workshops" component={WorkshopsPage} />
+          <ProtectedRoute path="/fleet-management/maintenance" component={MaintenancePage} />
           <ProtectedRoute path="/accidents" component={Accidents} />
           <ProtectedRoute path="/work-safety" component={WorkSafety} />
           <ProtectedRoute path="/users" component={UsersNew} />
