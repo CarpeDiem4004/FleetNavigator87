@@ -173,19 +173,38 @@ async function migrate() {
       if (!maintenanceStatusExists.rows[0].exists) {
         console.log('Criando tipo maintenance_status...');
         await db.execute(sql`
-          CREATE TYPE maintenance_status AS ENUM ('pendente', 'aguardando_orcamento', 'em_andamento', 'concluida', 'cancelada');
+          CREATE TYPE maintenance_status AS ENUM ('concluida', 'em_andamento', 'aguardando_pecas', 'pendente', 'aguardando_orcamento', 'cancelada');
         `);
       } else {
         console.log('Tipo maintenance_status já existe.');
-        try {
-          // Tentando remover o tipo (pode falhar se estiver em uso)
-          console.log('Tentando remover e recriar o tipo maintenance_status...');
-          await db.execute(sql`
-            DROP TYPE maintenance_status;
-            CREATE TYPE maintenance_status AS ENUM ('pendente', 'aguardando_orcamento', 'em_andamento', 'concluida', 'cancelada');
-          `);
-        } catch (error) {
-          console.log('Não foi possível remover o tipo maintenance_status, provavelmente está em uso. Mantendo o tipo existente.');
+        // Em vez de tentar remover o tipo, verificar se os valores que precisamos estão presentes
+        console.log('Verificando valores do tipo maintenance_status...');
+        const enumValues = await db.execute(sql`
+          SELECT e.enumlabel
+          FROM pg_type t
+          JOIN pg_enum e ON t.oid = e.enumtypid
+          WHERE t.typname = 'maintenance_status'
+        `);
+        
+        const existingValues = enumValues.rows.map(row => row.enumlabel);
+        console.log('Valores existentes:', existingValues);
+        
+        // Adicionar valores ausentes
+        const neededValues = ['pendente', 'aguardando_orcamento', 'cancelada'];
+        for (const value of neededValues) {
+          if (!existingValues.includes(value)) {
+            console.log(`Adicionando valor ${value} ao enum maintenance_status...`);
+            try {
+              await db.execute(sql`
+                ALTER TYPE maintenance_status ADD VALUE '${value}';
+              `);
+              console.log(`Valor ${value} adicionado com sucesso.`);
+            } catch (error) {
+              console.log(`Erro ao adicionar valor ${value}: ${error}`);
+            }
+          } else {
+            console.log(`Valor ${value} já existe no enum maintenance_status.`);
+          }
         }
       }
       
@@ -268,19 +287,38 @@ async function migrate() {
         if (!maintenanceStatusExists.rows[0].exists) {
           console.log('Criando tipo maintenance_status...');
           await db.execute(sql`
-            CREATE TYPE maintenance_status AS ENUM ('pendente', 'aguardando_orcamento', 'em_andamento', 'concluida', 'cancelada');
+            CREATE TYPE maintenance_status AS ENUM ('concluida', 'em_andamento', 'aguardando_pecas', 'pendente', 'aguardando_orcamento', 'cancelada');
           `);
         } else {
           console.log('Tipo maintenance_status já existe.');
-          try {
-            // Tentando remover o tipo (pode falhar se estiver em uso)
-            console.log('Tentando remover e recriar o tipo maintenance_status...');
-            await db.execute(sql`
-              DROP TYPE maintenance_status;
-              CREATE TYPE maintenance_status AS ENUM ('pendente', 'aguardando_orcamento', 'em_andamento', 'concluida', 'cancelada');
-            `);
-          } catch (error) {
-            console.log('Não foi possível remover o tipo maintenance_status, provavelmente está em uso. Mantendo o tipo existente.');
+          // Em vez de tentar remover o tipo, verificar se os valores que precisamos estão presentes
+          console.log('Verificando valores do tipo maintenance_status...');
+          const enumValues = await db.execute(sql`
+            SELECT e.enumlabel
+            FROM pg_type t
+            JOIN pg_enum e ON t.oid = e.enumtypid
+            WHERE t.typname = 'maintenance_status'
+          `);
+          
+          const existingValues = enumValues.rows.map(row => row.enumlabel);
+          console.log('Valores existentes:', existingValues);
+          
+          // Adicionar valores ausentes
+          const neededValues = ['pendente', 'aguardando_orcamento', 'cancelada'];
+          for (const value of neededValues) {
+            if (!existingValues.includes(value)) {
+              console.log(`Adicionando valor ${value} ao enum maintenance_status...`);
+              try {
+                await db.execute(sql`
+                  ALTER TYPE maintenance_status ADD VALUE '${value}';
+                `);
+                console.log(`Valor ${value} adicionado com sucesso.`);
+              } catch (error) {
+                console.log(`Erro ao adicionar valor ${value}: ${error}`);
+              }
+            } else {
+              console.log(`Valor ${value} já existe no enum maintenance_status.`);
+            }
           }
         }
         

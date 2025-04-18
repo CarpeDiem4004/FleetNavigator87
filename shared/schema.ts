@@ -7,7 +7,7 @@ import { relations } from "drizzle-orm";
 export const vehicleTypeEnum = pgEnum('vehicle_type', ['cavalo_mecanico', 'carreta', 'van', 'utilitario']);
 export const vehicleStatusEnum = pgEnum('vehicle_status', ['em_operacao', 'em_manutencao', 'parado']);
 export const maintenanceTypeEnum = pgEnum('maintenance_type', ['preventiva', 'corretiva']);
-export const maintenanceStatusEnum = pgEnum('maintenance_status', ['pendente', 'aguardando_orcamento', 'em_andamento', 'concluida', 'cancelada']);
+export const maintenanceStatusEnum = pgEnum('maintenance_status', ['concluida', 'em_andamento', 'aguardando_pecas', 'pendente', 'aguardando_orcamento', 'cancelada']);
 export const tireStatusEnum = pgEnum('tire_status', ['em_uso', 'estoque', 'descartado']);
 export const fuelTypeEnum = pgEnum('fuel_type', ['arla', 'diesel']);
 export const fineStatusEnum = pgEnum('fine_status', ['pendente', 'paga', 'contestada']);
