@@ -58,6 +58,7 @@ import {
   AlertTriangle,
   XCircle,
   AlertCircle,
+  User,
   FileBarChart as FileSpreadsheet
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
