@@ -296,9 +296,10 @@ export class DatabaseStorage implements IStorage {
     
     // Preparar dados para atualização
     const updateData: Partial<InsertMaintenance> = { 
-      status: status as any,
-      updated_at: new Date()
+      status: status as any
     };
+    
+    // Timestamp será adicionado diretamente na consulta
     
     // Se status for "concluida", adicionar data de saída real
     if (status === 'concluida' && !currentMaintenance.actualExitDate) {
@@ -318,9 +319,14 @@ export class DatabaseStorage implements IStorage {
         .where(eq(vehicles.plate, currentMaintenance.vehiclePlate));
     }
     
+    const updatedAt = new Date();
+    
     const [updated] = await db
       .update(maintenance)
-      .set(updateData)
+      .set({
+        ...updateData,
+        updated_at: updatedAt
+      })
       .where(eq(maintenance.id, id))
       .returning();
       
@@ -328,12 +334,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateMaintenance(id: number, maintenanceData: Partial<InsertMaintenance>): Promise<Maintenance | undefined> {
-    // Atualizar o timestamp de updated_at
-    maintenanceData.updated_at = new Date();
+    // Criar uma cópia dos dados de atualização e remover o campo updated_at
+    const dataToUpdate = { ...maintenanceData };
+    delete dataToUpdate.updated_at;
+    
+    // Adicionar a atualização de timestamp diretamente na consulta SQL
+    const updatedAt = new Date();
     
     const [updated] = await db
       .update(maintenance)
-      .set(maintenanceData)
+      .set({
+        ...dataToUpdate,
+        updated_at: updatedAt
+      })
       .where(eq(maintenance.id, id))
       .returning();
     return updated || undefined;
@@ -463,8 +476,8 @@ export class DatabaseStorage implements IStorage {
   
   // LineHall operations
   async getLineHall(id: number): Promise<LineHall | undefined> {
-    const [lineHallRecord] = await db.select().from(lineHall).where(eq(lineHall.id, id));
-    return lineHallRecord || undefined;
+    const [result] = await db.select().from(lineHall).where(eq(lineHall.id, id));
+    return result || undefined;
   }
 
   async getAllLineHall(): Promise<LineHall[]> {
