@@ -461,10 +461,10 @@ const Vehicles: React.FC = () => {
                   value={newVehicle.vehicleType || "cavalo_mecanico"}
                   onValueChange={(value: VehicleTypeType) => setNewVehicle({...newVehicle, vehicleType: value})}
                 >
-                  <SelectTrigger id="type">
+                  <SelectTrigger id="type" className="w-full">
                     <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper">
                     <SelectGroup>
                       <SelectItem value="cavalo_mecanico">Cavalo mecânico</SelectItem>
                       <SelectItem value="carreta">Carreta</SelectItem>
@@ -480,10 +480,10 @@ const Vehicles: React.FC = () => {
                   value={newVehicle.status || "em_operacao"}
                   onValueChange={(value: VehicleStatusType) => setNewVehicle({...newVehicle, status: value})}
                 >
-                  <SelectTrigger id="status">
+                  <SelectTrigger id="status" className="w-full">
                     <SelectValue placeholder="Selecione o status" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper">
                     <SelectGroup>
                       <SelectItem value="em_operacao">Em operação</SelectItem>
                       <SelectItem value="em_manutencao">Em manutenção</SelectItem>
@@ -500,10 +500,10 @@ const Vehicles: React.FC = () => {
                 value={newVehicle.baseId ? newVehicle.baseId.toString() : "12"}
                 onValueChange={(value) => setNewVehicle({...newVehicle, baseId: parseInt(value)})}
               >
-                <SelectTrigger id="base">
+                <SelectTrigger id="base" className="w-full">
                   <SelectValue placeholder="Selecione a base" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper">
                   <SelectGroup>
                     {Array.isArray(bases) && bases.length > 0 ? 
                       bases.map((base: any) => (
