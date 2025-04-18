@@ -57,7 +57,8 @@ import {
   ClipboardList,
   AlertTriangle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  FileBarChart as FileSpreadsheet
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { apiRequest } from '@/lib/queryClient';
@@ -156,6 +157,7 @@ export default function MaintenancePage() {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  // Adicionar valor padrão necessário para evitar problemas com SelectItem
   const [selectedStatus, setSelectedStatus] = useState<Maintenance['status']>('pendente');
   const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null);
   const [activeTab, setActiveTab] = useState('all');
@@ -595,13 +597,14 @@ export default function MaintenancePage() {
                     Veículo *
                   </Label>
                   <Select 
-                    value={formData.vehiclePlate || ""} 
+                    value={formData.vehiclePlate || "default"} 
                     onValueChange={(value) => handleSelectChange('vehiclePlate', value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o veículo" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="default">Selecione um veículo</SelectItem>
                       {vehicles.map((vehicle) => (
                         <SelectItem key={vehicle.id} value={vehicle.plate}>
                           {vehicle.plate} - {vehicle.model}
@@ -615,13 +618,14 @@ export default function MaintenancePage() {
                     Oficina *
                   </Label>
                   <Select 
-                    value={formData.workshopId ? formData.workshopId.toString() : ""} 
+                    value={formData.workshopId ? formData.workshopId.toString() : "0"} 
                     onValueChange={(value) => handleSelectChange('workshopId', value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a oficina" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="0">Selecione uma oficina</SelectItem>
                       {workshops.map((workshop) => (
                         <SelectItem key={workshop.id} value={workshop.id.toString()}>
                           {workshop.name}
@@ -652,13 +656,14 @@ export default function MaintenancePage() {
                     Base Solicitante *
                   </Label>
                   <Select 
-                    value={formData.requestBaseId ? formData.requestBaseId.toString() : ""} 
+                    value={formData.requestBaseId ? formData.requestBaseId.toString() : "0"} 
                     onValueChange={(value) => handleSelectChange('requestBaseId', value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a base" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="0">Selecione uma base</SelectItem>
                       {bases.map((base) => (
                         <SelectItem key={base.id} value={base.id.toString()}>
                           {base.name}
@@ -784,7 +789,7 @@ export default function MaintenancePage() {
                       onClick={() => setSelectedStatus(status)}
                     >
                       <div className="flex items-center">
-                        {status === 'aguardando_orcamento' && <FileSpreadsheet className="w-4 h-4 mr-2" />}
+                        {status === 'aguardando_orcamento' && <FileText className="w-4 h-4 mr-2" />}
                         {status === 'em_andamento' && <Wrench className="w-4 h-4 mr-2" />}
                         {status === 'concluida' && <CheckCircle2 className="w-4 h-4 mr-2" />}
                         {status === 'cancelada' && <XCircle className="w-4 h-4 mr-2" />}
