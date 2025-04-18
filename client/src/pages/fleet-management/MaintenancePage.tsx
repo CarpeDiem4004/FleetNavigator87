@@ -199,14 +199,18 @@ export default function MaintenancePage() {
     refetchOnWindowFocus: false
   });
 
-  // Carregar manutenções com base no filtro
+  // Carregar manutenções com base no filtro e na base do usuário
   const { data: maintenances = [], isLoading } = useQuery<Maintenance[]>({
     queryKey: ['/api/maintenance', { baseId: filterBaseId, status: activeTab !== 'all' ? activeTab : null }],
     queryFn: async () => {
       let url = '/api/maintenance';
       const params = new URLSearchParams();
       
-      if (filterBaseId) {
+      // Se o usuário não for admin e tiver uma baseId, filtrar por essa base
+      if (user && user.role !== 'admin' && user.baseId) {
+        params.append('baseId', user.baseId.toString());
+      } else if (filterBaseId) {
+        // Se houver um filtro de base selecionado, aplicar esse filtro (apenas para admin)
         params.append('baseId', filterBaseId.toString());
       }
       
@@ -218,6 +222,7 @@ export default function MaintenancePage() {
         url += `?${params.toString()}`;
       }
       
+      console.log(`Buscando manutenções com os parâmetros: ${params.toString()}`);
       const res = await fetch(url);
       return res.json();
     },
@@ -297,12 +302,28 @@ export default function MaintenancePage() {
       return;
     }
 
-    // Adicionar requestBaseId se não estiver definido
-    if (!formData.requestBaseId && user?.baseId) {
-      formData.requestBaseId = user.baseId;
+    const dataToSubmit = {...formData};
+    
+    // Para usuários não-admin, forçar o uso da sua própria base
+    if (user && user.role !== 'admin' && user.baseId) {
+      dataToSubmit.requestBaseId = user.baseId;
+      console.log(`Usuário não-admin: usando baseId ${user.baseId} para a manutenção`);
+    } else if (!dataToSubmit.requestBaseId && user?.baseId) {
+      // Adicionar requestBaseId se não estiver definido
+      dataToSubmit.requestBaseId = user.baseId;
+    }
+    
+    // Verificar se a base foi definida corretamente
+    if (!dataToSubmit.requestBaseId) {
+      toast({
+        title: 'Base não selecionada',
+        description: 'Por favor, selecione uma base solicitante',
+        variant: 'destructive'
+      });
+      return;
     }
 
-    createMaintenanceMutation.mutate(formData);
+    createMaintenanceMutation.mutate(dataToSubmit);
   };
 
   const handleStatusChange = () => {
@@ -453,27 +474,39 @@ export default function MaintenancePage() {
                     Histórico e status de manutenções de veículos
                   </CardDescription>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <div className="flex flex-wrap gap-2">
-                    <Button 
-                      variant={filterBaseId === null ? "default" : "outline"}
-                      onClick={() => setFilterBaseId(null)}
-                      className="h-9"
-                    >
-                      Todas as bases
-                    </Button>
-                    {bases.map((base) => (
-                      <Button
-                        key={base.id}
-                        variant={filterBaseId === base.id ? "default" : "outline"}
-                        onClick={() => setFilterBaseId(base.id)}
+                {/* Mostrar o filtro de bases apenas para administradores */}
+                {user && user.role === 'admin' && (
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      <Button 
+                        variant={filterBaseId === null ? "default" : "outline"}
+                        onClick={() => setFilterBaseId(null)}
                         className="h-9"
                       >
-                        {base.name}
+                        Todas as bases
                       </Button>
-                    ))}
+                      {bases.map((base) => (
+                        <Button
+                          key={base.id}
+                          variant={filterBaseId === base.id ? "default" : "outline"}
+                          onClick={() => setFilterBaseId(base.id)}
+                          className="h-9"
+                        >
+                          {base.name}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
+                {/* Para usuários não admin, mostrar um badge indicando sua base */}
+                {user && user.role !== 'admin' && user.baseId && (
+                  <div className="flex items-center">
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 h-9 px-3">
+                      <Building2 className="mr-1 h-4 w-4" />
+                      Base: {user.basename || getBaseName(user.baseId)}
+                    </Badge>
+                  </div>
+                )}
               </div>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid grid-cols-5">
@@ -647,22 +680,31 @@ export default function MaintenancePage() {
                     <Label htmlFor="requestBaseId">
                       Base Solicitante <span className="text-red-500">*</span>
                     </Label>
-                    <Select 
-                      value={formData.requestBaseId ? formData.requestBaseId.toString() : "0"} 
-                      onValueChange={(value) => handleSelectChange('requestBaseId', value)}
-                    >
-                      <SelectTrigger className="h-10">
-                        <SelectValue placeholder="Selecione a base" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="0">Selecione uma base</SelectItem>
-                        {bases.map((base) => (
-                          <SelectItem key={base.id} value={base.id.toString()}>
-                            {base.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {user && user.role !== 'admin' && user.baseId ? (
+                      // Para usuários não-admin, mostrar um campo desabilitado com sua própria base
+                      <div className="flex items-center h-10 px-3 border rounded-md border-input bg-muted/50">
+                        <Building2 className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <span>{user.basename || getBaseName(user.baseId)}</span>
+                      </div>
+                    ) : (
+                      // Para administradores, mostrar o dropdown de seleção
+                      <Select 
+                        value={formData.requestBaseId ? formData.requestBaseId.toString() : "0"} 
+                        onValueChange={(value) => handleSelectChange('requestBaseId', value)}
+                      >
+                        <SelectTrigger className="h-10">
+                          <SelectValue placeholder="Selecione a base" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">Selecione uma base</SelectItem>
+                          {bases.map((base) => (
+                            <SelectItem key={base.id} value={base.id.toString()}>
+                              {base.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                 </div>
 
