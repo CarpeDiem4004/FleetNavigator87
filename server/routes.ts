@@ -659,6 +659,151 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/dashboard/kpis", isAuthenticated, getDashboardKPIs);
 
   // Admin utility routes
+  // Rota específica para limpar os dados do Supabase
+  app.post('/api/admin/clear-supabase-data', isAdmin, async (req, res) => {
+    try {
+      const { confirm, tables } = req.body;
+      
+      if (confirm !== 'LIMPAR') {
+        return res.status(400).json({ 
+          message: "Confirmação inválida. Para limpar todos os dados, envie { 'confirm': 'LIMPAR' }" 
+        });
+      }
+      
+      // Se não foram especificadas tabelas, usar a lista padrão
+      const supabaseTables = tables || [
+        'abastecimentos_postos',
+        'movimentacoes_patio',
+        'entradas_combustivel', 
+        'status_tanques',
+        'controle_tanques',
+        'veiculos'
+      ];
+      
+      // Limpar os dados do Supabase
+      try {
+        const fetch = await import("node-fetch");
+        
+        // Garantir que as variáveis de ambiente estão definidas
+        const supabaseUrl = process.env.SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
+        const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';
+        
+        console.log("Iniciando limpeza específica de dados do Supabase via backend...");
+        console.log(`URL Supabase: ${supabaseUrl}`);
+        console.log(`Chave disponível: ${supabaseKey ? 'Sim' : 'Não'}`);
+        console.log(`Tabelas para limpar: ${JSON.stringify(supabaseTables)}`);
+        
+        const resultados: Record<string, any> = {};
+        
+        // Limpa cada tabela usando REST API
+        for (const table of supabaseTables) {
+          try {
+            console.log(`Limpando dados da tabela Supabase via backend: ${table}`);
+            
+            // Método 1: Limpar tudo de uma vez
+            const response = await fetch.default(
+              `${supabaseUrl}/rest/v1/${table}?select=id`,
+              {
+                method: 'DELETE',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'apikey': supabaseKey,
+                  'Authorization': `Bearer ${supabaseKey}`,
+                  'Prefer': 'return=minimal'
+                }
+              }
+            );
+            
+            if (response.ok) {
+              console.log(`Tabela ${table} limpa com sucesso via backend`);
+              resultados[table] = { success: true };
+            } else {
+              const errorText = await response.text();
+              console.error(`Erro ao limpar tabela ${table} via backend: ${errorText}`);
+              resultados[table] = { success: false, error: errorText };
+              
+              // Método 2: Se falhar o bulk delete, tenta registro a registro
+              const getResponse = await fetch.default(
+                `${supabaseUrl}/rest/v1/${table}?select=id`,
+                {
+                  method: 'GET',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': supabaseKey,
+                    'Authorization': `Bearer ${supabaseKey}`
+                  }
+                }
+              );
+              
+              if (getResponse.ok) {
+                // Conversão segura do JSON para o tipo esperado
+                const rawData: unknown = await getResponse.json();
+                const records: Array<{id: number}> = Array.isArray(rawData) 
+                  ? rawData.filter((r: any) => r && typeof r.id !== 'undefined').map((r: any) => ({id: r.id}))
+                  : [];
+                if (records.length > 0) {
+                  console.log(`Encontrados ${records.length} registros na tabela ${table} para exclusão individual`);
+                  
+                  const deleteResults = [];
+                  for (const record of records) {
+                    if (record && typeof record.id !== 'undefined') {
+                      const deleteResponse = await fetch.default(
+                        `${supabaseUrl}/rest/v1/${table}?id=eq.${record.id}`,
+                        {
+                          method: 'DELETE',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'apikey': supabaseKey,
+                            'Authorization': `Bearer ${supabaseKey}`,
+                            'Prefer': 'return=minimal'
+                          }
+                        }
+                      );
+                      
+                      deleteResults.push({
+                        id: record.id,
+                        success: deleteResponse.ok
+                      });
+                    }
+                  }
+                  
+                  resultados[table] = { 
+                    individualDeletion: true, 
+                    results: deleteResults 
+                  };
+                }
+              }
+            }
+          } catch (err) {
+            console.error(`Erro ao processar tabela ${table} via backend: ${err}`);
+            resultados[table] = { success: false, error: String(err) };
+          }
+        }
+        
+        return res.status(200).json({
+          message: "Operação de limpeza do Supabase concluída",
+          success: true,
+          resultados
+        });
+      } catch (supaError) {
+        console.error("Erro ao limpar dados do Supabase:", supaError);
+        return res.status(500).json({
+          message: "Erro ao limpar dados do Supabase",
+          error: String(supaError),
+          success: false
+        });
+      }
+    } catch (error) {
+      console.error("Erro na rota de limpeza do Supabase:", error);
+      return res.status(500).json({ 
+        message: "Erro ao processar solicitação de limpeza", 
+        error: String(error),
+        success: false
+      });
+    }
+  });
+  
+  // Rota principal para limpar todos os dados (somente admin)
   app.post("/api/admin/clear-all-data", isAdmin, async (req, res) => {
     try {
       console.log("Iniciando limpeza completa dos dados do sistema");
@@ -820,12 +965,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
               );
               
               if (getResponse.ok) {
-                const records = await getResponse.json();
+                // Conversão segura do JSON para o tipo esperado
+                const rawData: unknown = await getResponse.json();
+                const records: Array<{id: number}> = Array.isArray(rawData) 
+                  ? rawData.filter((r: any) => r && typeof r.id !== 'undefined').map((r: any) => ({id: r.id}))
+                  : [];
                 console.log(`Encontrados ${records.length} registros na tabela ${table}`);
                 
                 // Deleta cada registro individualmente
                 if (records.length > 0) {
                   for (const record of records) {
+                    if (!record || typeof record.id === 'undefined') continue;
                     const deleteResponse = await fetch.default(
                       `${supabaseUrl}/rest/v1/${table}?id=eq.${record.id}`,
                       {
