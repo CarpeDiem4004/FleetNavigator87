@@ -655,9 +655,7 @@ export default function MaintenancePage() {
                     <SelectContent>
                       <SelectItem value="default">Selecione um veículo</SelectItem>
                       {vehicles.length === 0 ? (
-                        <div className="flex items-center justify-center py-3 px-2 text-gray-500">
-                          <p>Carregando veículos...</p>
-                        </div>
+                        <SelectItem value="loading">Carregando veículos...</SelectItem>
                       ) : (
                         vehicles.map((vehicle) => (
                           <SelectItem key={vehicle.id} value={vehicle.plate}>
