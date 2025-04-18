@@ -658,6 +658,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard API
   app.get("/api/dashboard/kpis", isAuthenticated, getDashboardKPIs);
 
+  // Admin utility routes
+  app.post("/api/admin/clear-all-data", isAdmin, async (req, res) => {
+    try {
+      console.log("Iniciando limpeza completa dos dados do sistema");
+      
+      // Tabelas em ordem de limpeza (para evitar problemas de chave estrangeira)
+      // As tabelas dependentes precisam ser apagadas antes das tabelas que elas referenciam
+      const tables = [
+        'maintenance', 'refueling', 'fines', 'tires', 'line_hall',
+        'vehicles', 'workshops', 'bases'
+      ];
+      
+      // Limpar cada tabela em sequência
+      for (const table of tables) {
+        console.log(`Limpando dados da tabela: ${table}`);
+        
+        switch (table) {
+          case 'maintenance':
+            // Buscar todos os registros e excluir um por um
+            const maintenances = await storage.getAllMaintenance();
+            for (const m of maintenances) {
+              await storage.deleteMaintenance(m.id);
+            }
+            break;
+            
+          case 'refueling':
+            // Buscar todos os registros e excluir um por um
+            const refuelings = await storage.getAllRefueling();
+            for (const r of refuelings) {
+              await storage.deleteRefueling(r.id);
+            }
+            break;
+            
+          case 'fines':
+            // Buscar todos os registros e excluir um por um
+            const fines = await storage.getAllFines();
+            for (const f of fines) {
+              await storage.deleteFine(f.id);
+            }
+            break;
+            
+          case 'tires':
+            // Buscar todos os registros e excluir um por um
+            const tires = await storage.getAllTires();
+            for (const t of tires) {
+              await storage.deleteTire(t.id);
+            }
+            break;
+            
+          case 'line_hall':
+            // Buscar todos os registros e excluir um por um
+            const lineHalls = await storage.getAllLineHall();
+            for (const lh of lineHalls) {
+              await storage.deleteLineHall(lh.id);
+            }
+            break;
+            
+          case 'vehicles':
+            // Buscar todos os registros e excluir um por um
+            const vehicles = await storage.getAllVehicles();
+            for (const v of vehicles) {
+              await storage.deleteVehicle(v.id);
+            }
+            break;
+            
+          case 'workshops':
+            // Buscar todos os registros e excluir um por um
+            const workshops = await storage.getAllWorkshops();
+            for (const w of workshops) {
+              await storage.deleteWorkshop(w.id);
+            }
+            break;
+            
+          case 'bases':
+            // Não excluir as bases padrão, apenas outras que possam ter sido adicionadas
+            const bases = await storage.getAllBases();
+            
+            for (const b of bases) {
+              // Preservar as bases padrão (não excluir)
+              if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(b.id)) {
+                await storage.deleteBase(b.id);
+              }
+            }
+            break;
+        }
+      }
+      
+      console.log("Limpeza completa de dados concluída com sucesso");
+      return res.status(200).json({ 
+        message: "Todos os dados foram limpos com sucesso",
+        success: true
+      });
+    } catch (error) {
+      console.error("Erro ao limpar dados:", error);
+      return res.status(500).json({ 
+        message: "Erro ao limpar dados do sistema", 
+        error: String(error),
+        success: false
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

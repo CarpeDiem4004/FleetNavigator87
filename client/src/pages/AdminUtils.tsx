@@ -83,31 +83,29 @@ const AdminUtils = () => {
 
     try {
       setIsLoading(true);
-      setProgress(0);
-      setOperationStatus("Iniciando limpeza dos dados...");
+      setProgress(10);
+      setOperationStatus("Iniciando limpeza completa dos dados do sistema...");
 
-      // Processamento de cada tabela
-      for (let i = 0; i < tables.length; i++) {
-        const table = tables[i];
-        setOperationStatus(`Buscando registros da tabela ${table.label}...`);
-        
-        // Busca todos os registros da tabela
-        const registros = await fetchRecords(table.name, {});
-        
-        if (registros.length > 0) {
-          setOperationStatus(`Apagando ${registros.length} registros de ${table.label}...`);
-          const ids = registros.map(reg => reg.id);
-          
-          // Exclui todos os registros de uma vez
-          await deleteRecords(table.name, ids);
-        } else {
-          setOperationStatus(`Nenhum registro encontrado em ${table.label}`);
-        }
+      // Chamar o endpoint de API que limpa todos os dados
+      const response = await fetch('/api/admin/clear-all-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          confirm: 'LIMPAR',
+        }),
+      });
 
-        // Atualiza o progresso
-        setProgress(Math.round(((i + 1) / tables.length) * 100));
+      setProgress(90);
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.message || 'Erro ao limpar dados do sistema');
       }
-
+      
+      setProgress(100);
       setOperationStatus("Limpeza de dados concluída com sucesso!");
       
       toast({
