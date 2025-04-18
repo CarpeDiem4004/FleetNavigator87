@@ -3,7 +3,8 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Truck, FileBarChart, ListChecks, CalendarDays } from 'lucide-react';
 
-export default function FleetManagementPage() {
+// Renomeado para corresponder à importação em App.tsx
+export default function FleetManagement() {
   return (
     <AppLayout>
       <div className="container mx-auto py-6">

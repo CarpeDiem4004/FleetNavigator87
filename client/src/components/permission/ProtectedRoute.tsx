@@ -31,7 +31,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
   }
   
   // Verifica se o usuário tem permissão para acessar a rota
-  if (!hasPermission(path)) {
+  const hasRoutePermission = hasPermission(path);
+  console.log(`Verificação de permissão para ${path}: ${hasRoutePermission ? 'PERMITIDO' : 'NEGADO'}`);
+  
+  if (!hasRoutePermission) {
+    console.log(`Redirecionando usuário para /acesso-negado devido a permissão negada para ${path}`);
     return <Redirect to="/acesso-negado" />;
   }
   

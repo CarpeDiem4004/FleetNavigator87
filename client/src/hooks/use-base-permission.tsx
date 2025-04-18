@@ -118,6 +118,8 @@ export function useBasePermission(): BasePermissionHook {
     
     // Gestão de Frotas - permite acesso a todas as rotas relacionadas a frotas
     if (user.basename === "Gestão de Frotas" || user.baseId === 12) {
+      console.log("VERIFICANDO USUÁRIO DE GESTÃO DE FROTAS:", user);
+      
       const frotaRoutes = [
         '/', 
         '/gestao-de-frotas', 
@@ -126,10 +128,23 @@ export function useBasePermission(): BasePermissionHook {
         '/vehicles', 
         '/refueling',
         '/tires',
-        '/fines'
+        '/fines',
+        '/accidents',
+        '/work-safety'
       ];
+      
+      // Debug - imprime todas as rotas que o usuário pode acessar
+      console.log("Rotas permitidas para Gestão de Frotas:", frotaRoutes.join(", "));
+      
       const hasAccess = frotaRoutes.includes(route);
       console.log(`Gestão de Frotas user permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'} (baseId=${user.baseId}, basename=${user.basename})`);
+      
+      // Se a rota for fleet-management, sempre permitir para usuários de Gestão de Frotas
+      if (route === '/fleet-management') {
+        console.log("ACESSO ESPECIAL GARANTIDO para /fleet-management");
+        return true;
+      }
+      
       return hasAccess;
     }
     
