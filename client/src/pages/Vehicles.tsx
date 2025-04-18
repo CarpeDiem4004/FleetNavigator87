@@ -458,10 +458,15 @@ const Vehicles: React.FC = () => {
             </Button>
             <Button 
               onClick={() => {
-                console.log("Enviando veículo para a API:", newVehicle);
-                addVehicleMutation.mutate(newVehicle);
+                // Garantir que temos um baseId válido (baseId: 12 para "Gestão de Frotas")
+                const vehicleData = {
+                  ...newVehicle,
+                  baseId: newVehicle.baseId || 12
+                };
+                console.log("Enviando veículo para a API:", vehicleData);
+                addVehicleMutation.mutate(vehicleData);
               }}
-              disabled={!newVehicle.plate || !newVehicle.model || !newVehicle.baseId}
+              disabled={!newVehicle.plate || !newVehicle.model}
             >
               {addVehicleMutation.isPending ? 'Salvando...' : 'Salvar'}
             </Button>

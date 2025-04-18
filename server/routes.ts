@@ -182,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/vehicles", isAuthenticated, async (req, res) => {
     try {
       console.log("POST /api/vehicles - Iniciando criação de veículo");
-      console.log("Dados recebidos:", req.body);
+      console.log("Dados recebidos:", JSON.stringify(req.body, null, 2));
       
       if (!req.user) {
         console.log("Usuário não autenticado");
@@ -191,25 +191,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Usuário autenticado:", req.user.id, req.user.name, req.user.email, req.user.baseId);
       
-      const result = insertVehicleSchema.safeParse(req.body);
-      if (!result.success) {
-        console.log("Dados inválidos:", result.error.format());
-        return res.status(400).json({ message: "Invalid vehicle data", errors: result.error.format() });
+      // Ajustar os dados para o esquema da tabela se necessário
+      const vehicleData = {
+        plate: req.body.plate,
+        model: req.body.model,
+        vehicleType: req.body.vehicleType,
+        status: req.body.status,
+        baseId: req.body.baseId || req.user.baseId // Usar a baseId do usuário como fallback
+      };
+      
+      console.log("Dados ajustados:", JSON.stringify(vehicleData, null, 2));
+      
+      try {
+        // Validar os dados
+        const result = insertVehicleSchema.safeParse(vehicleData);
+        if (!result.success) {
+          console.log("Dados inválidos:", JSON.stringify(result.error.format(), null, 2));
+          return res.status(400).json({ message: "Invalid vehicle data", errors: result.error.format() });
+        }
+        
+        // Check if user can create vehicle for this base
+        if (req.user.role !== 'admin' && result.data.baseId !== req.user.baseId) {
+          // Para usuários "Gestão de Frotas" (baseId 12), permitir criar para qualquer base
+          if (req.user.baseId !== 12) {
+            console.log("Permissão negada: baseId do veículo não corresponde ao baseId do usuário");
+            return res.status(403).json({ message: "Cannot create vehicle for different base" });
+          }
+        }
+        
+        // Criar o veículo
+        const newVehicle = await storage.createVehicle(result.data);
+        console.log("Veículo criado com sucesso:", JSON.stringify(newVehicle, null, 2));
+        
+        return res.status(201).json(newVehicle);
+      } catch (parseError) {
+        console.error("Erro ao processar dados do veículo:", parseError);
+        return res.status(400).json({ message: "Error parsing vehicle data", error: String(parseError) });
       }
-      
-      console.log("Dados validados com sucesso:", result.data);
-      
-      // Check if user can create vehicle for this base
-      if (req.user.role !== 'admin' && result.data.baseId !== req.user.baseId) {
-        console.log("Permissão negada: baseId do veículo não corresponde ao baseId do usuário");
-        return res.status(403).json({ message: "Cannot create vehicle for different base" });
-      }
-      
-      console.log("Chamando storage.createVehicle");
-      const newVehicle = await storage.createVehicle(result.data);
-      console.log("Veículo criado com sucesso:", newVehicle);
-      
-      return res.status(201).json(newVehicle);
     } catch (error) {
       console.error("Error creating vehicle:", error);
       return res.status(500).json({ message: "Server error", error: String(error) });

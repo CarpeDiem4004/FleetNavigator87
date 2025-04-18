@@ -193,11 +193,22 @@ export class DatabaseStorage implements IStorage {
 
   async createVehicle(vehicle: InsertVehicle): Promise<Vehicle> {
     console.log("storage.createVehicle - Iniciando inserção no banco de dados");
-    console.log("Dados do veículo para inserção:", vehicle);
+    console.log("Dados do veículo para inserção:", JSON.stringify(vehicle, null, 2));
     
     try {
-      const [newVehicle] = await db.insert(vehicles).values(vehicle).returning();
-      console.log("Veículo inserido com sucesso:", newVehicle);
+      // Garantir que estamos usando os nomes de campo corretos para o banco de dados
+      const vehicleData = {
+        plate: vehicle.plate,
+        model: vehicle.model,
+        vehicleType: vehicle.vehicleType,
+        status: vehicle.status,
+        baseId: vehicle.baseId
+      };
+      
+      console.log("Dados preparados para inserção:", JSON.stringify(vehicleData, null, 2));
+      
+      const [newVehicle] = await db.insert(vehicles).values(vehicleData).returning();
+      console.log("Veículo inserido com sucesso:", JSON.stringify(newVehicle, null, 2));
       return newVehicle;
     } catch (error) {
       console.error("Erro ao inserir veículo no banco de dados:", error);
