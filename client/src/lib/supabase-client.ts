@@ -123,35 +123,85 @@ export async function checkConnection() {
   }
 }
 
-// Função para testar as conexões com o Supabase
+// Interface para resultado detalhado dos testes
+interface DetailedTestResult {
+  success: boolean;
+  error?: string;
+  data?: any;
+}
+
+// Função para testar as conexões com o Supabase com detalhes
 export async function checkAllConnections() {
+  // Objeto para resultados detalhados
+  const detailedResults: Record<string, DetailedTestResult> = {};
+  
+  // Objeto para compatibilidade com versão antiga (retorna apenas boolean)
   const results: Record<string, boolean> = {};
+  
+  console.log("Iniciando diagnóstico Supabase cliente");
   
   // Teste 1: Conexão básica com Supabase
   try {
+    console.log("Testando conexão básica...");
     const { data, error } = await supabase
       .from('status_tanques')
       .select('count(*)', { count: 'exact', head: true });
     
-    results.baseConnection = !error;
-  } catch (e) {
+    const success = !error;
+    results.baseConnection = success;
+    detailedResults.baseConnection = {
+      success,
+      error: error?.message,
+      data
+    };
+    
+    if (error) {
+      console.error("Erro na conexão básica:", error);
+    } else {
+      console.log("Conexão básica: OK");
+    }
+  } catch (e: any) {
     results.baseConnection = false;
+    detailedResults.baseConnection = {
+      success: false,
+      error: e?.message || "Erro desconhecido na conexão"
+    };
+    console.error("Exceção na conexão básica:", e);
   }
   
   // Teste 2: Permissões de leitura
   try {
+    console.log("Testando permissão de leitura...");
     const { data, error } = await supabase
       .from('status_tanques')
       .select('*')
       .limit(1);
     
-    results.readPermission = !error;
-  } catch (e) {
+    const success = !error;
+    results.readPermission = success;
+    detailedResults.readPermission = {
+      success,
+      error: error?.message,
+      data
+    };
+    
+    if (error) {
+      console.error("Erro na permissão de leitura:", error);
+    } else {
+      console.log("Permissão de leitura: OK");
+    }
+  } catch (e: any) {
     results.readPermission = false;
+    detailedResults.readPermission = {
+      success: false,
+      error: e?.message || "Erro desconhecido na leitura"
+    };
+    console.error("Exceção na permissão de leitura:", e);
   }
   
   // Teste 3: Permissões de escrita (teste com insert e delete)
   try {
+    console.log("Testando permissão de escrita...");
     // Inserir um registro temporário
     const testRecord = {
       posto_id: 99,
@@ -169,8 +219,14 @@ export async function checkAllConnections() {
       .select();
     
     if (insertError) {
+      console.error("Erro na permissão de escrita (insert):", insertError);
       results.writePermission = false;
+      detailedResults.writePermission = {
+        success: false,
+        error: insertError.message,
+      };
     } else if (insertData && insertData.length > 0) {
+      console.log("Insert bem-sucedido, tentando excluir o registro...");
       // Agora tentar excluir o registro criado
       const id = insertData[0].id;
       
@@ -179,12 +235,34 @@ export async function checkAllConnections() {
         .delete()
         .eq('id', id);
       
-      results.writePermission = !deleteError;
+      const success = !deleteError;
+      results.writePermission = success;
+      detailedResults.writePermission = {
+        success,
+        error: deleteError?.message,
+        data: insertData
+      };
+      
+      if (deleteError) {
+        console.error("Erro na permissão de escrita (delete):", deleteError);
+      } else {
+        console.log("Permissão de escrita: OK (insert e delete bem-sucedidos)");
+      }
     } else {
+      console.error("Erro na permissão de escrita: insert retornou null");
       results.writePermission = false;
+      detailedResults.writePermission = {
+        success: false,
+        error: "Insert retornou dados nulos"
+      };
     }
-  } catch (e) {
+  } catch (e: any) {
+    console.error("Exceção na permissão de escrita:", e);
     results.writePermission = false;
+    detailedResults.writePermission = {
+      success: false,
+      error: e?.message || "Erro desconhecido na escrita"
+    };
   }
   
   // Teste 4: Tabelas específicas existem e são acessíveis

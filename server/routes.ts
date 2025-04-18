@@ -54,12 +54,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Endpoint para diagnóstico do Supabase
   app.get("/api/diagnostico/supabase", isAdmin, async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    
     try {
+      console.log("Iniciando diagnóstico do Supabase via API...");
+      
       // Importar função de diagnóstico
       const { runSupabaseDiagnostic } = await import('./supabaseDiagnostic');
       
       // Executar diagnóstico
       const diagnosticResults = await runSupabaseDiagnostic();
+      
+      console.log("Diagnóstico do Supabase concluído com sucesso");
       
       return res.status(200).json({
         success: true,
@@ -69,10 +75,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("Erro no diagnóstico do Supabase:", error);
+      
+      // Mesmo em caso de erro, retornamos uma resposta JSON válida
       return res.status(500).json({
         success: false,
         message: "Erro ao executar diagnóstico do Supabase",
         error: error.message,
+        errorType: error.constructor.name,
         stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
       });
     }

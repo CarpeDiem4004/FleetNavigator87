@@ -68,20 +68,46 @@ export default function SupabaseDiagnostico() {
       setError(null);
       console.log("Iniciando diagnóstico de conexão Supabase no servidor...");
       
-      const response = await fetch('/api/diagnostico/supabase');
+      const response = await fetch('/api/diagnostico/supabase', {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Erro HTTP ${response.status}: ${errorText}`);
+      let responseData;
+      const contentType = response.headers.get('content-type');
+      const isJsonResponse = contentType && contentType.includes('application/json');
+      
+      if (isJsonResponse) {
+        responseData = await response.json();
+      } else {
+        const textResponse = await response.text();
+        console.error("Resposta não-JSON recebida:", textResponse);
+        throw new Error(`Resposta inesperada do servidor: não é JSON válido`);
       }
       
-      const data = await response.json();
-      setServerResultados(data.results);
+      if (!response.ok) {
+        if (responseData && responseData.error) {
+          throw new Error(`Erro ${response.status}: ${responseData.error}`);
+        } else {
+          throw new Error(`Erro HTTP ${response.status}`);
+        }
+      }
       
-      console.log("Diagnóstico servidor completo:", data.results);
+      if (!responseData.results) {
+        console.error("Resposta sem campo 'results':", responseData);
+        throw new Error("Formato de resposta inválido: campo 'results' ausente");
+      }
+      
+      setServerResultados(responseData.results);
+      console.log("Diagnóstico servidor completo:", responseData.results);
     } catch (error: any) {
       setError(error.message || "Erro desconhecido ao executar diagnóstico no servidor");
       console.error("Erro ao executar diagnóstico no servidor:", error);
+      
+      // Reseta o estado dos resultados em caso de erro para não exibir dados antigos
+      setServerResultados(null);
     } finally {
       setIsServerLoading(false);
     }
