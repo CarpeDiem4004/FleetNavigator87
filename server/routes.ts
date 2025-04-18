@@ -3,8 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
   insertBaseSchema, insertVehicleSchema, insertMaintenanceSchema,
-  insertTireSchema, insertRefuelingSchema, insertFineSchema,
-  insertLineHallSchema, insertUserSchema
+  insertWorkshopSchema, insertTireSchema, insertRefuelingSchema, 
+  insertFineSchema, insertLineHallSchema, insertUserSchema
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import { getDashboardKPIs } from "./dashboardApi";
@@ -229,6 +229,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Workshop routes
+  app.get("/api/workshops", isAuthenticated, async (req, res) => {
+    try {
+      const activeOnly = req.query.active === 'true';
+      const workshops = activeOnly 
+        ? await storage.getActiveWorkshops()
+        : await storage.getAllWorkshops();
+      
+      return res.status(200).json(workshops);
+    } catch (error) {
+      console.error("Error fetching workshops:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  app.get("/api/workshops/:id", isAuthenticated, async (req, res) => {
+    try {
+      const workshop = await storage.getWorkshop(parseInt(req.params.id));
+      
+      if (!workshop) {
+        return res.status(404).json({ message: "Workshop not found" });
+      }
+      
+      return res.status(200).json(workshop);
+    } catch (error) {
+      console.error("Error fetching workshop:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  app.post("/api/workshops", isAuthenticated, async (req, res) => {
+    try {
+      const result = insertWorkshopSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid workshop data", errors: result.error.format() });
+      }
+      
+      const newWorkshop = await storage.createWorkshop(result.data);
+      return res.status(201).json(newWorkshop);
+    } catch (error) {
+      console.error("Error creating workshop:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  app.put("/api/workshops/:id", isAuthenticated, async (req, res) => {
+    try {
+      const workshopId = parseInt(req.params.id);
+      const workshop = await storage.getWorkshop(workshopId);
+      
+      if (!workshop) {
+        return res.status(404).json({ message: "Workshop not found" });
+      }
+      
+      const result = insertWorkshopSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid workshop data", errors: result.error.format() });
+      }
+      
+      const updatedWorkshop = await storage.updateWorkshop(workshopId, result.data);
+      return res.status(200).json(updatedWorkshop);
+    } catch (error) {
+      console.error("Error updating workshop:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  app.delete("/api/workshops/:id", isAdmin, async (req, res) => {
+    try {
+      const workshopId = parseInt(req.params.id);
+      const success = await storage.deleteWorkshop(workshopId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Workshop not found" });
+      }
+      
+      return res.status(200).json({ message: "Workshop deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting workshop:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
   // Maintenance routes
   app.get("/api/maintenance", isAuthenticated, async (req, res) => {
     try {
@@ -236,16 +319,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Unauthorized" });
       }
       
-      const maintenance = await storage.getAllMaintenance();
-      // Filter maintenance by base if not admin
-      if (req.user.role !== 'admin') {
-        // For non-admin users, need to join with vehicles to filter by base
-        // This is simplified for now
+      // Check if filtering by base and status
+      const baseId = req.query.baseId ? parseInt(req.query.baseId as string) : null;
+      const status = req.query.status as string | null;
+      
+      // If both baseId and status provided, filter by both
+      if (baseId && status) {
+        const maintenance = await storage.getMaintenanceByBaseAndStatus(baseId, status);
         return res.status(200).json(maintenance);
       }
+      
+      // Otherwise get all maintenance records (with role-based filtering)
+      const maintenance = await storage.getAllMaintenance();
+      
+      // Filter by base if not admin and no specific filter provided
+      if (req.user.role !== 'admin' && !baseId && req.user.baseId) {
+        // For non-admin users, filter to only their base's maintenance records
+        const filteredMaintenance = maintenance.filter(m => m.requestBaseId === req.user!.baseId);
+        return res.status(200).json(filteredMaintenance);
+      }
+      
       return res.status(200).json(maintenance);
     } catch (error) {
       console.error("Error fetching maintenance:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  app.get("/api/maintenance/vehicle/:plate", isAuthenticated, async (req, res) => {
+    try {
+      const vehiclePlate = req.params.plate;
+      
+      // Verify vehicle exists
+      const vehicle = await storage.getVehicleByPlate(vehiclePlate);
+      if (!vehicle) {
+        return res.status(404).json({ message: "Vehicle not found" });
+      }
+      
+      // Get maintenance history
+      const maintenanceHistory = await storage.getMaintenanceByVehicle(vehiclePlate);
+      return res.status(200).json(maintenanceHistory);
+    } catch (error) {
+      console.error("Error fetching maintenance history:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  app.get("/api/maintenance/:id", isAuthenticated, async (req, res) => {
+    try {
+      const maintenanceId = parseInt(req.params.id);
+      const maintenanceRecord = await storage.getMaintenance(maintenanceId);
+      
+      if (!maintenanceRecord) {
+        return res.status(404).json({ message: "Maintenance record not found" });
+      }
+      
+      return res.status(200).json(maintenanceRecord);
+    } catch (error) {
+      console.error("Error fetching maintenance record:", error);
       return res.status(500).json({ message: "Server error" });
     }
   });
@@ -261,20 +392,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid maintenance data", errors: result.error.format() });
       }
       
-      // Check if vehicle exists and user has access
+      // Check if vehicle exists
       const vehicle = await storage.getVehicleByPlate(result.data.vehiclePlate);
       if (!vehicle) {
         return res.status(404).json({ message: "Vehicle not found" });
       }
       
-      if (req.user.role !== 'admin' && vehicle.baseId !== req.user.baseId) {
-        return res.status(403).json({ message: "Access denied" });
+      // Check if workshop exists
+      const workshop = await storage.getWorkshop(result.data.workshopId);
+      if (!workshop) {
+        return res.status(404).json({ message: "Workshop not found" });
       }
       
+      // Check if requesting base exists (if different from user's base)
+      if (result.data.requestBaseId !== req.user.baseId) {
+        const requestBase = await storage.getBase(result.data.requestBaseId);
+        if (!requestBase) {
+          return res.status(404).json({ message: "Requesting base not found" });
+        }
+      }
+      
+      // Create maintenance record
       const newMaintenance = await storage.createMaintenance(result.data);
       return res.status(201).json(newMaintenance);
     } catch (error) {
       console.error("Error creating maintenance:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  app.patch("/api/maintenance/:id/status", isAuthenticated, async (req, res) => {
+    try {
+      const maintenanceId = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      if (!status) {
+        return res.status(400).json({ message: "Status is required" });
+      }
+      
+      // Validate status value
+      const validStatuses = ['pendente', 'aguardando_orcamento', 'em_andamento', 'concluida', 'cancelada'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ 
+          message: "Invalid status value", 
+          validValues: validStatuses 
+        });
+      }
+      
+      // Update status
+      const updatedMaintenance = await storage.updateMaintenanceStatus(maintenanceId, status);
+      
+      if (!updatedMaintenance) {
+        return res.status(404).json({ message: "Maintenance record not found" });
+      }
+      
+      return res.status(200).json(updatedMaintenance);
+    } catch (error) {
+      console.error("Error updating maintenance status:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  app.put("/api/maintenance/:id", isAuthenticated, async (req, res) => {
+    try {
+      const maintenanceId = parseInt(req.params.id);
+      
+      // Check if maintenance record exists
+      const existingMaintenance = await storage.getMaintenance(maintenanceId);
+      if (!existingMaintenance) {
+        return res.status(404).json({ message: "Maintenance record not found" });
+      }
+      
+      const result = insertMaintenanceSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid maintenance data", errors: result.error.format() });
+      }
+      
+      // Update maintenance record
+      const updatedMaintenance = await storage.updateMaintenance(maintenanceId, result.data);
+      return res.status(200).json(updatedMaintenance);
+    } catch (error) {
+      console.error("Error updating maintenance:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  app.delete("/api/maintenance/:id", isAdmin, async (req, res) => {
+    try {
+      const maintenanceId = parseInt(req.params.id);
+      const success = await storage.deleteMaintenance(maintenanceId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Maintenance record not found" });
+      }
+      
+      return res.status(200).json({ message: "Maintenance record deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting maintenance:", error);
       return res.status(500).json({ message: "Server error" });
     }
   });

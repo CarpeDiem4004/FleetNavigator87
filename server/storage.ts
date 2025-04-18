@@ -1,9 +1,10 @@
 import { 
-  users, vehicles, maintenance, tires, refueling, fines, lineHall, bases,
+  users, vehicles, maintenance, tires, refueling, fines, lineHall, bases, workshops,
   type User, type InsertUser, type Vehicle, type InsertVehicle,
   type Maintenance, type InsertMaintenance, type Tire, type InsertTire,
   type Refueling, type InsertRefueling, type Fine, type InsertFine,
-  type LineHall, type InsertLineHall, type Base, type InsertBase
+  type LineHall, type InsertLineHall, type Base, type InsertBase,
+  type Workshop, type InsertWorkshop
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, like, desc } from "drizzle-orm";
@@ -33,11 +34,21 @@ export interface IStorage {
   updateVehicle(id: number, vehicle: Partial<InsertVehicle>): Promise<Vehicle | undefined>;
   deleteVehicle(id: number): Promise<boolean>;
   
+  // Workshop operations
+  getWorkshop(id: number): Promise<Workshop | undefined>;
+  getAllWorkshops(): Promise<Workshop[]>;
+  getActiveWorkshops(): Promise<Workshop[]>;
+  createWorkshop(workshop: InsertWorkshop): Promise<Workshop>;
+  updateWorkshop(id: number, workshop: Partial<InsertWorkshop>): Promise<Workshop | undefined>;
+  deleteWorkshop(id: number): Promise<boolean>;
+  
   // Maintenance operations
   getMaintenance(id: number): Promise<Maintenance | undefined>;
   getMaintenanceByVehicle(vehiclePlate: string): Promise<Maintenance[]>;
+  getMaintenanceByBaseAndStatus(baseId: number, status: string): Promise<Maintenance[]>;
   getAllMaintenance(): Promise<Maintenance[]>;
   createMaintenance(maintenance: InsertMaintenance): Promise<Maintenance>;
+  updateMaintenanceStatus(id: number, status: string): Promise<Maintenance | undefined>;
   updateMaintenance(id: number, maintenance: Partial<InsertMaintenance>): Promise<Maintenance | undefined>;
   deleteMaintenance(id: number): Promise<boolean>;
   
@@ -202,26 +213,123 @@ export class DatabaseStorage implements IStorage {
     return !!deleted;
   }
   
+  // Workshop operations
+  async getWorkshop(id: number): Promise<Workshop | undefined> {
+    const [workshop] = await db.select().from(workshops).where(eq(workshops.id, id));
+    return workshop || undefined;
+  }
+
+  async getAllWorkshops(): Promise<Workshop[]> {
+    return await db.select().from(workshops);
+  }
+
+  async getActiveWorkshops(): Promise<Workshop[]> {
+    return await db.select().from(workshops).where(eq(workshops.isActive, true));
+  }
+
+  async createWorkshop(workshop: InsertWorkshop): Promise<Workshop> {
+    const [newWorkshop] = await db.insert(workshops).values(workshop).returning();
+    return newWorkshop;
+  }
+
+  async updateWorkshop(id: number, workshop: Partial<InsertWorkshop>): Promise<Workshop | undefined> {
+    const [updated] = await db
+      .update(workshops)
+      .set(workshop)
+      .where(eq(workshops.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteWorkshop(id: number): Promise<boolean> {
+    const [deleted] = await db
+      .delete(workshops)
+      .where(eq(workshops.id, id))
+      .returning();
+    return !!deleted;
+  }
+
   // Maintenance operations
   async getMaintenance(id: number): Promise<Maintenance | undefined> {
-    const [maintenance] = await db.select().from(maintenance).where(eq(maintenance.id, id));
-    return maintenance || undefined;
+    const [maintenanceRecord] = await db.select().from(maintenance).where(eq(maintenance.id, id));
+    return maintenanceRecord || undefined;
   }
 
   async getMaintenanceByVehicle(vehiclePlate: string): Promise<Maintenance[]> {
-    return await db.select().from(maintenance).where(eq(maintenance.vehiclePlate, vehiclePlate));
+    return await db.select().from(maintenance).where(eq(maintenance.vehiclePlate, vehiclePlate))
+      .orderBy(desc(maintenance.entryDate));
+  }
+
+  async getMaintenanceByBaseAndStatus(baseId: number, status: string): Promise<Maintenance[]> {
+    return await db.select().from(maintenance)
+      .where(
+        and(
+          eq(maintenance.requestBaseId, baseId),
+          eq(maintenance.status, status)
+        )
+      )
+      .orderBy(desc(maintenance.entryDate));
   }
 
   async getAllMaintenance(): Promise<Maintenance[]> {
-    return await db.select().from(maintenance).orderBy(desc(maintenance.date));
+    return await db.select().from(maintenance).orderBy(desc(maintenance.entryDate));
   }
 
   async createMaintenance(maintenanceData: InsertMaintenance): Promise<Maintenance> {
     const [newMaintenance] = await db.insert(maintenance).values(maintenanceData).returning();
+    
+    // Atualizar o status do veículo para em_manutencao
+    await db.update(vehicles)
+      .set({ status: 'em_manutencao' })
+      .where(eq(vehicles.plate, maintenanceData.vehiclePlate));
+      
     return newMaintenance;
   }
 
+  async updateMaintenanceStatus(id: number, status: string): Promise<Maintenance | undefined> {
+    // Pegar a manutenção atual primeiro
+    const [currentMaintenance] = await db.select().from(maintenance).where(eq(maintenance.id, id));
+    
+    if (!currentMaintenance) {
+      return undefined;
+    }
+    
+    // Preparar dados para atualização
+    const updateData: Partial<InsertMaintenance> = { 
+      status: status as any,
+      updated_at: new Date()
+    };
+    
+    // Se status for "concluida", adicionar data de saída real
+    if (status === 'concluida' && !currentMaintenance.actualExitDate) {
+      updateData.actualExitDate = new Date();
+      
+      // Atualizar o status do veículo para em_operacao
+      await db.update(vehicles)
+        .set({ status: 'em_operacao' })
+        .where(eq(vehicles.plate, currentMaintenance.vehiclePlate));
+    }
+    
+    // Se status for "cancelada", também deve atualizar veículo
+    if (status === 'cancelada') {
+      await db.update(vehicles)
+        .set({ status: 'em_operacao' })
+        .where(eq(vehicles.plate, currentMaintenance.vehiclePlate));
+    }
+    
+    const [updated] = await db
+      .update(maintenance)
+      .set(updateData)
+      .where(eq(maintenance.id, id))
+      .returning();
+      
+    return updated || undefined;
+  }
+
   async updateMaintenance(id: number, maintenanceData: Partial<InsertMaintenance>): Promise<Maintenance | undefined> {
+    // Atualizar o timestamp de updated_at
+    maintenanceData.updated_at = new Date();
+    
     const [updated] = await db
       .update(maintenance)
       .set(maintenanceData)
@@ -231,6 +339,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteMaintenance(id: number): Promise<boolean> {
+    // Primeiro, obter a manutenção para saber qual veículo atualizar
+    const [maintenanceRecord] = await db.select().from(maintenance).where(eq(maintenance.id, id));
+    
+    if (maintenanceRecord) {
+      // Se o veículo estiver em manutenção, retornar para operação
+      await db.update(vehicles)
+        .set({ status: 'em_operacao' })
+        .where(eq(vehicles.plate, maintenanceRecord.vehiclePlate));
+    }
+    
     const [deleted] = await db
       .delete(maintenance)
       .where(eq(maintenance.id, id))

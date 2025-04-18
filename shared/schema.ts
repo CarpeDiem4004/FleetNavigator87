@@ -157,6 +157,7 @@ export const workshopsRelations = relations(workshops, ({ many }) => ({
 // Insert schemas
 export const insertBaseSchema = createInsertSchema(bases);
 export const insertVehicleSchema = createInsertSchema(vehicles);
+export const insertWorkshopSchema = createInsertSchema(workshops);
 export const insertMaintenanceSchema = createInsertSchema(maintenance);
 export const insertTireSchema = createInsertSchema(tires);
 export const insertRefuelingSchema = createInsertSchema(refueling);
@@ -177,6 +178,9 @@ export type InsertBase = z.infer<typeof insertBaseSchema>;
 
 export type Vehicle = typeof vehicles.$inferSelect;
 export type InsertVehicle = z.infer<typeof insertVehicleSchema>;
+
+export type Workshop = typeof workshops.$inferSelect;
+export type InsertWorkshop = z.infer<typeof insertWorkshopSchema>;
 
 export type Maintenance = typeof maintenance.$inferSelect;
 export type InsertMaintenance = z.infer<typeof insertMaintenanceSchema>;
