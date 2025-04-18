@@ -1,26 +1,28 @@
 import React, { useState } from 'react';
-import { deleteRecords, fetchRecords, supabaseAdmin } from '@/lib/supabase-client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/context/AuthContext';
-import { Loader2, Trash2, RefreshCw, Database } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
-import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
+import { 
+  Card, CardContent, CardDescription, 
+  CardFooter, CardHeader, CardTitle 
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+import { Loader2, Trash2, Database, RefreshCw } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabaseAdmin, deleteRecords, fetchRecords } from "@/lib/supabase-client";
+import MainLayoutSimple from "@/components/layout/MainLayoutSimple";
+import { useAuth } from "@/hooks/use-auth";
 
 const AdminUtils = () => {
-  const { user } = useAuth();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [operationStatus, setOperationStatus] = useState<string | null>(null);
 
-  // Verifica se o usuário é admin
-  const isAdmin = user?.role === 'admin';
-
+  // Lista de tabelas para limpar
   const tables = [
-    // Tabelas principais do sistema
     { name: 'vehicles', label: 'Veículos' },
     { name: 'maintenance', label: 'Manutenções' },
     { name: 'workshops', label: 'Oficinas' },
@@ -28,17 +30,12 @@ const AdminUtils = () => {
     { name: 'refueling', label: 'Abastecimentos' },
     { name: 'fines', label: 'Multas' },
     { name: 'line_hall', label: 'Line Hall' },
-    { name: 'accidents', label: 'Acidentes/Sinistros' },
-    { name: 'thefts', label: 'Roubos' },
-    { name: 'suppliers', label: 'Fornecedores' },
-    
-    // Tabelas de postos
-    { name: 'abastecimentos_postos', label: 'Abastecimentos de Postos' },
-    { name: 'recebimentos_combustivel', label: 'Recebimentos de Combustível' },
+    { name: 'abastecimentos_postos', label: 'Abastecimentos em Postos' },
     { name: 'movimentacoes_patio', label: 'Movimentações de Pátio' },
-    { name: 'controle_tanques', label: 'Controle de Tanques' },
+    { name: 'entradas_combustivel', label: 'Entradas de Combustível' },
     { name: 'status_tanques', label: 'Status de Tanques' },
-    { name: 'entradas_combustivel', label: 'Entradas de Combustível' }
+    { name: 'controle_tanques', label: 'Controle de Tanques' },
+    { name: 'veiculos', label: 'Tabela Veiculos Supabase' },
   ];
 
   const limparTodosDados = async () => {
@@ -84,9 +81,9 @@ const AdminUtils = () => {
     try {
       setIsLoading(true);
       setProgress(10);
-      setOperationStatus("Iniciando limpeza completa dos dados do sistema...");
+      setOperationStatus("Limpando dados da API e do banco de dados...");
 
-      // Chamar o endpoint de API que limpa todos os dados
+      // Primeiro limpar os dados do backend via API
       const response = await fetch('/api/admin/clear-all-data', {
         method: 'POST',
         headers: {
@@ -96,8 +93,6 @@ const AdminUtils = () => {
           confirm: 'LIMPAR',
         }),
       });
-
-      setProgress(90);
       
       const result = await response.json();
       
@@ -105,14 +100,49 @@ const AdminUtils = () => {
         throw new Error(result.message || 'Erro ao limpar dados do sistema');
       }
       
+      setProgress(50);
+      setOperationStatus("API limpa com sucesso. Agora limpando dados do Supabase...");
+      
+      // Agora limpar também os dados do Supabase
+      for (let i = 0; i < tables.length; i++) {
+        const table = tables[i];
+        setOperationStatus(`Buscando registros da tabela ${table.label} no Supabase...`);
+        
+        // Busca todos os registros da tabela
+        try {
+          const registros = await fetchRecords(table.name, {});
+          
+          if (registros.length > 0) {
+            setOperationStatus(`Apagando ${registros.length} registros de ${table.label}...`);
+            const ids = registros.map(reg => reg.id);
+            
+            // Exclui todos os registros de uma vez
+            await deleteRecords(table.name, ids);
+          } else {
+            setOperationStatus(`Nenhum registro encontrado em ${table.label}`);
+          }
+        } catch (err) {
+          console.warn(`Erro ao processar tabela ${table.name}, pulando: ${err}`);
+        }
+
+        // Atualiza o progresso
+        setProgress(50 + Math.round(((i + 1) / tables.length) * 50));
+      }
+
       setProgress(100);
-      setOperationStatus("Limpeza de dados concluída com sucesso!");
+      setOperationStatus("Limpeza de dados concluída com sucesso! Todos os dados foram removidos.");
       
       toast({
         title: "Dados limpos com sucesso",
         description: "Todos os dados foram removidos do sistema.",
         variant: "default"
       });
+      
+      // Forçar atualização da página após 2 segundos para limpar o cache do cliente
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 2000);
+      
     } catch (error: any) {
       console.error('Erro ao limpar dados:', error);
       setOperationStatus(`Erro: ${error.message}`);
