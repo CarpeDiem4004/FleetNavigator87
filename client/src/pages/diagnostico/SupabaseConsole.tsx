@@ -24,6 +24,19 @@ return { data, error };`);
   const [isExecuting, setIsExecuting] = useState(false);
   const [result, setResult] = useState<QueryResult | null>(null);
   
+  // Verificando se o hook useAuth completou a carga
+  if (user === undefined) {
+    return (
+      <MainLayoutSimple>
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex justify-center items-center h-40">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </div>
+      </MainLayoutSimple>
+    );
+  }
+  
   const executeQuery = async () => {
     try {
       setIsExecuting(true);
@@ -70,6 +83,15 @@ return { data, error };`);
   // Exemplos de consultas
   const queryExamples = [
     {
+      name: "Listar todas as tabelas",
+      query: `// Esta consulta lista todas as tabelas do esquema público
+const { data, error } = await supabase
+  .from('pg_tables')
+  .select('tablename')
+  .eq('schemaname', 'public');
+return { data, error };`
+    },
+    {
       name: "Listar veículos",
       query: `const { data, error } = await supabase.from('veiculos').select('*').limit(5);
 return { data, error };`
@@ -80,15 +102,80 @@ return { data, error };`
 return { data, error };`
     },
     {
-      name: "Tabelas existentes",
-      query: `const { data, error } = await supabase.rpc('get_tables');
+      name: "Abastecimentos",
+      query: `const { data, error } = await supabase.from('abastecimentos').select('*').limit(5);
 return { data, error };`
     },
     {
-      name: "Informações do sistema",
-      query: `const { data, error } = await supabase.rpc('get_system_info');
+      name: "Controle de Pátio",
+      query: `const { data, error } = await supabase.from('controle_patio').select('*').limit(5);
 return { data, error };`
     },
+    {
+      name: "Usuários",
+      query: `const { data, error } = await supabase.from('usuarios').select('*').limit(5);
+return { data, error };`
+    },
+    {
+      name: "Bases",
+      query: `const { data, error } = await supabase.from('bases').select('*').limit(5);
+return { data, error };`
+    },
+    {
+      name: "Manutenções",
+      query: `const { data, error } = await supabase.from('manutencoes').select('*').limit(5);
+return { data, error };`
+    },
+    {
+      name: "Oficinas",
+      query: `const { data, error } = await supabase.from('oficinas').select('*').limit(5);
+return { data, error };`
+    },
+    {
+      name: "Pneus",
+      query: `const { data, error } = await supabase.from('pneus').select('*').limit(5);
+return { data, error };`
+    },
+    {
+      name: "Multas",
+      query: `const { data, error } = await supabase.from('multas').select('*').limit(5);
+return { data, error };`
+    },
+    {
+      name: "Line Hall",
+      query: `const { data, error } = await supabase.from('line_hall').select('*').limit(5);
+return { data, error };`
+    },
+    {
+      name: "Estrutura das tabelas",
+      query: `// Esta consulta lista todas as colunas e seus tipos para todas as tabelas
+const { data, error } = await supabase
+  .from('information_schema.columns')
+  .select('table_name,column_name,data_type,is_nullable')
+  .eq('table_schema', 'public')
+  .order('table_name');
+return { data, error };`
+    },
+    {
+      name: "Tabelas e registros",
+      query: `// Esta consulta mostra todas as tabelas e quantos registros cada uma tem
+// Esta é uma consulta mais avançada usando SQL bruto
+const { data, error } = await supabase.rpc('contar_registros_por_tabela');
+return { data, error };`
+    },
+    {
+      name: "Info da conexão",
+      query: `// Esta consulta mostra informações sobre a conexão atual
+const authInfo = supabase.auth.session();
+const { data: connectionInfo, error: connectionError } = await supabase
+  .rpc('get_connection_info');
+
+return { 
+  auth: authInfo, 
+  connection: connectionInfo,
+  error: connectionError 
+};`
+    }
   ];
   
   if (!isAdmin) {
