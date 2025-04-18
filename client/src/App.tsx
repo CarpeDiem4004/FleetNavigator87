@@ -33,6 +33,7 @@ import PostoSorocaba from "@/pages/postos/Sorocaba";
 import HistoricoGeralPage from "@/pages/postos/HistoricoGeralPage";
 import HistoricoPatioPage from "@/pages/postos/HistoricoPatioPage";
 import SupabaseDiagnostico from "@/pages/diagnostico/SupabaseDiagnostico";
+import AdminUtils from "@/pages/AdminUtils";
 
 // Importação das novas páginas
 import FleetManagement from "@/pages/fleet-management";
@@ -104,6 +105,7 @@ function App() {
           <ProtectedRoute path="/postos/historico-geral" component={HistoricoGeralPage} />
           <ProtectedRoute path="/postos/historico-patio" component={HistoricoPatioPage} />
           <ProtectedRoute path="/diagnostico/supabase" component={SupabaseDiagnostico} />
+          <ProtectedRoute path="/admin/utils" component={AdminUtils} />
           
           {/* Rotas públicas para os postos de abastecimento - sem proteção e sem status de tanques */}
           <Route path="/posto/osasco/public">
