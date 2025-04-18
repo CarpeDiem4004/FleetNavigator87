@@ -14,7 +14,13 @@ import {
   TrafficCone, 
   Warehouse, 
   Users, 
-  LogOut
+  LogOut,
+  ClipboardList,
+  BarChart4,
+  Activity,
+  Timer,
+  ChevronsDown,
+  ShieldAlert
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -43,9 +49,26 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Bases', href: '/bases', icon: Warehouse },
     { name: 'Usuários', href: '/users', icon: Users },
   ];
+
+  // Itens específicos para Gestão de Frotas
+  const fleetManagementItems = [
+    { name: 'Gestão de Frotas', href: '/fleet-management', icon: Truck },
+    { name: 'Sistema de Manutenção', href: '/fleet-management/maintenance', icon: Wrench },
+    { name: 'Oficinas Credenciadas', href: '/fleet-management/workshops', icon: ClipboardList },
+    { name: 'Análise da Operação', href: '/fleet-management/operational-analysis', icon: BarChart4 },
+    { name: 'Visão Geral da Frota', href: '/fleet-management/fleet-overview', icon: Activity },
+    { name: 'Veículos Parados', href: '/fleet-management/downtime-analysis', icon: ChevronsDown },
+    { name: 'Segurança do Trabalho', href: '/work-safety', icon: ShieldAlert },
+  ];
+  
+  // Verifique se o usuário é da gestão de frotas
+  const isFleetUser = user.basename === "Gestão de Frotas" || user.baseId === 12;
+  
+  // Selecionando os itens de navegação apropriados
+  const navItemsBase = isFleetUser ? fleetManagementItems : allNavItems;
   
   // Filtrando itens de navegação com base nas permissões do usuário
-  const navItems = allNavItems.filter(item => hasPermission(item.href));
+  const navItems = navItemsBase.filter(item => hasPermission(item.href));
 
   const closeSidebar = () => {
     if (window.innerWidth < 768) {

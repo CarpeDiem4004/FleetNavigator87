@@ -126,14 +126,22 @@ export function useBasePermission(): BasePermissionHook {
       // Rotas acessíveis - removida a rota '/' (dashboard)
       const frotaRoutes = [
         '/gestao-de-frotas', 
-        '/fleet-management', 
-        '/maintenance', 
-        '/vehicles', 
-        '/refueling',
-        '/tires',
-        '/fines',
-        '/accidents',
-        '/work-safety'
+        '/fleet-management',                          // Página principal da Gestão de Frotas
+        '/fleet-management/maintenance',              // Sistema de manutenção
+        '/fleet-management/workshops',                // Oficinas credenciadas
+        '/fleet-management/operational-analysis',     // Análise da operação  
+        '/fleet-management/fleet-overview',           // Visão geral da frota
+        '/fleet-management/downtime-analysis',        // Dias de veículos parados em manutenção
+        '/fleet-management/downtime',                 // Alias para dias parados
+        '/fleet-management/operation',                // Alias para análise de operação
+        '/fleet-management/overview',                 // Alias para visão geral
+        '/maintenance',                               // Sistema de manutenção (rota antiga)
+        '/vehicles',                                  // Veículos
+        '/refueling',                                 // Abastecimentos
+        '/tires',                                     // Pneus
+        '/fines',                                     // Multas
+        '/accidents',                                 // Acidentes/Roubos
+        '/work-safety'                                // Segurança do Trabalho
       ];
       
       const hasAccess = frotaRoutes.includes(route);
