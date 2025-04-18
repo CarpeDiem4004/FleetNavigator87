@@ -12,7 +12,6 @@ import RefuelingNew from "@/pages/RefuelingNew";
 import FinesNew from "@/pages/FinesNew";
 import LineHallNew from "@/pages/LineHallNew";
 import UsersNew from "@/pages/UsersNew";
-import FleetManagementNew from "@/pages/FleetManagementNew";
 import Bases from "@/pages/Bases";
 import SignIn from "@/pages/SignIn";
 import RegisterNew from "@/pages/RegisterNew";
