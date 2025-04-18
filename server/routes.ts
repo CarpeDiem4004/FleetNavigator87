@@ -181,25 +181,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/vehicles", isAuthenticated, async (req, res) => {
     try {
+      console.log("POST /api/vehicles - Iniciando criação de veículo");
+      console.log("Dados recebidos:", req.body);
+      
       if (!req.user) {
+        console.log("Usuário não autenticado");
         return res.status(401).json({ message: "Unauthorized" });
       }
       
+      console.log("Usuário autenticado:", req.user.id, req.user.name, req.user.email, req.user.baseId);
+      
       const result = insertVehicleSchema.safeParse(req.body);
       if (!result.success) {
+        console.log("Dados inválidos:", result.error.format());
         return res.status(400).json({ message: "Invalid vehicle data", errors: result.error.format() });
       }
       
+      console.log("Dados validados com sucesso:", result.data);
+      
       // Check if user can create vehicle for this base
       if (req.user.role !== 'admin' && result.data.baseId !== req.user.baseId) {
+        console.log("Permissão negada: baseId do veículo não corresponde ao baseId do usuário");
         return res.status(403).json({ message: "Cannot create vehicle for different base" });
       }
       
+      console.log("Chamando storage.createVehicle");
       const newVehicle = await storage.createVehicle(result.data);
+      console.log("Veículo criado com sucesso:", newVehicle);
+      
       return res.status(201).json(newVehicle);
     } catch (error) {
       console.error("Error creating vehicle:", error);
-      return res.status(500).json({ message: "Server error" });
+      return res.status(500).json({ message: "Server error", error: String(error) });
     }
   });
   
