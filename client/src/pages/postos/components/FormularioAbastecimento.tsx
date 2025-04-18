@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -8,8 +8,8 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Fuel } from 'lucide-react';
-import { TabsContent } from '@/components/ui/tabs';
+import { Fuel, CheckCircle2 } from 'lucide-react';
+import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { insertData, checkConnection } from '@/lib/supabase-client';
 
 // Schema de validação para o formulário de abastecimento
@@ -38,6 +38,7 @@ interface FormularioAbastecimentoProps {
 export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = ({ postId }) => {
   const { toast } = useToast();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [registroSucesso, setRegistroSucesso] = useState(false);
   
   const form = useForm<AbastecimentoValues>({
     resolver: zodResolver(abastecimentoSchema),
@@ -105,15 +106,13 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         description: `Veículo ${data.placa} abastecido com sucesso.`,
       });
       
-      // Exibimos o toast de sucesso e resetamos o formulário sem redirecionar
-      // Isso permite que o usuário faça um novo registro imediatamente
-      setSuccessMessage('Abastecimento registrado com sucesso. Formulário resetado para um novo registro.');
+      // Mostra a tela de registro bem-sucedido com opções para o usuário
+      setRegistroSucesso(true);
       
-      // Limpa a mensagem de sucesso após 5 segundos
-      setTimeout(() => {
-        setSuccessMessage(null);
-      }, 5000);
+      // Exibimos o toast de sucesso
+      setSuccessMessage('Abastecimento registrado com sucesso!');
       
+      // Limpa o formulário 
       form.reset();
     } catch (error: any) {
       console.error('Erro ao registrar abastecimento:', error);
