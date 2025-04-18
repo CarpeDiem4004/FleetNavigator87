@@ -101,6 +101,7 @@ interface Maintenance {
   cost?: number;
   requestBaseId: number;
   requestBaseName?: string;
+  responsiblePerson?: string; // Campo para o responsável pela manutenção
   created_at: string;
   updated_at: string;
 }
@@ -174,7 +175,8 @@ export default function MaintenancePage() {
     expectedExitDate: '',
     status: 'pendente',
     cost: undefined,
-    requestBaseId: user?.baseId || 0
+    requestBaseId: user?.baseId || 0,
+    responsiblePerson: '' // Inicializar o campo de responsável
   });
 
   // Carregar bases
@@ -293,7 +295,7 @@ export default function MaintenancePage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.vehiclePlate || !formData.workshopId || !formData.entryDate || !formData.expectedExitDate) {
+    if (!formData.vehiclePlate || !formData.workshopId || !formData.entryDate || !formData.expectedExitDate || !formData.responsiblePerson) {
       toast({
         title: 'Dados incompletos',
         description: 'Por favor, preencha todos os campos obrigatórios',
@@ -345,7 +347,8 @@ export default function MaintenancePage() {
       expectedExitDate: '',
       status: 'pendente',
       cost: undefined,
-      requestBaseId: user?.baseId || 0
+      requestBaseId: user?.baseId || 0,
+      responsiblePerson: '' // Inicializar o campo de responsável
     });
     setIsOpen(true);
   };
@@ -549,6 +552,7 @@ export default function MaintenancePage() {
                         <TableHead>Entrada</TableHead>
                         <TableHead>Previsão</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead>Responsável</TableHead>
                         <TableHead>Base Solicitante</TableHead>
                         <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
@@ -590,6 +594,12 @@ export default function MaintenancePage() {
                           </TableCell>
                           <TableCell>
                             <StatusBadge status={maintenance.status} />
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <User className="h-4 w-4 mr-1 text-muted-foreground" />
+                              {maintenance.responsiblePerson || 'Não informado'}
+                            </div>
                           </TableCell>
                           <TableCell>
                             {getBaseName(maintenance.requestBaseId)}
@@ -773,6 +783,22 @@ export default function MaintenancePage() {
                     onChange={handleInputChange}
                     rows={3}
                     placeholder="Descreva o serviço a ser realizado"
+                    required
+                  />
+                </div>
+
+                {/* Responsável pela Manutenção */}
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="responsiblePerson">
+                    Responsável pela Manutenção <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="responsiblePerson"
+                    name="responsiblePerson"
+                    value={formData.responsiblePerson || ''}
+                    onChange={handleInputChange}
+                    className="h-10"
+                    placeholder="Nome do responsável pela manutenção"
                     required
                   />
                 </div>
