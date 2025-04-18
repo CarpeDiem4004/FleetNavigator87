@@ -759,8 +759,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Limpar os dados do Supabase também (se disponível)
       try {
         const fetch = await import("node-fetch");
+        
+        // Garantir que as variáveis de ambiente estão definidas
         const supabaseUrl = process.env.SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
-        const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
+        const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';
         
         // Lista de tabelas Supabase para limpar
         const supabaseTables = [
@@ -768,42 +770,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'movimentacoes_patio',
           'entradas_combustivel',
           'status_tanques',
+          'controle_tanques',
           'veiculos'
         ];
         
-        if (supabaseKey) {
-          console.log("Iniciando limpeza de dados do Supabase...");
-          
-          for (const table of supabaseTables) {
-            try {
-              console.log(`Limpando dados da tabela Supabase: ${table}`);
+        console.log("Iniciando limpeza de dados do Supabase via API REST...");
+        console.log(`URL Supabase: ${supabaseUrl}`);
+        console.log(`Chave disponível: ${supabaseKey ? 'Sim' : 'Não'}`);
+        
+        // Duas abordagens para limpar os dados - first try direct REST API
+        for (const table of supabaseTables) {
+          try {
+            console.log(`Tentando limpar dados da tabela Supabase: ${table} via REST API`);
+            
+            // Método 1: Usar API REST para limpar dados (DELETE sem WHERE = limpar tudo)
+            const response = await fetch.default(
+              `${supabaseUrl}/rest/v1/${table}?select=id`,
+              {
+                method: 'DELETE',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'apikey': supabaseKey,
+                  'Authorization': `Bearer ${supabaseKey}`,
+                  'Prefer': 'return=minimal' // Não retorna os registros apagados
+                }
+              }
+            );
+            
+            if (response.ok) {
+              console.log(`✅ Tabela ${table} limpa com sucesso no Supabase (REST API)`);
+            } else {
+              const errorText = await response.text();
+              console.error(`⚠️ Erro ao limpar tabela ${table} no Supabase via REST: ${errorText}`);
               
-              // Usar API REST para limpar dados (DELETE sem WHERE = limpar tudo)
-              const response = await fetch.default(
+              // Método 2: Se falhar o primeiro método, tenta limpar registro por registro
+              console.log(`Tentando abordagem alternativa para tabela ${table}...`);
+              
+              // Primeiro busca todos os registros
+              const getResponse = await fetch.default(
                 `${supabaseUrl}/rest/v1/${table}?select=id`,
                 {
-                  method: 'DELETE',
+                  method: 'GET',
                   headers: {
                     'Content-Type': 'application/json',
                     'apikey': supabaseKey,
-                    'Authorization': `Bearer ${supabaseKey}`,
-                    'Prefer': 'return=minimal' // Não retorna os registros apagados
+                    'Authorization': `Bearer ${supabaseKey}`
                   }
                 }
               );
               
-              if (response.ok) {
-                console.log(`Tabela ${table} limpa com sucesso no Supabase`);
+              if (getResponse.ok) {
+                const records = await getResponse.json();
+                console.log(`Encontrados ${records.length} registros na tabela ${table}`);
+                
+                // Deleta cada registro individualmente
+                if (records.length > 0) {
+                  for (const record of records) {
+                    const deleteResponse = await fetch.default(
+                      `${supabaseUrl}/rest/v1/${table}?id=eq.${record.id}`,
+                      {
+                        method: 'DELETE',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'apikey': supabaseKey,
+                          'Authorization': `Bearer ${supabaseKey}`,
+                          'Prefer': 'return=minimal'
+                        }
+                      }
+                    );
+                    
+                    if (deleteResponse.ok) {
+                      console.log(`Registro id=${record.id} excluído com sucesso da tabela ${table}`);
+                    } else {
+                      console.error(`Erro ao excluir registro id=${record.id} da tabela ${table}`);
+                    }
+                  }
+                }
               } else {
-                const errorText = await response.text();
-                console.error(`Erro ao limpar tabela ${table} no Supabase: ${errorText}`);
+                console.error(`⚠️ Não foi possível buscar registros da tabela ${table}`);
               }
-            } catch (err) {
-              console.error(`Erro ao processar tabela ${table} no Supabase: ${err}`);
             }
+          } catch (err) {
+            console.error(`⚠️ Erro ao processar tabela ${table} no Supabase: ${err}`);
           }
-        } else {
-          console.log("Chave do Supabase não disponível. Pulando limpeza do Supabase.");
         }
       } catch (supaError) {
         console.error("Erro ao limpar dados do Supabase:", supaError);

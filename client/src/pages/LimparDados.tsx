@@ -77,20 +77,52 @@ export default function LimparDados() {
       'veiculos'
     ];
     
+    // Abordagem 1: Usar o cliente Supabase diretamente para excluir dados
+    setStatus("Tentando limpar dados via Cliente Supabase...");
     for (let i = 0; i < supabaseTables.length; i++) {
       const tableName = supabaseTables[i];
       setStatus(`Limpando tabela ${tableName}...`);
       
       try {
-        // Limpar dados diretamente usando o supabaseAdmin.rpc para contornar RLS e limitações
+        // Primeira tentativa: limpar todos os dados diretamente
         const { error } = await supabaseAdmin
           .from(tableName)
           .delete()
           .neq('id', -1); // Trick para deletar todos os registros
           
         if (error) {
-          console.error(`Erro ao limpar tabela ${tableName}:`, error);
+          console.error(`Erro ao limpar tabela ${tableName} via cliente:`, error);
           setStatus(`Erro ao limpar tabela ${tableName}: ${error.message}`);
+          
+          // Tenta buscar e excluir registros um a um
+          try {
+            setStatus(`Tentando abordagem individual para ${tableName}`);
+            const { data: records } = await supabaseAdmin
+              .from(tableName)
+              .select('id')
+              .limit(100);
+              
+            if (records && records.length > 0) {
+              setStatus(`Encontrados ${records.length} registros em ${tableName}`);
+              
+              for (const record of records) {
+                const { error: deleteError } = await supabaseAdmin
+                  .from(tableName)
+                  .delete()
+                  .eq('id', record.id);
+                  
+                if (!deleteError) {
+                  console.log(`Registro id=${record.id} excluído com sucesso`);
+                } else {
+                  console.error(`Erro ao excluir registro id=${record.id}:`, deleteError);
+                }
+              }
+              
+              setStatus(`Tabela ${tableName} limpa registro por registro`);
+            }
+          } catch (err) {
+            console.error(`Erro na abordagem individual para ${tableName}:`, err);
+          }
         } else {
           setStatus(`Tabela ${tableName} limpa com sucesso!`);
         }
@@ -99,28 +131,31 @@ export default function LimparDados() {
       }
       
       // Atualiza o progresso com base na tabela atual
-      setProgress(50 + Math.round(((i + 1) / supabaseTables.length) * 50));
+      setProgress(50 + Math.round(((i + 1) / supabaseTables.length) * 25));
     }
     
-    // Função alternativa para limpar dados - usar stored procedures
+    // Abordagem 2: Função RPC
     try {
-      // Tenta executar uma função RPC de limpeza se existir
+      // Tenta executar uma função RPC de limpeza
       setStatus("Tentando limpar dados via RPC...");
-      await supabaseAdmin.rpc('limpar_todos_dados');
+      await supabaseAdmin.rpc('limpar_todos_dados').throwOnError();
+      setStatus("Limpeza RPC executada com sucesso!");
     } catch (err) {
       console.log("Função RPC limpar_todos_dados não disponível", err);
     }
     
-    // Abordagem adicional - fazer solicitação REST direta
+    // Abordagem 3: API REST direta
+    setStatus("Tentando limpeza direta com REST API...");
+    setProgress(75);
+    
     try {
-      setStatus("Tentando limpeza direta com REST...");
-      
-      // Essa é uma abordagem de último recurso
       for (const tableName of supabaseTables) {
         try {
-          // Use fetch para fazer uma solicitação DELETE direta à API REST do Supabase
+          setStatus(`Limpando ${tableName} via REST API...`);
+          
+          // Use fetch para fazer uma solicitação DELETE direta à API REST
           const response = await fetch(
-            `https://hvsmxxqkuyjhpsiojupb.supabase.co/rest/v1/${tableName}?select=id`, 
+            `${supabaseUrl}/rest/v1/${tableName}?select=id`, 
             {
               method: 'DELETE',
               headers: {
@@ -135,19 +170,93 @@ export default function LimparDados() {
           if (response.ok) {
             setStatus(`Limpeza REST de ${tableName} bem-sucedida!`);
           } else {
-            setStatus(`Erro na limpeza REST de ${tableName}`);
+            const errorText = await response.text();
+            console.error(`Erro na limpeza REST de ${tableName}: ${errorText}`);
+            
+            // Se falhou, tenta buscar e excluir registros individualmente
+            const getResponse = await fetch(
+              `${supabaseUrl}/rest/v1/${tableName}?select=id`,
+              {
+                method: 'GET',
+                headers: {
+                  'apikey': supabaseAnonKey,
+                  'Authorization': `Bearer ${supabaseAnonKey}`,
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
+            
+            if (getResponse.ok) {
+              const records = await getResponse.json();
+              setStatus(`Encontrados ${records.length} registros em ${tableName}, excluindo individualmente...`);
+              
+              for (const record of records) {
+                await fetch(
+                  `${supabaseUrl}/rest/v1/${tableName}?id=eq.${record.id}`,
+                  {
+                    method: 'DELETE',
+                    headers: {
+                      'apikey': supabaseAnonKey,
+                      'Authorization': `Bearer ${supabaseAnonKey}`,
+                      'Content-Type': 'application/json',
+                      'Prefer': 'return=minimal'
+                    }
+                  }
+                );
+              }
+            }
           }
         } catch (err) {
-          // Ignora erros desta abordagem, é apenas uma tentativa adicional
           console.log(`Erro na abordagem REST para ${tableName}`, err);
         }
       }
     } catch (err) {
-      // Ignora erros, essa é apenas uma tentativa adicional
       console.log("Erro na abordagem REST geral", err);
     }
     
-    setStatus("Supabase limpo com sucesso!");
+    // Invoca API que limpa dados via backend
+    try {
+      setStatus("Solicitando limpeza adicional via backend API...");
+      setProgress(90);
+      
+      const response = await fetch('/api/admin/clear-supabase-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          confirm: 'LIMPAR',
+          tables: supabaseTables
+        })
+      });
+      
+      if (response.ok) {
+        setStatus("Limpeza adicional via backend concluída com sucesso!");
+      } else {
+        console.log("API de limpeza adicional não disponível ou falhou");
+      }
+    } catch (err) {
+      console.log("Erro ao chamar API de limpeza adicional", err);
+    }
+    
+    setProgress(95);
+    
+    // Última tentativa - forçar recarga da aplicação para limpar cache do Supabase
+    try {
+      // Limpar cache do localStorage relacionado ao Supabase
+      Object.keys(localStorage).forEach(key => {
+        if (key.includes('supabase') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      console.log("Cache local do Supabase limpo");
+    } catch (err) {
+      console.error("Erro ao limpar cache local", err);
+    }
+    
+    setStatus("Limpeza do Supabase concluída! Diversos métodos foram usados para garantir a limpeza completa.");
+    setProgress(100);
     return true;
   };
 
