@@ -94,6 +94,220 @@ async function migrate() {
       console.log('Coluna created_at já existe.');
     }
     
+    // Verificar se a tabela workshops existe
+    const hasWorkshopsTable = await db.execute(sql`
+      SELECT EXISTS (
+        SELECT 1 
+        FROM information_schema.tables 
+        WHERE table_name = 'workshops'
+      );
+    `);
+    
+    const workshopsTableExists = hasWorkshopsTable.rows[0].exists;
+    
+    if (!workshopsTableExists) {
+      console.log('Criando tabela workshops...');
+      await db.execute(sql`
+        CREATE TABLE workshops (
+          id SERIAL PRIMARY KEY,
+          name TEXT NOT NULL,
+          address TEXT,
+          phone TEXT,
+          contact_person TEXT,
+          is_specialized BOOLEAN DEFAULT FALSE,
+          specialties TEXT,
+          observations TEXT,
+          is_active BOOLEAN DEFAULT TRUE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      console.log('Tabela workshops criada com sucesso.');
+      
+      // Inserir algumas oficinas iniciais
+      await db.execute(sql`
+        INSERT INTO workshops (name, address, phone, is_active)
+        VALUES 
+          ('Oficina Central', 'Av. das Oficinas, 1000, São Paulo', '(11) 3333-4444', TRUE),
+          ('Auto Mecânica Expressa', 'Rua dos Mecânicos, 250, Guarulhos', '(11) 2222-8888', TRUE),
+          ('Diesel Service', 'Rodovia Anhanguera, km 15, Osasco', '(11) 4444-7777', TRUE);
+      `);
+      console.log('Oficinas iniciais inseridas com sucesso.');
+    } else {
+      console.log('Tabela workshops já existe.');
+    }
+    
+    // Verificar se a coluna workshop_id existe na tabela maintenance
+    const maintenanceTableExists = await db.execute(sql`
+      SELECT EXISTS (
+        SELECT 1 
+        FROM information_schema.tables 
+        WHERE table_name = 'maintenance'
+      );
+    `);
+    
+    if (!maintenanceTableExists.rows[0].exists) {
+      // Se a tabela maintenance não existe, criá-la com a nova estrutura
+      console.log('Verificando tipos de enumeração existentes...');
+      // Verificar se os tipos já existem
+      const maintenanceTypeExists = await db.execute(sql`
+        SELECT EXISTS (
+          SELECT 1 FROM pg_type WHERE typname = 'maintenance_type'
+        );
+      `);
+      
+      const maintenanceStatusExists = await db.execute(sql`
+        SELECT EXISTS (
+          SELECT 1 FROM pg_type WHERE typname = 'maintenance_status'
+        );
+      `);
+      
+      if (!maintenanceTypeExists.rows[0].exists) {
+        console.log('Criando tipo maintenance_type...');
+        await db.execute(sql`
+          CREATE TYPE maintenance_type AS ENUM ('preventiva', 'corretiva');
+        `);
+      } else {
+        console.log('Tipo maintenance_type já existe.');
+      }
+      
+      if (!maintenanceStatusExists.rows[0].exists) {
+        console.log('Criando tipo maintenance_status...');
+        await db.execute(sql`
+          CREATE TYPE maintenance_status AS ENUM ('pendente', 'aguardando_orcamento', 'em_andamento', 'concluida', 'cancelada');
+        `);
+      } else {
+        console.log('Tipo maintenance_status já existe.');
+        try {
+          // Tentando remover o tipo (pode falhar se estiver em uso)
+          console.log('Tentando remover e recriar o tipo maintenance_status...');
+          await db.execute(sql`
+            DROP TYPE maintenance_status;
+            CREATE TYPE maintenance_status AS ENUM ('pendente', 'aguardando_orcamento', 'em_andamento', 'concluida', 'cancelada');
+          `);
+        } catch (error) {
+          console.log('Não foi possível remover o tipo maintenance_status, provavelmente está em uso. Mantendo o tipo existente.');
+        }
+      }
+      
+      console.log('Criando tabela maintenance com a nova estrutura...');
+      await db.execute(sql`
+        CREATE TABLE maintenance (
+          id SERIAL PRIMARY KEY,
+          vehicle_plate TEXT NOT NULL REFERENCES vehicles(plate),
+          workshop_id INTEGER NOT NULL REFERENCES workshops(id),
+          request_base_id INTEGER NOT NULL REFERENCES bases(id),
+          entry_date DATE NOT NULL,
+          expected_exit_date DATE,
+          actual_exit_date DATE,
+          status maintenance_status NOT NULL DEFAULT 'pendente',
+          maintenance_type maintenance_type NOT NULL,
+          cost DECIMAL(10, 2),
+          description TEXT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      console.log('Tabela maintenance criada com a nova estrutura.');
+    } else {
+      // Se a tabela já existe, verificar se a coluna workshop_id existe
+      const hasWorkshopIdColumn = await db.execute(sql`
+        SELECT EXISTS (
+          SELECT 1 
+          FROM information_schema.columns 
+          WHERE table_name = 'maintenance' AND column_name = 'workshop_id'
+        );
+      `);
+      
+      if (!hasWorkshopIdColumn.rows[0].exists) {
+        // Verificar se a tabela de backup já existe
+        const backupExists = await db.execute(sql`
+          SELECT EXISTS (
+            SELECT 1 
+            FROM information_schema.tables 
+            WHERE table_name = 'maintenance_backup'
+          );
+        `);
+        
+        if (!backupExists.rows[0].exists) {
+          console.log('Criando backup da tabela maintenance antiga...');
+          await db.execute(sql`
+            CREATE TABLE maintenance_backup AS SELECT * FROM maintenance;
+          `);
+        } else {
+          console.log('Backup da tabela maintenance já existe, usando backup existente...');
+        }
+        
+        console.log('Verificando tipos de enumeração existentes...');
+        // Verificar se os tipos já existem
+        const maintenanceTypeExists = await db.execute(sql`
+          SELECT EXISTS (
+            SELECT 1 FROM pg_type WHERE typname = 'maintenance_type'
+          );
+        `);
+        
+        const maintenanceStatusExists = await db.execute(sql`
+          SELECT EXISTS (
+            SELECT 1 FROM pg_type WHERE typname = 'maintenance_status'
+          );
+        `);
+        
+        console.log('Removendo a tabela maintenance antiga...');
+        await db.execute(sql`
+          DROP TABLE maintenance;
+        `);
+        
+        if (!maintenanceTypeExists.rows[0].exists) {
+          console.log('Criando tipo maintenance_type...');
+          await db.execute(sql`
+            CREATE TYPE maintenance_type AS ENUM ('preventiva', 'corretiva');
+          `);
+        } else {
+          console.log('Tipo maintenance_type já existe.');
+        }
+        
+        if (!maintenanceStatusExists.rows[0].exists) {
+          console.log('Criando tipo maintenance_status...');
+          await db.execute(sql`
+            CREATE TYPE maintenance_status AS ENUM ('pendente', 'aguardando_orcamento', 'em_andamento', 'concluida', 'cancelada');
+          `);
+        } else {
+          console.log('Tipo maintenance_status já existe.');
+          try {
+            // Tentando remover o tipo (pode falhar se estiver em uso)
+            console.log('Tentando remover e recriar o tipo maintenance_status...');
+            await db.execute(sql`
+              DROP TYPE maintenance_status;
+              CREATE TYPE maintenance_status AS ENUM ('pendente', 'aguardando_orcamento', 'em_andamento', 'concluida', 'cancelada');
+            `);
+          } catch (error) {
+            console.log('Não foi possível remover o tipo maintenance_status, provavelmente está em uso. Mantendo o tipo existente.');
+          }
+        }
+        
+        console.log('Criando tabela maintenance com a nova estrutura...');
+        await db.execute(sql`
+          CREATE TABLE maintenance (
+            id SERIAL PRIMARY KEY,
+            vehicle_plate TEXT NOT NULL REFERENCES vehicles(plate),
+            workshop_id INTEGER NOT NULL REFERENCES workshops(id),
+            request_base_id INTEGER NOT NULL REFERENCES bases(id),
+            entry_date DATE NOT NULL,
+            expected_exit_date DATE,
+            actual_exit_date DATE,
+            status maintenance_status NOT NULL DEFAULT 'pendente',
+            maintenance_type maintenance_type NOT NULL,
+            cost DECIMAL(10, 2),
+            description TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+        `);
+        console.log('Tabela maintenance recriada com a nova estrutura.');
+      } else {
+        console.log('Tabela maintenance já está atualizada com a nova estrutura.');
+      }
+    }
+    
     console.log('Migração concluída com sucesso!');
   } catch (error) {
     console.error('Erro durante a migração:', error);
