@@ -453,14 +453,14 @@ export default function MaintenancePage() {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Select 
-                    value={filterBaseId?.toString() || ""}
-                    onValueChange={(value) => setFilterBaseId(value ? parseInt(value) : null)}
+                    value={filterBaseId?.toString() || "all"}
+                    onValueChange={(value) => setFilterBaseId(value !== "all" ? parseInt(value) : null)}
                   >
                     <SelectTrigger className="w-[180px]">
                       <SelectValue placeholder="Filtrar por base" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todas as bases</SelectItem>
+                      <SelectItem value="all">Todas as bases</SelectItem>
                       {bases.map((base) => (
                         <SelectItem key={base.id} value={base.id.toString()}>
                           {base.name}
@@ -771,33 +771,35 @@ export default function MaintenancePage() {
                 </div>
               </div>
               <div>
-                <Label htmlFor="new-status" className="text-right">
-                  Novo Status
+                <Label className="text-right mb-2 block">
+                  Selecione o Novo Status
                 </Label>
-                <Select
-                  value={selectedStatus}
-                  onValueChange={(value) => {
-                    // Garantir que o valor seja um dos tipos válidos de status de manutenção
-                    setSelectedStatus(value as Maintenance['status']);
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o novo status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {selectedMaintenance && getNextAvailableStatuses(selectedMaintenance.status).map(status => (
-                      <SelectItem key={status} value={status}>
+                <div className="grid grid-cols-1 gap-2">
+                  {selectedMaintenance && getNextAvailableStatuses(selectedMaintenance.status).map(status => (
+                    <Button
+                      key={status}
+                      type="button"
+                      variant={selectedStatus === status ? "default" : "outline"}
+                      className="justify-start"
+                      onClick={() => setSelectedStatus(status)}
+                    >
+                      <div className="flex items-center">
+                        {status === 'aguardando_orcamento' && <FileSpreadsheet className="w-4 h-4 mr-2" />}
+                        {status === 'em_andamento' && <Wrench className="w-4 h-4 mr-2" />}
+                        {status === 'concluida' && <CheckCircle2 className="w-4 h-4 mr-2" />}
+                        {status === 'cancelada' && <XCircle className="w-4 h-4 mr-2" />}
+                        {status === 'pendente' && <Clock className="w-4 h-4 mr-2" />}
                         {status === 'pendente' && 'Pendente'}
                         {status === 'aguardando_orcamento' && 'Aguardando Orçamento'}
                         {status === 'em_andamento' && 'Em Andamento'}
                         {status === 'concluida' && 'Concluída'}
                         {status === 'cancelada' && 'Cancelada'}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      </div>
+                    </Button>
+                  ))}
+                </div>
                 {selectedStatus === 'cancelada' && (
-                  <p className="text-xs text-red-500 mt-1">
+                  <p className="text-xs text-red-500 mt-2">
                     <AlertTriangle className="h-3 w-3 inline mr-1" />
                     Atenção: Cancelar uma manutenção não pode ser desfeito.
                   </p>
