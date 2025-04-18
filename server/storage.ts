@@ -7,7 +7,7 @@ import {
   type Workshop, type InsertWorkshop
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, like, desc } from "drizzle-orm";
+import { eq, and, like, desc, sql } from "drizzle-orm";
 
 // Define the storage interface with CRUD operations
 export interface IStorage {
@@ -265,7 +265,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(maintenance.requestBaseId, baseId),
-          eq(maintenance.status, status)
+          sql`${maintenance.status}::text = ${status}`
         )
       )
       .orderBy(desc(maintenance.entryDate));
@@ -302,7 +302,8 @@ export class DatabaseStorage implements IStorage {
     
     // Se status for "concluida", adicionar data de saída real
     if (status === 'concluida' && !currentMaintenance.actualExitDate) {
-      updateData.actualExitDate = new Date();
+      // Converter para string no formato ISO para evitar problemas de tipo
+      updateData.actualExitDate = new Date().toISOString().split('T')[0];
       
       // Atualizar o status do veículo para em_operacao
       await db.update(vehicles)
@@ -390,8 +391,8 @@ export class DatabaseStorage implements IStorage {
   
   // Refueling operations
   async getRefueling(id: number): Promise<Refueling | undefined> {
-    const [refueling] = await db.select().from(refueling).where(eq(refueling.id, id));
-    return refueling || undefined;
+    const [refuelingRecord] = await db.select().from(refueling).where(eq(refueling.id, id));
+    return refuelingRecord || undefined;
   }
 
   async getRefuelingByVehicle(vehiclePlate: string): Promise<Refueling[]> {
@@ -462,8 +463,8 @@ export class DatabaseStorage implements IStorage {
   
   // LineHall operations
   async getLineHall(id: number): Promise<LineHall | undefined> {
-    const [lineHall] = await db.select().from(lineHall).where(eq(lineHall.id, id));
-    return lineHall || undefined;
+    const [lineHallRecord] = await db.select().from(lineHall).where(eq(lineHall.id, id));
+    return lineHallRecord || undefined;
   }
 
   async getAllLineHall(): Promise<LineHall[]> {
