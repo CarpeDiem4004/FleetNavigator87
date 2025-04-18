@@ -44,8 +44,24 @@ const baseRouteMapping = {
   'line hall': ['/line-hall'],
   'multas': ['/multas', '/fines'],
   'pneus': ['/pneus', '/tires'],
-  'gestão de frotas': ['/gestao-de-frotas', '/fleet-management', '/maintenance'],
-  'frota': ['/gestao-de-frotas', '/fleet-management', '/maintenance']
+  'gestão de frotas': [
+    '/gestao-de-frotas', 
+    '/fleet-management', 
+    '/maintenance', 
+    '/vehicles', 
+    '/refueling',
+    '/tires',
+    '/fines'
+  ],
+  'frota': [
+    '/gestao-de-frotas', 
+    '/fleet-management', 
+    '/maintenance', 
+    '/vehicles', 
+    '/refueling',
+    '/tires',
+    '/fines'
+  ]
 };
 
 // Rotas básicas que todos os usuários têm acesso (exceto os que têm base específica)
@@ -94,6 +110,22 @@ export function useBasePermission(): BasePermissionHook {
       // Se o usuário for Line Hall, só mostra Line Hall no menu
       console.log("Verificando permissões do usuário Line Hall para rota:", route, user.basename, user.baseId);
       return route === '/line-hall';
+    }
+    
+    // Gestão de Frotas - permite acesso a todas as rotas relacionadas a frotas
+    if (user.basename === "Gestão de Frotas" || user.baseId === 12) {
+      console.log("Verificando permissões do usuário Gestão de Frotas para rota:", route, user.basename, user.baseId);
+      const frotaRoutes = [
+        '/', 
+        '/gestao-de-frotas', 
+        '/fleet-management', 
+        '/maintenance', 
+        '/vehicles', 
+        '/refueling',
+        '/tires',
+        '/fines'
+      ];
+      return frotaRoutes.includes(route);
     }
     
     // Verificar se o usuário tem uma base associada e se a rota corresponde a essa base
