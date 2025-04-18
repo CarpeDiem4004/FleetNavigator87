@@ -33,6 +33,7 @@ import PostoSorocaba from "@/pages/postos/Sorocaba";
 import HistoricoGeralPage from "@/pages/postos/HistoricoGeralPage";
 import HistoricoPatioPage from "@/pages/postos/HistoricoPatioPage";
 import SupabaseDiagnostico from "@/pages/diagnostico/SupabaseDiagnostico";
+import SupabaseConsole from "@/pages/diagnostico/SupabaseConsole";
 import ApiTester from "@/pages/diagnostico/ApiTester";
 import AdminUtils from "@/pages/AdminUtils";
 import LimparDados from "@/pages/LimparDados";
@@ -107,6 +108,7 @@ function App() {
           <ProtectedRoute path="/postos/historico-geral" component={HistoricoGeralPage} />
           <ProtectedRoute path="/postos/historico-patio" component={HistoricoPatioPage} />
           <ProtectedRoute path="/diagnostico/supabase" component={SupabaseDiagnostico} />
+          <ProtectedRoute path="/diagnostico/supabase-console" component={SupabaseConsole} />
           <ProtectedRoute path="/diagnostico/api-tester" component={ApiTester} />
           <ProtectedRoute path="/admin/utils" component={AdminUtils} />
           <ProtectedRoute path="/limpar-dados" component={LimparDados} />

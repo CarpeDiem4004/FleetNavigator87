@@ -144,7 +144,15 @@ export default function SupabaseDiagnostico() {
   return (
     <MainLayoutSimple>
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">Diagnóstico de Conexão - Supabase</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold">Diagnóstico de Conexão - Supabase</h1>
+          <Button 
+            variant="default" 
+            onClick={() => window.location.href = '/diagnostico/supabase-console'}
+          >
+            Abrir Console Supabase
+          </Button>
+        </div>
         
         <Tabs defaultValue="ambos" className="mb-6">
           <TabsList className="mb-4">
