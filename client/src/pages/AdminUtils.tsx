@@ -39,7 +39,7 @@ const AdminUtils = () => {
     }
 
     const confirmacao = window.confirm(
-      'ATENÇÃO: Esta operação irá limpar TODOS os dados de todos os postos do sistema. ' +
+      'ATENÇÃO: Esta operação irá limpar TODOS os dados dos postos do sistema. ' +
       'Esta ação é irreversível e removerá todos os registros de abastecimentos, ' +
       'recebimentos, controle de pátio e outras informações. Deseja continuar?'
     );
