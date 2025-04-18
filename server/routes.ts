@@ -660,6 +660,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Admin utility routes
   // Rota específica para limpar os dados do Supabase
+  // GET para documentação (sem autenticação)
+  app.get('/api/admin/clear-supabase-data', (req, res) => {
+    return res.status(200).json({
+      message: "Esta API requer uma requisição POST com parâmetro 'confirm' igual a 'LIMPAR'",
+      usage: {
+        method: "POST",
+        contentType: "application/json",
+        body: {
+          confirm: "LIMPAR", 
+          tables: ["lista_opcional_de_tabelas"]
+        }
+      },
+      description: "Esta rota permite limpar dados específicos no Supabase quando a limpeza normal não funciona corretamente"
+    });
+  });
+  
+  // POST para executar a limpeza
   app.post('/api/admin/clear-supabase-data', isAdmin, async (req, res) => {
     try {
       const { confirm, tables } = req.body;
