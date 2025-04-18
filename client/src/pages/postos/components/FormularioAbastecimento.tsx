@@ -139,6 +139,23 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     }
   }
 
+  // Função para lidar com a navegação entre abas na página principal
+  const handleVerHistorico = () => {
+    // Este script vai rolar a página para a seção de histórico
+    const historicosSection = document.getElementById("historicos-section");
+    if (historicosSection) {
+      historicosSection.scrollIntoView({ behavior: "smooth" });
+    }
+    // Resetamos o estado para permitir novos registros
+    setRegistroSucesso(false);
+  };
+  
+  const handleNovoRegistro = () => {
+    // Resetamos o estado para permitir um novo registro
+    setRegistroSucesso(false);
+    setSuccessMessage(null);
+  };
+
   return (
     <TabsContent value="abastecimento" className="mt-4">
       <Card>
@@ -152,20 +169,45 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {successMessage && (
-                <div className="col-span-full mb-4">
-                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-4 text-sm text-green-800 dark:text-green-400">
-                    <div className="flex items-center">
-                      <svg className="h-4 w-4 mr-2 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                        <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
-                      </svg>
-                      {successMessage}
+          {registroSucesso ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-full p-6">
+                <CheckCircle2 className="h-16 w-16 text-green-500" />
+              </div>
+              <h2 className="text-2xl font-bold mb-2 text-center">Abastecimento Registrado com Sucesso!</h2>
+              <p className="text-muted-foreground mb-6 text-center max-w-md">
+                O abastecimento foi registrado no sistema. O que você deseja fazer agora?
+              </p>
+              <div className="flex flex-col md:flex-row gap-4 mt-2">
+                <Button 
+                  onClick={handleVerHistorico} 
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  Ver Histórico de Abastecimentos
+                </Button>
+                <Button 
+                  onClick={handleNovoRegistro} 
+                  variant="outline"
+                >
+                  Registrar Novo Abastecimento
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                {successMessage && (
+                  <div className="col-span-full mb-4">
+                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-4 text-sm text-green-800 dark:text-green-400">
+                      <div className="flex items-center">
+                        <svg className="h-4 w-4 mr-2 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                          <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+                        </svg>
+                        {successMessage}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
@@ -334,6 +376,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               </div>
             </form>
           </Form>
+        )}
         </CardContent>
         <CardFooter className="flex justify-between border-t pt-4 text-sm text-muted-foreground">
           <p>Data e hora serão registradas automaticamente.</p>

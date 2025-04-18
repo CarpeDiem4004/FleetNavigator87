@@ -78,7 +78,7 @@ export const PostoLayout: React.FC<PostoLayoutProps> = ({ id, nomePosto }) => {
         </div>
         
         {/* Históricos */}
-        <div>
+        <div id="historicos-section">
           <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
             <History className="h-5 w-5" />
             Históricos
