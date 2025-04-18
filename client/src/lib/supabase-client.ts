@@ -1,287 +1,263 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// URL do Supabase
+// Chaves de API Supabase
 export const supabaseUrl = 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
-
-// Chave anônima para autenticação e operações permitidas pelo RLS
 export const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';
 
-// Chave de serviço para operações administrativas (contorna RLS)
-// NOTA: A chave de serviço está inválida, então estamos usando temporariamente a chave anônima 
-// até que uma chave de serviço válida seja fornecida
-export const supabaseServiceKey = supabaseAnonKey; // Usando a mesma chave temporariamente
-
-// Cliente Supabase padrão com chave anônima (para autenticação e operações com RLS)
+// Cliente Supabase para uso anônimo (geral)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Cliente Supabase com chave "de serviço" (temporariamente usando a chave anônima)
-// Importante: isso NÃO vai contornar as políticas de RLS até que uma chave de serviço válida seja usada
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+// Cliente Supabase para operações administrativas (quando disponível)
+// Para ser inicializado quando necessário, por exemplo
+// `supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);`
+export let supabaseAdmin: SupabaseClient | null = null;
 
-/**
- * Insere dados em uma tabela Supabase usando o cliente administrativo (contorna RLS)
- * @param table Nome da tabela
- * @param data Dados a serem inseridos
- * @returns Resultado da operação
- */
-export async function insertData(table: string, data: any) {
-  const timestamp = new Date().getTime();
-  
+// Inicializa cliente admin se a chave de serviço estiver disponível
+// No ambiente do cliente, usamos import.meta.env ao invés de process.env
+if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_SERVICE_KEY) {
+  supabaseAdmin = createClient(
+    supabaseUrl,
+    import.meta.env.VITE_SUPABASE_SERVICE_KEY
+  );
+}
+
+// Função para buscar registros de uma tabela Supabase
+export async function fetchRecords(table: string) {
   try {
-    console.log(`[Supabase] Inserindo dados em ${table}:`, data);
+    const { data, error } = await supabase
+      .from(table)
+      .select('*');
     
-    const { data: result, error } = await supabaseAdmin
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error(`Erro ao buscar registros da tabela ${table}:`, error);
+    return [];
+  }
+}
+
+// Função para excluir um registro específico de uma tabela Supabase
+export async function deleteRecord(table: string, id: number) {
+  try {
+    const { error } = await supabase
+      .from(table)
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error(`Erro ao excluir registro id=${id} da tabela ${table}:`, error);
+    return false;
+  }
+}
+
+// Função para excluir todos os registros ou um conjunto específico de registros de uma tabela Supabase
+export async function deleteRecords(table: string, ids?: number[]) {
+  try {
+    // Se recebemos uma lista de IDs, exclui apenas esses registros
+    if (ids && ids.length > 0) {
+      const { error } = await supabase
+        .from(table)
+        .delete()
+        .in('id', ids);
+      
+      if (error) throw error;
+      return true;
+    }
+    
+    // Caso contrário, tenta excluir todos os registros
+    // Primeiro tentamos usar o cliente administrativo se disponível
+    if (supabaseAdmin) {
+      const { error } = await supabaseAdmin
+        .from(table)
+        .delete()
+        .neq('id', -1); // Truque para deletar todos (já que não existe .delete() sem where)
+      
+      if (error) throw error;
+      return true;
+    } else {
+      // Fallback para o cliente anônimo com permissões limitadas
+      const { error } = await supabase
+        .from(table)
+        .delete()
+        .neq('id', -1);
+      
+      if (error) throw error;
+      return true;
+    }
+  } catch (error) {
+    console.error(`Erro ao excluir registros da tabela ${table}:`, error);
+    return false;
+  }
+}
+
+// Função para inserir um registro em uma tabela Supabase
+export async function insertRecord(table: string, data: any) {
+  try {
+    const { data: result, error } = await supabase
       .from(table)
       .insert(data)
       .select();
     
-    if (error) {
-      console.error(`[Supabase] Erro ao inserir em ${table}:`, error);
-      throw new Error(`Erro ao inserir dados: ${error.message}`);
-    }
-    
-    console.log(`[Supabase] Dados inseridos com sucesso em ${table}:`, result);
-    return result;
-  } catch (error: any) {
-    console.error(`[Supabase] Exceção ao inserir em ${table}:`, error);
-    throw new Error(`Falha ao inserir dados: ${error.message}`);
+    if (error) throw error;
+    return result?.[0] || null;
+  } catch (error) {
+    console.error(`Erro ao inserir registro na tabela ${table}:`, error);
+    return null;
   }
 }
 
-/**
- * Busca dados de uma tabela Supabase usando o cliente administrativo (contorna RLS)
- * Para compatibilidade com código existente, esta função também está disponível como fetchRecords
- * @param table Nome da tabela
- * @param query Objeto de consulta (opcional)
- * @returns Dados retornados
- */
-export async function fetchData(table: string, query?: any) {
-  try {
-    console.log(`[Supabase] Buscando dados de ${table}`);
-    
-    let queryBuilder = supabaseAdmin
-      .from(table)
-      .select();
-    
-    // Aplica filtros se existirem
-    if (query) {
-      if (query.equals) {
-        Object.entries(query.equals).forEach(([key, value]) => {
-          queryBuilder = queryBuilder.eq(key, value);
-        });
-      }
-      
-      if (query.order) {
-        Object.entries(query.order).forEach(([column, direction]) => {
-          queryBuilder = queryBuilder.order(column, { ascending: direction === 'asc' });
-        });
-      }
-      
-      if (query.limit) {
-        queryBuilder = queryBuilder.limit(query.limit);
-      }
-    }
-    
-    const { data, error } = await queryBuilder;
-    
-    if (error) {
-      console.error(`[Supabase] Erro ao buscar dados de ${table}:`, error);
-      throw new Error(`Erro ao buscar dados: ${error.message}`);
-    }
-    
-    console.log(`[Supabase] Dados recuperados de ${table}: ${data?.length} registros`);
-    return data || [];
-  } catch (error: any) {
-    console.error(`[Supabase] Exceção ao buscar dados de ${table}:`, error);
-    throw new Error(`Falha ao buscar dados: ${error.message}`);
-  }
+// Alias da função insertRecord para compatibilidade com código existente
+export async function insertData(table: string, data: any) {
+  return insertRecord(table, data);
 }
 
-/**
- * Atualiza dados em uma tabela Supabase usando o cliente administrativo (contorna RLS)
- * @param table Nome da tabela
- * @param id ID do registro a ser atualizado
- * @param data Dados atualizados
- * @returns Resultado da operação
- */
+// Função para atualizar um registro em uma tabela Supabase
 export async function updateData(table: string, id: number, data: any) {
   try {
-    console.log(`[Supabase] Atualizando dados em ${table} com ID ${id}:`, data);
-    
-    const { data: result, error } = await supabaseAdmin
+    const { data: result, error } = await supabase
       .from(table)
       .update(data)
       .eq('id', id)
       .select();
     
-    if (error) {
-      console.error(`[Supabase] Erro ao atualizar em ${table}:`, error);
-      throw new Error(`Erro ao atualizar dados: ${error.message}`);
-    }
-    
-    console.log(`[Supabase] Dados atualizados com sucesso em ${table}:`, result);
-    return result;
-  } catch (error: any) {
-    console.error(`[Supabase] Exceção ao atualizar em ${table}:`, error);
-    throw new Error(`Falha ao atualizar dados: ${error.message}`);
+    if (error) throw error;
+    return result?.[0] || null;
+  } catch (error) {
+    console.error(`Erro ao atualizar registro na tabela ${table}:`, error);
+    return null;
   }
 }
 
-/**
- * Verifica se a conexão com o Supabase está funcionando
- * @returns true se a conexão estiver funcionando, false caso contrário
- */
-export async function checkConnection(): Promise<boolean> {
+// Verifica se a conexão com o Supabase está funcionando
+export async function checkConnection() {
   try {
-    // Tenta buscar um registro de uma tabela existente
-    const { data, error } = await supabaseAdmin
-      .from('controle_tanques')
-      .select()
-      .limit(1);
+    const { data, error } = await supabase
+      .from('status_tanques')
+      .select('count(*)', { count: 'exact', head: true });
     
-    if (error) {
-      console.error('[Supabase] Erro ao verificar conexão:', error);
-      return false;
-    }
-    
-    console.log('[Supabase] Conexão verificada com sucesso');
-    return true;
-  } catch (error) {
-    console.error('[Supabase] Exceção ao verificar conexão:', error);
+    return !error;
+  } catch (e) {
+    console.error("Erro ao verificar conexão com Supabase:", e);
     return false;
   }
 }
 
-/**
- * Verifica todas as conexões com o Supabase testando acesso a diversas tabelas
- * @returns Objeto com os resultados de cada teste
- */
-export async function checkAllConnections(): Promise<{ [key: string]: boolean }> {
-  const results: { [key: string]: boolean } = {};
+// Função para testar as conexões com o Supabase
+export async function checkAllConnections() {
+  const results: Record<string, boolean> = {};
+  
+  // Teste 1: Conexão básica com Supabase
+  try {
+    const { data, error } = await supabase
+      .from('status_tanques')
+      .select('count(*)', { count: 'exact', head: true });
+    
+    results.baseConnection = !error;
+  } catch (e) {
+    results.baseConnection = false;
+  }
+  
+  // Teste 2: Permissões de leitura
+  try {
+    const { data, error } = await supabase
+      .from('status_tanques')
+      .select('*')
+      .limit(1);
+    
+    results.readPermission = !error;
+  } catch (e) {
+    results.readPermission = false;
+  }
+  
+  // Teste 3: Permissões de escrita (teste com insert e delete)
+  try {
+    // Inserir um registro temporário
+    const testRecord = {
+      posto_id: 99,
+      diesel_capacidade: 1000,
+      diesel_nivel: 500,
+      arla_capacidade: 100,
+      arla_nivel: 50,
+      ultima_atualizacao: new Date().toISOString(),
+      teste_diagnostico: true
+    };
+    
+    const { data: insertData, error: insertError } = await supabase
+      .from('status_tanques')
+      .insert(testRecord)
+      .select();
+    
+    if (insertError) {
+      results.writePermission = false;
+    } else if (insertData && insertData.length > 0) {
+      // Agora tentar excluir o registro criado
+      const id = insertData[0].id;
+      
+      const { error: deleteError } = await supabase
+        .from('status_tanques')
+        .delete()
+        .eq('id', id);
+      
+      results.writePermission = !deleteError;
+    } else {
+      results.writePermission = false;
+    }
+  } catch (e) {
+    results.writePermission = false;
+  }
+  
+  // Teste 4: Tabelas específicas existem e são acessíveis
   const tables = [
-    'controle_tanques',
-    'abastecimentos_postos',
+    'status_tanques', 
+    'abastecimentos_postos', 
     'movimentacoes_patio',
-    'status_tanques',
     'entradas_combustivel',
+    'controle_tanques',
     'veiculos'
   ];
   
-  console.log('[Supabase] Iniciando verificação completa de todas as conexões...');
-  
   for (const table of tables) {
     try {
-      console.log(`[Supabase] Testando conexão com tabela ${table}...`);
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await supabase
         .from(table)
-        .select('id')
-        .limit(1);
+        .select('count(*)', { count: 'exact', head: true });
       
-      if (error) {
-        console.error(`[Supabase] Erro ao conectar com tabela ${table}:`, error);
-        results[table] = false;
-      } else {
-        console.log(`[Supabase] Conexão com tabela ${table} bem-sucedida`);
-        results[table] = true;
-      }
-    } catch (error) {
-      console.error(`[Supabase] Exceção ao conectar com tabela ${table}:`, error);
-      results[table] = false;
+      results[`table_${table}`] = !error;
+    } catch (e) {
+      results[`table_${table}`] = false;
     }
   }
   
-  // Teste se consegue executar RPC
+  // Teste 5: Testar funções RPC (se houver)
   try {
-    console.log('[Supabase] Testando conexão RPC...');
-    const { data, error } = await supabaseAdmin.rpc('version');
-    results['rpc'] = !error;
-    if (error) {
-      console.error('[Supabase] Erro ao testar RPC:', error);
-    } else {
-      console.log('[Supabase] Conexão RPC bem-sucedida');
-    }
-  } catch (error) {
-    console.error('[Supabase] Exceção ao testar RPC:', error);
-    results['rpc'] = false;
+    const { data, error } = await supabase
+      .rpc('get_system_time');
+    
+    results.rpcFunctions = !error;
+  } catch (e) {
+    results.rpcFunctions = false;
   }
   
-  // Teste se consegue fazer autenticação anônima
+  // Teste 6: Verificar se consegue fazer autenticação (se relevante)
+  // Nota: este é um teste sintético, não vai realmente criar um usuário
   try {
-    console.log('[Supabase] Testando cliente anônimo...');
-    const { data, error } = await supabase.from('controle_tanques').select('id').limit(1);
-    results['anon_client'] = !error;
-    if (error) {
-      console.error('[Supabase] Erro com cliente anônimo:', error);
-    } else {
-      console.log('[Supabase] Cliente anônimo funcionando corretamente');
-    }
-  } catch (error) {
-    console.error('[Supabase] Exceção com cliente anônimo:', error);
-    results['anon_client'] = false;
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: 'test@example.com',
+      password: 'invalidpassword123',
+    });
+    
+    // Aqui estamos testando apenas se a API de auth responde, não se faz login
+    // então ignoramos o erro específico de credenciais inválidas
+    results.authSystem = Boolean(error?.message?.includes('Invalid login') || error?.message?.includes('Email not confirmed'));
+  } catch (e) {
+    results.authSystem = false;
   }
+
+  // Adicionar versões do navegador e informações de ambiente
+  results.userAgent = navigator.userAgent ? true : false;
+  results.timestamp = true;
   
-  // Resultado geral
-  console.log('[Supabase] Resultado completo dos testes de conexão:', results);
   return results;
-}
-
-/**
- * Alias para fetchData para compatibilidade com código existente
- */
-export const fetchRecords = fetchData;
-
-/**
- * Exclui um registro de uma tabela Supabase usando o cliente administrativo (contorna RLS)
- * @param table Nome da tabela
- * @param id ID do registro a ser excluído
- * @returns true se a exclusão for bem sucedida
- */
-export async function deleteRecord(table: string, id: number): Promise<boolean> {
-  try {
-    console.log(`[Supabase] Excluindo registro de ${table} com ID ${id}`);
-    
-    const { error } = await supabaseAdmin
-      .from(table)
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
-      console.error(`[Supabase] Erro ao excluir registro de ${table}:`, error);
-      throw new Error(`Erro ao excluir registro: ${error.message}`);
-    }
-    
-    console.log(`[Supabase] Registro excluído com sucesso de ${table}`);
-    return true;
-  } catch (error: any) {
-    console.error(`[Supabase] Exceção ao excluir registro de ${table}:`, error);
-    throw new Error(`Falha ao excluir registro: ${error.message}`);
-  }
-}
-
-/**
- * Exclui múltiplos registros de uma tabela Supabase usando o cliente administrativo (contorna RLS)
- * @param table Nome da tabela
- * @param ids Lista de IDs dos registros a serem excluídos
- * @returns true se a exclusão for bem sucedida
- */
-export async function deleteRecords(table: string, ids: number[]): Promise<boolean> {
-  try {
-    console.log(`[Supabase] Excluindo ${ids.length} registros de ${table}`);
-    
-    const { error } = await supabaseAdmin
-      .from(table)
-      .delete()
-      .in('id', ids);
-    
-    if (error) {
-      console.error(`[Supabase] Erro ao excluir registros de ${table}:`, error);
-      throw new Error(`Erro ao excluir registros: ${error.message}`);
-    }
-    
-    console.log(`[Supabase] Registros excluídos com sucesso de ${table}`);
-    return true;
-  } catch (error: any) {
-    console.error(`[Supabase] Exceção ao excluir registros de ${table}:`, error);
-    throw new Error(`Falha ao excluir registros: ${error.message}`);
-  }
 }

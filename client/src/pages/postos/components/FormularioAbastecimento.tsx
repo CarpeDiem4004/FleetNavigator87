@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Fuel, CheckCircle2 } from 'lucide-react';
 import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { insertData, checkConnection } from '@/lib/supabase-client';
+import { insertRecord, checkAllConnections } from '@/lib/supabase-client';
 
 // Schema de validação para o formulário de abastecimento
 const abastecimentoSchema = z.object({
@@ -92,13 +92,13 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         description: 'Aguarde enquanto verificamos a conexão com o servidor...',
       });
       
-      const conexaoSupabase = await checkConnection();
-      if (!conexaoSupabase) {
+      const conexaoSupabase = await checkAllConnections();
+      if (!conexaoSupabase.baseConnection) {
         throw new Error('Não foi possível conectar ao servidor Supabase. Verifique sua conexão e tente novamente mais tarde.');
       }
       
       // Envia os dados para o Supabase usando o cliente de serviço para contornar RLS
-      const response = await insertData('abastecimentos_postos', abastecimentoData);
+      const response = await insertRecord('abastecimentos_postos', abastecimentoData);
       console.log('Resposta do servidor:', response);
       
       toast({
