@@ -156,7 +156,7 @@ export default function MaintenancePage() {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<Maintenance['status'] | ''>('');
+  const [selectedStatus, setSelectedStatus] = useState<Maintenance['status']>('pendente');
   const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null);
   const [activeTab, setActiveTab] = useState('all');
   const [filterBaseId, setFilterBaseId] = useState<number | null>(null);
@@ -329,7 +329,13 @@ export default function MaintenancePage() {
 
   const openStatusDialog = (maintenance: Maintenance) => {
     setSelectedMaintenance(maintenance);
-    setSelectedStatus('');
+    // Definir um valor inicial válido baseado no primeiro status disponível
+    const availableStatuses = getNextAvailableStatuses(maintenance.status);
+    if (availableStatuses.length > 0) {
+      setSelectedStatus(availableStatuses[0] as Maintenance['status']);
+    } else {
+      setSelectedStatus('pendente');
+    }
     setStatusDialogOpen(true);
   };
 
@@ -366,20 +372,20 @@ export default function MaintenancePage() {
   };
 
   // Próximos status disponíveis com base no status atual
-  const getNextAvailableStatuses = (currentStatus: Maintenance['status']) => {
+  const getNextAvailableStatuses = (currentStatus: Maintenance['status']): Maintenance['status'][] => {
     switch(currentStatus) {
       case 'pendente':
-        return ['aguardando_orcamento', 'cancelada'];
+        return ['aguardando_orcamento', 'cancelada'] as Maintenance['status'][];
       case 'aguardando_orcamento':
-        return ['em_andamento', 'cancelada'];
+        return ['em_andamento', 'cancelada'] as Maintenance['status'][];
       case 'em_andamento':
-        return ['concluida', 'cancelada'];
+        return ['concluida', 'cancelada'] as Maintenance['status'][];
       case 'concluida':
-        return [];
+        return [] as Maintenance['status'][];
       case 'cancelada':
-        return [];
+        return [] as Maintenance['status'][];
       default:
-        return [];
+        return [] as Maintenance['status'][];
     }
   };
 
@@ -770,7 +776,10 @@ export default function MaintenancePage() {
                 </Label>
                 <Select
                   value={selectedStatus}
-                  onValueChange={setSelectedStatus}
+                  onValueChange={(value) => {
+                    // Garantir que o valor seja um dos tipos válidos de status de manutenção
+                    setSelectedStatus(value as Maintenance['status']);
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o novo status" />
