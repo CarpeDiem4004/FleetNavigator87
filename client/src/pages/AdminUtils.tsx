@@ -280,6 +280,53 @@ const AdminUtils = () => {
         <h1 className="text-2xl font-bold mb-6">Ferramentas Administrativas</h1>
         
         <div className="grid md:grid-cols-2 gap-6">
+          {/* Card para Ferramentas de Diagnóstico */}
+          <Card className="shadow-lg">
+            <CardHeader className="bg-blue-50 dark:bg-blue-900/20">
+              <CardTitle className="flex items-center text-blue-700 dark:text-blue-400">
+                <Database className="mr-2 h-5 w-5" />
+                Ferramentas de Diagnóstico
+              </CardTitle>
+              <CardDescription className="text-blue-600/80 dark:text-blue-400/80">
+                Ferramentas para diagnóstico e testes do sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <p className="mb-4 text-sm">
+                Acesse as ferramentas de diagnóstico do sistema:
+              </p>
+              <ul className="list-disc ml-5 mb-4 text-sm space-y-1">
+                <li>Testar APIs do sistema</li>
+                <li>Diagnosticar conexão com Supabase</li>
+                <li>Verificar status dos endpoints</li>
+              </ul>
+            </CardContent>
+            <CardFooter className="flex flex-col space-y-2">
+              <Button 
+                variant="outline" 
+                className="w-full justify-between"
+                onClick={() => window.location.href = '/diagnostico/api-tester'}
+              >
+                Testador de APIs
+                <span className="text-xs bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded text-blue-800 dark:text-blue-300">Novo</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => window.location.href = '/diagnostico/supabase'}
+              >
+                Diagnóstico Supabase
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => window.location.href = '/limpar-dados'}
+              >
+                Limpar Dados Supabase
+              </Button>
+            </CardFooter>
+          </Card>
+          
           {/* Card de Limpeza de Dados */}
           <Card className="shadow-lg">
             <CardHeader className="bg-red-50 dark:bg-red-900/20">

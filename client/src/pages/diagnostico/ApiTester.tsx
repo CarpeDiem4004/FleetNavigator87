@@ -38,7 +38,7 @@ export default function ApiTester() {
       toast({
         title: "Confirmação necessária",
         description: "Para operações de limpeza, digite 'LIMPAR' no campo de confirmação.",
-        variant: "warning"
+        variant: "destructive"
       });
       return;
     }
