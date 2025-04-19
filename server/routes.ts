@@ -10,6 +10,7 @@ import { setupAuth } from "./auth";
 import { getDashboardKPIs } from "./dashboardApi";
 import { runSupabaseDiagnostic } from "./supabaseDiagnostic";
 import { compareSchemas } from "./compareSchemas";
+import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
 import { db } from "./db";
 
 // Middleware para verificar autenticação em rotas protegidas
@@ -112,6 +113,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({
         success: false,
         message: "Erro ao comparar esquemas",
+        error: error.message,
+        errorType: error.constructor.name,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
+  });
+  
+  // Endpoint para sincronizar tabelas entre Replit e Supabase
+  app.post("/api/diagnostico/sync-schema", isAdmin, async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    
+    try {
+      console.log("Iniciando sincronização de esquemas com o Supabase...");
+      
+      // Executar sincronização
+      const result = await synchronizeSupabaseTables();
+      
+      return res.status(200).json({
+        success: result.success,
+        message: "Sincronização de esquemas concluída",
+        timestamp: new Date().toISOString(),
+        tablesCreated: result.tablesCreated,
+        errors: result.errors
+      });
+    } catch (error: any) {
+      console.error("Erro na sincronização de esquemas:", error);
+      
+      // Mesmo em caso de erro, retornamos uma resposta JSON válida
+      return res.status(500).json({
+        success: false,
+        message: "Erro ao sincronizar esquemas",
         error: error.message,
         errorType: error.constructor.name,
         stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
