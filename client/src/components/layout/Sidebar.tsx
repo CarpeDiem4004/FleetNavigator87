@@ -3,6 +3,14 @@ import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/context/AuthContext';
 import { useBasePermission } from '@/hooks/use-base-permission';
 
+// Interface para os itens de navegação
+interface NavItem {
+  name: string;
+  href: string;
+  icon: any; // Lucide icons são ForwardRefExoticComponent
+  highlight?: boolean;
+}
+
 // Icons
 import { 
   Truck, 
@@ -40,7 +48,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   }
   
   // Lista completa de itens de navegação disponíveis
-  const allNavItems = [
+  const allNavItems: NavItem[] = [
     { name: 'Dashboard', href: '/', icon: Gauge },
     { name: 'Veículos', href: '/vehicles', icon: Truck },
     { name: 'Manutenções', href: '/maintenance', icon: Wrench },
@@ -54,7 +62,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   ];
 
   // Itens específicos para Gestão de Frotas
-  const fleetManagementItems = [
+  const fleetManagementItems: NavItem[] = [
     { name: 'Gestão de Frotas', href: '/fleet-management', icon: Truck },
     { name: 'Sistema de Manutenção', href: '/fleet-management/maintenance', icon: Wrench },
     { name: 'Oficinas Credenciadas', href: '/fleet-management/workshops', icon: ClipboardList },
@@ -65,10 +73,15 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'LINE HALL SHOPEE', href: '/linehall-shopee', icon: Waypoints },
   ];
   
-  // Itens específicos para Line Hall
-  const lineHallItems = [
+  // Itens específicos para Line Hall - destacando o LINE HALL SHOPEE
+  const lineHallItems: NavItem[] = [
     { name: 'Dashboard', href: '/', icon: Gauge },
-    { name: 'LINE HALL SHOPEE', href: '/linehall-shopee', icon: Waypoints },
+    { 
+      name: 'LINE HALL SHOPEE', 
+      href: '/linehall-shopee', 
+      icon: Waypoints,
+      highlight: true // Adiciona marcação para destacar o item no menu
+    },
   ];
   
   // Verifique se o usuário é da gestão de frotas
@@ -78,7 +91,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   const isLineHallUser = user.basename === "Line Hall" || user.baseId === 11;
   
   // Selecionando os itens de navegação apropriados
-  let navItemsBase;
+  let navItemsBase: NavItem[];
   if (isFleetUser) {
     navItemsBase = fleetManagementItems;
   } else if (isLineHallUser) {
@@ -119,6 +132,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
                 const isActive = location === item.href;
                 const Icon = item.icon;
                 
+                // Verifica se o item deve ser destacado
+                const isHighlighted = 'highlight' in item && item.highlight === true;
+                
                 return (
                   <Link 
                     key={item.name} 
@@ -127,11 +143,14 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
                     className={`flex items-center px-4 py-3 rounded-md group transition-colors duration-200 ${
                       isActive 
                         ? 'text-white bg-primary-900' 
-                        : 'text-primary-100 hover:bg-primary-700'
+                        : isHighlighted
+                          ? 'text-white bg-primary-600 hover:bg-primary-500 font-bold border border-white' 
+                          : 'text-primary-100 hover:bg-primary-700'
                     }`}
                   >
-                    <Icon className="w-6" size={18} />
-                    <span className="ml-3">{item.name}</span>
+                    <Icon className={`w-6 ${isHighlighted ? 'animate-pulse' : ''}`} size={isHighlighted ? 22 : 18} />
+                    <span className={`ml-3 ${isHighlighted ? 'font-bold text-lg' : ''}`}>{item.name}</span>
+                    {isHighlighted && <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-200 text-green-800">NOVO</span>}
                   </Link>
                 );
               })}
