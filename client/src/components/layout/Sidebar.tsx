@@ -55,8 +55,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Pneus', href: '/tires', icon: CircleDot },
     { name: 'Abastecimentos', href: '/refueling', icon: Fuel },
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
-    // Line Hall Shopee - nova implementação
-    { name: 'LINE HALL SHOPEE', href: '/linehall-shopee', icon: Waypoints },
+    // Line Hall Shopee - nova implementação com destaque
+    { name: 'LINE HALL SHOPEE', href: '/linehall-shopee', icon: Waypoints, highlight: true },
     { name: 'Bases', href: '/bases', icon: Warehouse },
     { name: 'Usuários', href: '/users', icon: Users },
   ];
@@ -93,9 +93,23 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   // Adicionar console log para debug da base do usuário
   console.log(`Usuário atual: base=${user.basename}, baseId=${user.baseId}, nome=${user.name}, email=${user.email}, isLineHall=${user.basename === "Line Hall" || user.baseId === 11}`);
   
-  // Selecionando os itens de navegação apropriados
+  // Verificação especial para o usuário Aline
   let navItemsBase: NavItem[];
-  if (isFleetUser) {
+  
+  // Verifica explicitamente pelo email ou ID da Aline
+  if (user.email === "aline@muricionfleet.com" || user.id === 35) {
+    console.log("USUÁRIO ALINE DETECTADO - Mostrando menu LINE HALL SHOPEE");
+    // Menu fixo para Aline
+    navItemsBase = [
+      { name: 'Dashboard', href: '/', icon: Gauge },
+      { 
+        name: 'LINE HALL SHOPEE', 
+        href: '/linehall-shopee', 
+        icon: Waypoints,
+        highlight: true 
+      }
+    ];
+  } else if (isFleetUser) {
     navItemsBase = fleetManagementItems;
   } else if (isLineHallUser) {
     navItemsBase = lineHallItems;
@@ -103,8 +117,10 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     navItemsBase = allNavItems;
   }
   
-  // Filtrando itens de navegação com base nas permissões do usuário
-  const navItems = navItemsBase.filter(item => hasPermission(item.href));
+  // Filtrando itens de navegação - para Aline não filtramos (sempre mostramos)
+  const navItems = user.email === "aline@muricionfleet.com" ? 
+    navItemsBase :
+    navItemsBase.filter(item => hasPermission(item.href));
 
   const closeSidebar = () => {
     if (window.innerWidth < 768) {

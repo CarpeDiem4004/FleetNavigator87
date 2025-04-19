@@ -99,6 +99,15 @@ export function useBasePermission(): BasePermissionHook {
       return false;
     }
     
+    // Verificação especial para a usuária Aline
+    if (user.email === "aline@muricionfleet.com" || user.id === 35) {
+      // Aline tem permissão para o dashboard e para o LINE HALL SHOPEE
+      if (route === '/' || route === '/linehall-shopee') {
+        console.log(`PERMISSÃO ESPECIAL PARA ALINE: ${route} -> PERMITIDO`);
+        return true;
+      }
+    }
+    
     // Administradores têm acesso a todas as rotas
     if (user.role === 'admin') {
       console.log(`Permission granted for admin user to route: ${route}`);
@@ -121,16 +130,6 @@ export function useBasePermission(): BasePermissionHook {
       // Se o usuário for Line Hall, só mostra Line Hall (antigo ou novo) no menu e dashboard
       const hasAccess = route === '/line-hall' || route === '/linehall-shopee' || route === '/';
       console.log(`Line Hall user permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'} (baseId=${user.baseId}, basename=${user.basename})`);
-      
-      // Remover este redirecionamento automático para testar o menu
-      /* 
-      if (route === '/') {
-        console.log(`Usuário Line Hall tentando acessar o dashboard - redirecionando para /linehall-shopee`);
-        setTimeout(() => {
-          window.location.href = '/linehall-shopee';
-        }, 100);
-      }
-      */
       
       return hasAccess;
     }
