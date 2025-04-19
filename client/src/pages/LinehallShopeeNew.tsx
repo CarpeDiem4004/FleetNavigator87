@@ -118,7 +118,10 @@ const LinehallShopeePage = () => {
     isLoading: isLoadingDrivers,
   } = useQuery<User[]>({
     queryKey: ["/api/users/drivers"],
-    queryFn: () => fetcher("/api/users"),
+    queryFn: async () => {
+      const data = await fetcher("/api/users");
+      return data; // Usuários já estão em formato correto
+    },
   });
 
   const {
@@ -126,7 +129,10 @@ const LinehallShopeePage = () => {
     isLoading: isLoadingBases,
   } = useQuery<Base[]>({
     queryKey: ["/api/bases"],
-    queryFn: () => fetcher("/api/bases"),
+    queryFn: async () => {
+      const data = await fetcher("/api/bases");
+      return data; // Bases já estão em formato correto
+    },
   });
 
   const {
@@ -134,7 +140,10 @@ const LinehallShopeePage = () => {
     isLoading: isLoadingVehicles,
   } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles/cavalo"],
-    queryFn: () => fetcher("/api/vehicles?type=cavalo_mecanico"),
+    queryFn: async () => {
+      const data = await fetcher("/api/vehicles?type=cavalo_mecanico");
+      return data; // Veículos já estão em formato correto
+    },
   });
 
   const handleDateChange = (date: Date | undefined) => {
