@@ -292,6 +292,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllMaintenance(): Promise<Maintenance[]> {
+    // A tabela no banco de dados agora se chama "manutencao"
+    // Mas a variável no código continua sendo "maintenance"
     return await db.select().from(maintenance).orderBy(desc(maintenance.entryDate));
   }
 
