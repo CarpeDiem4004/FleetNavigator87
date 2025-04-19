@@ -775,7 +775,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
-  // Rota específica para limpar apenas a tabela de pneus/tires
+  // Rota específica para limpar apenas a tabela de pneus
   app.post('/api/admin/clear-tires-data', isAdmin, async (req, res) => {
     try {
       console.log("Iniciando limpeza de dados da tabela de pneus...");
@@ -795,9 +795,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         supabase: { success: false, message: '', count: 0 }
       };
       
-      // 1. Limpar dados no PostgreSQL do Replit (tabela "tires")
+      // 1. Limpar dados no PostgreSQL do Replit (tabela "pneus")
       try {
-        console.log("Limpando dados de pneus no PostgreSQL do Replit (tabela 'tires')...");
+        console.log("Limpando dados de pneus no PostgreSQL do Replit (tabela 'pneus')...");
         const tires = await storage.getAllTires();
         console.log(`Encontrados ${tires.length} pneus no PostgreSQL do Replit para exclusão`);
         
@@ -818,7 +818,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Erro ao limpar pneus do PostgreSQL do Replit:", dbError);
         resultados.replit = {
           success: false,
-          message: `Erro ao limpar tabela 'tires': ${dbError}`,
+          message: `Erro ao limpar tabela 'pneus': ${dbError}`,
           count: 0
         };
       }

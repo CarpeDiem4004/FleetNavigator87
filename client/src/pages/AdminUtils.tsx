@@ -491,8 +491,8 @@ const AdminUtils = () => {
                 </p>
                 <div className="p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-md mb-2">
                   <p className="text-xs text-yellow-800 dark:text-yellow-300 text-center">
-                    Esta operação limpa tanto a tabela <code>tires</code> no PostgreSQL do Replit <br/>
-                    quanto a tabela <code>pneus</code> no Supabase, garantindo sincronização.
+                    Esta operação limpa a tabela <code>pneus</code> em ambos os bancos de dados <br/>
+                    (PostgreSQL do Replit e Supabase), garantindo sincronização completa.
                   </p>
                 </div>
                 <Button 
@@ -509,7 +509,7 @@ const AdminUtils = () => {
                   ) : (
                     <>
                       <Trash2 className="mr-2 h-4 w-4" />
-                      Limpar Tabela de Pneus (tires/pneus)
+                      Limpar Tabela de Pneus
                     </>
                   )}
                 </Button>

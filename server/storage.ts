@@ -390,7 +390,7 @@ export class DatabaseStorage implements IStorage {
     return !!deleted;
   }
   
-  // Tire operations
+  // Tire operations (pneus)
   async getTire(id: number): Promise<Tire | undefined> {
     const [tire] = await db.select().from(tires).where(eq(tires.id, id));
     return tire || undefined;

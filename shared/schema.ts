@@ -26,8 +26,8 @@ export const bases = pgTable("bases", {
   created_at: timestamp("created_at").defaultNow(),
 });
 
-// Create the vehicles table
-export const vehicles = pgTable("vehicles", {
+// Create the vehicles table (veiculos)
+export const vehicles = pgTable("veiculos", {
   id: serial("id").primaryKey(),
   plate: text("plate").notNull().unique(),
   model: text("model").notNull(),
@@ -36,8 +36,8 @@ export const vehicles = pgTable("vehicles", {
   baseId: integer("base_id").notNull().references(() => bases.id),
 });
 
-// Create the workshops table
-export const workshops = pgTable("workshops", {
+// Create the workshops table (oficinas)
+export const workshops = pgTable("oficinas", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   address: text("address"),
@@ -46,8 +46,8 @@ export const workshops = pgTable("workshops", {
   created_at: timestamp("created_at").defaultNow(),
 });
 
-// Create the maintenance table
-export const maintenance = pgTable("maintenance", {
+// Create the maintenance table (manutencao)
+export const maintenance = pgTable("manutencao", {
   id: serial("id").primaryKey(),
   vehiclePlate: text("vehicle_plate").notNull().references(() => vehicles.plate),
   workshopId: integer("workshop_id").notNull().references(() => workshops.id),
@@ -64,8 +64,8 @@ export const maintenance = pgTable("maintenance", {
   updated_at: timestamp("updated_at").defaultNow(),
 });
 
-// Create the tires table
-export const tires = pgTable("tires", {
+// Create the tires table (pneus)
+export const tires = pgTable("pneus", {
   id: serial("id").primaryKey(),
   tireNumber: text("tire_number").notNull().unique(),
   changeDate: date("change_date").notNull(),
@@ -73,8 +73,8 @@ export const tires = pgTable("tires", {
   status: tireStatusEnum("status").notNull(),
 });
 
-// Create the refueling table
-export const refueling = pgTable("refueling", {
+// Create the refueling table (abastecimentos)
+export const refueling = pgTable("abastecimentos", {
   id: serial("id").primaryKey(),
   vehiclePlate: text("vehicle_plate").notNull().references(() => vehicles.plate),
   fuelType: fuelTypeEnum("fuel_type").notNull(),
@@ -84,8 +84,8 @@ export const refueling = pgTable("refueling", {
   driverName: text("driver_name").notNull(),
 });
 
-// Create the fines table
-export const fines = pgTable("fines", {
+// Create the fines table (multas)
+export const fines = pgTable("multas", {
   id: serial("id").primaryKey(),
   vehiclePlate: text("vehicle_plate").notNull().references(() => vehicles.plate),
   infraction: text("infraction").notNull(),
@@ -95,8 +95,8 @@ export const fines = pgTable("fines", {
   value: decimal("value", { precision: 10, scale: 2 }).notNull(),
 });
 
-// Create the lineHall table
-export const lineHall = pgTable("line_hall", {
+// Create the lineHall table (linha_corredor)
+export const lineHall = pgTable("linha_corredor", {
   id: serial("id").primaryKey(),
   truckPlate: text("truck_plate").notNull().references(() => vehicles.plate),
   trailer1Plate: text("trailer1_plate").notNull().references(() => vehicles.plate),
