@@ -154,6 +154,12 @@ export default function SupabaseDiagnostico() {
               Comparar Esquemas
             </Button>
             <Button 
+              variant="secondary" 
+              onClick={() => window.location.href = '/diagnostico/sincronizar-tabelas'}
+            >
+              Sincronizar Tabelas
+            </Button>
+            <Button 
               variant="default" 
               onClick={() => window.location.href = '/diagnostico/supabase-console'}
             >
