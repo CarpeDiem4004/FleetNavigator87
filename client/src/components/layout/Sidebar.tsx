@@ -20,7 +20,9 @@ import {
   Activity,
   Timer,
   ChevronsDown,
-  ShieldAlert
+  ShieldAlert,
+  PackageOpen,
+  Waypoints
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -45,7 +47,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Pneus', href: '/tires', icon: CircleDot },
     { name: 'Abastecimentos', href: '/refueling', icon: Fuel },
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
-    // Line Hall removido conforme solicitação do cliente
+    // Line Hall Shopee - nova implementação
+    { name: 'LINE HALL SHOPEE', href: '/linehall-shopee', icon: Waypoints },
     { name: 'Bases', href: '/bases', icon: Warehouse },
     { name: 'Usuários', href: '/users', icon: Users },
   ];
@@ -59,6 +62,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Visão Geral da Frota', href: '/fleet-management/fleet-overview', icon: Activity },
     { name: 'Veículos Parados', href: '/fleet-management/downtime-analysis', icon: ChevronsDown },
     { name: 'Segurança do Trabalho', href: '/work-safety', icon: ShieldAlert },
+    { name: 'LINE HALL SHOPEE', href: '/linehall-shopee', icon: Waypoints },
   ];
   
   // Verifique se o usuário é da gestão de frotas

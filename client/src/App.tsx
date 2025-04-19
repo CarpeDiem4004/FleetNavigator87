@@ -46,6 +46,7 @@ import Accidents from "@/pages/accidents";
 import WorkSafety from "@/pages/work-safety";
 import WorkshopsPage from "@/pages/fleet-management/WorkshopsPage";
 import MaintenancePage from "@/pages/fleet-management/MaintenancePage";
+import LinehallShopee from "@/pages/LinehallShopee";
 
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
@@ -87,7 +88,8 @@ function App() {
           <ProtectedRoute path="/tires" component={TiresNew} />
           <ProtectedRoute path="/refueling" component={RefuelingNew} />
           <ProtectedRoute path="/fines" component={FinesNew} />
-          {/* Rota line-hall removida conforme solicitação do cliente */}
+          {/* Nova rota LINE HALL SHOPEE */}
+          <ProtectedRoute path="/linehall-shopee" component={LinehallShopee} />
           <ProtectedRoute path="/fleet-management" component={FleetManagement} />
           <ProtectedRoute path="/fleet-management/workshops" component={WorkshopsPage} />
           <ProtectedRoute path="/fleet-management/maintenance" component={MaintenancePage} />
