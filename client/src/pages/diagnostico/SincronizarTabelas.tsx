@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, DatabaseZap, Copy, CheckCircle } from "lucide-react";
@@ -20,18 +20,127 @@ interface SyncResult {
   checkedTables?: string[];
 }
 
+// Componente separado para os comandos SQL
+const SqlCommandsList = memo(({ 
+  commands, 
+  onCopy 
+}: { 
+  commands: string[], 
+  onCopy: (text: string, index: number) => void 
+}) => {
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  
+  const handleCopy = (text: string, index: number) => {
+    setCopiedIndex(index);
+    onCopy(text, index);
+    
+    // Reset após 2 segundos
+    setTimeout(() => {
+      setCopiedIndex(null);
+    }, 2000);
+  };
+  
+  return (
+    <div className="space-y-4">
+      {commands.map((command, index) => (
+        <div key={index} className="relative">
+          <pre className="bg-slate-950 text-slate-50 p-3 rounded text-xs overflow-auto whitespace-pre-wrap">
+            {command}
+          </pre>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="absolute top-2 right-2 h-8 w-8 p-0"
+            onClick={() => handleCopy(command, index)}
+          >
+            {copiedIndex === index ? (
+              <CheckCircle className="h-4 w-4 text-green-500" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
+});
+
+// Componente separado para o resultado da verificação
+const VerificationResult = memo(({ 
+  result, 
+  onCopy 
+}: { 
+  result: SyncResult, 
+  onCopy: (text: string, index: number) => void 
+}) => {
+  return (
+    <Alert variant={result.success ? "default" : "destructive"} className="mt-4">
+      <div className="flex items-start gap-3">
+        {result.success ? (
+          <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" />
+        ) : (
+          <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
+        )}
+        <div className="w-full">
+          <AlertTitle>
+            {result.missingTables && result.missingTables.length > 0 
+              ? "Tabelas faltantes detectadas" 
+              : "Verificação concluída"}
+          </AlertTitle>
+          <AlertDescription className="mt-2">
+            <div className="space-y-2">
+              {result.missingTables && result.missingTables.length > 0 ? (
+                <div>
+                  <p>Foram encontradas tabelas faltantes. Execute os comandos SQL abaixo no Console SQL do Supabase.</p>
+                  <div className="flex gap-3 mt-2 flex-wrap">
+                    <Badge variant="outline" className="bg-amber-50 border-amber-200">
+                      {result.checkedTables?.length || 0} tabelas verificadas
+                    </Badge>
+                    <Badge variant="outline" className="bg-red-50 border-red-200">
+                      {result.missingTables?.length || 0} tabelas faltantes
+                    </Badge>
+                  </div>
+                  
+                  {result.sqlCommands && result.sqlCommands.length > 0 && (
+                    <Accordion type="single" collapsible className="mt-4">
+                      <AccordionItem value="commands">
+                        <AccordionTrigger>Comandos SQL para criação de tabelas</AccordionTrigger>
+                        <AccordionContent>
+                          <SqlCommandsList 
+                            commands={result.sqlCommands} 
+                            onCopy={onCopy}
+                          />
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  )}
+                </div>
+              ) : (
+                <p>Todas as tabelas necessárias já existem no Supabase!</p>
+              )}
+              
+              <p className="text-xs text-muted-foreground mt-1">
+                Executado em: {new Date(result.timestamp).toLocaleString()}
+              </p>
+            </div>
+          </AlertDescription>
+        </div>
+      </div>
+    </Alert>
+  );
+});
+
+// Componente principal
 const SincronizarTabelas: React.FC = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SyncResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [copiedCommandIndex, setCopiedCommandIndex] = useState<number | null>(null);
 
   const sincronizarTabelas = async () => {
     setLoading(true);
     setError(null);
     setResult(null);
-    setCopiedCommandIndex(null);
 
     try {
       const response = await fetch('/api/diagnostico/sync-schema', {
@@ -53,7 +162,7 @@ const SincronizarTabelas: React.FC = () => {
           variant: "default"
         });
       } else {
-        setError(data.message || 'Erro desconhecido durante a sincronização');
+        setError(data.message || 'Erro desconhecido durante a verificação');
         toast({
           title: "Erro na verificação",
           description: data.message || 'Erro desconhecido durante a verificação',
@@ -74,18 +183,12 @@ const SincronizarTabelas: React.FC = () => {
   
   const copyToClipboard = (text: string, index: number) => {
     navigator.clipboard.writeText(text);
-    setCopiedCommandIndex(index);
     
     toast({
       title: "Comando SQL copiado",
       description: "O comando SQL foi copiado para a área de transferência.",
       variant: "default"
     });
-    
-    // Reset the copied state after 2 seconds
-    setTimeout(() => {
-      setCopiedCommandIndex(null);
-    }, 2000);
   };
 
   return (
@@ -106,76 +209,7 @@ const SincronizarTabelas: React.FC = () => {
             Gera comandos SQL que podem ser executados manualmente para criar tabelas faltantes.
           </p>
 
-          {result && (
-            <Alert variant={result.success ? "default" : "destructive"} className="mt-4">
-              <div className="flex items-start gap-3">
-                {result.success ? (
-                  <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" />
-                ) : (
-                  <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
-                )}
-                <div className="w-full">
-                  <AlertTitle>
-                    {result.missingTables && result.missingTables.length > 0 
-                      ? "Tabelas faltantes detectadas" 
-                      : "Verificação concluída"}
-                  </AlertTitle>
-                  <AlertDescription className="mt-2">
-                    <div className="space-y-2">
-                      {result.missingTables && result.missingTables.length > 0 ? (
-                        <div>
-                          <p>Foram encontradas tabelas faltantes. Execute os comandos SQL abaixo no Console SQL do Supabase.</p>
-                          <div className="flex gap-3 mt-2 flex-wrap">
-                            <Badge variant="outline" className="bg-amber-50 border-amber-200">
-                              {result.checkedTables?.length || 0} tabelas verificadas
-                            </Badge>
-                            <Badge variant="outline" className="bg-red-50 border-red-200">
-                              {result.missingTables?.length || 0} tabelas faltantes
-                            </Badge>
-                          </div>
-                          
-                          <Accordion type="single" collapsible className="mt-4">
-                            <AccordionItem value="commands">
-                              <AccordionTrigger>Comandos SQL para criação de tabelas</AccordionTrigger>
-                              <AccordionContent>
-                                <div className="space-y-4">
-                                  {result.sqlCommands?.map((command, index) => (
-                                    <div key={index} className="relative">
-                                      <pre className="bg-slate-950 text-slate-50 p-3 rounded text-xs overflow-auto whitespace-pre-wrap">
-                                        {command}
-                                      </pre>
-                                      <Button 
-                                        variant="outline" 
-                                        size="sm" 
-                                        className="absolute top-2 right-2 h-8 w-8 p-0"
-                                        onClick={() => copyToClipboard(command, index)}
-                                      >
-                                        {copiedCommandIndex === index ? (
-                                          <CheckCircle className="h-4 w-4 text-green-500" />
-                                        ) : (
-                                          <Copy className="h-4 w-4" />
-                                        )}
-                                      </Button>
-                                    </div>
-                                  ))}
-                                </div>
-                              </AccordionContent>
-                            </AccordionItem>
-                          </Accordion>
-                        </div>
-                      ) : (
-                        <p>Todas as tabelas necessárias já existem no Supabase!</p>
-                      )}
-                      
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Executado em: {new Date(result.timestamp).toLocaleString()}
-                      </p>
-                    </div>
-                  </AlertDescription>
-                </div>
-              </div>
-            </Alert>
-          )}
+          {result && <VerificationResult result={result} onCopy={copyToClipboard} />}
 
           {error && (
             <Alert variant="destructive" className="mt-4">

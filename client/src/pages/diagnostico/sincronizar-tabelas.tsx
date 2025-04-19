@@ -1,11 +1,19 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import SincronizarTabelas from './SincronizarTabelas';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Link } from 'wouter';
+import ErrorBoundary from '@/components/ErrorBoundary';
+
+// Componente de fallback para o Suspense
+const LoadingFallback = () => (
+  <div className="flex justify-center items-center p-8">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  </div>
+);
 
 export default function SincronizarTabelasPage() {
   const { user } = useAuth();
@@ -15,7 +23,7 @@ export default function SincronizarTabelasPage() {
     <MainLayoutSimple>
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">Sincronização de Tabelas - Supabase</h1>
+          <h1 className="text-2xl font-bold">Verificação de Tabelas - Supabase</h1>
           <Link href="/diagnostico/supabase">
             <Button 
               variant="outline" 
@@ -38,11 +46,15 @@ export default function SincronizarTabelasPage() {
           </Card>
         ) : (
           <div className="flex flex-col space-y-6 max-w-3xl mx-auto">
-            <SincronizarTabelas />
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingFallback />}>
+                <SincronizarTabelas />
+              </Suspense>
+            </ErrorBoundary>
             
             <Card>
               <CardHeader>
-                <CardTitle>Informações sobre a Sincronização</CardTitle>
+                <CardTitle>Informações sobre a Verificação</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4 text-sm">
