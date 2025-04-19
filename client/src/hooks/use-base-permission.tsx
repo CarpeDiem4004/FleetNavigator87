@@ -121,6 +121,15 @@ export function useBasePermission(): BasePermissionHook {
       // Se o usuário for Line Hall, só mostra Line Hall (antigo ou novo) no menu e dashboard
       const hasAccess = route === '/line-hall' || route === '/linehall-shopee' || route === '/';
       console.log(`Line Hall user permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'} (baseId=${user.baseId}, basename=${user.basename})`);
+      
+      // Redireciona usuários Line Hall para a nova versão LINE HALL SHOPEE quando acessam a página inicial
+      if (route === '/') {
+        console.log(`Usuário Line Hall tentando acessar o dashboard - redirecionando para /linehall-shopee`);
+        setTimeout(() => {
+          window.location.href = '/linehall-shopee';
+        }, 100);
+      }
+      
       return hasAccess;
     }
     
