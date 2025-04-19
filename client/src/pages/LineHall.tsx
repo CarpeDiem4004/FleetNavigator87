@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Plus, Edit, Eye, Trash2 } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Plus, Edit, Eye, Trash2, AlertTriangle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 import {
   Select,
   SelectContent,
@@ -19,8 +20,19 @@ import {
   DialogContent,
   DialogDescription,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
+  DialogFooter
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { 
   Pagination, 
   PaginationContent, 
@@ -50,7 +62,11 @@ const getStatusBadge = (status: TripStatusType) => {
 };
 
 const LineHall: React.FC = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [tripToDelete, setTripToDelete] = useState<number | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [filters, setFilters] = useState({
     truck: '',
     destination: '',
@@ -64,6 +80,59 @@ const LineHall: React.FC = () => {
   const { data: vehicles } = useQuery({
     queryKey: ['/api/vehicles'],
   });
+  
+  // Mutation para excluir uma viagem
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/line-hall/${id}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao excluir viagem');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      // Recarregar os dados após a exclusão bem-sucedida
+      queryClient.invalidateQueries({ queryKey: ['/api/line-hall'] });
+      
+      toast({
+        title: "Viagem excluída",
+        description: "A viagem foi excluída com sucesso.",
+        variant: "default"
+      });
+      
+      // Fechar o diálogo de confirmação
+      setIsDeleteDialogOpen(false);
+      setTripToDelete(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao excluir viagem",
+        description: error.message || "Ocorreu um erro inesperado",
+        variant: "destructive"
+      });
+      
+      // Fechar o diálogo de confirmação mesmo em caso de erro
+      setIsDeleteDialogOpen(false);
+    }
+  });
+  
+  // Função para iniciar o processo de exclusão
+  const handleDeleteClick = (tripId: number) => {
+    setTripToDelete(tripId);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  // Função para confirmar a exclusão
+  const confirmDelete = () => {
+    if (tripToDelete !== null) {
+      deleteMutation.mutate(tripToDelete);
+    }
+  };
   
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -249,7 +318,12 @@ const LineHall: React.FC = () => {
                         <Button variant="ghost" size="icon">
                           <Eye className="h-4 w-4 text-gray-600" />
                         </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleDeleteClick(trip.id)}
+                          disabled={deleteMutation.isPending}
+                        >
                           <Trash2 className="h-4 w-4 text-red-600" />
                         </Button>
                       </div>

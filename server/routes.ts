@@ -738,6 +738,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Rota para excluir viagem do LineHall
+  app.delete("/api/line-hall/:id", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "ID inválido" });
+      }
+      
+      const deleted = await storage.deleteLineHall(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Viagem não encontrada" });
+      }
+      
+      return res.status(200).json({ message: "Viagem excluída com sucesso" });
+    } catch (error) {
+      console.error("Erro ao excluir viagem:", error);
+      return res.status(500).json({ message: "Erro no servidor" });
+    }
+  });
+  
   // Users routes (admin only)
   app.get("/api/users", isAdmin, async (req, res) => {
     try {
