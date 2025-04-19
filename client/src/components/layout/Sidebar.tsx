@@ -50,13 +50,14 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   // Lista completa de itens de navegação disponíveis
   const allNavItems: NavItem[] = [
     { name: 'Dashboard', href: '/', icon: Gauge },
+    { name: 'Gestão de Frota', href: '/fleet-management', icon: Truck },
+    // Line Hall Shopee - nova implementação com destaque (logo após Gestão de Frota)
+    { name: 'LINE HALL SHOPEE', href: '/linehall-shopee', icon: Waypoints, highlight: true },
     { name: 'Veículos', href: '/vehicles', icon: Truck },
     { name: 'Manutenções', href: '/maintenance', icon: Wrench },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
     { name: 'Abastecimentos', href: '/refueling', icon: Fuel },
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
-    // Line Hall Shopee - nova implementação com destaque
-    { name: 'LINE HALL SHOPEE', href: '/linehall-shopee', icon: Waypoints, highlight: true },
     { name: 'Bases', href: '/bases', icon: Warehouse },
     { name: 'Usuários', href: '/users', icon: Users },
   ];
@@ -82,6 +83,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   // Itens específicos para Line Hall - destacando o LINE HALL SHOPEE
   const lineHallItems: NavItem[] = [
     { name: 'Dashboard', href: '/', icon: Gauge },
+    { name: 'Gestão de Frota', href: '/fleet-management', icon: Truck },
     { 
       name: 'LINE HALL SHOPEE', 
       href: '/linehall-shopee', 
@@ -102,6 +104,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     // Menu fixo para Aline
     navItemsBase = [
       { name: 'Dashboard', href: '/', icon: Gauge },
+      { name: 'Gestão de Frota', href: '/fleet-management', icon: Truck },
       { 
         name: 'LINE HALL SHOPEE', 
         href: '/linehall-shopee', 
