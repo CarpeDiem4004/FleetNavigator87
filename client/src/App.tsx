@@ -10,14 +10,14 @@ import MaintenanceNew from "@/pages/MaintenanceNew";
 import TiresNew from "@/pages/TiresNew";
 import RefuelingNew from "@/pages/RefuelingNew";
 import FinesNew from "@/pages/FinesNew";
-// LineHallNew removido conforme solicitação do cliente
+import LineHallNew from "@/pages/LineHallNew";
 import UsersNew from "@/pages/UsersNew";
 import Bases from "@/pages/Bases";
 import SignIn from "@/pages/SignIn";
 import RegisterNew from "@/pages/RegisterNew";
 import AccessDeniedPage from "@/pages/access-denied";
 import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
-// LineHallRedirect removido conforme solicitação do cliente
+import LineHallRedirect from "@/components/permission/LineHallRedirect";
 import FleetManagementRedirect from "@/components/permission/FleetManagementRedirect";
 import { AuthProvider } from "@/context/AuthContext";
 
@@ -46,7 +46,6 @@ import Accidents from "@/pages/accidents";
 import WorkSafety from "@/pages/work-safety";
 import WorkshopsPage from "@/pages/fleet-management/WorkshopsPage";
 import MaintenancePage from "@/pages/fleet-management/MaintenancePage";
-import LinehallShopee from "@/pages/LinehallShopeeNew";
 
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
@@ -73,7 +72,9 @@ function App() {
           </Route>
           
           {/* Componentes de redirecionamento para usuários específicos */}
-          {/* Rota LineHallRedirect removida conforme solicitação do cliente */}
+          <Route path="/old-dashboard">
+            <LineHallRedirect />
+          </Route>
           
           <Route path="/fleet-redirect">
             <FleetManagementRedirect />
@@ -88,8 +89,7 @@ function App() {
           <ProtectedRoute path="/tires" component={TiresNew} />
           <ProtectedRoute path="/refueling" component={RefuelingNew} />
           <ProtectedRoute path="/fines" component={FinesNew} />
-          {/* Nova rota LINE HALL SHOPEE */}
-          <ProtectedRoute path="/linehall-shopee" component={LinehallShopee} />
+          <ProtectedRoute path="/line-hall" component={LineHallNew} />
           <ProtectedRoute path="/fleet-management" component={FleetManagement} />
           <ProtectedRoute path="/fleet-management/workshops" component={WorkshopsPage} />
           <ProtectedRoute path="/fleet-management/maintenance" component={MaintenancePage} />

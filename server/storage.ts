@@ -1,13 +1,13 @@
 import { 
-  users, vehicles, maintenance, tires, refueling, fines, bases, workshops, linehallShopee,
+  users, vehicles, maintenance, tires, refueling, fines, lineHall, bases, workshops,
   type User, type InsertUser, type Vehicle, type InsertVehicle,
   type Maintenance, type InsertMaintenance, type Tire, type InsertTire,
   type Refueling, type InsertRefueling, type Fine, type InsertFine,
-  type Base, type InsertBase, type LinehallShopee, type InsertLinehallShopee,
+  type LineHall, type InsertLineHall, type Base, type InsertBase,
   type Workshop, type InsertWorkshop
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, or, like, desc, sql } from "drizzle-orm";
+import { eq, and, like, desc, sql } from "drizzle-orm";
 
 // Define the storage interface with CRUD operations
 export interface IStorage {
@@ -75,16 +75,12 @@ export interface IStorage {
   updateFine(id: number, fine: Partial<InsertFine>): Promise<Fine | undefined>;
   deleteFine(id: number): Promise<boolean>;
   
-  // LinehallShopee operations
-  getLinehallShopee(id: number): Promise<LinehallShopee | undefined>;
-  getLinehallShopeeByBase(baseId: number): Promise<LinehallShopee[]>;
-  getLinehallShopeeByStatus(status: string): Promise<LinehallShopee[]>;
-  getLinehallShopeeByVehicle(vehiclePlate: string): Promise<LinehallShopee[]>;
-  getAllLinehallShopee(): Promise<LinehallShopee[]>;
-  createLinehallShopee(linehallShopee: InsertLinehallShopee): Promise<LinehallShopee>;
-  updateLinehallShopeeStatus(id: number, status: string): Promise<LinehallShopee | undefined>;
-  updateLinehallShopee(id: number, linehallShopee: Partial<InsertLinehallShopee>): Promise<LinehallShopee | undefined>;
-  deleteLinehallShopee(id: number): Promise<boolean>;
+  // LineHall operations
+  getLineHall(id: number): Promise<LineHall | undefined>;
+  getAllLineHall(): Promise<LineHall[]>;
+  createLineHall(lineHall: InsertLineHall): Promise<LineHall>;
+  updateLineHall(id: number, lineHall: Partial<InsertLineHall>): Promise<LineHall | undefined>;
+  deleteLineHall(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -500,74 +496,34 @@ export class DatabaseStorage implements IStorage {
     return !!deleted;
   }
   
-  // LinehallShopee operations
-  async getLinehallShopee(id: number): Promise<LinehallShopee | undefined> {
-    const [viagem] = await db.select().from(linehallShopee).where(eq(linehallShopee.id, id));
-    return viagem || undefined;
+  // LineHall operations
+  async getLineHall(id: number): Promise<LineHall | undefined> {
+    const [result] = await db.select().from(lineHall).where(eq(lineHall.id, id));
+    return result || undefined;
   }
 
-  async getLinehallShopeeByBase(baseId: number): Promise<LinehallShopee[]> {
-    // Buscar viagens onde a base é origem ou destino
-    return await db.select().from(linehallShopee).where(
-      or(
-        eq(linehallShopee.baseOrigemId, baseId),
-        eq(linehallShopee.baseDestinoId, baseId)
-      )
-    ).orderBy(desc(linehallShopee.dataViagem));
+  async getAllLineHall(): Promise<LineHall[]> {
+    return await db.select().from(lineHall);
   }
 
-  async getLinehallShopeeByStatus(status: string): Promise<LinehallShopee[]> {
-    return await db.select().from(linehallShopee).where(
-      sql`${linehallShopee.status}::text = ${status}`
-    ).orderBy(desc(linehallShopee.dataViagem));
+  async createLineHall(lineHallData: InsertLineHall): Promise<LineHall> {
+    const [newLineHall] = await db.insert(lineHall).values(lineHallData).returning();
+    return newLineHall;
   }
 
-  async getLinehallShopeeByVehicle(vehiclePlate: string): Promise<LinehallShopee[]> {
-    return await db.select().from(linehallShopee)
-      .where(eq(linehallShopee.cavaloPlaca, vehiclePlate))
-      .orderBy(desc(linehallShopee.dataViagem));
-  }
-
-  async getAllLinehallShopee(): Promise<LinehallShopee[]> {
-    return await db.select().from(linehallShopee).orderBy(desc(linehallShopee.dataViagem));
-  }
-
-  async createLinehallShopee(data: InsertLinehallShopee): Promise<LinehallShopee> {
-    const [newLinehall] = await db.insert(linehallShopee).values(data).returning();
-    return newLinehall;
-  }
-
-  async updateLinehallShopeeStatus(id: number, status: string): Promise<LinehallShopee | undefined> {
+  async updateLineHall(id: number, lineHallData: Partial<InsertLineHall>): Promise<LineHall | undefined> {
     const [updated] = await db
-      .update(linehallShopee)
-      .set({ 
-        status: status as any,
-        updated_at: new Date()
-      })
-      .where(eq(linehallShopee.id, id))
+      .update(lineHall)
+      .set(lineHallData)
+      .where(eq(lineHall.id, id))
       .returning();
     return updated || undefined;
   }
 
-  async updateLinehallShopee(id: number, data: Partial<InsertLinehallShopee>): Promise<LinehallShopee | undefined> {
-    // Adicionar updated_at
-    const updateData = {
-      ...data,
-      updated_at: new Date()
-    };
-    
-    const [updated] = await db
-      .update(linehallShopee)
-      .set(updateData)
-      .where(eq(linehallShopee.id, id))
-      .returning();
-    return updated || undefined;
-  }
-
-  async deleteLinehallShopee(id: number): Promise<boolean> {
+  async deleteLineHall(id: number): Promise<boolean> {
     const [deleted] = await db
-      .delete(linehallShopee)
-      .where(eq(linehallShopee.id, id))
+      .delete(lineHall)
+      .where(eq(lineHall.id, id))
       .returning();
     return !!deleted;
   }

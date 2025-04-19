@@ -33,8 +33,7 @@ const allRoutes = [
   '/refueling',       // Abastecimentos
   '/fines',           // Multas
   '/multas',          // Alias para Multas
-  '/line-hall',       // Line Hall (antigo)
-  '/linehall-shopee', // LINE HALL SHOPEE (novo)
+  '/line-hall',       // Line Hall
   '/fleet-management', // Gestão de Frota
   '/gestao-de-frotas', // Alias para Gestão de Frota
   '/users'            // Usuários (só admin)
@@ -42,7 +41,7 @@ const allRoutes = [
 
 // Regras de correspondência entre bases e rotas
 const baseRouteMapping = {
-  'line hall': ['/line-hall', '/linehall-shopee'],
+  'line hall': ['/line-hall'],
   'multas': ['/multas', '/fines'],
   'pneus': ['/pneus', '/tires'],
   'gestão de frotas': [
@@ -52,8 +51,7 @@ const baseRouteMapping = {
     '/vehicles', 
     '/refueling',
     '/tires',
-    '/fines',
-    '/linehall-shopee'
+    '/fines'
   ],
   'frota': [
     '/gestao-de-frotas', 
@@ -62,8 +60,7 @@ const baseRouteMapping = {
     '/vehicles', 
     '/refueling',
     '/tires',
-    '/fines',
-    '/linehall-shopee'
+    '/fines'
   ]
 };
 
@@ -99,15 +96,6 @@ export function useBasePermission(): BasePermissionHook {
       return false;
     }
     
-    // Verificação especial para a usuária Aline
-    if (user.email === "aline@muricionfleet.com" || user.id === 35) {
-      // Aline tem permissão para o dashboard e para o LINE HALL SHOPEE
-      if (route === '/' || route === '/linehall-shopee') {
-        console.log(`PERMISSÃO ESPECIAL PARA ALINE: ${route} -> PERMITIDO`);
-        return true;
-      }
-    }
-    
     // Administradores têm acesso a todas as rotas
     if (user.role === 'admin') {
       console.log(`Permission granted for admin user to route: ${route}`);
@@ -127,10 +115,9 @@ export function useBasePermission(): BasePermissionHook {
     
     // Line Hall - permite acesso somente ao Line Hall e bloqueia outras rotas específicas
     if (user.basename === "Line Hall" || user.baseId === 11) {
-      // Se o usuário for Line Hall, só mostra Line Hall (antigo ou novo) no menu e dashboard
-      const hasAccess = route === '/line-hall' || route === '/linehall-shopee' || route === '/';
+      // Se o usuário for Line Hall, só mostra Line Hall no menu e dashboard
+      const hasAccess = route === '/line-hall' || route === '/';
       console.log(`Line Hall user permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'} (baseId=${user.baseId}, basename=${user.basename})`);
-      
       return hasAccess;
     }
     
@@ -154,8 +141,7 @@ export function useBasePermission(): BasePermissionHook {
         '/tires',                                     // Pneus
         '/fines',                                     // Multas
         '/accidents',                                 // Acidentes/Roubos
-        '/work-safety',                               // Segurança do Trabalho
-        '/linehall-shopee'                            // LINE HALL SHOPEE
+        '/work-safety'                                // Segurança do Trabalho
       ];
       
       const hasAccess = frotaRoutes.includes(route);

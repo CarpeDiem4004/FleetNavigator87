@@ -79,7 +79,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       ]
     },
     { href: '/fines', label: 'Multas', icon: ReceiptText },
-    // Line Hall removido conforme solicitação do cliente
+    { href: '/line-hall', label: 'Line Hall', icon: Truck },
     { href: '/accidents', label: 'Sinistros e Roubos', icon: AlertCircle },
     { href: '/work-safety', label: 'Segurança do Trabalho', icon: ShieldCheck },
     { href: '/users', label: 'Usuários', icon: Users },
