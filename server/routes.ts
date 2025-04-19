@@ -738,6 +738,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Rota para adicionar uma nova viagem 
+  app.post("/api/line-hall", isAuthenticated, async (req, res) => {
+    try {
+      console.log("Recebido request para criar viagem:", req.body);
+      
+      // Validar os dados de entrada
+      if (!req.body.truckPlate || !req.body.trailer1Plate || !req.body.loadingTime || !req.body.destination || !req.body.tripStatus) {
+        return res.status(400).json({ 
+          message: "Dados incompletos. Certifique-se de incluir truckPlate, trailer1Plate, loadingTime, destination e tripStatus" 
+        });
+      }
+      
+      // Criar a viagem
+      const newTrip = await storage.createLineHall(req.body);
+      
+      console.log("Viagem criada com sucesso:", newTrip);
+      return res.status(201).json(newTrip);
+    } catch (error) {
+      console.error("Erro ao criar viagem:", error);
+      return res.status(500).json({ message: "Erro no servidor" });
+    }
+  });
+  
   // Rota para excluir viagem do LineHall
   app.delete("/api/line-hall/:id", isAuthenticated, async (req, res) => {
     try {
@@ -747,12 +770,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "ID inválido" });
       }
       
+      console.log(`Tentando excluir viagem com ID ${id}...`);
       const deleted = await storage.deleteLineHall(id);
       
       if (!deleted) {
+        console.log(`Viagem com ID ${id} não encontrada`);
         return res.status(404).json({ message: "Viagem não encontrada" });
       }
       
+      console.log(`Viagem com ID ${id} excluída com sucesso`);
       return res.status(200).json({ message: "Viagem excluída com sucesso" });
     } catch (error) {
       console.error("Erro ao excluir viagem:", error);
