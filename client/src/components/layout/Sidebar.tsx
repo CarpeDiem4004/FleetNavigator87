@@ -65,11 +65,27 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'LINE HALL SHOPEE', href: '/linehall-shopee', icon: Waypoints },
   ];
   
+  // Itens específicos para Line Hall
+  const lineHallItems = [
+    { name: 'Dashboard', href: '/', icon: Gauge },
+    { name: 'LINE HALL SHOPEE', href: '/linehall-shopee', icon: Waypoints },
+  ];
+  
   // Verifique se o usuário é da gestão de frotas
   const isFleetUser = user.basename === "Gestão de Frotas" || user.baseId === 12;
   
+  // Verifique se o usuário é do Line Hall
+  const isLineHallUser = user.basename === "Line Hall" || user.baseId === 11;
+  
   // Selecionando os itens de navegação apropriados
-  const navItemsBase = isFleetUser ? fleetManagementItems : allNavItems;
+  let navItemsBase;
+  if (isFleetUser) {
+    navItemsBase = fleetManagementItems;
+  } else if (isLineHallUser) {
+    navItemsBase = lineHallItems;
+  } else {
+    navItemsBase = allNavItems;
+  }
   
   // Filtrando itens de navegação com base nas permissões do usuário
   const navItems = navItemsBase.filter(item => hasPermission(item.href));
