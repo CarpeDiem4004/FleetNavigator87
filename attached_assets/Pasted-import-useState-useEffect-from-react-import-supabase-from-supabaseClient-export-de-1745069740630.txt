@@ -1,0 +1,158 @@
+import { useState, useEffect } from "react";
+import { supabase } from "./supabaseClient";
+
+export default function LineHallCadastro() {
+  const [bases, setBases] = useState([]);
+  const [motoristas, setMotoristas] = useState([]);
+  const [formData, setFormData] = useState({
+    data_viagem: "",
+    cavalo_placa: "",
+    carreta1_placa: "",
+    carreta2_placa: "",
+    motorista_id: "",
+    base_origem_id: "",
+    base_destino_id: "",
+    horario_carregamento: ""
+  });
+
+  useEffect(() => {
+    const fetchBases = async () => {
+      const { data } = await supabase.from("bases").select("id, nome");
+      setBases(data);
+    };
+
+    const fetchMotoristas = async () => {
+      const { data } = await supabase.from("usuarios").select("id, nome");
+      setMotoristas(data);
+    };
+
+    fetchBases();
+    fetchMotoristas();
+  }, []);
+
+  const handleChange = (e) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const { error } = await supabase.from("line_hall_viagens").insert([formData]);
+    if (error) {
+      alert("Erro ao registrar viagem: " + error.message);
+    } else {
+      alert("Viagem registrada com sucesso!");
+      setFormData({
+        data_viagem: "",
+        cavalo_placa: "",
+        carreta1_placa: "",
+        carreta2_placa: "",
+        motorista_id: "",
+        base_origem_id: "",
+        base_destino_id: "",
+        horario_carregamento: ""
+      });
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-white rounded shadow">
+      <h2 className="text-xl font-bold">Cadastro de Viagem - LINE HALL SHOPEE</h2>
+
+      <input
+        type="date"
+        name="data_viagem"
+        value={formData.data_viagem}
+        onChange={handleChange}
+        className="border p-2 w-full"
+        required
+      />
+
+      <input
+        type="text"
+        name="cavalo_placa"
+        placeholder="Placa do cavalo"
+        value={formData.cavalo_placa}
+        onChange={handleChange}
+        className="border p-2 w-full"
+        required
+      />
+
+      <input
+        type="text"
+        name="carreta1_placa"
+        placeholder="Placa da carreta 1"
+        value={formData.carreta1_placa}
+        onChange={handleChange}
+        className="border p-2 w-full"
+        required
+      />
+
+      <input
+        type="text"
+        name="carreta2_placa"
+        placeholder="Placa da carreta 2 (opcional)"
+        value={formData.carreta2_placa}
+        onChange={handleChange}
+        className="border p-2 w-full"
+      />
+
+      <select
+        name="motorista_id"
+        value={formData.motorista_id}
+        onChange={handleChange}
+        className="border p-2 w-full"
+        required
+      >
+        <option value="">Selecione o motorista</option>
+        {motoristas.map((m) => (
+          <option key={m.id} value={m.id}>
+            {m.nome}
+          </option>
+        ))}
+      </select>
+
+      <select
+        name="base_origem_id"
+        value={formData.base_origem_id}
+        onChange={handleChange}
+        className="border p-2 w-full"
+        required
+      >
+        <option value="">Base de origem</option>
+        {bases.map((b) => (
+          <option key={b.id} value={b.id}>
+            {b.nome}
+          </option>
+        ))}
+      </select>
+
+      <select
+        name="base_destino_id"
+        value={formData.base_destino_id}
+        onChange={handleChange}
+        className="border p-2 w-full"
+        required
+      >
+        <option value="">Base de destino</option>
+        {bases.map((b) => (
+          <option key={b.id} value={b.id}>
+            {b.nome}
+          </option>
+        ))}
+      </select>
+
+      <input
+        type="time"
+        name="horario_carregamento"
+        value={formData.horario_carregamento}
+        onChange={handleChange}
+        className="border p-2 w-full"
+        required
+      />
+
+      <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
+        Registrar Viagem
+      </button>
+    </form>
+  );
+}
