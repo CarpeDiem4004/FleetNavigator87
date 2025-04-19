@@ -87,7 +87,7 @@ function App() {
           <ProtectedRoute path="/tires" component={TiresNew} />
           <ProtectedRoute path="/refueling" component={RefuelingNew} />
           <ProtectedRoute path="/fines" component={FinesNew} />
-          {/* <ProtectedRoute path="/line-hall" removida conforme solicitação do cliente /> */}
+          {/* Rota line-hall removida conforme solicitação do cliente */}
           <ProtectedRoute path="/fleet-management" component={FleetManagement} />
           <ProtectedRoute path="/fleet-management/workshops" component={WorkshopsPage} />
           <ProtectedRoute path="/fleet-management/maintenance" component={MaintenancePage} />

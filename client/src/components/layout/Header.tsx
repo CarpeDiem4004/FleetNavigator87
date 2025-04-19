@@ -37,8 +37,7 @@ const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen }) => {
         return 'Abastecimentos';
       case '/fines':
         return 'Multas';
-      case '/line-hall':
-        return 'Line Hall';
+      /* Line Hall removido conforme solicitação do cliente */
       case '/bases':
         return 'Bases';
       case '/users':
