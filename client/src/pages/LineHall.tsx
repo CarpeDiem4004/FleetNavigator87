@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit, Eye, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, Edit, Eye, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -73,11 +73,11 @@ const LineHall: React.FC = () => {
     status: '',
   });
   
-  const { data: lineHall, isLoading } = useQuery({
+  const { data: lineHall = [], isLoading } = useQuery<any[]>({
     queryKey: ['/api/line-hall', filters],
   });
   
-  const { data: vehicles } = useQuery({
+  const { data: vehicles = [] } = useQuery<any[]>({
     queryKey: ['/api/vehicles'],
   });
   
@@ -139,8 +139,7 @@ const LineHall: React.FC = () => {
   };
   
   const filteredLineHall = React.useMemo(() => {
-    if (!lineHall) return [];
-    
+    // lineHall agora é sempre um array por causa do valor padrão
     return lineHall.filter((trip: any) => {
       return (
         (filters.truck === '' || trip.truckPlate === filters.truck) &&
@@ -162,12 +161,12 @@ const LineHall: React.FC = () => {
 
   // Filter for truck vehicles (cavalo mecânico) and trailers (carreta)
   const getTrucks = () => {
-    if (!vehicles) return [];
+    // vehicles agora é sempre um array por causa do valor padrão
     return vehicles.filter((v: any) => v.vehicleType === 'cavalo_mecanico');
   };
   
   const getTrailers = () => {
-    if (!vehicles) return [];
+    // vehicles agora é sempre um array por causa do valor padrão
     return vehicles.filter((v: any) => v.vehicleType === 'carreta');
   };
 
@@ -461,6 +460,39 @@ const LineHall: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+      
+      {/* Dialog de confirmação de exclusão */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Esta viagem será permanentemente excluída
+              do sistema.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              disabled={deleteMutation.isPending}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="mr-2 h-4 w-4" />
+                  Excluir viagem
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
