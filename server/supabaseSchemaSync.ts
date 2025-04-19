@@ -32,7 +32,8 @@ export async function synchronizeSupabaseTables() {
       'status_tanques': 'tanques',                // Tabela existente que precisa ser mapeada
       'controle_patio': 'controle_patio',         // Tabela que precisa ser criada
       'abastecimentos_postos': 'abastecimentos',  // Tabela existente que precisa ser mapeada
-      'recebimentos_combustivel': 'recebimentos_combustivel' // Tabela que precisa ser criada
+      'recebimentos_combustivel': 'recebimentos_combustivel', // Tabela que precisa ser criada
+      'tires': 'pneus'                           // Mapeamento entre tabela tires do schema e pneus do Supabase
     };
 
     // 2. Verificar quais tabelas existem no Supabase
@@ -46,6 +47,41 @@ export async function synchronizeSupabaseTables() {
     
     // Definições das tabelas que precisamos
     const tableDefinitions = {
+      'pneus': {
+        columns: [
+          { name: 'id', type: 'SERIAL PRIMARY KEY', isNullable: false },
+          { name: 'serial_number', type: 'TEXT NOT NULL', isNullable: false },
+          { name: 'brand', type: 'TEXT NOT NULL', isNullable: false },
+          { name: 'model', type: 'TEXT NOT NULL', isNullable: false },
+          { name: 'size', type: 'TEXT NOT NULL', isNullable: false },
+          { name: 'purchase_date', type: 'DATE NOT NULL', isNullable: false },
+          { name: 'vehicle_plate', type: 'TEXT', isNullable: true },
+          { name: 'position', type: 'TEXT', isNullable: true },
+          { name: 'initial_mileage', type: 'INTEGER DEFAULT 0', isNullable: false },
+          { name: 'current_mileage', type: 'INTEGER DEFAULT 0', isNullable: false },
+          { name: 'tread_depth', type: 'DECIMAL(4,1) DEFAULT 12.0', isNullable: false },
+          { name: 'status', type: 'TEXT NOT NULL', isNullable: false },
+          { name: 'created_at', type: 'TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP', isNullable: false }
+        ],
+        sql: `CREATE TABLE pneus (
+          id SERIAL PRIMARY KEY,
+          serial_number TEXT NOT NULL,
+          brand TEXT NOT NULL,
+          model TEXT NOT NULL,
+          size TEXT NOT NULL,
+          purchase_date DATE NOT NULL,
+          vehicle_plate TEXT,
+          position TEXT,
+          initial_mileage INTEGER DEFAULT 0,
+          current_mileage INTEGER DEFAULT 0,
+          tread_depth DECIMAL(4,1) DEFAULT 12.0,
+          status TEXT NOT NULL,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        CREATE UNIQUE INDEX idx_pneus_serial_number ON pneus(serial_number);
+        COMMENT ON TABLE pneus IS 'Tabela para armazenar informações sobre pneus da frota';`
+      },
       'status_tanques': {
         columns: [
           { name: 'id', type: 'SERIAL PRIMARY KEY' },
@@ -203,6 +239,30 @@ export async function synchronizeSupabaseTables() {
         { name: 'fornecedor', type: 'text', isNullable: true }
       ]);
     }
+    
+    // Verificar a tabela pneus
+    if (!existingTables.includes('pneus')) {
+      console.log("A tabela 'pneus' não foi encontrada no Supabase.");
+      missingTables.push('pneus');
+      
+      // Para a tabela de pneus, usamos a SQL completa predefinida
+      sqlCommands.push(tableDefinitions.pneus.sql);
+    } else {
+      checkedTables.push('pneus');
+      await ensureColumnsExist(supabase, 'pneus', [
+        { name: 'serial_number', type: 'text', isNullable: false },
+        { name: 'brand', type: 'text', isNullable: false },
+        { name: 'model', type: 'text', isNullable: false },
+        { name: 'size', type: 'text', isNullable: false },
+        { name: 'purchase_date', type: 'date', isNullable: false },
+        { name: 'vehicle_plate', type: 'text', isNullable: true },
+        { name: 'position', type: 'text', isNullable: true },
+        { name: 'initial_mileage', type: 'integer', isNullable: false },
+        { name: 'current_mileage', type: 'integer', isNullable: false },
+        { name: 'tread_depth', type: 'decimal', isNullable: false },
+        { name: 'status', type: 'text', isNullable: false }
+      ]);
+    }
 
     // Informar sobre os comandos SQL para criação de tabelas faltantes
     if (missingTables.length > 0) {
@@ -257,7 +317,8 @@ async function getExistingTablesAlternative(supabase: SupabaseClient): Promise<s
       'controle_patio', 
       'abastecimentos', 
       'abastecimentos_postos',
-      'recebimentos_combustivel'
+      'recebimentos_combustivel',
+      'pneus'
     ];
     
     const existingTables: string[] = [];
