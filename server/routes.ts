@@ -1179,8 +1179,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Tabelas em ordem de limpeza (para evitar problemas de chave estrangeira)
       // As tabelas dependentes precisam ser apagadas antes das tabelas que elas referenciam
+      // Todas as tabelas agora em português para consistência
       const tables = [
-        'maintenance', 'refueling', 'fines', 'tires', 'line_hall', 'vehicles', 'workshops'
+        'manutencao', 'abastecimentos', 'multas', 'pneus', 'linha_corredor', 'veiculos', 'oficinas'
       ];
       
       // Não vamos limpar as bases para evitar problemas com chaves estrangeiras
@@ -1191,7 +1192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Limpando dados da tabela: ${table}`);
         
         switch (table) {
-          case 'maintenance':
+          case 'manutencao':
             // Buscar todos os registros e excluir um por um
             const maintenances = await storage.getAllMaintenance();
             for (const m of maintenances) {
@@ -1199,7 +1200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             break;
             
-          case 'refueling':
+          case 'abastecimentos':
             // Buscar todos os registros e excluir um por um
             const refuelings = await storage.getAllRefueling();
             for (const r of refuelings) {
@@ -1207,7 +1208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             break;
             
-          case 'fines':
+          case 'multas':
             // Buscar todos os registros e excluir um por um
             const fines = await storage.getAllFines();
             for (const f of fines) {
@@ -1215,7 +1216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             break;
             
-          case 'tires':
+          case 'pneus':
             // Buscar todos os registros e excluir um por um
             const tires = await storage.getAllTires();
             for (const t of tires) {
@@ -1223,7 +1224,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             break;
             
-          case 'line_hall':
+          case 'linha_corredor':
             // Buscar todos os registros e excluir um por um
             const lineHalls = await storage.getAllLineHall();
             for (const lh of lineHalls) {
@@ -1231,7 +1232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             break;
             
-          case 'vehicles':
+          case 'veiculos':
             // Buscar todos os registros e excluir um por um
             const vehicles = await storage.getAllVehicles();
             for (const v of vehicles) {
@@ -1239,7 +1240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             break;
             
-          case 'workshops':
+          case 'oficinas':
             // Buscar todos os registros e excluir um por um
             const workshops = await storage.getAllWorkshops();
             for (const w of workshops) {
@@ -1271,13 +1272,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Lista de tabelas Supabase para limpar
         const supabaseTables = [
+          // Tabelas específicas do Supabase
           'abastecimentos_postos',
           'movimentacoes_patio',
           'entradas_combustivel',
           'status_tanques',
           'controle_tanques',
+          // Tabelas compartilhadas com o Replit (nomes em português)
           'veiculos',
-          'pneus'
+          'pneus',
+          'multas',
+          'abastecimentos',
+          'manutencao',
+          'oficinas',
+          'linha_corredor',
+          // Possibilidade de tabelas com nomes antigos em inglês
+          'vehicles',
+          'tires',
+          'maintenance',
+          'workshops',
+          'fines',
+          'refueling',
+          'line_hall'
         ];
         
         console.log("Iniciando limpeza de dados do Supabase via API REST...");
