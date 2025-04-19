@@ -318,3 +318,63 @@ export async function checkAllConnections() {
   
   return results;
 }
+
+// Função para limpar completamente uma tabela específica no Supabase
+export async function limparTabela(tabela: string) {
+  try {
+    const { error } = await supabase
+      .from(tabela)
+      .delete()
+      .neq('id', ''); // Garante que ele tente apagar tudo
+    
+    if (error) {
+      console.error(`Erro ao limpar tabela ${tabela}:`, error);
+      return { success: false, message: error.message };
+    } else {
+      console.log(`Tabela ${tabela} limpa com sucesso.`);
+      return { success: true, message: `Tabela ${tabela} limpa com sucesso` };
+    }
+  } catch (error: any) {
+    console.error(`Erro ao limpar tabela ${tabela}:`, error);
+    return { success: false, message: error.message || 'Erro desconhecido' };
+  }
+}
+
+// Função para limpar várias tabelas no Supabase na ordem correta
+export async function limparTodosOsDados(tabelas?: string[]) {
+  // Lista padrão de tabelas para limpar, na ordem correta para evitar conflitos de FK
+  const tabelasPadrao = [
+    'manutencao',
+    'abastecimentos',
+    'multas',
+    'pneus',
+    'linha_corredor',
+    'veiculos',
+    'oficinas',
+    'abastecimentos_postos',
+    'movimentacoes_patio',
+    'entradas_combustivel',
+    'status_tanques',
+    'controle_tanques',
+    // Incluir também os nomes antigos em inglês para garantir
+    'maintenance',
+    'refueling',
+    'fines',
+    'tires',
+    'line_hall',
+    'vehicles',
+    'workshops'
+  ];
+
+  // Usar as tabelas fornecidas ou as padrão
+  const tabelasParaLimpar = tabelas || tabelasPadrao;
+  const resultados: Record<string, any> = {};
+  
+  for (const tabela of tabelasParaLimpar) {
+    console.log(`Tentando limpar tabela ${tabela}...`);
+    const resultado = await limparTabela(tabela);
+    resultados[tabela] = resultado;
+  }
+  
+  return resultados;
+}
