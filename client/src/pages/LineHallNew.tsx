@@ -20,8 +20,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label';
-import { Search, Plus, FileEdit, Trash2, MapPin } from 'lucide-react';
+import { Search, Plus, FileEdit, Trash2, MapPin, Loader2 } from 'lucide-react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { 
   Select,
@@ -30,6 +40,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // Tipo para viagens
 interface Trip {
@@ -167,9 +179,13 @@ const formatWeight = (weightKg: number): string => {
 };
 
 const LineHallNew: React.FC = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [trips, setTrips] = useState<Trip[]>(mockTrips);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [tripToDelete, setTripToDelete] = useState<number | null>(null);
   const [newTrip, setNewTrip] = useState<Partial<Trip>>({
     origin: '',
     destination: '',
@@ -185,14 +201,81 @@ const LineHallNew: React.FC = () => {
     status: 'concluida',
     notes: null
   });
+  
+  // Buscar dados da API em vez de usar dados mockados
+  const { data: apiTrips = [], isLoading } = useQuery<any[]>({
+    queryKey: ['/api/line-hall'],
+    retry: 1,
+    staleTime: 60000,
+    refetchOnWindowFocus: false
+  });
+  
+  // Mutation para excluir uma viagem
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/line-hall/${id}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao excluir viagem');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      // Recarregar os dados após a exclusão bem-sucedida
+      queryClient.invalidateQueries({ queryKey: ['/api/line-hall'] });
+      
+      toast({
+        title: "Viagem excluída",
+        description: "A viagem foi excluída com sucesso.",
+        variant: "default"
+      });
+      
+      // Também excluir localmente para resposta imediata na UI
+      if (tripToDelete !== null) {
+        setTrips(trips.filter(trip => trip.id !== tripToDelete));
+      }
+      
+      // Fechar o diálogo de confirmação
+      setIsDeleteDialogOpen(false);
+      setTripToDelete(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao excluir viagem",
+        description: error.message || "Ocorreu um erro inesperado",
+        variant: "destructive"
+      });
+      
+      // Fechar o diálogo de confirmação mesmo em caso de erro
+      setIsDeleteDialogOpen(false);
+    }
+  });
+  
+  // Função para iniciar o processo de exclusão
+  const handleDeleteClick = (tripId: number) => {
+    setTripToDelete(tripId);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  // Função para confirmar a exclusão
+  const confirmDelete = () => {
+    if (tripToDelete !== null) {
+      deleteMutation.mutate(tripToDelete);
+    }
+  };
 
   // Filtrar viagens com base no termo de busca
-  const filteredTrips = trips.filter(
-    (trip) => 
-      trip.origin.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      trip.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      trip.truckPlate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      trip.driver.toLowerCase().includes(searchTerm.toLowerCase())
+  const tripsToUse = Array.isArray(apiTrips) && apiTrips.length > 0 ? apiTrips : trips;
+  const filteredTrips = tripsToUse.filter(
+    (trip: any) => 
+      (trip.origin?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      trip.destination?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      trip.truckPlate?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      trip.driver?.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Adicionar nova viagem
@@ -517,8 +600,17 @@ const LineHallNew: React.FC = () => {
                         <Button variant="outline" size="icon">
                           <FileEdit className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="icon">
-                          <Trash2 className="h-4 w-4" />
+                        <Button 
+                          variant="outline" 
+                          size="icon"
+                          onClick={() => handleDeleteClick(trip.id)}
+                          disabled={deleteMutation.isPending}
+                        >
+                          {deleteMutation.isPending && tripToDelete === trip.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          )}
                         </Button>
                       </div>
                     </TableCell>
@@ -529,6 +621,35 @@ const LineHallNew: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Diálogo de confirmação de exclusão */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta viagem? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={deleteMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                'Excluir'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayoutSimple>
   );
 };
