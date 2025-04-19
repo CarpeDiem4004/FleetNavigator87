@@ -1272,7 +1272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'abastecimentos',
           'manutencao',
           'oficinas',
-          'linha_corredor',
+          // 'linha_corredor' removido conforme solicitação,
           // Possibilidade de tabelas com nomes antigos em inglês
           'vehicles',
           'tires',
@@ -1280,7 +1280,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'workshops',
           'fines',
           'refueling',
-          'line_hall'
+          // 'line_hall' removido conforme solicitação
         ];
         
         console.log("Iniciando limpeza de dados do Supabase via API REST...");

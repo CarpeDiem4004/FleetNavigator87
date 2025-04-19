@@ -10,14 +10,14 @@ import MaintenanceNew from "@/pages/MaintenanceNew";
 import TiresNew from "@/pages/TiresNew";
 import RefuelingNew from "@/pages/RefuelingNew";
 import FinesNew from "@/pages/FinesNew";
-import LineHallNew from "@/pages/LineHallNew";
+// LineHallNew removido conforme solicitação do cliente
 import UsersNew from "@/pages/UsersNew";
 import Bases from "@/pages/Bases";
 import SignIn from "@/pages/SignIn";
 import RegisterNew from "@/pages/RegisterNew";
 import AccessDeniedPage from "@/pages/access-denied";
 import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
-import LineHallRedirect from "@/components/permission/LineHallRedirect";
+// LineHallRedirect removido conforme solicitação do cliente
 import FleetManagementRedirect from "@/components/permission/FleetManagementRedirect";
 import { AuthProvider } from "@/context/AuthContext";
 
@@ -72,9 +72,7 @@ function App() {
           </Route>
           
           {/* Componentes de redirecionamento para usuários específicos */}
-          <Route path="/old-dashboard">
-            <LineHallRedirect />
-          </Route>
+          {/* Rota LineHallRedirect removida conforme solicitação do cliente */}
           
           <Route path="/fleet-redirect">
             <FleetManagementRedirect />
@@ -89,7 +87,7 @@ function App() {
           <ProtectedRoute path="/tires" component={TiresNew} />
           <ProtectedRoute path="/refueling" component={RefuelingNew} />
           <ProtectedRoute path="/fines" component={FinesNew} />
-          <ProtectedRoute path="/line-hall" component={LineHallNew} />
+          {/* <ProtectedRoute path="/line-hall" removida conforme solicitação do cliente /> */}
           <ProtectedRoute path="/fleet-management" component={FleetManagement} />
           <ProtectedRoute path="/fleet-management/workshops" component={WorkshopsPage} />
           <ProtectedRoute path="/fleet-management/maintenance" component={MaintenancePage} />
