@@ -46,7 +46,7 @@ import Accidents from "@/pages/accidents";
 import WorkSafety from "@/pages/work-safety";
 import WorkshopsPage from "@/pages/fleet-management/WorkshopsPage";
 import MaintenancePage from "@/pages/fleet-management/MaintenancePage";
-import LinehallShopee from "@/pages/LinehallShopee";
+import LinehallShopee from "@/pages/LinehallShopeeNew";
 
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";

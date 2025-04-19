@@ -29,6 +29,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Edit, Trash2 } from "lucide-react";
 import { fetcher } from "@/lib/fetcher";
+import { camelToSnakeObject, snakeToCamelObject } from "@/lib/adapters";
 import AppLayout from "@/components/layout/AppLayout";
 
 type LinehallShopee = {
@@ -106,7 +107,10 @@ const LinehallShopeePage = () => {
     refetch: refetchList,
   } = useQuery<LinehallShopee[]>({
     queryKey: ["/api/linehall-shopee"],
-    queryFn: () => fetcher("/api/linehall-shopee"),
+    queryFn: async () => {
+      const data = await fetcher("/api/linehall-shopee");
+      return snakeToCamelObject<LinehallShopee[]>(data);
+    },
   });
 
   const {
@@ -147,15 +151,18 @@ const LinehallShopeePage = () => {
     e.preventDefault();
     
     try {
+      // Converte os dados de camelCase para snake_case antes de enviar para o backend
+      const snakeCaseData = camelToSnakeObject({
+        ...formData,
+        created_by: user?.id
+      });
+      
       const response = await fetch("/api/linehall-shopee", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          ...formData,
-          created_by: user?.id
-        }),
+        body: JSON.stringify(snakeCaseData),
       });
 
       if (!response.ok) {
@@ -169,8 +176,8 @@ const LinehallShopeePage = () => {
       
       setIsAddDialogOpen(false);
       setFormData({
-        data_viagem: format(new Date(), 'yyyy-MM-dd'),
-        horario_carregamento: '08:00',
+        dataViagem: format(new Date(), 'yyyy-MM-dd'),
+        horarioCarregamento: '08:00',
         status: 'agendado'
       });
       queryClient.invalidateQueries({ queryKey: ["/api/linehall-shopee"] });
@@ -190,12 +197,15 @@ const LinehallShopeePage = () => {
     if (!selectedItem) return;
     
     try {
+      // Converte os dados de camelCase para snake_case antes de enviar para o backend
+      const snakeCaseData = camelToSnakeObject(formData);
+      
       const response = await fetch(`/api/linehall-shopee/${selectedItem.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(snakeCaseData),
       });
 
       if (!response.ok) {
@@ -251,14 +261,14 @@ const LinehallShopeePage = () => {
   const openEditDialog = (item: LinehallShopee) => {
     setSelectedItem(item);
     setFormData({
-      data_viagem: item.data_viagem,
-      cavalo_placa: item.cavalo_placa,
-      carreta1_placa: item.carreta1_placa,
-      carreta2_placa: item.carreta2_placa || "",
-      motorista_id: item.motorista_id,
-      base_origem_id: item.base_origem_id,
-      base_destino_id: item.base_destino_id,
-      horario_carregamento: item.horario_carregamento,
+      dataViagem: item.dataViagem,
+      cavaloPlaca: item.cavaloPlaca,
+      carreta1Placa: item.carreta1Placa,
+      carreta2Placa: item.carreta2Placa || "",
+      motoristaId: item.motoristaId,
+      baseOrigemId: item.baseOrigemId,
+      baseDestinoId: item.baseDestinoId,
+      horarioCarregamento: item.horarioCarregamento,
       status: item.status,
       observacoes: item.observacoes || "",
     });
@@ -360,20 +370,20 @@ const LinehallShopeePage = () => {
                   {linehallShopeeList && linehallShopeeList.length > 0 ? (
                     linehallShopeeList.map((item) => (
                       <TableRow key={item.id}>
-                        <TableCell>{formatDate(item.data_viagem)}</TableCell>
-                        <TableCell>{item.cavalo_placa}</TableCell>
+                        <TableCell>{formatDate(item.dataViagem)}</TableCell>
+                        <TableCell>{item.cavaloPlaca}</TableCell>
                         <TableCell>
-                          {item.carreta1_placa}
-                          {item.carreta2_placa && <span> + {item.carreta2_placa}</span>}
+                          {item.carreta1Placa}
+                          {item.carreta2Placa && <span> + {item.carreta2Placa}</span>}
                         </TableCell>
                         <TableCell>
-                          {item.motorista_nome || getDriverName(item.motorista_id)}
+                          {item.motoristaNome || getDriverName(item.motoristaId)}
                         </TableCell>
                         <TableCell>
-                          {item.base_origem_nome || getBaseName(item.base_origem_id)} → 
-                          {item.base_destino_nome || getBaseName(item.base_destino_id)}
+                          {item.baseOrigemNome || getBaseName(item.baseOrigemId)} → 
+                          {item.baseDestinoNome || getBaseName(item.baseDestinoId)}
                         </TableCell>
-                        <TableCell>{item.horario_carregamento}</TableCell>
+                        <TableCell>{item.horarioCarregamento}</TableCell>
                         <TableCell>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(item.status)}`}>
                             {mapStatusToLabel(item.status)}
@@ -425,19 +435,19 @@ const LinehallShopeePage = () => {
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="data_viagem">Data da Viagem</Label>
+                    <Label htmlFor="dataViagem">Data da Viagem</Label>
                     <DatePickerForm
                       date={selectedDate}
                       setDate={handleDateChange}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="horario_carregamento">Horário de Carregamento</Label>
+                    <Label htmlFor="horarioCarregamento">Horário de Carregamento</Label>
                     <Input
-                      id="horario_carregamento"
-                      name="horario_carregamento"
+                      id="horarioCarregamento"
+                      name="horarioCarregamento"
                       type="time"
-                      value={formData.horario_carregamento || ""}
+                      value={formData.horarioCarregamento || ""}
                       onChange={handleInputChange}
                       required
                     />
@@ -446,10 +456,10 @@ const LinehallShopeePage = () => {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="cavalo_placa">Cavalo (Placa)</Label>
+                    <Label htmlFor="cavaloPlaca">Cavalo (Placa)</Label>
                     <Select
-                      value={formData.cavalo_placa}
-                      onValueChange={(value) => handleSelectChange("cavalo_placa", value)}
+                      value={formData.cavaloPlaca}
+                      onValueChange={(value) => handleSelectChange("cavaloPlaca", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecionar cavalo" />
@@ -464,10 +474,10 @@ const LinehallShopeePage = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="motorista_id">Motorista</Label>
+                    <Label htmlFor="motoristaId">Motorista</Label>
                     <Select
-                      value={formData.motorista_id?.toString()}
-                      onValueChange={(value) => handleSelectChange("motorista_id", value)}
+                      value={formData.motoristaId?.toString()}
+                      onValueChange={(value) => handleSelectChange("motoristaId", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecionar motorista" />
@@ -485,21 +495,21 @@ const LinehallShopeePage = () => {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="carreta1_placa">Carreta 1 (Placa)</Label>
+                    <Label htmlFor="carreta1Placa">Carreta 1 (Placa)</Label>
                     <Input
-                      id="carreta1_placa"
-                      name="carreta1_placa"
-                      value={formData.carreta1_placa || ""}
+                      id="carreta1Placa"
+                      name="carreta1Placa"
+                      value={formData.carreta1Placa || ""}
                       onChange={handleInputChange}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="carreta2_placa">Carreta 2 (Placa - Opcional)</Label>
+                    <Label htmlFor="carreta2Placa">Carreta 2 (Placa - Opcional)</Label>
                     <Input
-                      id="carreta2_placa"
-                      name="carreta2_placa"
-                      value={formData.carreta2_placa || ""}
+                      id="carreta2Placa"
+                      name="carreta2Placa"
+                      value={formData.carreta2Placa || ""}
                       onChange={handleInputChange}
                     />
                   </div>
@@ -507,10 +517,10 @@ const LinehallShopeePage = () => {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="base_origem_id">Base de Origem</Label>
+                    <Label htmlFor="baseOrigemId">Base de Origem</Label>
                     <Select
-                      value={formData.base_origem_id?.toString()}
-                      onValueChange={(value) => handleSelectChange("base_origem_id", value)}
+                      value={formData.baseOrigemId?.toString()}
+                      onValueChange={(value) => handleSelectChange("baseOrigemId", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecionar origem" />
@@ -525,10 +535,10 @@ const LinehallShopeePage = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="base_destino_id">Base de Destino</Label>
+                    <Label htmlFor="baseDestinoId">Base de Destino</Label>
                     <Select
-                      value={formData.base_destino_id?.toString()}
-                      onValueChange={(value) => handleSelectChange("base_destino_id", value)}
+                      value={formData.baseDestinoId?.toString()}
+                      onValueChange={(value) => handleSelectChange("baseDestinoId", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecionar destino" />
@@ -596,23 +606,23 @@ const LinehallShopeePage = () => {
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="data_viagem">Data da Viagem</Label>
+                    <Label htmlFor="dataViagem">Data da Viagem</Label>
                     <Input
-                      id="data_viagem"
-                      name="data_viagem"
+                      id="dataViagem"
+                      name="dataViagem"
                       type="date"
-                      value={formData.data_viagem || ""}
+                      value={formData.dataViagem || ""}
                       onChange={handleInputChange}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="horario_carregamento">Horário de Carregamento</Label>
+                    <Label htmlFor="horarioCarregamento">Horário de Carregamento</Label>
                     <Input
-                      id="horario_carregamento"
-                      name="horario_carregamento"
+                      id="horarioCarregamento"
+                      name="horarioCarregamento"
                       type="time"
-                      value={formData.horario_carregamento || ""}
+                      value={formData.horarioCarregamento || ""}
                       onChange={handleInputChange}
                       required
                     />
@@ -621,10 +631,10 @@ const LinehallShopeePage = () => {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="cavalo_placa">Cavalo (Placa)</Label>
+                    <Label htmlFor="cavaloPlaca">Cavalo (Placa)</Label>
                     <Select
-                      value={formData.cavalo_placa}
-                      onValueChange={(value) => handleSelectChange("cavalo_placa", value)}
+                      value={formData.cavaloPlaca}
+                      onValueChange={(value) => handleSelectChange("cavaloPlaca", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecionar cavalo" />
@@ -639,10 +649,10 @@ const LinehallShopeePage = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="motorista_id">Motorista</Label>
+                    <Label htmlFor="motoristaId">Motorista</Label>
                     <Select
-                      value={formData.motorista_id?.toString()}
-                      onValueChange={(value) => handleSelectChange("motorista_id", value)}
+                      value={formData.motoristaId?.toString()}
+                      onValueChange={(value) => handleSelectChange("motoristaId", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecionar motorista" />
@@ -660,21 +670,21 @@ const LinehallShopeePage = () => {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="carreta1_placa">Carreta 1 (Placa)</Label>
+                    <Label htmlFor="carreta1Placa">Carreta 1 (Placa)</Label>
                     <Input
-                      id="carreta1_placa"
-                      name="carreta1_placa"
-                      value={formData.carreta1_placa || ""}
+                      id="carreta1Placa"
+                      name="carreta1Placa"
+                      value={formData.carreta1Placa || ""}
                       onChange={handleInputChange}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="carreta2_placa">Carreta 2 (Placa - Opcional)</Label>
+                    <Label htmlFor="carreta2Placa">Carreta 2 (Placa - Opcional)</Label>
                     <Input
-                      id="carreta2_placa"
-                      name="carreta2_placa"
-                      value={formData.carreta2_placa || ""}
+                      id="carreta2Placa"
+                      name="carreta2Placa"
+                      value={formData.carreta2Placa || ""}
                       onChange={handleInputChange}
                     />
                   </div>
@@ -682,10 +692,10 @@ const LinehallShopeePage = () => {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="base_origem_id">Base de Origem</Label>
+                    <Label htmlFor="baseOrigemId">Base de Origem</Label>
                     <Select
-                      value={formData.base_origem_id?.toString()}
-                      onValueChange={(value) => handleSelectChange("base_origem_id", value)}
+                      value={formData.baseOrigemId?.toString()}
+                      onValueChange={(value) => handleSelectChange("baseOrigemId", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecionar origem" />
@@ -700,10 +710,10 @@ const LinehallShopeePage = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="base_destino_id">Base de Destino</Label>
+                    <Label htmlFor="baseDestinoId">Base de Destino</Label>
                     <Select
-                      value={formData.base_destino_id?.toString()}
-                      onValueChange={(value) => handleSelectChange("base_destino_id", value)}
+                      value={formData.baseDestinoId?.toString()}
+                      onValueChange={(value) => handleSelectChange("baseDestinoId", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecionar destino" />
