@@ -1,30 +1,19 @@
 /**
  * Função utilitária para fazer requisições HTTP
- * Utilizada com o react-query para buscar dados
+ * Retorna os dados da resposta JSON ou gera um erro
  */
-export async function fetcher<T = any>(
-  input: RequestInfo,
-  init?: RequestInit
-): Promise<T> {
-  const response = await fetch(input, init);
-
-  if (!response.ok) {
-    let errorMessage = `Erro ${response.status}: ${response.statusText}`;
-    try {
-      const errorData = await response.json();
-      if (errorData.message) {
-        errorMessage = errorData.message;
-      }
-    } catch (e) {
-      // Se não conseguirmos extrair uma mensagem de erro do JSON, usamos a mensagem padrão acima
-    }
+export async function fetcher(url: string): Promise<any> {
+  const res = await fetch(url);
+  
+  // Se a resposta não for 2xx, gera um erro com a mensagem do servidor
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({
+      message: 'Ocorreu um erro inesperado'
+    }));
+    
+    const errorMessage = errorData.message || 'Ocorreu um erro inesperado';
     throw new Error(errorMessage);
   }
-
-  // Para requisições DELETE ou outras sem conteúdo
-  if (response.status === 204) {
-    return {} as T;
-  }
-
-  return response.json();
+  
+  return res.json();
 }

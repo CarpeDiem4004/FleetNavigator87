@@ -1,25 +1,27 @@
-import * as React from "react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import * as React from "react"
+import { format } from "date-fns"
+import { ptBR } from "date-fns/locale"
+import { Calendar as CalendarIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@/components/ui/popover"
+
+interface DatePickerFormProps {
+  date: Date | undefined
+  setDate: (date: Date | undefined) => void
+  className?: string
+}
 
 export function DatePickerForm({
   date,
   setDate,
   className,
-}: {
-  date?: Date;
-  setDate: (date: Date | undefined) => void;
-  className?: string;
-}) {
+}: DatePickerFormProps) {
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -45,5 +47,5 @@ export function DatePickerForm({
         />
       </PopoverContent>
     </Popover>
-  );
+  )
 }
