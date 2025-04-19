@@ -4,7 +4,8 @@ import { storage } from "./storage";
 import { 
   insertBaseSchema, insertVehicleSchema, insertMaintenanceSchema,
   insertWorkshopSchema, insertTireSchema, insertRefuelingSchema, 
-  insertFineSchema, insertLineHallSchema, insertUserSchema
+  insertFineSchema, insertUserSchema
+  // insertLineHallSchema removido conforme solicitação do cliente
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import { getDashboardKPIs } from "./dashboardApi";
@@ -727,16 +728,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // LineHall routes
-  app.get("/api/line-hall", isAuthenticated, async (req, res) => {
-    try {
-      const lineHall = await storage.getAllLineHall();
-      return res.status(200).json(lineHall);
-    } catch (error) {
-      console.error("Error fetching line hall:", error);
-      return res.status(500).json({ message: "Server error" });
-    }
-  });
+  // LineHall routes removidas conforme solicitação do cliente
   
   // Users routes (admin only)
   app.get("/api/users", isAdmin, async (req, res) => {
@@ -1182,7 +1174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // As tabelas dependentes precisam ser apagadas antes das tabelas que elas referenciam
       // Todas as tabelas agora em português para consistência
       const tables = [
-        'manutencao', 'abastecimentos', 'multas', 'pneus', 'linha_corredor', 'veiculos', 'oficinas'
+        'manutencao', 'abastecimentos', 'multas', 'pneus', 'veiculos', 'oficinas' // 'linha_corredor' removido conforme solicitação
       ];
       
       // Não vamos limpar as bases para evitar problemas com chaves estrangeiras
@@ -1225,13 +1217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             break;
             
-          case 'linha_corredor':
-            // Buscar todos os registros e excluir um por um
-            const lineHalls = await storage.getAllLineHall();
-            for (const lh of lineHalls) {
-              await storage.deleteLineHall(lh.id);
-            }
-            break;
+          // Caso 'linha_corredor' removido conforme solicitação do cliente
             
           case 'veiculos':
             // Buscar todos os registros e excluir um por um
