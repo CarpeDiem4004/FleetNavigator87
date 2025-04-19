@@ -177,7 +177,7 @@ const MainLayoutSimple: React.FC<MainLayoutSimpleProps> = ({ children }) => {
       hasSubmenu: true  // Indica que este item tem submenu
     },
     { href: '/fines', icon: <FileWarning className="h-5 w-5" />, title: 'Multas' },
-    { href: '/line-hall', icon: <MapPin className="h-5 w-5" />, title: 'Line Hall' },
+    // Line Hall removido conforme solicitação do cliente
     { href: '/fleet-management', icon: <Truck className="h-5 w-5" />, title: 'Gestão de Frota' },
     { href: '/users', icon: <Users className="h-5 w-5" />, title: 'Usuários' },
   ];
