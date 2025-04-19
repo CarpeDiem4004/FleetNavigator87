@@ -18,6 +18,7 @@ const AdminUtils = () => {
   const isAdmin = user?.role === 'admin';
   
   const [isLoading, setIsLoading] = useState(false);
+  const [isTiresLoading, setIsTiresLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [operationStatus, setOperationStatus] = useState<string | null>(null);
 
@@ -154,6 +155,83 @@ const AdminUtils = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const limparApenasTabeaPneus = async () => {
+    if (!isAdmin) {
+      toast({
+        title: "Acesso negado",
+        description: "Você não tem permissão para realizar esta operação.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const confirmacao = window.confirm(
+      'ATENÇÃO: Esta operação irá limpar APENAS a tabela de pneus! ' +
+      'Esta ação é IRREVERSÍVEL e removerá todos os registros de pneus ' +
+      'do sistema PostgreSQL e do Supabase.\n\n' +
+      'Deseja continuar?'
+    );
+
+    if (!confirmacao) return;
+
+    // Segunda confirmação para ter certeza
+    const segundaConfirmacao = prompt(
+      'Para confirmar a limpeza da tabela de pneus, digite "LIMPAR" e clique em OK:'
+    );
+    
+    // Verifica se o usuário digitou "LIMPAR" corretamente
+    if (segundaConfirmacao !== 'LIMPAR') {
+      toast({
+        title: "Operação cancelada",
+        description: "A limpeza dos dados de pneus foi cancelada. Nenhuma alteração foi realizada.",
+        variant: "default"
+      });
+      return;
+    }
+
+    try {
+      setIsTiresLoading(true);
+      setOperationStatus("Limpando tabela de pneus...");
+
+      // Chamar API para limpar tabela de pneus
+      const response = await fetch('/api/admin/clear-tires-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          confirm: 'LIMPAR',
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.message || 'Erro ao limpar dados de pneus');
+      }
+      
+      setOperationStatus("Limpeza da tabela de pneus concluída com sucesso!");
+      
+      toast({
+        title: "Dados de pneus limpos com sucesso",
+        description: "Todos os registros de pneus foram removidos do sistema.",
+        variant: "default"
+      });
+      
+    } catch (error: any) {
+      console.error('Erro ao limpar tabela de pneus:', error);
+      setOperationStatus(`Erro: ${error.message}`);
+      
+      toast({
+        title: "Erro ao limpar tabela de pneus",
+        description: error.message || "Ocorreu um erro inesperado",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTiresLoading(false);
     }
   };
 
@@ -385,12 +463,12 @@ const AdminUtils = () => {
                 </a>
               </div>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex flex-col space-y-3">
               <Button 
                 variant="destructive" 
                 className="w-full"
                 onClick={limparTodosDados}
-                disabled={isLoading}
+                disabled={isLoading || isTiresLoading}
               >
                 {isLoading ? (
                   <>
@@ -404,6 +482,32 @@ const AdminUtils = () => {
                   </>
                 )}
               </Button>
+              
+              <Separator />
+              
+              <div className="w-full pt-2">
+                <p className="text-center text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  Limpeza seletiva de tabelas
+                </p>
+                <Button 
+                  variant="outline" 
+                  className="w-full border-amber-600 text-amber-700 dark:border-amber-500 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                  onClick={limparApenasTabeaPneus}
+                  disabled={isLoading || isTiresLoading}
+                >
+                  {isTiresLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Limpando pneus...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Limpar Apenas Tabela de Pneus
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardFooter>
           </Card>
           
@@ -436,7 +540,7 @@ const AdminUtils = () => {
                 variant="outline" 
                 className="w-full border-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30"
                 onClick={resetarStatusTanques}
-                disabled={isLoading}
+                disabled={isLoading || isTiresLoading}
               >
                 {isLoading ? (
                   <>
@@ -455,13 +559,13 @@ const AdminUtils = () => {
         </div>
         
         {/* Status da Operação */}
-        {isLoading && (
+        {(isLoading || isTiresLoading) && (
           <Card className="mt-6 shadow-lg">
             <CardHeader>
               <CardTitle className="text-base font-medium">Status da Operação</CardTitle>
             </CardHeader>
             <CardContent>
-              <Progress value={progress} className="h-2 mb-2" />
+              {isLoading && <Progress value={progress} className="h-2 mb-2" />}
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 {operationStatus || "Processando..."}
               </p>
@@ -469,7 +573,7 @@ const AdminUtils = () => {
           </Card>
         )}
         
-        {!isLoading && operationStatus && (
+        {!isLoading && !isTiresLoading && operationStatus && (
           <Card className="mt-6 shadow-lg">
             <CardHeader>
               <CardTitle className="text-base font-medium">Resultado da Última Operação</CardTitle>
