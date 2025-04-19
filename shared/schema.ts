@@ -11,7 +11,7 @@ export const maintenanceStatusEnum = pgEnum('maintenance_status', ['concluida', 
 export const tireStatusEnum = pgEnum('tire_status', ['em_uso', 'estoque', 'descartado']);
 export const fuelTypeEnum = pgEnum('fuel_type', ['arla', 'diesel']);
 export const fineStatusEnum = pgEnum('fine_status', ['pendente', 'paga', 'contestada']);
-export const tripStatusEnum = pgEnum('trip_status', ['programada', 'carregando', 'aguardando_carga', 'em_transito', 'finalizada']);
+// tripStatusEnum removido conforme solicitação do cliente
 export const userRoleEnum = pgEnum('user_role', ['admin', 'gestor', 'operador']);
 
 // Create the bases table
@@ -96,15 +96,7 @@ export const fines = pgTable("multas", {
 });
 
 // Create the lineHall table (linha_corredor)
-export const lineHall = pgTable("linha_corredor", {
-  id: serial("id").primaryKey(),
-  truckPlate: text("truck_plate").notNull().references(() => vehicles.plate),
-  trailer1Plate: text("trailer1_plate").notNull().references(() => vehicles.plate),
-  trailer2Plate: text("trailer2_plate").references(() => vehicles.plate),
-  loadingTime: timestamp("loading_time").notNull(),
-  destination: text("destination").notNull(),
-  tripStatus: tripStatusEnum("trip_status").notNull(),
-});
+// Tabela lineHall removida conforme solicitação do cliente
 
 // Create the users table
 export const users = pgTable("users", {
@@ -163,7 +155,7 @@ export const insertMaintenanceSchema = createInsertSchema(maintenance);
 export const insertTireSchema = createInsertSchema(tires);
 export const insertRefuelingSchema = createInsertSchema(refueling);
 export const insertFineSchema = createInsertSchema(fines);
-export const insertLineHallSchema = createInsertSchema(lineHall);
+// insertLineHallSchema removido conforme solicitação do cliente
 export const insertUserSchema = createInsertSchema(users).pick({
   name: true,
   email: true,
@@ -195,8 +187,7 @@ export type InsertRefueling = z.infer<typeof insertRefuelingSchema>;
 export type Fine = typeof fines.$inferSelect;
 export type InsertFine = z.infer<typeof insertFineSchema>;
 
-export type LineHall = typeof lineHall.$inferSelect;
-export type InsertLineHall = z.infer<typeof insertLineHallSchema>;
+// Tipos de LineHall removidos conforme solicitação do cliente
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;

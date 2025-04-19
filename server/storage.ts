@@ -1,9 +1,9 @@
 import { 
-  users, vehicles, maintenance, tires, refueling, fines, lineHall, bases, workshops,
+  users, vehicles, maintenance, tires, refueling, fines, bases, workshops, // lineHall removido conforme solicitação
   type User, type InsertUser, type Vehicle, type InsertVehicle,
   type Maintenance, type InsertMaintenance, type Tire, type InsertTire,
   type Refueling, type InsertRefueling, type Fine, type InsertFine,
-  type LineHall, type InsertLineHall, type Base, type InsertBase,
+  type Base, type InsertBase, // LineHall types removidos conforme solicitação
   type Workshop, type InsertWorkshop
 } from "@shared/schema";
 import { db } from "./db";
@@ -75,12 +75,7 @@ export interface IStorage {
   updateFine(id: number, fine: Partial<InsertFine>): Promise<Fine | undefined>;
   deleteFine(id: number): Promise<boolean>;
   
-  // LineHall operations
-  getLineHall(id: number): Promise<LineHall | undefined>;
-  getAllLineHall(): Promise<LineHall[]>;
-  createLineHall(lineHall: InsertLineHall): Promise<LineHall>;
-  updateLineHall(id: number, lineHall: Partial<InsertLineHall>): Promise<LineHall | undefined>;
-  deleteLineHall(id: number): Promise<boolean>;
+  // LineHall operations removidas conforme solicitação do cliente
 }
 
 export class DatabaseStorage implements IStorage {
@@ -497,36 +492,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   // LineHall operations
-  async getLineHall(id: number): Promise<LineHall | undefined> {
-    const [result] = await db.select().from(lineHall).where(eq(lineHall.id, id));
-    return result || undefined;
-  }
-
-  async getAllLineHall(): Promise<LineHall[]> {
-    return await db.select().from(lineHall);
-  }
-
-  async createLineHall(lineHallData: InsertLineHall): Promise<LineHall> {
-    const [newLineHall] = await db.insert(lineHall).values(lineHallData).returning();
-    return newLineHall;
-  }
-
-  async updateLineHall(id: number, lineHallData: Partial<InsertLineHall>): Promise<LineHall | undefined> {
-    const [updated] = await db
-      .update(lineHall)
-      .set(lineHallData)
-      .where(eq(lineHall.id, id))
-      .returning();
-    return updated || undefined;
-  }
-
-  async deleteLineHall(id: number): Promise<boolean> {
-    const [deleted] = await db
-      .delete(lineHall)
-      .where(eq(lineHall.id, id))
-      .returning();
-    return !!deleted;
-  }
+  // Implementações de LineHall removidas conforme solicitação do cliente
 }
 
 export const storage = new DatabaseStorage();
