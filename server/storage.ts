@@ -1,9 +1,9 @@
 import { 
-  users, vehicles, maintenance, tires, refueling, fines, bases, workshops, // lineHall removido conforme solicitação
+  users, vehicles, maintenance, tires, refueling, fines, bases, workshops, linehallShopee,
   type User, type InsertUser, type Vehicle, type InsertVehicle,
   type Maintenance, type InsertMaintenance, type Tire, type InsertTire,
   type Refueling, type InsertRefueling, type Fine, type InsertFine,
-  type Base, type InsertBase, // LineHall types removidos conforme solicitação
+  type Base, type InsertBase, type LinehallShopee, type InsertLinehallShopee,
   type Workshop, type InsertWorkshop
 } from "@shared/schema";
 import { db } from "./db";

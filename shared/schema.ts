@@ -11,7 +11,7 @@ export const maintenanceStatusEnum = pgEnum('maintenance_status', ['concluida', 
 export const tireStatusEnum = pgEnum('tire_status', ['em_uso', 'estoque', 'descartado']);
 export const fuelTypeEnum = pgEnum('fuel_type', ['arla', 'diesel']);
 export const fineStatusEnum = pgEnum('fine_status', ['pendente', 'paga', 'contestada']);
-// tripStatusEnum removido conforme solicitação do cliente
+export const linehallStatusEnum = pgEnum('linehall_status', ['agendado', 'carregando', 'em_transito', 'descarregando', 'finalizado', 'cancelado']);
 export const userRoleEnum = pgEnum('user_role', ['admin', 'gestor', 'operador']);
 
 // Create the bases table
@@ -95,8 +95,23 @@ export const fines = pgTable("multas", {
   value: decimal("value", { precision: 10, scale: 2 }).notNull(),
 });
 
-// Create the lineHall table (linha_corredor)
-// Tabela lineHall removida conforme solicitação do cliente
+// Criar a tabela para LINE HALL SHOPEE
+export const linehallShopee = pgTable("linehall_shopee", {
+  id: serial("id").primaryKey(),
+  dataViagem: date("data_viagem").notNull(),
+  cavaloPlaca: text("cavalo_placa").notNull().references(() => vehicles.plate),
+  carreta1Placa: text("carreta1_placa").notNull(),
+  carreta2Placa: text("carreta2_placa"),
+  motoristaId: integer("motorista_id").notNull().references(() => users.id),
+  baseOrigemId: integer("base_origem_id").notNull().references(() => bases.id),
+  baseDestinoId: integer("base_destino_id").notNull().references(() => bases.id),
+  horarioCarregamento: text("horario_carregamento").notNull(),
+  status: linehallStatusEnum("status").default('agendado'),
+  observacoes: text("observacoes"),
+  createdBy: integer("created_by").references(() => users.id),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
 
 // Create the users table
 export const users = pgTable("users", {
@@ -118,6 +133,7 @@ export const vehiclesRelations = relations(vehicles, ({ one, many }) => ({
   maintenance: many(maintenance),
   refueling: many(refueling),
   fines: many(fines),
+  linehallShopee: many(linehallShopee),
 }));
 
 export const basesRelations = relations(bases, ({ many }) => ({
@@ -125,6 +141,8 @@ export const basesRelations = relations(bases, ({ many }) => ({
   refueling: many(refueling),
   users: many(users),
   maintenance: many(maintenance, { relationName: "requestedMaintenance" }),
+  linehallShopeeOrigem: many(linehallShopee, { relationName: "baseOrigem" }),
+  linehallShopeeDestino: many(linehallShopee, { relationName: "baseDestino" }),
 }));
 
 export const maintenanceRelations = relations(maintenance, ({ one }) => ({
@@ -147,6 +165,33 @@ export const workshopsRelations = relations(workshops, ({ many }) => ({
   maintenance: many(maintenance),
 }));
 
+// Relações para LinehallShopee
+export const linehallShopeeRelations = relations(linehallShopee, ({ one }) => ({
+  veiculo: one(vehicles, {
+    fields: [linehallShopee.cavaloPlaca],
+    references: [vehicles.plate]
+  }),
+  motorista: one(users, {
+    fields: [linehallShopee.motoristaId],
+    references: [users.id]
+  }),
+  baseOrigem: one(bases, {
+    fields: [linehallShopee.baseOrigemId],
+    references: [bases.id],
+    relationName: "baseOrigem"
+  }),
+  baseDestino: one(bases, {
+    fields: [linehallShopee.baseDestinoId],
+    references: [bases.id],
+    relationName: "baseDestino"
+  }),
+  criador: one(users, {
+    fields: [linehallShopee.createdBy],
+    references: [users.id],
+    relationName: "criador"
+  })
+}));
+
 // Insert schemas
 export const insertBaseSchema = createInsertSchema(bases);
 export const insertVehicleSchema = createInsertSchema(vehicles);
@@ -155,7 +200,12 @@ export const insertMaintenanceSchema = createInsertSchema(maintenance);
 export const insertTireSchema = createInsertSchema(tires);
 export const insertRefuelingSchema = createInsertSchema(refueling);
 export const insertFineSchema = createInsertSchema(fines);
-// insertLineHallSchema removido conforme solicitação do cliente
+export const insertLinehallShopeeSchema = createInsertSchema(linehallShopee).omit({
+  id: true,
+  status: true,
+  created_at: true,
+  updated_at: true
+});
 export const insertUserSchema = createInsertSchema(users).pick({
   name: true,
   email: true,
@@ -187,7 +237,8 @@ export type InsertRefueling = z.infer<typeof insertRefuelingSchema>;
 export type Fine = typeof fines.$inferSelect;
 export type InsertFine = z.infer<typeof insertFineSchema>;
 
-// Tipos de LineHall removidos conforme solicitação do cliente
+export type LinehallShopee = typeof linehallShopee.$inferSelect;
+export type InsertLinehallShopee = z.infer<typeof insertLinehallShopeeSchema>;
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
