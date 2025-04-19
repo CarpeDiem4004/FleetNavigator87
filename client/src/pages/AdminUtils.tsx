@@ -22,21 +22,29 @@ const AdminUtils = () => {
   const [progress, setProgress] = useState(0);
   const [operationStatus, setOperationStatus] = useState<string | null>(null);
 
-  // Lista de tabelas para limpar
+  // Lista de tabelas para limpar (atualizada para nomes em português)
   const tables = [
-    { name: 'vehicles', label: 'Veículos' },
-    { name: 'maintenance', label: 'Manutenções' },
-    { name: 'workshops', label: 'Oficinas' },
-    { name: 'tires', label: 'Pneus' },
-    { name: 'refueling', label: 'Abastecimentos' },
-    { name: 'fines', label: 'Multas' },
-    { name: 'line_hall', label: 'Line Hall' },
+    // Tabelas principais em português
+    { name: 'veiculos', label: 'Veículos' },
+    { name: 'manutencao', label: 'Manutenções' },
+    { name: 'oficinas', label: 'Oficinas' },
+    { name: 'pneus', label: 'Pneus' },
+    { name: 'abastecimentos', label: 'Abastecimentos' },
+    { name: 'multas', label: 'Multas' },
+    { name: 'linha_corredor', label: 'Line Hall' },
     { name: 'abastecimentos_postos', label: 'Abastecimentos em Postos' },
     { name: 'movimentacoes_patio', label: 'Movimentações de Pátio' },
     { name: 'entradas_combustivel', label: 'Entradas de Combustível' },
     { name: 'status_tanques', label: 'Status de Tanques' },
     { name: 'controle_tanques', label: 'Controle de Tanques' },
-    { name: 'veiculos', label: 'Tabela Veiculos Supabase' },
+    // Nomes antigos em inglês (para compatibilidade)
+    { name: 'vehicles', label: 'Veículos (nome antigo)' },
+    { name: 'maintenance', label: 'Manutenções (nome antigo)' },
+    { name: 'workshops', label: 'Oficinas (nome antigo)' },
+    { name: 'tires', label: 'Pneus (nome antigo)' },
+    { name: 'refueling', label: 'Abastecimentos (nome antigo)' },
+    { name: 'fines', label: 'Multas (nome antigo)' },
+    { name: 'line_hall', label: 'Line Hall (nome antigo)' },
   ];
 
   const limparTodosDados = async () => {
@@ -434,7 +442,7 @@ const AdminUtils = () => {
             </CardHeader>
             <CardContent className="pt-6">
               <p className="mb-4 text-sm">
-                Esta ferramenta permite <strong>ZERAR COMPLETAMENTE</strong> o sistema e limpar todos os dados operacionais:
+                Esta ferramenta permite <strong>ZERAR COMPLETAMENTE</strong> o sistema e limpar todos os dados operacionais no Replit e no Supabase, garantindo consistência com os novos nomes em português:
               </p>
               <ul className="list-disc ml-5 mb-4 text-sm space-y-1">
                 <li>Veículos e manutenções</li>
@@ -478,7 +486,7 @@ const AdminUtils = () => {
                 ) : (
                   <>
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Limpar Todos os Dados
+                    Limpar Todos os Dados (Replit + Supabase)
                   </>
                 )}
               </Button>
