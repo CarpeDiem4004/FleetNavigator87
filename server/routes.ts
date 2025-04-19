@@ -4,8 +4,7 @@ import { storage } from "./storage";
 import { 
   insertBaseSchema, insertVehicleSchema, insertMaintenanceSchema,
   insertWorkshopSchema, insertTireSchema, insertRefuelingSchema, 
-  insertFineSchema, insertUserSchema
-  // insertLineHallSchema removido conforme solicitação do cliente
+  insertFineSchema, insertUserSchema, insertLinehallShopeeSchema
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import { getDashboardKPIs } from "./dashboardApi";
@@ -1217,7 +1216,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             break;
             
-          // Caso 'linha_corredor' removido conforme solicitação do cliente
+          case 'linehall_shopee':
+            // Buscar todos os registros e excluir um por um
+            const linehallRecords = await storage.getAllLinehallShopee();
+            for (const lr of linehallRecords) {
+              await storage.deleteLinehallShopee(lr.id);
+            }
+            break;
             
           case 'veiculos':
             // Buscar todos os registros e excluir um por um
@@ -1272,7 +1277,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'abastecimentos',
           'manutencao',
           'oficinas',
-          // 'linha_corredor' removido conforme solicitação,
+          'linehall_shopee',
           // Possibilidade de tabelas com nomes antigos em inglês
           'vehicles',
           'tires',
@@ -1384,6 +1389,171 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: String(error),
         success: false
       });
+    }
+  });
+
+  // LinehallShopee routes
+  app.get("/api/linehall-shopee", isAuthenticated, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const baseId = req.user.baseId;
+      const role = req.user.role;
+      
+      // Filtrar por status ou veículo se fornecido na query
+      const status = req.query.status as string;
+      const vehiclePlate = req.query.vehiclePlate as string;
+      
+      // Aplicar filtros conforme os parâmetros
+      let linehallRecords;
+      
+      if (vehiclePlate) {
+        // Filtro por placa do veículo tem precedência
+        linehallRecords = await storage.getLinehallShopeeByVehicle(vehiclePlate);
+      } else if (status) {
+        // Filtro por status
+        linehallRecords = await storage.getLinehallShopeeByStatus(status);
+      } else {
+        // Filtro por permissão de base (ou sem filtro para admin)
+        linehallRecords = role === 'admin' 
+          ? await storage.getAllLinehallShopee() 
+          : (baseId ? await storage.getLinehallShopeeByBase(baseId) : []);
+      }
+        
+      return res.status(200).json(linehallRecords);
+    } catch (error) {
+      console.error("Error fetching linehall records:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  app.get("/api/linehall-shopee/:id", isAuthenticated, async (req, res) => {
+    try {
+      const record = await storage.getLinehallShopee(parseInt(req.params.id));
+      
+      if (!record) {
+        return res.status(404).json({ message: "Record not found" });
+      }
+      
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      // Verificar se o usuário tem acesso a este registro
+      // Admin tem acesso a todos os registros
+      // Usuários comuns só têm acesso se a base de origem ou destino for a sua
+      if (req.user.role !== 'admin' && 
+          record.baseOrigemId !== req.user.baseId && 
+          record.baseDestinoId !== req.user.baseId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      return res.status(200).json(record);
+    } catch (error) {
+      console.error("Error fetching linehall record:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  app.post("/api/linehall-shopee", isAuthenticated, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      // Validar os dados
+      const result = insertLinehallShopeeSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid data", errors: result.error.format() });
+      }
+      
+      // Verificar se o usuário tem permissão para criar viagens para esta base de origem
+      if (req.user.role !== 'admin' && result.data.baseOrigemId !== req.user.baseId) {
+        return res.status(403).json({ message: "Access denied. You can only create trips from your own base." });
+      }
+      
+      // Adicionar o ID do usuário que está criando o registro
+      const dataWithCreator = {
+        ...result.data,
+        createdBy: req.user.id
+      };
+      
+      const newRecord = await storage.createLinehallShopee(dataWithCreator);
+      return res.status(201).json(newRecord);
+    } catch (error) {
+      console.error("Error creating linehall record:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  app.put("/api/linehall-shopee/:id", isAuthenticated, async (req, res) => {
+    try {
+      const recordId = parseInt(req.params.id);
+      const record = await storage.getLinehallShopee(recordId);
+      
+      if (!record) {
+        return res.status(404).json({ message: "Record not found" });
+      }
+      
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      // Verificar se o usuário tem permissão para atualizar este registro
+      // Admin ou usuário da base de origem podem atualizar
+      if (req.user.role !== 'admin' && record.baseOrigemId !== req.user.baseId) {
+        return res.status(403).json({ message: "Access denied. You can only update trips from your own base." });
+      }
+      
+      // Se está apenas atualizando o status, usar a função específica
+      if (req.body.status && Object.keys(req.body).length === 1) {
+        const updatedRecord = await storage.updateLinehallShopeeStatus(recordId, req.body.status);
+        return res.status(200).json(updatedRecord);
+      }
+      
+      // Para atualizações mais amplas, validar todos os dados
+      const result = insertLinehallShopeeSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid data", errors: result.error.format() });
+      }
+      
+      const updatedRecord = await storage.updateLinehallShopee(recordId, result.data);
+      return res.status(200).json(updatedRecord);
+    } catch (error) {
+      console.error("Error updating linehall record:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  app.delete("/api/linehall-shopee/:id", isAuthenticated, async (req, res) => {
+    try {
+      const recordId = parseInt(req.params.id);
+      const record = await storage.getLinehallShopee(recordId);
+      
+      if (!record) {
+        return res.status(404).json({ message: "Record not found" });
+      }
+      
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      // Apenas admin ou usuário da base de origem podem excluir
+      if (req.user.role !== 'admin' && record.baseOrigemId !== req.user.baseId) {
+        return res.status(403).json({ message: "Access denied. You can only delete trips from your own base." });
+      }
+      
+      const success = await storage.deleteLinehallShopee(recordId);
+      if (!success) {
+        return res.status(500).json({ message: "Failed to delete record" });
+      }
+      
+      return res.status(200).json({ message: "Record deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting linehall record:", error);
+      return res.status(500).json({ message: "Server error" });
     }
   });
 
