@@ -775,7 +775,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
-  // Rota específica para limpar apenas a tabela de pneus
+  // Rota específica para limpar apenas a tabela de pneus/tires
   app.post('/api/admin/clear-tires-data', isAdmin, async (req, res) => {
     try {
       console.log("Iniciando limpeza de dados da tabela de pneus...");
@@ -789,22 +789,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // 1. Limpar dados no PostgreSQL do Replit
+      // Resultados das operações
+      const resultados = {
+        replit: { success: false, message: '', count: 0 },
+        supabase: { success: false, message: '', count: 0 }
+      };
+      
+      // 1. Limpar dados no PostgreSQL do Replit (tabela "tires")
       try {
-        console.log("Limpando dados de pneus no PostgreSQL do Replit...");
+        console.log("Limpando dados de pneus no PostgreSQL do Replit (tabela 'tires')...");
         const tires = await storage.getAllTires();
         console.log(`Encontrados ${tires.length} pneus no PostgreSQL do Replit para exclusão`);
         
+        let deletedCount = 0;
         for (const tire of tires) {
           await storage.deleteTire(tire.id);
+          deletedCount++;
         }
         
-        console.log("Pneus excluídos com sucesso do PostgreSQL do Replit");
+        resultados.replit = {
+          success: true,
+          message: `${deletedCount} pneus excluídos com sucesso do PostgreSQL do Replit`,
+          count: deletedCount
+        };
+        
+        console.log(resultados.replit.message);
       } catch (dbError) {
         console.error("Erro ao limpar pneus do PostgreSQL do Replit:", dbError);
+        resultados.replit = {
+          success: false,
+          message: `Erro ao limpar tabela 'tires': ${dbError}`,
+          count: 0
+        };
       }
       
-      // 2. Limpar dados no Supabase
+      // 2. Limpar dados no Supabase (tabela "pneus")
       try {
         const fetch = await import("node-fetch");
         
@@ -812,34 +831,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const supabaseUrl = process.env.SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
         const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';
         
+        // Verificar e limpar registros na tabela "pneus" 
         console.log("Iniciando limpeza de dados da tabela 'pneus' no Supabase...");
         
-        // Método 1: Usar API REST para limpar dados (DELETE sem WHERE = limpar tudo)
-        const response = await fetch.default(
-          `${supabaseUrl}/rest/v1/pneus?select=id`,
+        // Primeiro verifica se a tabela existe
+        const checkResponse = await fetch.default(
+          `${supabaseUrl}/rest/v1/pneus?select=id&limit=1`,
           {
-            method: 'DELETE',
+            method: 'GET',
             headers: {
               'Content-Type': 'application/json',
               'apikey': supabaseKey,
-              'Authorization': `Bearer ${supabaseKey}`,
-              'Prefer': 'return=minimal' // Não retorna os registros apagados
+              'Authorization': `Bearer ${supabaseKey}`
             }
           }
         );
         
-        if (response.ok) {
-          console.log("Tabela 'pneus' limpa com sucesso no Supabase (REST API)");
-        } else {
-          const errorText = await response.text();
-          console.error(`Erro ao limpar tabela 'pneus' no Supabase via REST: ${errorText}`);
-          
-          // Método 2: Se falhar o primeiro método, tenta limpar registro por registro
-          console.log("Tentando abordagem alternativa para tabela 'pneus'...");
-          
-          // Primeiro busca todos os registros
-          const getResponse = await fetch.default(
-            `${supabaseUrl}/rest/v1/pneus?select=id`,
+        if (!checkResponse.ok) {
+          console.log("Tabela 'pneus' não encontrada no Supabase, tentando 'tires'...");
+          // Verificar se existe tabela "tires" em inglês
+          const checkTiresResponse = await fetch.default(
+            `${supabaseUrl}/rest/v1/tires?select=id&limit=1`,
             {
               method: 'GET',
               headers: {
@@ -850,51 +862,152 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           );
           
-          if (getResponse.ok) {
-            // Conversão segura do JSON para o tipo esperado
-            const rawData: unknown = await getResponse.json();
-            const records: Array<{id: number}> = Array.isArray(rawData) 
-              ? rawData.filter((r: any) => r && typeof r.id !== 'undefined').map((r: any) => ({id: r.id}))
-              : [];
-            console.log(`Encontrados ${records.length} registros na tabela 'pneus' do Supabase`);
+          if (!checkTiresResponse.ok) {
+            throw new Error("Nenhuma tabela de pneus encontrada no Supabase (nem 'pneus' nem 'tires')");
+          }
+          
+          // Se existe "tires", limpar essa tabela
+          const tiresResponse = await fetch.default(
+            `${supabaseUrl}/rest/v1/tires?select=id`,
+            {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`,
+                'Prefer': 'return=minimal'
+              }
+            }
+          );
+          
+          if (tiresResponse.ok) {
+            resultados.supabase = {
+              success: true,
+              message: "Tabela 'tires' limpa com sucesso no Supabase",
+              count: -1 // Não temos como saber quantos foram removidos
+            };
+            console.log(resultados.supabase.message);
+          } else {
+            throw new Error(`Falha ao limpar tabela 'tires' no Supabase: ${await tiresResponse.text()}`);
+          }
+        } else {
+          // Limpar a tabela "pneus"
+          const response = await fetch.default(
+            `${supabaseUrl}/rest/v1/pneus?select=id`,
+            {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`,
+                'Prefer': 'return=minimal'
+              }
+            }
+          );
+          
+          if (response.ok) {
+            resultados.supabase = {
+              success: true,
+              message: "Tabela 'pneus' limpa com sucesso no Supabase (REST API)",
+              count: -1 // Não temos como saber quantos foram removidos
+            };
+            console.log(resultados.supabase.message);
+          } else {
+            const errorText = await response.text();
+            console.error(`Erro ao limpar tabela 'pneus' no Supabase via REST: ${errorText}`);
             
-            // Deleta cada registro individualmente
-            let deletedCount = 0;
-            if (records.length > 0) {
-              for (const record of records) {
-                if (!record || typeof record.id === 'undefined') continue;
-                const deleteResponse = await fetch.default(
-                  `${supabaseUrl}/rest/v1/pneus?id=eq.${record.id}`,
-                  {
-                    method: 'DELETE',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'apikey': supabaseKey,
-                      'Authorization': `Bearer ${supabaseKey}`,
-                      'Prefer': 'return=minimal'
-                    }
-                  }
-                );
-                
-                if (deleteResponse.ok) {
-                  deletedCount++;
-                } else {
-                  console.error(`Erro ao excluir registro id=${record.id} da tabela 'pneus'`);
+            // Método 2: Limpar registro por registro
+            console.log("Tentando abordagem alternativa para tabela 'pneus'...");
+            
+            // Primeiro busca todos os registros
+            const getResponse = await fetch.default(
+              `${supabaseUrl}/rest/v1/pneus?select=id`,
+              {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'apikey': supabaseKey,
+                  'Authorization': `Bearer ${supabaseKey}`
                 }
               }
-              console.log(`${deletedCount} registros excluídos com sucesso da tabela 'pneus'`);
+            );
+            
+            if (getResponse.ok) {
+              // Conversão segura do JSON para o tipo esperado
+              const rawData: unknown = await getResponse.json();
+              const records: Array<{id: number}> = Array.isArray(rawData) 
+                ? rawData.filter((r: any) => r && typeof r.id !== 'undefined').map((r: any) => ({id: r.id}))
+                : [];
+              console.log(`Encontrados ${records.length} registros na tabela 'pneus' do Supabase`);
+              
+              // Deleta cada registro individualmente
+              let deletedCount = 0;
+              if (records.length > 0) {
+                for (const record of records) {
+                  if (!record || typeof record.id === 'undefined') continue;
+                  const deleteResponse = await fetch.default(
+                    `${supabaseUrl}/rest/v1/pneus?id=eq.${record.id}`,
+                    {
+                      method: 'DELETE',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${supabaseKey}`,
+                        'Prefer': 'return=minimal'
+                      }
+                    }
+                  );
+                  
+                  if (deleteResponse.ok) {
+                    deletedCount++;
+                  } else {
+                    console.error(`Erro ao excluir registro id=${record.id} da tabela 'pneus'`);
+                  }
+                }
+                resultados.supabase = {
+                  success: true,
+                  message: `${deletedCount} registros excluídos com sucesso da tabela 'pneus'`,
+                  count: deletedCount
+                };
+                console.log(resultados.supabase.message);
+              } else {
+                resultados.supabase = {
+                  success: true,
+                  message: "Nenhum registro encontrado na tabela 'pneus' para exclusão",
+                  count: 0
+                };
+                console.log(resultados.supabase.message);
+              }
+            } else {
+              throw new Error("Não foi possível buscar registros da tabela 'pneus' no Supabase");
             }
-          } else {
-            console.error("Não foi possível buscar registros da tabela 'pneus' no Supabase");
           }
         }
       } catch (supaError) {
         console.error("Erro ao limpar dados de pneus do Supabase:", supaError);
+        resultados.supabase = {
+          success: false,
+          message: `Erro ao limpar tabela de pneus no Supabase: ${supaError}`,
+          count: 0
+        };
+      }
+      
+      // Combinar resultados para mensagem de retorno
+      let mensagem = "";
+      if (resultados.replit.success && resultados.supabase.success) {
+        mensagem = "Todos os dados de pneus foram limpos com sucesso nos dois bancos de dados";
+      } else if (resultados.replit.success) {
+        mensagem = "Dados limpos com sucesso no Replit, mas ocorreram problemas no Supabase: " + resultados.supabase.message;
+      } else if (resultados.supabase.success) {
+        mensagem = "Dados limpos com sucesso no Supabase, mas ocorreram problemas no Replit: " + resultados.replit.message;
+      } else {
+        mensagem = "Ocorreram problemas ao limpar os dados de pneus em ambos os bancos de dados";
       }
       
       return res.status(200).json({ 
-        message: "Todos os dados de pneus foram limpos com sucesso",
-        success: true
+        message: mensagem,
+        success: resultados.replit.success || resultados.supabase.success,
+        resultados
       });
     } catch (error) {
       console.error("Erro ao limpar dados de pneus:", error);

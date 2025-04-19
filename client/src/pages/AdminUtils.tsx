@@ -489,6 +489,12 @@ const AdminUtils = () => {
                 <p className="text-center text-sm text-gray-600 dark:text-gray-400 mb-2">
                   Limpeza seletiva de tabelas
                 </p>
+                <div className="p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-md mb-2">
+                  <p className="text-xs text-yellow-800 dark:text-yellow-300 text-center">
+                    Esta operação limpa tanto a tabela <code>tires</code> no PostgreSQL do Replit <br/>
+                    quanto a tabela <code>pneus</code> no Supabase, garantindo sincronização.
+                  </p>
+                </div>
                 <Button 
                   variant="outline" 
                   className="w-full border-amber-600 text-amber-700 dark:border-amber-500 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20"
@@ -503,7 +509,7 @@ const AdminUtils = () => {
                   ) : (
                     <>
                       <Trash2 className="mr-2 h-4 w-4" />
-                      Limpar Apenas Tabela de Pneus
+                      Limpar Tabela de Pneus (tires/pneus)
                     </>
                   )}
                 </Button>
