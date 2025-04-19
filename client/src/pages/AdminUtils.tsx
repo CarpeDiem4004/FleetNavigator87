@@ -8,7 +8,13 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, Trash2, Database, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { deleteRecords, fetchRecords, insertData, supabase } from "@/lib/supabase-client";
+import { 
+  deleteRecords, 
+  fetchRecords, 
+  insertData, 
+  supabase, 
+  limparTodosOsDados 
+} from "@/lib/supabase-client";
 import MainLayoutSimple from "@/components/layout/MainLayoutSimple";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -112,30 +118,38 @@ const AdminUtils = () => {
       setProgress(50);
       setOperationStatus("API limpa com sucesso. Agora limpando dados do Supabase...");
       
-      // Agora limpar também os dados do Supabase
-      for (let i = 0; i < tables.length; i++) {
-        const table = tables[i];
-        setOperationStatus(`Buscando registros da tabela ${table.label} no Supabase...`);
+      // Usar nossa nova função otimizada para limpar tabelas do Supabase
+      // Esta função já implementa a ordem correta para evitar conflitos de chaves estrangeiras
+      setOperationStatus("Iniciando limpeza de tabelas no Supabase com método otimizado...");
+      
+      try {
+        // Extrair apenas os nomes das tabelas
+        const tableNames = tables.map(t => t.name);
         
-        // Busca todos os registros da tabela
-        try {
-          const registros = await fetchRecords(table.name);
-          
-          if (registros.length > 0) {
-            setOperationStatus(`Apagando ${registros.length} registros de ${table.label}...`);
-            const ids = registros.map(reg => reg.id);
-            
-            // Exclui todos os registros de uma vez
-            await deleteRecords(table.name, ids);
+        // Limpar as tabelas no Supabase usando a função otimizada
+        const resultados = await limparTodosOsDados(tableNames);
+        
+        // Analisar resultados e contar sucessos
+        let successCount = 0;
+        let errorCount = 0;
+        
+        Object.entries(resultados).forEach(([tabela, resultado]: [string, any]) => {
+          if (resultado.success) {
+            successCount++;
+            console.log(`Tabela ${tabela} limpa com sucesso.`);
           } else {
-            setOperationStatus(`Nenhum registro encontrado em ${table.label}`);
+            errorCount++;
+            console.warn(`Erro ao limpar tabela ${tabela}: ${resultado.message}`);
           }
-        } catch (err) {
-          console.warn(`Erro ao processar tabela ${table.name}, pulando: ${err}`);
-        }
-
-        // Atualiza o progresso
-        setProgress(50 + Math.round(((i + 1) / tables.length) * 50));
+          
+          // Atualizar o progresso de acordo com o número de tabelas processadas
+          const progress = 50 + Math.round((successCount + errorCount) / tableNames.length * 50);
+          setProgress(progress);
+          setOperationStatus(`Processando tabelas: ${successCount} ok, ${errorCount} falhas...`);
+        });
+      } catch (err) {
+        console.error("Erro durante a limpeza de tabelas:", err);
+        setOperationStatus(`Erro durante limpeza de tabelas no Supabase: ${err}`);
       }
 
       setProgress(100);
@@ -205,7 +219,7 @@ const AdminUtils = () => {
       setIsTiresLoading(true);
       setOperationStatus("Limpando tabela de pneus...");
 
-      // Chamar API para limpar tabela de pneus
+      // Chamar API para limpar tabela de pneus no banco PostgreSQL do Replit
       const response = await fetch('/api/admin/clear-tires-data', {
         method: 'POST',
         headers: {
@@ -221,6 +235,21 @@ const AdminUtils = () => {
       if (!response.ok) {
         throw new Error(result.message || 'Erro ao limpar dados de pneus');
       }
+      
+      // Agora limpar no Supabase com método otimizado
+      setOperationStatus("API limpa com sucesso. Limpando tabelas de pneus no Supabase...");
+      
+      // Limpar tanto a tabela 'pneus' quanto 'tires' (versão antiga)
+      const resultadosPneus = await limparTodosOsDados(['pneus', 'tires']);
+      
+      // Analisar resultados
+      Object.entries(resultadosPneus).forEach(([tabela, resultado]: [string, any]) => {
+        if (resultado.success) {
+          console.log(`Tabela ${tabela} limpa com sucesso.`);
+        } else {
+          console.warn(`Erro ao limpar tabela ${tabela}: ${resultado.message}`);
+        }
+      });
       
       setOperationStatus("Limpeza da tabela de pneus concluída com sucesso!");
       
