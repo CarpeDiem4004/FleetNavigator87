@@ -179,7 +179,8 @@ const AdminUtils = () => {
     const confirmacao = window.confirm(
       'ATENÇÃO: Esta operação irá limpar APENAS a tabela de pneus! ' +
       'Esta ação é IRREVERSÍVEL e removerá todos os registros de pneus ' +
-      'do sistema PostgreSQL e do Supabase.\n\n' +
+      'do sistema PostgreSQL do Replit (tabela "pneus") e do Supabase ' + 
+      '(verificando tanto a tabela "pneus" quanto "tires", se existirem).\n\n' +
       'Deseja continuar?'
     );
 
@@ -499,8 +500,9 @@ const AdminUtils = () => {
                 </p>
                 <div className="p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-md mb-2">
                   <p className="text-xs text-yellow-800 dark:text-yellow-300 text-center">
-                    Esta operação limpa a tabela <code>pneus</code> em ambos os bancos de dados <br/>
-                    (PostgreSQL do Replit e Supabase), garantindo sincronização completa.
+                    Esta operação limpa apenas a tabela <code>pneus</code> em ambos os bancos de dados <br/>
+                    (PostgreSQL do Replit e Supabase), garantindo sincronização completa e <br/>
+                    verificando a existência de ambos os nomes (pneus/tires).
                   </p>
                 </div>
                 <Button 

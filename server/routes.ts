@@ -798,6 +798,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 1. Limpar dados no PostgreSQL do Replit (tabela "pneus")
       try {
         console.log("Limpando dados de pneus no PostgreSQL do Replit (tabela 'pneus')...");
+        // Buscar todos os pneus utilizando a função getAllTires() que agora trabalha com a tabela "pneus"
         const tires = await storage.getAllTires();
         console.log(`Encontrados ${tires.length} pneus no PostgreSQL do Replit para exclusão`);
         
