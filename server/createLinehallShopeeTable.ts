@@ -5,6 +5,12 @@ async function createLinehallShopeeTable() {
   console.log("Iniciando criação da tabela linehall_shopee...");
   
   try {
+    // Verificar tabelas existentes
+    const tablesResult = await db.execute(sql`
+      SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';
+    `);
+    console.log("Tabelas existentes:", tablesResult.rows.map(r => r.table_name));
+
     // Criar o enum linehall_status
     await db.execute(sql`
       DO $$ 
@@ -21,7 +27,7 @@ async function createLinehallShopeeTable() {
       CREATE TABLE IF NOT EXISTS linehall_shopee (
         id SERIAL PRIMARY KEY,
         data_viagem DATE NOT NULL,
-        cavalo_placa TEXT NOT NULL REFERENCES veiculos(plate),
+        cavalo_placa TEXT NOT NULL REFERENCES vehicles(plate),
         carreta1_placa TEXT NOT NULL,
         carreta2_placa TEXT,
         motorista_id INTEGER NOT NULL REFERENCES users(id),
