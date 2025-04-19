@@ -73,6 +73,12 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'LINE HALL SHOPEE', href: '/linehall-shopee', icon: Waypoints },
   ];
   
+  // Verifique se o usuário é da gestão de frotas
+  const isFleetUser = user.basename === "Gestão de Frotas" || user.baseId === 12;
+  
+  // Verifique se o usuário é do Line Hall
+  const isLineHallUser = user.basename === "Line Hall" || user.baseId === 11;
+  
   // Itens específicos para Line Hall - destacando o LINE HALL SHOPEE
   const lineHallItems: NavItem[] = [
     { name: 'Dashboard', href: '/', icon: Gauge },
@@ -84,11 +90,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     },
   ];
   
-  // Verifique se o usuário é da gestão de frotas
-  const isFleetUser = user.basename === "Gestão de Frotas" || user.baseId === 12;
-  
-  // Verifique se o usuário é do Line Hall
-  const isLineHallUser = user.basename === "Line Hall" || user.baseId === 11;
+  // Adicionar console log para debug da base do usuário
+  console.log(`Usuário atual: base=${user.basename}, baseId=${user.baseId}, nome=${user.name}, email=${user.email}, isLineHall=${user.basename === "Line Hall" || user.baseId === 11}`);
   
   // Selecionando os itens de navegação apropriados
   let navItemsBase: NavItem[];
