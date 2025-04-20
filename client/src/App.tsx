@@ -47,6 +47,8 @@ import WorkSafety from "@/pages/work-safety";
 import WorkshopsPage from "@/pages/fleet-management/WorkshopsPage";
 import MaintenancePage from "@/pages/fleet-management/MaintenancePage";
 import TiresEntrada from "@/pages/TiresEntrada";
+import LineHallShopee from "@/pages/LineHallShopee";
+import DriverChecklist from "@/pages/DriverChecklist";
 
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
@@ -118,6 +120,12 @@ function App() {
           <ProtectedRoute path="/diagnostico/api-tester" component={ApiTester} />
           <ProtectedRoute path="/admin/utils" component={AdminUtils} />
           <ProtectedRoute path="/limpar-dados" component={LimparDados} />
+          <ProtectedRoute path="/line-hall-shopee" component={LineHallShopee} />
+          
+          {/* Rota pública para checklist do motorista */}
+          <Route path="/checklist/:id">
+            <DriverChecklist />
+          </Route>
           
           {/* Rotas públicas para os postos de abastecimento - sem proteção e sem status de tanques */}
           <Route path="/posto/osasco/public">

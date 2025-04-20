@@ -35,7 +35,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { FileEdit, Trash2, Search, FileCheck, Clock, Tool, CreditCard } from "lucide-react";
+import { FileEdit, Trash2, Search, FileCheck, Clock, Wrench as Tool, CreditCard } from "lucide-react";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar } from "@/components/ui/calendar";
