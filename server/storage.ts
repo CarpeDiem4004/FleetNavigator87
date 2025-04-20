@@ -1,10 +1,11 @@
 import { 
-  users, vehicles, maintenance, tires, refueling, fines, lineHall, bases, workshops,
+  users, vehicles, maintenance, tires, refueling, fines, lineHall, bases, workshops, painelPrincipal, operations,
   type User, type InsertUser, type Vehicle, type InsertVehicle,
   type Maintenance, type InsertMaintenance, type Tire, type InsertTire,
   type Refueling, type InsertRefueling, type Fine, type InsertFine,
   type LineHall, type InsertLineHall, type Base, type InsertBase,
-  type Workshop, type InsertWorkshop
+  type Workshop, type InsertWorkshop, type Operation, type InsertOperation,
+  type PainelPrincipal, type InsertPainelPrincipal
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, like, desc, sql } from "drizzle-orm";

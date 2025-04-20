@@ -1449,6 +1449,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint para obter dados do painel principal
+  app.get("/api/painel-principal", isAuthenticated, async (req, res) => {
+    try {
+      // Pegar data de requisição se estiver presente
+      let date: Date | undefined;
+      if (req.query.date) {
+        date = new Date(req.query.date as string);
+      }
+      
+      // Dados mockados para o painel principal (apenas para demonstração)
+      const mockData = {
+        id: 1,
+        data_referencia: new Date().toISOString().split('T')[0],
+        manutencoes_pendentes: 12,
+        tempo_medio_manutencao: "3.5 dias",
+        veiculos_parados: 8,
+        dias_parados_total: 24, 
+        linehall_parados: 3,
+        viagens_concluidas: 145,
+        viagens_no_show: 5,
+        viagens_canceladas_cliente: 7,
+        litros_diesel_total: 8500,
+        gasto_total_combustivel: 42500,
+        qtd_sinistros: 3,
+        qtd_roubos: 0,
+        incidentes_seguranca_trabalho: 1,
+        movimentacoes_pneus: 28,
+        pneus_substituidos: 12
+      };
+      
+      return res.status(200).json(mockData);
+    } catch (error) {
+      console.error("Error fetching painel principal:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
