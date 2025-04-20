@@ -94,38 +94,34 @@ const VehiclesNew: React.FC = () => {
     try {
       // Buscar todos os veículos
       const { data: vehiclesData, error: vehiclesError } = await supabase
-        .from('veiculos')
-        .select(`
-          id,
-          placa,
-          marca,
-          modelo,
-          base_id,
-          status,
-          created_at,
-          updated_at
-        `)
-        .order('created_at', { ascending: false });
+        .from('vehicles')
+        .select('id, plate, vehicle_type, model, base_id, status')
+        .order('id', { ascending: false });
       
       if (vehiclesError) throw vehiclesError;
       
       // Buscar bases para mapear os nomes
       const { data: basesData, error: basesError } = await supabase
         .from('bases')
-        .select('id, nome');
+        .select('id, name');
       
       if (basesError) throw basesError;
       
       // Criar um mapa de bases por ID para facilitar a busca
       const basesMap = new Map();
       basesData.forEach(base => {
-        basesMap.set(base.id, base.nome);
+        basesMap.set(base.id, base.name);
       });
       
-      // Adicionar nome da base a cada veículo
+      // Adicionar nome da base a cada veículo e mapear campos
       const vehiclesWithBaseNames = vehiclesData.map(vehicle => {
         return {
-          ...vehicle,
+          id: vehicle.id,
+          placa: vehicle.plate || '',
+          marca: vehicle.vehicle_type || '',
+          modelo: vehicle.model || '',
+          base_id: vehicle.base_id,
+          status: vehicle.status || '',
           base_nome: basesMap.get(vehicle.base_id) || 'Sem base'
         };
       });
@@ -164,7 +160,7 @@ const VehiclesNew: React.FC = () => {
 
     try {
       const { error } = await supabase
-        .from('veiculos')
+        .from('vehicles')
         .delete()
         .eq('id', id);
       
