@@ -1,6 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+// Importar cronJobs para tarefas agendadas
+import { initCronJobs } from "./cronJobs";
 
 // Configuração das variáveis de ambiente do Supabase
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
@@ -72,5 +74,13 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Iniciar tarefas agendadas
+    try {
+      initCronJobs();
+      log('Cron jobs iniciados com sucesso.');
+    } catch (error) {
+      console.error('Erro ao iniciar cron jobs:', error);
+    }
   });
 })();
