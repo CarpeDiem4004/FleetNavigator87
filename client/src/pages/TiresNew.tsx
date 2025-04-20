@@ -23,6 +23,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Search, Plus, FileEdit, Trash2 } from 'lucide-react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
+import { useLocation } from 'wouter';
 import { 
   Select,
   SelectContent,
@@ -160,6 +161,7 @@ const formatDate = (dateString: string): string => {
 };
 
 const TiresNew: React.FC = () => {
+  const [, navigate] = useLocation();
   const [tires, setTires] = useState<Tire[]>(mockTires);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -223,153 +225,164 @@ const TiresNew: React.FC = () => {
             </p>
           </div>
           
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center">
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar Pneu
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Registrar Novo Pneu</DialogTitle>
-                <DialogDescription>
-                  Preencha os detalhes do pneu abaixo
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="serialNumber" className="text-right">
-                    Nº de Série
-                  </Label>
-                  <Input
-                    id="serialNumber"
-                    value={newTire.serialNumber}
-                    onChange={(e) => setNewTire({...newTire, serialNumber: e.target.value})}
-                    className="col-span-3"
-                    placeholder="T001"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="brand" className="text-right">
-                    Marca
-                  </Label>
-                  <Input
-                    id="brand"
-                    value={newTire.brand}
-                    onChange={(e) => setNewTire({...newTire, brand: e.target.value})}
-                    className="col-span-3"
-                    placeholder="Pirelli"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="model" className="text-right">
-                    Modelo
-                  </Label>
-                  <Input
-                    id="model"
-                    value={newTire.model}
-                    onChange={(e) => setNewTire({...newTire, model: e.target.value})}
-                    className="col-span-3"
-                    placeholder="Formula Energy"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="size" className="text-right">
-                    Tamanho
-                  </Label>
-                  <Input
-                    id="size"
-                    value={newTire.size}
-                    onChange={(e) => setNewTire({...newTire, size: e.target.value})}
-                    className="col-span-3"
-                    placeholder="295/80R22.5"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="purchaseDate" className="text-right">
-                    Data de Compra
-                  </Label>
-                  <Input
-                    id="purchaseDate"
-                    type="date"
-                    value={newTire.purchaseDate}
-                    onChange={(e) => setNewTire({...newTire, purchaseDate: e.target.value})}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="treadDepth" className="text-right">
-                    Prof. Sulcos (mm)
-                  </Label>
-                  <Input
-                    id="treadDepth"
-                    type="number"
-                    step="0.1"
-                    value={newTire.treadDepth}
-                    onChange={(e) => setNewTire({...newTire, treadDepth: parseFloat(e.target.value)})}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="status" className="text-right">
-                    Status
-                  </Label>
-                  <Select 
-                    value={newTire.status}
-                    onValueChange={(value: 'em_uso' | 'estoque' | 'descartado') => 
-                      setNewTire({...newTire, status: value})
-                    }
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="em_uso">Em Uso</SelectItem>
-                      <SelectItem value="estoque">Em Estoque</SelectItem>
-                      <SelectItem value="descartado">Descartado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {newTire.status === 'em_uso' && (
-                  <>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="vehiclePlate" className="text-right">
-                        Veículo
-                      </Label>
-                      <Input
-                        id="vehiclePlate"
-                        value={newTire.vehiclePlate || ''}
-                        onChange={(e) => setNewTire({...newTire, vehiclePlate: e.target.value})}
-                        className="col-span-3"
-                        placeholder="ABC-1234"
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="position" className="text-right">
-                        Posição
-                      </Label>
-                      <Input
-                        id="position"
-                        value={newTire.position || ''}
-                        onChange={(e) => setNewTire({...newTire, position: e.target.value})}
-                        className="col-span-3"
-                        placeholder="Dianteiro Direito"
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Cancelar
+          <div className="flex space-x-3">
+            <Button 
+              variant="outline" 
+              className="flex items-center"
+              onClick={() => navigate('/tires/entrada')}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Entrada em Lote
+            </Button>
+            
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Adicionar Pneu Individual
                 </Button>
-                <Button onClick={handleAddTire}>
-                  Adicionar
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Registrar Novo Pneu</DialogTitle>
+                  <DialogDescription>
+                    Preencha os detalhes do pneu abaixo
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="serialNumber" className="text-right">
+                      Nº de Série
+                    </Label>
+                    <Input
+                      id="serialNumber"
+                      value={newTire.serialNumber}
+                      onChange={(e) => setNewTire({...newTire, serialNumber: e.target.value})}
+                      className="col-span-3"
+                      placeholder="T001"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="brand" className="text-right">
+                      Marca
+                    </Label>
+                    <Input
+                      id="brand"
+                      value={newTire.brand}
+                      onChange={(e) => setNewTire({...newTire, brand: e.target.value})}
+                      className="col-span-3"
+                      placeholder="Pirelli"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="model" className="text-right">
+                      Modelo
+                    </Label>
+                    <Input
+                      id="model"
+                      value={newTire.model}
+                      onChange={(e) => setNewTire({...newTire, model: e.target.value})}
+                      className="col-span-3"
+                      placeholder="Formula Energy"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="size" className="text-right">
+                      Tamanho
+                    </Label>
+                    <Input
+                      id="size"
+                      value={newTire.size}
+                      onChange={(e) => setNewTire({...newTire, size: e.target.value})}
+                      className="col-span-3"
+                      placeholder="295/80R22.5"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="purchaseDate" className="text-right">
+                      Data de Compra
+                    </Label>
+                    <Input
+                      id="purchaseDate"
+                      type="date"
+                      value={newTire.purchaseDate}
+                      onChange={(e) => setNewTire({...newTire, purchaseDate: e.target.value})}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="treadDepth" className="text-right">
+                      Prof. Sulcos (mm)
+                    </Label>
+                    <Input
+                      id="treadDepth"
+                      type="number"
+                      step="0.1"
+                      value={newTire.treadDepth}
+                      onChange={(e) => setNewTire({...newTire, treadDepth: parseFloat(e.target.value)})}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="status" className="text-right">
+                      Status
+                    </Label>
+                    <Select 
+                      value={newTire.status}
+                      onValueChange={(value: 'em_uso' | 'estoque' | 'descartado') => 
+                        setNewTire({...newTire, status: value})
+                      }
+                    >
+                      <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Selecione o status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="em_uso">Em Uso</SelectItem>
+                        <SelectItem value="estoque">Em Estoque</SelectItem>
+                        <SelectItem value="descartado">Descartado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {newTire.status === 'em_uso' && (
+                    <>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="vehiclePlate" className="text-right">
+                          Veículo
+                        </Label>
+                        <Input
+                          id="vehiclePlate"
+                          value={newTire.vehiclePlate || ''}
+                          onChange={(e) => setNewTire({...newTire, vehiclePlate: e.target.value})}
+                          className="col-span-3"
+                          placeholder="ABC-1234"
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="position" className="text-right">
+                          Posição
+                        </Label>
+                        <Input
+                          id="position"
+                          value={newTire.position || ''}
+                          onChange={(e) => setNewTire({...newTire, position: e.target.value})}
+                          className="col-span-3"
+                          placeholder="Dianteiro Direito"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleAddTire}>
+                    Adicionar
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         <Card>

@@ -1,0 +1,119 @@
+import React, { useState } from 'react';
+import { supabase } from './supabaseClient';
+
+const EntradaPneusForm = () => {
+  const [formData, setFormData] = useState({
+    marca: '',
+    modelo: '',
+    medida: '',
+    aro: '',
+    tipo: '',
+    origem: '',
+    quantidade: 1,
+    localizacao: '',
+    observacao: '',
+  });
+
+  const [status, setStatus] = useState('');
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus('Salvando...');
+
+    const { marca, modelo, medida, aro, tipo, origem, quantidade, localizacao, observacao } = formData;
+
+    try {
+      // 1. Inserir no estoque_pneus
+      const { data: estoque, error: estoqueError } = await supabase
+        .from('estoque_pneus')
+        .insert([
+          {
+            marca,
+            modelo,
+            medida,
+            aro,
+            tipo,
+            origem,
+            quantidade: parseInt(quantidade),
+            localizacao,
+            observacao,
+          },
+        ]);
+
+      if (estoqueError) throw estoqueError;
+
+      // 2. Criar movimentação de entrada
+      const { data: mov, error: movError } = await supabase
+        .from('movimentacoes_pneus')
+        .insert([
+          {
+            tipo: 'entrada',
+            quantidade: parseInt(quantidade),
+            pneu_id: estoque[0].id,
+            observacao,
+          },
+        ]);
+
+      if (movError) throw movError;
+
+      setStatus('Entrada registrada com sucesso!');
+      setFormData({
+        marca: '',
+        modelo: '',
+        medida: '',
+        aro: '',
+        tipo: '',
+        origem: '',
+        quantidade: 1,
+        localizacao: '',
+        observacao: '',
+      });
+    } catch (error) {
+      console.error(error);
+      setStatus('Erro ao registrar entrada.');
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="p-4 space-y-4 bg-white shadow rounded-xl max-w-xl mx-auto">
+      <h2 className="text-xl font-bold">Entrada de Pneus</h2>
+
+      {[
+        { name: 'marca', label: 'Marca' },
+        { name: 'modelo', label: 'Modelo' },
+        { name: 'medida', label: 'Medida' },
+        { name: 'aro', label: 'Aro' },
+        { name: 'tipo', label: 'Tipo (direção, tração, etc.)' },
+        { name: 'origem', label: 'Origem (novo ou recapado)' },
+        { name: 'localizacao', label: 'Localização' },
+        { name: 'quantidade', label: 'Quantidade', type: 'number' },
+        { name: 'observacao', label: 'Observação' },
+      ].map(({ name, label, type = 'text' }) => (
+        <div key={name}>
+          <label className="block font-semibold">{label}</label>
+          <input
+            type={type}
+            name={name}
+            value={formData[name]}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+            required={name !== 'observacao'}
+          />
+        </div>
+      ))}
+
+      <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+        Registrar Entrada
+      </button>
+
+      {status && <p className="text-sm text-gray-700 mt-2">{status}</p>}
+    </form>
+  );
+};
+
+export default EntradaPneusForm;

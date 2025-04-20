@@ -46,6 +46,7 @@ import Accidents from "@/pages/accidents";
 import WorkSafety from "@/pages/work-safety";
 import WorkshopsPage from "@/pages/fleet-management/WorkshopsPage";
 import MaintenancePage from "@/pages/fleet-management/MaintenancePage";
+import EntradaPneusForm from "@/pages/EntradaPneus";
 
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
@@ -87,6 +88,7 @@ function App() {
           <ProtectedRoute path="/vehicles" component={VehiclesNew} />
           <ProtectedRoute path="/maintenance" component={MaintenanceNew} />
           <ProtectedRoute path="/tires" component={TiresNew} />
+          <ProtectedRoute path="/tires/entrada" component={EntradaPneusForm} />
           <ProtectedRoute path="/refueling" component={RefuelingNew} />
           <ProtectedRoute path="/fines" component={FinesNew} />
           <ProtectedRoute path="/line-hall" component={LineHallNew} />

@@ -1,380 +1,327 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Chaves de API Supabase
-export const supabaseUrl = 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
-export const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';
+// Valores padrão para desenvolvimento
+const SUPABASE_URL = 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';
+const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDkwMzQ2MiwiZXhwIjoyMDYwMjc5NDYyfQ.M5Yf9Y-YRsF1hRfpZcnJHWdDR3x8T0yzIKbXZTXZQOY';
 
-// Cliente Supabase para uso anônimo (geral)
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Usar variáveis de ambiente se disponíveis
+export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || SUPABASE_URL;
+export const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+export const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY || SUPABASE_SERVICE_KEY;
 
-// Cliente Supabase para operações administrativas (quando disponível)
-// No cliente web, não inicializamos o admin client - deixamos isso para o servidor
-export const supabaseAdmin: SupabaseClient | null = null;
+let supabaseInstance: SupabaseClient | null = null;
+let supabaseAdminInstance: SupabaseClient | null = null;
 
-// Função para buscar registros de uma tabela Supabase
-export async function fetchRecords(table: string) {
+export function createSupabaseClient(): SupabaseClient {
+  if (!supabaseInstance) {
+    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
+  }
+  return supabaseInstance;
+}
+
+export const supabase = createSupabaseClient();
+
+export function createSupabaseAdmin(): SupabaseClient {
+  if (!supabaseAdminInstance) {
+    supabaseAdminInstance = createClient(supabaseUrl, supabaseServiceKey);
+  }
+  return supabaseAdminInstance;
+}
+
+export const supabaseAdmin = createSupabaseAdmin();
+
+export async function checkSupabaseConnection(): Promise<boolean> {
   try {
-    const { data, error } = await supabase
-      .from(table)
-      .select('*');
+    const client = createSupabaseClient();
+    const { data, error } = await client.from('estoque_pneus').select('count()', { count: 'exact' });
     
-    if (error) throw error;
-    return data || [];
+    if (error) {
+      console.error('Erro ao conectar ao Supabase:', error);
+      return false;
+    }
+    
+    return true;
   } catch (error) {
-    console.error(`Erro ao buscar registros da tabela ${table}:`, error);
+    console.error('Erro ao verificar conexão com Supabase:', error);
+    return false;
+  }
+}
+
+export const checkConnection = checkSupabaseConnection;
+
+export async function getSupabaseTables(): Promise<string[]> {
+  try {
+    const client = createSupabaseClient();
+    const { data, error } = await client.rpc('get_tables');
+    
+    if (error) {
+      console.error('Erro ao buscar tabelas do Supabase:', error);
+      return [];
+    }
+    
+    return Array.isArray(data) ? data.map((item: any) => item.table_name) : [];
+  } catch (error) {
+    console.error('Erro ao obter lista de tabelas:', error);
     return [];
   }
 }
 
-// Função para excluir um registro específico de uma tabela Supabase
-export async function deleteRecord(table: string, id: number) {
-  try {
-    const { error } = await supabase
-      .from(table)
-      .delete()
-      .eq('id', id);
-    
-    if (error) throw error;
-    return true;
-  } catch (error) {
-    console.error(`Erro ao excluir registro id=${id} da tabela ${table}:`, error);
-    return false;
-  }
+export async function checkAllConnections(): Promise<{
+  supabase: boolean;
+}> {
+  const supabaseConnected = await checkSupabaseConnection();
+  
+  return {
+    supabase: supabaseConnected
+  };
 }
 
-// Função para excluir todos os registros ou um conjunto específico de registros de uma tabela Supabase
-export async function deleteRecords(table: string, ids?: number[]) {
+export async function insertRecord(
+  table: string, 
+  data: Record<string, any>
+): Promise<{ success: boolean; data?: any; error?: any }> {
   try {
-    // Se recebemos uma lista de IDs, exclui apenas esses registros
-    if (ids && ids.length > 0) {
-      const { error } = await supabase
-        .from(table)
-        .delete()
-        .in('id', ids);
-      
-      if (error) throw error;
-      return true;
-    }
-    
-    // Se não tem IDs, tenta excluir todos - como não temos acesso admin no cliente web, 
-    // isso deve ser feito pelo servidor ou então usar a API específica para limpar dados
-    const { error } = await supabase
+    const client = createSupabaseClient();
+    const { data: result, error } = await client
       .from(table)
-      .delete()
-      .neq('id', -1); // Truque para deletar todos (já que não existe .delete() sem where)
-    
-    if (error) throw error;
-    return true;
-  } catch (error) {
-    console.error(`Erro ao excluir registros da tabela ${table}:`, error);
-    return false;
-  }
-}
-
-// Função para inserir um registro em uma tabela Supabase
-export async function insertRecord(table: string, data: any) {
-  try {
-    const { data: result, error } = await supabase
-      .from(table)
-      .insert(data)
+      .insert([data])
       .select();
     
-    if (error) throw error;
-    return result?.[0] || null;
+    if (error) {
+      console.error(`Erro ao inserir registro em ${table}:`, error);
+      return { success: false, error };
+    }
+    
+    return { success: true, data: result };
   } catch (error) {
-    console.error(`Erro ao inserir registro na tabela ${table}:`, error);
-    return null;
+    console.error(`Exceção ao inserir registro em ${table}:`, error);
+    return { success: false, error: error instanceof Error ? error.message : error };
   }
 }
 
-// Alias da função insertRecord para compatibilidade com código existente
-export async function insertData(table: string, data: any) {
-  return insertRecord(table, data);
+// Alias para insertRecord
+export const insertData = insertRecord;
+
+export async function fetchRecords(
+  table: string,
+  options: { 
+    columns?: string; 
+    filter?: Record<string, any>;
+    order?: { column: string; ascending?: boolean };
+    limit?: number;
+    single?: boolean;
+  } = {}
+): Promise<{ success: boolean; data?: any; error?: any }> {
+  try {
+    const client = createSupabaseClient();
+    let query = client.from(table).select(options.columns || '*');
+    
+    // Aplicar filtros
+    if (options.filter) {
+      Object.entries(options.filter).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (typeof value === 'object' && 'op' in value && 'value' in value) {
+            // Filtro avançado com operador personalizado
+            const { op, value: filterValue } = value as { op: string; value: any };
+            switch (op) {
+              case 'eq': query = query.eq(key, filterValue); break;
+              case 'neq': query = query.neq(key, filterValue); break;
+              case 'gt': query = query.gt(key, filterValue); break;
+              case 'gte': query = query.gte(key, filterValue); break;
+              case 'lt': query = query.lt(key, filterValue); break;
+              case 'lte': query = query.lte(key, filterValue); break;
+              case 'like': query = query.like(key, `%${filterValue}%`); break;
+              case 'ilike': query = query.ilike(key, `%${filterValue}%`); break;
+              case 'in': query = query.in(key, filterValue); break;
+              default: query = query.eq(key, filterValue);
+            }
+          } else {
+            // Filtro simples por igualdade
+            query = query.eq(key, value);
+          }
+        }
+      });
+    }
+    
+    // Aplicar ordenação
+    if (options.order) {
+      const { column, ascending = true } = options.order;
+      query = query.order(column, { ascending });
+    }
+    
+    // Aplicar limite
+    if (options.limit) {
+      query = query.limit(options.limit);
+    }
+    
+    // Executar a consulta
+    const { data, error } = options.single 
+      ? await query.single() 
+      : await query;
+    
+    if (error) {
+      console.error(`Erro ao buscar registros de ${table}:`, error);
+      return { success: false, error };
+    }
+    
+    return { success: true, data };
+  } catch (error) {
+    console.error(`Exceção ao buscar registros de ${table}:`, error);
+    return { success: false, error: error instanceof Error ? error.message : error };
+  }
 }
 
-// Função para atualizar um registro em uma tabela Supabase
-export async function updateData(table: string, id: number, data: any) {
+export async function updateData(
+  table: string,
+  id: number | string,
+  data: Record<string, any>,
+  idField: string = 'id'
+): Promise<{ success: boolean; data?: any; error?: any }> {
   try {
-    const { data: result, error } = await supabase
+    const client = createSupabaseClient();
+    const { data: result, error } = await client
       .from(table)
       .update(data)
-      .eq('id', id)
+      .eq(idField, id)
       .select();
+      
+    if (error) {
+      console.error(`Erro ao atualizar registro em ${table}:`, error);
+      return { success: false, error };
+    }
     
-    if (error) throw error;
-    return result?.[0] || null;
+    return { success: true, data: result };
   } catch (error) {
-    console.error(`Erro ao atualizar registro na tabela ${table}:`, error);
-    return null;
+    console.error(`Exceção ao atualizar registro em ${table}:`, error);
+    return { success: false, error: error instanceof Error ? error.message : error };
   }
 }
 
-// Verifica se a conexão com o Supabase está funcionando
-export async function checkConnection() {
+export async function deleteRecord(
+  table: string,
+  id: number | string,
+  idField: string = 'id'
+): Promise<{ success: boolean; error?: any }> {
   try {
-    const { data, error } = await supabase
-      .from('status_tanques')
-      .select('count(*)', { count: 'exact', head: true });
-    
-    return !error;
-  } catch (e) {
-    console.error("Erro ao verificar conexão com Supabase:", e);
-    return false;
-  }
-}
-
-// Interface para resultado detalhado dos testes
-interface DetailedTestResult {
-  success: boolean;
-  error?: string;
-  data?: any;
-}
-
-// Função para testar as conexões com o Supabase com detalhes
-export async function checkAllConnections() {
-  // Objeto para resultados detalhados
-  const detailedResults: Record<string, DetailedTestResult> = {};
-  
-  // Objeto para compatibilidade com versão antiga (retorna apenas boolean)
-  const results: Record<string, boolean> = {};
-  
-  console.log("Iniciando diagnóstico Supabase cliente");
-  
-  // Teste 1: Conexão básica com Supabase
-  try {
-    console.log("Testando conexão básica...");
-    const { data, error } = await supabase
-      .from('status_tanques')
-      .select('count(*)', { count: 'exact', head: true });
-    
-    const success = !error;
-    results.baseConnection = success;
-    detailedResults.baseConnection = {
-      success,
-      error: error?.message,
-      data
-    };
-    
-    if (error) {
-      console.error("Erro na conexão básica:", error);
-    } else {
-      console.log("Conexão básica: OK");
-    }
-  } catch (e: any) {
-    results.baseConnection = false;
-    detailedResults.baseConnection = {
-      success: false,
-      error: e?.message || "Erro desconhecido na conexão"
-    };
-    console.error("Exceção na conexão básica:", e);
-  }
-  
-  // Teste 2: Permissões de leitura
-  try {
-    console.log("Testando permissão de leitura...");
-    const { data, error } = await supabase
-      .from('status_tanques')
-      .select('*')
-      .limit(1);
-    
-    const success = !error;
-    results.readPermission = success;
-    detailedResults.readPermission = {
-      success,
-      error: error?.message,
-      data
-    };
-    
-    if (error) {
-      console.error("Erro na permissão de leitura:", error);
-    } else {
-      console.log("Permissão de leitura: OK");
-    }
-  } catch (e: any) {
-    results.readPermission = false;
-    detailedResults.readPermission = {
-      success: false,
-      error: e?.message || "Erro desconhecido na leitura"
-    };
-    console.error("Exceção na permissão de leitura:", e);
-  }
-  
-  // Teste 3: Permissões de escrita (teste com insert e delete)
-  try {
-    console.log("Testando permissão de escrita...");
-    // Inserir um registro temporário
-    const testRecord = {
-      posto_id: 99,
-      diesel_capacidade: 1000,
-      diesel_nivel: 500,
-      arla_capacidade: 100,
-      arla_nivel: 50,
-      ultima_atualizacao: new Date().toISOString(),
-      teste_diagnostico: true
-    };
-    
-    const { data: insertData, error: insertError } = await supabase
-      .from('status_tanques')
-      .insert(testRecord)
-      .select();
-    
-    if (insertError) {
-      console.error("Erro na permissão de escrita (insert):", insertError);
-      results.writePermission = false;
-      detailedResults.writePermission = {
-        success: false,
-        error: insertError.message,
-      };
-    } else if (insertData && insertData.length > 0) {
-      console.log("Insert bem-sucedido, tentando excluir o registro...");
-      // Agora tentar excluir o registro criado
-      const id = insertData[0].id;
-      
-      const { error: deleteError } = await supabase
-        .from('status_tanques')
-        .delete()
-        .eq('id', id);
-      
-      const success = !deleteError;
-      results.writePermission = success;
-      detailedResults.writePermission = {
-        success,
-        error: deleteError?.message,
-        data: insertData
-      };
-      
-      if (deleteError) {
-        console.error("Erro na permissão de escrita (delete):", deleteError);
-      } else {
-        console.log("Permissão de escrita: OK (insert e delete bem-sucedidos)");
-      }
-    } else {
-      console.error("Erro na permissão de escrita: insert retornou null");
-      results.writePermission = false;
-      detailedResults.writePermission = {
-        success: false,
-        error: "Insert retornou dados nulos"
-      };
-    }
-  } catch (e: any) {
-    console.error("Exceção na permissão de escrita:", e);
-    results.writePermission = false;
-    detailedResults.writePermission = {
-      success: false,
-      error: e?.message || "Erro desconhecido na escrita"
-    };
-  }
-  
-  // Teste 4: Tabelas específicas existem e são acessíveis
-  const tables = [
-    'status_tanques', 
-    'abastecimentos_postos', 
-    'movimentacoes_patio',
-    'entradas_combustivel',
-    'controle_tanques',
-    'veiculos'
-  ];
-  
-  for (const table of tables) {
-    try {
-      const { data, error } = await supabase
-        .from(table)
-        .select('count(*)', { count: 'exact', head: true });
-      
-      results[`table_${table}`] = !error;
-    } catch (e) {
-      results[`table_${table}`] = false;
-    }
-  }
-  
-  // Teste 5: Testar funções RPC (se houver)
-  try {
-    const { data, error } = await supabase
-      .rpc('get_system_time');
-    
-    results.rpcFunctions = !error;
-  } catch (e) {
-    results.rpcFunctions = false;
-  }
-  
-  // Teste 6: Verificar se consegue fazer autenticação (se relevante)
-  // Nota: este é um teste sintético, não vai realmente criar um usuário
-  try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: 'test@example.com',
-      password: 'invalidpassword123',
-    });
-    
-    // Aqui estamos testando apenas se a API de auth responde, não se faz login
-    // então ignoramos o erro específico de credenciais inválidas
-    results.authSystem = Boolean(error?.message?.includes('Invalid login') || error?.message?.includes('Email not confirmed'));
-  } catch (e) {
-    results.authSystem = false;
-  }
-
-  // Adicionar versões do navegador e informações de ambiente
-  results.userAgent = navigator.userAgent ? true : false;
-  results.timestamp = true;
-  
-  return results;
-}
-
-// Função para limpar completamente uma tabela específica no Supabase
-export async function limparTabela(tabela: string) {
-  try {
-    const { error } = await supabase
-      .from(tabela)
+    const client = createSupabaseClient();
+    const { error } = await client
+      .from(table)
       .delete()
-      .neq('id', ''); // Garante que ele tente apagar tudo
-    
+      .eq(idField, id);
+      
     if (error) {
-      console.error(`Erro ao limpar tabela ${tabela}:`, error);
-      return { success: false, message: error.message };
-    } else {
-      console.log(`Tabela ${tabela} limpa com sucesso.`);
-      return { success: true, message: `Tabela ${tabela} limpa com sucesso` };
+      console.error(`Erro ao excluir registro de ${table}:`, error);
+      return { success: false, error };
     }
-  } catch (error: any) {
-    console.error(`Erro ao limpar tabela ${tabela}:`, error);
-    return { success: false, message: error.message || 'Erro desconhecido' };
+    
+    return { success: true };
+  } catch (error) {
+    console.error(`Exceção ao excluir registro de ${table}:`, error);
+    return { success: false, error: error instanceof Error ? error.message : error };
   }
 }
 
-// Função para limpar várias tabelas no Supabase na ordem correta
-export async function limparTodosOsDados(tabelas?: string[]) {
-  // Lista padrão de tabelas para limpar, na ordem correta para evitar conflitos de FK
-  const tabelasPadrao = [
-    'manutencao',
-    'abastecimentos',
-    'multas',
-    'pneus',
-    'linha_corredor',
-    'veiculos',
-    'oficinas',
+export async function deleteRecords(
+  table: string,
+  filter?: Record<string, any>
+): Promise<{ success: boolean; error?: any }> {
+  try {
+    const client = createSupabaseClient();
+    let query = client.from(table).delete();
+    
+    // Aplicar filtros
+    if (filter) {
+      Object.entries(filter).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          query = query.eq(key, value);
+        }
+      });
+    }
+    
+    const { error } = await query;
+      
+    if (error) {
+      console.error(`Erro ao excluir registros de ${table}:`, error);
+      return { success: false, error };
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error(`Exceção ao excluir registros de ${table}:`, error);
+    return { success: false, error: error instanceof Error ? error.message : error };
+  }
+}
+
+/**
+ * Função para limpar várias tabelas no Supabase de forma otimizada
+ * Leva em consideração a ordem correta para evitar problemas com chaves estrangeiras
+ * @param tables Array de nomes de tabelas para limpar
+ * @returns Objeto com resultados por tabela
+ */
+export async function limparTodosOsDados(
+  tables: string[]
+): Promise<Record<string, { success: boolean; message?: string }>> {
+  // Ordem otimizada para limpeza respeitando chaves estrangeiras
+  const orderForDeletion = [
+    // Primeiro tabelas dependentes
+    'multas', 'fines',
+    'abastecimentos', 'refueling',
     'abastecimentos_postos',
     'movimentacoes_patio',
-    'entradas_combustivel',
-    'status_tanques',
+    'recebimentos_combustivel',
+    'manutencao', 'maintenance',
+    'linha_corredor', 'line_hall',
+    // Depois tabelas principais
+    'pneus', 'tires',
+    'veiculos', 'vehicles',
+    'oficinas', 'workshops',
+    'bases', 'bases',
+    // Por último tabelas de configuração
     'controle_tanques',
-    // Incluir também os nomes antigos em inglês para garantir
-    'maintenance',
-    'refueling',
-    'fines',
-    'tires',
-    'line_hall',
-    'vehicles',
-    'workshops'
+    'status_tanques',
+    'configuracao_tanques'
   ];
-
-  // Usar as tabelas fornecidas ou as padrão
-  const tabelasParaLimpar = tabelas || tabelasPadrao;
-  const resultados: Record<string, any> = {};
   
-  for (const tabela of tabelasParaLimpar) {
-    console.log(`Tentando limpar tabela ${tabela}...`);
-    const resultado = await limparTabela(tabela);
-    resultados[tabela] = resultado;
+  // Filtrar as tabelas solicitadas pela ordem otimizada
+  const orderedTablesToDelete = orderForDeletion.filter(t => tables.includes(t));
+  
+  // Adicionar no final qualquer tabela que não estiver na lista predefinida
+  const remainingTables = tables.filter(t => !orderForDeletion.includes(t));
+  const finalOrderedTables = [...orderedTablesToDelete, ...remainingTables];
+  
+  const results: Record<string, { success: boolean; message?: string }> = {};
+  
+  // Usar cliente administrativo para garantir permissões
+  const admin = createSupabaseAdmin();
+  
+  // Processar tabelas na ordem correta
+  for (const table of finalOrderedTables) {
+    try {
+      console.log(`Limpando tabela: ${table}`);
+      
+      // Tentar excluir todos os registros
+      const { error } = await admin
+        .from(table)
+        .delete()
+        .neq('id', -1); // condição sempre verdadeira para excluir tudo
+      
+      if (error) {
+        results[table] = { 
+          success: false, 
+          message: error.message || 'Erro desconhecido'
+        };
+        console.error(`Erro ao limpar tabela ${table}:`, error);
+      } else {
+        results[table] = { success: true };
+        console.log(`Tabela ${table} limpa com sucesso!`);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      results[table] = { success: false, message: errorMessage };
+      console.error(`Exceção ao limpar tabela ${table}:`, error);
+    }
   }
   
-  return resultados;
+  return results;
 }
