@@ -45,6 +45,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Motoristas', href: '/drivers', icon: Users },
     { name: 'Manutenções', href: '/maintenance', icon: Wrench },
     { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText },
+    { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
     { name: 'Abastecimentos', href: '/refueling', icon: Fuel },
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
