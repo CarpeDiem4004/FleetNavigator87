@@ -30,20 +30,34 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
 
   useEffect(() => {
     async function fetchBases() {
-      const { data, error } = await supabase.from('bases').select('id, nome')
-      if (error) {
-        console.error('Erro ao buscar bases:', error)
+      try {
+        // Usar a API REST em vez do cliente Supabase diretamente
+        const response = await fetch('/api/bases');
+        if (!response.ok) {
+          throw new Error(`Erro ao buscar bases: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Bases carregadas da API:', data);
+        
+        // Adaptar o formato da resposta da API para o formato esperado pelo componente
+        const formattedBases = data.map((base: any) => ({
+          id: base.id,
+          nome: base.name || base.nome // Lidar com ambos os formatos possíveis
+        }));
+        
+        setBases(formattedBases);
+      } catch (error) {
+        console.error('Erro ao buscar bases:', error);
         toast({
           title: 'Erro ao carregar bases',
           description: 'Não foi possível carregar a lista de bases.',
           variant: 'destructive'
-        })
-      } else {
-        setBases(data || [])
+        });
       }
     }
 
-    fetchBases()
+    fetchBases();
   }, [toast])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,39 +75,43 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
     setIsSubmitting(true)
     
     try {
-      const { error } = await supabase.from('veiculos').insert({
-        placa,
-        marca,
-        modelo,
-        base_id: parseInt(baseId),
-        status: 'em_operacao',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+      // Usar a API REST em vez do cliente Supabase
+      const response = await fetch('/api/vehicles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          plate: placa,
+          model: modelo,
+          vehicleType: marca,
+          status: 'em_operacao',
+          baseId: parseInt(baseId)
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao cadastrar veículo');
+      }
+      
+      const vehicleData = await response.json();
+      
+      toast({
+        title: 'Veículo cadastrado',
+        description: `Veículo ${placa} cadastrado com sucesso.`,
+        variant: 'default'
       })
       
-      if (error) {
-        toast({
-          title: 'Erro ao cadastrar veículo',
-          description: error.message,
-          variant: 'destructive'
-        })
-      } else {
-        toast({
-          title: 'Veículo cadastrado',
-          description: `Veículo ${placa} cadastrado com sucesso.`,
-          variant: 'default'
-        })
-        
-        // Limpar formulário após sucesso
-        setPlaca('')
-        setMarca('')
-        setModelo('Fiorino')
-        setBaseId(undefined)
-        
-        // Notificar o componente pai sobre a adição
-        if (onVehicleAdded) {
-          onVehicleAdded()
-        }
+      // Limpar formulário após sucesso
+      setPlaca('')
+      setMarca('')
+      setModelo('Fiorino')
+      setBaseId(undefined)
+      
+      // Notificar o componente pai sobre a adição
+      if (onVehicleAdded) {
+        onVehicleAdded()
       }
     } catch (error) {
       console.error('Exceção ao cadastrar veículo:', error)
