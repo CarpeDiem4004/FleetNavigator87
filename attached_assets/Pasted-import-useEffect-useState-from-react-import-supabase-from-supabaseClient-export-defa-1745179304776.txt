@@ -1,0 +1,68 @@
+import { useEffect, useState } from 'react'
+import { supabase } from './supabaseClient'
+
+export default function PainelPrincipal() {
+  const [painel, setPainel] = useState(null)
+
+  useEffect(() => {
+    const fetchPainel = async () => {
+      const { data, error } = await supabase
+        .from('painel_principal')
+        .select('*')
+        .order('data_referencia', { ascending: false })
+        .limit(1)
+
+      if (error) {
+        console.error('Erro ao buscar painel:', error)
+      } else {
+        setPainel(data[0])
+      }
+    }
+
+    fetchPainel()
+  }, [])
+
+  if (!painel) return <div className="text-center p-6">Carregando painel...</div>
+
+  return (
+    <div className="p-6 space-y-4 bg-gray-100 min-h-screen">
+      <h1 className="text-2xl font-bold text-center">Painel Principal - {painel.data_referencia}</h1>
+
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Manutenção */}
+        <KpiCard label="Manutenções Pendentes" value={painel.manutencoes_pendentes} color="red" />
+        <KpiCard label="Tempo Médio de Manutenção" value={painel.tempo_medio_manutencao} />
+        <KpiCard label="Veículos Parados" value={painel.veiculos_parados} />
+        <KpiCard label="Dias Parados (Total)" value={painel.dias_parados_total} />
+
+        {/* Line Hall */}
+        <KpiCard label="Line Hall Parados" value={painel.linehall_parados} />
+        <KpiCard label="Viagens Concluídas" value={painel.viagens_concluidas} />
+        <KpiCard label="No Show" value={painel.viagens_no_show} />
+        <KpiCard label="Canceladas pelo Cliente" value={painel.viagens_canceladas_cliente} />
+
+        {/* Combustível */}
+        <KpiCard label="Litros Diesel Total" value={painel.litros_diesel_total + ' L'} />
+        <KpiCard label="Gasto Total com Combustível" value={'R$ ' + painel.gasto_total_combustivel} />
+
+        {/* Sinistros e Segurança */}
+        <KpiCard label="Sinistros" value={painel.qtd_sinistros} />
+        <KpiCard label="Roubos" value={painel.qtd_roubos} />
+        <KpiCard label="Incidentes de Segurança" value={painel.incidentes_seguranca_trabalho} />
+
+        {/* Pneus */}
+        <KpiCard label="Movimentações de Pneus" value={painel.movimentacoes_pneus} />
+        <KpiCard label="Pneus Substituídos" value={painel.pneus_substituidos} />
+      </div>
+    </div>
+  )
+}
+
+function KpiCard({ label, value, color = 'blue' }) {
+  return (
+    <div className={`p-4 bg-white shadow rounded border-l-4 border-${color}-600`}>
+      <p className="text-sm text-gray-500">{label}</p>
+      <p className="text-xl font-semibold">{value}</p>
+    </div>
+  )
+}
