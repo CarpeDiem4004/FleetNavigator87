@@ -15,7 +15,8 @@ import {
   X,
   LogOut,
   AlertCircle,
-  ShieldCheck
+  ShieldCheck,
+  FileText
 } from 'lucide-react';
 import backgroundImage from '../../assets/background.jpeg';
 import { Button } from '@/components/ui/button';
@@ -82,6 +83,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     { href: '/line-hall', label: 'Line Hall', icon: Truck },
     { href: '/line-hall-shopee', label: 'Line Hall Shopee', icon: Truck },
     { href: '/drivers', label: 'Motoristas', icon: Users },
+    { href: '/manutencao', label: 'Solicitações de Manutenção', icon: FileText },
     { href: '/accidents', label: 'Sinistros e Roubos', icon: AlertCircle },
     { href: '/work-safety', label: 'Segurança do Trabalho', icon: ShieldCheck },
     { href: '/users', label: 'Usuários', icon: Users },
