@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Truck, Bolt, Fuel, AlertTriangle, ArrowLeft, BarChart3, FileText, AlertCircle, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Truck, Bolt, Fuel, AlertTriangle, ArrowLeft, BarChart3, FileText, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLocation } from 'wouter';
 import { supabase } from '@/lib/supabase-client';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import VeiculosParadosCard from '@/components/dashboard/VeiculosParadosCard';
+import { useToast } from '@/hooks/use-toast';
 
 interface DashboardMetrics {
   veiculos_total?: number;
@@ -17,16 +18,31 @@ interface DashboardMetrics {
 }
 
 const Dashboard: React.FC = () => {
+  const { toast } = useToast();
   const [_, navigate] = useLocation();
   const [metrics, setMetrics] = useState<DashboardMetrics>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const autoRefreshTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    fetchDashboardData();
+  // Limpar as métricas (zerar os dados)
+  const clearMetrics = useCallback(() => {
+    setMetrics({
+      veiculos_total: 0,
+      manutencoes_pendentes: 0,
+      manutencoes_andamento: 0,
+      abastecimentos_mes: 0,
+      pneus_estoque: 0
+    });
   }, []);
 
-  const fetchDashboardData = async () => {
-    setIsLoading(true);
+  // Função para buscar dados, com opção para mostrar indicadores de carregamento
+  const fetchDashboardData = useCallback(async (showLoading = true) => {
+    if (showLoading) {
+      setIsLoading(true);
+    }
+    
     try {
       // Carregar estatísticas básicas
       const [veiculosResult, manutencoesResult, abasteResult, pneusResult] = await Promise.all([
@@ -53,22 +69,129 @@ const Dashboard: React.FC = () => {
         abastecimentos_mes: abastecimentosMes,
         pneus_estoque: pneusEstoque
       });
+      
+      // Atualizar horário da última atualização
+      setLastUpdated(new Date());
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error);
+      if (!showLoading) {
+        toast({
+          title: "Erro na atualização",
+          description: "Não foi possível atualizar os dados do dashboard",
+          variant: "destructive"
+        });
+      }
     } finally {
-      setIsLoading(false);
+      if (showLoading) {
+        setIsLoading(false);
+      }
     }
+  }, [toast]);
+
+  // Atualização automática a cada 30 segundos
+  useEffect(() => {
+    // Inicializar com dados limpos
+    clearMetrics();
+    
+    // Carregar dados iniciais
+    fetchDashboardData();
+    
+    // Configurar atualização automática
+    if (autoRefresh) {
+      autoRefreshTimerRef.current = setInterval(() => {
+        fetchDashboardData(false); // Atualizar sem mostrar indicador de carregamento
+      }, 30000); // A cada 30 segundos
+    }
+    
+    // Limpeza ao desmontar o componente
+    return () => {
+      if (autoRefreshTimerRef.current) {
+        clearInterval(autoRefreshTimerRef.current);
+      }
+    };
+  }, [fetchDashboardData, clearMetrics, autoRefresh]);
+
+  // Alternar atualização automática
+  const toggleAutoRefresh = () => {
+    if (autoRefresh) {
+      // Desligar auto-refresh
+      if (autoRefreshTimerRef.current) {
+        clearInterval(autoRefreshTimerRef.current);
+        autoRefreshTimerRef.current = null;
+      }
+    } else {
+      // Ligar auto-refresh
+      autoRefreshTimerRef.current = setInterval(() => {
+        fetchDashboardData(false);
+      }, 30000);
+    }
+    setAutoRefresh(!autoRefresh);
+  };
+
+  // Forçar atualização manual
+  const handleManualRefresh = () => {
+    fetchDashboardData();
+    toast({
+      title: "Dashboard atualizado",
+      description: "Os dados foram atualizados com sucesso.",
+    });
+  };
+
+  // Zerar todos os dados
+  const handleClearData = () => {
+    clearMetrics();
+    toast({
+      title: "Dados zerados",
+      description: "Todos os dados do dashboard foram zerados.",
+    });
   };
 
   return (
     <MainLayoutSimple>
       <div className="space-y-6 p-4 md:p-6">
-        <div className="flex flex-col space-y-2">
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-gray-500">
-            Visão geral da sua frota e operações
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <p className="text-gray-500">
+              Visão geral da sua frota e operações
+            </p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleClearData}
+              className="text-gray-600"
+            >
+              Zerar Dados
+            </Button>
+            <Button 
+              variant={autoRefresh ? "default" : "outline"} 
+              size="sm" 
+              onClick={toggleAutoRefresh}
+              className={autoRefresh ? "" : "text-gray-600"}
+            >
+              {autoRefresh ? "Auto Atualização: Ligada" : "Auto Atualização: Desligada"}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={handleManualRefresh}
+              disabled={isLoading}
+              className="text-gray-600"
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </div>
+        
+        {lastUpdated && (
+          <div className="flex justify-end">
+            <p className="text-xs text-gray-500">
+              Última atualização: {lastUpdated.toLocaleTimeString()}
+            </p>
+          </div>
+        )}
 
         {/* Cards de KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

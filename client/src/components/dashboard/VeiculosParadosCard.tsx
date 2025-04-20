@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase-client';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { differenceInDays, format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Truck, AlertCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Truck, AlertCircle, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 interface VeiculoParado {
   id: number;
@@ -20,16 +21,24 @@ interface VeiculoParado {
 }
 
 const VeiculosParadosCard: React.FC = () => {
+  const { toast } = useToast();
   const [veiculosParados, setVeiculosParados] = useState<VeiculoParado[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const autoRefreshTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    fetchVeiculosParados();
+  // Função para limpar os dados
+  const clearVeiculos = useCallback(() => {
+    setVeiculosParados([]);
   }, []);
 
-  const fetchVeiculosParados = async () => {
-    setIsLoading(true);
+  // Função para buscar dados com a opção de mostrar ou não o carregamento
+  const fetchVeiculosParados = useCallback(async (showLoading = true) => {
+    if (showLoading) {
+      setIsLoading(true);
+    }
     setError(null);
 
     try {
@@ -70,13 +79,24 @@ const VeiculosParadosCard: React.FC = () => {
       });
 
       setVeiculosParados(veiculosFormatados);
+      // Atualizar horário da última atualização
+      setLastUpdated(new Date());
     } catch (err) {
       console.error('Erro ao buscar veículos parados:', err);
       setError('Não foi possível carregar os veículos parados. Tente novamente mais tarde.');
+      if (!showLoading) {
+        toast({
+          title: "Erro na atualização",
+          description: "Não foi possível atualizar os dados de veículos parados",
+          variant: "destructive"
+        });
+      }
     } finally {
-      setIsLoading(false);
+      if (showLoading) {
+        setIsLoading(false);
+      }
     }
-  };
+  }, [toast]);
 
   // Agrupar por dias parados para melhor visualização
   const getCategoriaParada = (dias: number) => {
@@ -86,11 +106,41 @@ const VeiculosParadosCard: React.FC = () => {
     return 'recente';
   };
 
+  // Configurar atualização automática
+  useEffect(() => {
+    // Inicializar com dados limpos e carregar dados iniciais
+    clearVeiculos();
+    fetchVeiculosParados();
+    
+    // Configurar atualização automática
+    if (autoRefresh) {
+      autoRefreshTimerRef.current = setInterval(() => {
+        fetchVeiculosParados(false); // Atualizar sem mostrar indicador de carregamento
+      }, 45000); // A cada 45 segundos
+    }
+    
+    // Limpeza ao desmontar o componente
+    return () => {
+      if (autoRefreshTimerRef.current) {
+        clearInterval(autoRefreshTimerRef.current);
+      }
+    };
+  }, [fetchVeiculosParados, clearVeiculos, autoRefresh]);
+
   // Ordenar veículos por tempo parado (maior para menor)
   const veiculosOrdenados = [...veiculosParados].sort((a, b) => b.dias_parado - a.dias_parado);
   
   // Limitar a 5 veículos para exibição no card
   const topVeiculos = veiculosOrdenados.slice(0, 5);
+  
+  // Forçar atualização manual
+  const handleManualRefresh = () => {
+    fetchVeiculosParados();
+    toast({
+      title: "Dados atualizados",
+      description: "A lista de veículos parados foi atualizada."
+    });
+  };
   
   return (
     <Card>
@@ -100,13 +150,31 @@ const VeiculosParadosCard: React.FC = () => {
             <AlertTriangle className="h-5 w-5 text-amber-500" />
             <CardTitle>Veículos Parados</CardTitle>
           </div>
-          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-            {veiculosParados.length} veículo(s)
-          </Badge>
+          <div className="flex items-center space-x-2">
+            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+              {veiculosParados.length} veículo(s)
+            </Badge>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7" 
+              onClick={handleManualRefresh}
+              disabled={isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </div>
         <CardDescription>
           Veículos do LineHall que estão parados e há quantos dias
         </CardDescription>
+        {lastUpdated && (
+          <div className="mt-1">
+            <p className="text-xs text-gray-400">
+              Atualizado às {lastUpdated.toLocaleTimeString()}
+            </p>
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         {isLoading ? (
