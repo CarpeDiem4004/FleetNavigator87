@@ -337,7 +337,7 @@ const LineHallShopee: React.FC = () => {
         data_viagem: format(date, 'yyyy-MM-dd'),
         cavalo_placa: truckPlate,
         carreta1_placa: trailer1Plate,
-        carreta2_placa: trailer2Plate || null,
+        carreta2_placa: trailer2Plate && trailer2Plate !== "none" ? trailer2Plate : null,
         motorista_id: parseInt(driverId),
         base_origem_id: parseInt(loadingBaseId),
         base_destino_id: parseInt(unloadingBaseId),
@@ -808,7 +808,7 @@ const LineHallShopee: React.FC = () => {
                             <SelectValue placeholder="Selecione a carreta" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Nenhuma</SelectItem>
+                            <SelectItem value="none">Nenhuma</SelectItem>
                             {carretaVehicles.map((vehicle) => (
                               <SelectItem key={vehicle.id} value={vehicle.plate}>{vehicle.plate} - {vehicle.model}</SelectItem>
                             ))}
