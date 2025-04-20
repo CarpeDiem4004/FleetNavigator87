@@ -81,6 +81,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     { href: '/fines', label: 'Multas', icon: ReceiptText },
     { href: '/line-hall', label: 'Line Hall', icon: Truck },
     { href: '/line-hall-shopee', label: 'Line Hall Shopee', icon: Truck },
+    { href: '/drivers', label: 'Motoristas', icon: Users },
     { href: '/accidents', label: 'Sinistros e Roubos', icon: AlertCircle },
     { href: '/work-safety', label: 'Segurança do Trabalho', icon: ShieldCheck },
     { href: '/users', label: 'Usuários', icon: Users },

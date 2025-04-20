@@ -41,11 +41,13 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   const allNavItems = [
     { name: 'Dashboard', href: '/', icon: Gauge },
     { name: 'Veículos', href: '/vehicles', icon: Truck },
+    { name: 'Motoristas', href: '/drivers', icon: Users },
     { name: 'Manutenções', href: '/maintenance', icon: Wrench },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
     { name: 'Abastecimentos', href: '/refueling', icon: Fuel },
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
     { name: 'Line Hall', href: '/line-hall', icon: TrafficCone },
+    { name: 'Line Hall Shopee', href: '/line-hall-shopee', icon: TrafficCone },
     { name: 'Bases', href: '/bases', icon: Warehouse },
     { name: 'Usuários', href: '/users', icon: Users },
   ];
