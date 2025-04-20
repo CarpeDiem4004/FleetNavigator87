@@ -14,7 +14,16 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -95,7 +104,9 @@ const tripStatusMap: Record<string, { label: string; color: string }> = {
   'carregando': { label: 'Carregando', color: 'bg-amber-100 text-amber-800' },
   'aguardando_carga': { label: 'Aguardando Carga', color: 'bg-purple-100 text-purple-800' },
   'em_transito': { label: 'Em Trânsito', color: 'bg-green-100 text-green-800' },
-  'finalizada': { label: 'Finalizada', color: 'bg-gray-100 text-gray-800' }
+  'finalizada': { label: 'Finalizada', color: 'bg-gray-100 text-gray-800' },
+  'no_show': { label: 'No Show', color: 'bg-red-100 text-red-800' },
+  'cancelada_cliente': { label: 'Cancelada pelo Cliente', color: 'bg-rose-100 text-rose-800' }
 };
 
 const checklistStatusMap: Record<string, { label: string; color: string }> = {
@@ -130,6 +141,9 @@ const LineHallShopee: React.FC = () => {
   const [unloadingTime, setUnloadingTime] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [noShowReason, setNoShowReason] = useState('');
+  const [isNoShowModalOpen, setIsNoShowModalOpen] = useState(false);
+  const [selectedTripId, setSelectedTripId] = useState<number | null>(null);
   
   // Dados para selects
   const [bases, setBases] = useState<Base[]>([]);
@@ -436,9 +450,118 @@ const LineHallShopee: React.FC = () => {
       variant: 'default',
     });
   };
+  
+  // Função para atualizar o status da viagem
+  const updateTripStatus = async (tripId: number, status: string, reason?: string) => {
+    try {
+      const updateData: any = {
+        status: status
+      };
+      
+      // Se for no_show, adicionar motivo às observações
+      if (status === 'no_show' && reason) {
+        updateData.observacoes = `No Show: ${reason}`;
+      }
+      
+      // Se for cancelada_cliente, adicionar às observações
+      if (status === 'cancelada_cliente') {
+        updateData.observacoes = 'Viagem cancelada pelo cliente';
+      }
+      
+      const { error } = await supabase
+        .from('linehall_shopee')
+        .update(updateData)
+        .eq('id', tripId);
+        
+      if (error) throw error;
+      
+      // Atualizar a lista de viagens no estado
+      setTrips(trips.map(trip => {
+        if (trip.id === tripId) {
+          return {
+            ...trip,
+            status: status,
+            observacoes: updateData.observacoes || trip.observacoes
+          };
+        }
+        return trip;
+      }));
+      
+      toast({
+        title: 'Status atualizado',
+        description: `Status da viagem atualizado para ${tripStatusMap[status].label}.`,
+        variant: 'default',
+      });
+      
+      // Fechar modal se estiver aberto
+      if (status === 'no_show') {
+        setIsNoShowModalOpen(false);
+        setNoShowReason('');
+      }
+      
+    } catch (error) {
+      console.error('Erro ao atualizar status da viagem:', error);
+      toast({
+        title: 'Erro ao atualizar status',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  // Abrir modal para informar motivo de no-show
+  const openNoShowModal = (tripId: number) => {
+    setSelectedTripId(tripId);
+    setNoShowReason('');
+    setIsNoShowModalOpen(true);
+  };
+  
+  // Enviar motivo de no-show
+  const submitNoShow = () => {
+    if (!noShowReason.trim()) {
+      toast({
+        title: 'Campo obrigatório',
+        description: 'Por favor, informe o motivo do No Show.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (selectedTripId) {
+      updateTripStatus(selectedTripId, 'no_show', noShowReason);
+    }
+  };
 
   return (
     <MainLayoutSimple>
+      {/* Modal de No Show */}
+      <Dialog open={isNoShowModalOpen} onOpenChange={setIsNoShowModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Registrar No Show</DialogTitle>
+            <DialogDescription>
+              Informe o motivo do No Show para esta viagem.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="no-show-reason">Motivo do No Show *</Label>
+              <Textarea
+                id="no-show-reason"
+                placeholder="Descreva o motivo do No Show..."
+                value={noShowReason}
+                onChange={(e) => setNoShowReason(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsNoShowModalOpen(false)}>Cancelar</Button>
+            <Button onClick={submitNoShow}>Confirmar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
@@ -555,6 +678,32 @@ const LineHallShopee: React.FC = () => {
                                 >
                                   <FileCheck className="h-4 w-4" />
                                 </Button>
+                                
+                                {/* Dropdown para alterar status */}
+                                <Select 
+                                  value={trip.status} 
+                                  onValueChange={(value) => {
+                                    if (value === 'no_show') {
+                                      openNoShowModal(trip.id);
+                                    } else {
+                                      updateTripStatus(trip.id, value);
+                                    }
+                                  }}
+                                >
+                                  <SelectTrigger className="w-[120px]">
+                                    <SelectValue placeholder="Alterar Status" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="programada">Programada</SelectItem>
+                                    <SelectItem value="carregando">Carregando</SelectItem>
+                                    <SelectItem value="aguardando_carga">Aguardando Carga</SelectItem>
+                                    <SelectItem value="em_transito">Em Trânsito</SelectItem>
+                                    <SelectItem value="finalizada">Finalizada</SelectItem>
+                                    <SelectItem value="no_show">No Show</SelectItem>
+                                    <SelectItem value="cancelada_cliente">Cancelada pelo Cliente</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                
                                 <Button 
                                   variant="outline" 
                                   size="icon"
