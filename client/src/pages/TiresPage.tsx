@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,11 +28,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Plus, FileEdit, Trash2, ArrowUpCircle } from 'lucide-react';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Search, Plus, FileEdit, Trash2, ArrowUpCircle, ShoppingBag, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
-import { fetchRecords, createSupabaseClient } from '@/lib/supabase-client';
+import { fetchRecords, createSupabaseClient, insertRecord, updateData } from '@/lib/supabase-client';
 
 // Interface para o modelo de pneus
 interface Tire {
@@ -53,6 +60,29 @@ interface Tire {
   localizacao: string;
   status: 'em_uso' | 'estoque' | 'descartado';
   observacao?: string;
+}
+
+// Interface para solicitações de pneus
+interface TireRequest {
+  id: number;
+  base_id: number;
+  base_nome: string;
+  usuario_id: number;
+  usuario_nome: string;
+  marca: string;
+  modelo: string;
+  medida: string;
+  tipo: string;
+  quantidade: number;
+  motivo: string;
+  status: 'pendente' | 'aprovado' | 'rejeitado';
+  data_solicitacao: string;
+  data_aprovacao?: string;
+  aprovador_id?: number;
+  aprovador_nome?: string;
+  observacao?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // Função para traduzir os status de pneus
@@ -98,13 +128,37 @@ const formatDate = (dateString: string): string => {
   }
 };
 
+// Função para traduzir status de solicitações de pneus
+const translateRequestStatus = (status: string): string => {
+  const statuses: Record<string, string> = {
+    pendente: 'Pendente',
+    aprovado: 'Aprovado',
+    rejeitado: 'Rejeitado'
+  };
+  return statuses[status] || status;
+};
+
+// Função para obter a classe CSS para o badge de status de requisição
+const getRequestStatusBadgeClass = (status: string): string => {
+  const classes: Record<string, string> = {
+    pendente: 'bg-yellow-100 text-yellow-800',
+    aprovado: 'bg-green-100 text-green-800',
+    rejeitado: 'bg-red-100 text-red-800'
+  };
+  return classes[status] || 'bg-gray-100 text-gray-800';
+};
+
 const TiresPage: React.FC = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [tires, setTires] = useState<Tire[]>([]);
+  const [tireRequests, setTireRequests] = useState<TireRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingRequests, setIsLoadingRequests] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState("inventory");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   const [newTire, setNewTire] = useState<Partial<Tire>>({
     codigo: '',
     marca: '',
@@ -121,6 +175,22 @@ const TiresPage: React.FC = () => {
     profundidade_sulco: 12.0,
     localizacao: 'almoxarifado',
     status: 'estoque',
+    observacao: ''
+  });
+
+  // Estado para nova solicitação de pneus
+  const [newRequest, setNewRequest] = useState({
+    base_id: 0,
+    base_nome: '',
+    usuario_id: 0,
+    usuario_nome: '',
+    marca: '',
+    modelo: '',
+    medida: '',
+    tipo: 'direcao',
+    quantidade: 1,
+    motivo: '',
+    status: 'pendente' as const,
     observacao: ''
   });
 
@@ -153,6 +223,27 @@ const TiresPage: React.FC = () => {
 
     loadTires();
   }, [toast]);
+
+  // Carregar solicitações de pneus
+  useEffect(() => {
+    const loadTireRequests = async () => {
+      setIsLoadingRequests(true);
+      try {
+        const response = await fetchRecords('solicitacoes_pneus');
+        if (response.success && response.data) {
+          setTireRequests(response.data);
+        } else {
+          console.error("Falha ao carregar solicitações de pneus:", response.error);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar solicitações de pneus:", error);
+      } finally {
+        setIsLoadingRequests(false);
+      }
+    };
+
+    loadTireRequests();
+  }, []);
 
   // Filtrar pneus com base no termo de busca
   const filteredTires = tires.filter(
@@ -261,6 +352,180 @@ const TiresPage: React.FC = () => {
     }
   };
 
+  // Adicionar nova solicitação de pneus
+  const handleAddRequest = async () => {
+    if (!newRequest.marca || !newRequest.modelo || !newRequest.motivo || newRequest.quantidade <= 0) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha todos os campos obrigatórios.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Valores simulados para teste - em produção esses valores viriam do usuário logado e sua base atual
+      const currentUser = {
+        id: 12,
+        name: "Administrador"
+      };
+      
+      const userBase = {
+        id: 1,
+        nome: "Base São Paulo"
+      };
+
+      const supabase = createSupabaseClient();
+      
+      const { data, error } = await supabase
+        .from('solicitacoes_pneus')
+        .insert([{
+          base_id: userBase.id,
+          base_nome: userBase.nome,
+          usuario_id: currentUser.id,
+          usuario_nome: currentUser.name,
+          marca: newRequest.marca,
+          modelo: newRequest.modelo,
+          medida: newRequest.medida,
+          tipo: newRequest.tipo,
+          quantidade: newRequest.quantidade,
+          motivo: newRequest.motivo,
+          status: 'pendente',
+          data_solicitacao: new Date().toISOString(),
+          observacao: newRequest.observacao,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select();
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setTireRequests([...tireRequests, data[0] as TireRequest]);
+        setIsRequestDialogOpen(false);
+        
+        toast({
+          title: "Solicitação enviada",
+          description: "Sua solicitação de pneus foi enviada com sucesso.",
+          variant: "default"
+        });
+        
+        // Resetar formulário
+        setNewRequest({
+          base_id: 0,
+          base_nome: '',
+          usuario_id: 0,
+          usuario_nome: '',
+          marca: '',
+          modelo: '',
+          medida: '',
+          tipo: 'direcao',
+          quantidade: 1,
+          motivo: '',
+          status: 'pendente',
+          observacao: ''
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao enviar solicitação:", error);
+      toast({
+        title: "Erro ao enviar solicitação",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Aprovar solicitação de pneus
+  const handleApproveRequest = async (requestId: number) => {
+    try {
+      const supabase = createSupabaseClient();
+      
+      // Valores simulados para teste - em produção viria do usuário logado
+      const currentUser = {
+        id: 12,
+        name: "Administrador"
+      };
+      
+      const { data, error } = await supabase
+        .from('solicitacoes_pneus')
+        .update({
+          status: 'aprovado',
+          data_aprovacao: new Date().toISOString(),
+          aprovador_id: currentUser.id,
+          aprovador_nome: currentUser.name,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', requestId)
+        .select();
+      
+      if (error) throw error;
+      
+      // Atualizar a lista de solicitações
+      setTireRequests(tireRequests.map(req => 
+        req.id === requestId ? (data[0] as TireRequest) : req
+      ));
+      
+      toast({
+        title: "Solicitação aprovada",
+        description: "A solicitação de pneus foi aprovada com sucesso.",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error("Erro ao aprovar solicitação:", error);
+      toast({
+        title: "Erro ao aprovar solicitação",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Rejeitar solicitação de pneus
+  const handleRejectRequest = async (requestId: number) => {
+    try {
+      const supabase = createSupabaseClient();
+      
+      // Valores simulados para teste - em produção viria do usuário logado
+      const currentUser = {
+        id: 12,
+        name: "Administrador"
+      };
+      
+      const { data, error } = await supabase
+        .from('solicitacoes_pneus')
+        .update({
+          status: 'rejeitado',
+          data_aprovacao: new Date().toISOString(),
+          aprovador_id: currentUser.id,
+          aprovador_nome: currentUser.name,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', requestId)
+        .select();
+      
+      if (error) throw error;
+      
+      // Atualizar a lista de solicitações
+      setTireRequests(tireRequests.map(req => 
+        req.id === requestId ? (data[0] as TireRequest) : req
+      ));
+      
+      toast({
+        title: "Solicitação rejeitada",
+        description: "A solicitação de pneus foi rejeitada.",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error("Erro ao rejeitar solicitação:", error);
+      toast({
+        title: "Erro ao rejeitar solicitação",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive"
+      });
+    }
+  };
+
   const tiposOptions = [
     { value: 'direcao', label: 'Direção' },
     { value: 'tracao', label: 'Tração' },
@@ -299,6 +564,121 @@ const TiresPage: React.FC = () => {
               <ArrowUpCircle className="mr-2 h-4 w-4" />
               Entrada em Lote
             </Button>
+
+            <Dialog open={isRequestDialogOpen} onOpenChange={setIsRequestDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="flex items-center">
+                  <ShoppingBag className="mr-2 h-4 w-4" />
+                  Solicitar Pneus
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>Solicitar Pneus</DialogTitle>
+                  <DialogDescription>
+                    Preencha os detalhes para solicitar novos pneus para sua base
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  {/* Marca e Modelo */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="req-marca">Marca *</Label>
+                      <Input
+                        id="req-marca"
+                        value={newRequest.marca}
+                        onChange={(e) => setNewRequest({...newRequest, marca: e.target.value})}
+                        placeholder="Ex: Pirelli"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="req-modelo">Modelo *</Label>
+                      <Input
+                        id="req-modelo"
+                        value={newRequest.modelo}
+                        onChange={(e) => setNewRequest({...newRequest, modelo: e.target.value})}
+                        placeholder="Ex: Formula Energy"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Medida e Tipo */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="req-medida">Medida</Label>
+                      <Input
+                        id="req-medida"
+                        value={newRequest.medida}
+                        onChange={(e) => setNewRequest({...newRequest, medida: e.target.value})}
+                        placeholder="Ex: 295/80R22.5"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="req-tipo">Tipo</Label>
+                      <Select 
+                        value={newRequest.tipo} 
+                        onValueChange={(value) => setNewRequest({...newRequest, tipo: value})}
+                      >
+                        <SelectTrigger id="req-tipo">
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {tiposOptions.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  {/* Quantidade */}
+                  <div className="space-y-2">
+                    <Label htmlFor="req-quantidade">Quantidade *</Label>
+                    <Input
+                      id="req-quantidade"
+                      type="number"
+                      min="1"
+                      value={newRequest.quantidade.toString()}
+                      onChange={(e) => setNewRequest({...newRequest, quantidade: parseInt(e.target.value) || 1})}
+                      required
+                    />
+                  </div>
+                  
+                  {/* Motivo */}
+                  <div className="space-y-2">
+                    <Label htmlFor="req-motivo">Motivo da Solicitação *</Label>
+                    <Input
+                      id="req-motivo"
+                      value={newRequest.motivo}
+                      onChange={(e) => setNewRequest({...newRequest, motivo: e.target.value})}
+                      placeholder="Ex: Substituição de pneus desgastados"
+                      required
+                    />
+                  </div>
+                  
+                  {/* Observações */}
+                  <div className="space-y-2">
+                    <Label htmlFor="req-observacao">Observações</Label>
+                    <Input
+                      id="req-observacao"
+                      value={newRequest.observacao}
+                      onChange={(e) => setNewRequest({...newRequest, observacao: e.target.value})}
+                      placeholder="Observações adicionais"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsRequestDialogOpen(false)}>Cancelar</Button>
+                  <Button onClick={handleAddRequest}>Enviar Solicitação</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
             
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
