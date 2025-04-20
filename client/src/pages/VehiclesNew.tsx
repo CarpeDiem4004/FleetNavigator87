@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,66 +30,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import CadastroFrota from '@/components/vehicle/CadastroFrota';
+import { supabase } from '@/lib/supabase-client';
+import { useToast } from '@/hooks/use-toast';
 
 // Tipo para representar os dados de um veículo
 interface Vehicle {
   id: number;
-  plate: string;
-  type: string;
-  model: string;
-  year: number;
+  placa: string; // Nota: usando os campos em português como no exemplo enviado
+  marca: string;
+  modelo: string;
+  base_id: number;
+  base_nome?: string;
   status: string;
-  base: string;
+  created_at?: string;
+  updated_at?: string;
 }
-
-// Dados mockados para a tabela de veículos
-const mockVehicles: Vehicle[] = [
-  {
-    id: 1,
-    plate: 'ABC-1234',
-    type: 'cavalo_mecanico',
-    model: 'Volvo FH 460',
-    year: 2021,
-    status: 'em_operacao',
-    base: 'São Paulo'
-  },
-  {
-    id: 2,
-    plate: 'DEF-5678',
-    type: 'carreta',
-    model: 'Randon Graneleira',
-    year: 2020,
-    status: 'em_manutencao',
-    base: 'Rio de Janeiro'
-  },
-  {
-    id: 3,
-    plate: 'GHI-9012',
-    type: 'cavalo_mecanico',
-    model: 'Scania R450',
-    year: 2022,
-    status: 'em_operacao',
-    base: 'São Paulo'
-  },
-  {
-    id: 4,
-    plate: 'JKL-3456',
-    type: 'van',
-    model: 'Mercedes-Benz Sprinter',
-    year: 2023,
-    status: 'parado',
-    base: 'Belo Horizonte'
-  },
-  {
-    id: 5,
-    plate: 'MNO-7890',
-    type: 'utilitario',
-    model: 'Ford Ranger',
-    year: 2022,
-    status: 'em_operacao',
-    base: 'Curitiba'
-  }
-];
 
 // Função para traduzir os tipos de veículos
 const translateVehicleType = (type: string): string => {
@@ -123,43 +80,99 @@ const getStatusBadgeClass = (status: string): string => {
 };
 
 const VehiclesNew: React.FC = () => {
-  const [vehicles, setVehicles] = useState<Vehicle[]>(mockVehicles);
+  const { toast } = useToast();
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newVehicle, setNewVehicle] = useState<Partial<Vehicle>>({
-    plate: '',
-    type: 'cavalo_mecanico',
-    model: '',
-    year: new Date().getFullYear(),
-    status: 'em_operacao',
-    base: 'São Paulo'
-  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("list");
+  // Estado simples apenas para a página principal
+  
+
+  // Carregar veículos do Supabase
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('veiculos')
+          .select(`
+            id,
+            placa,
+            marca,
+            modelo,
+            base_id,
+            status,
+            created_at,
+            updated_at,
+            bases(nome)
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        // Transformar os dados para incluir nome da base
+        const formattedData = data.map(vehicle => {
+          // Extrair o nome da base do objeto retornado
+          const baseName = vehicle.bases ? vehicle.bases.nome : 'Sem base';
+          
+          // Construir o veículo com o nome da base extraído
+          return {
+            ...vehicle,
+            base_nome: baseName
+          };
+        });
+        
+        setVehicles(formattedData);
+      } catch (error) {
+        console.error('Erro ao buscar veículos:', error);
+        toast({
+          title: 'Erro ao carregar veículos',
+          description: error instanceof Error ? error.message : 'Erro desconhecido',
+          variant: 'destructive'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchVehicles();
+  }, [toast]);
 
   // Filtrar veículos com base no termo de busca
   const filteredVehicles = vehicles.filter(
     (vehicle) => 
-      vehicle.plate.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      vehicle.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      translateVehicleType(vehicle.type).toLowerCase().includes(searchTerm.toLowerCase())
+      (vehicle.placa && vehicle.placa.toLowerCase().includes(searchTerm.toLowerCase())) || 
+      (vehicle.marca && vehicle.marca.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (vehicle.modelo && vehicle.modelo.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // Adicionar novo veículo
-  const handleAddVehicle = () => {
-    if (newVehicle.plate && newVehicle.model) {
-      const vehicle = {
-        ...newVehicle,
-        id: vehicles.length + 1
-      } as Vehicle;
+  // Excluir veículo
+  const handleDeleteVehicle = async (id: number) => {
+    if (!confirm("Tem certeza que deseja excluir este veículo? Esta ação não pode ser desfeita.")) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('veiculos')
+        .delete()
+        .eq('id', id);
       
-      setVehicles([...vehicles, vehicle]);
-      setIsAddDialogOpen(false);
-      setNewVehicle({
-        plate: '',
-        type: 'cavalo_mecanico',
-        model: '',
-        year: new Date().getFullYear(),
-        status: 'em_operacao',
-        base: 'São Paulo'
+      if (error) throw error;
+      
+      setVehicles(vehicles.filter(vehicle => vehicle.id !== id));
+      
+      toast({
+        title: "Veículo excluído",
+        description: "O veículo foi excluído com sucesso.",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error("Erro ao excluir veículo:", error);
+      toast({
+        title: "Erro ao excluir veículo",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive"
       });
     }
   };
@@ -174,186 +187,95 @@ const VehiclesNew: React.FC = () => {
               Gerenciamento de veículos da frota
             </p>
           </div>
-          
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center">
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar Veículo
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Adicionar Novo Veículo</DialogTitle>
-                <DialogDescription>
-                  Preencha os detalhes do veículo abaixo
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="plate" className="text-right">
-                    Placa
-                  </Label>
-                  <Input
-                    id="plate"
-                    value={newVehicle.plate}
-                    onChange={(e) => setNewVehicle({...newVehicle, plate: e.target.value})}
-                    className="col-span-3"
-                    placeholder="ABC-1234"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="type" className="text-right">
-                    Tipo
-                  </Label>
-                  <Select 
-                    value={newVehicle.type}
-                    onValueChange={(value) => setNewVehicle({...newVehicle, type: value})}
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cavalo_mecanico">Cavalo Mecânico</SelectItem>
-                      <SelectItem value="carreta">Carreta</SelectItem>
-                      <SelectItem value="van">Van</SelectItem>
-                      <SelectItem value="utilitario">Utilitário</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="model" className="text-right">
-                    Modelo
-                  </Label>
-                  <Input
-                    id="model"
-                    value={newVehicle.model}
-                    onChange={(e) => setNewVehicle({...newVehicle, model: e.target.value})}
-                    className="col-span-3"
-                    placeholder="Volvo FH 460"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="year" className="text-right">
-                    Ano
-                  </Label>
-                  <Input
-                    id="year"
-                    type="number"
-                    value={newVehicle.year}
-                    onChange={(e) => setNewVehicle({...newVehicle, year: parseInt(e.target.value)})}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="status" className="text-right">
-                    Status
-                  </Label>
-                  <Select 
-                    value={newVehicle.status}
-                    onValueChange={(value) => setNewVehicle({...newVehicle, status: value})}
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="em_operacao">Em Operação</SelectItem>
-                      <SelectItem value="em_manutencao">Em Manutenção</SelectItem>
-                      <SelectItem value="parado">Parado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="base" className="text-right">
-                    Base
-                  </Label>
-                  <Select 
-                    value={newVehicle.base}
-                    onValueChange={(value) => setNewVehicle({...newVehicle, base: value})}
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Selecione a base" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="São Paulo">São Paulo</SelectItem>
-                      <SelectItem value="Rio de Janeiro">Rio de Janeiro</SelectItem>
-                      <SelectItem value="Belo Horizonte">Belo Horizonte</SelectItem>
-                      <SelectItem value="Curitiba">Curitiba</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleAddVehicle}>
-                  Adicionar
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </div>
 
-        <Card>
-          <CardHeader>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="list">Lista de Veículos</TabsTrigger>
+            <TabsTrigger value="add">Cadastrar Veículo</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="list" className="space-y-4">
             <div className="flex justify-between items-center">
-              <CardTitle>Lista de Veículos</CardTitle>
+              <div></div>
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                 <Input
                   type="search"
                   placeholder="Buscar veículos..."
-                  className="pl-8 w-[250px]"
+                  className="pl-8 w-[300px]"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableCaption>Lista de veículos da frota</TableCaption>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Placa</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Modelo</TableHead>
-                  <TableHead>Ano</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Base</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredVehicles.map((vehicle) => (
-                  <TableRow key={vehicle.id}>
-                    <TableCell className="font-medium">{vehicle.plate}</TableCell>
-                    <TableCell>{translateVehicleType(vehicle.type)}</TableCell>
-                    <TableCell>{vehicle.model}</TableCell>
-                    <TableCell>{vehicle.year}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(vehicle.status)}`}>
-                        {translateVehicleStatus(vehicle.status)}
-                      </span>
-                    </TableCell>
-                    <TableCell>{vehicle.base}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button variant="outline" size="icon">
-                          <FileEdit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="icon">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+            
+            <Card>
+              <CardContent className="pt-6">
+                {isLoading ? (
+                  <div className="flex justify-center items-center h-64">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableCaption>Lista de veículos da frota</TableCaption>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Placa</TableHead>
+                        <TableHead>Marca</TableHead>
+                        <TableHead>Modelo</TableHead>
+                        <TableHead>Base</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredVehicles.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-24 text-center">
+                            Nenhum veículo encontrado.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredVehicles.map((vehicle) => (
+                          <TableRow key={vehicle.id}>
+                            <TableCell className="font-medium">{vehicle.placa}</TableCell>
+                            <TableCell>{vehicle.marca}</TableCell>
+                            <TableCell>{vehicle.modelo}</TableCell>
+                            <TableCell>{vehicle.base_nome}</TableCell>
+                            <TableCell>
+                              <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(vehicle.status)}`}>
+                                {translateVehicleStatus(vehicle.status)}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end space-x-2">
+                                <Button variant="outline" size="icon">
+                                  <FileEdit className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="icon"
+                                  onClick={() => handleDeleteVehicle(vehicle.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="add">
+            <CadastroFrota />
+          </TabsContent>
+        </Tabs>
       </div>
     </MainLayoutSimple>
   );

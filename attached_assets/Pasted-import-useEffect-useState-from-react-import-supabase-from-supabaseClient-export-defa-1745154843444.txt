@@ -1,0 +1,80 @@
+import { useEffect, useState } from 'react'
+import { supabase } from './supabaseClient'
+
+export default function CadastroFrota() {
+  const [placa, setPlaca] = useState('')
+  const [marca, setMarca] = useState('')
+  const [modelo, setModelo] = useState('Fiorino')
+  const [baseId, setBaseId] = useState('')
+  const [bases, setBases] = useState([])
+
+  const modelos = ['Fiorino', 'Van', 'VUC', '3/4', 'Toco', 'Truck', 'Cavalo', 'Carreta']
+
+  useEffect(() => {
+    async function fetchBases() {
+      const { data, error } = await supabase.from('base').select('id, nome')
+      if (error) console.error('Erro ao buscar bases:', error)
+      else setBases(data)
+    }
+
+    fetchBases()
+  }, [])
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    const { error } = await supabase.from('cadastro_frota').insert({
+      placa,
+      marca,
+      modelo,
+      base_id: baseId,
+    })
+    if (error) {
+      alert('Erro ao salvar: ' + error.message)
+    } else {
+      alert('Veículo cadastrado com sucesso!')
+      setPlaca('')
+      setMarca('')
+      setModelo('Fiorino')
+      setBaseId('')
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="p-4 bg-white shadow rounded space-y-4 max-w-md mx-auto">
+      <h2 className="text-xl font-bold mb-4">Cadastro de Frota</h2>
+
+      <input
+        type="text"
+        placeholder="Placa"
+        value={placa}
+        onChange={(e) => setPlaca(e.target.value.toUpperCase())}
+        required
+        className="w-full p-2 border rounded"
+      />
+
+      <input
+        type="text"
+        placeholder="Marca"
+        value={marca}
+        onChange={(e) => setMarca(e.target.value)}
+        required
+        className="w-full p-2 border rounded"
+      />
+
+      <select value={modelo} onChange={(e) => setModelo(e.target.value)} className="w-full p-2 border rounded">
+        {modelos.map((m) => (
+          <option key={m} value={m}>{m}</option>
+        ))}
+      </select>
+
+      <select value={baseId} onChange={(e) => setBaseId(e.target.value)} required className="w-full p-2 border rounded">
+        <option value="">Selecione a Base</option>
+        {bases.map((b) => (
+          <option key={b.id} value={b.id}>{b.nome}</option>
+        ))}
+      </select>
+
+      <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded">Salvar Veículo</button>
+    </form>
+  )
+}
