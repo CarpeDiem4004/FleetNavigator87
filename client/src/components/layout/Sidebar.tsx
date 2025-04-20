@@ -43,7 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Dashboard', href: '/', icon: Gauge },
     { name: 'Veículos', href: '/vehicles', icon: Truck },
     { name: 'Motoristas', href: '/drivers', icon: Users },
-    { name: 'Manutenções', href: '/maintenance', icon: Wrench },
+    // { name: 'Manutenções', href: '/maintenance', icon: Wrench },
     { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText },
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
@@ -58,7 +58,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   // Itens específicos para Gestão de Frotas
   const fleetManagementItems = [
     { name: 'Gestão de Frotas', href: '/fleet-management', icon: Truck },
-    { name: 'Sistema de Manutenção', href: '/fleet-management/maintenance', icon: Wrench },
+    // { name: 'Sistema de Manutenção', href: '/fleet-management/maintenance', icon: Wrench },
     { name: 'Oficinas Credenciadas', href: '/fleet-management/workshops', icon: ClipboardList },
     { name: 'Análise da Operação', href: '/fleet-management/operational-analysis', icon: BarChart4 },
     { name: 'Visão Geral da Frota', href: '/fleet-management/fleet-overview', icon: Activity },

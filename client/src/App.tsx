@@ -91,7 +91,7 @@ function App() {
           
           {/* Rotas protegidas com verificação de permissão de base */}
           <ProtectedRoute path="/vehicles" component={VehiclesNew} />
-          <ProtectedRoute path="/maintenance" component={MaintenanceNew} />
+          {/* <ProtectedRoute path="/maintenance" component={MaintenanceNew} /> */}
           <ProtectedRoute path="/tires" component={TiresPage} />
           <ProtectedRoute path="/tires/entrada" component={TiresEntrada} />
           <ProtectedRoute path="/refueling" component={RefuelingNew} />
@@ -99,7 +99,7 @@ function App() {
           <ProtectedRoute path="/line-hall" component={EntradaOperacoes} />
           <ProtectedRoute path="/fleet-management" component={FleetManagement} />
           <ProtectedRoute path="/fleet-management/workshops" component={WorkshopsPage} />
-          <ProtectedRoute path="/fleet-management/maintenance" component={MaintenancePage} />
+          {/* <ProtectedRoute path="/fleet-management/maintenance" component={MaintenancePage} /> */}
           <ProtectedRoute path="/accidents" component={Accidents} />
           <ProtectedRoute path="/work-safety" component={WorkSafety} />
           <ProtectedRoute path="/users" component={UsersNew} />

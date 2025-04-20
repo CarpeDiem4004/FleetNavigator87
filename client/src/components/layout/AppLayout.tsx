@@ -58,7 +58,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     { href: '/', label: 'Dashboard', icon: BarChart4 },
     { href: '/fleet-management', label: 'Gestão de Frota', icon: Truck },
     { href: '/vehicles', label: 'Veículos', icon: Car },
-    { href: '/maintenance', label: 'Manutenções', icon: Wrench },
+    // { href: '/maintenance', label: 'Manutenções', icon: Wrench },
     { href: '/tires', label: 'Pneus', icon: CircleDollarSign },
     { 
       href: '#', 
