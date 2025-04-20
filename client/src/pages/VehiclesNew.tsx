@@ -88,53 +88,63 @@ const VehiclesNew: React.FC = () => {
   // Estado simples apenas para a página principal
   
 
-  // Carregar veículos do Supabase
+  // Função para carregar veículos do Supabase
+  const fetchVehicles = async () => {
+    setIsLoading(true);
+    try {
+      // Buscar todos os veículos
+      const { data: vehiclesData, error: vehiclesError } = await supabase
+        .from('veiculos')
+        .select(`
+          id,
+          placa,
+          marca,
+          modelo,
+          base_id,
+          status,
+          created_at,
+          updated_at
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (vehiclesError) throw vehiclesError;
+      
+      // Buscar bases para mapear os nomes
+      const { data: basesData, error: basesError } = await supabase
+        .from('bases')
+        .select('id, nome');
+      
+      if (basesError) throw basesError;
+      
+      // Criar um mapa de bases por ID para facilitar a busca
+      const basesMap = new Map();
+      basesData.forEach(base => {
+        basesMap.set(base.id, base.nome);
+      });
+      
+      // Adicionar nome da base a cada veículo
+      const vehiclesWithBaseNames = vehiclesData.map(vehicle => {
+        return {
+          ...vehicle,
+          base_nome: basesMap.get(vehicle.base_id) || 'Sem base'
+        };
+      });
+      
+      setVehicles(vehiclesWithBaseNames);
+    } catch (error) {
+      console.error('Erro ao buscar veículos:', error);
+      toast({
+        title: 'Erro ao carregar veículos',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Carregar veículos quando o componente é montado
   useEffect(() => {
-    const fetchVehicles = async () => {
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('veiculos')
-          .select(`
-            id,
-            placa,
-            marca,
-            modelo,
-            base_id,
-            status,
-            created_at,
-            updated_at,
-            bases(nome)
-          `)
-          .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        
-        // Transformar os dados para incluir nome da base
-        const formattedData = data.map(vehicle => {
-          // Extrair o nome da base do objeto retornado
-          const baseName = vehicle.bases ? vehicle.bases.nome : 'Sem base';
-          
-          // Construir o veículo com o nome da base extraído
-          return {
-            ...vehicle,
-            base_nome: baseName
-          };
-        });
-        
-        setVehicles(formattedData);
-      } catch (error) {
-        console.error('Erro ao buscar veículos:', error);
-        toast({
-          title: 'Erro ao carregar veículos',
-          description: error instanceof Error ? error.message : 'Erro desconhecido',
-          variant: 'destructive'
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
     fetchVehicles();
   }, [toast]);
 
@@ -273,7 +283,10 @@ const VehiclesNew: React.FC = () => {
           </TabsContent>
           
           <TabsContent value="add">
-            <CadastroFrota />
+            <CadastroFrota onVehicleAdded={() => {
+              fetchVehicles();
+              setActiveTab("list"); // Mudar para a aba de lista após adicionar
+            }} />
           </TabsContent>
         </Tabs>
       </div>

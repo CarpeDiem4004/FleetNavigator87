@@ -13,7 +13,11 @@ import {
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 
-export default function CadastroFrota() {
+interface Props {
+  onVehicleAdded?: () => void;
+}
+
+export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
   const { toast } = useToast()
   const [placa, setPlaca] = useState('')
   const [marca, setMarca] = useState('')
@@ -85,6 +89,11 @@ export default function CadastroFrota() {
         setMarca('')
         setModelo('Fiorino')
         setBaseId('')
+        
+        // Notificar o componente pai sobre a adição
+        if (onVehicleAdded) {
+          onVehicleAdded()
+        }
       }
     } catch (error) {
       console.error('Exceção ao cadastrar veículo:', error)
