@@ -41,13 +41,19 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
       console.log("[FETCH] Usando nome capitalizado:", formatPosto(postId));
       
       // Usando o cliente Supabase para buscar dados
-      const data = await fetchRecords('abastecimentos_postos', {
-        equals: { posto: formatPosto(postId) },
+      const response = await fetchRecords('abastecimentos_postos', {
+        filter: { posto: formatPosto(postId) },
         limit: 100
       });
       
-      console.log("[FETCH] Dados recuperados:", data.length);
-      setAbastecimentos(data);
+      // Verificar se a resposta foi bem-sucedida e tem dados
+      if (response.success && response.data) {
+        console.log("[FETCH] Dados recuperados:", response.data.length);
+        setAbastecimentos(response.data as Abastecimento[]);
+      } else {
+        console.log("[FETCH] Nenhum dado recuperado ou erro:", response.error);
+        setAbastecimentos([]);
+      }
     } catch (error) {
       console.error('Erro ao buscar histórico de abastecimentos:', error);
       setAbastecimentos([]);
@@ -163,13 +169,8 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
       // Criar Blob com os dados CSV
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       
-      // Usar a API de navegação para iniciar download direto sem manipulação DOM
-      // Isso evita o erro 'removeChild' completamente
-      if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-        // Para IE/Edge
-        window.navigator.msSaveOrOpenBlob(blob, `abastecimentos_${formatPosto(postId)}_${new Date().toISOString().slice(0, 10)}.csv`);
-        return;
-      }
+      // Métodos específicos para navegadores legados foram removidos
+      // Usaremos apenas a abordagem moderna para todos os navegadores
       
       // Para navegadores modernos
       const url = URL.createObjectURL(blob);
@@ -196,23 +197,26 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
   };
   
   // Filtragem de dados
-  const filteredData = abastecimentos.filter(item => {
+  const filteredData = Array.isArray(abastecimentos) ? abastecimentos.filter((item) => {
     let passesSearch = true;
     let passesDateFilter = true;
     
+    // Verificação de busca por texto
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      const placaMatch = item.placa.toLowerCase().includes(term);
-      const motoristaMatch = item.nome_motorista.toLowerCase().includes(term);
+      // Uso do optional chaining para evitar erros
+      const placaMatch = item?.placa ? item.placa.toLowerCase().includes(term) : false;
+      const motoristaMatch = item?.nome_motorista ? item.nome_motorista.toLowerCase().includes(term) : false;
       let projectMatch = false;
       
-      if (item.project) {
+      if (item?.project) {
         projectMatch = item.project.toLowerCase().includes(term);
       }
       
       passesSearch = placaMatch || motoristaMatch || projectMatch;
     }
     
+    // Filtro por data
     if (dateStart) {
       const startDate = new Date(dateStart);
       passesDateFilter = passesDateFilter && new Date(item.created_at) >= startDate;
@@ -225,7 +229,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
     }
     
     return passesSearch && passesDateFilter;
-  });
+  }) : [];
   
   // Função para limpar todo o histórico de abastecimentos
   const handleLimparHistorico = async () => {
@@ -235,19 +239,21 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
         console.log("[LIMPAR HISTÓRICO] Iniciando limpeza para o posto:", postId);
         
         // Busca todos os IDs de abastecimentos para este posto
-        const registros = await fetchRecords('abastecimentos_postos', {
-          equals: { posto: formatPosto(postId) }
+        const response = await fetchRecords('abastecimentos_postos', {
+          filter: { posto: formatPosto(postId) }
         });
         
-        if (registros.length > 0) {
+        // Verificar se a resposta foi bem-sucedida e tem dados
+        if (response.success && response.data && Array.isArray(response.data) && response.data.length > 0) {
           // Extrai os IDs para excluir
-          const ids = registros.map(reg => reg.id);
+          const ids = response.data.map((reg: any) => reg.id);
           
           // Exclui todos os registros de uma vez
           await deleteRecords('abastecimentos_postos', ids);
+          console.log("[LIMPAR HISTÓRICO] Registros excluídos com sucesso");
+        } else {
+          console.log("[LIMPAR HISTÓRICO] Nenhum registro encontrado para excluir");
         }
-        
-        console.log("[LIMPAR HISTÓRICO] Registros excluídos com sucesso");
         
         // Limpa todos os abastecimentos localmente
         setAbastecimentos([]);
