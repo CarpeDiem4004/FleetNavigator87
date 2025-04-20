@@ -10,7 +10,7 @@ import MaintenanceNew from "@/pages/MaintenanceNew";
 import TiresPage from "@/pages/TiresPage";
 import RefuelingNew from "@/pages/RefuelingNew";
 import FinesNew from "@/pages/FinesNew";
-import LineHallNew from "@/pages/LineHallNew";
+import EntradaOperacoes from "@/pages/EntradaOperacoes";
 import UsersNew from "@/pages/UsersNew";
 import Bases from "@/pages/Bases";
 import SignIn from "@/pages/SignIn";
@@ -91,7 +91,7 @@ function App() {
           <ProtectedRoute path="/tires/entrada" component={TiresEntrada} />
           <ProtectedRoute path="/refueling" component={RefuelingNew} />
           <ProtectedRoute path="/fines" component={FinesNew} />
-          <ProtectedRoute path="/line-hall" component={LineHallNew} />
+          <ProtectedRoute path="/line-hall" component={EntradaOperacoes} />
           <ProtectedRoute path="/fleet-management" component={FleetManagement} />
           <ProtectedRoute path="/fleet-management/workshops" component={WorkshopsPage} />
           <ProtectedRoute path="/fleet-management/maintenance" component={MaintenancePage} />
