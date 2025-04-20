@@ -37,14 +37,21 @@ export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ 
       console.log("[FETCH] Usando nome capitalizado:", formatPosto(postId));
       
       // Usando o cliente Supabase para buscar dados com permissões administrativas
-      const data = await fetchRecords('movimentacoes_patio', {
-        equals: { posto: formatPosto(postId) },
-        order: { created_at: 'desc' },
+      const result = await fetchRecords('movimentacoes_patio', {
+        filter: { posto: formatPosto(postId) },
+        order: { column: 'created_at', ascending: false },
         limit: 20
       });
       
-      console.log("[FETCH] Movimentações recuperadas:", data?.length || 0);
-      setMovimentacoes(data || []);
+      // Verificar se a operação foi bem-sucedida e extrair os dados
+      if (result.success && result.data) {
+        console.log("[FETCH] Movimentações recuperadas:", result.data.length || 0);
+        setMovimentacoes(result.data || []);
+      } else {
+        console.error('[FETCH] Erro ao buscar movimentações:', result.error);
+        setMovimentacoes([]);
+      }
+      
       setLastUpdated(new Date());
     } catch (error) {
       console.error('Erro ao buscar histórico de movimentações:', error);
