@@ -50,6 +50,7 @@ import TiresEntrada from "@/pages/TiresEntrada";
 import LineHallShopee from "@/pages/LineHallShopee";
 import DriverChecklist from "@/pages/DriverChecklist";
 import DriversPage from "@/pages/DriversPage";
+import ManutencaoPage from "@/pages/ManutencaoPage";
 
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
@@ -123,6 +124,7 @@ function App() {
           <ProtectedRoute path="/limpar-dados" component={LimparDados} />
           <ProtectedRoute path="/line-hall-shopee" component={LineHallShopee} />
           <ProtectedRoute path="/drivers" component={DriversPage} />
+          <ProtectedRoute path="/manutencao" component={ManutencaoPage} />
           
           {/* Rota pública para checklist do motorista */}
           <Route path="/checklist/:id">
