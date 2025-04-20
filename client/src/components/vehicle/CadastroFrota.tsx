@@ -158,12 +158,11 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
 
           <div className="space-y-2">
             <Label htmlFor="base">Base *</Label>
-            <Select value={baseId.toString()} onValueChange={setBaseId}>
+            <Select value={baseId || undefined} onValueChange={setBaseId}>
               <SelectTrigger id="base">
                 <SelectValue placeholder="Selecione a Base" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Selecione a Base</SelectItem>
                 {bases.map((b) => (
                   <SelectItem key={b.id} value={b.id.toString()}>{b.nome}</SelectItem>
                 ))}
