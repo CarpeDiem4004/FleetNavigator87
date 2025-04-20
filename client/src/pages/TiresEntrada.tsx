@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from 'wouter';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { 
   Select,
   SelectContent,
@@ -16,7 +16,7 @@ import {
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { createSupabaseClient } from '@/lib/supabase-client';
 
-const EntradaPneusForm: React.FC = () => {
+const TiresEntrada: React.FC = () => {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [formData, setFormData] = useState({
@@ -48,8 +48,20 @@ const EntradaPneusForm: React.FC = () => {
 
     const { marca, modelo, medida, aro, tipo, origem, quantidade, localizacao, observacao } = formData;
 
+    // Validar campos obrigatórios
+    if (!marca || !modelo || !medida || !tipo || !origem || !localizacao) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha todos os campos obrigatórios.",
+        variant: "destructive"
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const supabase = createSupabaseClient();
+      const timestamp = new Date().toISOString();
       
       // 1. Inserir no estoque_pneus
       const { data: estoque, error: estoqueError } = await supabase
@@ -65,6 +77,8 @@ const EntradaPneusForm: React.FC = () => {
             quantidade: parseInt(quantidade.toString()),
             localizacao,
             observacao,
+            created_at: timestamp,
+            updated_at: timestamp
           },
         ])
         .select('id');
@@ -75,15 +89,50 @@ const EntradaPneusForm: React.FC = () => {
         throw new Error('Falha ao obter ID do registro criado');
       }
 
-      // 2. Criar movimentação de entrada
+      // 2. Criar pneus individuais para cada unidade na quantidade
+      for (let i = 0; i < parseInt(quantidade.toString()); i++) {
+        const codigo = `${marca.substring(0, 3).toUpperCase()}${modelo.substring(0, 3).toUpperCase()}${(Math.floor(Math.random() * 10000)).toString().padStart(4, '0')}`;
+        
+        // Inserir pneu individual
+        const { error: pneuError } = await supabase
+          .from('pneus')
+          .insert([
+            {
+              codigo,
+              marca,
+              modelo,
+              medida,
+              aro,
+              tipo,
+              origem,
+              data_aquisicao: timestamp.split('T')[0],
+              veiculo_placa: null,
+              posicao: null,
+              km_inicial: 0,
+              km_atual: 0,
+              profundidade_sulco: 12.0, // Valor padrão para pneu novo
+              localizacao,
+              status: 'estoque',
+              observacao,
+              created_at: timestamp,
+              updated_at: timestamp
+            },
+          ]);
+
+        if (pneuError) throw pneuError;
+      }
+
+      // 3. Criar movimentação de entrada
       const { error: movError } = await supabase
         .from('movimentacoes_pneus')
         .insert([
           {
             tipo: 'entrada',
             quantidade: parseInt(quantidade.toString()),
-            pneu_id: estoque[0].id,
+            estoque_id: estoque[0].id,
             observacao,
+            created_at: timestamp,
+            updated_at: timestamp
           },
         ]);
 
@@ -166,7 +215,7 @@ const EntradaPneusForm: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Marca do pneu */}
                 <div className="space-y-2">
-                  <Label htmlFor="marca">Marca</Label>
+                  <Label htmlFor="marca">Marca *</Label>
                   <Input
                     id="marca"
                     name="marca"
@@ -179,7 +228,7 @@ const EntradaPneusForm: React.FC = () => {
 
                 {/* Modelo do pneu */}
                 <div className="space-y-2">
-                  <Label htmlFor="modelo">Modelo</Label>
+                  <Label htmlFor="modelo">Modelo *</Label>
                   <Input
                     id="modelo"
                     name="modelo"
@@ -192,7 +241,7 @@ const EntradaPneusForm: React.FC = () => {
 
                 {/* Medida do pneu */}
                 <div className="space-y-2">
-                  <Label htmlFor="medida">Medida</Label>
+                  <Label htmlFor="medida">Medida *</Label>
                   <Input
                     id="medida"
                     name="medida"
@@ -212,16 +261,16 @@ const EntradaPneusForm: React.FC = () => {
                     placeholder="Ex: 22.5"
                     value={formData.aro}
                     onChange={handleChange}
-                    required
                   />
                 </div>
 
                 {/* Tipo de pneu */}
                 <div className="space-y-2">
-                  <Label htmlFor="tipo">Tipo</Label>
+                  <Label htmlFor="tipo">Tipo *</Label>
                   <Select 
                     value={formData.tipo} 
                     onValueChange={(value) => handleSelectChange('tipo', value)}
+                    required
                   >
                     <SelectTrigger id="tipo">
                       <SelectValue placeholder="Selecione o tipo" />
@@ -238,10 +287,11 @@ const EntradaPneusForm: React.FC = () => {
 
                 {/* Origem do pneu */}
                 <div className="space-y-2">
-                  <Label htmlFor="origem">Origem</Label>
+                  <Label htmlFor="origem">Origem *</Label>
                   <Select 
                     value={formData.origem} 
                     onValueChange={(value) => handleSelectChange('origem', value)}
+                    required
                   >
                     <SelectTrigger id="origem">
                       <SelectValue placeholder="Selecione a origem" />
@@ -258,10 +308,11 @@ const EntradaPneusForm: React.FC = () => {
 
                 {/* Localização */}
                 <div className="space-y-2">
-                  <Label htmlFor="localizacao">Localização</Label>
+                  <Label htmlFor="localizacao">Localização *</Label>
                   <Select 
                     value={formData.localizacao} 
                     onValueChange={(value) => handleSelectChange('localizacao', value)}
+                    required
                   >
                     <SelectTrigger id="localizacao">
                       <SelectValue placeholder="Selecione a localização" />
@@ -278,7 +329,7 @@ const EntradaPneusForm: React.FC = () => {
 
                 {/* Quantidade */}
                 <div className="space-y-2">
-                  <Label htmlFor="quantidade">Quantidade</Label>
+                  <Label htmlFor="quantidade">Quantidade *</Label>
                   <Input
                     id="quantidade"
                     name="quantidade"
@@ -308,9 +359,10 @@ const EntradaPneusForm: React.FC = () => {
               <div className="flex justify-end">
                 <Button 
                   type="submit" 
-                  className="w-full md:w-auto" 
+                  className="w-full md:w-auto flex items-center gap-2" 
                   disabled={isSubmitting}
                 >
+                  <Save className="h-4 w-4" />
                   {isSubmitting ? 'Registrando...' : 'Registrar Entrada'}
                 </Button>
               </div>
@@ -322,4 +374,4 @@ const EntradaPneusForm: React.FC = () => {
   );
 };
 
-export default EntradaPneusForm;
+export default TiresEntrada;

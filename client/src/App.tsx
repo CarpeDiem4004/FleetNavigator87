@@ -7,7 +7,7 @@ import DashboardNew from "@/pages/DashboardNew";
 import Dashboard from "@/pages/index";
 import VehiclesNew from "@/pages/VehiclesNew";
 import MaintenanceNew from "@/pages/MaintenanceNew";
-import TiresNew from "@/pages/TiresNew";
+import TiresPage from "@/pages/TiresPage";
 import RefuelingNew from "@/pages/RefuelingNew";
 import FinesNew from "@/pages/FinesNew";
 import LineHallNew from "@/pages/LineHallNew";
@@ -46,7 +46,7 @@ import Accidents from "@/pages/accidents";
 import WorkSafety from "@/pages/work-safety";
 import WorkshopsPage from "@/pages/fleet-management/WorkshopsPage";
 import MaintenancePage from "@/pages/fleet-management/MaintenancePage";
-import EntradaPneusForm from "@/pages/EntradaPneus";
+import TiresEntrada from "@/pages/TiresEntrada";
 
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
@@ -87,8 +87,8 @@ function App() {
           {/* Rotas protegidas com verificação de permissão de base */}
           <ProtectedRoute path="/vehicles" component={VehiclesNew} />
           <ProtectedRoute path="/maintenance" component={MaintenanceNew} />
-          <ProtectedRoute path="/tires" component={TiresNew} />
-          <ProtectedRoute path="/tires/entrada" component={EntradaPneusForm} />
+          <ProtectedRoute path="/tires" component={TiresPage} />
+          <ProtectedRoute path="/tires/entrada" component={TiresEntrada} />
           <ProtectedRoute path="/refueling" component={RefuelingNew} />
           <ProtectedRoute path="/fines" component={FinesNew} />
           <ProtectedRoute path="/line-hall" component={LineHallNew} />
