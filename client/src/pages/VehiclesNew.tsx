@@ -32,7 +32,6 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CadastroFrota from '@/components/vehicle/CadastroFrota';
-import { supabase } from '@/lib/supabase-client';
 import { useToast } from '@/hooks/use-toast';
 
 // Tipo para representar os dados de um veículo
@@ -88,41 +87,47 @@ const VehiclesNew: React.FC = () => {
   // Estado simples apenas para a página principal
   
 
-  // Função para carregar veículos do Supabase
+  // Função para carregar veículos usando a API REST
   const fetchVehicles = async () => {
     setIsLoading(true);
     try {
-      // Buscar todos os veículos
-      const { data: vehiclesData, error: vehiclesError } = await supabase
-        .from('vehicles')
-        .select('id, plate, vehicle_type, model, base_id, status')
-        .order('id', { ascending: false });
+      // Buscar todos os veículos usando a API REST
+      console.log('Buscando veículos via API REST');
+      const vehiclesResponse = await fetch('/api/vehicles');
       
-      if (vehiclesError) throw vehiclesError;
+      if (!vehiclesResponse.ok) {
+        throw new Error(`Erro ao buscar veículos: ${vehiclesResponse.status}`);
+      }
+      
+      const vehiclesData = await vehiclesResponse.json();
+      console.log('Veículos recebidos da API:', vehiclesData);
       
       // Buscar bases para mapear os nomes
-      const { data: basesData, error: basesError } = await supabase
-        .from('bases')
-        .select('id, name');
+      const basesResponse = await fetch('/api/bases');
       
-      if (basesError) throw basesError;
+      if (!basesResponse.ok) {
+        throw new Error(`Erro ao buscar bases: ${basesResponse.status}`);
+      }
+      
+      const basesData = await basesResponse.json();
+      console.log('Bases recebidas da API:', basesData);
       
       // Criar um mapa de bases por ID para facilitar a busca
       const basesMap = new Map();
-      basesData.forEach(base => {
-        basesMap.set(base.id, base.name);
+      basesData.forEach((base: any) => {
+        basesMap.set(base.id, base.name || base.nome);
       });
       
       // Adicionar nome da base a cada veículo e mapear campos
-      const vehiclesWithBaseNames = vehiclesData.map(vehicle => {
+      const vehiclesWithBaseNames = vehiclesData.map((vehicle: any) => {
         return {
           id: vehicle.id,
           placa: vehicle.plate || '',
-          marca: vehicle.vehicle_type || '',
+          marca: vehicle.vehicleType || '', // Nota: ajustado para camelCase do schema
           modelo: vehicle.model || '',
-          base_id: vehicle.base_id,
+          base_id: vehicle.baseId,
           status: vehicle.status || '',
-          base_nome: basesMap.get(vehicle.base_id) || 'Sem base'
+          base_nome: basesMap.get(vehicle.baseId) || 'Sem base'
         };
       });
       
@@ -152,20 +157,24 @@ const VehiclesNew: React.FC = () => {
       (vehicle.modelo && vehicle.modelo.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // Excluir veículo
+  // Excluir veículo usando a API REST
   const handleDeleteVehicle = async (id: number) => {
     if (!confirm("Tem certeza que deseja excluir este veículo? Esta ação não pode ser desfeita.")) {
       return;
     }
 
     try {
-      const { error } = await supabase
-        .from('vehicles')
-        .delete()
-        .eq('id', id);
+      console.log(`Excluindo veículo com ID ${id} via API REST`);
+      const response = await fetch(`/api/vehicles/${id}`, {
+        method: 'DELETE',
+      });
       
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao excluir veículo');
+      }
       
+      // Atualizar estado local removendo o veículo
       setVehicles(vehicles.filter(vehicle => vehicle.id !== id));
       
       toast({
