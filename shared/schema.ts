@@ -148,6 +148,29 @@ export const operations = pgTable("operacoes", {
   updated_at: timestamp("updated_at").defaultNow(),
 });
 
+// Criar a tabela painel_principal para exibir KPIs e métricas gerais
+export const painelPrincipal = pgTable("painel_principal", {
+  id: serial("id").primaryKey(),
+  data_referencia: date("data_referencia").notNull(),
+  manutencoes_pendentes: integer("manutencoes_pendentes").notNull().default(0),
+  tempo_medio_manutencao: text("tempo_medio_manutencao"),
+  veiculos_parados: integer("veiculos_parados").notNull().default(0),
+  dias_parados_total: integer("dias_parados_total").notNull().default(0),
+  linehall_parados: integer("linehall_parados").notNull().default(0),
+  viagens_concluidas: integer("viagens_concluidas").notNull().default(0),
+  viagens_no_show: integer("viagens_no_show").notNull().default(0),
+  viagens_canceladas_cliente: integer("viagens_canceladas_cliente").notNull().default(0),
+  litros_diesel_total: decimal("litros_diesel_total", { precision: 10, scale: 2 }).notNull().default('0'),
+  gasto_total_combustivel: decimal("gasto_total_combustivel", { precision: 10, scale: 2 }).notNull().default('0'),
+  qtd_sinistros: integer("qtd_sinistros").notNull().default(0),
+  qtd_roubos: integer("qtd_roubos").notNull().default(0),
+  incidentes_seguranca_trabalho: integer("incidentes_seguranca_trabalho").notNull().default(0),
+  movimentacoes_pneus: integer("movimentacoes_pneus").notNull().default(0),
+  pneus_substituidos: integer("pneus_substituidos").notNull().default(0),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const vehiclesRelations = relations(vehicles, ({ one, many }) => ({
   base: one(bases, {
@@ -302,6 +325,7 @@ export const insertOperationSchema = createInsertSchema(operations);
 export const insertVehicleChecklistSchema = createInsertSchema(vehicleChecklist);
 export const insertDriverMaintenanceRequestSchema = createInsertSchema(driverMaintenanceRequest);
 export const insertRefuelingCardRequestSchema = createInsertSchema(refuelingCardRequest);
+export const insertPainelPrincipalSchema = createInsertSchema(painelPrincipal);
 export const insertUserSchema = createInsertSchema(users).pick({
   name: true,
   email: true,
@@ -350,3 +374,6 @@ export type InsertDriverMaintenanceRequest = z.infer<typeof insertDriverMaintena
 
 export type RefuelingCardRequest = typeof refuelingCardRequest.$inferSelect;
 export type InsertRefuelingCardRequest = z.infer<typeof insertRefuelingCardRequestSchema>;
+
+export type PainelPrincipal = typeof painelPrincipal.$inferSelect;
+export type InsertPainelPrincipal = z.infer<typeof insertPainelPrincipalSchema>;

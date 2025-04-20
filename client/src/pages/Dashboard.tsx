@@ -6,6 +6,7 @@ import { useLocation } from 'wouter';
 import { supabase } from '@/lib/supabase-client';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import VeiculosParadosCard from '@/components/dashboard/VeiculosParadosCard';
+import PainelPrincipal from '@/components/dashboard/PainelPrincipal';
 import { useToast } from '@/hooks/use-toast';
 
 interface DashboardMetrics {
@@ -259,6 +260,9 @@ const Dashboard: React.FC = () => {
           </Card>
         </div>
 
+        {/* Painel Principal de Operações */}
+        <PainelPrincipal />
+
         {/* Seção Principal */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Card de Veículos Parados */}
@@ -324,8 +328,8 @@ const Dashboard: React.FC = () => {
                       <span className="text-sm">Monitor de Veículos Parados</span>
                     </li>
                     <li className="flex items-center">
-                      <div className="h-2 w-2 rounded-full bg-blue-500 mr-2"></div>
-                      <span className="text-sm">Análise de Desempenho</span>
+                      <div className="h-2 w-2 rounded-full bg-green-500 mr-2"></div>
+                      <span className="text-sm">Painel de Operações</span>
                     </li>
                     <li className="flex items-center">
                       <div className="h-2 w-2 rounded-full bg-blue-500 mr-2"></div>
