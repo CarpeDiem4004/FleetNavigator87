@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import cron from 'node-cron'
+import { pool } from './db'
 
 // Conectar ao Supabase
 const supabaseUrl = 'https://hvsmxxqkuyjhpsiojupb.supabase.co'
@@ -116,32 +117,42 @@ function initCronJobs() {
       const movimentacoesPneus = pneus?.length || 0
       const pneusSubstituidos = pneus?.filter(p => p.status === 'substituido').length || 0
 
-      // Insere na tabela painel_principal
-      const { error } = await supabase.from('painel_principal').insert([
-        {
-          data_referencia: new Date().toISOString().slice(0, 10),
-          veiculos_parados: veiculosParados || 0,
-          dias_parados_total: diasParadosTotal || 0,
-          manutencoes_pendentes: manutencoesPendentes || 0,
-          tempo_medio_manutencao: tempoMedioManutencao,
-          linehall_parados: linehallParados || 0,
-          viagens_concluidas: viagensConcluidas || 0,
-          viagens_no_show: viagensNoShow || 0,
-          viagens_canceladas_cliente: viagensCanceladas || 0,
-          litros_diesel_total: litrosTotais || 0,
-          gasto_total_combustivel: valorTotal || 0,
-          qtd_sinistros: qtdSinistros || 0,
-          qtd_roubos: qtdRoubos || 0,
-          incidentes_seguranca_trabalho: incidentesSeguranca || 0,
-          movimentacoes_pneus: movimentacoesPneus || 0,
-          pneus_substituidos: pneusSubstituidos || 0
-        },
-      ])
-
-      if (error) {
-        console.error('Erro ao atualizar painel:', error)
-      } else {
-        console.log('Painel principal atualizado com sucesso ✅')
+      // Insere na tabela painel_principal usando consulta SQL direta
+      try {
+        const dataRef = new Date().toISOString().slice(0, 10);
+        const result = await pool.query(
+          `INSERT INTO painel_principal (
+            data_referencia, veiculos_parados, dias_parados_total, 
+            manutencoes_pendentes, tempo_medio_manutencao, linehall_parados,
+            viagens_concluidas, viagens_no_show, viagens_canceladas_cliente,
+            litros_diesel_total, gasto_total_combustivel, qtd_sinistros,
+            qtd_roubos, incidentes_seguranca_trabalho, movimentacoes_pneus,
+            pneus_substituidos
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+          RETURNING id`,
+          [
+            dataRef,
+            veiculosParados || 0,
+            diasParadosTotal || 0,
+            manutencoesPendentes || 0,
+            tempoMedioManutencao,
+            linehallParados || 0,
+            viagensConcluidas || 0,
+            viagensNoShow || 0,
+            viagensCanceladas || 0,
+            litrosTotais || 0,
+            valorTotal || 0,
+            qtdSinistros || 0,
+            qtdRoubos || 0,
+            incidentesSeguranca || 0,
+            movimentacoesPneus || 0,
+            pneusSubstituidos || 0
+          ]
+        );
+        
+        console.log('Painel principal atualizado com sucesso ✅', result.rows[0]);
+      } catch (dbError) {
+        console.error('Erro ao atualizar painel:', dbError);
       }
     } catch (error) {
       console.error('Erro na execução do job de atualização do painel:', error)
