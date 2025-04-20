@@ -13,6 +13,8 @@ export const fuelTypeEnum = pgEnum('fuel_type', ['arla', 'diesel']);
 export const fineStatusEnum = pgEnum('fine_status', ['pendente', 'paga', 'contestada']);
 export const tripStatusEnum = pgEnum('trip_status', ['programada', 'carregando', 'aguardando_carga', 'em_transito', 'finalizada']);
 export const userRoleEnum = pgEnum('user_role', ['admin', 'gestor', 'operador']);
+export const operationTypeEnum = pgEnum('operation_type', ['carregamento', 'descarga', 'transferencia', 'inventario', 'manutencao']);
+export const operationStatusEnum = pgEnum('operation_status', ['pendente', 'em_andamento', 'concluida', 'cancelada']);
 
 // Create the bases table
 export const bases = pgTable("bases", {
@@ -117,6 +119,20 @@ export const users = pgTable("users", {
   basename: text("basename"),
 });
 
+// Create the operations table (operacoes)
+export const operations = pgTable("operacoes", {
+  id: serial("id").primaryKey(),
+  tipo: operationTypeEnum("tipo").notNull(),
+  data: date("data").notNull(),
+  baseId: integer("base_id").notNull().references(() => bases.id),
+  operador: text("operador").notNull(),
+  turno: text("turno").notNull(),
+  status: operationStatusEnum("status").notNull().default('pendente'),
+  observacoes: text("observacoes"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const vehiclesRelations = relations(vehicles, ({ one, many }) => ({
   base: one(bases, {
@@ -133,6 +149,7 @@ export const basesRelations = relations(bases, ({ many }) => ({
   refueling: many(refueling),
   users: many(users),
   maintenance: many(maintenance, { relationName: "requestedMaintenance" }),
+  operations: many(operations),
 }));
 
 export const maintenanceRelations = relations(maintenance, ({ one }) => ({
@@ -155,6 +172,13 @@ export const workshopsRelations = relations(workshops, ({ many }) => ({
   maintenance: many(maintenance),
 }));
 
+export const operationsRelations = relations(operations, ({ one }) => ({
+  base: one(bases, {
+    fields: [operations.baseId],
+    references: [bases.id],
+  }),
+}));
+
 // Insert schemas
 export const insertBaseSchema = createInsertSchema(bases);
 export const insertVehicleSchema = createInsertSchema(vehicles);
@@ -164,6 +188,7 @@ export const insertTireSchema = createInsertSchema(tires);
 export const insertRefuelingSchema = createInsertSchema(refueling);
 export const insertFineSchema = createInsertSchema(fines);
 export const insertLineHallSchema = createInsertSchema(lineHall);
+export const insertOperationSchema = createInsertSchema(operations);
 export const insertUserSchema = createInsertSchema(users).pick({
   name: true,
   email: true,
