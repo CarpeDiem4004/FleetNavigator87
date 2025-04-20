@@ -40,6 +40,7 @@ import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { fetchRecords, createSupabaseClient, insertRecord, updateData } from '@/lib/supabase-client';
+import TireRequestForm from '@/components/tire/TireRequestForm';
 
 // Interface para o modelo de pneus
 interface Tire {
@@ -158,7 +159,6 @@ const TiresPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState("inventory");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   const [newTire, setNewTire] = useState<Partial<Tire>>({
     codigo: '',
     marca: '',
@@ -175,22 +175,6 @@ const TiresPage: React.FC = () => {
     profundidade_sulco: 12.0,
     localizacao: 'almoxarifado',
     status: 'estoque',
-    observacao: ''
-  });
-
-  // Estado para nova solicitação de pneus
-  const [newRequest, setNewRequest] = useState({
-    base_id: 0,
-    base_nome: '',
-    usuario_id: 0,
-    usuario_nome: '',
-    marca: '',
-    modelo: '',
-    medida: '',
-    tipo: 'direcao',
-    quantidade: 1,
-    motivo: '',
-    status: 'pendente' as const,
     observacao: ''
   });
 
@@ -352,89 +336,7 @@ const TiresPage: React.FC = () => {
     }
   };
 
-  // Adicionar nova solicitação de pneus
-  const handleAddRequest = async () => {
-    if (!newRequest.marca || !newRequest.modelo || !newRequest.motivo || newRequest.quantidade <= 0) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Preencha todos os campos obrigatórios.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      // Valores simulados para teste - em produção esses valores viriam do usuário logado e sua base atual
-      const currentUser = {
-        id: 12,
-        name: "Administrador"
-      };
-      
-      const userBase = {
-        id: 1,
-        nome: "Base São Paulo"
-      };
-
-      const supabase = createSupabaseClient();
-      
-      const { data, error } = await supabase
-        .from('solicitacoes_pneus')
-        .insert([{
-          base_id: userBase.id,
-          base_nome: userBase.nome,
-          usuario_id: currentUser.id,
-          usuario_nome: currentUser.name,
-          marca: newRequest.marca,
-          modelo: newRequest.modelo,
-          medida: newRequest.medida,
-          tipo: newRequest.tipo,
-          quantidade: newRequest.quantidade,
-          motivo: newRequest.motivo,
-          status: 'pendente',
-          data_solicitacao: new Date().toISOString(),
-          observacao: newRequest.observacao,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }])
-        .select();
-      
-      if (error) throw error;
-      
-      if (data && data.length > 0) {
-        setTireRequests([...tireRequests, data[0] as TireRequest]);
-        setIsRequestDialogOpen(false);
-        
-        toast({
-          title: "Solicitação enviada",
-          description: "Sua solicitação de pneus foi enviada com sucesso.",
-          variant: "default"
-        });
-        
-        // Resetar formulário
-        setNewRequest({
-          base_id: 0,
-          base_nome: '',
-          usuario_id: 0,
-          usuario_nome: '',
-          marca: '',
-          modelo: '',
-          medida: '',
-          tipo: 'direcao',
-          quantidade: 1,
-          motivo: '',
-          status: 'pendente',
-          observacao: ''
-        });
-      }
-    } catch (error) {
-      console.error("Erro ao enviar solicitação:", error);
-      toast({
-        title: "Erro ao enviar solicitação",
-        description: error instanceof Error ? error.message : "Erro desconhecido",
-        variant: "destructive"
-      });
-    }
-  };
+  // Handle tire requests logic moved to TireRequestForm component
 
   // Aprovar solicitação de pneus
   const handleApproveRequest = async (requestId: number) => {
@@ -565,120 +467,26 @@ const TiresPage: React.FC = () => {
               Entrada em Lote
             </Button>
             
-            <Dialog open={isRequestDialogOpen} onOpenChange={setIsRequestDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="flex items-center">
-                  <ShoppingBag className="mr-2 h-4 w-4" />
-                  Solicitar Pneus
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-[500px]">
-                <DialogHeader>
-                  <DialogTitle>Solicitar Pneus</DialogTitle>
-                  <DialogDescription>
-                    Preencha os detalhes para solicitar novos pneus para sua base
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  {/* Marca e Modelo */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="req-marca">Marca *</Label>
-                      <Input
-                        id="req-marca"
-                        value={newRequest.marca}
-                        onChange={(e) => setNewRequest({...newRequest, marca: e.target.value})}
-                        placeholder="Ex: Pirelli"
-                        required
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="req-modelo">Modelo *</Label>
-                      <Input
-                        id="req-modelo"
-                        value={newRequest.modelo}
-                        onChange={(e) => setNewRequest({...newRequest, modelo: e.target.value})}
-                        placeholder="Ex: Formula Energy"
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  {/* Medida e Tipo */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="req-medida">Medida</Label>
-                      <Input
-                        id="req-medida"
-                        value={newRequest.medida}
-                        onChange={(e) => setNewRequest({...newRequest, medida: e.target.value})}
-                        placeholder="Ex: 295/80R22.5"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="req-tipo">Tipo</Label>
-                      <Select 
-                        value={newRequest.tipo} 
-                        onValueChange={(value) => setNewRequest({...newRequest, tipo: value})}
-                      >
-                        <SelectTrigger id="req-tipo">
-                          <SelectValue placeholder="Selecione o tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {tiposOptions.map(option => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  
-                  {/* Quantidade */}
-                  <div className="space-y-2">
-                    <Label htmlFor="req-quantidade">Quantidade *</Label>
-                    <Input
-                      id="req-quantidade"
-                      type="number"
-                      min="1"
-                      value={newRequest.quantidade.toString()}
-                      onChange={(e) => setNewRequest({...newRequest, quantidade: parseInt(e.target.value) || 1})}
-                      required
-                    />
-                  </div>
-                  
-                  {/* Motivo */}
-                  <div className="space-y-2">
-                    <Label htmlFor="req-motivo">Motivo da Solicitação *</Label>
-                    <Input
-                      id="req-motivo"
-                      value={newRequest.motivo}
-                      onChange={(e) => setNewRequest({...newRequest, motivo: e.target.value})}
-                      placeholder="Ex: Substituição de pneus desgastados"
-                      required
-                    />
-                  </div>
-                  
-                  {/* Observações */}
-                  <div className="space-y-2">
-                    <Label htmlFor="req-observacao">Observações</Label>
-                    <Input
-                      id="req-observacao"
-                      value={newRequest.observacao}
-                      onChange={(e) => setNewRequest({...newRequest, observacao: e.target.value})}
-                      placeholder="Observações adicionais"
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsRequestDialogOpen(false)}>Cancelar</Button>
-                  <Button onClick={handleAddRequest}>Enviar Solicitação</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <TireRequestForm 
+              onRequestSubmitted={() => {
+                // Recarregar as solicitações após criar uma nova
+                const loadTireRequests = async () => {
+                  setIsLoadingRequests(true);
+                  try {
+                    const response = await fetchRecords('solicitacoes_pneus');
+                    if (response.success && response.data) {
+                      setTireRequests(response.data);
+                    }
+                  } catch (error) {
+                    console.error("Erro ao buscar solicitações de pneus:", error);
+                  } finally {
+                    setIsLoadingRequests(false);
+                  }
+                };
+                
+                loadTireRequests();
+              }}
+            />
             
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
