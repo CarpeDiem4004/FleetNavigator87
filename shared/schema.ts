@@ -225,3 +225,6 @@ export type InsertLineHall = z.infer<typeof insertLineHallSchema>;
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export type Operation = typeof operations.$inferSelect;
+export type InsertOperation = z.infer<typeof insertOperationSchema>;

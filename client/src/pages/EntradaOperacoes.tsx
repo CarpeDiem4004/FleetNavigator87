@@ -76,20 +76,32 @@ const EntradaOperacoes: React.FC = () => {
             turno,
             status,
             observacoes,
-            created_at,
-            bases:base_id (nome)
+            created_at
           `)
           .order('created_at', { ascending: false });
 
         if (error) throw error;
 
+        // Buscar bases para mapear IDs para nomes
+        const { data: basesData, error: basesError } = await supabase
+          .from('bases')
+          .select('id, name');
+          
+        if (basesError) throw basesError;
+        
+        // Criar um mapa de bases por ID para facilitar a busca
+        const basesMap = new Map();
+        basesData.forEach((base: any) => {
+          basesMap.set(base.id, base.name);
+        });
+
         // Formatar os dados para incluir o nome da base
-        const formattedData = data.map((item) => ({
+        const formattedData = data.map((item: any) => ({
           id: item.id,
           tipo: item.tipo,
           data: item.data,
           baseId: item.base_id,
-          baseName: item.bases?.nome || 'Base Desconhecida',
+          baseName: basesMap.get(item.base_id) || 'Base Desconhecida',
           operador: item.operador,
           turno: item.turno,
           status: item.status,
@@ -117,9 +129,16 @@ const EntradaOperacoes: React.FC = () => {
   useEffect(() => {
     const fetchBases = async () => {
       try {
-        const { data, error } = await supabase.from('bases').select('id, nome');
+        const { data, error } = await supabase.from('bases').select('id, name');
         if (error) throw error;
-        setBases(data || []);
+        
+        // Mapear os dados para o formato esperado
+        const formattedBases = data.map((base: any) => ({
+          id: base.id,
+          nome: base.name // Usar 'name' como 'nome' para manter compatibilidade
+        }));
+        
+        setBases(formattedBases || []);
       } catch (error) {
         console.error('Erro ao buscar bases:', error);
         toast({
