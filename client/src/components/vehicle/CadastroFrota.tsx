@@ -22,7 +22,7 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
   const [placa, setPlaca] = useState('')
   const [marca, setMarca] = useState('')
   const [modelo, setModelo] = useState('Fiorino')
-  const [baseId, setBaseId] = useState('')
+  const [baseId, setBaseId] = useState<string | undefined>(undefined)
   const [bases, setBases] = useState<{id: number, nome: string}[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -88,7 +88,7 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
         setPlaca('')
         setMarca('')
         setModelo('Fiorino')
-        setBaseId('')
+        setBaseId(undefined)
         
         // Notificar o componente pai sobre a adição
         if (onVehicleAdded) {
