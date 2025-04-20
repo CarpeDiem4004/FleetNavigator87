@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase-client';
-import MainLayoutSimple from '@/components/layouts/MainLayoutSimple';
+import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import {
   Tabs,
   TabsContent,
