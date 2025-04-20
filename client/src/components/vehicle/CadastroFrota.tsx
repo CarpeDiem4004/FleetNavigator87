@@ -21,12 +21,18 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
   const { toast } = useToast()
   const [placa, setPlaca] = useState('')
   const [marca, setMarca] = useState('')
-  const [modelo, setModelo] = useState('Fiorino')
+  const [modelo, setModelo] = useState('carreta')
   const [baseId, setBaseId] = useState<string | undefined>(undefined)
   const [bases, setBases] = useState<{id: number, nome: string}[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const modelos = ['Fiorino', 'Van', 'VUC', '3/4', 'Toco', 'Truck', 'Cavalo', 'Carreta']
+  // Opções de modelo seguindo os valores válidos do enum vehicleType
+  const modelos = [
+    { id: 'carreta', nome: 'Carreta' },
+    { id: 'cavalo_mecanico', nome: 'Cavalo Mecânico' },
+    { id: 'van', nome: 'Van' },
+    { id: 'utilitario', nome: 'Utilitário' }
+  ]
 
   useEffect(() => {
     async function fetchBases() {
@@ -83,8 +89,8 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
         },
         body: JSON.stringify({
           plate: placa,
-          model: modelo,
-          vehicleType: marca,
+          model: marca, // Agora usamos marca como modelo (Ford, FACCHINI, etc)
+          vehicleType: modelo, // E modelo como vehicleType (carreta, cavalo_mecanico, etc)
           status: 'em_operacao',
           baseId: parseInt(baseId)
         })
@@ -106,7 +112,7 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
       // Limpar formulário após sucesso
       setPlaca('')
       setMarca('')
-      setModelo('Fiorino')
+      setModelo('carreta')
       setBaseId(undefined)
       
       // Notificar o componente pai sobre a adição
@@ -161,14 +167,14 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="modelo">Modelo *</Label>
+            <Label htmlFor="modelo">Tipo de Veículo *</Label>
             <Select value={modelo} onValueChange={setModelo}>
               <SelectTrigger id="modelo">
-                <SelectValue placeholder="Selecione o modelo" />
+                <SelectValue placeholder="Selecione o tipo de veículo" />
               </SelectTrigger>
               <SelectContent>
                 {modelos.map((m) => (
-                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                  <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
