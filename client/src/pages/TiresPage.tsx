@@ -564,7 +564,7 @@ const TiresPage: React.FC = () => {
               <ArrowUpCircle className="mr-2 h-4 w-4" />
               Entrada em Lote
             </Button>
-
+            
             <Dialog open={isRequestDialogOpen} onOpenChange={setIsRequestDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="flex items-center">
@@ -814,16 +814,14 @@ const TiresPage: React.FC = () => {
                       <Label htmlFor="status">Status</Label>
                       <Select 
                         value={newTire.status} 
-                        onValueChange={(value: 'em_uso' | 'estoque' | 'descartado') => 
-                          setNewTire({...newTire, status: value})
-                        }
+                        onValueChange={(value: 'em_uso' | 'estoque' | 'descartado') => setNewTire({...newTire, status: value})}
                       >
                         <SelectTrigger id="status">
                           <SelectValue placeholder="Selecione o status" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="em_uso">Em Uso</SelectItem>
                           <SelectItem value="estoque">Em Estoque</SelectItem>
+                          <SelectItem value="em_uso">Em Uso</SelectItem>
                           <SelectItem value="descartado">Descartado</SelectItem>
                         </SelectContent>
                       </Select>
@@ -849,7 +847,7 @@ const TiresPage: React.FC = () => {
                     </div>
                   </div>
                   
-                  {/* Profundidade do Sulco */}
+                  {/* Profundidade e KM */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="profundidade_sulco">Profundidade do Sulco (mm)</Label>
@@ -857,55 +855,27 @@ const TiresPage: React.FC = () => {
                         id="profundidade_sulco"
                         type="number"
                         step="0.1"
-                        value={newTire.profundidade_sulco || 0}
-                        onChange={(e) => setNewTire({...newTire, profundidade_sulco: parseFloat(e.target.value)})}
                         min="0"
                         max="20"
+                        value={newTire.profundidade_sulco?.toString() || '12.0'}
+                        onChange={(e) => setNewTire({...newTire, profundidade_sulco: parseFloat(e.target.value) || 0})}
                       />
                     </div>
                     
-                    {newTire.status === 'em_uso' && (
-                      <div className="space-y-2">
-                        <Label htmlFor="veiculo_placa">Placa do Veículo</Label>
-                        <Input
-                          id="veiculo_placa"
-                          value={newTire.veiculo_placa || ''}
-                          onChange={(e) => setNewTire({...newTire, veiculo_placa: e.target.value})}
-                          placeholder="Ex: ABC-1234"
-                        />
-                      </div>
-                    )}
+                    <div className="space-y-2">
+                      <Label htmlFor="km_inicial">KM Inicial</Label>
+                      <Input
+                        id="km_inicial"
+                        type="number"
+                        value={newTire.km_inicial?.toString() || '0'}
+                        onChange={(e) => setNewTire({...newTire, km_inicial: parseInt(e.target.value) || 0})}
+                      />
+                    </div>
                   </div>
                   
-                  {/* Informações extras para pneus em uso */}
-                  {newTire.status === 'em_uso' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="posicao">Posição no Veículo</Label>
-                        <Input
-                          id="posicao"
-                          value={newTire.posicao || ''}
-                          onChange={(e) => setNewTire({...newTire, posicao: e.target.value})}
-                          placeholder="Ex: Dianteiro Direito"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="km_atual">Km Atual</Label>
-                        <Input
-                          id="km_atual"
-                          type="number"
-                          value={newTire.km_atual || 0}
-                          onChange={(e) => setNewTire({...newTire, km_atual: parseInt(e.target.value)})}
-                          min="0"
-                        />
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Observação */}
+                  {/* Observações */}
                   <div className="space-y-2">
-                    <Label htmlFor="observacao">Observação</Label>
+                    <Label htmlFor="observacao">Observações</Label>
                     <Input
                       id="observacao"
                       value={newTire.observacao || ''}
@@ -915,117 +885,323 @@ const TiresPage: React.FC = () => {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={handleAddTire}>
-                    Adicionar
-                  </Button>
+                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancelar</Button>
+                  <Button onClick={handleAddTire}>Adicionar Pneu</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
           </div>
         </div>
-
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Inventário de Pneus</CardTitle>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                <Input
-                  type="search"
-                  placeholder="Buscar pneus..."
-                  className="pl-8 w-[250px]"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
+          <TabsList className="grid w-full md:w-[400px] grid-cols-2">
+            <TabsTrigger value="inventory">Inventário</TabsTrigger>
+            <TabsTrigger value="requests">Solicitações</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="inventory" className="mt-4">
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                  <Input
+                    type="search"
+                    placeholder="Buscar pneus..."
+                    className="pl-8 w-[300px]"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
-          </CardHeader>
-          <CardContent>
+
             {isLoading ? (
-              <div className="flex justify-center items-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : filteredTires.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                {searchTerm ? 
-                  "Nenhum pneu encontrado para esta busca. Tente outros termos." : 
-                  "Nenhum pneu cadastrado. Clique em 'Adicionar Pneu' para começar."}
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="rounded-md border">
                 <Table>
-                  <TableCaption>Inventário de pneus da frota</TableCaption>
+                  <TableCaption>Lista de pneus cadastrados no sistema</TableCaption>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Código</TableHead>
                       <TableHead>Marca/Modelo</TableHead>
                       <TableHead>Medida</TableHead>
+                      <TableHead>Tipo</TableHead>
                       <TableHead>Veículo</TableHead>
-                      <TableHead>Posição</TableHead>
-                      <TableHead>Vida Útil</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredTires.map((tire) => (
-                      <TableRow key={tire.id}>
-                        <TableCell className="font-medium">{tire.codigo}</TableCell>
-                        <TableCell>{tire.marca} {tire.modelo}</TableCell>
-                        <TableCell>{tire.medida}</TableCell>
-                        <TableCell>{tire.veiculo_placa || '-'}</TableCell>
-                        <TableCell>{tire.posicao || '-'}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <div className="h-2 w-24 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
-                                className={`h-full ${
-                                  calculateTireLife(tire.profundidade_sulco) > 50 
-                                    ? 'bg-green-500' 
-                                    : calculateTireLife(tire.profundidade_sulco) > 25 
-                                      ? 'bg-yellow-500' 
-                                      : 'bg-red-500'
-                                }`}
-                                style={{ width: `${calculateTireLife(tire.profundidade_sulco)}%` }}
-                              />
-                            </div>
-                            <span className="text-xs">{calculateTireLife(tire.profundidade_sulco)}%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(tire.status)}`}>
-                            {translateTireStatus(tire.status)}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end space-x-2">
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => navigate(`/tires/${tire.id}`)}
-                            >
-                              <FileEdit className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => handleDeleteTire(tire.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                    {filteredTires.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="h-24 text-center">
+                          Nenhum pneu encontrado.
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      filteredTires.map((tire) => (
+                        <TableRow key={tire.id}>
+                          <TableCell className="font-medium">{tire.codigo}</TableCell>
+                          <TableCell>{tire.marca} {tire.modelo}</TableCell>
+                          <TableCell>{tire.medida}</TableCell>
+                          <TableCell>{tire.tipo}</TableCell>
+                          <TableCell>{tire.veiculo_placa || '-'}</TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadgeClass(tire.status)}`}>
+                              {translateTireStatus(tire.status)}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button variant="ghost" size="icon" title="Editar">
+                                <FileEdit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                title="Excluir"
+                                onClick={() => handleDeleteTire(tire.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </TabsContent>
+          
+          <TabsContent value="requests" className="mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              
+              {/* Card para Solicitações pendentes */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center">
+                    <AlertCircle className="mr-2 h-5 w-5 text-yellow-500" />
+                    Solicitações Pendentes
+                  </CardTitle>
+                  <CardDescription>
+                    Solicitações aguardando aprovação
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="max-h-[300px] overflow-y-auto">
+                  {isLoadingRequests ? (
+                    <div className="flex justify-center items-center h-32">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                    </div>
+                  ) : (
+                    <>
+                      {tireRequests.filter(req => req.status === 'pendente').length === 0 ? (
+                        <div className="text-center text-gray-500 my-8">
+                          Não há solicitações pendentes
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {tireRequests
+                            .filter(req => req.status === 'pendente')
+                            .map(request => (
+                              <div key={request.id} className="border rounded-lg p-3 bg-gray-50">
+                                <div className="flex justify-between items-start mb-2">
+                                  <div>
+                                    <h4 className="font-semibold">{request.marca} {request.modelo}</h4>
+                                    <p className="text-sm text-gray-600">{request.medida || '-'}</p>
+                                  </div>
+                                  <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-300">
+                                    Pendente
+                                  </Badge>
+                                </div>
+                                <div className="grid grid-cols-2 gap-1 text-sm mb-2">
+                                  <div>
+                                    <span className="text-gray-500">Base:</span> {request.base_nome}
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-500">Qt:</span> {request.quantidade}
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-500">Solicitante:</span> {request.usuario_nome}
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-500">Data:</span> {formatDate(request.data_solicitacao)}
+                                  </div>
+                                </div>
+                                <div className="text-sm mb-3">
+                                  <span className="text-gray-500">Motivo:</span> {request.motivo}
+                                </div>
+                                <div className="flex justify-end gap-2">
+                                  <Button 
+                                    size="sm" 
+                                    variant="default" 
+                                    onClick={() => handleApproveRequest(request.id)}
+                                    className="h-8"
+                                  >
+                                    <CheckCircle className="mr-1 h-4 w-4" />
+                                    Aprovar
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    onClick={() => handleRejectRequest(request.id)}
+                                    className="h-8"
+                                  >
+                                    <XCircle className="mr-1 h-4 w-4" />
+                                    Rejeitar
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Card para Solicitações aprovadas */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center">
+                    <CheckCircle className="mr-2 h-5 w-5 text-green-500" />
+                    Solicitações Aprovadas
+                  </CardTitle>
+                  <CardDescription>
+                    Solicitações já aprovadas pela gestão
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="max-h-[300px] overflow-y-auto">
+                  {isLoadingRequests ? (
+                    <div className="flex justify-center items-center h-32">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                    </div>
+                  ) : (
+                    <>
+                      {tireRequests.filter(req => req.status === 'aprovado').length === 0 ? (
+                        <div className="text-center text-gray-500 my-8">
+                          Não há solicitações aprovadas
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {tireRequests
+                            .filter(req => req.status === 'aprovado')
+                            .map(request => (
+                              <div key={request.id} className="border rounded-lg p-3 bg-gray-50">
+                                <div className="flex justify-between items-start mb-2">
+                                  <div>
+                                    <h4 className="font-semibold">{request.marca} {request.modelo}</h4>
+                                    <p className="text-sm text-gray-600">{request.medida || '-'}</p>
+                                  </div>
+                                  <Badge variant="outline" className="bg-green-50 text-green-800 border-green-300">
+                                    Aprovado
+                                  </Badge>
+                                </div>
+                                <div className="grid grid-cols-2 gap-1 text-sm mb-2">
+                                  <div>
+                                    <span className="text-gray-500">Base:</span> {request.base_nome}
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-500">Qt:</span> {request.quantidade}
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-500">Solicitante:</span> {request.usuario_nome}
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-500">Data:</span> {formatDate(request.data_solicitacao)}
+                                  </div>
+                                </div>
+                                <div className="text-sm">
+                                  <span className="text-gray-500">Aprovador:</span> {request.aprovador_nome || '-'}
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Card para Solicitações rejeitadas */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center">
+                    <XCircle className="mr-2 h-5 w-5 text-red-500" />
+                    Solicitações Rejeitadas
+                  </CardTitle>
+                  <CardDescription>
+                    Solicitações que foram negadas
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="max-h-[300px] overflow-y-auto">
+                  {isLoadingRequests ? (
+                    <div className="flex justify-center items-center h-32">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                    </div>
+                  ) : (
+                    <>
+                      {tireRequests.filter(req => req.status === 'rejeitado').length === 0 ? (
+                        <div className="text-center text-gray-500 my-8">
+                          Não há solicitações rejeitadas
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {tireRequests
+                            .filter(req => req.status === 'rejeitado')
+                            .map(request => (
+                              <div key={request.id} className="border rounded-lg p-3 bg-gray-50">
+                                <div className="flex justify-between items-start mb-2">
+                                  <div>
+                                    <h4 className="font-semibold">{request.marca} {request.modelo}</h4>
+                                    <p className="text-sm text-gray-600">{request.medida || '-'}</p>
+                                  </div>
+                                  <Badge variant="outline" className="bg-red-50 text-red-800 border-red-300">
+                                    Rejeitado
+                                  </Badge>
+                                </div>
+                                <div className="grid grid-cols-2 gap-1 text-sm mb-2">
+                                  <div>
+                                    <span className="text-gray-500">Base:</span> {request.base_nome}
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-500">Qt:</span> {request.quantidade}
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-500">Solicitante:</span> {request.usuario_nome}
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-500">Data:</span> {formatDate(request.data_solicitacao)}
+                                  </div>
+                                </div>
+                                <div className="text-sm">
+                                  <span className="text-gray-500">Rejeitado por:</span> {request.aprovador_nome || '-'}
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+                <CardFooter className="pt-2 pb-4 flex justify-center">
+                  <Button 
+                    variant="outline" 
+                    className="text-sm"
+                    onClick={() => setIsRequestDialogOpen(true)}
+                  >
+                    <ShoppingBag className="mr-2 h-4 w-4" />
+                    Nova Solicitação
+                  </Button>
+                </CardFooter>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </MainLayoutSimple>
   );

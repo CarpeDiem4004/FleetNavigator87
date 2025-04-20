@@ -1,165 +1,158 @@
 import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-import { useLocation } from 'wouter';
-import { ArrowLeft, Save } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { 
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Plus, Save, ArrowLeft, Trash2 } from 'lucide-react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
+import { useLocation } from 'wouter';
+import { useToast } from '@/hooks/use-toast';
 import { createSupabaseClient } from '@/lib/supabase-client';
 
+// Interface para o modelo de pneus
+interface Tire {
+  codigo: string;
+  marca: string;
+  modelo: string;
+  medida: string;
+  aro: string;
+  tipo: string;
+  origem: string;
+  data_aquisicao: string;
+  profundidade_sulco: number;
+  localizacao: string;
+  status: 'estoque';
+}
+
 const TiresEntrada: React.FC = () => {
-  const { toast } = useToast();
   const [, navigate] = useLocation();
-  const [formData, setFormData] = useState({
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Estado para o template de pneu (valores que serão aplicados a todos os pneus)
+  const [tireTemplate, setTireTemplate] = useState<Partial<Tire>>({
     marca: '',
     modelo: '',
     medida: '',
     aro: '',
-    tipo: '',
-    origem: '',
-    quantidade: 1,
-    localizacao: '',
-    observacao: '',
+    tipo: 'direcao',
+    origem: 'novo',
+    data_aquisicao: new Date().toISOString().split('T')[0],
+    profundidade_sulco: 12.0,
+    localizacao: 'almoxarifado',
+    status: 'estoque',
   });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    const { marca, modelo, medida, aro, tipo, origem, quantidade, localizacao, observacao } = formData;
-
-    // Validar campos obrigatórios
-    if (!marca || !modelo || !medida || !tipo || !origem || !localizacao) {
+  
+  // Estado para lista de pneus a serem adicionados
+  const [tiresQueue, setTiresQueue] = useState<Tire[]>([]);
+  
+  // Estado para código sendo editado no campo
+  const [currentCode, setCurrentCode] = useState('');
+  
+  // Adicionar um novo pneu à fila
+  const addTireToQueue = () => {
+    if (!currentCode) {
       toast({
-        title: "Campos obrigatórios",
-        description: "Preencha todos os campos obrigatórios.",
+        title: "Código obrigatório",
+        description: "Por favor, informe o código do pneu.",
         variant: "destructive"
       });
-      setIsSubmitting(false);
       return;
     }
-
+    
+    if (!tireTemplate.marca || !tireTemplate.modelo) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Marca e modelo são obrigatórios.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Verificar se o código já existe na fila
+    if (tiresQueue.some(tire => tire.codigo === currentCode)) {
+      toast({
+        title: "Código duplicado",
+        description: "Este código já foi adicionado à lista.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const newTire: Tire = {
+      ...tireTemplate as Tire,
+      codigo: currentCode,
+    };
+    
+    setTiresQueue([...tiresQueue, newTire]);
+    setCurrentCode('');
+  };
+  
+  // Remover um pneu da fila
+  const removeTireFromQueue = (code: string) => {
+    setTiresQueue(tiresQueue.filter(tire => tire.codigo !== code));
+  };
+  
+  // Salvar todos os pneus no banco de dados
+  const saveTires = async () => {
+    if (tiresQueue.length === 0) {
+      toast({
+        title: "Nenhum pneu na fila",
+        description: "Adicione pelo menos um pneu à fila antes de salvar.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
     try {
       const supabase = createSupabaseClient();
-      const timestamp = new Date().toISOString();
       
-      // 1. Inserir no estoque_pneus
-      const { data: estoque, error: estoqueError } = await supabase
-        .from('estoque_pneus')
-        .insert([
-          {
-            marca,
-            modelo,
-            medida,
-            aro,
-            tipo,
-            origem,
-            quantidade: parseInt(quantidade.toString()),
-            localizacao,
-            observacao,
-            created_at: timestamp,
-            updated_at: timestamp
-          },
-        ])
-        .select('id');
-
-      if (estoqueError) throw estoqueError;
+      // Preparar dados com created_at e updated_at
+      const tiresWithTimestamps = tiresQueue.map(tire => ({
+        ...tire,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }));
       
-      if (!estoque || estoque.length === 0) {
-        throw new Error('Falha ao obter ID do registro criado');
-      }
-
-      // 2. Criar pneus individuais para cada unidade na quantidade
-      for (let i = 0; i < parseInt(quantidade.toString()); i++) {
-        const codigo = `${marca.substring(0, 3).toUpperCase()}${modelo.substring(0, 3).toUpperCase()}${(Math.floor(Math.random() * 10000)).toString().padStart(4, '0')}`;
-        
-        // Inserir pneu individual
-        const { error: pneuError } = await supabase
-          .from('pneus')
-          .insert([
-            {
-              codigo,
-              marca,
-              modelo,
-              medida,
-              aro,
-              tipo,
-              origem,
-              data_aquisicao: timestamp.split('T')[0],
-              veiculo_placa: null,
-              posicao: null,
-              km_inicial: 0,
-              km_atual: 0,
-              profundidade_sulco: 12.0, // Valor padrão para pneu novo
-              localizacao,
-              status: 'estoque',
-              observacao,
-              created_at: timestamp,
-              updated_at: timestamp
-            },
-          ]);
-
-        if (pneuError) throw pneuError;
-      }
-
-      // 3. Criar movimentação de entrada
-      const { error: movError } = await supabase
-        .from('movimentacoes_pneus')
-        .insert([
-          {
-            tipo: 'entrada',
-            quantidade: parseInt(quantidade.toString()),
-            estoque_id: estoque[0].id,
-            observacao,
-            created_at: timestamp,
-            updated_at: timestamp
-          },
-        ]);
-
-      if (movError) throw movError;
-
+      // Inserir todos os pneus de uma vez
+      const { data, error } = await supabase
+        .from('pneus')
+        .insert(tiresWithTimestamps)
+        .select();
+      
+      if (error) throw error;
+      
       toast({
-        title: "Entrada registrada com sucesso!",
-        description: `${quantidade} pneu(s) ${marca} ${modelo} adicionado(s) ao estoque.`,
+        title: "Pneus cadastrados com sucesso",
+        description: `${data.length} pneus foram adicionados ao inventário.`,
         variant: "default"
       });
       
-      // Limpar o formulário
-      setFormData({
-        marca: '',
-        modelo: '',
-        medida: '',
-        aro: '',
-        tipo: '',
-        origem: '',
-        quantidade: 1,
-        localizacao: '',
-        observacao: '',
-      });
+      // Limpar a fila após o cadastro bem-sucedido
+      setTiresQueue([]);
+      
     } catch (error) {
-      console.error('Erro ao registrar entrada:', error);
+      console.error("Erro ao cadastrar pneus:", error);
       toast({
-        title: "Erro ao registrar entrada",
+        title: "Erro ao cadastrar pneus",
         description: error instanceof Error ? error.message : "Erro desconhecido",
         variant: "destructive"
       });
@@ -167,7 +160,7 @@ const TiresEntrada: React.FC = () => {
       setIsSubmitting(false);
     }
   };
-
+  
   const tiposOptions = [
     { value: 'direcao', label: 'Direção' },
     { value: 'tracao', label: 'Tração' },
@@ -185,134 +178,160 @@ const TiresEntrada: React.FC = () => {
     { value: 'estoque_borracharia', label: 'Estoque Borracharia' },
     { value: 'transito', label: 'Em Trânsito' },
   ];
-
+  
   return (
     <MainLayoutSimple>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold mb-2">Entrada de Pneus</h1>
+            <h1 className="text-2xl font-bold mb-2">Entrada em Lote de Pneus</h1>
             <p className="text-gray-500">
-              Registre a entrada de novos pneus no estoque
+              Cadastre múltiplos pneus com informações semelhantes
             </p>
           </div>
-          <Button
-            variant="outline"
+          
+          <Button 
+            variant="outline" 
             onClick={() => navigate('/tires')}
-            className="flex items-center gap-1"
+            className="flex items-center"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Voltar
           </Button>
         </div>
-
-        <Card className="max-w-4xl mx-auto">
-          <CardHeader>
-            <CardTitle>Formulário de Entrada</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Marca do pneu */}
-                <div className="space-y-2">
-                  <Label htmlFor="marca">Marca *</Label>
-                  <Input
-                    id="marca"
-                    name="marca"
-                    placeholder="Ex: Bridgestone, Michelin, etc."
-                    value={formData.marca}
-                    onChange={handleChange}
-                    required
-                  />
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Card para informações em comum */}
+          <div className="md:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Informações Comuns</CardTitle>
+                <CardDescription>
+                  Defina os atributos comuns a todos os pneus do lote
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Marca, Modelo */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="marca">Marca *</Label>
+                    <Input
+                      id="marca"
+                      value={tireTemplate.marca || ''}
+                      onChange={(e) => setTireTemplate({...tireTemplate, marca: e.target.value})}
+                      placeholder="Ex: Pirelli"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="modelo">Modelo *</Label>
+                    <Input
+                      id="modelo"
+                      value={tireTemplate.modelo || ''}
+                      onChange={(e) => setTireTemplate({...tireTemplate, modelo: e.target.value})}
+                      placeholder="Ex: Formula Energy"
+                      required
+                    />
+                  </div>
                 </div>
-
-                {/* Modelo do pneu */}
-                <div className="space-y-2">
-                  <Label htmlFor="modelo">Modelo *</Label>
-                  <Input
-                    id="modelo"
-                    name="modelo"
-                    placeholder="Ex: R250, Duravis, etc."
-                    value={formData.modelo}
-                    onChange={handleChange}
-                    required
-                  />
+                
+                {/* Medida, Aro */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="medida">Medida</Label>
+                    <Input
+                      id="medida"
+                      value={tireTemplate.medida || ''}
+                      onChange={(e) => setTireTemplate({...tireTemplate, medida: e.target.value})}
+                      placeholder="Ex: 295/80R22.5"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="aro">Aro</Label>
+                    <Input
+                      id="aro"
+                      value={tireTemplate.aro || ''}
+                      onChange={(e) => setTireTemplate({...tireTemplate, aro: e.target.value})}
+                      placeholder="Ex: 22.5"
+                    />
+                  </div>
                 </div>
-
-                {/* Medida do pneu */}
-                <div className="space-y-2">
-                  <Label htmlFor="medida">Medida *</Label>
-                  <Input
-                    id="medida"
-                    name="medida"
-                    placeholder="Ex: 295/80R22.5"
-                    value={formData.medida}
-                    onChange={handleChange}
-                    required
-                  />
+                
+                {/* Tipo, Origem */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="tipo">Tipo</Label>
+                    <Select 
+                      value={tireTemplate.tipo} 
+                      onValueChange={(value) => setTireTemplate({...tireTemplate, tipo: value})}
+                    >
+                      <SelectTrigger id="tipo">
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tiposOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="origem">Origem</Label>
+                    <Select 
+                      value={tireTemplate.origem} 
+                      onValueChange={(value) => setTireTemplate({...tireTemplate, origem: value})}
+                    >
+                      <SelectTrigger id="origem">
+                        <SelectValue placeholder="Selecione a origem" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {origensOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-
-                {/* Aro do pneu */}
-                <div className="space-y-2">
-                  <Label htmlFor="aro">Aro</Label>
-                  <Input
-                    id="aro"
-                    name="aro"
-                    placeholder="Ex: 22.5"
-                    value={formData.aro}
-                    onChange={handleChange}
-                  />
+                
+                {/* Data de Aquisição, Profundidade */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="data_aquisicao">Data de Aquisição</Label>
+                    <Input
+                      id="data_aquisicao"
+                      type="date"
+                      value={tireTemplate.data_aquisicao || ''}
+                      onChange={(e) => setTireTemplate({...tireTemplate, data_aquisicao: e.target.value})}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="profundidade_sulco">Profundidade do Sulco (mm)</Label>
+                    <Input
+                      id="profundidade_sulco"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="20"
+                      value={tireTemplate.profundidade_sulco?.toString() || '12.0'}
+                      onChange={(e) => setTireTemplate({...tireTemplate, profundidade_sulco: parseFloat(e.target.value) || 0})}
+                    />
+                  </div>
                 </div>
-
-                {/* Tipo de pneu */}
-                <div className="space-y-2">
-                  <Label htmlFor="tipo">Tipo *</Label>
-                  <Select 
-                    value={formData.tipo} 
-                    onValueChange={(value) => handleSelectChange('tipo', value)}
-                    required
-                  >
-                    <SelectTrigger id="tipo">
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tiposOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Origem do pneu */}
-                <div className="space-y-2">
-                  <Label htmlFor="origem">Origem *</Label>
-                  <Select 
-                    value={formData.origem} 
-                    onValueChange={(value) => handleSelectChange('origem', value)}
-                    required
-                  >
-                    <SelectTrigger id="origem">
-                      <SelectValue placeholder="Selecione a origem" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {origensOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
+                
                 {/* Localização */}
                 <div className="space-y-2">
-                  <Label htmlFor="localizacao">Localização *</Label>
+                  <Label htmlFor="localizacao">Localização</Label>
                   <Select 
-                    value={formData.localizacao} 
-                    onValueChange={(value) => handleSelectChange('localizacao', value)}
-                    required
+                    value={tireTemplate.localizacao} 
+                    onValueChange={(value) => setTireTemplate({...tireTemplate, localizacao: value})}
                   >
                     <SelectTrigger id="localizacao">
                       <SelectValue placeholder="Selecione a localização" />
@@ -326,49 +345,94 @@ const TiresEntrada: React.FC = () => {
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* Quantidade */}
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Card para adicionar códigos */}
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Adicionar Pneus</CardTitle>
+                <CardDescription>
+                  Informe os códigos dos pneus um por um
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="quantidade">Quantidade *</Label>
-                  <Input
-                    id="quantidade"
-                    name="quantidade"
-                    type="number"
-                    min="1"
-                    placeholder="Quantidade"
-                    value={formData.quantidade}
-                    onChange={handleChange}
-                    required
-                  />
+                  <Label htmlFor="codigo">Código/Nº de Série *</Label>
+                  <div className="flex space-x-2">
+                    <Input
+                      id="codigo"
+                      value={currentCode}
+                      onChange={(e) => setCurrentCode(e.target.value)}
+                      placeholder="Ex: P001"
+                      onKeyPress={(e) => e.key === 'Enter' && addTireToQueue()}
+                    />
+                    <Button onClick={addTireToQueue}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-
-              {/* Observação */}
-              <div className="space-y-2">
-                <Label htmlFor="observacao">Observação (opcional)</Label>
-                <Input
-                  id="observacao"
-                  name="observacao"
-                  placeholder="Observações adicionais"
-                  value={formData.observacao}
-                  onChange={handleChange}
-                />
-              </div>
-
-              {/* Submit button */}
-              <div className="flex justify-end">
+                
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium mb-2">Pneus na fila: {tiresQueue.length}</h3>
+                  {tiresQueue.length > 0 ? (
+                    <div className="max-h-[350px] overflow-y-auto border rounded-md">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Código</TableHead>
+                            <TableHead className="w-[80px]">Ação</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {tiresQueue.map((tire) => (
+                            <TableRow key={tire.codigo}>
+                              <TableCell className="font-medium">{tire.codigo}</TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeTireFromQueue(tire.codigo)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-500 py-4 border rounded-md">
+                      Nenhum pneu na fila
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter className="pt-0">
                 <Button 
-                  type="submit" 
-                  className="w-full md:w-auto flex items-center gap-2" 
-                  disabled={isSubmitting}
+                  disabled={tiresQueue.length === 0 || isSubmitting}
+                  className="w-full"
+                  onClick={saveTires}
                 >
-                  <Save className="h-4 w-4" />
-                  {isSubmitting ? 'Registrando...' : 'Registrar Entrada'}
+                  {isSubmitting ? (
+                    <span className="flex items-center">
+                      <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                      Salvando...
+                    </span>
+                  ) : (
+                    <span className="flex items-center">
+                      <Save className="mr-2 h-4 w-4" />
+                      Salvar {tiresQueue.length} Pneus
+                    </span>
+                  )}
                 </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+              </CardFooter>
+            </Card>
+          </div>
+        </div>
       </div>
     </MainLayoutSimple>
   );
