@@ -98,14 +98,29 @@ export const fines = pgTable("multas", {
 });
 
 // Create the lineHall table (linha_corredor)
+export const checklistStatusEnum = pgEnum('checklist_status', ['pendente', 'iniciado', 'concluido']);
+export const maintenanceRequestStatusEnum = pgEnum('maintenance_request_status', ['pendente', 'aprovada', 'rejeitada', 'concluida']);
+export const refuelingCardStatusEnum = pgEnum('refueling_card_status', ['pendente', 'aprovada', 'rejeitada']);
+
 export const lineHall = pgTable("linha_corredor", {
   id: serial("id").primaryKey(),
   truckPlate: text("truck_plate").notNull().references(() => vehicles.plate),
   trailer1Plate: text("trailer1_plate").notNull().references(() => vehicles.plate),
   trailer2Plate: text("trailer2_plate").references(() => vehicles.plate),
+  driverName: text("driver_name").notNull(),
+  driverPhone: text("driver_phone"),
+  loadingLocation: text("loading_location").notNull(), // CD de carregamento
   loadingTime: timestamp("loading_time").notNull(),
-  destination: text("destination").notNull(),
+  unloadingLocation: text("unloading_location").notNull(), // CD de descarregamento
+  estimatedUnloadingTime: timestamp("estimated_unloading_time"),
+  actualUnloadingTime: timestamp("actual_unloading_time"),
+  initialKm: integer("initial_km"),
+  finalKm: integer("final_km"),
+  checklistStatus: checklistStatusEnum("checklist_status").default('pendente'),
+  tripNotes: text("trip_notes"),
   tripStatus: tripStatusEnum("trip_status").notNull(),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 // Create the users table
@@ -168,6 +183,62 @@ export const maintenanceRelations = relations(maintenance, ({ one }) => ({
   }),
 }));
 
+// Tabela para checklist de veículos
+export const vehicleChecklist = pgTable("vehicle_checklist", {
+  id: serial("id").primaryKey(),
+  tripId: integer("trip_id").notNull().references(() => lineHall.id),
+  driverName: text("driver_name").notNull(),
+  checkDate: timestamp("check_date").notNull().defaultNow(),
+  initialKm: integer("initial_km"),
+  finalKm: integer("final_km"),
+  tireCondition: text("tire_condition"), // bom, regular, ruim
+  lightsCondition: text("lights_condition"), // bom, regular, ruim
+  brakesCondition: text("brakes_condition"), // bom, regular, ruim
+  windshieldCondition: text("windshield_condition"), // bom, regular, ruim
+  oilLevel: text("oil_level"), // bom, regular, ruim
+  waterLevel: text("water_level"), // bom, regular, ruim
+  observations: text("observations"),
+  status: checklistStatusEnum("status").notNull().default('pendente'),
+  isInitialCheck: boolean("is_initial_check").notNull(), // true para checklist inicial, false para final
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela para solicitações de manutenção pelo motorista
+export const driverMaintenanceRequest = pgTable("driver_maintenance_request", {
+  id: serial("id").primaryKey(),
+  tripId: integer("trip_id").references(() => lineHall.id),
+  vehiclePlate: text("vehicle_plate").notNull().references(() => vehicles.plate),
+  driverName: text("driver_name").notNull(),
+  requestDate: timestamp("request_date").notNull().defaultNow(),
+  description: text("description").notNull(),
+  urgency: text("urgency").notNull().default('normal'), // baixa, normal, alta, emergencial
+  status: maintenanceRequestStatusEnum("status").notNull().default('pendente'),
+  approvedBy: text("approved_by"),
+  approvalDate: timestamp("approval_date"),
+  maintenanceId: integer("maintenance_id").references(() => maintenance.id), // Referência à manutenção gerada, se aprovada
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela para solicitações de recarga de cartão de abastecimento
+export const refuelingCardRequest = pgTable("refueling_card_request", {
+  id: serial("id").primaryKey(),
+  tripId: integer("trip_id").references(() => lineHall.id),
+  vehiclePlate: text("vehicle_plate").notNull().references(() => vehicles.plate),
+  driverName: text("driver_name").notNull(),
+  requestDate: timestamp("request_date").notNull().defaultNow(),
+  cardNumber: text("card_number"),
+  requestedAmount: decimal("requested_amount", { precision: 10, scale: 2 }).notNull(),
+  justification: text("justification").notNull(),
+  status: refuelingCardStatusEnum("status").notNull().default('pendente'),
+  approvedBy: text("approved_by"),
+  approvalDate: timestamp("approval_date"),
+  approvedAmount: decimal("approved_amount", { precision: 10, scale: 2 }),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
 export const workshopsRelations = relations(workshops, ({ many }) => ({
   maintenance: many(maintenance),
 }));
@@ -176,6 +247,45 @@ export const operationsRelations = relations(operations, ({ one }) => ({
   base: one(bases, {
     fields: [operations.baseId],
     references: [bases.id],
+  }),
+}));
+
+export const lineHallRelations = relations(lineHall, ({ many }) => ({
+  checklists: many(vehicleChecklist),
+  maintenanceRequests: many(driverMaintenanceRequest),
+  cardRequests: many(refuelingCardRequest),
+}));
+
+export const vehicleChecklistRelations = relations(vehicleChecklist, ({ one }) => ({
+  trip: one(lineHall, {
+    fields: [vehicleChecklist.tripId],
+    references: [lineHall.id],
+  }),
+}));
+
+export const driverMaintenanceRequestRelations = relations(driverMaintenanceRequest, ({ one }) => ({
+  trip: one(lineHall, {
+    fields: [driverMaintenanceRequest.tripId],
+    references: [lineHall.id],
+  }),
+  vehicle: one(vehicles, {
+    fields: [driverMaintenanceRequest.vehiclePlate],
+    references: [vehicles.plate],
+  }),
+  maintenance: one(maintenance, {
+    fields: [driverMaintenanceRequest.maintenanceId],
+    references: [maintenance.id],
+  }),
+}));
+
+export const refuelingCardRequestRelations = relations(refuelingCardRequest, ({ one }) => ({
+  trip: one(lineHall, {
+    fields: [refuelingCardRequest.tripId],
+    references: [lineHall.id],
+  }),
+  vehicle: one(vehicles, {
+    fields: [refuelingCardRequest.vehiclePlate],
+    references: [vehicles.plate],
   }),
 }));
 
@@ -189,6 +299,9 @@ export const insertRefuelingSchema = createInsertSchema(refueling);
 export const insertFineSchema = createInsertSchema(fines);
 export const insertLineHallSchema = createInsertSchema(lineHall);
 export const insertOperationSchema = createInsertSchema(operations);
+export const insertVehicleChecklistSchema = createInsertSchema(vehicleChecklist);
+export const insertDriverMaintenanceRequestSchema = createInsertSchema(driverMaintenanceRequest);
+export const insertRefuelingCardRequestSchema = createInsertSchema(refuelingCardRequest);
 export const insertUserSchema = createInsertSchema(users).pick({
   name: true,
   email: true,
@@ -228,3 +341,12 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 
 export type Operation = typeof operations.$inferSelect;
 export type InsertOperation = z.infer<typeof insertOperationSchema>;
+
+export type VehicleChecklist = typeof vehicleChecklist.$inferSelect;
+export type InsertVehicleChecklist = z.infer<typeof insertVehicleChecklistSchema>;
+
+export type DriverMaintenanceRequest = typeof driverMaintenanceRequest.$inferSelect;
+export type InsertDriverMaintenanceRequest = z.infer<typeof insertDriverMaintenanceRequestSchema>;
+
+export type RefuelingCardRequest = typeof refuelingCardRequest.$inferSelect;
+export type InsertRefuelingCardRequest = z.infer<typeof insertRefuelingCardRequestSchema>;
