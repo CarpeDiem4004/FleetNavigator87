@@ -311,6 +311,36 @@ const TratativaManutencaoPage: React.FC = () => {
               Gerencie e acompanhe o andamento das solicitações de manutenção
             </p>
           </div>
+          <div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                // Obter a URL base da aplicação
+                const baseUrl = window.location.origin;
+                const oficinasUrl = `${baseUrl}/oficinas/cadastro`;
+                
+                // Copiar para a área de transferência
+                navigator.clipboard.writeText(oficinasUrl)
+                  .then(() => {
+                    toast({
+                      title: "Link copiado!",
+                      description: "O link para cadastro de oficinas foi copiado para a área de transferência.",
+                      variant: "default",
+                    });
+                  })
+                  .catch(err => {
+                    console.error('Erro ao copiar link:', err);
+                    toast({
+                      title: "Erro ao copiar",
+                      description: "Não foi possível copiar o link. Por favor, tente novamente.",
+                      variant: "destructive",
+                    });
+                  });
+              }}
+            >
+              Copiar Link para Cadastro de Oficinas
+            </Button>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
