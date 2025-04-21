@@ -136,6 +136,8 @@ export function useBasePermission(): BasePermissionHook {
         '/fleet-management/operation',                // Alias para análise de operação
         '/fleet-management/overview',                 // Alias para visão geral
         '/maintenance',                               // Sistema de manutenção (rota antiga)
+        '/manutencao',                                // Solicitações de manutenção
+        '/tratativa-manutencao',                      // Tratativas de manutenção
         '/vehicles',                                  // Veículos
         '/refueling',                                 // Abastecimentos
         '/tires',                                     // Pneus
