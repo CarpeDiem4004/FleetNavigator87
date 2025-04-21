@@ -24,7 +24,7 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
   const [marca, setMarca] = useState('')
   const [modelo, setModelo] = useState('carreta')
   const [baseId, setBaseId] = useState<string | undefined>(undefined)
-  const [ownership, setOwnership] = useState('proprio')
+  const [ownership, setOwnership] = useState('murici') // Alterado de 'proprio' para 'murici'
   const [leasingCompany, setLeasingCompany] = useState('')
   const [bases, setBases] = useState<{id: number, nome: string}[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -132,9 +132,7 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
       setMarca('')
       setModelo('carreta')
       setBaseId(undefined)
-      setOwnership('proprio')
-      setLeasingCompany('')
-      setOwnership('proprio')
+      setOwnership('murici')
       setLeasingCompany('')
       
       // Notificar o componente pai sobre a adição
@@ -223,7 +221,7 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
               onValueChange={(value) => {
                 setOwnership(value);
                 // Limpar o campo de empresa quando mudar para próprio
-                if (value === 'proprio') {
+                if (value === 'murici') {
                   setLeasingCompany('');
                 }
               }}
@@ -232,7 +230,7 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
                 <SelectValue placeholder="Selecione a propriedade" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="proprio">Murici</SelectItem>
+                <SelectItem value="murici">Murici</SelectItem>
                 <SelectItem value="locado">Locado</SelectItem>
               </SelectContent>
             </Select>
