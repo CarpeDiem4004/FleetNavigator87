@@ -29,7 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
 import MaintenanceChatHistory from "@/components/chat/MaintenanceChatHistory";
-import { formatCurrency } from "@/lib/formatters";
+import { formatCurrency } from "@/lib/utils";
 import { CircleAlert, BarChart3, CheckCircle, Clock, AlertCircle } from "lucide-react";
 
 interface Maintenance {
@@ -540,22 +540,53 @@ export default function BudgetManagementPage() {
                     {statusMap[selectedMaintenance?.status || ""]?.label || selectedMaintenance?.status}
                   </Badge>
                 </div>
-                <div>
-                  <span className="font-semibold text-sm">Orçamento Inicial: </span>
-                  <span className="text-sm">
-                    {selectedMaintenance?.initialBudget 
-                      ? formatCurrency(Number(selectedMaintenance.initialBudget)) 
-                      : "Não informado"}
-                  </span>
+                
+                {/* Informações do orçamento */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 border-t pt-2">
+                  <div>
+                    <span className="font-semibold text-sm">Orçamento Inicial: </span>
+                    <span className="text-sm">
+                      {selectedMaintenance?.initialBudget 
+                        ? formatCurrency(Number(selectedMaintenance.initialBudget)) 
+                        : "Não informado"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-sm">Orçamento Final: </span>
+                    <span className="text-sm">
+                      {selectedMaintenance?.finalBudget 
+                        ? formatCurrency(Number(selectedMaintenance.finalBudget)) 
+                        : "Ainda não finalizado"}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <span className="font-semibold text-sm">Orçamento Final: </span>
-                  <span className="text-sm">
-                    {selectedMaintenance?.finalBudget 
-                      ? formatCurrency(Number(selectedMaintenance.finalBudget)) 
-                      : "Ainda não finalizado"}
-                  </span>
+                
+                {/* Novas informações adicionais */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border-t pt-2 mt-1">
+                  {selectedMaintenance?.kmAtual && (
+                    <div>
+                      <span className="font-semibold text-sm">Quilometragem Atual: </span>
+                      <span className="text-sm">{selectedMaintenance.kmAtual} km</span>
+                    </div>
+                  )}
+                  
+                  {selectedMaintenance?.prazoEstimado && (
+                    <div>
+                      <span className="font-semibold text-sm">Prazo Estimado: </span>
+                      <span className="text-sm">{selectedMaintenance.prazoEstimado} dias</span>
+                    </div>
+                  )}
                 </div>
+                
+                {/* Descrição detalhada do serviço */}
+                {selectedMaintenance?.descricaoServico && (
+                  <div className="border-t pt-2 mt-1">
+                    <span className="font-semibold text-sm">Descrição do Serviço: </span>
+                    <p className="text-sm mt-1 text-muted-foreground bg-muted/30 p-2 rounded">
+                      {selectedMaintenance.descricaoServico}
+                    </p>
+                  </div>
+                )}
               </div>
               
               <div className="border rounded-md p-4 h-64 overflow-y-auto">
