@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useToast } from '@/hooks/use-toast'
 
 interface Props {
@@ -23,15 +24,20 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
   const [marca, setMarca] = useState('')
   const [modelo, setModelo] = useState('carreta')
   const [baseId, setBaseId] = useState<string | undefined>(undefined)
+  const [ownership, setOwnership] = useState('proprio')
+  const [leasingCompany, setLeasingCompany] = useState('')
   const [bases, setBases] = useState<{id: number, nome: string}[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Opções de modelo seguindo os valores válidos do enum vehicleType
   const modelos = [
-    { id: 'carreta', nome: 'Carreta' },
-    { id: 'cavalo_mecanico', nome: 'Cavalo Mecânico' },
+    { id: 'fiorino', nome: 'Fiorino' },
     { id: 'van', nome: 'Van' },
-    { id: 'utilitario', nome: 'Utilitário' }
+    { id: 'vuc', nome: 'VUC' },
+    { id: 'toco', nome: 'Toco' },
+    { id: 'truck', nome: 'Truck' },
+    { id: 'cavalo_mecanico', nome: 'Cavalo Mecânico' },
+    { id: 'carreta', nome: 'Carreta' }
   ]
 
   useEffect(() => {
@@ -78,6 +84,16 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
       return
     }
     
+    // Validar empresa de locação para veículos locados
+    if (ownership === 'locado' && !leasingCompany) {
+      toast({
+        title: 'Empresa de locação obrigatória',
+        description: 'Informe a empresa de locação para veículos locados.',
+        variant: 'destructive'
+      })
+      return
+    }
+    
     setIsSubmitting(true)
     
     try {
@@ -92,7 +108,9 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
           model: marca, // Agora usamos marca como modelo (Ford, FACCHINI, etc)
           vehicleType: modelo, // E modelo como vehicleType (carreta, cavalo_mecanico, etc)
           status: 'em_operacao',
-          baseId: parseInt(baseId)
+          baseId: parseInt(baseId),
+          ownership: ownership,
+          rentalCompany: ownership === 'locado' ? leasingCompany : null
         })
       });
       
@@ -193,6 +211,33 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
               </SelectContent>
             </Select>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="ownership">Propriedade *</Label>
+            <Select value={ownership} onValueChange={setOwnership}>
+              <SelectTrigger id="ownership">
+                <SelectValue placeholder="Selecione a propriedade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="proprio">Murici</SelectItem>
+                <SelectItem value="locado">Locado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {ownership === 'locado' && (
+            <div className="space-y-2">
+              <Label htmlFor="leasingCompany">Empresa de Locação *</Label>
+              <Input
+                id="leasingCompany"
+                type="text"
+                placeholder="Ex: Localiza"
+                value={leasingCompany}
+                onChange={(e) => setLeasingCompany(e.target.value)}
+                required={ownership === 'locado'}
+              />
+            </div>
+          )}
         </CardContent>
         <CardFooter>
           <Button 
