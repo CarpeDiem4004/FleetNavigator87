@@ -2053,6 +2053,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const status = req.query.status as string;
       
       // Obter todos os chats com orçamentos junto com informações das manutenções relacionadas
+      let statusFilter = '';
+      
+      // Mapear os filtros de status corretamente
+      if (status && status !== 'todos') {
+        if (status === 'negociacao') {
+          statusFilter = `AND (m.status = 'em_negociacao' OR m.status = 'em_andamento')`;
+        } else if (status === 'aguardando') {
+          statusFilter = `AND m.status = 'aguardando_orcamento'`;
+        } else if (status === 'aprovados') {
+          statusFilter = `AND (mc.is_finalized = true OR m.status = 'orcamento_aprovado')`;
+        } else {
+          statusFilter = `AND m.status = '${status}'`;
+        }
+      }
+      
+      // Consulta atualizada com mais filtros abrangentes
       const query = `
         SELECT 
           mc.id, 
@@ -2062,7 +2078,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           mc.is_finalized as "isFinalized", 
           mc.created_at, 
           mc.updated_at,
-          mc.vehicle_plate as "maintenanceVehiclePlate",
+          COALESCE(mc.vehicle_plate, m.vehicle_plate) as "maintenanceVehiclePlate",
           m.description as "maintenanceDescription", 
           m.status as "maintenanceStatus",
           w.name as "workshopName"
@@ -2074,7 +2090,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           workshops w ON m.workshop_id = w.id
         WHERE 
           1=1
-          ${status && status !== 'todos' ? `AND m.status = '${status}'` : ''}
+          ${statusFilter}
         ORDER BY 
           mc.updated_at DESC
       `;

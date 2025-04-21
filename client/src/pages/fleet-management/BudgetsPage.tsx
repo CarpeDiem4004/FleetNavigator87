@@ -90,6 +90,7 @@ const BudgetStatusBadge = ({ status, isFinalized }: { status: string, isFinalize
         </Badge>
       );
     case 'em_negociacao':
+    case 'em_andamento':
       return (
         <Badge variant="outline" className="flex items-center gap-1 bg-blue-50 text-blue-700 border-blue-200">
           <MessageSquare className="h-3 w-3" />
@@ -198,7 +199,7 @@ export default function BudgetsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">
-                  {budgetChats.filter(chat => !chat.isFinalized && chat.maintenanceStatus === 'em_negociacao').length}
+                  {budgetChats.filter(chat => !chat.isFinalized && (chat.maintenanceStatus === 'em_negociacao' || chat.maintenanceStatus === 'em_andamento')).length}
                 </div>
               </CardContent>
             </Card>
@@ -299,7 +300,7 @@ export default function BudgetsPage() {
                 <TabsContent value="negociacao" className="space-y-4">
                   <BudgetTable 
                     budgetChats={filteredBudgetChats.filter(chat => 
-                      !chat.isFinalized && chat.maintenanceStatus === 'em_negociacao'
+                      !chat.isFinalized && (chat.maintenanceStatus === 'em_negociacao' || chat.maintenanceStatus === 'em_andamento')
                     )} 
                     isLoading={isLoading}
                     onOpenChat={handleOpenChatDialog}
