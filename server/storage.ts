@@ -87,8 +87,37 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user || undefined;
+    try {
+      // Usar SQL direto para evitar problemas com o campo oficina_id
+      const query = `
+        SELECT id, name, email, password, role, "baseId", basename, oficina_id
+        FROM users 
+        WHERE id = $1
+      `;
+      
+      const result = await pool.query(query, [id]);
+      
+      if (result.rows.length === 0) {
+        return undefined;
+      }
+      
+      // Converter o resultado para o formato esperado
+      const user: User = {
+        id: result.rows[0].id,
+        name: result.rows[0].name,
+        email: result.rows[0].email,
+        password: result.rows[0].password,
+        role: result.rows[0].role,
+        baseId: result.rows[0].baseId,
+        basename: result.rows[0].basename,
+        oficina_id: result.rows[0].oficina_id || null
+      };
+      
+      return user;
+    } catch (error) {
+      console.error("Erro ao buscar usuário por ID:", error);
+      return undefined;
+    }
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
@@ -131,26 +160,63 @@ export class DatabaseStorage implements IStorage {
       password: "***********"  // Oculta a senha por segurança
     });
     
-    // Certificar-se de que todos os campos esperados estão presentes
-    const userData: any = {
-      name: user.name,
-      email: user.email,
-      password: user.password,
-      role: user.role
-    };
-    
-    // Adicionar campos opcionais se presentes
-    if (user.baseId !== undefined && user.baseId !== null) {
-      userData.baseId = user.baseId;
+    try {
+      // Usar SQL direto para evitar problemas com o campo oficina_id
+      let query = `
+        INSERT INTO users (name, email, password, role
+      `;
+      
+      const params = [user.name, user.email, user.password, user.role];
+      let valueIndexes = `$1, $2, $3, $4`;
+      let paramIndex = 5;
+      
+      // Adicionar campos opcionais se presentes
+      if (user.baseId !== undefined && user.baseId !== null) {
+        query += `, "baseId"`;
+        valueIndexes += `, $${paramIndex}`;
+        params.push(user.baseId);
+        paramIndex++;
+      }
+      
+      if (user.basename) {
+        query += `, basename`;
+        valueIndexes += `, $${paramIndex}`;
+        params.push(user.basename);
+        paramIndex++;
+      }
+      
+      if (user.oficina_id !== undefined && user.oficina_id !== null) {
+        query += `, oficina_id`;
+        valueIndexes += `, $${paramIndex}`;
+        params.push(user.oficina_id);
+        paramIndex++;
+      }
+      
+      query += `) VALUES (${valueIndexes}) RETURNING *`;
+      
+      const result = await pool.query(query, params);
+      
+      if (result.rows.length === 0) {
+        throw new Error("Falha ao criar usuário");
+      }
+      
+      const newUser: User = {
+        id: result.rows[0].id,
+        name: result.rows[0].name,
+        email: result.rows[0].email,
+        password: result.rows[0].password,
+        role: result.rows[0].role,
+        baseId: result.rows[0].baseId,
+        basename: result.rows[0].basename,
+        oficina_id: result.rows[0].oficina_id || null
+      };
+      
+      console.log("Usuário criado com sucesso:", { id: newUser.id, email: newUser.email });
+      return newUser;
+    } catch (error) {
+      console.error("Erro ao criar usuário:", error);
+      throw error;
     }
-    
-    if (user.basename) {
-      userData.basename = user.basename;
-    }
-    
-    const [newUser] = await db.insert(users).values(userData).returning();
-    console.log("Usuário criado com sucesso:", { id: newUser.id, email: newUser.email });
-    return newUser;
   }
 
   async updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined> {

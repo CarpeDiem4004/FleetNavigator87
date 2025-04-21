@@ -4,35 +4,29 @@ export async function runMigrations() {
   try {
     console.log("Iniciando migrações...");
 
-    // Verificar se a tabela 'oficinas' existe no esquema público
-    const checkOficinasTableQuery = `
+    // Verificar se a tabela 'workshops' existe no esquema público
+    const checkWorkshopsTableQuery = `
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' AND table_name = 'oficinas'
+        WHERE table_schema = 'public' AND table_name = 'workshops'
       );
     `;
     
-    const oficinasTableResult = await pool.query(checkOficinasTableQuery);
-    const oficinasTableExists = oficinasTableResult.rows[0].exists;
+    const workshopsTableResult = await pool.query(checkWorkshopsTableQuery);
+    const workshopsTableExists = workshopsTableResult.rows[0].exists;
     
-    if (!oficinasTableExists) {
-      console.log("Tabela 'oficinas' não existe. Criando tabela...");
-      
-      // Criar tabela 'oficinas' seguindo o schema.ts
-      await pool.query(`
-        CREATE TABLE oficinas (
-          id SERIAL PRIMARY KEY,
-          name TEXT NOT NULL,
-          address TEXT,
-          phone TEXT,
-          is_active BOOLEAN DEFAULT TRUE,
-          created_at TIMESTAMP DEFAULT NOW()
-        );
-      `);
-      
-      console.log("Tabela 'oficinas' criada com sucesso");
-    } else {
-      console.log("Tabela 'oficinas' já existe");
+    console.log("Tabela 'workshops' existe:", workshopsTableExists);
+    
+    // Verificar a estrutura da tabela workshops
+    if (workshopsTableExists) {
+      console.log("Verificando colunas da tabela 'workshops'...");
+      const columnsQuery = `
+        SELECT column_name, data_type 
+        FROM information_schema.columns 
+        WHERE table_name = 'workshops'
+      `;
+      const columnsResult = await pool.query(columnsQuery);
+      console.log("Colunas existentes na tabela 'workshops':", columnsResult.rows);
     }
     
     // Verificar se a coluna 'oficina_id' já existe na tabela 'users'
@@ -50,7 +44,7 @@ export async function runMigrations() {
       // Adicionar coluna 'oficina_id' à tabela 'users'
       await pool.query(`
         ALTER TABLE users 
-        ADD COLUMN oficina_id INTEGER REFERENCES oficinas(id)
+        ADD COLUMN oficina_id INTEGER REFERENCES workshops(id)
       `);
       
       console.log("Coluna 'oficina_id' adicionada com sucesso");
