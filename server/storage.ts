@@ -92,6 +92,7 @@ export interface IStorage {
   createMaintenanceChat(chat: InsertMaintenanceChat): Promise<MaintenanceChat>;
   updateMaintenanceChat(id: number, chat: Partial<InsertMaintenanceChat>): Promise<MaintenanceChat | undefined>;
   finalizeMaintenanceChat(id: number, finalBudget: number, finalizedBy: string): Promise<MaintenanceChat | undefined>;
+  getAllMaintenanceChats(): Promise<MaintenanceChat[]>;
   
   // Chat Message operations
   getChatMessage(id: number): Promise<ChatMessage | undefined>;
@@ -891,6 +892,15 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Erro ao finalizar chat de manutenção:", error);
       return undefined;
+    }
+  }
+
+  async getAllMaintenanceChats(): Promise<MaintenanceChat[]> {
+    try {
+      return await db.select().from(maintenanceChat);
+    } catch (error) {
+      console.error("Erro ao obter todos os chats de manutenção:", error);
+      return [];
     }
   }
 
