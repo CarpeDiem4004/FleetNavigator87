@@ -266,21 +266,36 @@ export default function OficinaDashboard() {
       
       const chatData = await chatResponse.json();
       
-      // Guardar o ID do chat criado
-      setCreatedChatId(chatData.id);
+      // Limpar campos e fechar o diálogo antes de atualizar os estados
+      setVehiclePlate("");
+      setInitialBudget("");
+      setKmAtual("");
+      setPrazoEstimado("");
+      setDescricaoServico("");
+      setIsChatDialogOpen(false);
       
-      // Atualizar o status da manutenção na lista local
-      setMaintenanceItems(prev => 
-        prev.map(item => item.id === selectedMaintenance.id 
-          ? { ...item, status: 'em_andamento' } 
-          : item
-        )
-      );
-      
-      toast({
-        title: "Sucesso",
-        description: "Orçamento enviado para análise.",
-      });
+      // Depois de fechar o diálogo, atualizar os outros estados
+      // Isso evita o erro de insertBefore com nós removidos
+      setTimeout(() => {
+        // Guardar o ID do chat criado
+        setCreatedChatId(chatData.id);
+        
+        // Atualizar o status da manutenção na lista local
+        setMaintenanceItems(prev => 
+          prev.map(item => item.id === selectedMaintenance.id 
+            ? { ...item, status: 'em_andamento' } 
+            : item
+          )
+        );
+        
+        toast({
+          title: "Sucesso",
+          description: "Orçamento enviado para análise.",
+        });
+        
+        // Atualizar a lista após enviar o orçamento
+        fetchMaintenance();
+      }, 100);
     } catch (error) {
       console.error("Erro ao criar chat de orçamento:", error);
       toast({
