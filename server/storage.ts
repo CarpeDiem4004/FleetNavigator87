@@ -175,17 +175,54 @@ export class DatabaseStorage implements IStorage {
   
   // Vehicle operations
   async getVehicle(id: number): Promise<Vehicle | undefined> {
-    const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, id));
-    return vehicle || undefined;
+    try {
+      // Usar SQL bruto para evitar problemas com mapeamento de campos
+      const result = await db.execute(sql`
+        SELECT id, plate, model, vehicle_type as "vehicleType", 
+               status, base_id as "baseId", ownership,
+               rental_company as "rentalCompany"
+        FROM vehicles
+        WHERE id = ${id}
+      `);
+      return result.rows[0] as Vehicle || undefined;
+    } catch (error) {
+      console.error("Erro ao buscar veículo por ID:", error);
+      return undefined;
+    }
   }
 
   async getVehicleByPlate(plate: string): Promise<Vehicle | undefined> {
-    const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.plate, plate));
-    return vehicle || undefined;
+    try {
+      // Usar SQL bruto para evitar problemas com mapeamento de campos
+      const result = await db.execute(sql`
+        SELECT id, plate, model, vehicle_type as "vehicleType", 
+               status, base_id as "baseId", ownership,
+               rental_company as "rentalCompany"
+        FROM vehicles
+        WHERE plate = ${plate}
+      `);
+      return result.rows[0] as Vehicle || undefined;
+    } catch (error) {
+      console.error("Erro ao buscar veículo pela placa:", error);
+      return undefined;
+    }
   }
 
   async getVehiclesByBase(baseId: number): Promise<Vehicle[]> {
-    return await db.select().from(vehicles).where(eq(vehicles.baseId, baseId));
+    try {
+      // Usar SQL bruto para evitar problemas com mapeamento de campos
+      const result = await db.execute(sql`
+        SELECT id, plate, model, vehicle_type as "vehicleType", 
+               status, base_id as "baseId", ownership,
+               rental_company as "rentalCompany"
+        FROM vehicles
+        WHERE base_id = ${baseId}
+      `);
+      return result.rows as Vehicle[];
+    } catch (error) {
+      console.error("Erro ao buscar veículos da base:", error);
+      return [];
+    }
   }
 
   async getAllVehicles(): Promise<Vehicle[]> {
@@ -209,22 +246,21 @@ export class DatabaseStorage implements IStorage {
     console.log("Dados do veículo para inserção:", JSON.stringify(vehicle, null, 2));
     
     try {
-      // Garantir que estamos usando os nomes de campo corretos para o banco de dados
-      const vehicleData = {
-        plate: vehicle.plate,
-        model: vehicle.model,
-        vehicleType: vehicle.vehicleType,
-        status: vehicle.status,
-        baseId: vehicle.baseId,
-        ownership: vehicle.ownership || 'murici',
-        rentalCompany: vehicle.ownership === 'locado' ? vehicle.rentalCompany : null
-      };
+      // Usar SQL bruto para evitar problemas com mapeamento de campos
+      // Transformar os nomes de campo do modelo para os nomes usados no banco de dados
+      const result = await db.execute(sql`
+        INSERT INTO vehicles 
+        (plate, model, vehicle_type, status, base_id, ownership, rental_company)
+        VALUES 
+        (${vehicle.plate}, ${vehicle.model}, ${vehicle.vehicleType}, ${vehicle.status}, 
+         ${vehicle.baseId}, ${vehicle.ownership || 'murici'}, 
+         ${vehicle.ownership === 'locado' ? vehicle.rentalCompany : null})
+        RETURNING id, plate, model, vehicle_type as "vehicleType", 
+                 status, base_id as "baseId", ownership, rental_company as "rentalCompany"
+      `);
       
-      console.log("Dados preparados para inserção:", JSON.stringify(vehicleData, null, 2));
-      
-      const [newVehicle] = await db.insert(vehicles).values(vehicleData).returning();
-      console.log("Veículo inserido com sucesso:", JSON.stringify(newVehicle, null, 2));
-      return newVehicle;
+      console.log("Veículo inserido com sucesso:", JSON.stringify(result.rows[0], null, 2));
+      return result.rows[0] as Vehicle;
     } catch (error) {
       console.error("Erro ao inserir veículo no banco de dados:", error);
       throw error;
