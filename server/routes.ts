@@ -5,7 +5,9 @@ import {
   insertBaseSchema, insertVehicleSchema, insertMaintenanceSchema,
   insertWorkshopSchema, insertTireSchema, insertRefuelingSchema, 
   insertFineSchema, insertLineHallSchema, insertUserSchema,
-  type InsertWorkshop, type InsertUser, type InsertMaintenance
+  insertMaintenanceChatSchema, insertChatMessageSchema,
+  type InsertWorkshop, type InsertUser, type InsertMaintenance,
+  type InsertMaintenanceChat, type InsertChatMessage
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import { getDashboardKPIs, getPainelPrincipal } from "./dashboardApi";
@@ -1988,6 +1990,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         message: "Erro interno ao processar cadastro", 
         error: error instanceof Error ? error.message : "Erro desconhecido" 
+      });
+    }
+  });
+  
+  // ======= ROTAS PARA CHAT DE NEGOCIAÇÃO DE ORÇAMENTO =======
+  
+  // Obter chat por ID da manutenção
+  app.get("/api/workshop/maintenance-chat/:maintenanceId", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const maintenanceId = parseInt(req.params.maintenanceId);
+      
+      // Verificar se o ID foi fornecido corretamente
+      if (isNaN(maintenanceId)) {
+        return res.status(400).json({ message: "ID de manutenção inválido" });
+      }
+      
+      // Buscar o chat de manutenção
+      const chat = await storage.getMaintenanceChatByMaintenanceId(maintenanceId);
+      
+      // Se encontrou um chat, buscar suas mensagens
+      if (chat) {
+        const chatWithMessages = await storage.getMaintenanceChatWithMessages(chat.id);
+        return res.status(200).json({
+          ...chatWithMessages.chat,
+          messages: chatWithMessages.messages
+        });
+      }
+      
+      // Se não encontrou, retornar um objeto vazio
+      return res.status(200).json({ 
+        maintenanceId,
+        messages: [] 
+      });
+    } catch (error: any) {
+      console.error("Erro ao buscar chat de manutenção:", error);
+      return res.status(500).json({ 
+        message: "Erro ao buscar chat",
+        error: error.message 
+      });
+    }
+  });
+  
+  // Criar um novo chat de manutenção
+  app.post("/api/workshop/maintenance-chat", hasMaintenanceAccess, async (req, res) => {
+    try {
+      // Validar dados do corpo da requisição
+      const result = insertMaintenanceChatSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: result.error.format() 
+        });
+      }
+      
+      // Criar chat
+      const chat = await storage.createMaintenanceChat(result.data);
+      
+      // Buscar manutenção relacionada para ajustar status se necessário
+      const maintenance = await storage.getMaintenance(chat.maintenanceId);
+      
+      // Se a manutenção estiver pendente, atualizar status para em negociação
+      if (maintenance && maintenance.status === 'aguardando_orcamento') {
+        await storage.updateMaintenanceStatus(maintenance.id, 'em_negociacao');
+      }
+      
+      // Retornar o chat criado
+      return res.status(201).json(chat);
+    } catch (error: any) {
+      console.error("Erro ao criar chat de manutenção:", error);
+      return res.status(500).json({ 
+        message: "Erro ao criar chat",
+        error: error.message 
+      });
+    }
+  });
+  
+  // Adicionar mensagem ao chat
+  app.post("/api/workshop/chat-message", hasMaintenanceAccess, async (req, res) => {
+    try {
+      // Verificar se o usuário está autenticado
+      if (!req.user) {
+        return res.status(401).json({ message: "Usuário não autenticado" });
+      }
+      
+      // Preparar dados da mensagem
+      const messageData: InsertChatMessage = {
+        chatId: req.body.chatId,
+        author: req.user.role === 'oficina' ? 'oficina' : 'gestor_frota',
+        authorId: req.user.id,
+        authorName: req.user.name,
+        message: req.body.message,
+        proposedBudget: req.body.proposedBudget || null
+      };
+      
+      // Validar dados
+      const result = insertChatMessageSchema.safeParse(messageData);
+      if (!result.success) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: result.error.format() 
+        });
+      }
+      
+      // Criar mensagem
+      const message = await storage.createChatMessage(result.data);
+      
+      // Retornar a mensagem criada
+      return res.status(201).json(message);
+    } catch (error: any) {
+      console.error("Erro ao criar mensagem:", error);
+      return res.status(500).json({ 
+        message: "Erro ao enviar mensagem",
+        error: error.message 
+      });
+    }
+  });
+  
+  // Finalizar negociação de orçamento
+  app.post("/api/workshop/maintenance-chat/:chatId/finalize", hasMaintenanceAccess, async (req, res) => {
+    try {
+      // Verificar se o usuário está autenticado
+      if (!req.user) {
+        return res.status(401).json({ message: "Usuário não autenticado" });
+      }
+      
+      const chatId = parseInt(req.params.chatId);
+      const { finalBudget } = req.body;
+      
+      // Validar dados
+      if (isNaN(chatId) || !finalBudget || isNaN(parseFloat(finalBudget))) {
+        return res.status(400).json({ message: "Dados inválidos para finalização" });
+      }
+      
+      // Finalizar chat
+      const updatedChat = await storage.finalizeMaintenanceChat(
+        chatId, 
+        parseFloat(finalBudget), 
+        req.user.name
+      );
+      
+      if (!updatedChat) {
+        return res.status(404).json({ message: "Chat não encontrado" });
+      }
+      
+      // Atualizar status da manutenção para orçamento aprovado
+      const maintenance = await storage.getMaintenance(updatedChat.maintenanceId);
+      if (maintenance) {
+        await storage.updateMaintenanceStatus(maintenance.id, 'orcamento_aprovado');
+      }
+      
+      // Retornar o chat atualizado
+      return res.status(200).json(updatedChat);
+    } catch (error: any) {
+      console.error("Erro ao finalizar negociação:", error);
+      return res.status(500).json({ 
+        message: "Erro ao finalizar negociação",
+        error: error.message 
       });
     }
   });
