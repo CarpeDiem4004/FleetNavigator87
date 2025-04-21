@@ -133,6 +133,7 @@ export default function OficinaDashboard() {
   const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null);
   const [initialBudget, setInitialBudget] = useState<string>("");
   const [isSubmittingBudget, setIsSubmittingBudget] = useState(false);
+  const [createdChatId, setCreatedChatId] = useState<number | null>(null);
   
   // Função para buscar manutenções da oficina
   const fetchMaintenance = async () => {
@@ -254,6 +255,9 @@ export default function OficinaDashboard() {
       
       const chatData = await chatResponse.json();
       
+      // Guardar o ID do chat criado
+      setCreatedChatId(chatData.id);
+      
       // Atualizar o status da manutenção na lista local
       setMaintenanceItems(prev => 
         prev.map(item => item.id === selectedMaintenance.id 
@@ -266,8 +270,6 @@ export default function OficinaDashboard() {
         title: "Sucesso",
         description: "Orçamento enviado para análise.",
       });
-      
-      // Atualiza o componente de chat para mostrar a mensagem inicial
     } catch (error) {
       console.error("Erro ao criar chat de orçamento:", error);
       toast({
@@ -576,6 +578,7 @@ export default function OficinaDashboard() {
                 <ChatOficina
                   maintenanceId={selectedMaintenance.id}
                   initialBudget={initialBudget ? parseFloat(initialBudget) : undefined}
+                  chatId={createdChatId}
                 />
               )}
             </div>

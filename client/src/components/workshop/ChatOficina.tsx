@@ -34,14 +34,15 @@ interface ChatData {
 interface ChatOficinaProps {
   maintenanceId: number;
   initialBudget?: number | null;
+  chatId?: number | null;
 }
 
-export default function ChatOficina({ maintenanceId, initialBudget }: ChatOficinaProps) {
+export default function ChatOficina({ maintenanceId, initialBudget, chatId: externalChatId }: ChatOficinaProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [message, setMessage] = useState('');
   const [proposedBudget, setProposedBudget] = useState<string>('');
-  const [chatId, setChatId] = useState<number | null>(null);
+  const [chatId, setChatId] = useState<number | null>(externalChatId || null);
 
   // Buscar ou criar chat
   const {
