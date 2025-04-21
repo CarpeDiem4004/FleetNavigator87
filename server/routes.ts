@@ -312,8 +312,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("Veículo criado com sucesso:", JSON.stringify(newVehicle, null, 2));
         
         return res.status(201).json(newVehicle);
-      } catch (parseError) {
+      } catch (parseError: any) {
         console.error("Erro ao processar dados do veículo:", parseError);
+        
+        // Verificar se é um erro de placa duplicada
+        if (parseError.name === "DuplicatePlateError") {
+          return res.status(409).json({ 
+            message: "Placa já cadastrada", 
+            error: parseError.message,
+            code: "DUPLICATE_PLATE"
+          });
+        }
+        
         return res.status(400).json({ message: "Error parsing vehicle data", error: String(parseError) });
       }
     } catch (error) {

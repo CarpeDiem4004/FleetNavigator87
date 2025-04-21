@@ -116,6 +116,12 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
       
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // Verificar se é um erro de placa duplicada (código de status 409)
+        if (response.status === 409 && errorData.code === 'DUPLICATE_PLATE') {
+          throw new Error(`A placa ${placa} já está cadastrada no sistema. Verifique e tente novamente.`);
+        }
+        
         throw new Error(errorData.message || 'Erro ao cadastrar veículo');
       }
       

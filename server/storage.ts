@@ -246,6 +246,15 @@ export class DatabaseStorage implements IStorage {
     console.log("Dados do veículo para inserção:", JSON.stringify(vehicle, null, 2));
     
     try {
+      // Verificar primeiro se a placa já existe
+      const existingVehicle = await this.getVehicleByPlate(vehicle.plate);
+      if (existingVehicle) {
+        // Lançar um erro personalizado para placas duplicadas
+        const duplicateError = new Error(`Veículo com placa ${vehicle.plate} já existe no sistema`);
+        duplicateError.name = "DuplicatePlateError";
+        throw duplicateError;
+      }
+      
       // Usar SQL bruto para evitar problemas com mapeamento de campos
       // Transformar os nomes de campo do modelo para os nomes usados no banco de dados
       const result = await db.execute(sql`
@@ -263,6 +272,14 @@ export class DatabaseStorage implements IStorage {
       return result.rows[0] as Vehicle;
     } catch (error) {
       console.error("Erro ao inserir veículo no banco de dados:", error);
+      
+      // Verificar se é um erro de violação de constraint unique
+      if ((error as any)?.code === '23505' && (error as any)?.constraint === 'vehicles_plate_unique') {
+        const duplicateError = new Error(`Veículo com placa ${vehicle.plate} já existe no sistema`);
+        duplicateError.name = "DuplicatePlateError";
+        throw duplicateError;
+      }
+      
       throw error;
     }
   }
