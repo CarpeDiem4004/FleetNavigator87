@@ -436,32 +436,151 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Recebendo cadastro externo de oficina:", req.body);
       
-      // Aqui você pode implementar uma validação de dados mais específica
-      if (!req.body.nome_oficina) {
+      const {
+        nome_oficina,
+        cnpj,
+        telefone,
+        email,
+        endereco,
+        ramo_atuacao,
+        observacoes,
+        placa_veiculo
+      } = req.body;
+      
+      // Validação de dados básica
+      if (!nome_oficina) {
         return res.status(400).json({ message: "Nome da oficina é obrigatório" });
       }
       
-      // Criar registro de oficina externa
-      // Nota: Este é um exemplo, a implementação real dependerá da estrutura do seu banco de dados
-      const officina = {
-        name: req.body.nome_oficina,
-        address: req.body.endereco || '',
-        phone: req.body.telefone || '',
-        isActive: true,
-        isExternal: true,
-        externalData: req.body
-      };
+      try {
+        // Verificar se a oficina já existe
+        const oficinas = await storage.getAllWorkshops();
+        const oficinaExistente = oficinas.find(w => 
+          w.name.toLowerCase() === nome_oficina.toLowerCase() && 
+          (cnpj ? w.cnpj === cnpj : true)
+        );
+        
+        let oficina;
+        let isNovaOficina = false;
+        
+        if (oficinaExistente) {
+          console.log(`Oficina '${nome_oficina}' já existe com ID ${oficinaExistente.id}`);
+          oficina = oficinaExistente;
+        } else {
+          isNovaOficina = true;
+          
+          // Criar nova oficina usando o storage
+          const workshop: InsertWorkshop = {
+            name: nome_oficina,
+            address: endereco || '',
+            phone: telefone || '',
+            email: email || '',
+            cnpj: cnpj || '',
+            specialties: ramo_atuacao || '',
+            contactPerson: '',
+            observations: observacoes || '',
+            isActive: true,
+            isSpecialized: false,
+            createdAt: new Date()
+          };
+          
+          oficina = await storage.createWorkshop(workshop);
+          console.log(`Nova oficina criada com ID ${oficina.id}`);
+        }
+        
+        // Gerar credenciais para a oficina, se for nova
+        let credenciais = null;
+        if (isNovaOficina) {
+          try {
+            // Gerar um nome de usuário baseado no nome da oficina (remoção de espaços e caracteres especiais)
+            const username = nome_oficina
+              .toLowerCase()
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .replace(/[^a-z0-9]/g, '')
+              .substring(0, 15);
+              
+            // Gerar um email usando o formato solicitado
+            const emailOficina = `${username}@muricionfleet.com`;
+            
+            // Gerar uma senha aleatória
+            const senhaAleatoria = Math.random().toString(36).substring(2, 10);
+            
+            // Criptografar a senha
+            const senhaHash = await hashPassword(senhaAleatoria);
+            
+            // Verificar se usuário já existe
+            const usuarioExistente = await storage.getUserByEmail(emailOficina);
+            
+            if (!usuarioExistente) {
+              // Criar novo usuário com role 'oficina' e vincular à oficina
+              const novoUsuario: InsertUser = {
+                name: nome_oficina,
+                email: emailOficina,
+                password: senhaHash,
+                role: 'oficina',
+                oficina_id: oficina.id
+              };
+              
+              const usuario = await storage.createUser(novoUsuario);
+              console.log(`Usuário oficina criado com ID ${usuario.id}, email: ${emailOficina}`);
+              
+              credenciais = {
+                email: emailOficina,
+                senha: senhaAleatoria
+              };
+            } else {
+              console.log(`Usuário com email ${emailOficina} já existe`);
+            }
+          } catch (userError) {
+            console.error("Erro ao criar usuário para oficina:", userError);
+            // Continuamos mesmo com erro na criação do usuário
+          }
+        }
+        
+        // Criar registro de manutenção se veículo foi especificado
+        if (placa_veiculo) {
+          try {
+            const veiculo = await storage.getVehicleByPlate(placa_veiculo);
+            if (veiculo) {
+              console.log(`Veículo encontrado com placa ${placa_veiculo}, ID: ${veiculo.id}`);
+              
+              // Criar um registro de manutenção pendente
+              const novaManutenao: InsertMaintenance = {
+                vehiclePlate: veiculo.plate,
+                vehicleModel: veiculo.model,
+                vehicleType: veiculo.vehicleType,
+                entryDate: new Date(),
+                status: 'pendente',
+                description: observacoes || 'Cadastro via portal externo',
+                type: 'corretiva',
+                workshopId: oficina.id,
+                workshopName: oficina.name,
+                requestBaseId: veiculo.baseId || 1, // Usa a base do veículo ou base padrão
+                maintenanceItems: [],
+                expectedExitDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 dias após
+                totalValue: 0
+              };
+              
+              await storage.createMaintenance(novaManutenao);
+              console.log(`Registro de manutenção criado para veículo ${veiculo.plate}`);
+            } else {
+              console.log(`Nenhum veículo encontrado com placa ${placa_veiculo}`);
+            }
+          } catch (maintenanceError) {
+            console.error("Erro ao criar registro de manutenção:", maintenanceError);
+          }
+        }
       
-      const newWorkshop = await storage.createWorkshop(officina);
-      console.log(`Oficina externa cadastrada com ID ${newWorkshop.id}`);
-      
-      // Notificação para o time de gestão de frotas pode ser implementada aqui
-      // Ex: envio de e-mail, notificação no sistema, etc.
-      
-      return res.status(201).json({ 
-        message: "Cadastro recebido com sucesso! A equipe de gestão de frotas analisará as informações.", 
-        id: newWorkshop.id 
-      });
+        return res.status(201).json({ 
+          message: "Cadastro recebido com sucesso! A equipe de gestão de frotas analisará as informações.", 
+          id: oficina.id,
+          credenciais
+        });
+      } catch (dbError) {
+        console.error("Erro de banco de dados:", dbError);
+        return res.status(500).json({ message: "Erro ao processar cadastro no banco de dados" });
+      }
     } catch (error) {
       console.error("Erro ao cadastrar oficina externa:", error);
       return res.status(500).json({ message: "Erro ao processar cadastro da oficina" });

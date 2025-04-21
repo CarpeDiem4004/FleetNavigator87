@@ -487,6 +487,12 @@ export class DatabaseStorage implements IStorage {
       )
       .orderBy(desc(maintenance.entryDate));
   }
+  
+  async getMaintenanceByWorkshop(workshopId: number): Promise<Maintenance[]> {
+    return await db.select().from(maintenance)
+      .where(eq(maintenance.workshopId, workshopId))
+      .orderBy(desc(maintenance.entryDate));
+  }
 
   async getAllMaintenance(): Promise<Maintenance[]> {
     // A tabela no banco de dados agora se chama "manutencao"
