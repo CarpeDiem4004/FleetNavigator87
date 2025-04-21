@@ -236,13 +236,16 @@ const ManutencaoPage: React.FC = () => {
         throw new Error('Veículo não encontrado');
       }
       
+      // Formatar dados de acordo com o esperado pela API
       const maintenanceData = {
-        veiculo_id: parseInt(form.veiculo_id),
-        base_id: parseInt(form.base_id),
-        descricao: form.descricao,
-        placa_veiculo: vehicle.plate,
-        status: 'pendente',
-        data_registro: new Date().toISOString(),
+        vehiclePlate: vehicle.plate,
+        workshopId: 1, // Valor padrão para a oficina
+        requestBaseId: parseInt(form.base_id),
+        entryDate: new Date().toISOString().split('T')[0],
+        expectedExitDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 dias depois
+        status: 'pendente', 
+        maintenanceType: 'corretiva', // Valor padrão
+        description: form.descricao
       };
       
       console.log('Dados da manutenção:', maintenanceData);
