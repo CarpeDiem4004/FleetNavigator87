@@ -606,50 +606,85 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateMaintenanceStatus(id: number, status: string): Promise<Maintenance | undefined> {
-    // Pegar a manutenção atual primeiro
-    const [currentMaintenance] = await db.select().from(maintenance).where(eq(maintenance.id, id));
-    
-    if (!currentMaintenance) {
+    try {
+      // Usar SQL direto para buscar manutenção e evitar erro com colunas que podem não existir
+      const getQuery = `
+        SELECT id, vehicle_plate as "vehiclePlate", status, actual_exit_date as "actualExitDate"
+        FROM manutencao
+        WHERE id = $1
+      `;
+      
+      const result = await pool.query(getQuery, [id]);
+      
+      if (result.rows.length === 0) {
+        return undefined;
+      }
+      
+      const currentMaintenance = result.rows[0];
+      
+      // Preparar o SQL de atualização
+      let updateSQL = `
+        UPDATE manutencao
+        SET status = $1, updated_at = $2
+      `;
+      
+      let params = [status, new Date()];
+      
+      // Se status for "concluida", adicionar data de saída real
+      if (status === 'concluida' && !currentMaintenance.actualExitDate) {
+        // Adicionar parâmetro de data de saída
+        updateSQL += `, actual_exit_date = $3`;
+        params.push(new Date().toISOString().split('T')[0]);
+        
+        // Atualizar o status do veículo para em_operacao
+        await pool.query(
+          `UPDATE veiculos SET status = 'em_operacao' WHERE plate = $1`,
+          [currentMaintenance.vehiclePlate]
+        );
+      }
+      
+      // Se status for "cancelada", também deve atualizar veículo
+      if (status === 'cancelada') {
+        await pool.query(
+          `UPDATE veiculos SET status = 'em_operacao' WHERE plate = $1`,
+          [currentMaintenance.vehiclePlate]
+        );
+      }
+      
+      // Concluir a query de atualização
+      updateSQL += ` WHERE id = $${params.length + 1} RETURNING *`;
+      params.push(id);
+      
+      // Executar a atualização
+      const updateResult = await pool.query(updateSQL, params);
+      
+      if (updateResult.rows.length === 0) {
+        return undefined;
+      }
+      
+      // Converter nomes de coluna snake_case para camelCase
+      const updated = {
+        id: updateResult.rows[0].id,
+        vehiclePlate: updateResult.rows[0].vehicle_plate,
+        description: updateResult.rows[0].description,
+        status: updateResult.rows[0].status,
+        workshopId: updateResult.rows[0].workshop_id,
+        requestBaseId: updateResult.rows[0].request_base_id,
+        entryDate: updateResult.rows[0].entry_date,
+        expectedExitDate: updateResult.rows[0].expected_exit_date,
+        actualExitDate: updateResult.rows[0].actual_exit_date,
+        maintenanceType: updateResult.rows[0].maintenance_type,
+        initialCost: updateResult.rows[0].initial_cost,
+        finalCost: updateResult.rows[0].final_cost,
+        created_at: updateResult.rows[0].created_at,
+        updated_at: updateResult.rows[0].updated_at
+      };
+      
+      return updated;
+    } catch (error) {
+      console.error("Erro ao atualizar status da manutenção:", error);
       return undefined;
     }
-    
-    // Preparar dados para atualização
-    const updateData: Partial<InsertMaintenance> = { 
-      status: status as any
-    };
-    
-    // Timestamp será adicionado diretamente na consulta
-    
-    // Se status for "concluida", adicionar data de saída real
-    if (status === 'concluida' && !currentMaintenance.actualExitDate) {
-      // Converter para string no formato ISO para evitar problemas de tipo
-      updateData.actualExitDate = new Date().toISOString().split('T')[0];
-      
-      // Atualizar o status do veículo para em_operacao
-      await db.update(vehicles)
-        .set({ status: 'em_operacao' })
-        .where(eq(vehicles.plate, currentMaintenance.vehiclePlate));
-    }
-    
-    // Se status for "cancelada", também deve atualizar veículo
-    if (status === 'cancelada') {
-      await db.update(vehicles)
-        .set({ status: 'em_operacao' })
-        .where(eq(vehicles.plate, currentMaintenance.vehiclePlate));
-    }
-    
-    const updatedAt = new Date();
-    
-    const [updated] = await db
-      .update(maintenance)
-      .set({
-        ...updateData,
-        updated_at: updatedAt
-      })
-      .where(eq(maintenance.id, id))
-      .returning();
-      
-    return updated || undefined;
   }
 
   async updateMaintenance(id: number, maintenanceData: Partial<InsertMaintenance>): Promise<Maintenance | undefined> {
