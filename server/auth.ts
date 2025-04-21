@@ -97,14 +97,31 @@ export function setupAuth(app: Express) {
           
           // Verificação normal de senha com hash
           try {
+            console.log(`Verificando senha para: ${username}`);
+            console.log(`Senha armazenada: ${user.password.substring(0, 20)}...`);
+            
             // Para simplificar o desenvolvimento, aceitar login com senha igual ao username
             // Em um ambiente de produção, usaria apenas comparePasswords
             const isPasswordExactMatch = password === user.password;
+            
+            // Verificar se a senha está armazenada como hash (contém um ponto)
             const isHashValid = user.password && user.password.includes('.') ? 
               await comparePasswords(password, user.password) : false;
             
+            console.log(`Resultado da verificação de senha: Match exato=${isPasswordExactMatch}, Hash válido=${isHashValid}`);
+            
             if (!isPasswordExactMatch && !isHashValid) {
               console.log('Senha inválida');
+              
+              // Em ambiente de desenvolvimento, permitir login com admin123 para admin ou Murici@rogerio25 para rogerio
+              if (process.env.NODE_ENV !== 'production') {
+                if ((username === 'admin@muricionfleet.com' && password === 'admin123') || 
+                    (username === 'rogerio@muricionfleet.com' && password === 'Murici@rogerio25')) {
+                  console.log('Permitindo login com credenciais de desenvolvimento');
+                  return done(null, user);
+                }
+              }
+              
               return done(null, false, { message: 'Senha incorreta' });
             }
           } catch (error) {
@@ -112,6 +129,13 @@ export function setupAuth(app: Express) {
             // Se ocorrer erro na validação da senha, permitir login apenas em desenvolvimento
             if (process.env.NODE_ENV !== 'production') {
               console.log('Ignorando erro de verificação de senha em ambiente de desenvolvimento');
+              
+              // Em ambiente de desenvolvimento, permitir login com admin123 para admin ou Murici@rogerio25 para rogerio
+              if ((username === 'admin@muricionfleet.com' && password === 'admin123') || 
+                  (username === 'rogerio@muricionfleet.com' && password === 'Murici@rogerio25')) {
+                console.log('Permitindo login com credenciais de desenvolvimento');
+                return done(null, user);
+              }
             } else {
               return done(null, false, { message: 'Erro na validação da senha' });
             }
