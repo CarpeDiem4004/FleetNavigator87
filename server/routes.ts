@@ -2047,6 +2047,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // API para a página de orçamentos (BudgetsPage)
+  app.get("/api/fleet/budget-chats", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const status = req.query.status as string;
+      
+      // Obter todos os chats com orçamentos junto com informações das manutenções relacionadas
+      const query = `
+        SELECT 
+          mc.id, 
+          mc.maintenance_id as "maintenanceId", 
+          mc.initial_budget as "initialBudget", 
+          mc.final_budget as "finalBudget", 
+          mc.is_finalized as "isFinalized", 
+          mc.created_at, 
+          mc.updated_at,
+          mc.vehicle_plate as "maintenanceVehiclePlate",
+          m.description as "maintenanceDescription", 
+          m.status as "maintenanceStatus",
+          w.name as "workshopName"
+        FROM 
+          maintenance_chat mc
+        JOIN 
+          manutencao m ON mc.maintenance_id = m.id
+        JOIN 
+          workshops w ON m.workshop_id = w.id
+        WHERE 
+          1=1
+          ${status && status !== 'todos' ? `AND m.status = '${status}'` : ''}
+        ORDER BY 
+          mc.updated_at DESC
+      `;
+      
+      const result = await pool.query(query);
+      
+      return res.status(200).json(result.rows);
+    } catch (error: any) {
+      console.error("Erro ao obter chats de orçamento:", error);
+      return res.status(500).json({ 
+        message: "Erro ao obter chats de orçamento",
+        error: error.message 
+      });
+    }
+  });
+  
   app.get("/api/workshop/maintenance-chats", hasMaintenanceAccess, async (req, res) => {
     try {
       // Buscar todos os chats de manutenção
