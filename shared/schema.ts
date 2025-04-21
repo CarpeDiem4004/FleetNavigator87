@@ -4,7 +4,7 @@ import { z } from "zod";
 import { relations } from "drizzle-orm";
 
 // Create enums for database
-export const vehicleTypeEnum = pgEnum('vehicle_type', ['cavalo_mecanico', 'carreta', 'van', 'utilitario']);
+export const vehicleTypeEnum = pgEnum('vehicle_type', ['fiorino', 'van', 'vuc', 'toco', 'truck', 'cavalo_mecanico', 'carreta']);
 export const vehicleStatusEnum = pgEnum('vehicle_status', ['em_operacao', 'em_manutencao', 'parado']);
 export const maintenanceTypeEnum = pgEnum('maintenance_type', ['preventiva', 'corretiva']);
 export const maintenanceStatusEnum = pgEnum('maintenance_status', ['concluida', 'em_andamento', 'aguardando_pecas', 'pendente', 'aguardando_orcamento', 'cancelada']);
@@ -28,6 +28,9 @@ export const bases = pgTable("bases", {
   created_at: timestamp("created_at").defaultNow(),
 });
 
+// Define enum para propriedade do veículo
+export const vehicleOwnershipEnum = pgEnum('vehicle_ownership', ['murici', 'locado']);
+
 // Create the vehicles table (veiculos)
 export const vehicles = pgTable("veiculos", {
   id: serial("id").primaryKey(),
@@ -36,6 +39,8 @@ export const vehicles = pgTable("veiculos", {
   vehicleType: vehicleTypeEnum("vehicle_type").notNull(),
   status: vehicleStatusEnum("status").notNull(),
   baseId: integer("base_id").notNull().references(() => bases.id),
+  ownership: vehicleOwnershipEnum("ownership").notNull().default('murici'),
+  rentalCompany: text("rental_company"), // Empresa de locação, quando aplicável
 });
 
 // Create the workshops table (oficinas)
