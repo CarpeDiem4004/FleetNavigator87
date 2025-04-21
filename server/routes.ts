@@ -747,6 +747,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para obter todos os veículos cadastrados
+  app.get("/api/workshop/vehicles", isWorkshop, async (req, res) => {
+    try {
+      // Buscar todos os veículos
+      const query = `
+        SELECT 
+          id, 
+          plate, 
+          model,
+          make,
+          year,
+          base_id
+        FROM 
+          veiculos
+        WHERE 
+          is_active = true
+        ORDER BY 
+          plate ASC
+      `;
+      
+      const result = await pool.query(query);
+      
+      return res.status(200).json({ 
+        message: "Veículos obtidos com sucesso",
+        data: result.rows 
+      });
+    } catch (error: any) {
+      console.error("Erro ao buscar veículos:", error);
+      return res.status(500).json({ 
+        message: "Erro ao buscar veículos",
+        error: error.message 
+      });
+    }
+  });
+
   app.get("/api/maintenance/vehicle/:plate", hasMaintenanceAccess, async (req, res) => {
     try {
       const vehiclePlate = req.params.plate;
