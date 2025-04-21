@@ -686,37 +686,59 @@ export default function OficinaDashboard() {
                   </div>
                   
                   <div className="p-3 space-y-3">
-                    {/* Campo de placa (Select) */}
+                    {/* Campo de placa (Input ou Select) com opção de adicionar manualmente */}
                     <div>
                       <Label htmlFor="vehiclePlate" className="text-xs font-medium flex items-center">
                         <span className="mr-1">🚗</span>Placa do Veículo
                       </Label>
-                      <Select
-                        value={vehiclePlate}
-                        onValueChange={(value) => setVehiclePlate(value)}
-                      >
-                        <SelectTrigger className="mt-1 h-9 text-sm">
-                          <SelectValue placeholder="Selecione um veículo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {loadingVehicles ? (
-                            <div className="flex items-center justify-center py-2">
-                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                              <span>Carregando veículos...</span>
+                      <div className="space-y-2">
+                        {/* Seletor de veículos */}
+                        <div className="flex gap-2 items-center">
+                          <div className="flex-1">
+                            <Select
+                              value={vehiclePlate}
+                              onValueChange={(value) => setVehiclePlate(value)}
+                            >
+                              <SelectTrigger className="mt-1 h-9 text-sm">
+                                <SelectValue placeholder="Selecione um veículo" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {!loadingVehicles && vehicles.map((vehicle) => (
+                                  <SelectItem key={vehicle.id} value={vehicle.plate}>
+                                    {vehicle.plate} - {vehicle.make} {vehicle.model} ({vehicle.year})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {/* Indicador de carregamento */}
+                          {loadingVehicles && (
+                            <div className="flex items-center ml-2">
+                              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                              <span className="text-xs">Carregando...</span>
                             </div>
-                          ) : vehicles.length === 0 ? (
-                            <div className="py-2 px-2 text-sm text-muted-foreground">
-                              Nenhum veículo encontrado
-                            </div>
-                          ) : (
-                            vehicles.map((vehicle) => (
-                              <SelectItem key={vehicle.id} value={vehicle.plate}>
-                                {vehicle.plate} - {vehicle.make} {vehicle.model} ({vehicle.year})
-                              </SelectItem>
-                            ))
                           )}
-                        </SelectContent>
-                      </Select>
+                        </div>
+                        
+                        {/* Opção de digitar placa manualmente */}
+                        {vehicles.length === 0 && !loadingVehicles && (
+                          <div className="text-xs text-muted-foreground">
+                            Nenhum veículo encontrado. Digite a placa manualmente abaixo.
+                          </div>
+                        )}
+                        
+                        {/* Campo para digitação manual */}
+                        <Input
+                          id="vehiclePlateManual"
+                          value={vehiclePlate}
+                          onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())}
+                          placeholder="Digite a placa do veículo manualmente"
+                          className="uppercase mt-1 h-8 text-sm"
+                        />
+                        <div className="text-xs text-muted-foreground">
+                          Você pode selecionar um veículo ou digitar a placa manualmente.
+                        </div>
+                      </div>
                     </div>
                     
                     {/* Grid de 2 colunas para valor e quilometragem */}
