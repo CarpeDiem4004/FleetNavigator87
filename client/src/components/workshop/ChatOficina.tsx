@@ -33,7 +33,7 @@ interface ChatData {
 
 interface ChatOficinaProps {
   maintenanceId: number;
-  initialBudget?: number | null;
+  initialBudget?: string | null; // Alterado para receber string
   chatId?: number | null;
 }
 
@@ -77,7 +77,7 @@ export default function ChatOficina({ maintenanceId, initialBudget, chatId: exte
         '/api/workshop/maintenance-chat',
         {
           maintenanceId,
-          initialBudget: initialBudget.toString() // Convertendo para string para atender à validação do schema
+          initialBudget: initialBudget.toString() // Já está convertendo para string
         }
       );
       

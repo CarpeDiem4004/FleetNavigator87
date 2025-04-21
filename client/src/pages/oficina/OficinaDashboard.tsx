@@ -246,7 +246,7 @@ export default function OficinaDashboard() {
         },
         body: JSON.stringify({
           maintenanceId: selectedMaintenance.id,
-          initialBudget: parseFloat(initialBudget),
+          initialBudget: initialBudget, // Enviar como string, sem converter para número
           isFinalized: false
         })
       });
@@ -579,7 +579,7 @@ export default function OficinaDashboard() {
               {selectedMaintenance && (
                 <ChatOficina
                   maintenanceId={selectedMaintenance.id}
-                  initialBudget={initialBudget ? parseFloat(initialBudget) : undefined}
+                  initialBudget={initialBudget || undefined} // Passar diretamente como string
                   chatId={createdChatId}
                 />
               )}
