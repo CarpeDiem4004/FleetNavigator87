@@ -117,6 +117,16 @@ const StatusIcon = ({ status }: { status: string }) => {
   }
 };
 
+// Interface para os veículos
+interface Vehicle {
+  id: number;
+  plate: string;
+  model: string;
+  make: string;
+  year: string;
+  base_id: number;
+}
+
 export default function OficinaDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -134,6 +144,8 @@ export default function OficinaDashboard() {
   const [vehiclePlate, setVehiclePlate] = useState<string>("");
   const [isSubmittingBudget, setIsSubmittingBudget] = useState(false);
   const [createdChatId, setCreatedChatId] = useState<number | null>(null);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [loadingVehicles, setLoadingVehicles] = useState(false);
   
   // Função para buscar manutenções da oficina
   const fetchMaintenance = async () => {
@@ -201,8 +213,14 @@ export default function OficinaDashboard() {
   // Função para abrir o chat de orçamento
   const openBudgetChat = (maintenance: Maintenance) => {
     console.log("Abrindo formulário para manutenção:", maintenance.id);
+    
+    // Verificar se a lista de veículos já foi carregada
+    if (vehicles.length === 0 && !loadingVehicles) {
+      fetchVehicles();
+    }
+    
     setSelectedMaintenance(maintenance);
-    setVehiclePlate(maintenance.vehiclePlate || ""); // Inicializa com a placa atual, mas pode ser modificada
+    setVehiclePlate(""); // Agora iniciamos vazio para o usuário selecionar
     setInitialBudget("");
     setKmAtual("");
     setPrazoEstimado("");
@@ -295,9 +313,34 @@ export default function OficinaDashboard() {
     }
   };
   
-  // Carregar manutenções ao montar o componente
+  // Função para buscar veículos cadastrados
+  const fetchVehicles = async () => {
+    try {
+      setLoadingVehicles(true);
+      const response = await fetch("/api/workshop/vehicles");
+      
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar veículos: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      setVehicles(data.data || []);
+    } catch (error) {
+      console.error("Erro ao buscar veículos cadastrados:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar a lista de veículos. Por favor, tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingVehicles(false);
+    }
+  };
+  
+  // Carregar manutenções e veículos ao montar o componente
   useEffect(() => {
     fetchMaintenance();
+    fetchVehicles();
   }, []);
   
   // Filtrar manutenções com base no status selecionado
@@ -330,9 +373,14 @@ export default function OficinaDashboard() {
                 const maintenance = maintenanceItems[0];
                 console.log("Abrindo formulário para a primeira manutenção disponível:", maintenance.id);
                 
+                // Verificar se a lista de veículos já foi carregada
+                if (vehicles.length === 0 && !loadingVehicles) {
+                  fetchVehicles();
+                }
+                
                 // Configurar o formulário
                 setSelectedMaintenance(maintenance);
-                setVehiclePlate(""); // Campo vazio para o usuário digitar
+                setVehiclePlate(""); // Campo vazio para seleção do usuário
                 setInitialBudget('');
                 setKmAtual('');
                 setPrazoEstimado('');
@@ -638,18 +686,37 @@ export default function OficinaDashboard() {
                   </div>
                   
                   <div className="p-3 space-y-3">
-                    {/* Campo de placa */}
+                    {/* Campo de placa (Select) */}
                     <div>
                       <Label htmlFor="vehiclePlate" className="text-xs font-medium flex items-center">
                         <span className="mr-1">🚗</span>Placa do Veículo
                       </Label>
-                      <Input
-                        id="vehiclePlate"
+                      <Select
                         value={vehiclePlate}
-                        onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())}
-                        placeholder="Digite a placa do veículo"
-                        className="uppercase mt-1 h-8 text-sm"
-                      />
+                        onValueChange={(value) => setVehiclePlate(value)}
+                      >
+                        <SelectTrigger className="mt-1 h-9 text-sm">
+                          <SelectValue placeholder="Selecione um veículo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {loadingVehicles ? (
+                            <div className="flex items-center justify-center py-2">
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                              <span>Carregando veículos...</span>
+                            </div>
+                          ) : vehicles.length === 0 ? (
+                            <div className="py-2 px-2 text-sm text-muted-foreground">
+                              Nenhum veículo encontrado
+                            </div>
+                          ) : (
+                            vehicles.map((vehicle) => (
+                              <SelectItem key={vehicle.id} value={vehicle.plate}>
+                                {vehicle.plate} - {vehicle.make} {vehicle.model} ({vehicle.year})
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
                     </div>
                     
                     {/* Grid de 2 colunas para valor e quilometragem */}
@@ -726,7 +793,7 @@ export default function OficinaDashboard() {
                     variant="ghost" 
                     onClick={() => {
                       // Limpar campos
-                      setVehiclePlate(selectedMaintenance.vehiclePlate || "");
+                      setVehiclePlate(""); // Agora não preenche automaticamente
                       setInitialBudget("");
                       setKmAtual("");
                       setPrazoEstimado("");
