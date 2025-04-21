@@ -46,13 +46,17 @@ interface Vehicle {
   id: number;
   plate: string;
   model: string;
-  vehicle_type: string;
-  base_id: number;
+  vehicleType: string; // Alterado para compatibilidade com a API REST
+  baseId: number; // Alterado para compatibilidade com a API REST
+  status: string;
+  ownership: string;
+  rentalCompany?: string;
 }
 
 interface Base {
   id: number;
   name: string;
+  location?: string;
 }
 
 interface Maintenance {
@@ -132,16 +136,20 @@ const ManutencaoPage: React.FC = () => {
     fetchMaintenances();
   }, [toast]);
 
-  // Carregar veículos
+  // Carregar veículos usando a API REST
   useEffect(() => {
     const fetchVehicles = async () => {
       try {
-        const { data, error } = await supabase
-          .from('vehicles')
-          .select('id, plate, model, vehicle_type, base_id')
-          .order('plate');
+        console.log('Buscando veículos via API REST...');
+        const response = await fetch('/api/vehicles');
         
-        if (error) throw error;
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erro ao buscar veículos');
+        }
+        
+        const data = await response.json();
+        console.log('Veículos recebidos:', data);
         setVehicles(data || []);
       } catch (error) {
         console.error('Erro ao buscar veículos:', error);
@@ -156,16 +164,20 @@ const ManutencaoPage: React.FC = () => {
     fetchVehicles();
   }, [toast]);
 
-  // Carregar bases
+  // Carregar bases usando a API REST
   useEffect(() => {
     const fetchBases = async () => {
       try {
-        const { data, error } = await supabase
-          .from('bases')
-          .select('id, name')
-          .order('name');
+        console.log('Buscando bases via API REST...');
+        const response = await fetch('/api/bases');
         
-        if (error) throw error;
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erro ao buscar bases');
+        }
+        
+        const data = await response.json();
+        console.log('Bases recebidas:', data);
         setBases(data || []);
       } catch (error) {
         console.error('Erro ao buscar bases:', error);
@@ -509,6 +521,11 @@ const ManutencaoPage: React.FC = () => {
                             {vehicle.plate} - {vehicle.model}
                           </SelectItem>
                         ))}
+                        {vehicles.length === 0 && (
+                          <div className="px-3 py-2 text-sm text-gray-500">
+                            Nenhum veículo encontrado
+                          </div>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -529,6 +546,11 @@ const ManutencaoPage: React.FC = () => {
                             {base.name}
                           </SelectItem>
                         ))}
+                        {bases.length === 0 && (
+                          <div className="px-3 py-2 text-sm text-gray-500">
+                            Nenhuma base encontrada
+                          </div>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
