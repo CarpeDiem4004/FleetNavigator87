@@ -1,11 +1,13 @@
 import { 
   users, vehicles, maintenance, tires, refueling, fines, lineHall, bases, workshops, painelPrincipal, operations,
+  maintenanceChat, chatMessages,
   type User, type InsertUser, type Vehicle, type InsertVehicle,
   type Maintenance, type InsertMaintenance, type Tire, type InsertTire,
   type Refueling, type InsertRefueling, type Fine, type InsertFine,
   type LineHall, type InsertLineHall, type Base, type InsertBase,
   type Workshop, type InsertWorkshop, type Operation, type InsertOperation,
-  type PainelPrincipal, type InsertPainelPrincipal
+  type PainelPrincipal, type InsertPainelPrincipal, type MaintenanceChat, type InsertMaintenanceChat,
+  type ChatMessage, type InsertChatMessage
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, like, desc, sql } from "drizzle-orm";
@@ -82,6 +84,19 @@ export interface IStorage {
   createLineHall(lineHall: InsertLineHall): Promise<LineHall>;
   updateLineHall(id: number, lineHall: Partial<InsertLineHall>): Promise<LineHall | undefined>;
   deleteLineHall(id: number): Promise<boolean>;
+  
+  // Maintenance Chat operations
+  getMaintenanceChat(id: number): Promise<MaintenanceChat | undefined>;
+  getMaintenanceChatByMaintenanceId(maintenanceId: number): Promise<MaintenanceChat | undefined>;
+  getMaintenanceChatWithMessages(chatId: number): Promise<{chat: MaintenanceChat, messages: ChatMessage[]}>;
+  createMaintenanceChat(chat: InsertMaintenanceChat): Promise<MaintenanceChat>;
+  updateMaintenanceChat(id: number, chat: Partial<InsertMaintenanceChat>): Promise<MaintenanceChat | undefined>;
+  finalizeMaintenanceChat(id: number, finalBudget: number, finalizedBy: string): Promise<MaintenanceChat | undefined>;
+  
+  // Chat Message operations
+  getChatMessage(id: number): Promise<ChatMessage | undefined>;
+  getChatMessagesByChatId(chatId: number): Promise<ChatMessage[]>;
+  createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -764,6 +779,157 @@ export class DatabaseStorage implements IStorage {
       .where(eq(lineHall.id, id))
       .returning();
     return !!deleted;
+  }
+
+  // Maintenance Chat operations
+  async getMaintenanceChat(id: number): Promise<MaintenanceChat | undefined> {
+    try {
+      const [chat] = await db.select().from(maintenanceChat).where(eq(maintenanceChat.id, id));
+      return chat;
+    } catch (error) {
+      console.error("Erro ao buscar chat de manutenção:", error);
+      return undefined;
+    }
+  }
+
+  async getMaintenanceChatByMaintenanceId(maintenanceId: number): Promise<MaintenanceChat | undefined> {
+    try {
+      const [chat] = await db
+        .select()
+        .from(maintenanceChat)
+        .where(eq(maintenanceChat.maintenanceId, maintenanceId));
+      return chat;
+    } catch (error) {
+      console.error("Erro ao buscar chat por ID de manutenção:", error);
+      return undefined;
+    }
+  }
+
+  async getMaintenanceChatWithMessages(chatId: number): Promise<{ chat: MaintenanceChat, messages: ChatMessage[] }> {
+    try {
+      const [chat] = await db
+        .select()
+        .from(maintenanceChat)
+        .where(eq(maintenanceChat.id, chatId));
+
+      if (!chat) {
+        throw new Error("Chat não encontrado");
+      }
+
+      const messages = await db
+        .select()
+        .from(chatMessages)
+        .where(eq(chatMessages.chatId, chatId))
+        .orderBy(chatMessages.sent_at);
+
+      return { chat, messages };
+    } catch (error) {
+      console.error("Erro ao buscar chat com mensagens:", error);
+      throw error;
+    }
+  }
+
+  async createMaintenanceChat(chat: InsertMaintenanceChat): Promise<MaintenanceChat> {
+    try {
+      // Verificar se já existe um chat para esta manutenção
+      const existingChat = await this.getMaintenanceChatByMaintenanceId(chat.maintenanceId);
+      if (existingChat) {
+        return existingChat;
+      }
+
+      const [newChat] = await db
+        .insert(maintenanceChat)
+        .values(chat)
+        .returning();
+      return newChat;
+    } catch (error) {
+      console.error("Erro ao criar chat de manutenção:", error);
+      throw error;
+    }
+  }
+
+  async updateMaintenanceChat(id: number, chat: Partial<InsertMaintenanceChat>): Promise<MaintenanceChat | undefined> {
+    try {
+      const [updated] = await db
+        .update(maintenanceChat)
+        .set(chat)
+        .where(eq(maintenanceChat.id, id))
+        .returning();
+      return updated || undefined;
+    } catch (error) {
+      console.error("Erro ao atualizar chat de manutenção:", error);
+      return undefined;
+    }
+  }
+
+  async finalizeMaintenanceChat(id: number, finalBudget: number, finalizedBy: string): Promise<MaintenanceChat | undefined> {
+    try {
+      const [updated] = await db
+        .update(maintenanceChat)
+        .set({
+          finalBudget,
+          isFinalized: true,
+          finalizedBy,
+          finalizedAt: new Date()
+        })
+        .where(eq(maintenanceChat.id, id))
+        .returning();
+      
+      if (updated) {
+        // Atualizar o custo final na manutenção
+        const maintenance = await this.getMaintenance(updated.maintenanceId);
+        if (maintenance) {
+          await this.updateMaintenance(maintenance.id, {
+            finalCost: finalBudget,
+            costApprovedBy: finalizedBy,
+            costApprovalDate: new Date()
+          });
+        }
+      }
+      
+      return updated || undefined;
+    } catch (error) {
+      console.error("Erro ao finalizar chat de manutenção:", error);
+      return undefined;
+    }
+  }
+
+  // Chat Message operations
+  async getChatMessage(id: number): Promise<ChatMessage | undefined> {
+    try {
+      const [message] = await db.select().from(chatMessages).where(eq(chatMessages.id, id));
+      return message;
+    } catch (error) {
+      console.error("Erro ao buscar mensagem:", error);
+      return undefined;
+    }
+  }
+
+  async getChatMessagesByChatId(chatId: number): Promise<ChatMessage[]> {
+    try {
+      const messages = await db
+        .select()
+        .from(chatMessages)
+        .where(eq(chatMessages.chatId, chatId))
+        .orderBy(chatMessages.sent_at);
+      return messages;
+    } catch (error) {
+      console.error("Erro ao buscar mensagens por ID de chat:", error);
+      return [];
+    }
+  }
+
+  async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
+    try {
+      const [newMessage] = await db
+        .insert(chatMessages)
+        .values(message)
+        .returning();
+      return newMessage;
+    } catch (error) {
+      console.error("Erro ao criar mensagem de chat:", error);
+      throw error;
+    }
   }
 }
 
