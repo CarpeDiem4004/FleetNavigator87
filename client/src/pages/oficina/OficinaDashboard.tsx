@@ -559,14 +559,14 @@ export default function OficinaDashboard() {
       
       {/* Modal de chat de orçamento */}
       <Dialog open={isChatDialogOpen} onOpenChange={setIsChatDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
-          <DialogHeader>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="pb-2">
             <DialogTitle>
               {selectedMaintenance?.status === 'aguardando_orcamento'
                 ? 'Enviar Orçamento'
                 : 'Negociação de Orçamento'}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs">
               {selectedMaintenance?.status === 'aguardando_orcamento'
                 ? 'Preencha o valor do orçamento inicial para esta manutenção'
                 : 'Acompanhe a negociação de orçamento com o gestor da frota'}
@@ -574,51 +574,51 @@ export default function OficinaDashboard() {
           </DialogHeader>
           
           {selectedMaintenance?.status === 'aguardando_orcamento' ? (
-            <div className="py-4 px-1">
-              {/* Card de Detalhes da Solicitação com estilo melhorado */}
-              <div className="mb-5 bg-muted/20 rounded-lg p-3 border border-muted/30">
-                <div className="flex items-center mb-2 text-sm font-medium text-muted-foreground">
-                  <FileInput className="h-4 w-4 mr-2" />
+            <div className="py-2">
+              {/* Detalhes da Solicitação - Versão simplificada */}
+              <div className="mb-3 p-2 border text-xs rounded bg-muted/10">
+                <div className="flex items-center gap-1 mb-1 text-xs font-medium">
+                  <FileInput className="h-3 w-3" />
                   <span>Detalhes da Solicitação</span>
                 </div>
-                <div className="grid grid-cols-1 gap-2">
-                  <div className="grid grid-cols-3 text-sm">
-                    <span className="font-medium text-muted-foreground">Tipo de Manutenção:</span> 
-                    <span className="col-span-2">{selectedMaintenance?.maintenanceType === 'preventiva' ? 'Preventiva' : 'Corretiva'}</span>
+                <div className="grid grid-cols-1 gap-0.5">
+                  <div className="flex text-xs">
+                    <span className="font-medium w-28">Tipo:</span> 
+                    <span>{selectedMaintenance?.maintenanceType === 'preventiva' ? 'Preventiva' : 'Corretiva'}</span>
                   </div>
-                  <div className="grid grid-cols-3 text-sm">
-                    <span className="font-medium text-muted-foreground">Descrição Original:</span> 
-                    <span className="col-span-2">{selectedMaintenance?.description}</span>
+                  <div className="flex text-xs">
+                    <span className="font-medium w-28">Descrição:</span> 
+                    <span className="truncate">{selectedMaintenance?.description}</span>
                   </div>
                 </div>
               </div>
               
-              {/* Formulário de novo orçamento com layout aprimorado */}
-              <div className="mb-5 bg-background rounded-lg border shadow-sm">
-                <div className="p-4 border-b">
-                  <h3 className="text-lg font-semibold">Novo Orçamento</h3>
+              {/* Formulário de novo orçamento simplificado */}
+              <div className="mb-3 border rounded">
+                <div className="p-2 border-b bg-muted/10">
+                  <h3 className="text-sm font-medium">Novo Orçamento</h3>
                 </div>
                 
-                <div className="p-4 space-y-5">
-                  {/* Campo de placa com layout e ícone melhorados */}
+                <div className="p-3 space-y-3">
+                  {/* Campo de placa */}
                   <div>
-                    <Label htmlFor="vehiclePlate" className="flex items-center text-sm font-medium">
-                      <span className="mr-2">🚗</span>Placa do Veículo
+                    <Label htmlFor="vehiclePlate" className="text-xs font-medium flex items-center">
+                      <span className="mr-1">🚗</span>Placa do Veículo
                     </Label>
                     <Input
                       id="vehiclePlate"
                       value={vehiclePlate}
                       onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())}
-                      placeholder="Digite a placa do veículo (ex: ABC1234)"
-                      className="uppercase mt-1.5 focus:ring-1 focus:ring-primary"
+                      placeholder="Digite a placa do veículo"
+                      className="uppercase mt-1 h-8 text-sm"
                     />
                   </div>
                   
-                  {/* Grid de 2 colunas para valor e quilometragem com espaçamento melhorado */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  {/* Grid de 2 colunas para valor e quilometragem */}
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label htmlFor="initialBudget" className="flex items-center text-sm font-medium">
-                        <span className="mr-2">💰</span>Valor do Orçamento (R$)
+                      <Label htmlFor="initialBudget" className="text-xs font-medium flex items-center">
+                        <span className="mr-1">💰</span>Valor (R$)
                       </Label>
                       <Input
                         id="initialBudget"
@@ -628,13 +628,13 @@ export default function OficinaDashboard() {
                         placeholder="0,00"
                         value={initialBudget}
                         onChange={(e) => setInitialBudget(e.target.value)}
-                        className="mt-1.5 focus:ring-1 focus:ring-primary"
+                        className="mt-1 h-8 text-sm"
                       />
                     </div>
                     
                     <div>
-                      <Label htmlFor="kmAtual" className="flex items-center text-sm font-medium">
-                        <span className="mr-2">🔄</span>Quilometragem Atual
+                      <Label htmlFor="kmAtual" className="text-xs font-medium flex items-center">
+                        <span className="mr-1">🔄</span>Quilometragem
                       </Label>
                       <Input
                         id="kmAtual"
@@ -643,15 +643,15 @@ export default function OficinaDashboard() {
                         placeholder="Ex: 45000"
                         value={kmAtual}
                         onChange={(e) => setKmAtual(e.target.value)}
-                        className="mt-1.5 focus:ring-1 focus:ring-primary"
+                        className="mt-1 h-8 text-sm"
                       />
                     </div>
                   </div>
                   
-                  {/* Prazo estimado com layout melhorado */}
+                  {/* Prazo estimado */}
                   <div>
-                    <Label htmlFor="prazoEstimado" className="flex items-center text-sm font-medium">
-                      <span className="mr-2">⏱️</span>Prazo para Conclusão (dias)
+                    <Label htmlFor="prazoEstimado" className="text-xs font-medium flex items-center">
+                      <span className="mr-1">⏱️</span>Prazo para Conclusão (dias)
                     </Label>
                     <Input
                       id="prazoEstimado"
@@ -660,54 +660,54 @@ export default function OficinaDashboard() {
                       placeholder="Ex: 3"
                       value={prazoEstimado}
                       onChange={(e) => setPrazoEstimado(e.target.value)}
-                      className="mt-1.5 focus:ring-1 focus:ring-primary"
+                      className="mt-1 h-8 text-sm"
                     />
                   </div>
                   
-                  {/* Descrição do serviço - layout aprimorado */}
+                  {/* Descrição do serviço */}
                   <div>
-                    <Label htmlFor="descricaoServico" className="flex items-center text-sm font-medium">
-                      <span className="mr-2">📝</span>Descrição Detalhada do Serviço
+                    <Label htmlFor="descricaoServico" className="text-xs font-medium flex items-center">
+                      <span className="mr-1">📝</span>Descrição do Serviço
                     </Label>
                     <textarea
                       id="descricaoServico"
-                      placeholder="Descreva detalhadamente o serviço a ser realizado, incluindo peças necessárias e procedimentos..."
+                      placeholder="Descreva o serviço a ser realizado..."
                       value={descricaoServico}
                       onChange={(e) => setDescricaoServico(e.target.value)}
-                      rows={3}
-                      className="w-full mt-1.5 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      rows={2}
+                      className="w-full mt-1 resize-none rounded-md border text-sm border-input p-2"
                     />
                   </div>
                 </div>
               </div>
               
-              {/* Barra de ações com botões reorganizados */}
-              <div className="flex justify-between items-center mt-4 gap-4">
+              {/* Barra de ações */}
+              <div className="flex justify-between items-center gap-2">
                 <Button 
-                  variant="secondary" 
+                  variant="ghost" 
                   onClick={() => {
-                    // Limpar todos os campos mantendo a manutenção selecionada
-                    setVehiclePlate(selectedMaintenance?.vehiclePlate || ""); // Resetar para a placa original
+                    // Limpar campos
+                    setVehiclePlate(selectedMaintenance?.vehiclePlate || "");
                     setInitialBudget("");
                     setKmAtual("");
                     setPrazoEstimado("");
                     setDescricaoServico("");
                   }}
-                  className="flex items-center"
-                  size="sm"
+                  className="flex items-center h-8 text-xs"
                 >
-                  <RefreshCw className="h-4 w-4 mr-1" />
-                  Novo Orçamento
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Novo
                 </Button>
                 
-                <div className="flex space-x-2">
-                  <Button variant="outline" onClick={closeBudgetChat} size="sm">
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={closeBudgetChat} size="sm" className="h-8 text-xs">
                     Cancelar
                   </Button>
                   <Button 
                     onClick={createBudgetChat}
                     disabled={isSubmittingBudget || !vehiclePlate || !initialBudget || !kmAtual || !prazoEstimado || !descricaoServico}
                     size="sm"
+                    className="h-8 text-xs"
                   >
                     {isSubmittingBudget && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Enviar Orçamento
