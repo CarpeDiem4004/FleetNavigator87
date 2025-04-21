@@ -230,13 +230,19 @@ const ManutencaoPage: React.FC = () => {
       console.log('Registrando manutenção via API REST...');
       
       // Usar a API REST para registrar a manutenção
+      const vehicle = vehicles.find(v => v.id === parseInt(form.veiculo_id));
+      
+      if (!vehicle) {
+        throw new Error('Veículo não encontrado');
+      }
+      
       const maintenanceData = {
-        vehiclePlate: vehicles.find(v => v.id === parseInt(form.veiculo_id))?.plate,
-        workshopId: 1, // Valor padrão, pode ser atualizado conforme necessário
-        requestBaseId: parseInt(form.base_id),
-        description: form.descricao,
-        estimatedExitDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 dias a partir de hoje
-        priority: 'normal',
+        veiculo_id: parseInt(form.veiculo_id),
+        base_id: parseInt(form.base_id),
+        descricao: form.descricao,
+        placa_veiculo: vehicle.plate,
+        status: 'pendente',
+        data_registro: new Date().toISOString(),
       };
       
       console.log('Dados da manutenção:', maintenanceData);
