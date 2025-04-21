@@ -1439,6 +1439,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Endpoint legado para KPIs do dashboard - manter por compatibilidade
   app.get("/api/dashboard/kpis", isAuthenticated, getDashboardKPIs);
+  
+  // Solicitações de manutenção - API para página de solicitação de manutenção
+  app.get("/api/solicitacoes-manutencao", hasMaintenanceAccess, async (req, res) => {
+    try {
+      // Buscar todas as solicitações de manutenção
+      // Como está usando Supabase diretamente, vamos retornar uma mensagem explicativa por enquanto
+      res.status(200).json({ 
+        message: "Esta API deve ser implementada com acesso a tabela manutencoes. A página atual usa Supabase diretamente."
+      });
+    } catch (error) {
+      console.error("Erro ao buscar solicitações de manutenção:", error);
+      res.status(500).json({ message: "Erro ao buscar solicitações", error: error.message });
+    }
+  });
+  
+  // Tratativas de manutenção - API para página de tratativas de manutenção
+  app.get("/api/tratativas-manutencao", hasMaintenanceAccess, async (req, res) => {
+    try {
+      // Buscar todas as tratativas de manutenção
+      // Como está usando Supabase diretamente, vamos retornar uma mensagem explicativa por enquanto
+      res.status(200).json({ 
+        message: "Esta API deve ser implementada com acesso a tabela manutencoes. A página atual usa Supabase diretamente."
+      });
+    } catch (error) {
+      console.error("Erro ao buscar tratativas de manutenção:", error);
+      res.status(500).json({ message: "Erro ao buscar tratativas", error: error.message });
+    }
+  });
+  
+  // API para iniciar uma tratativa de manutenção (mudar status para em_andamento)
+  app.post("/api/tratativas-manutencao/:id/iniciar", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { responsavel } = req.body;
+      
+      if (!id) {
+        return res.status(400).json({ message: "ID da manutenção é obrigatório" });
+      }
+      
+      // Atualizar status da manutenção para em_andamento
+      const manutencao = await storage.updateMaintenanceStatus(id, "em_andamento");
+      
+      if (!manutencao) {
+        return res.status(404).json({ message: "Manutenção não encontrada" });
+      }
+      
+      res.status(200).json(manutencao);
+    } catch (error) {
+      console.error("Erro ao iniciar tratativa de manutenção:", error);
+      res.status(500).json({ message: "Erro ao iniciar tratativa", error: error.message });
+    }
+  });
+  
+  // API para concluir uma tratativa de manutenção (mudar status para concluida)
+  app.post("/api/tratativas-manutencao/:id/concluir", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (!id) {
+        return res.status(400).json({ message: "ID da manutenção é obrigatório" });
+      }
+      
+      // Atualizar status da manutenção para concluida
+      const manutencao = await storage.updateMaintenanceStatus(id, "concluida");
+      
+      if (!manutencao) {
+        return res.status(404).json({ message: "Manutenção não encontrada" });
+      }
+      
+      res.status(200).json(manutencao);
+    } catch (error) {
+      console.error("Erro ao concluir tratativa de manutenção:", error);
+      res.status(500).json({ message: "Erro ao concluir tratativa", error: error.message });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
