@@ -268,20 +268,54 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateVehicle(id: number, vehicle: Partial<InsertVehicle>): Promise<Vehicle | undefined> {
-    const [updated] = await db
-      .update(vehicles)
-      .set(vehicle)
-      .where(eq(vehicles.id, id))
-      .returning();
-    return updated || undefined;
+    try {
+      // Preparar os campos para update, com seus nomes corretos no banco de dados
+      const updateData: Record<string, any> = {};
+      
+      if (vehicle.plate !== undefined) updateData.plate = vehicle.plate;
+      if (vehicle.model !== undefined) updateData.model = vehicle.model;
+      if (vehicle.vehicleType !== undefined) updateData['vehicle_type'] = vehicle.vehicleType;
+      if (vehicle.status !== undefined) updateData.status = vehicle.status;
+      if (vehicle.baseId !== undefined) updateData['base_id'] = vehicle.baseId;
+      if (vehicle.ownership !== undefined) updateData.ownership = vehicle.ownership;
+      if (vehicle.rentalCompany !== undefined) updateData['rental_company'] = vehicle.rentalCompany;
+      
+      // Usar SQL bruto para evitar problemas com mapeamento de campos
+      const result = await db.execute(sql`
+        UPDATE vehicles
+        SET ${sql.join(
+          Object.entries(updateData).map(
+            ([key, value]) => sql`${sql.identifier(key)} = ${value}`
+          ),
+          sql`, `
+        )}
+        WHERE id = ${id}
+        RETURNING id, plate, model, vehicle_type as "vehicleType", 
+                 status, base_id as "baseId", ownership,
+                 rental_company as "rentalCompany"
+      `);
+      
+      return result.rows[0] as Vehicle || undefined;
+    } catch (error) {
+      console.error("Erro ao atualizar veículo:", error);
+      return undefined;
+    }
   }
 
   async deleteVehicle(id: number): Promise<boolean> {
-    const [deleted] = await db
-      .delete(vehicles)
-      .where(eq(vehicles.id, id))
-      .returning();
-    return !!deleted;
+    try {
+      // Usar SQL bruto para evitar problemas com mapeamento de campos
+      const result = await db.execute(sql`
+        DELETE FROM vehicles
+        WHERE id = ${id}
+        RETURNING id
+      `);
+      
+      return result.rows.length > 0;
+    } catch (error) {
+      console.error("Erro ao excluir veículo:", error);
+      return false;
+    }
   }
   
   // Workshop operations
