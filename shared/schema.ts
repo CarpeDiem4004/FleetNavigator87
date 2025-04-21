@@ -106,6 +106,7 @@ export const maintenanceChat = pgTable("maintenance_chat", {
   kmAtual: text("km_atual"), // Quilometragem atual do veículo
   prazoEstimado: text("prazo_estimado"), // Prazo estimado em dias
   descricaoServico: text("descricao_servico"), // Descrição detalhada do serviço
+  vehiclePlate: text("vehicle_plate"), // Placa do veículo informada pela oficina
   isFinalized: boolean("is_finalized").default(false),
   finalizedBy: text("finalized_by"),
   finalizedAt: timestamp("finalized_at"),

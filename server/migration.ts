@@ -115,6 +115,29 @@ export async function runMigrations() {
       }
     }
     
+        // Verificar se o campo 'vehicle_plate' existe na tabela 'maintenance_chat'
+    const checkVehiclePlateColumnQuery = `
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'maintenance_chat' AND column_name = 'vehicle_plate'
+    `;
+    
+    const vehiclePlateResult = await pool.query(checkVehiclePlateColumnQuery);
+    
+    if (vehiclePlateResult.rows.length === 0) {
+      console.log("Adicionando coluna 'vehicle_plate' à tabela 'maintenance_chat'");
+      
+      // Adicionar coluna 'vehicle_plate' à tabela 'maintenance_chat'
+      await pool.query(`
+        ALTER TABLE maintenance_chat 
+        ADD COLUMN vehicle_plate TEXT
+      `);
+      
+      console.log("Coluna 'vehicle_plate' adicionada com sucesso à tabela 'maintenance_chat'");
+    } else {
+      console.log("Coluna 'vehicle_plate' já existe na tabela 'maintenance_chat'");
+    }
+
     console.log("Migrações concluídas com sucesso!");
     return true;
   } catch (error) {
