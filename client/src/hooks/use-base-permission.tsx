@@ -9,6 +9,7 @@ interface User {
   role?: string;
   baseId?: number;
   basename?: string;
+  oficina_id?: number;
   bases?: {
     id: number;
     name: string;

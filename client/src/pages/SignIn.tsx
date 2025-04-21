@@ -87,10 +87,21 @@ export default function SignIn({ oficina = false }: SignInProps) {
         <Card className="backdrop-blur-sm bg-white/60 shadow-2xl border-0">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">
-              Sistema de Gestão de Frotas
+              {oficina ? (
+                <>
+                  <Wrench className="h-8 w-8 mx-auto mb-2" />
+                  Portal da Oficina
+                </>
+              ) : (
+                "Sistema de Gestão de Frotas"
+              )}
             </CardTitle>
             <CardDescription className="text-center">
-              Entre com suas credenciais para acessar o sistema
+              {oficina ? (
+                "Acesse o sistema para gerenciar os serviços de manutenção"
+              ) : (
+                "Entre com suas credenciais para acessar o sistema"
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -138,6 +149,21 @@ export default function SignIn({ oficina = false }: SignInProps) {
             </form>
           </CardContent>
           <CardFooter className="flex flex-col">
+            {oficina && (
+              <div className="mb-3 text-sm text-center">
+                <p className="text-primary font-medium mb-1">Oficina cadastrada?</p>
+                <p className="text-muted-foreground mb-2">
+                  Utilize o e-mail e senha fornecidos durante o cadastro
+                </p>
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto text-xs"
+                  onClick={() => navigate('/oficinas/cadastro')}
+                >
+                  Ainda não é cadastrado? Clique aqui para se registrar
+                </Button>
+              </div>
+            )}
             <p className="text-xs text-center text-gray-600">
               Sistema de gerenciamento de frota desenvolvido para Murici Logística
             </p>

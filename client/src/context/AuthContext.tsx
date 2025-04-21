@@ -20,16 +20,25 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
+  register: (email: string, password: string, name: string) => Promise<User>;
   logout: () => Promise<void>;
 }
 
+// Criando um stub do usuário para o contexto inicial
+const stubUser: User = {
+  id: 0,
+  name: '',
+  email: '',
+  role: '',
+};
+
+// Criando o contexto com valores iniciais adequados
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
-  login: async () => {},
-  register: async () => {},
+  login: async () => stubUser,
+  register: async () => stubUser,
   logout: async () => {},
 });
 
@@ -93,7 +102,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     };
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User> => {
     setIsLoading(true);
     try {
       console.log("Tentando fazer login com:", email);
@@ -117,6 +126,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         title: "Login bem-sucedido",
         description: `Bem-vindo, ${userData.name || userData.email}!`,
       });
+      
+      return userData;
     } catch (error: any) {
       console.error('Erro no login:', error);
       
@@ -157,7 +168,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const register = async (email: string, password: string, name: string) => {
+  const register = async (email: string, password: string, name: string): Promise<User> => {
     setIsLoading(true);
     try {
       console.log("Tentando registrar usuário:", email);
@@ -183,6 +194,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         title: "Registro bem-sucedido",
         description: "Sua conta foi criada com sucesso!",
       });
+      
+      return userData;
     } catch (error: any) {
       console.error('Erro no registro:', error);
       
