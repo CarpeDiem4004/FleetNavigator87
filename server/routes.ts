@@ -4,7 +4,8 @@ import { storage } from "./storage";
 import { 
   insertBaseSchema, insertVehicleSchema, insertMaintenanceSchema,
   insertWorkshopSchema, insertTireSchema, insertRefuelingSchema, 
-  insertFineSchema, insertLineHallSchema, insertUserSchema
+  insertFineSchema, insertLineHallSchema, insertUserSchema,
+  type InsertWorkshop, type InsertUser, type InsertMaintenance
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import { getDashboardKPIs, getPainelPrincipal } from "./dashboardApi";
@@ -43,10 +44,18 @@ const isAdmin = (req: Request, res: Response, next: NextFunction) => {
 // Middleware para verificar se o usuário tem permissão para acessar funcionalidades de manutenção
 // Permite acesso para usuários com role='admin' ou baseId=12 (Gestão de Frotas)
 const hasMaintenanceAccess = (req: Request, res: Response, next: NextFunction) => {
-  if (req.isAuthenticated() && req.user && (req.user.role === 'admin' || req.user.baseId === 12)) {
+  if (req.isAuthenticated() && req.user && (req.user.role === 'admin' || req.user.baseId === 12 || req.user.role === 'oficina')) {
     return next();
   }
-  res.status(403).json({ message: "Acesso negado. Permissão de gestão de frotas ou admin necessária." });
+  res.status(403).json({ message: "Acesso negado. Permissão de gestão de frotas, admin ou oficina necessária." });
+};
+
+// Middleware para verificar se o usuário tem perfil de oficina
+const isWorkshop = (req: Request, res: Response, next: NextFunction) => {
+  if (req.isAuthenticated() && req.user && req.user.role === 'oficina') {
+    return next();
+  }
+  res.status(403).json({ message: "Acesso negado. Apenas oficinas podem acessar este recurso." });
 };
 
 // Middleware para verificar se o usuário tem acesso à base especificada
@@ -710,6 +719,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Rota para oficinas buscarem manutenções associadas a elas
+  app.get("/api/workshop/maintenance", isWorkshop, async (req, res) => {
+    try {
+      if (!req.user || !req.user.oficina_id) {
+        return res.status(400).json({ 
+          message: "Usuário não possui oficina associada"
+        });
+      }
+
+      // Buscar manutenções da oficina do usuário logado
+      const workshopId = req.user.oficina_id;
+      console.log(`Buscando manutenções para oficina ID ${workshopId}`);
+      
+      const maintenanceItems = await storage.getMaintenanceByWorkshop(workshopId);
+      
+      return res.status(200).json({
+        message: "Manutenções da oficina recuperadas com sucesso",
+        count: maintenanceItems.length,
+        items: maintenanceItems
+      });
+    } catch (error) {
+      console.error("Erro ao buscar manutenções da oficina:", error);
+      return res.status(500).json({ message: "Erro ao buscar manutenções" });
+    }
+  });
+
   app.get("/api/maintenance/vehicle/:plate", hasMaintenanceAccess, async (req, res) => {
     try {
       const vehiclePlate = req.params.plate;
@@ -807,6 +842,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Rota para oficinas atualizarem o status de manutenções
+  app.patch("/api/workshop/maintenance/:id/status", isWorkshop, async (req, res) => {
+    try {
+      if (!req.user || !req.user.oficina_id) {
+        return res.status(400).json({ 
+          message: "Usuário não possui oficina associada"
+        });
+      }
+      
+      const maintenanceId = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      if (!status) {
+        return res.status(400).json({ message: "Status é obrigatório" });
+      }
+      
+      // Validar valores de status
+      const validStatuses = ['pendente', 'aguardando_orcamento', 'em_andamento', 'concluida', 'cancelada'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ 
+          message: "Valor de status inválido", 
+          validValues: validStatuses 
+        });
+      }
+      
+      // Verificar se a manutenção existe e pertence à oficina
+      const maintenance = await storage.getMaintenance(maintenanceId);
+      if (!maintenance) {
+        return res.status(404).json({ message: "Manutenção não encontrada" });
+      }
+      
+      // Verificar se a manutenção pertence à oficina do usuário logado
+      if (maintenance.workshopId !== req.user.oficina_id) {
+        return res.status(403).json({ 
+          message: "Acesso negado. Esta manutenção não pertence à sua oficina." 
+        });
+      }
+      
+      // Atualizar status
+      const updatedMaintenance = await storage.updateMaintenanceStatus(maintenanceId, status);
+      
+      return res.status(200).json({
+        message: "Status da manutenção atualizado com sucesso",
+        maintenance: updatedMaintenance
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar status da manutenção:", error);
+      return res.status(500).json({ message: "Erro ao atualizar status" });
+    }
+  });
+
   app.patch("/api/maintenance/:id/status", hasMaintenanceAccess, async (req, res) => {
     try {
       const maintenanceId = parseInt(req.params.id);
