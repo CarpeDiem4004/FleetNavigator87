@@ -358,8 +358,7 @@ export default function OficinaDashboard() {
               fetchMaintenance();
               toast({
                 title: "Lista Atualizada",
-                description: "Os dados foram atualizados com sucesso.",
-                variant: "success"
+                description: "Os dados foram atualizados com sucesso."
               });
             }} 
             variant="outline"

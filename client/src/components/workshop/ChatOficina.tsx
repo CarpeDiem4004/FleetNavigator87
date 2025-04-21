@@ -60,15 +60,34 @@ export default function ChatOficina({
   const [proposedBudget, setProposedBudget] = useState<string>('');
   const [chatId, setChatId] = useState<number | null>(externalChatId || null);
   
+  // Estado para controlar renderização e evitar problemas com DOM
+  const [isComponentMounted, setIsComponentMounted] = useState(false);
+  const [shouldRenderChat, setShouldRenderChat] = useState(false);
+  
   // Referência para verificar se o componente está montado
   const isMounted = useRef(true);
   
-  // Limpar referência quando o componente for desmontado
+  // Inicializar componente com segurança
   useEffect(() => {
+    setIsComponentMounted(true);
+    
     return () => {
       isMounted.current = false;
+      setIsComponentMounted(false);
     };
   }, []);
+  
+  // Controle adicional de renderização para evitar manipulações DOM instáveis
+  useEffect(() => {
+    if (isComponentMounted) {
+      // Atraso pequeno para garantir que o DOM foi completamente renderizado
+      const timer = setTimeout(() => {
+        setShouldRenderChat(true);
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isComponentMounted]);
 
   // Buscar ou criar chat
   const {
@@ -260,6 +279,18 @@ export default function ChatOficina({
     );
   }
 
+  // Se o componente não estiver pronto para renderização, mostramos um placeholder
+  if (!shouldRenderChat) {
+    return (
+      <Card className="w-full">
+        <CardContent className="pt-6 text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+          <p className="mt-2">Preparando chat...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -311,7 +342,8 @@ export default function ChatOficina({
       </CardHeader>
       
       <CardContent>
-        <ScrollArea className="h-[300px] pr-4 mb-4 border rounded-md p-2">
+        {/* Usamos div em vez de ScrollArea para evitar complicações no DOM */}
+        <div className="h-[300px] overflow-auto pr-4 mb-4 border rounded-md p-2">
           {chat?.messages && chat.messages.length > 0 ? (
             <div className="space-y-3">
               {chat.messages.map((msg: Message) => (
@@ -345,7 +377,7 @@ export default function ChatOficina({
               {chat?.id ? 'Nenhuma mensagem enviada ainda' : 'Inicie o chat enviando um orçamento'}
             </div>
           )}
-        </ScrollArea>
+        </div>
         
         {!chat?.isFinalized && (
           <div className="space-y-3">
