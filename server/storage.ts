@@ -638,7 +638,7 @@ export class DatabaseStorage implements IStorage {
         
         // Atualizar o status do veículo para em_operacao
         await pool.query(
-          `UPDATE veiculos SET status = 'em_operacao' WHERE plate = $1`,
+          `UPDATE vehicles SET status = 'em_operacao' WHERE plate = $1`,
           [currentMaintenance.vehiclePlate]
         );
       }
@@ -646,7 +646,7 @@ export class DatabaseStorage implements IStorage {
       // Se status for "cancelada", também deve atualizar veículo
       if (status === 'cancelada') {
         await pool.query(
-          `UPDATE veiculos SET status = 'em_operacao' WHERE plate = $1`,
+          `UPDATE vehicles SET status = 'em_operacao' WHERE plate = $1`,
           [currentMaintenance.vehiclePlate]
         );
       }
