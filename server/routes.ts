@@ -2171,28 +2171,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Garantir que temos a placa do veículo
+      if (!result.data.vehiclePlate && result.data.maintenanceId) {
+        // Buscar a manutenção para pegar a placa caso não tenha sido informada
+        const maintenance = await storage.getMaintenance(result.data.maintenanceId);
+        if (maintenance && maintenance.vehiclePlate) {
+          result.data.vehiclePlate = maintenance.vehiclePlate;
+        }
+      }
+      
       // Criar chat
       const chat = await storage.createMaintenanceChat(result.data);
       
       // Buscar manutenção relacionada para ajustar status se necessário
       const maintenance = await storage.getMaintenance(chat.maintenanceId);
       
-      // Se a manutenção estiver pendente, atualizar status (usando apenas valores existentes no enum)
-      if (maintenance && maintenance.status === 'aguardando_orcamento') {
-        try {
-          // Usar SQL direto para evitar problema com coluna maintenance_start_date
-          // Usamos 'em_andamento' em vez de 'em_negociacao' porque o enum não tem esse valor
-          await pool.query(`
-            UPDATE manutencao
-            SET status = 'em_andamento', updated_at = NOW()
-            WHERE id = $1
-          `, [maintenance.id]);
-          
-          console.log(`Status da manutenção ${maintenance.id} atualizado para em_andamento (negociação em progresso)`);
-        } catch (updateError) {
-          console.error("Erro ao atualizar status da manutenção:", updateError);
-          // Continuar mesmo com erro no status para pelo menos cadastrar o chat
-        }
+      // Atualizar status da manutenção para em_andamento após cada chat, independente do status atual
+      // Garante que qualquer chat de orçamento muda a manutenção para em_andamento
+      try {
+        // Usar SQL direto para evitar problema com coluna maintenance_start_date
+        await pool.query(`
+          UPDATE manutencao
+          SET status = 'em_andamento', updated_at = NOW()
+          WHERE id = $1
+        `, [chat.maintenanceId]);
+        
+        console.log(`Status da manutenção ${chat.maintenanceId} atualizado para em_andamento (negociação em progresso)`);
+      } catch (updateError) {
+        console.error("Erro ao atualizar status da manutenção:", updateError);
+        // Continuar mesmo com erro no status para pelo menos cadastrar o chat
       }
       
       // Retornar o chat criado
