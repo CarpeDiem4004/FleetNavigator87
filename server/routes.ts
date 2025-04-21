@@ -2318,6 +2318,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Rota temporária para redefinir senha de oficina (APENAS PARA TESTES)
+  app.get("/api/reset-workshop-password", async (req, res) => {
+    try {
+      // Definir senha temporária
+      const novaSenha = "oficina123";
+      const senhaHash = await hashPassword(novaSenha);
+      
+      // Atualizar a senha do usuário com role 'oficina'
+      await pool.query(
+        "UPDATE users SET password = $1 WHERE role = 'oficina'",
+        [senhaHash]
+      );
+      
+      return res.status(200).json({
+        message: "Senha redefinida com sucesso para todas as oficinas",
+        novaSenha
+      });
+    } catch (error: any) {
+      console.error("Erro ao redefinir senha:", error);
+      return res.status(500).json({
+        message: "Erro ao redefinir senha",
+        error: error.message
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
