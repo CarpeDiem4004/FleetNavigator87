@@ -18,7 +18,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Loader2, CheckCircle, Clock, AlertTriangle, XCircle, MessageSquare, FileInput, Calendar } from "lucide-react";
+import { Loader2, CheckCircle, Clock, AlertTriangle, XCircle, MessageSquare, FileInput, Calendar, ReceiptText } from "lucide-react";
 import ChatOficina from "@/components/workshop/ChatOficina";
 import MaintenanceLifecycle from "@/components/workshop/MaintenanceLifecycle";
 
@@ -309,9 +309,32 @@ export default function OficinaDashboard() {
             Gerencie as manutenções designadas para sua oficina
           </p>
         </div>
-        <Button onClick={fetchMaintenance} variant="outline">
-          Atualizar
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => {
+              // Encontrar uma manutenção que está aguardando orçamento
+              const maintenance = maintenanceItems.find(m => m.status === 'aguardando_orcamento');
+              if (maintenance) {
+                setSelectedMaintenance(maintenance);
+                setInitialBudget('');
+                setIsChatDialogOpen(true);
+              } else {
+                toast({
+                  title: "Atenção",
+                  description: "Não há manutenções aguardando orçamento no momento.",
+                  variant: "default"
+                });
+              }
+            }}
+            variant="default"
+          >
+            <FileInput className="h-4 w-4 mr-2" />
+            Novo Orçamento
+          </Button>
+          <Button onClick={fetchMaintenance} variant="outline">
+            Atualizar
+          </Button>
+        </div>
       </div>
       
       {/* Cards de estatísticas */}
