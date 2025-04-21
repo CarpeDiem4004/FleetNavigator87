@@ -124,7 +124,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Usar SQL direto para evitar problemas com o campo oficina_id
       const query = `
-        SELECT id, name, email, password, role, "baseId", basename, oficina_id
+        SELECT id, name, email, password, role, base_id as "baseId", basename, oficina_id
         FROM users 
         WHERE email = $1
       `;
@@ -132,6 +132,7 @@ export class DatabaseStorage implements IStorage {
       const result = await pool.query(query, [email]);
       
       if (result.rows.length === 0) {
+        console.log(`Usuário não encontrado: ${email}`);
         return undefined;
       }
       

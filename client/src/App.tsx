@@ -53,7 +53,7 @@ import DriversPage from "@/pages/DriversPage";
 import ManutencaoPage from "@/pages/ManutencaoPage";
 import TratativaManutencaoPage from "@/pages/TratativaManutencaoPage";
 import OficinasExternaPage from "@/pages/OficinasExternaPage";
-import OficinaDashboard from "@/pages/OficinaDashboard";
+import OficinaDashboard from "@/pages/oficina/OficinaDashboard";
 
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
@@ -140,8 +140,9 @@ function App() {
             <OficinasExternaPage />
           </Route>
           
-          {/* Rota protegida para dashboard da oficina */}
-          <ProtectedRoute path="/oficinas/dashboard" component={OficinaDashboard} />
+          {/* Rotas protegidas para oficinas */}
+          <ProtectedRoute path="/oficina/dashboard" component={OficinaDashboard} />
+          <ProtectedRoute path="/oficinas/dashboard" component={OficinaDashboard} /> {/* Rota alternativa para compatibilidade */}
           
           {/* Rotas públicas para os postos de abastecimento - sem proteção e sem status de tanques */}
           <Route path="/posto/osasco/public">
