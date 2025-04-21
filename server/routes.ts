@@ -2103,20 +2103,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const chat of chats) {
         const maintenance = await storage.getMaintenance(chat.maintenanceId);
         if (maintenance) {
+          // Consultar nome da oficina diretamente
+          let workshopName = '';
+          if (maintenance.workshopId) {
+            const workshopQuery = await pool.query(
+              'SELECT name FROM workshops WHERE id = $1',
+              [maintenance.workshopId]
+            );
+            if (workshopQuery.rows.length > 0) {
+              workshopName = workshopQuery.rows[0].name;
+            }
+          }
+          
+          // Consultar nome da base diretamente
+          let baseName = '';
+          if (maintenance.requestBaseId) {
+            const baseQuery = await pool.query(
+              'SELECT name FROM bases WHERE id = $1',
+              [maintenance.requestBaseId]
+            );
+            if (baseQuery.rows.length > 0) {
+              baseName = baseQuery.rows[0].name;
+            }
+          }
+          
           chatsWithMaintenanceDetails.push({
             ...chat,
             maintenance: {
               id: maintenance.id,
               vehiclePlate: maintenance.vehiclePlate,
-              vehicleModel: maintenance.vehicleModel,
+              // Removemos vehicleModel que não existe no banco
               description: maintenance.description,
               status: maintenance.status,
-              priority: maintenance.priority,
+              // Removemos priority que não existe no banco
               workshopId: maintenance.workshopId,
-              workshopName: maintenance.workshopName,
+              workshopName: workshopName,
               baseId: maintenance.requestBaseId,
-              baseName: maintenance.requestBaseName,
-              responsavelNome: maintenance.responsavelNome
+              baseName: baseName,
+              responsavelNome: maintenance.responsiblePerson // Campo correto
             }
           });
         }

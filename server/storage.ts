@@ -985,13 +985,14 @@ export class DatabaseStorage implements IStorage {
   async getMaintenanceEntriesWithChats(): Promise<any[]> {
     try {
       // Usar SQL bruto para fazer o JOIN entre manutenções e chats
+      // Eliminamos campos que não existem no banco (vehicle_model, priority, responsavel_nome)
       const query = `
-        SELECT m.id, m.vehicle_plate, m.vehicle_model, m.description, m.status, 
-               m.priority, m.workshop_id, w.name as workshop_name, 
-               m.request_base_id, b.name as base_name, m.responsavel_nome,
+        SELECT m.id, m.vehicle_plate, m.description, m.status, 
+               m.workshop_id, w.name as workshop_name, 
+               m.request_base_id, b.name as base_name, m.responsible_person,
                mc.id as maintenance_chat_id, mc.initial_budget, mc.final_budget, 
                mc.is_finalized, mc.created_at as chat_created_at
-        FROM maintenance m
+        FROM manutencao m
         INNER JOIN maintenance_chat mc ON m.id = mc.maintenance_id
         LEFT JOIN workshops w ON m.workshop_id = w.id
         LEFT JOIN bases b ON m.request_base_id = b.id
@@ -1003,15 +1004,15 @@ export class DatabaseStorage implements IStorage {
       return result.rows.map(row => ({
         id: row.id,
         vehiclePlate: row.vehicle_plate,
-        vehicleModel: row.vehicle_model,
+        // Removemos vehicleModel
         description: row.description,
         status: row.status,
-        priority: row.priority,
+        // Removemos priority 
         workshopId: row.workshop_id,
         workshopName: row.workshop_name,
         baseId: row.request_base_id,
         baseName: row.base_name, 
-        responsavelNome: row.responsavel_nome,
+        responsavelNome: row.responsible_person, // Alteramos para o nome correto da coluna
         maintenanceChatId: row.maintenance_chat_id,
         initialBudget: row.initial_budget,
         finalBudget: row.final_budget,
