@@ -53,7 +53,7 @@ export default function SignIn() {
       <div className="absolute inset-0 bg-black bg-opacity-50"></div>
       
       {/* Conteúdo do login */}
-      <div className="relative z-10 w-full max-w-md px-4">
+      <div className="relative z-10 w-full max-w-sm px-4">
         <Card className="backdrop-blur-sm bg-white/60 shadow-2xl border-0">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">
