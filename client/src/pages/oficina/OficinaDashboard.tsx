@@ -201,13 +201,25 @@ export default function OficinaDashboard() {
   const openBudgetChat = (maintenance: Maintenance) => {
     setSelectedMaintenance(maintenance);
     setInitialBudget("");
-    setIsDialogOpen(true);
+    setIsChatDialogOpen(true);
   };
   
   // Função para fechar o chat de orçamento
   const closeBudgetChat = () => {
-    setIsDialogOpen(false);
+    setIsChatDialogOpen(false);
     setSelectedMaintenance(null);
+  };
+  
+  // Função para abrir o diálogo do ciclo de vida
+  const openLifecycleDialog = (maintenance: Maintenance) => {
+    setSelectedMaintenance(maintenance);
+    setIsLifecycleDialogOpen(true);
+  };
+  
+  // Função para fechar o diálogo do ciclo de vida
+  const closeLifecycleDialog = () => {
+    setIsLifecycleDialogOpen(false);
+    fetchMaintenance(); // Atualizar a lista após alterações no ciclo de vida
   };
   
   // Função para criar um novo chat com orçamento inicial
@@ -462,6 +474,16 @@ export default function OficinaDashboard() {
                                   {maintenance.status === 'aguardando_orcamento' ? 'Enviar Orçamento' : 'Ver Negociação'}
                                 </Button>
                               )}
+                              
+                              {/* Botão para gerenciar ciclo de vida */}
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={() => openLifecycleDialog(maintenance)}
+                              >
+                                <Calendar className="h-4 w-4 mr-1" />
+                                Ciclo de Vida
+                              </Button>
                             </>
                           )}
                           
@@ -493,7 +515,7 @@ export default function OficinaDashboard() {
       </Card>
       
       {/* Modal de chat de orçamento */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isChatDialogOpen} onOpenChange={setIsChatDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>
@@ -557,6 +579,25 @@ export default function OficinaDashboard() {
                 />
               )}
             </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Modal do ciclo de vida */}
+      <Dialog open={isLifecycleDialogOpen} onOpenChange={setIsLifecycleDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Ciclo de Vida da Manutenção</DialogTitle>
+            <DialogDescription>
+              Acompanhe e registre cada etapa do ciclo de vida do veículo durante o processo de manutenção
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedMaintenance && (
+            <MaintenanceLifecycle 
+              maintenanceId={selectedMaintenance.id}
+              onStatusChange={closeLifecycleDialog}
+            />
           )}
         </DialogContent>
       </Dialog>
