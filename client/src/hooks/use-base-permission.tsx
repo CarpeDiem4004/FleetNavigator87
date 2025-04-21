@@ -102,6 +102,14 @@ export function useBasePermission(): BasePermissionHook {
       return true;
     }
     
+    // Oficinas têm acesso apenas à rota de dashboard da oficina
+    if (user.role === 'oficina') {
+      const oficinaRoutes = ['/oficina/dashboard', '/oficinas/dashboard'];
+      const hasAccess = oficinaRoutes.includes(route);
+      console.log(`Oficina user permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'} (oficina_id=${user.oficina_id})`);
+      return hasAccess;
+    }
+    
     // Usuários não-admin não podem acessar a página de usuários ou bases
     if (route === '/users' || route === '/bases') {
       console.log(`Permission denied for non-admin user to ${route}`);

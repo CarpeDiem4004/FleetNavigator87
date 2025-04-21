@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/context/AuthContext';
@@ -6,18 +6,35 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Wrench } from 'lucide-react';
 
 // Importando imagem de fundo
 import loginBackgroundImage from '@/assets/login-background.jpeg';
 
-export default function SignIn() {
-  const [email, setEmail] = useState('rogerio@muricionfleet.com');
-  const [password, setPassword] = useState('Murici@rogerio25');
+interface SignInProps {
+  oficina?: boolean;
+}
+
+export default function SignIn({ oficina = false }: SignInProps) {
+  // Define os valores iniciais com base no tipo de login
+  const [email, setEmail] = useState(oficina ? '' : 'rogerio@muricionfleet.com');
+  const [password, setPassword] = useState(oficina ? '' : 'Murici@rogerio25');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const [_, navigate] = useLocation();
-  const { login } = useAuth();
+  const { login, user } = useAuth();
+  
+  // Verificar se o usuário já está logado e redirecionar se for o caso
+  useEffect(() => {
+    if (user) {
+      // Se for usuário de oficina, redirecionar para dashboard da oficina
+      if (user.role === 'oficina') {
+        navigate('/oficina/dashboard');
+      } else {
+        navigate('/');
+      }
+    }
+  }, [user, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,13 +44,26 @@ export default function SignIn() {
       console.log("Tentando fazer login com:", email);
       
       // Usar o hook de autenticação para fazer login
-      await login(email, password);
+      const loggedUser = await login(email, password);
       
-      // Redirecionar após login bem-sucedido
-      navigate('/');
+      // Redirecionar com base no tipo de usuário
+      if (loggedUser && loggedUser.role === 'oficina') {
+        navigate('/oficina/dashboard');
+      } else if (loggedUser && loggedUser.basename === "Gestão de Frotas") {
+        navigate('/fleet-management');
+      } else {
+        navigate('/');
+      }
     } catch (error: any) {
       console.error('Erro ao fazer login:', error);
-      // Não é necessário mostrar toast aqui pois o componente AuthContext já faz isso
+      // Erro customizado para oficinas se necessário
+      if (oficina) {
+        toast({
+          title: "Erro ao fazer login",
+          description: "Verifique se suas credenciais de oficina estão corretas.",
+          variant: "destructive"
+        });
+      }
     } finally {
       setLoading(false);
     }

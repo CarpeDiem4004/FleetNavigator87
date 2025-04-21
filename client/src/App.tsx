@@ -140,6 +140,11 @@ function App() {
             <OficinasExternaPage />
           </Route>
           
+          {/* Rota de acesso para oficinas - login específico */}
+          <Route path="/oficina">
+            <SignIn oficina={true} />
+          </Route>
+          
           {/* Rotas protegidas para oficinas */}
           <ProtectedRoute path="/oficina/dashboard" component={OficinaDashboard} />
           <ProtectedRoute path="/oficinas/dashboard" component={OficinaDashboard} /> {/* Rota alternativa para compatibilidade */}
