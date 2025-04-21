@@ -208,40 +208,42 @@ export default function BudgetsPage() {
           </div>
 
           {/* Diálogo para o chat de orçamento */}
-          <Dialog open={isChatDialogOpen} onOpenChange={setIsChatDialogOpen}>
-            <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Negociação de Orçamento</DialogTitle>
-                <DialogDescription>
-                  {selectedChat?.workshopName && (
-                    <span className="font-medium">Oficina: {selectedChat.workshopName}</span>
-                  )}
-                  {selectedChat?.maintenanceVehiclePlate && (
-                    <span className="ml-2 font-medium">| Veículo: {selectedChat.maintenanceVehiclePlate}</span>
-                  )}
-                </DialogDescription>
-              </DialogHeader>
-              
-              {selectedChat && (
-                <div className="mt-4">
-                  <ChatOficina 
-                    maintenanceId={selectedChat.maintenanceId} 
-                    chatId={selectedChat.id}
-                  />
-                </div>
-              )}
-              
-              <DialogFooter className="mt-4">
-                <Button onClick={() => {
-                  setIsChatDialogOpen(false);
-                  // Atualizar dados após fechar
-                  queryClient.invalidateQueries({ queryKey: ['/api/fleet/budget-chats'] });
-                }}>
-                  Fechar
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          {isChatDialogOpen && (
+            <Dialog open={isChatDialogOpen} onOpenChange={setIsChatDialogOpen}>
+              <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Negociação de Orçamento</DialogTitle>
+                  <DialogDescription>
+                    {selectedChat?.workshopName && (
+                      <span className="font-medium">Oficina: {selectedChat.workshopName}</span>
+                    )}
+                    {selectedChat?.maintenanceVehiclePlate && (
+                      <span className="ml-2 font-medium">| Veículo: {selectedChat.maintenanceVehiclePlate}</span>
+                    )}
+                  </DialogDescription>
+                </DialogHeader>
+                
+                {selectedChat && (
+                  <div className="mt-4">
+                    <ChatOficina 
+                      maintenanceId={selectedChat.maintenanceId} 
+                      chatId={selectedChat.id}
+                    />
+                  </div>
+                )}
+                
+                <DialogFooter className="mt-4">
+                  <Button onClick={() => {
+                    setIsChatDialogOpen(false);
+                    // Atualizar dados após fechar
+                    queryClient.invalidateQueries({ queryKey: ['/api/fleet/budget-chats'] });
+                  }}>
+                    Fechar
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
 
           <Card>
             <CardHeader>

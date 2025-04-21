@@ -2177,17 +2177,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Buscar manutenção relacionada para ajustar status se necessário
       const maintenance = await storage.getMaintenance(chat.maintenanceId);
       
-      // Se a manutenção estiver pendente, atualizar status para em negociação
+      // Se a manutenção estiver pendente, atualizar status (usando apenas valores existentes no enum)
       if (maintenance && maintenance.status === 'aguardando_orcamento') {
         try {
           // Usar SQL direto para evitar problema com coluna maintenance_start_date
+          // Usamos 'em_andamento' em vez de 'em_negociacao' porque o enum não tem esse valor
           await pool.query(`
             UPDATE manutencao
-            SET status = 'em_negociacao', updated_at = NOW()
+            SET status = 'em_andamento', updated_at = NOW()
             WHERE id = $1
           `, [maintenance.id]);
           
-          console.log(`Status da manutenção ${maintenance.id} atualizado para em_negociacao`);
+          console.log(`Status da manutenção ${maintenance.id} atualizado para em_andamento (negociação em progresso)`);
         } catch (updateError) {
           console.error("Erro ao atualizar status da manutenção:", updateError);
           // Continuar mesmo com erro no status para pelo menos cadastrar o chat
