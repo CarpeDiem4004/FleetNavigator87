@@ -11,7 +11,18 @@ import { getDashboardKPIs, getPainelPrincipal } from "./dashboardApi";
 import { runSupabaseDiagnostic } from "./supabaseDiagnostic";
 import { compareSchemas } from "./compareSchemas";
 import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
-import { db } from "./db";
+import { db, pool } from "./db";
+import { randomBytes, scrypt } from "crypto";
+import { promisify } from "util";
+
+// Função auxiliar para hash de senha (usada na criação de usuários de oficinas)
+const scryptAsync = promisify(scrypt);
+
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
 
 // Middleware para verificar autenticação em rotas protegidas
 const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
@@ -1626,9 +1637,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
 
         let oficinaId: number;
+        let isNovaOficina = false;
 
         // Se a oficina não existe, criar nova
         if (oficinaExistente.rowCount === 0) {
+          isNovaOficina = true;
+
           // Inserir nova oficina
           const novaOficina = await pool.query(
             `INSERT INTO oficinas (
@@ -1694,9 +1708,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ]
         );
 
+        // Gerar credenciais para a oficina, se for nova
+        let credenciais = null;
+        if (isNovaOficina) {
+          // Gerar um nome de usuário baseado no nome da oficina (remoção de espaços e caracteres especiais)
+          const username = nome_oficina
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]/g, '')
+            .substring(0, 15);
+            
+          // Gerar um email usando o formato solicitado
+          const emailOficina = `${username}@muricionfleet.com`;
+          
+          // Gerar uma senha aleatória
+          const senhaAleatoria = Math.random().toString(36).substring(2, 10);
+          
+          // Criptografar a senha
+          const senhaHash = await hashPassword(senhaAleatoria);
+          
+          try {
+            // Verificar se já existe um usuário com esse email
+            const usuarioExistente = await pool.query(
+              "SELECT id FROM users WHERE email = $1",
+              [emailOficina]
+            );
+            
+            if (usuarioExistente.rowCount === 0) {
+              // Inserir novo usuário
+              await pool.query(
+                `INSERT INTO users (
+                  name, email, password, role, baseId, is_oficina, oficina_id
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                [
+                  nome_oficina,
+                  emailOficina,
+                  senhaHash,
+                  'oficina',
+                  null, // baseId nulo, pois não está associado a nenhuma base
+                  true,
+                  oficinaId
+                ]
+              );
+              
+              // Atualizar a oficina com o email gerado
+              await pool.query(
+                "UPDATE oficinas SET email_sistema = $1 WHERE id = $2",
+                [emailOficina, oficinaId]
+              );
+              
+              credenciais = {
+                email: emailOficina,
+                senha: senhaAleatoria
+              };
+            }
+          } catch (userError) {
+            console.error("Erro ao criar usuário para oficina:", userError);
+            // Continuamos mesmo com erro na criação do usuário
+          }
+        }
+
         res.status(201).json({
           message: "Cadastro de oficina e orçamento recebido com sucesso",
-          oficinaId
+          oficinaId,
+          credenciais
         });
       } catch (dbError) {
         console.error("Erro de banco de dados:", dbError);

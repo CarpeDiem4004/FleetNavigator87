@@ -28,6 +28,7 @@ export default function OficinasExternaPage() {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [credenciais, setCredenciais] = useState<{email: string, senha: string} | null>(null);
   const [form, setForm] = useState({
     nome_oficina: '',
     cnpj: '',
@@ -92,6 +93,13 @@ export default function OficinasExternaPage() {
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Erro ao cadastrar oficina');
+      }
+      
+      const responseData = await response.json();
+      
+      // Verificar se o servidor retornou credenciais
+      if (responseData.credenciais) {
+        setCredenciais(responseData.credenciais);
       }
       
       setIsSuccess(true);
@@ -180,7 +188,34 @@ export default function OficinasExternaPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center">
-              <p className="text-gray-500 mb-6">
+              {credenciais ? (
+                <div className="border border-green-200 rounded-lg p-6 mb-4 bg-green-50">
+                  <h3 className="text-lg font-semibold text-green-800 mb-3">
+                    Credenciais de Acesso
+                  </h3>
+                  <div className="grid gap-2 mb-4 text-left">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-sm text-gray-600">Email:</span>
+                      <code className="bg-white px-3 py-1 rounded border">
+                        {credenciais.email}
+                      </code>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-sm text-gray-600">Senha:</span>
+                      <code className="bg-white px-3 py-1 rounded border">
+                        {credenciais.senha}
+                      </code>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">
+                    Guarde essas informações! Você precisará delas para acessar o portal da Murici Logística.
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Você pode fazer login no sistema com estas credenciais após a aprovação do seu cadastro.
+                  </p>
+                </div>
+              ) : null}
+              <p className="text-gray-500 mb-3">
                 Em caso de dúvidas, entre em contato com a equipe de gestão de frotas da Murici.
               </p>
             </CardContent>
