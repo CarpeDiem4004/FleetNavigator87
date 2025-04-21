@@ -190,6 +190,28 @@ export const operations = pgTable("operacoes", {
 });
 
 // Criar a tabela painel_principal para exibir KPIs e métricas gerais
+// Tabela para rastrear o ciclo de vida da manutenção (já que a tabela manutencao é uma view)
+export const maintenanceLifecycle = pgTable("maintenance_lifecycle", {
+  id: serial("id").primaryKey(),
+  maintenanceId: integer("maintenance_id").notNull().unique(), // Referência à manutencao
+  // Datas de ciclo de vida
+  entryDate: date("entry_date").notNull(), // Data de entrada do veículo
+  maintenanceStartDate: date("maintenance_start_date"), // Data de início efetivo da manutenção
+  expectedExitDate: date("expected_exit_date"), // Data prevista de saída
+  actualExitDate: date("actual_exit_date"), // Data real de saída
+  // Informações de retirada do veículo
+  vehiclePickupDate: timestamp("vehicle_pickup_date"), // Data e hora da retirada do veículo
+  pickupPersonName: text("pickup_person_name"), // Nome da pessoa que retirou o veículo
+  pickupPersonCPF: text("pickup_person_cpf"), // CPF da pessoa que retirou o veículo
+  pickupComments: text("pickup_comments"), // Observações sobre a retirada
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Relações para o ciclo de vida não podem ser definidas diretamente
+// já que manutencao é uma view, não uma tabela.
+// As relações serão tratadas via código
+
 export const painelPrincipal = pgTable("painel_principal", {
   id: serial("id").primaryKey(),
   data_referencia: date("data_referencia").notNull(),
@@ -389,6 +411,7 @@ export const insertRefuelingCardRequestSchema = createInsertSchema(refuelingCard
 export const insertPainelPrincipalSchema = createInsertSchema(painelPrincipal);
 export const insertMaintenanceChatSchema = createInsertSchema(maintenanceChat);
 export const insertChatMessageSchema = createInsertSchema(chatMessages);
+export const insertMaintenanceLifecycleSchema = createInsertSchema(maintenanceLifecycle);
 export const insertUserSchema = createInsertSchema(users).pick({
   name: true,
   email: true,
@@ -447,3 +470,6 @@ export type InsertMaintenanceChat = z.infer<typeof insertMaintenanceChatSchema>;
 
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+
+export type MaintenanceLifecycle = typeof maintenanceLifecycle.$inferSelect;
+export type InsertMaintenanceLifecycle = z.infer<typeof insertMaintenanceLifecycleSchema>;

@@ -75,58 +75,43 @@ export async function runMigrations() {
       console.log("Valor 'oficina' já existe no enum 'user_role'");
     }
     
-    // Adicionar novas colunas para rastreamento do ciclo de vida do veículo na tabela manutencao
-    const novosAtributosCicloVida = [
-      {
-        nome: "maintenance_start_date",
-        tipo: "DATE",
-        descricao: "Data de início efetivo da manutenção"
-      },
-      {
-        nome: "vehicle_pickup_date",
-        tipo: "TIMESTAMP",
-        descricao: "Data e hora da retirada do veículo"
-      },
-      {
-        nome: "pickup_person_name",
-        tipo: "TEXT",
-        descricao: "Nome da pessoa que retirou o veículo"
-      },
-      {
-        nome: "pickup_person_cpf",
-        tipo: "TEXT",
-        descricao: "CPF da pessoa que retirou o veículo"
-      },
-      {
-        nome: "pickup_comments",
-        tipo: "TEXT",
-        descricao: "Observações sobre a retirada do veículo"
-      }
-    ];
+    // Verificar se a tabela maintenance_lifecycle existe e, se não, criá-la
+    const checkMaintenanceLifecycleTableQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' AND table_name = 'maintenance_lifecycle'
+      );
+    `;
     
-    // Verificar e adicionar cada coluna na tabela de manutenção
-    for (const coluna of novosAtributosCicloVida) {
-      // Verificar se a coluna já existe
-      const checkColuna = `
-        SELECT column_name 
-        FROM information_schema.columns 
-        WHERE table_name = 'manutencao' AND column_name = $1
-      `;
+    const maintenanceLifecycleTableResult = await pool.query(checkMaintenanceLifecycleTableQuery);
+    const maintenanceLifecycleTableExists = maintenanceLifecycleTableResult.rows[0].exists;
+    
+    console.log("Tabela 'maintenance_lifecycle' existe:", maintenanceLifecycleTableExists);
+    
+    if (!maintenanceLifecycleTableExists) {
+      console.log("Criando tabela 'maintenance_lifecycle'...");
       
-      const colunaExiste = await pool.query(checkColuna, [coluna.nome]);
-      
-      if (colunaExiste.rows.length === 0) {
-        console.log(`Adicionando coluna '${coluna.nome}' à tabela 'manutencao'`);
-        
-        // Adicionar a nova coluna
+      try {
         await pool.query(`
-          ALTER TABLE manutencao 
-          ADD COLUMN ${coluna.nome} ${coluna.tipo}
+          CREATE TABLE maintenance_lifecycle (
+            id SERIAL PRIMARY KEY,
+            maintenance_id INTEGER NOT NULL UNIQUE,
+            entry_date DATE NOT NULL,
+            maintenance_start_date DATE,
+            expected_exit_date DATE,
+            actual_exit_date DATE,
+            vehicle_pickup_date TIMESTAMP,
+            pickup_person_name TEXT,
+            pickup_person_cpf TEXT,
+            pickup_comments TEXT,
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
+          );
         `);
         
-        console.log(`Coluna '${coluna.nome}' adicionada com sucesso`);
-      } else {
-        console.log(`Coluna '${coluna.nome}' já existe na tabela 'manutencao'`);
+        console.log("Tabela 'maintenance_lifecycle' criada com sucesso");
+      } catch (error) {
+        console.error("Erro ao criar tabela 'maintenance_lifecycle':", error);
       }
     }
     
