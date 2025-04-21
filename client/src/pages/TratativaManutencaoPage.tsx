@@ -328,6 +328,28 @@ const TratativaManutencaoPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Diálogo para exibir o histórico de chat/negociação */}
+      <Dialog open={isChatDialogOpen} onOpenChange={setIsChatDialogOpen}>
+        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Histórico de Negociação de Orçamento</DialogTitle>
+            <DialogDescription>
+              Acompanhe a comunicação e negociação de orçamento com a oficina
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedMaintenanceId && (
+            <div className="mt-4">
+              <MaintenanceChatHistory maintenanceId={selectedMaintenanceId} />
+            </div>
+          )}
+          
+          <DialogFooter className="mt-6">
+            <Button variant="outline" onClick={() => setIsChatDialogOpen(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -457,6 +479,7 @@ const TratativaManutencaoPage: React.FC = () => {
                                   Iniciar
                                 </Button>
                               )}
+                              {/* Botão para ação em manutenções em andamento normal */}
                               {manutencao.status === 'em_andamento' && (
                                 <Button 
                                   variant="outline" 
@@ -466,6 +489,19 @@ const TratativaManutencaoPage: React.FC = () => {
                                 >
                                   <CheckCircle2 className="h-4 w-4 mr-1" />
                                   Concluir
+                                </Button>
+                              )}
+
+                              {/* Botão para ação em manutenções com orçamento */}
+                              {['aguardando_orcamento', 'em_negociacao', 'orcamento_aprovado', 'aguardando_pecas'].includes(manutencao.status) && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleOpenChatDialog(manutencao.id)}
+                                  className="text-purple-600 hover:text-purple-800"
+                                >
+                                  <MessageSquare className="h-4 w-4 mr-1" />
+                                  Negociação
                                 </Button>
                               )}
                             </div>
