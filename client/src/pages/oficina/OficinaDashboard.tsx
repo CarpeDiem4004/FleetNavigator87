@@ -574,27 +574,35 @@ export default function OficinaDashboard() {
           </DialogHeader>
           
           {selectedMaintenance?.status === 'aguardando_orcamento' ? (
-            <div className="py-4">
-              {/* Detalhes da Solicitação - Card com destaque */}
-              <div className="mb-6 bg-muted/30 rounded-lg p-4 border border-muted-foreground/20">
-                <h3 className="text-sm font-medium mb-2 flex items-center text-muted-foreground">
+            <div className="py-4 px-1">
+              {/* Card de Detalhes da Solicitação com estilo melhorado */}
+              <div className="mb-5 bg-muted/20 rounded-lg p-3 border border-muted/30">
+                <div className="flex items-center mb-2 text-sm font-medium text-muted-foreground">
                   <FileInput className="h-4 w-4 mr-2" />
-                  Detalhes da Solicitação
-                </h3>
-                <div className="grid grid-cols-1 gap-1 text-sm">
-                  <div className="flex"><span className="font-medium w-36">Tipo de Manutenção:</span> {selectedMaintenance?.maintenanceType === 'preventiva' ? 'Preventiva' : 'Corretiva'}</div>
-                  <div className="flex"><span className="font-medium w-36">Descrição Original:</span> {selectedMaintenance?.description}</div>
+                  <span>Detalhes da Solicitação</span>
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  <div className="grid grid-cols-3 text-sm">
+                    <span className="font-medium text-muted-foreground">Tipo de Manutenção:</span> 
+                    <span className="col-span-2">{selectedMaintenance?.maintenanceType === 'preventiva' ? 'Preventiva' : 'Corretiva'}</span>
+                  </div>
+                  <div className="grid grid-cols-3 text-sm">
+                    <span className="font-medium text-muted-foreground">Descrição Original:</span> 
+                    <span className="col-span-2">{selectedMaintenance?.description}</span>
+                  </div>
                 </div>
               </div>
               
-              {/* Formulário de novo orçamento com layout bem estruturado */}
-              <div className="space-y-6 bg-card rounded-lg p-5 border">
-                <h3 className="text-lg font-semibold mb-4">Novo Orçamento</h3>
+              {/* Formulário de novo orçamento com layout aprimorado */}
+              <div className="mb-5 bg-background rounded-lg border shadow-sm">
+                <div className="p-4 border-b">
+                  <h3 className="text-lg font-semibold">Novo Orçamento</h3>
+                </div>
                 
-                <div className="space-y-4">
-                  {/* Campo de placa com ícone */}
-                  <div className="space-y-2">
-                    <Label htmlFor="vehiclePlate" className="flex items-center">
+                <div className="p-4 space-y-5">
+                  {/* Campo de placa com layout e ícone melhorados */}
+                  <div>
+                    <Label htmlFor="vehiclePlate" className="flex items-center text-sm font-medium">
                       <span className="mr-2">🚗</span>Placa do Veículo
                     </Label>
                     <Input
@@ -602,14 +610,14 @@ export default function OficinaDashboard() {
                       value={vehiclePlate}
                       onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())}
                       placeholder="Digite a placa do veículo (ex: ABC1234)"
-                      className="uppercase focus:ring-1 focus:ring-primary"
+                      className="uppercase mt-1.5 focus:ring-1 focus:ring-primary"
                     />
                   </div>
                   
-                  {/* Grid de 2 colunas para valor e quilometragem */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="initialBudget" className="flex items-center">
+                  {/* Grid de 2 colunas para valor e quilometragem com espaçamento melhorado */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                      <Label htmlFor="initialBudget" className="flex items-center text-sm font-medium">
                         <span className="mr-2">💰</span>Valor do Orçamento (R$)
                       </Label>
                       <Input
@@ -620,12 +628,12 @@ export default function OficinaDashboard() {
                         placeholder="0,00"
                         value={initialBudget}
                         onChange={(e) => setInitialBudget(e.target.value)}
-                        className="focus:ring-1 focus:ring-primary"
+                        className="mt-1.5 focus:ring-1 focus:ring-primary"
                       />
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="kmAtual" className="flex items-center">
+                    <div>
+                      <Label htmlFor="kmAtual" className="flex items-center text-sm font-medium">
                         <span className="mr-2">🔄</span>Quilometragem Atual
                       </Label>
                       <Input
@@ -635,14 +643,14 @@ export default function OficinaDashboard() {
                         placeholder="Ex: 45000"
                         value={kmAtual}
                         onChange={(e) => setKmAtual(e.target.value)}
-                        className="focus:ring-1 focus:ring-primary"
+                        className="mt-1.5 focus:ring-1 focus:ring-primary"
                       />
                     </div>
                   </div>
                   
-                  {/* Prazo estimado */}
-                  <div className="space-y-2">
-                    <Label htmlFor="prazoEstimado" className="flex items-center">
+                  {/* Prazo estimado com layout melhorado */}
+                  <div>
+                    <Label htmlFor="prazoEstimado" className="flex items-center text-sm font-medium">
                       <span className="mr-2">⏱️</span>Prazo para Conclusão (dias)
                     </Label>
                     <Input
@@ -652,13 +660,13 @@ export default function OficinaDashboard() {
                       placeholder="Ex: 3"
                       value={prazoEstimado}
                       onChange={(e) => setPrazoEstimado(e.target.value)}
-                      className="focus:ring-1 focus:ring-primary"
+                      className="mt-1.5 focus:ring-1 focus:ring-primary"
                     />
                   </div>
                   
-                  {/* Descrição do serviço - transformado em textarea */}
-                  <div className="space-y-2">
-                    <Label htmlFor="descricaoServico" className="flex items-center">
+                  {/* Descrição do serviço - layout aprimorado */}
+                  <div>
+                    <Label htmlFor="descricaoServico" className="flex items-center text-sm font-medium">
                       <span className="mr-2">📝</span>Descrição Detalhada do Serviço
                     </Label>
                     <textarea
@@ -666,15 +674,15 @@ export default function OficinaDashboard() {
                       placeholder="Descreva detalhadamente o serviço a ser realizado, incluindo peças necessárias e procedimentos..."
                       value={descricaoServico}
                       onChange={(e) => setDescricaoServico(e.target.value)}
-                      rows={4}
-                      className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      rows={3}
+                      className="w-full mt-1.5 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </div>
                 </div>
               </div>
               
-              {/* Botões de ação com melhor espaçamento e alinhamento */}
-              <div className="flex flex-col sm:flex-row justify-between items-center pt-6 gap-4">
+              {/* Barra de ações com botões reorganizados */}
+              <div className="flex justify-between items-center mt-4 gap-4">
                 <Button 
                   variant="secondary" 
                   onClick={() => {
@@ -685,20 +693,21 @@ export default function OficinaDashboard() {
                     setPrazoEstimado("");
                     setDescricaoServico("");
                   }}
-                  className="flex items-center w-full sm:w-auto"
+                  className="flex items-center"
+                  size="sm"
                 >
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                  <RefreshCw className="h-4 w-4 mr-1" />
                   Novo Orçamento
                 </Button>
                 
-                <div className="flex space-x-2 w-full sm:w-auto">
-                  <Button variant="outline" onClick={closeBudgetChat} className="flex-1 sm:flex-none">
+                <div className="flex space-x-2">
+                  <Button variant="outline" onClick={closeBudgetChat} size="sm">
                     Cancelar
                   </Button>
                   <Button 
                     onClick={createBudgetChat}
-                    className="flex-1 sm:flex-none"
                     disabled={isSubmittingBudget || !vehiclePlate || !initialBudget || !kmAtual || !prazoEstimado || !descricaoServico}
+                    size="sm"
                   >
                     {isSubmittingBudget && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Enviar Orçamento
