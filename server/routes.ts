@@ -2035,9 +2035,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Criar um novo chat de manutenção
   app.post("/api/workshop/maintenance-chat", hasMaintenanceAccess, async (req, res) => {
     try {
+      console.log("Payload recebido:", req.body);
+      
       // Validar dados do corpo da requisição
       const result = insertMaintenanceChatSchema.safeParse(req.body);
       if (!result.success) {
+        console.log("Erro de validação:", result.error.format());
         return res.status(400).json({ 
           message: "Dados inválidos", 
           errors: result.error.format() 

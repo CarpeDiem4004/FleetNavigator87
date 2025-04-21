@@ -246,7 +246,8 @@ export default function OficinaDashboard() {
         },
         body: JSON.stringify({
           maintenanceId: selectedMaintenance.id,
-          initialBudget: parseFloat(initialBudget)
+          initialBudget: parseFloat(initialBudget),
+          isFinalized: false
         })
       });
       
