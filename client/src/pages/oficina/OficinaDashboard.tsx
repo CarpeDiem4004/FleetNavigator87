@@ -132,6 +132,9 @@ export default function OficinaDashboard() {
   const [isLifecycleDialogOpen, setIsLifecycleDialogOpen] = useState(false);
   const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null);
   const [initialBudget, setInitialBudget] = useState<string>("");
+  const [kmAtual, setKmAtual] = useState<string>("");
+  const [prazoEstimado, setPrazoEstimado] = useState<string>("");
+  const [descricaoServico, setDescricaoServico] = useState<string>("");
   const [isSubmittingBudget, setIsSubmittingBudget] = useState(false);
   const [createdChatId, setCreatedChatId] = useState<number | null>(null);
   
@@ -202,6 +205,9 @@ export default function OficinaDashboard() {
   const openBudgetChat = (maintenance: Maintenance) => {
     setSelectedMaintenance(maintenance);
     setInitialBudget("");
+    setKmAtual("");
+    setPrazoEstimado("");
+    setDescricaoServico("");
     setIsChatDialogOpen(true);
   };
   
@@ -226,10 +232,10 @@ export default function OficinaDashboard() {
   
   // Função para criar um novo chat com orçamento inicial
   const createBudgetChat = async () => {
-    if (!selectedMaintenance || !initialBudget || isNaN(parseFloat(initialBudget))) {
+    if (!selectedMaintenance || !initialBudget || !kmAtual || !prazoEstimado || !descricaoServico) {
       toast({
         title: "Erro",
-        description: "Por favor, informe um valor válido para o orçamento.",
+        description: "Por favor, preencha todos os campos do orçamento.",
         variant: "destructive"
       });
       return;
@@ -247,6 +253,9 @@ export default function OficinaDashboard() {
         body: JSON.stringify({
           maintenanceId: selectedMaintenance.id,
           initialBudget: initialBudget, // Enviar como string, sem converter para número
+          kmAtual: kmAtual,
+          prazoEstimado: prazoEstimado,
+          descricaoServico: descricaoServico,
           isFinalized: false
         })
       });
@@ -317,6 +326,9 @@ export default function OficinaDashboard() {
               if (maintenance) {
                 setSelectedMaintenance(maintenance);
                 setInitialBudget('');
+                setKmAtual('');
+                setPrazoEstimado('');
+                setDescricaoServico('');
                 setIsChatDialogOpen(true);
               } else {
                 toast({
@@ -560,27 +572,66 @@ export default function OficinaDashboard() {
           {selectedMaintenance?.status === 'aguardando_orcamento' ? (
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="initialBudget">Orçamento (R$)</Label>
-                <Input
-                  id="initialBudget"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0,00"
-                  value={initialBudget}
-                  onChange={(e) => setInitialBudget(e.target.value)}
-                />
-                <p className="text-sm text-muted-foreground">
-                  Informe o valor para iniciar a negociação
-                </p>
+                <Label>Veículo</Label>
+                <div className="rounded-md border p-2 bg-muted/30">
+                  <p className="text-muted-foreground">{selectedMaintenance?.vehiclePlate}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="kmAtual">Quilometragem Atual</Label>
+                  <Input
+                    id="kmAtual"
+                    type="number"
+                    min="0"
+                    placeholder="Ex: 45000"
+                    value={kmAtual}
+                    onChange={(e) => setKmAtual(e.target.value)}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="initialBudget">Valor do Orçamento (R$)</Label>
+                  <Input
+                    id="initialBudget"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0,00"
+                    value={initialBudget}
+                    onChange={(e) => setInitialBudget(e.target.value)}
+                  />
+                </div>
               </div>
               
               <div className="space-y-2">
-                <Label>Detalhes da Manutenção</Label>
+                <Label htmlFor="prazoEstimado">Prazo para Conclusão (dias)</Label>
+                <Input
+                  id="prazoEstimado"
+                  type="number"
+                  min="1"
+                  placeholder="Ex: 3"
+                  value={prazoEstimado}
+                  onChange={(e) => setPrazoEstimado(e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="descricaoServico">Descrição Detalhada do Serviço</Label>
+                <Input
+                  id="descricaoServico"
+                  placeholder="Descreva o serviço a ser realizado..."
+                  value={descricaoServico}
+                  onChange={(e) => setDescricaoServico(e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Detalhes da Solicitação</Label>
                 <div className="rounded-md border p-4 text-sm">
-                  <p><strong>Veículo:</strong> {selectedMaintenance?.vehiclePlate}</p>
                   <p><strong>Tipo:</strong> {selectedMaintenance?.maintenanceType}</p>
-                  <p><strong>Descrição:</strong> {selectedMaintenance?.description}</p>
+                  <p><strong>Descrição Original:</strong> {selectedMaintenance?.description}</p>
                 </div>
               </div>
               
@@ -590,7 +641,7 @@ export default function OficinaDashboard() {
                 </Button>
                 <Button 
                   onClick={createBudgetChat} 
-                  disabled={isSubmittingBudget || !initialBudget || isNaN(parseFloat(initialBudget))}
+                  disabled={isSubmittingBudget || !initialBudget || !kmAtual || !prazoEstimado || !descricaoServico}
                 >
                   {isSubmittingBudget && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Enviar Orçamento
