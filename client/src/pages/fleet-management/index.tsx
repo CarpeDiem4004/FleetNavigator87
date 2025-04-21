@@ -1,7 +1,18 @@
 import React from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Truck, FileBarChart, ListChecks, CalendarDays, Wrench, Building2, ArrowRight } from 'lucide-react';
+import { 
+  Truck, 
+  FileBarChart, 
+  ListChecks, 
+  CalendarDays, 
+  Wrench, 
+  Building2, 
+  ArrowRight,
+  DollarSign,
+  MessageSquare,
+  AlertCircle
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
@@ -54,7 +65,7 @@ export default function FleetManagement() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2">
@@ -72,6 +83,28 @@ export default function FleetManagement() {
                 <Button variant="outline" className="w-full" asChild>
                   <Link href="/fleet-management/maintenance">
                     Gerenciar Manutenções <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-primary" />
+                  Negociação de Orçamentos
+                </CardTitle>
+                <CardDescription>
+                  Tratativas com oficinas
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p>Gerencie orçamentos enviados pelas oficinas, responda às propostas e acompanhe as negociações em andamento para aprovar os valores e autorizar serviços.</p>
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href="/fleet-management/budgets">
+                    Gerenciar Orçamentos <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
               </CardFooter>

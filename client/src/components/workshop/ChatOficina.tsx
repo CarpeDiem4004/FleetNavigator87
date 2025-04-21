@@ -77,7 +77,7 @@ export default function ChatOficina({ maintenanceId, initialBudget, chatId: exte
         '/api/workshop/maintenance-chat',
         {
           maintenanceId,
-          initialBudget
+          initialBudget: initialBudget.toString() // Convertendo para string para atender à validação do schema
         }
       );
       
