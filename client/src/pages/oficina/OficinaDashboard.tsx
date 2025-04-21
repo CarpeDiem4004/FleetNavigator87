@@ -244,7 +244,7 @@ export default function OficinaDashboard() {
       setIsSubmittingBudget(true);
       
       // Criar o chat de orçamento
-      const chatResponse = await fetch("/api/workshop/maintenance-chat", {
+      const response = await fetch("/api/workshop/maintenance-chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -260,42 +260,26 @@ export default function OficinaDashboard() {
         })
       });
       
-      if (!chatResponse.ok) {
+      if (!response.ok) {
         throw new Error("Erro ao criar chat de orçamento");
       }
       
-      const chatData = await chatResponse.json();
+      const data = await response.json();
       
-      // Limpar campos e fechar o diálogo antes de atualizar os estados
-      setVehiclePlate("");
-      setInitialBudget("");
-      setKmAtual("");
-      setPrazoEstimado("");
-      setDescricaoServico("");
+      // Atualizar o ID do chat criado
+      setCreatedChatId(data.id);
+      
+      // Atualizar a lista de manutenções
+      fetchMaintenance();
+      
+      // Fechar o diálogo e mostrar mensagem de sucesso
       setIsChatDialogOpen(false);
       
-      // Depois de fechar o diálogo, atualizar os outros estados
-      // Isso evita o erro de insertBefore com nós removidos
-      setTimeout(() => {
-        // Guardar o ID do chat criado
-        setCreatedChatId(chatData.id);
-        
-        // Atualizar o status da manutenção na lista local
-        setMaintenanceItems(prev => 
-          prev.map(item => item.id === selectedMaintenance.id 
-            ? { ...item, status: 'em_andamento' } 
-            : item
-          )
-        );
-        
-        toast({
-          title: "Sucesso",
-          description: "Orçamento enviado para análise.",
-        });
-        
-        // Atualizar a lista após enviar o orçamento
-        fetchMaintenance();
-      }, 100);
+      toast({
+        title: "Sucesso",
+        description: "Orçamento enviado para análise.",
+      });
+      
     } catch (error) {
       console.error("Erro ao criar chat de orçamento:", error);
       toast({
@@ -575,19 +559,35 @@ export default function OficinaDashboard() {
         </CardContent>
       </Card>
       
-      {/* Modal de chat de orçamento */}
-      {isChatDialogOpen && selectedMaintenance && (
-        <Dialog open={true} onOpenChange={(open) => !open && setIsChatDialogOpen(false)}>
-          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-            <DialogHeader className="pb-2">
-              <DialogTitle>
-                Novo Orçamento
-              </DialogTitle>
-              <DialogDescription className="text-xs">
-                Preencha todas as informações do orçamento incluindo a placa do veículo
-              </DialogDescription>
-            </DialogHeader>
+      {/* Modal de chat de orçamento - Nova versão sem renderização condicional */}
+      <Dialog 
+        open={isChatDialogOpen && selectedMaintenance !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            // Fechar o diálogo
+            setIsChatDialogOpen(false);
             
+            // Se o chat foi criado recentemente, reagendar a atualização dos dados
+            if (createdChatId) {
+              setCreatedChatId(null);
+              setTimeout(() => {
+                fetchMaintenance();
+              }, 500);
+            }
+          }
+        }}
+      >
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="pb-2">
+            <DialogTitle>
+              Novo Orçamento
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Preencha todas as informações do orçamento incluindo a placa do veículo
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedMaintenance && (
             <div className="py-2">
               {/* Detalhes da Solicitação - Versão simplificada */}
               <div className="mb-3 p-2 border text-xs rounded bg-muted/10">
@@ -608,130 +608,144 @@ export default function OficinaDashboard() {
               </div>
               
               {/* Formulário de novo orçamento simplificado */}
-              <div className="mb-3 border rounded">
-                <div className="p-2 border-b bg-muted/10">
-                  <h3 className="text-sm font-medium">Novo Orçamento</h3>
-                </div>
-                
-                <div className="p-3 space-y-3">
-                  {/* Campo de placa */}
-                  <div>
-                    <Label htmlFor="vehiclePlate" className="text-xs font-medium flex items-center">
-                      <span className="mr-1">🚗</span>Placa do Veículo
-                    </Label>
-                    <Input
-                      id="vehiclePlate"
-                      value={vehiclePlate}
-                      onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())}
-                      placeholder="Digite a placa do veículo"
-                      className="uppercase mt-1 h-8 text-sm"
-                    />
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                createBudgetChat();
+              }}>
+                <div className="mb-3 border rounded">
+                  <div className="p-2 border-b bg-muted/10">
+                    <h3 className="text-sm font-medium">Novo Orçamento</h3>
                   </div>
                   
-                  {/* Grid de 2 colunas para valor e quilometragem */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 space-y-3">
+                    {/* Campo de placa */}
                     <div>
-                      <Label htmlFor="initialBudget" className="text-xs font-medium flex items-center">
-                        <span className="mr-1">💰</span>Valor (R$)
+                      <Label htmlFor="vehiclePlate" className="text-xs font-medium flex items-center">
+                        <span className="mr-1">🚗</span>Placa do Veículo
                       </Label>
                       <Input
-                        id="initialBudget"
+                        id="vehiclePlate"
+                        value={vehiclePlate}
+                        onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())}
+                        placeholder="Digite a placa do veículo"
+                        className="uppercase mt-1 h-8 text-sm"
+                      />
+                    </div>
+                    
+                    {/* Grid de 2 colunas para valor e quilometragem */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="initialBudget" className="text-xs font-medium flex items-center">
+                          <span className="mr-1">💰</span>Valor (R$)
+                        </Label>
+                        <Input
+                          id="initialBudget"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0,00"
+                          value={initialBudget}
+                          onChange={(e) => setInitialBudget(e.target.value)}
+                          className="mt-1 h-8 text-sm"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="kmAtual" className="text-xs font-medium flex items-center">
+                          <span className="mr-1">🔄</span>Quilometragem
+                        </Label>
+                        <Input
+                          id="kmAtual"
+                          type="number"
+                          min="0"
+                          placeholder="Ex: 45000"
+                          value={kmAtual}
+                          onChange={(e) => setKmAtual(e.target.value)}
+                          className="mt-1 h-8 text-sm"
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Prazo estimado */}
+                    <div>
+                      <Label htmlFor="prazoEstimado" className="text-xs font-medium flex items-center">
+                        <span className="mr-1">⏱️</span>Prazo para Conclusão (dias)
+                      </Label>
+                      <Input
+                        id="prazoEstimado"
                         type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0,00"
-                        value={initialBudget}
-                        onChange={(e) => setInitialBudget(e.target.value)}
+                        min="1"
+                        placeholder="Ex: 3"
+                        value={prazoEstimado}
+                        onChange={(e) => setPrazoEstimado(e.target.value)}
                         className="mt-1 h-8 text-sm"
                       />
                     </div>
                     
+                    {/* Descrição do serviço */}
                     <div>
-                      <Label htmlFor="kmAtual" className="text-xs font-medium flex items-center">
-                        <span className="mr-1">🔄</span>Quilometragem
+                      <Label htmlFor="descricaoServico" className="text-xs font-medium flex items-center">
+                        <span className="mr-1">📝</span>Descrição do Serviço
                       </Label>
-                      <Input
-                        id="kmAtual"
-                        type="number"
-                        min="0"
-                        placeholder="Ex: 45000"
-                        value={kmAtual}
-                        onChange={(e) => setKmAtual(e.target.value)}
-                        className="mt-1 h-8 text-sm"
+                      <textarea
+                        id="descricaoServico"
+                        placeholder="Descreva o serviço a ser realizado..."
+                        value={descricaoServico}
+                        onChange={(e) => setDescricaoServico(e.target.value)}
+                        rows={2}
+                        className="w-full mt-1 resize-none rounded-md border text-sm border-input p-2"
                       />
                     </div>
                   </div>
-                  
-                  {/* Prazo estimado */}
-                  <div>
-                    <Label htmlFor="prazoEstimado" className="text-xs font-medium flex items-center">
-                      <span className="mr-1">⏱️</span>Prazo para Conclusão (dias)
-                    </Label>
-                    <Input
-                      id="prazoEstimado"
-                      type="number"
-                      min="1"
-                      placeholder="Ex: 3"
-                      value={prazoEstimado}
-                      onChange={(e) => setPrazoEstimado(e.target.value)}
-                      className="mt-1 h-8 text-sm"
-                    />
-                  </div>
-                  
-                  {/* Descrição do serviço */}
-                  <div>
-                    <Label htmlFor="descricaoServico" className="text-xs font-medium flex items-center">
-                      <span className="mr-1">📝</span>Descrição do Serviço
-                    </Label>
-                    <textarea
-                      id="descricaoServico"
-                      placeholder="Descreva o serviço a ser realizado..."
-                      value={descricaoServico}
-                      onChange={(e) => setDescricaoServico(e.target.value)}
-                      rows={2}
-                      className="w-full mt-1 resize-none rounded-md border text-sm border-input p-2"
-                    />
-                  </div>
                 </div>
-              </div>
-              
-              {/* Barra de ações */}
-              <div className="flex justify-between items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  onClick={() => {
-                    // Limpar campos
-                    setVehiclePlate(selectedMaintenance.vehiclePlate || "");
-                    setInitialBudget("");
-                    setKmAtual("");
-                    setPrazoEstimado("");
-                    setDescricaoServico("");
-                  }}
-                  className="flex items-center h-8 text-xs"
-                >
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Novo
-                </Button>
                 
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={closeBudgetChat} size="sm" className="h-8 text-xs">
-                    Cancelar
-                  </Button>
+                {/* Barra de ações */}
+                <div className="flex justify-between items-center gap-2">
                   <Button 
-                    onClick={createBudgetChat}
-                    disabled={isSubmittingBudget || !vehiclePlate || !initialBudget || !kmAtual || !prazoEstimado || !descricaoServico}
-                    size="sm"
-                    className="h-8 text-xs"
+                    type="button"
+                    variant="ghost" 
+                    onClick={() => {
+                      // Limpar campos
+                      setVehiclePlate(selectedMaintenance.vehiclePlate || "");
+                      setInitialBudget("");
+                      setKmAtual("");
+                      setPrazoEstimado("");
+                      setDescricaoServico("");
+                    }}
+                    className="flex items-center h-8 text-xs"
                   >
-                    {isSubmittingBudget && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Enviar Orçamento
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Novo
                   </Button>
+                  
+                  <div className="flex gap-2">
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      onClick={() => {
+                        setIsChatDialogOpen(false);
+                      }} 
+                      size="sm" 
+                      className="h-8 text-xs"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button 
+                      type="submit"
+                      disabled={isSubmittingBudget || !vehiclePlate || !initialBudget || !kmAtual || !prazoEstimado || !descricaoServico}
+                      size="sm"
+                      className="h-8 text-xs"
+                    >
+                      {isSubmittingBudget && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Enviar Orçamento
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              </form>
             </div>
-          </DialogContent>
-        </Dialog>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
       
       {/* Modal do ciclo de vida */}
       {isLifecycleDialogOpen && selectedMaintenance && (
