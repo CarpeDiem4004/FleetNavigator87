@@ -15,3 +15,15 @@ export function formatCurrency(value: number | string): string {
     maximumFractionDigits: 2
   }).format(numberValue);
 }
+
+export function formatDate(dateStr: string | null): string {
+  if (!dateStr) return "-";
+  
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('pt-BR');
+  } catch (error) {
+    console.error("Erro ao formatar data:", error);
+    return "-";
+  }
+}
