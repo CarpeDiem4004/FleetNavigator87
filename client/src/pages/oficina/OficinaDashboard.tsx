@@ -683,6 +683,7 @@ export default function OficinaDashboard() {
                   kmAtual={kmAtual || undefined}
                   prazoEstimado={prazoEstimado || undefined}
                   descricaoServico={descricaoServico || undefined}
+                  vehiclePlate={vehiclePlate || undefined}
                   chatId={createdChatId}
                 />
               )}

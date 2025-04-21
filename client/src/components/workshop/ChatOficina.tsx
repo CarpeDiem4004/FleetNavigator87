@@ -30,6 +30,7 @@ interface ChatData {
   kmAtual: string | null;
   prazoEstimado: string | null;
   descricaoServico: string | null;
+  vehiclePlate: string | null;
   isFinalized: boolean;
   messages: Message[];
 }
@@ -40,6 +41,7 @@ interface ChatOficinaProps {
   kmAtual?: string | null;
   prazoEstimado?: string | null;
   descricaoServico?: string | null;
+  vehiclePlate?: string | null;
   chatId?: number | null;
 }
 
@@ -49,6 +51,7 @@ export default function ChatOficina({
   kmAtual, 
   prazoEstimado, 
   descricaoServico, 
+  vehiclePlate,
   chatId: externalChatId 
 }: ChatOficinaProps) {
   const { user } = useAuth();
@@ -93,7 +96,8 @@ export default function ChatOficina({
           initialBudget: initialBudget.toString(), // Já está convertendo para string
           kmAtual: kmAtual || '',
           prazoEstimado: prazoEstimado || '',
-          descricaoServico: descricaoServico || ''
+          descricaoServico: descricaoServico || '',
+          vehiclePlate: vehiclePlate || ''
         }
       );
       
@@ -264,8 +268,14 @@ export default function ChatOficina({
                 {chat?.finalBudget && ` → Final: ${formatCurrency(chat.finalBudget)}`}
               </div>
               
-              {(chat.kmAtual || chat.prazoEstimado || chat.descricaoServico) && (
+              {(chat.vehiclePlate || chat.kmAtual || chat.prazoEstimado || chat.descricaoServico) && (
                 <div className="text-sm grid gap-2 mt-2 p-2 bg-muted/50 rounded-md">
+                  {chat.vehiclePlate && (
+                    <div>
+                      <span className="font-semibold">Placa do Veículo:</span> {chat.vehiclePlate.toUpperCase()}
+                    </div>
+                  )}
+                  
                   {chat.kmAtual && (
                     <div>
                       <span className="font-semibold">Quilometragem Atual:</span> {chat.kmAtual} km
