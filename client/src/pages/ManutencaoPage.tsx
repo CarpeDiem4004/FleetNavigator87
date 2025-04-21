@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase-client';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import {
   Tabs,
@@ -90,34 +89,34 @@ const ManutencaoPage: React.FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Carregar manutenções
+  // Carregar manutenções usando a API REST
   useEffect(() => {
     const fetchMaintenances = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('manutencoes')
-          .select(`
-            *,
-            vehicles:veiculo_id(id, plate, model),
-            bases:base_id(id, name)
-          `)
-          .order('data_registro', { ascending: false });
-
-        if (error) throw error;
+        console.log('Buscando manutenções via API REST...');
+        const response = await fetch('/api/maintenance');
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erro ao buscar manutenções');
+        }
+        
+        const data = await response.json();
+        console.log('Manutenções recebidas:', data);
         
         // Formatar dados para exibição
         const formattedData = data.map((item: any) => ({
           id: item.id,
-          veiculo_id: item.veiculo_id,
-          base_id: item.base_id,
-          descricao: item.descricao,
-          data_registro: item.data_registro,
+          veiculo_id: item.vehicleId || item.veiculo_id,
+          base_id: item.baseId || item.base_id,
+          descricao: item.description || item.descricao,
+          data_registro: item.requestDate || item.data_registro,
           status: item.status,
-          data_conclusao: item.data_conclusao,
-          placa_veiculo: item.vehicles?.plate,
-          modelo_veiculo: item.vehicles?.model,
-          base_nome: item.bases?.name
+          data_conclusao: item.completionDate || item.data_conclusao,
+          placa_veiculo: item.vehiclePlate || item.placa_veiculo,
+          modelo_veiculo: item.vehicleModel || item.modelo_veiculo,
+          base_nome: item.baseName || item.base_nome
         }));
 
         setManutencoes(formattedData);
@@ -212,7 +211,7 @@ const ManutencaoPage: React.FC = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Função para cadastrar nova manutenção
+  // Função para cadastrar nova manutenção usando a API REST
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -228,20 +227,35 @@ const ManutencaoPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
+      console.log('Registrando manutenção via API REST...');
+      
+      // Usar a API REST para registrar a manutenção
       const maintenanceData = {
-        veiculo_id: parseInt(form.veiculo_id),
-        base_id: parseInt(form.base_id),
-        descricao: form.descricao,
-        status: 'pendente',
-        data_registro: new Date().toISOString(),
+        vehiclePlate: vehicles.find(v => v.id === parseInt(form.veiculo_id))?.plate,
+        workshopId: 1, // Valor padrão, pode ser atualizado conforme necessário
+        requestBaseId: parseInt(form.base_id),
+        description: form.descricao,
+        estimatedExitDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 dias a partir de hoje
+        priority: 'normal',
       };
-
-      const { data, error } = await supabase
-        .from('manutencoes')
-        .insert(maintenanceData)
-        .select();
-
-      if (error) throw error;
+      
+      console.log('Dados da manutenção:', maintenanceData);
+      
+      const response = await fetch('/api/maintenance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(maintenanceData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao registrar manutenção');
+      }
+      
+      const data = await response.json();
+      console.log('Manutenção registrada com sucesso:', data);
 
       toast({
         title: 'Manutenção registrada',
@@ -261,13 +275,12 @@ const ManutencaoPage: React.FC = () => {
       const baseSelecionada = bases.find(b => b.id === parseInt(form.base_id));
       
       const newMaintenance: Maintenance = {
-        id: data[0].id,
-        veiculo_id: data[0].veiculo_id,
-        base_id: data[0].base_id,
-        descricao: data[0].descricao,
-        data_registro: data[0].data_registro,
-        status: data[0].status,
-        data_conclusao: data[0].data_conclusao,
+        id: data.id,
+        veiculo_id: parseInt(form.veiculo_id),
+        base_id: parseInt(form.base_id),
+        descricao: form.descricao,
+        data_registro: new Date().toISOString(),
+        status: 'pendente',
         placa_veiculo: veiculoSelecionado?.plate,
         modelo_veiculo: veiculoSelecionado?.model,
         base_nome: baseSelecionada?.name,
@@ -288,22 +301,29 @@ const ManutencaoPage: React.FC = () => {
     }
   };
 
-  // Função para concluir uma manutenção
+  // Função para concluir uma manutenção usando a API REST
   const handleCompleteMaintenances = async (id: number) => {
     if (!confirm('Marcar esta manutenção como concluída?')) {
       return;
     }
 
     try {
-      const { error } = await supabase
-        .from('manutencoes')
-        .update({
-          status: 'concluida',
-          data_conclusao: new Date().toISOString()
-        })
-        .eq('id', id);
+      console.log('Concluindo manutenção via API REST:', id);
       
-      if (error) throw error;
+      const response = await fetch(`/api/maintenance/${id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'concluida' }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao concluir manutenção');
+      }
+      
+      console.log('Manutenção concluída com sucesso');
       
       // Atualizar a lista
       setManutencoes(manutencoes.map(item => {
@@ -332,20 +352,25 @@ const ManutencaoPage: React.FC = () => {
     }
   };
 
-  // Função para excluir manutenção
+  // Função para excluir manutenção usando a API REST
   const handleDeleteMaintenance = async (id: number) => {
     if (!confirm('Tem certeza que deseja excluir este registro de manutenção? Esta ação não pode ser desfeita.')) {
       return;
     }
 
     try {
-      const { error } = await supabase
-        .from('manutencoes')
-        .delete()
-        .eq('id', id);
+      console.log('Excluindo manutenção via API REST:', id);
       
-      if (error) throw error;
+      const response = await fetch(`/api/maintenance/${id}`, {
+        method: 'DELETE',
+      });
       
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao excluir manutenção');
+      }
+      
+      console.log('Manutenção excluída com sucesso');
       setManutencoes(manutencoes.filter(item => item.id !== id));
       
       toast({
