@@ -107,10 +107,7 @@ export default function SignIn() {
               </Button>
             </form>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-2">
-            <div className="text-sm text-center">
-              Não tem uma conta? <a href="/register" className="text-primary hover:underline">Cadastre-se</a>
-            </div>
+          <CardFooter className="flex flex-col">
             <p className="text-xs text-center text-gray-600">
               Sistema de gerenciamento de frota desenvolvido para Murici Logística
             </p>
