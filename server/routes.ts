@@ -290,7 +290,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         model: req.body.model,
         vehicleType: req.body.vehicleType,
         status: req.body.status,
-        baseId: req.body.baseId || 12 // Usar 12 (Gestão de Frotas) como fallback
+        baseId: req.body.baseId || 12, // Usar 12 (Gestão de Frotas) como fallback
+        ownership: req.body.ownership || 'proprio', // Valor padrão: próprio
+        rentalCompany: req.body.rentalCompany || null // Empresa de locação, nullable
       };
       
       console.log("Dados ajustados:", JSON.stringify(vehicleData, null, 2));

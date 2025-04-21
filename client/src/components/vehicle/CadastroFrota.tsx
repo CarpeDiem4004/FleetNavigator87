@@ -132,6 +132,10 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
       setMarca('')
       setModelo('carreta')
       setBaseId(undefined)
+      setOwnership('proprio')
+      setLeasingCompany('')
+      setOwnership('proprio')
+      setLeasingCompany('')
       
       // Notificar o componente pai sobre a adição
       if (onVehicleAdded) {
@@ -214,7 +218,16 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
 
           <div className="space-y-2">
             <Label htmlFor="ownership">Propriedade *</Label>
-            <Select value={ownership} onValueChange={setOwnership}>
+            <Select 
+              value={ownership} 
+              onValueChange={(value) => {
+                setOwnership(value);
+                // Limpar o campo de empresa quando mudar para próprio
+                if (value === 'proprio') {
+                  setLeasingCompany('');
+                }
+              }}
+            >
               <SelectTrigger id="ownership">
                 <SelectValue placeholder="Selecione a propriedade" />
               </SelectTrigger>
