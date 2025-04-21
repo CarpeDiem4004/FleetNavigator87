@@ -136,6 +136,39 @@ export default function ChatOficina({ maintenanceId, initialBudget }: ChatOficin
     }
   });
 
+  // Finalizar a negociação
+  const finalizeChatMutation = useMutation({
+    mutationFn: async (finalBudget: number) => {
+      if (!chatId) return null;
+      
+      const res = await apiRequest(
+        'POST',
+        `/api/workshop/maintenance-chat/${chatId}/finalize`,
+        { finalBudget }
+      );
+      
+      return await res.json();
+    },
+    onSuccess: () => {
+      refetchChat();
+      
+      toast({
+        title: 'Negociação finalizada',
+        description: 'O orçamento foi aprovado e a manutenção pode prosseguir.',
+      });
+      
+      // Invalidar cache da consulta de manutenções
+      queryClient.invalidateQueries({ queryKey: ['/api/workshop/maintenance'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro ao finalizar negociação',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  });
+
   // Verificar se precisa criar o chat
   useEffect(() => {
     if (!chatLoading && !chat?.id && initialBudget && !chatError) {
@@ -274,7 +307,38 @@ export default function ChatOficina({ maintenanceId, initialBudget }: ChatOficin
         )}
       </CardContent>
       
-      <CardFooter className="flex justify-end">
+      <CardFooter className="flex justify-between">
+        {/* Botões de finalização (visíveis apenas em negociação) */}
+        {!chat?.isFinalized && chat?.messages && chat.messages.length > 0 && user?.role === 'gestor_frota' && (
+          <div>
+            <Button 
+              variant="outline" 
+              className="bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border-green-200"
+              onClick={() => {
+                // Usa o último orçamento proposto como final, ou o inicial se nenhum foi proposto
+                const lastProposedBudget = [...chat.messages]
+                  .reverse()
+                  .find(msg => msg.proposedBudget)?.proposedBudget;
+                
+                const finalBudget = lastProposedBudget || chat.initialBudget;
+                
+                if (finalBudget) {
+                  finalizeChatMutation.mutate(finalBudget);
+                }
+              }}
+              disabled={finalizeChatMutation.isPending}
+            >
+              {finalizeChatMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <CheckCircle className="h-4 w-4 mr-2" />
+              )}
+              Aprovar Orçamento
+            </Button>
+          </div>
+        )}
+        
+        {/* Botão de envio (visível apenas se o chat não estiver finalizado) */}
         {!chat?.isFinalized && (
           <Button 
             onClick={handleSendMessage}
