@@ -205,6 +205,7 @@ export default function OficinaDashboard() {
   // Função para abrir o chat de orçamento
   const openBudgetChat = (maintenance: Maintenance) => {
     setSelectedMaintenance(maintenance);
+    setVehiclePlate(maintenance.vehiclePlate || ""); // Inicializa com a placa atual, mas pode ser modificada
     setInitialBudget("");
     setKmAtual("");
     setPrazoEstimado("");
@@ -233,10 +234,10 @@ export default function OficinaDashboard() {
   
   // Função para criar um novo chat com orçamento inicial
   const createBudgetChat = async () => {
-    if (!selectedMaintenance || !initialBudget || !kmAtual || !prazoEstimado || !descricaoServico) {
+    if (!selectedMaintenance || !vehiclePlate || !initialBudget || !kmAtual || !prazoEstimado || !descricaoServico) {
       toast({
         title: "Erro",
-        description: "Por favor, preencha todos os campos do orçamento.",
+        description: "Por favor, preencha todos os campos do orçamento, incluindo a placa do veículo.",
         variant: "destructive"
       });
       return;
@@ -253,6 +254,7 @@ export default function OficinaDashboard() {
         },
         body: JSON.stringify({
           maintenanceId: selectedMaintenance.id,
+          vehiclePlate: vehiclePlate.toUpperCase(),  // Enviar a placa digitada pela oficina
           initialBudget: initialBudget, // Enviar como string, sem converter para número
           kmAtual: kmAtual,
           prazoEstimado: prazoEstimado,
@@ -326,6 +328,7 @@ export default function OficinaDashboard() {
               const maintenance = maintenanceItems.find(m => m.status === 'aguardando_orcamento');
               if (maintenance) {
                 setSelectedMaintenance(maintenance);
+                setVehiclePlate(maintenance.vehiclePlate || "");
                 setInitialBudget('');
                 setKmAtual('');
                 setPrazoEstimado('');
@@ -645,6 +648,7 @@ export default function OficinaDashboard() {
                   variant="secondary" 
                   onClick={() => {
                     // Limpar todos os campos mantendo a manutenção selecionada
+                    setVehiclePlate(selectedMaintenance?.vehiclePlate || ""); // Resetar para a placa original
                     setInitialBudget("");
                     setKmAtual("");
                     setPrazoEstimado("");
@@ -662,7 +666,7 @@ export default function OficinaDashboard() {
                   </Button>
                   <Button 
                     onClick={createBudgetChat} 
-                    disabled={isSubmittingBudget || !initialBudget || !kmAtual || !prazoEstimado || !descricaoServico}
+                    disabled={isSubmittingBudget || !vehiclePlate || !initialBudget || !kmAtual || !prazoEstimado || !descricaoServico}
                   >
                     {isSubmittingBudget && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Enviar Orçamento
