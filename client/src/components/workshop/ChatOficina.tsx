@@ -176,6 +176,14 @@ export default function ChatOficina({ maintenanceId, initialBudget, chatId: exte
       initChatMutation.mutate();
     }
   }, [chatLoading, chat, initialBudget, chatError]);
+  
+  // Atualizar chatId quando externalChatId mudar
+  useEffect(() => {
+    if (externalChatId) {
+      setChatId(externalChatId);
+      refetchChat();
+    }
+  }, [externalChatId]);
 
   // Função para formatar hora da mensagem
   const formatMessageTime = (dateStr: string) => {

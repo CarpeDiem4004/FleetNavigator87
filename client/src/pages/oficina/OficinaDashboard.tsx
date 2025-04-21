@@ -209,6 +209,7 @@ export default function OficinaDashboard() {
   const closeBudgetChat = () => {
     setIsChatDialogOpen(false);
     setSelectedMaintenance(null);
+    setCreatedChatId(null);
   };
   
   // Função para abrir o diálogo do ciclo de vida
