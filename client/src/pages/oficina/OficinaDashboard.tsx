@@ -654,6 +654,9 @@ export default function OficinaDashboard() {
                 <ChatOficina
                   maintenanceId={selectedMaintenance.id}
                   initialBudget={initialBudget || undefined} // Passar diretamente como string
+                  kmAtual={kmAtual || undefined}
+                  prazoEstimado={prazoEstimado || undefined}
+                  descricaoServico={descricaoServico || undefined}
                   chatId={createdChatId}
                 />
               )}

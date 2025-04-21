@@ -34,10 +34,20 @@ interface ChatData {
 interface ChatOficinaProps {
   maintenanceId: number;
   initialBudget?: string | null; // Alterado para receber string
+  kmAtual?: string | null;
+  prazoEstimado?: string | null;
+  descricaoServico?: string | null;
   chatId?: number | null;
 }
 
-export default function ChatOficina({ maintenanceId, initialBudget, chatId: externalChatId }: ChatOficinaProps) {
+export default function ChatOficina({ 
+  maintenanceId, 
+  initialBudget, 
+  kmAtual, 
+  prazoEstimado, 
+  descricaoServico, 
+  chatId: externalChatId 
+}: ChatOficinaProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [message, setMessage] = useState('');
@@ -77,7 +87,10 @@ export default function ChatOficina({ maintenanceId, initialBudget, chatId: exte
         '/api/workshop/maintenance-chat',
         {
           maintenanceId,
-          initialBudget: initialBudget.toString() // Já está convertendo para string
+          initialBudget: initialBudget.toString(), // Já está convertendo para string
+          kmAtual: kmAtual || '',
+          prazoEstimado: prazoEstimado || '',
+          descricaoServico: descricaoServico || ''
         }
       );
       
