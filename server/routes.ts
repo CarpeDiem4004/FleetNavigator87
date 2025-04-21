@@ -750,28 +750,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API para obter todos os veículos cadastrados
   app.get("/api/workshop/vehicles", isWorkshop, async (req, res) => {
     try {
-      // Buscar todos os veículos
+      // Buscar todos os veículos - adaptado para as colunas existentes
       const query = `
         SELECT 
           id, 
           plate, 
           model,
-          make,
-          year,
+          rental_company,
+          vehicle_type,
           base_id
         FROM 
           veiculos
-        WHERE 
-          is_active = true
         ORDER BY 
           plate ASC
       `;
       
       const result = await pool.query(query);
       
+      // Adaptar o resultado para o formato esperado pelo frontend
+      const formattedData = result.rows.map(vehicle => ({
+        id: vehicle.id,
+        plate: vehicle.plate,
+        model: vehicle.model,
+        make: vehicle.rental_company || 'Não Informado', // Usar rental_company como make
+        year: 'N/A', // Não temos o ano, então usamos um valor padrão
+        base_id: vehicle.base_id
+      }));
+      
       return res.status(200).json({ 
         message: "Veículos obtidos com sucesso",
-        data: result.rows 
+        data: formattedData 
       });
     } catch (error: any) {
       console.error("Erro ao buscar veículos:", error);
