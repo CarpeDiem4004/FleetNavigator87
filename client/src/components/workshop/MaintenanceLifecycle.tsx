@@ -10,8 +10,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { CalendarIcon, CheckCircle } from "lucide-react";
-import { formatDate } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
 // Interface para o ciclo de vida da manutenção
 interface MaintenanceLifecycle {
@@ -143,7 +142,7 @@ export default function MaintenanceLifecycle({ maintenanceId, onStatusChange, in
   }, [maintenanceId]);
   
   // Função auxiliar para atualizar uma data no estado
-  const updateDate = (field: keyof MaintenanceLifecycle, date: Date | null) => {
+  const updateDate = (field: keyof MaintenanceLifecycle, date: Date | null | undefined) => {
     setLifecycleData({
       ...lifecycleData,
       [field]: date ? date.toISOString().split('T')[0] : null

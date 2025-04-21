@@ -18,8 +18,9 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Loader2, CheckCircle, Clock, AlertTriangle, XCircle, MessageSquare } from "lucide-react";
+import { Loader2, CheckCircle, Clock, AlertTriangle, XCircle, MessageSquare, FileInput, Calendar } from "lucide-react";
 import ChatOficina from "@/components/workshop/ChatOficina";
+import MaintenanceLifecycle from "@/components/workshop/MaintenanceLifecycle";
 
 // Interface para as manutenções
 interface Maintenance {
@@ -127,7 +128,8 @@ export default function OficinaDashboard() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isChatDialogOpen, setIsChatDialogOpen] = useState(false);
+  const [isLifecycleDialogOpen, setIsLifecycleDialogOpen] = useState(false);
   const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null);
   const [initialBudget, setInitialBudget] = useState<string>("");
   const [isSubmittingBudget, setIsSubmittingBudget] = useState(false);
