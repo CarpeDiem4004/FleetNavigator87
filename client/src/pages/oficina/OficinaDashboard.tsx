@@ -200,6 +200,7 @@ export default function OficinaDashboard() {
   
   // Função para abrir o chat de orçamento
   const openBudgetChat = (maintenance: Maintenance) => {
+    console.log("Abrindo formulário para manutenção:", maintenance.id);
     setSelectedMaintenance(maintenance);
     setVehiclePlate(maintenance.vehiclePlate || ""); // Inicializa com a placa atual, mas pode ser modificada
     setInitialBudget("");
@@ -320,11 +321,16 @@ export default function OficinaDashboard() {
         <div className="flex gap-2">
           <Button 
             onClick={() => {
-              // Encontrar uma manutenção que está aguardando orçamento
-              const maintenance = maintenanceItems.find(m => m.status === 'aguardando_orcamento');
-              if (maintenance) {
+              // Vamos criar um formulário para novo orçamento independente de haver manutenções elegíveis
+              if (maintenanceItems.length > 0) {
+                // Criar um objeto de manutenção sintético com os dados mínimos necessários
+                // Usaremos a primeira manutenção disponível, independente do status
+                const maintenance = maintenanceItems[0];
+                console.log("Abrindo formulário para a primeira manutenção disponível:", maintenance.id);
+                
+                // Configurar o formulário
                 setSelectedMaintenance(maintenance);
-                setVehiclePlate(maintenance.vehiclePlate || "");
+                setVehiclePlate(""); // Campo vazio para o usuário digitar
                 setInitialBudget('');
                 setKmAtual('');
                 setPrazoEstimado('');
@@ -333,9 +339,10 @@ export default function OficinaDashboard() {
               } else {
                 toast({
                   title: "Atenção",
-                  description: "Não há manutenções aguardando orçamento no momento.",
+                  description: "Não há manutenções disponíveis no momento.",
                   variant: "default"
                 });
+                console.log("Nenhuma manutenção disponível para criar orçamento.");
               }
             }}
             variant="default"
@@ -559,18 +566,14 @@ export default function OficinaDashboard() {
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader className="pb-2">
               <DialogTitle>
-                {selectedMaintenance.status === 'aguardando_orcamento'
-                  ? 'Enviar Orçamento'
-                  : 'Negociação de Orçamento'}
+                Novo Orçamento
               </DialogTitle>
               <DialogDescription className="text-xs">
-                {selectedMaintenance.status === 'aguardando_orcamento'
-                  ? 'Preencha o valor do orçamento inicial para esta manutenção'
-                  : 'Acompanhe a negociação de orçamento com o gestor da frota'}
+                Preencha todas as informações do orçamento incluindo a placa do veículo
               </DialogDescription>
             </DialogHeader>
             
-            {selectedMaintenance.status === 'aguardando_orcamento' ? (
+            {/* Sempre exibir o formulário de novo orçamento */}
               <div className="py-2">
                 {/* Detalhes da Solicitação - Versão simplificada */}
                 <div className="mb-3 p-2 border text-xs rounded bg-muted/10">
@@ -712,19 +715,6 @@ export default function OficinaDashboard() {
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="flex-1 overflow-hidden">
-                <ChatOficina
-                  maintenanceId={selectedMaintenance.id}
-                  initialBudget={initialBudget || undefined} // Passar diretamente como string
-                  kmAtual={kmAtual || undefined}
-                  prazoEstimado={prazoEstimado || undefined}
-                  descricaoServico={descricaoServico || undefined}
-                  vehiclePlate={vehiclePlate || undefined}
-                  chatId={createdChatId}
-                />
-              </div>
-            )}
           </DialogContent>
         </Dialog>
       )}
