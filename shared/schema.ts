@@ -103,6 +103,9 @@ export const maintenanceChat = pgTable("maintenance_chat", {
   maintenanceId: integer("maintenance_id").notNull().references(() => maintenance.id),
   initialBudget: decimal("initial_budget", { precision: 10, scale: 2 }),
   finalBudget: decimal("final_budget", { precision: 10, scale: 2 }),
+  kmAtual: text("km_atual"), // Quilometragem atual do veículo
+  prazoEstimado: text("prazo_estimado"), // Prazo estimado em dias
+  descricaoServico: text("descricao_servico"), // Descrição detalhada do serviço
   isFinalized: boolean("is_finalized").default(false),
   finalizedBy: text("finalized_by"),
   finalizedAt: timestamp("finalized_at"),

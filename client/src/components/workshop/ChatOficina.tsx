@@ -27,6 +27,9 @@ interface ChatData {
   maintenanceId: number;
   initialBudget: number | null;
   finalBudget: number | null;
+  kmAtual: string | null;
+  prazoEstimado: string | null;
+  descricaoServico: string | null;
   isFinalized: boolean;
   messages: Message[];
 }
@@ -253,12 +256,36 @@ export default function ChatOficina({
             </Badge>
           )}
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="space-y-2">
           {chat?.initialBudget ? (
-            <span className="font-medium">
-              Orçamento Inicial: {formatCurrency(chat.initialBudget)}
-              {chat?.finalBudget && ` → Final: ${formatCurrency(chat.finalBudget)}`}
-            </span>
+            <>
+              <div className="font-medium">
+                Orçamento Inicial: {formatCurrency(chat.initialBudget)}
+                {chat?.finalBudget && ` → Final: ${formatCurrency(chat.finalBudget)}`}
+              </div>
+              
+              {(chat.kmAtual || chat.prazoEstimado || chat.descricaoServico) && (
+                <div className="text-sm grid gap-2 mt-2 p-2 bg-muted/50 rounded-md">
+                  {chat.kmAtual && (
+                    <div>
+                      <span className="font-semibold">Quilometragem Atual:</span> {chat.kmAtual} km
+                    </div>
+                  )}
+                  
+                  {chat.prazoEstimado && (
+                    <div>
+                      <span className="font-semibold">Prazo Estimado:</span> {chat.prazoEstimado} dias
+                    </div>
+                  )}
+                  
+                  {chat.descricaoServico && (
+                    <div>
+                      <span className="font-semibold">Descrição do Serviço:</span> {chat.descricaoServico}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           ) : 'Informe um orçamento inicial para iniciar a negociação'}
         </CardDescription>
       </CardHeader>
