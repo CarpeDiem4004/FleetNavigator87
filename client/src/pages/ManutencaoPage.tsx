@@ -239,7 +239,7 @@ const ManutencaoPage: React.FC = () => {
       // Formatar dados de acordo com o esperado pela API
       const maintenanceData = {
         vehiclePlate: vehicle.plate,
-        workshopId: 1, // Valor padrão para a oficina
+        workshopId: 4, // ID da oficina padrão criada
         requestBaseId: parseInt(form.base_id),
         entryDate: new Date().toISOString().split('T')[0],
         expectedExitDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 dias depois
