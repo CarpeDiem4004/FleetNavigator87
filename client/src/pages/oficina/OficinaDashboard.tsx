@@ -135,6 +135,7 @@ export default function OficinaDashboard() {
   const [kmAtual, setKmAtual] = useState<string>("");
   const [prazoEstimado, setPrazoEstimado] = useState<string>("");
   const [descricaoServico, setDescricaoServico] = useState<string>("");
+  const [vehiclePlate, setVehiclePlate] = useState<string>("");
   const [isSubmittingBudget, setIsSubmittingBudget] = useState(false);
   const [createdChatId, setCreatedChatId] = useState<number | null>(null);
   
@@ -572,10 +573,14 @@ export default function OficinaDashboard() {
           {selectedMaintenance?.status === 'aguardando_orcamento' ? (
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>Veículo</Label>
-                <div className="rounded-md border p-2 bg-muted/30">
-                  <p className="text-muted-foreground">{selectedMaintenance?.vehiclePlate}</p>
-                </div>
+                <Label htmlFor="vehiclePlate">Placa do Veículo</Label>
+                <Input
+                  id="vehiclePlate"
+                  value={vehiclePlate}
+                  onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())}
+                  placeholder="Digite a placa do veículo (ex: ABC1234)"
+                  className="uppercase"
+                />
               </div>
               
               <div className="grid grid-cols-2 gap-4">
