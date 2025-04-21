@@ -203,7 +203,9 @@ export class DatabaseStorage implements IStorage {
         model: vehicle.model,
         vehicleType: vehicle.vehicleType,
         status: vehicle.status,
-        baseId: vehicle.baseId
+        baseId: vehicle.baseId,
+        ownership: vehicle.ownership || 'murici',
+        rentalCompany: vehicle.ownership === 'locado' ? vehicle.rentalCompany : null
       };
       
       console.log("Dados preparados para inserção:", JSON.stringify(vehicleData, null, 2));
