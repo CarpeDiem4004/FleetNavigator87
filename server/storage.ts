@@ -90,7 +90,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Usar SQL direto para evitar problemas com o campo oficina_id
       const query = `
-        SELECT id, name, email, password, role, "baseId", basename, oficina_id
+        SELECT id, name, email, password, role, base_id, basename, oficina_id
         FROM users 
         WHERE id = $1
       `;
@@ -101,14 +101,16 @@ export class DatabaseStorage implements IStorage {
         return undefined;
       }
       
-      // Converter o resultado para o formato esperado
+      // Converter o resultado para o formato esperado com log para depuração
+      console.log("Dados do usuário por ID:", JSON.stringify(result.rows[0], null, 2));
+      
       const user: User = {
         id: result.rows[0].id,
         name: result.rows[0].name,
         email: result.rows[0].email,
         password: result.rows[0].password,
         role: result.rows[0].role,
-        baseId: result.rows[0].baseId,
+        baseId: result.rows[0].base_id, // Corrigido para usar base_id, nome da coluna no banco
         basename: result.rows[0].basename,
         oficina_id: result.rows[0].oficina_id || null
       };
@@ -124,7 +126,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Usar SQL direto para evitar problemas com o campo oficina_id
       const query = `
-        SELECT id, name, email, password, role, base_id as "baseId", basename, oficina_id
+        SELECT id, name, email, password, role, base_id, basename, oficina_id
         FROM users 
         WHERE email = $1
       `;
@@ -136,14 +138,16 @@ export class DatabaseStorage implements IStorage {
         return undefined;
       }
       
-      // Converter o resultado para o formato esperado
+      // Converter o resultado para o formato esperado com log para depuração
+      console.log("Dados do usuário:", JSON.stringify(result.rows[0], null, 2));
+      
       const user: User = {
         id: result.rows[0].id,
         name: result.rows[0].name,
         email: result.rows[0].email,
         password: result.rows[0].password,
         role: result.rows[0].role,
-        baseId: result.rows[0].baseId,
+        baseId: result.rows[0].base_id, // Corrigido para usar base_id, nome da coluna no banco
         basename: result.rows[0].basename,
         oficina_id: result.rows[0].oficina_id || null
       };
@@ -173,7 +177,7 @@ export class DatabaseStorage implements IStorage {
       
       // Adicionar campos opcionais se presentes
       if (user.baseId !== undefined && user.baseId !== null) {
-        query += `, "baseId"`;
+        query += `, base_id`;
         valueIndexes += `, $${paramIndex}`;
         params.push(user.baseId);
         paramIndex++;
@@ -207,7 +211,7 @@ export class DatabaseStorage implements IStorage {
         email: result.rows[0].email,
         password: result.rows[0].password,
         role: result.rows[0].role,
-        baseId: result.rows[0].baseId,
+        baseId: result.rows[0].base_id,
         basename: result.rows[0].basename,
         oficina_id: result.rows[0].oficina_id || null
       };
@@ -490,9 +494,39 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getMaintenanceByWorkshop(workshopId: number): Promise<Maintenance[]> {
-    return await db.select().from(maintenance)
-      .where(eq(maintenance.workshopId, workshopId))
-      .orderBy(desc(maintenance.entryDate));
+    try {
+      // Usar SQL direto para buscar dados de manutenção e juntar informações do veículo
+      const query = `
+        SELECT m.*, v.model as "vehicleModel"
+        FROM manutencao m
+        LEFT JOIN vehicles v ON m.vehicle_plate = v.plate
+        WHERE m.workshop_id = $1
+        ORDER BY m.entry_date DESC
+      `;
+      
+      const result = await pool.query(query, [workshopId]);
+      
+      // Mapear os resultados para o formato correto do objeto Maintenance
+      return result.rows.map(row => ({
+        id: row.id,
+        vehiclePlate: row.vehicle_plate,
+        vehicleModel: row.vehicleModel || "",
+        description: row.description,
+        status: row.status,
+        priority: row.priority,
+        maintenanceType: row.maintenance_type,
+        entryDate: row.entry_date,
+        estimatedExitDate: row.estimated_exit_date,
+        actualExitDate: row.actual_exit_date,
+        workshopId: row.workshop_id,
+        requestBaseId: row.request_base_id,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      }));
+    } catch (error) {
+      console.error("Erro ao buscar manutenções da oficina:", error);
+      return [];
+    }
   }
 
   async getAllMaintenance(): Promise<Maintenance[]> {
