@@ -574,76 +574,107 @@ export default function OficinaDashboard() {
           </DialogHeader>
           
           {selectedMaintenance?.status === 'aguardando_orcamento' ? (
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="vehiclePlate">Placa do Veículo</Label>
-                <Input
-                  id="vehiclePlate"
-                  value={vehiclePlate}
-                  onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())}
-                  placeholder="Digite a placa do veículo (ex: ABC1234)"
-                  className="uppercase"
-                />
+            <div className="py-4">
+              {/* Detalhes da Solicitação - Card com destaque */}
+              <div className="mb-6 bg-muted/30 rounded-lg p-4 border border-muted-foreground/20">
+                <h3 className="text-sm font-medium mb-2 flex items-center text-muted-foreground">
+                  <FileInput className="h-4 w-4 mr-2" />
+                  Detalhes da Solicitação
+                </h3>
+                <div className="grid grid-cols-1 gap-1 text-sm">
+                  <div className="flex"><span className="font-medium w-36">Tipo de Manutenção:</span> {selectedMaintenance?.maintenanceType === 'preventiva' ? 'Preventiva' : 'Corretiva'}</div>
+                  <div className="flex"><span className="font-medium w-36">Descrição Original:</span> {selectedMaintenance?.description}</div>
+                </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="kmAtual">Quilometragem Atual</Label>
-                  <Input
-                    id="kmAtual"
-                    type="number"
-                    min="0"
-                    placeholder="Ex: 45000"
-                    value={kmAtual}
-                    onChange={(e) => setKmAtual(e.target.value)}
-                  />
-                </div>
+              {/* Formulário de novo orçamento com layout bem estruturado */}
+              <div className="space-y-6 bg-card rounded-lg p-5 border">
+                <h3 className="text-lg font-semibold mb-4">Novo Orçamento</h3>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="initialBudget">Valor do Orçamento (R$)</Label>
-                  <Input
-                    id="initialBudget"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0,00"
-                    value={initialBudget}
-                    onChange={(e) => setInitialBudget(e.target.value)}
-                  />
+                <div className="space-y-4">
+                  {/* Campo de placa com ícone */}
+                  <div className="space-y-2">
+                    <Label htmlFor="vehiclePlate" className="flex items-center">
+                      <span className="mr-2">🚗</span>Placa do Veículo
+                    </Label>
+                    <Input
+                      id="vehiclePlate"
+                      value={vehiclePlate}
+                      onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())}
+                      placeholder="Digite a placa do veículo (ex: ABC1234)"
+                      className="uppercase focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+                  
+                  {/* Grid de 2 colunas para valor e quilometragem */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="initialBudget" className="flex items-center">
+                        <span className="mr-2">💰</span>Valor do Orçamento (R$)
+                      </Label>
+                      <Input
+                        id="initialBudget"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0,00"
+                        value={initialBudget}
+                        onChange={(e) => setInitialBudget(e.target.value)}
+                        className="focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="kmAtual" className="flex items-center">
+                        <span className="mr-2">🔄</span>Quilometragem Atual
+                      </Label>
+                      <Input
+                        id="kmAtual"
+                        type="number"
+                        min="0"
+                        placeholder="Ex: 45000"
+                        value={kmAtual}
+                        onChange={(e) => setKmAtual(e.target.value)}
+                        className="focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Prazo estimado */}
+                  <div className="space-y-2">
+                    <Label htmlFor="prazoEstimado" className="flex items-center">
+                      <span className="mr-2">⏱️</span>Prazo para Conclusão (dias)
+                    </Label>
+                    <Input
+                      id="prazoEstimado"
+                      type="number"
+                      min="1"
+                      placeholder="Ex: 3"
+                      value={prazoEstimado}
+                      onChange={(e) => setPrazoEstimado(e.target.value)}
+                      className="focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+                  
+                  {/* Descrição do serviço - transformado em textarea */}
+                  <div className="space-y-2">
+                    <Label htmlFor="descricaoServico" className="flex items-center">
+                      <span className="mr-2">📝</span>Descrição Detalhada do Serviço
+                    </Label>
+                    <textarea
+                      id="descricaoServico"
+                      placeholder="Descreva detalhadamente o serviço a ser realizado, incluindo peças necessárias e procedimentos..."
+                      value={descricaoServico}
+                      onChange={(e) => setDescricaoServico(e.target.value)}
+                      rows={4}
+                      className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
                 </div>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="prazoEstimado">Prazo para Conclusão (dias)</Label>
-                <Input
-                  id="prazoEstimado"
-                  type="number"
-                  min="1"
-                  placeholder="Ex: 3"
-                  value={prazoEstimado}
-                  onChange={(e) => setPrazoEstimado(e.target.value)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="descricaoServico">Descrição Detalhada do Serviço</Label>
-                <Input
-                  id="descricaoServico"
-                  placeholder="Descreva o serviço a ser realizado..."
-                  value={descricaoServico}
-                  onChange={(e) => setDescricaoServico(e.target.value)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Detalhes da Solicitação</Label>
-                <div className="rounded-md border p-4 text-sm">
-                  <p><strong>Tipo:</strong> {selectedMaintenance?.maintenanceType}</p>
-                  <p><strong>Descrição Original:</strong> {selectedMaintenance?.description}</p>
-                </div>
-              </div>
-              
-              <div className="flex flex-wrap justify-between items-center pt-4">
+              {/* Botões de ação com melhor espaçamento e alinhamento */}
+              <div className="flex flex-col sm:flex-row justify-between items-center pt-6 gap-4">
                 <Button 
                   variant="secondary" 
                   onClick={() => {
@@ -654,18 +685,19 @@ export default function OficinaDashboard() {
                     setPrazoEstimado("");
                     setDescricaoServico("");
                   }}
-                  className="flex items-center"
+                  className="flex items-center w-full sm:w-auto"
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Novo Orçamento
                 </Button>
                 
-                <div className="flex space-x-2 mt-2 sm:mt-0">
-                  <Button variant="outline" onClick={closeBudgetChat}>
+                <div className="flex space-x-2 w-full sm:w-auto">
+                  <Button variant="outline" onClick={closeBudgetChat} className="flex-1 sm:flex-none">
                     Cancelar
                   </Button>
                   <Button 
-                    onClick={createBudgetChat} 
+                    onClick={createBudgetChat}
+                    className="flex-1 sm:flex-none"
                     disabled={isSubmittingBudget || !vehiclePlate || !initialBudget || !kmAtual || !prazoEstimado || !descricaoServico}
                   >
                     {isSubmittingBudget && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

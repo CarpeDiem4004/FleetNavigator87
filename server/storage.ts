@@ -490,8 +490,23 @@ export class DatabaseStorage implements IStorage {
 
   // Maintenance operations
   async getMaintenance(id: number): Promise<Maintenance | undefined> {
-    const [maintenanceRecord] = await db.select().from(maintenance).where(eq(maintenance.id, id));
-    return maintenanceRecord || undefined;
+    try {
+      // Usar SQL direto em vez de Drizzle ORM para evitar problemas com colunas que podem não existir
+      const query = `
+        SELECT id, vehicle_plate as "vehiclePlate", description, status, 
+               workshop_id as "workshopId", request_base_id as "requestBaseId"
+        FROM manutencao
+        WHERE id = $1
+      `;
+      
+      const result = await pool.query(query, [id]);
+      if (result.rows.length === 0) return undefined;
+      
+      return result.rows[0] as Maintenance;
+    } catch (error) {
+      console.error("Erro ao buscar manutenção:", error);
+      return undefined;
+    }
   }
 
   async getMaintenanceByVehicle(vehiclePlate: string): Promise<Maintenance[]> {
