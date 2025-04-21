@@ -349,7 +349,17 @@ export default function OficinaDashboard() {
             <FileInput className="h-4 w-4 mr-2" />
             Novo Orçamento
           </Button>
-          <Button onClick={fetchMaintenance} variant="outline">
+          <Button 
+            onClick={() => {
+              // Forçar atualização dos dados
+              fetchMaintenance();
+              toast({
+                title: "Atualizando",
+                description: "Lista de manutenções atualizada.",
+              });
+            }} 
+            variant="outline"
+          >
             Atualizar
           </Button>
         </div>
@@ -508,7 +518,7 @@ export default function OficinaDashboard() {
                               
                               {/* Botão para chat de orçamento */}
                               {(maintenance.status === 'aguardando_orcamento' || 
-                                /* Removida verificação de em_negociacao */ 
+                                maintenance.status === 'em_andamento' ||  
                                 maintenance.status === 'orcamento_aprovado') && (
                                 <Button 
                                   size="sm" 
@@ -516,7 +526,9 @@ export default function OficinaDashboard() {
                                   onClick={() => openBudgetChat(maintenance)}
                                 >
                                   <MessageSquare className="h-4 w-4 mr-1" />
-                                  {maintenance.status === 'aguardando_orcamento' ? 'Enviar Orçamento' : 'Ver Negociação'}
+                                  {maintenance.status === 'aguardando_orcamento' ? 'Enviar Orçamento' : 
+                                   maintenance.status === 'em_andamento' ? 'Atualizar Orçamento' :
+                                   'Ver Negociação'}
                                 </Button>
                               )}
                               
