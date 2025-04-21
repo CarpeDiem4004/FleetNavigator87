@@ -903,6 +903,48 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
+  
+  async getMaintenanceEntriesWithChats(): Promise<any[]> {
+    try {
+      // Usar SQL bruto para fazer o JOIN entre manutenções e chats
+      const query = `
+        SELECT m.id, m.vehicle_plate, m.vehicle_model, m.description, m.status, 
+               m.priority, m.workshop_id, w.name as workshop_name, 
+               m.request_base_id, b.name as base_name, m.responsavel_nome,
+               mc.id as maintenance_chat_id, mc.initial_budget, mc.final_budget, 
+               mc.is_finalized, mc.created_at as chat_created_at
+        FROM maintenance m
+        INNER JOIN maintenance_chat mc ON m.id = mc.maintenance_id
+        LEFT JOIN workshops w ON m.workshop_id = w.id
+        LEFT JOIN bases b ON m.request_base_id = b.id
+        ORDER BY mc.created_at DESC
+      `;
+      
+      const result = await pool.query(query);
+      
+      return result.rows.map(row => ({
+        id: row.id,
+        vehiclePlate: row.vehicle_plate,
+        vehicleModel: row.vehicle_model,
+        description: row.description,
+        status: row.status,
+        priority: row.priority,
+        workshopId: row.workshop_id,
+        workshopName: row.workshop_name,
+        baseId: row.request_base_id,
+        baseName: row.base_name, 
+        responsavelNome: row.responsavel_nome,
+        maintenanceChatId: row.maintenance_chat_id,
+        initialBudget: row.initial_budget,
+        finalBudget: row.final_budget,
+        isFinalized: row.is_finalized,
+        chatCreatedAt: row.chat_created_at
+      }));
+    } catch (error) {
+      console.error("Erro ao obter manutenções com chats:", error);
+      return [];
+    }
+  }
 
   // Chat Message operations
   async getChatMessage(id: number): Promise<ChatMessage | undefined> {

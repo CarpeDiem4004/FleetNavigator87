@@ -2032,6 +2032,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Obter todos os chats de manutenção
+  // Obter manutenções com chats para a página de tratativas de orçamentos
+  app.get("/api/fleet/maintenance-with-chats", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const maintenanceWithChats = await storage.getMaintenanceEntriesWithChats();
+      return res.status(200).json(maintenanceWithChats);
+    } catch (error: any) {
+      console.error("Erro ao obter manutenções com chats:", error);
+      return res.status(500).json({
+        message: "Erro ao obter manutenções com chats",
+        error: error.message
+      });
+    }
+  });
+  
+  app.get("/api/workshop/maintenance-chats", hasMaintenanceAccess, async (req, res) => {
+    try {
+      // Buscar todos os chats de manutenção
+      const chats = await storage.getAllMaintenanceChats();
+      
+      // Preparar array para os chats com os detalhes da manutenção
+      const chatsWithMaintenanceDetails = [];
+      
+      // Buscar detalhes de cada manutenção associada aos chats
+      for (const chat of chats) {
+        const maintenance = await storage.getMaintenance(chat.maintenanceId);
+        if (maintenance) {
+          chatsWithMaintenanceDetails.push({
+            ...chat,
+            maintenance: {
+              id: maintenance.id,
+              vehiclePlate: maintenance.vehiclePlate,
+              vehicleModel: maintenance.vehicleModel,
+              description: maintenance.description,
+              status: maintenance.status,
+              priority: maintenance.priority,
+              workshopId: maintenance.workshopId,
+              workshopName: maintenance.workshopName,
+              baseId: maintenance.requestBaseId,
+              baseName: maintenance.requestBaseName,
+              responsavelNome: maintenance.responsavelNome
+            }
+          });
+        }
+      }
+      
+      return res.status(200).json(chatsWithMaintenanceDetails);
+    } catch (error: any) {
+      console.error("Erro ao buscar todos os chats de manutenção:", error);
+      return res.status(500).json({
+        message: "Erro ao buscar chats",
+        error: error.message
+      });
+    }
+  });
+  
   // Criar um novo chat de manutenção
   app.post("/api/workshop/maintenance-chat", hasMaintenanceAccess, async (req, res) => {
     try {
