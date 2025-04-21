@@ -15,11 +15,6 @@ export const tripStatusEnum = pgEnum('trip_status', ['programada', 'carregando',
 export const userRoleEnum = pgEnum('user_role', ['admin', 'gestor', 'operador', 'oficina']);
 export const operationTypeEnum = pgEnum('operation_type', ['carregamento', 'descarga', 'transferencia', 'inventario', 'manutencao']);
 export const operationStatusEnum = pgEnum('operation_status', ['pendente', 'em_andamento', 'concluida', 'cancelada']);
-export const checklistStatusEnum = pgEnum('checklist_status', ['pendente', 'iniciado', 'concluido']);
-export const maintenanceRequestStatusEnum = pgEnum('maintenance_request_status', ['pendente', 'aprovada', 'rejeitada', 'concluida']);
-export const refuelingCardStatusEnum = pgEnum('refueling_card_status', ['pendente', 'aprovada', 'rejeitada']);
-export const messageAuthorEnum = pgEnum('message_author', ['oficina', 'gestor_frota']);
-export const vehicleOwnershipEnum = pgEnum('vehicle_ownership', ['murici', 'locado']);
 
 // Create the bases table
 export const bases = pgTable("bases", {
@@ -32,6 +27,9 @@ export const bases = pgTable("bases", {
   hasTires: boolean("has_tires").default(false),
   created_at: timestamp("created_at").defaultNow(),
 });
+
+// Define enum para propriedade do veículo
+export const vehicleOwnershipEnum = pgEnum('vehicle_ownership', ['murici', 'locado']);
 
 // Create the vehicles table (veiculos)
 export const vehicles = pgTable("veiculos", {
@@ -55,18 +53,6 @@ export const workshops = pgTable("oficinas", {
   created_at: timestamp("created_at").defaultNow(),
 });
 
-// Create the users table
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  password: text("password").notNull(),
-  role: userRoleEnum("role").notNull(),
-  baseId: integer("base_id").references(() => bases.id),
-  basename: text("basename"),
-  oficina_id: integer("oficina_id").references(() => workshops.id),
-});
-
 // Create the maintenance table (manutencao)
 export const maintenance = pgTable("manutencao", {
   id: serial("id").primaryKey(),
@@ -86,31 +72,6 @@ export const maintenance = pgTable("manutencao", {
   responsiblePerson: text("responsible_person"),  // Campo para quem está cuidando da manutenção
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
-});
-
-// Tabela de chats para negociação de orçamentos
-export const maintenanceChat = pgTable("maintenance_chat", {
-  id: serial("id").primaryKey(),
-  maintenanceId: integer("maintenance_id").notNull().references(() => maintenance.id),
-  initialBudget: decimal("initial_budget", { precision: 10, scale: 2 }),
-  finalBudget: decimal("final_budget", { precision: 10, scale: 2 }),
-  isFinalized: boolean("is_finalized").default(false),
-  finalizedBy: text("finalized_by"),
-  finalizedAt: timestamp("finalized_at"),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
-});
-
-// Tabela para mensagens do chat
-export const chatMessages = pgTable("chat_messages", {
-  id: serial("id").primaryKey(),
-  chatId: integer("chat_id").notNull().references(() => maintenanceChat.id),
-  author: messageAuthorEnum("author").notNull(),
-  authorId: integer("author_id").notNull().references(() => users.id),
-  authorName: text("author_name").notNull(),
-  message: text("message").notNull(),
-  proposedBudget: decimal("proposed_budget", { precision: 10, scale: 2 }),
-  sent_at: timestamp("sent_at").defaultNow(),
 });
 
 // Create the tires table (pneus)
@@ -145,6 +106,11 @@ export const fines = pgTable("multas", {
 });
 
 // Create the lineHall table (linha_corredor)
+export const checklistStatusEnum = pgEnum('checklist_status', ['pendente', 'iniciado', 'concluido']);
+export const maintenanceRequestStatusEnum = pgEnum('maintenance_request_status', ['pendente', 'aprovada', 'rejeitada', 'concluida']);
+export const refuelingCardStatusEnum = pgEnum('refueling_card_status', ['pendente', 'aprovada', 'rejeitada']);
+export const messageAuthorEnum = pgEnum('message_author', ['oficina', 'gestor_frota']);
+
 export const lineHall = pgTable("linha_corredor", {
   id: serial("id").primaryKey(),
   truckPlate: text("truck_plate").notNull().references(() => vehicles.plate),
@@ -164,6 +130,18 @@ export const lineHall = pgTable("linha_corredor", {
   tripStatus: tripStatusEnum("trip_status").notNull(),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Create the users table
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  password: text("password").notNull(),
+  role: userRoleEnum("role").notNull(),
+  baseId: integer("base_id").references(() => bases.id),
+  basename: text("basename"),
+  oficina_id: integer("oficina_id").references(() => workshops.id),
 });
 
 // Create the operations table (operacoes)
@@ -202,6 +180,86 @@ export const painelPrincipal = pgTable("painel_principal", {
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
+
+// Tabela de chats para negociação de orçamentos
+export const maintenanceChat = pgTable("maintenance_chat", {
+  id: serial("id").primaryKey(),
+  maintenanceId: integer("maintenance_id").notNull().references(() => maintenance.id),
+  initialBudget: decimal("initial_budget", { precision: 10, scale: 2 }),
+  finalBudget: decimal("final_budget", { precision: 10, scale: 2 }),
+  isFinalized: boolean("is_finalized").default(false),
+  finalizedBy: text("finalized_by"),
+  finalizedAt: timestamp("finalized_at"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela para mensagens do chat
+export const chatMessages = pgTable("chat_messages", {
+  id: serial("id").primaryKey(),
+  chatId: integer("chat_id").notNull().references(() => maintenanceChat.id),
+  author: messageAuthorEnum("author").notNull(),
+  authorId: integer("author_id").notNull().references(() => users.id),
+  authorName: text("author_name").notNull(),
+  message: text("message").notNull(),
+  proposedBudget: decimal("proposed_budget", { precision: 10, scale: 2 }),
+  sent_at: timestamp("sent_at").defaultNow(),
+});
+
+// Relations
+export const vehiclesRelations = relations(vehicles, ({ one, many }) => ({
+  base: one(bases, {
+    fields: [vehicles.baseId],
+    references: [bases.id],
+  }),
+  maintenance: many(maintenance),
+  refueling: many(refueling),
+  fines: many(fines),
+}));
+
+export const basesRelations = relations(bases, ({ many }) => ({
+  vehicles: many(vehicles),
+  refueling: many(refueling),
+  users: many(users),
+  maintenance: many(maintenance, { relationName: "requestedMaintenance" }),
+  operations: many(operations),
+}));
+
+export const maintenanceRelations = relations(maintenance, ({ one, many }) => ({
+  vehicle: one(vehicles, {
+    fields: [maintenance.vehiclePlate],
+    references: [vehicles.plate],
+  }),
+  workshop: one(workshops, {
+    fields: [maintenance.workshopId],
+    references: [workshops.id],
+  }),
+  requestBase: one(bases, {
+    fields: [maintenance.requestBaseId],
+    references: [bases.id],
+    relationName: "requestedMaintenance"
+  }),
+  chat: many(maintenanceChat),
+}));
+
+export const maintenanceChatRelations = relations(maintenanceChat, ({ one, many }) => ({
+  maintenance: one(maintenance, {
+    fields: [maintenanceChat.maintenanceId],
+    references: [maintenance.id],
+  }),
+  messages: many(chatMessages),
+}));
+
+export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
+  chat: one(maintenanceChat, {
+    fields: [chatMessages.chatId],
+    references: [maintenanceChat.id],
+  }),
+  author: one(users, {
+    fields: [chatMessages.authorId],
+    references: [users.id],
+  }),
+}));
 
 // Tabela para checklist de veículos
 export const vehicleChecklist = pgTable("vehicle_checklist", {
@@ -259,60 +317,30 @@ export const refuelingCardRequest = pgTable("refueling_card_request", {
   updated_at: timestamp("updated_at").defaultNow(),
 });
 
-// Relations
-export const vehiclesRelations = relations(vehicles, ({ one, many }) => ({
-  base: one(bases, {
-    fields: [vehicles.baseId],
-    references: [bases.id],
-  }),
-  maintenance: many(maintenance),
-  refueling: many(refueling),
-  fines: many(fines),
-}));
+// Tabela de chats para negociação de orçamentos
+export const maintenanceChat = pgTable("maintenance_chat", {
+  id: serial("id").primaryKey(),
+  maintenanceId: integer("maintenance_id").notNull().references(() => maintenance.id),
+  initialBudget: decimal("initial_budget", { precision: 10, scale: 2 }),
+  finalBudget: decimal("final_budget", { precision: 10, scale: 2 }),
+  isFinalized: boolean("is_finalized").default(false),
+  finalizedBy: text("finalized_by"),
+  finalizedAt: timestamp("finalized_at"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
 
-export const basesRelations = relations(bases, ({ many }) => ({
-  vehicles: many(vehicles),
-  refueling: many(refueling),
-  users: many(users),
-  maintenance: many(maintenance, { relationName: "requestedMaintenance" }),
-  operations: many(operations),
-}));
-
-export const maintenanceRelations = relations(maintenance, ({ one, many }) => ({
-  vehicle: one(vehicles, {
-    fields: [maintenance.vehiclePlate],
-    references: [vehicles.plate],
-  }),
-  workshop: one(workshops, {
-    fields: [maintenance.workshopId],
-    references: [workshops.id],
-  }),
-  requestBase: one(bases, {
-    fields: [maintenance.requestBaseId],
-    references: [bases.id],
-    relationName: "requestedMaintenance"
-  }),
-  chat: many(maintenanceChat),
-}));
-
-export const maintenanceChatRelations = relations(maintenanceChat, ({ one, many }) => ({
-  maintenance: one(maintenance, {
-    fields: [maintenanceChat.maintenanceId],
-    references: [maintenance.id],
-  }),
-  messages: many(chatMessages),
-}));
-
-export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
-  chat: one(maintenanceChat, {
-    fields: [chatMessages.chatId],
-    references: [maintenanceChat.id],
-  }),
-  author: one(users, {
-    fields: [chatMessages.authorId],
-    references: [users.id],
-  }),
-}));
+// Tabela para mensagens do chat
+export const chatMessages = pgTable("chat_messages", {
+  id: serial("id").primaryKey(),
+  chatId: integer("chat_id").notNull().references(() => maintenanceChat.id),
+  author: messageAuthorEnum("author").notNull(),
+  authorId: integer("author_id").notNull().references(() => users.id),
+  authorName: text("author_name").notNull(),
+  message: text("message").notNull(),
+  proposedBudget: decimal("proposed_budget", { precision: 10, scale: 2 }),
+  sent_at: timestamp("sent_at").defaultNow(),
+});
 
 export const workshopsRelations = relations(workshops, ({ many }) => ({
   maintenance: many(maintenance),
@@ -432,9 +460,3 @@ export type InsertRefuelingCardRequest = z.infer<typeof insertRefuelingCardReque
 
 export type PainelPrincipal = typeof painelPrincipal.$inferSelect;
 export type InsertPainelPrincipal = z.infer<typeof insertPainelPrincipalSchema>;
-
-export type MaintenanceChat = typeof maintenanceChat.$inferSelect;
-export type InsertMaintenanceChat = z.infer<typeof insertMaintenanceChatSchema>;
-
-export type ChatMessage = typeof chatMessages.$inferSelect;
-export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
