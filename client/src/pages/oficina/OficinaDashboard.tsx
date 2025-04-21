@@ -175,7 +175,7 @@ export default function OficinaDashboard() {
   }, []);
   
   // Filtrar manutenções com base no status selecionado
-  const filteredMaintenance = filterStatus
+  const filteredMaintenance = filterStatus && filterStatus !== "todos"
     ? maintenanceItems.filter(item => item.status === filterStatus)
     : maintenanceItems;
   
@@ -268,7 +268,7 @@ export default function OficinaDashboard() {
                 <SelectValue placeholder="Filtrar por status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="todos">Todos</SelectItem>
                 <SelectItem value="pendente">Pendente</SelectItem>
                 <SelectItem value="aguardando_orcamento">Aguardando Orçamento</SelectItem>
                 <SelectItem value="em_andamento">Em Andamento</SelectItem>
