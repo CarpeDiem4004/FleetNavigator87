@@ -563,6 +563,13 @@ export default function BudgetManagementPage() {
                 
                 {/* Novas informações adicionais */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border-t pt-2 mt-1">
+                  {selectedMaintenance?.vehiclePlate && (
+                    <div>
+                      <span className="font-semibold text-sm">Placa do Veículo (Informada): </span>
+                      <span className="text-sm uppercase">{selectedMaintenance.vehiclePlate}</span>
+                    </div>
+                  )}
+
                   {selectedMaintenance?.kmAtual && (
                     <div>
                       <span className="font-semibold text-sm">Quilometragem Atual: </span>
