@@ -3,6 +3,8 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 // Importar cronJobs para tarefas agendadas
 import { initCronJobs } from "./cronJobs";
+// Importar migrações
+import { runMigrations } from "./migration";
 
 // Configuração das variáveis de ambiente do Supabase
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
