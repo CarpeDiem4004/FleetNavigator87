@@ -54,7 +54,7 @@ export default function SignIn() {
       
       {/* Conteúdo do login */}
       <div className="relative z-10 w-full max-w-md px-4">
-        <Card className="backdrop-blur-sm bg-white/90 shadow-2xl border-0">
+        <Card className="backdrop-blur-sm bg-white/60 shadow-2xl border-0">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">
               Sistema de Gestão de Frotas
@@ -75,7 +75,7 @@ export default function SignIn() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={loading}
-                  className="bg-white/80"
+                  className="bg-white/50"
                 />
               </div>
               <div className="space-y-2">
@@ -88,7 +88,7 @@ export default function SignIn() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={loading}
-                  className="bg-white/80"
+                  className="bg-white/50"
                 />
               </div>
               <Button 
