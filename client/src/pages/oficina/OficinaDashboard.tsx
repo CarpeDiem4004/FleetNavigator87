@@ -214,13 +214,12 @@ export default function OficinaDashboard() {
   const openBudgetChat = (maintenance: Maintenance) => {
     console.log("Abrindo formulário para manutenção:", maintenance.id);
     
-    // Verificar se a lista de veículos já foi carregada
-    if (vehicles.length === 0 && !loadingVehicles) {
-      fetchVehicles();
-    }
+    // Sempre buscar a lista atualizada de veículos
+    fetchVehicles();
     
+    // Configurar o formulário e abrir o modal
     setSelectedMaintenance(maintenance);
-    setVehiclePlate(""); // Agora iniciamos vazio para o usuário selecionar
+    setVehiclePlate("");
     setInitialBudget("");
     setKmAtual("");
     setPrazoEstimado("");
@@ -366,21 +365,18 @@ export default function OficinaDashboard() {
         <div className="flex gap-2">
           <Button 
             onClick={() => {
-              // Vamos criar um formulário para novo orçamento independente de haver manutenções elegíveis
+              // Carregar veículos antes de abrir o diálogo
+              fetchVehicles();
+              
+              // Verificar se existem manutenções
               if (maintenanceItems.length > 0) {
-                // Criar um objeto de manutenção sintético com os dados mínimos necessários
-                // Usaremos a primeira manutenção disponível, independente do status
+                // Usamos a primeira manutenção disponível como referência
                 const maintenance = maintenanceItems[0];
-                console.log("Abrindo formulário para a primeira manutenção disponível:", maintenance.id);
+                console.log("Abrindo formulário para manutenção:", maintenance.id);
                 
-                // Verificar se a lista de veículos já foi carregada
-                if (vehicles.length === 0 && !loadingVehicles) {
-                  fetchVehicles();
-                }
-                
-                // Configurar o formulário
+                // Configurar o formulário e abrir o diálogo
                 setSelectedMaintenance(maintenance);
-                setVehiclePlate(""); // Campo vazio para seleção do usuário
+                setVehiclePlate('');
                 setInitialBudget('');
                 setKmAtual('');
                 setPrazoEstimado('');
@@ -392,7 +388,6 @@ export default function OficinaDashboard() {
                   description: "Não há manutenções disponíveis no momento.",
                   variant: "default"
                 });
-                console.log("Nenhuma manutenção disponível para criar orçamento.");
               }
             }}
             variant="default"
@@ -686,59 +681,40 @@ export default function OficinaDashboard() {
                   </div>
                   
                   <div className="p-3 space-y-3">
-                    {/* Campo de placa (Input ou Select) com opção de adicionar manualmente */}
+                    {/* Campo de placa (somente seletor de veículos cadastrados) */}
                     <div>
                       <Label htmlFor="vehiclePlate" className="text-xs font-medium flex items-center">
-                        <span className="mr-1">🚗</span>Placa do Veículo
+                        <span className="mr-1">🚗</span>Placa do Veículo (Somente Cadastrados)
                       </Label>
-                      <div className="space-y-2">
-                        {/* Seletor de veículos */}
-                        <div className="flex gap-2 items-center">
-                          <div className="flex-1">
-                            <Select
-                              value={vehiclePlate}
-                              onValueChange={(value) => setVehiclePlate(value)}
-                            >
-                              <SelectTrigger className="mt-1 h-9 text-sm">
-                                <SelectValue placeholder="Selecione um veículo" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {!loadingVehicles && vehicles.map((vehicle) => (
-                                  <SelectItem key={vehicle.id} value={vehicle.plate}>
-                                    {vehicle.plate} - {vehicle.make} {vehicle.model} ({vehicle.year})
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          {/* Indicador de carregamento */}
-                          {loadingVehicles && (
-                            <div className="flex items-center ml-2">
-                              <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                              <span className="text-xs">Carregando...</span>
-                            </div>
-                          )}
-                        </div>
+                      <div className="relative mt-1">
+                        <Select
+                          value={vehiclePlate}
+                          onValueChange={(value) => setVehiclePlate(value)}
+                        >
+                          <SelectTrigger className="h-9 text-sm">
+                            <SelectValue placeholder="Selecione um veículo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {!loadingVehicles && vehicles.map((vehicle) => (
+                              <SelectItem key={vehicle.id} value={vehicle.plate}>
+                                {vehicle.plate} - {vehicle.make} {vehicle.model} ({vehicle.year})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         
-                        {/* Opção de digitar placa manualmente */}
-                        {vehicles.length === 0 && !loadingVehicles && (
-                          <div className="text-xs text-muted-foreground">
-                            Nenhum veículo encontrado. Digite a placa manualmente abaixo.
+                        {/* Indicador de carregamento absoluto */}
+                        {loadingVehicles && (
+                          <div className="absolute inset-y-0 right-8 flex items-center pr-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
                           </div>
                         )}
-                        
-                        {/* Campo para digitação manual */}
-                        <Input
-                          id="vehiclePlateManual"
-                          value={vehiclePlate}
-                          onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())}
-                          placeholder="Digite a placa do veículo manualmente"
-                          className="uppercase mt-1 h-8 text-sm"
-                        />
-                        <div className="text-xs text-muted-foreground">
-                          Você pode selecionar um veículo ou digitar a placa manualmente.
-                        </div>
                       </div>
+                      {vehicles.length === 0 && !loadingVehicles && (
+                        <div className="text-xs text-orange-500 mt-1">
+                          Nenhum veículo cadastrado encontrado no sistema.
+                        </div>
+                      )}
                     </div>
                     
                     {/* Grid de 2 colunas para valor e quilometragem */}
