@@ -18,7 +18,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Loader2, CheckCircle, Clock, AlertTriangle, XCircle, MessageSquare, FileInput, Calendar, ReceiptText } from "lucide-react";
+import { Loader2, CheckCircle, Clock, AlertTriangle, XCircle, MessageSquare, FileInput, Calendar, ReceiptText, RefreshCw } from "lucide-react";
 import ChatOficina from "@/components/workshop/ChatOficina";
 import MaintenanceLifecycle from "@/components/workshop/MaintenanceLifecycle";
 
@@ -635,17 +635,34 @@ export default function OficinaDashboard() {
                 </div>
               </div>
               
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button variant="outline" onClick={closeBudgetChat}>
-                  Cancelar
-                </Button>
+              <div className="flex flex-wrap justify-between items-center pt-4">
                 <Button 
-                  onClick={createBudgetChat} 
-                  disabled={isSubmittingBudget || !initialBudget || !kmAtual || !prazoEstimado || !descricaoServico}
+                  variant="secondary" 
+                  onClick={() => {
+                    // Limpar todos os campos mantendo a manutenção selecionada
+                    setInitialBudget("");
+                    setKmAtual("");
+                    setPrazoEstimado("");
+                    setDescricaoServico("");
+                  }}
+                  className="flex items-center"
                 >
-                  {isSubmittingBudget && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Enviar Orçamento
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Novo Orçamento
                 </Button>
+                
+                <div className="flex space-x-2 mt-2 sm:mt-0">
+                  <Button variant="outline" onClick={closeBudgetChat}>
+                    Cancelar
+                  </Button>
+                  <Button 
+                    onClick={createBudgetChat} 
+                    disabled={isSubmittingBudget || !initialBudget || !kmAtual || !prazoEstimado || !descricaoServico}
+                  >
+                    {isSubmittingBudget && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Enviar Orçamento
+                  </Button>
+                </div>
               </div>
             </div>
           ) : (
