@@ -58,7 +58,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   // Itens específicos para Gestão de Frotas
   const fleetManagementItems = [
     { name: 'Gestão de Frotas', href: '/fleet-management', icon: Truck },
-    // { name: 'Sistema de Manutenção', href: '/fleet-management/maintenance', icon: Wrench },
+    { name: 'Sistema de Manutenção', href: '/fleet-management/maintenance', icon: Wrench },
     { name: 'Oficinas Credenciadas', href: '/fleet-management/workshops', icon: ClipboardList },
     { name: 'Análise da Operação', href: '/fleet-management/operational-analysis', icon: BarChart4 },
     { name: 'Visão Geral da Frota', href: '/fleet-management/fleet-overview', icon: Activity },

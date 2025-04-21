@@ -29,6 +29,15 @@ const isAdmin = (req: Request, res: Response, next: NextFunction) => {
   res.status(403).json({ message: "Acesso negado. Permissão de administrador necessária." });
 };
 
+// Middleware para verificar se o usuário tem permissão para acessar funcionalidades de manutenção
+// Permite acesso para usuários com role='admin' ou baseId=12 (Gestão de Frotas)
+const hasMaintenanceAccess = (req: Request, res: Response, next: NextFunction) => {
+  if (req.isAuthenticated() && req.user && (req.user.role === 'admin' || req.user.baseId === 12)) {
+    return next();
+  }
+  res.status(403).json({ message: "Acesso negado. Permissão de gestão de frotas ou admin necessária." });
+};
+
 // Middleware para verificar se o usuário tem acesso à base especificada
 const hasBaseAccess = (req: Request, res: Response, next: NextFunction) => {
   // Se o usuário for admin, permite acesso a todas as bases
@@ -453,7 +462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Maintenance routes
-  app.get("/api/maintenance", isAuthenticated, async (req, res) => {
+  app.get("/api/maintenance", hasMaintenanceAccess, async (req, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -522,7 +531,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/maintenance/vehicle/:plate", isAuthenticated, async (req, res) => {
+  app.get("/api/maintenance/vehicle/:plate", hasMaintenanceAccess, async (req, res) => {
     try {
       const vehiclePlate = req.params.plate;
       
@@ -541,7 +550,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/maintenance/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/maintenance/:id", hasMaintenanceAccess, async (req, res) => {
     try {
       const maintenanceId = parseInt(req.params.id);
       const maintenanceRecord = await storage.getMaintenance(maintenanceId);
@@ -557,7 +566,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post("/api/maintenance", isAuthenticated, async (req, res) => {
+  app.post("/api/maintenance", hasMaintenanceAccess, async (req, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -597,7 +606,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.patch("/api/maintenance/:id/status", isAuthenticated, async (req, res) => {
+  app.patch("/api/maintenance/:id/status", hasMaintenanceAccess, async (req, res) => {
     try {
       const maintenanceId = parseInt(req.params.id);
       const { status } = req.body;

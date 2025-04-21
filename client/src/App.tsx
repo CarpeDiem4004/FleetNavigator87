@@ -99,7 +99,7 @@ function App() {
           <ProtectedRoute path="/line-hall" component={EntradaOperacoes} />
           <ProtectedRoute path="/fleet-management" component={FleetManagement} />
           <ProtectedRoute path="/fleet-management/workshops" component={WorkshopsPage} />
-          {/* <ProtectedRoute path="/fleet-management/maintenance" component={MaintenancePage} /> */}
+          <ProtectedRoute path="/fleet-management/maintenance" component={MaintenancePage} />
           <ProtectedRoute path="/accidents" component={Accidents} />
           <ProtectedRoute path="/work-safety" component={WorkSafety} />
           <ProtectedRoute path="/users" component={UsersNew} />
