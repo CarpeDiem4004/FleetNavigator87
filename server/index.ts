@@ -47,6 +47,14 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Executar migrações antes de iniciar o servidor
+  try {
+    await runMigrations();
+    console.log("Migrações executadas com sucesso!");
+  } catch (error) {
+    console.error("Erro ao executar migrações:", error);
+  }
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

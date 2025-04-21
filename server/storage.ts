@@ -7,7 +7,7 @@ import {
   type Workshop, type InsertWorkshop, type Operation, type InsertOperation,
   type PainelPrincipal, type InsertPainelPrincipal
 } from "@shared/schema";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { eq, and, like, desc, sql } from "drizzle-orm";
 
 // Define the storage interface with CRUD operations
@@ -92,8 +92,37 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user || undefined;
+    try {
+      // Usar SQL direto para evitar problemas com o campo oficina_id
+      const query = `
+        SELECT id, name, email, password, role, "baseId", basename 
+        FROM users 
+        WHERE email = $1
+      `;
+      
+      const result = await pool.query(query, [email]);
+      
+      if (result.rows.length === 0) {
+        return undefined;
+      }
+      
+      // Converter o resultado para o formato esperado
+      const user: User = {
+        id: result.rows[0].id,
+        name: result.rows[0].name,
+        email: result.rows[0].email,
+        password: result.rows[0].password,
+        role: result.rows[0].role,
+        baseId: result.rows[0].baseId,
+        basename: result.rows[0].basename,
+        oficina_id: result.rows[0].oficina_id || null
+      };
+      
+      return user;
+    } catch (error) {
+      console.error("Erro ao buscar usuário por email:", error);
+      return undefined;
+    }
   }
 
   async createUser(user: InsertUser): Promise<User> {

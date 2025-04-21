@@ -9,6 +9,7 @@ interface User {
   role: string;
   baseId?: number;
   basename?: string;
+  oficina_id?: number;  // ID da oficina associada ao usuário (se for oficina)
   // Relação com a base
   bases?: {
     id: number;
