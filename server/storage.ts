@@ -189,7 +189,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllVehicles(): Promise<Vehicle[]> {
-    return await db.select().from(vehicles);
+    try {
+      // Usar SQL bruto para evitar problemas com mapeamento de campos
+      const result = await db.execute(sql`
+        SELECT id, plate, model, vehicle_type as "vehicleType", 
+               status, base_id as "baseId", ownership,
+               rental_company as "rentalCompany"
+        FROM vehicles
+      `);
+      return result.rows as Vehicle[];
+    } catch (error) {
+      console.error("Erro ao buscar veículos:", error);
+      return [];
+    }
   }
 
   async createVehicle(vehicle: InsertVehicle): Promise<Vehicle> {
