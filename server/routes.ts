@@ -2111,7 +2111,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Se a manutenção estiver pendente, atualizar status para em negociação
       if (maintenance && maintenance.status === 'aguardando_orcamento') {
-        await storage.updateMaintenanceStatus(maintenance.id, 'em_negociacao');
+        try {
+          // Usar SQL direto para evitar problema com coluna maintenance_start_date
+          await pool.query(`
+            UPDATE manutencao
+            SET status = 'em_negociacao', updated_at = NOW()
+            WHERE id = $1
+          `, [maintenance.id]);
+          
+          console.log(`Status da manutenção ${maintenance.id} atualizado para em_negociacao`);
+        } catch (updateError) {
+          console.error("Erro ao atualizar status da manutenção:", updateError);
+          // Continuar mesmo com erro no status para pelo menos cadastrar o chat
+        }
       }
       
       // Retornar o chat criado
@@ -2196,7 +2208,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Atualizar status da manutenção para orçamento aprovado
       const maintenance = await storage.getMaintenance(updatedChat.maintenanceId);
       if (maintenance) {
-        await storage.updateMaintenanceStatus(maintenance.id, 'orcamento_aprovado');
+        try {
+          // Usar SQL direto para evitar problema com coluna maintenance_start_date
+          await pool.query(`
+            UPDATE manutencao
+            SET status = 'orcamento_aprovado', updated_at = NOW()
+            WHERE id = $1
+          `, [maintenance.id]);
+          
+          console.log(`Status da manutenção ${maintenance.id} atualizado para orcamento_aprovado`);
+        } catch (updateError) {
+          console.error("Erro ao atualizar status da manutenção:", updateError);
+          // Continuar mesmo com erro no status para pelo menos finalizar o chat
+        }
       }
       
       // Retornar o chat atualizado
@@ -2311,21 +2335,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Atualizar o status da manutenção com base nas datas do ciclo de vida
-      if (vehiclePickupDate) {
-        // Se o veículo foi retirado, marcar como concluída (se ainda não estiver)
-        if (maintenance.status !== 'concluida') {
-          await storage.updateMaintenanceStatus(maintenanceId, 'concluida');
+      try {
+        let novoStatus = null;
+        
+        if (vehiclePickupDate) {
+          // Se o veículo foi retirado, marcar como concluída (se ainda não estiver)
+          if (maintenance.status !== 'concluida') {
+            novoStatus = 'concluida';
+          }
+        } else if (actualExitDate) {
+          // Se a manutenção foi finalizada (tem data de saída), mas o veículo ainda não foi retirado
+          if (maintenance.status !== 'concluida') {
+            novoStatus = 'concluida';
+          }
+        } else if (maintenanceStartDate && maintenance.status !== 'em_andamento' && 
+                  maintenance.status !== 'concluida' && maintenance.status !== 'cancelada') {
+          // Se a manutenção foi iniciada, mas não concluída/cancelada, atualizar para em andamento
+          novoStatus = 'em_andamento';
         }
-      } else if (actualExitDate) {
-        // Se a manutenção foi finalizada (tem data de saída), mas o veículo ainda não foi retirado
-        // podemos manter como concluída ou criar um status específico se necessário
-        if (maintenance.status !== 'concluida') {
-          await storage.updateMaintenanceStatus(maintenanceId, 'concluida');
+        
+        // Se precisamos atualizar o status, fazer via SQL direto
+        if (novoStatus) {
+          await pool.query(`
+            UPDATE manutencao
+            SET status = $1, updated_at = NOW()
+            WHERE id = $2
+          `, [novoStatus, maintenanceId]);
+          
+          console.log(`Status da manutenção ${maintenanceId} atualizado para ${novoStatus}`);
         }
-      } else if (maintenanceStartDate && maintenance.status !== 'em_andamento' && 
-                 maintenance.status !== 'concluida' && maintenance.status !== 'cancelada') {
-        // Se a manutenção foi iniciada, mas não concluída/cancelada, atualizar para em andamento
-        await storage.updateMaintenanceStatus(maintenanceId, 'em_andamento');
+      } catch (updateError) {
+        console.error("Erro ao atualizar status da manutenção:", updateError);
+        // Continuar mesmo com erro no status
       }
       
       return res.status(200).json(lifecycleData);
