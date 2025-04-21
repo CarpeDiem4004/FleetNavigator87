@@ -1,38 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import AppLayout from '@/components/layout/AppLayout';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
-import { formatCurrency } from '@/lib/utils';
-import { queryClient } from '@/lib/queryClient';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useState, useEffect } from "react";
+import AppLayout from "@/components/layout/AppLayout";
 import { 
   Card, 
   CardContent, 
   CardDescription, 
-  CardFooter, 
   CardHeader, 
   CardTitle 
-} from '@/components/ui/card';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -40,307 +14,585 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  DollarSign,
-  FileBarChart,
-  Loader2,
-  MessageSquare,
-  Search,
-  ShieldAlert,
-  Truck,
-  Wrench,
-} from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import ChatOficina from '@/components/workshop/ChatOficina';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { toast } from "@/hooks/use-toast";
+import MaintenanceChatHistory from "@/components/chat/MaintenanceChatHistory";
+import { formatCurrency } from "@/lib/formatters";
+import { CircleAlert, BarChart3, CheckCircle, Clock, AlertCircle } from "lucide-react";
 
-// Interfaces
 interface Maintenance {
   id: number;
-  vehicle_id: number;
-  vehicle_name: string;
+  vehiclePlate: string;
+  vehicleModel: string;
   description: string;
   status: string;
   priority: string;
-  oficina_id: number;
-  oficina_name: string;
-  created_at: string;
-  updated_at: string;
-  base_id: number;
-  base_name: string;
-  responsavel_nome: string;
-  maintenance_chat_id?: number;
-  maintenance_chat_status?: string;
-  initial_budget?: number | null;
-}
-
-interface ChatInfo {
-  id: number;
-  maintenanceId: number;
+  workshopId: number;
+  workshopName: string;
+  baseId: number;
+  baseName: string;
+  responsavelNome: string;
+  maintenanceChatId: number;
   initialBudget: number | null;
   finalBudget: number | null;
   isFinalized: boolean;
+  chatCreatedAt: string;
 }
 
-const BudgetManagementPage: React.FC = () => {
-  const { toast } = useToast();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [chatOpen, setChatOpen] = useState(false);
+interface ChatMessage {
+  id: number;
+  chatId: number;
+  author: string;
+  authorId: number;
+  authorName: string;
+  message: string;
+  sent_at: string;
+  proposedBudget: number | null;
+}
+
+const statusMap: Record<string, { label: string; color: "default" | "primary" | "secondary" | "destructive" | "warning" | "success" }> = {
+  em_negociacao: { label: "Em Negociação", color: "warning" },
+  orcamento_aprovado: { label: "Orçamento Aprovado", color: "success" },
+  aguardando_orcamento: { label: "Aguardando Orçamento", color: "secondary" },
+  em_andamento: { label: "Em Andamento", color: "primary" },
+  concluida: { label: "Concluída", color: "success" },
+  pendente: { label: "Pendente", color: "default" },
+  cancelada: { label: "Cancelada", color: "destructive" }
+};
+
+const priorityMap: Record<string, { label: string; color: "default" | "warning" | "destructive" }> = {
+  baixa: { label: "Baixa", color: "default" },
+  media: { label: "Média", color: "warning" },
+  alta: { label: "Alta", color: "destructive" }
+};
+
+export default function BudgetManagementPage() {
+  const [maintenances, setMaintenances] = useState<Maintenance[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null);
-  const [selectedMaintenanceId, setSelectedMaintenanceId] = useState<number | null>(null);
-  const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatDialogOpen, setChatDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("all");
+  const [fetchingMessages, setFetchingMessages] = useState(false);
 
-  // Buscar manutenções com chats de orçamento
-  const { data: maintenances = [], isLoading } = useQuery<Maintenance[]>({
-    queryKey: ['/api/maintenance', 'with-chats'],
-    queryFn: async () => {
-      const res = await fetch('/api/maintenance/with-chats');
-      if (!res.ok) {
-        throw new Error('Falha ao buscar manutenções com chats de orçamento');
+  // Função para obter as manutenções com chats
+  const fetchMaintenancesWithChats = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/fleet/maintenance-with-chats");
+      
+      if (!response.ok) {
+        throw new Error("Falha ao buscar manutenções com chats");
       }
-      return res.json();
-    },
-    refetchInterval: 30000, // Atualizar a cada 30 segundos
-  });
+      
+      const data = await response.json();
+      setMaintenances(data);
+    } catch (error) {
+      console.error("Erro ao buscar manutenções com orçamentos:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar as manutenções com orçamentos",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Filtragem de manutenções
-  const filteredMaintenances = maintenances.filter(maintenance => {
-    const matchesSearch = 
-      maintenance.vehicle_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      maintenance.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      maintenance.oficina_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      maintenance.id.toString().includes(searchTerm);
-    
-    if (statusFilter === 'all') return matchesSearch;
-    if (statusFilter === 'waiting') return matchesSearch && maintenance.status === 'aguardando_orcamento';
-    if (statusFilter === 'negotiating') return matchesSearch && maintenance.status === 'em_negociacao';
-    if (statusFilter === 'both') return matchesSearch && ['aguardando_orcamento', 'em_negociacao'].includes(maintenance.status);
-    return matchesSearch;
-  });
+  // Função para obter as mensagens de um chat específico
+  const fetchChatMessages = async (maintenanceId: number) => {
+    try {
+      setFetchingMessages(true);
+      const response = await fetch(`/api/workshop/maintenance-chat/${maintenanceId}`);
+      
+      if (!response.ok) {
+        throw new Error("Falha ao buscar mensagens do chat");
+      }
+      
+      const data = await response.json();
+      setChatMessages(data.messages || []);
+    } catch (error) {
+      console.error("Erro ao buscar mensagens do chat:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar as mensagens do chat",
+        variant: "destructive"
+      });
+      setChatMessages([]);
+    } finally {
+      setFetchingMessages(false);
+    }
+  };
 
-  // Funções auxiliares
+  // Carregar manutenções com chats quando a página carrega
+  useEffect(() => {
+    fetchMaintenancesWithChats();
+  }, []);
+
+  // Abrir o chat de uma manutenção
   const openChat = (maintenance: Maintenance) => {
     setSelectedMaintenance(maintenance);
-    setSelectedMaintenanceId(maintenance.id);
-    setSelectedChatId(maintenance.maintenance_chat_id || null);
-    setChatOpen(true);
+    fetchChatMessages(maintenance.id);
+    setChatDialogOpen(true);
   };
 
-  const closeChat = () => {
-    setChatOpen(false);
-    setSelectedChatId(null);
-    setSelectedMaintenanceId(null);
-    setSelectedMaintenance(null);
-    // Recarregar dados após fechamento do chat
-    queryClient.invalidateQueries({ queryKey: ['/api/maintenance', 'with-chats'] });
-  };
+  // Filtrar manutenções com base na tab selecionada
+  const filteredMaintenances = maintenances.filter(maintenance => {
+    if (activeTab === "all") return true;
+    if (activeTab === "negotiation") return maintenance.status === "em_negociacao";
+    if (activeTab === "approved") return maintenance.status === "orcamento_aprovado";
+    return true;
+  });
 
-  // Formatação de status
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'aguardando_orcamento':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Aguardando Orçamento</Badge>;
-      case 'em_negociacao':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Em Negociação</Badge>;
-      case 'em_andamento':
-        return <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">Em Andamento</Badge>;
-      case 'finalizada':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Finalizada</Badge>;
-      case 'cancelada':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Cancelada</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+  // Função para finalizar uma negociação
+  const finalizeNegotiation = async (chatId: number, finalBudget: number) => {
+    try {
+      const response = await fetch(`/api/workshop/maintenance-chat/${chatId}/finalize`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ finalBudget })
+      });
+      
+      if (!response.ok) {
+        throw new Error("Falha ao finalizar negociação");
+      }
+      
+      toast({
+        title: "Sucesso",
+        description: "Negociação finalizada com sucesso",
+        variant: "success"
+      });
+      
+      // Recarregar dados
+      fetchMaintenancesWithChats();
+      setChatDialogOpen(false);
+    } catch (error) {
+      console.error("Erro ao finalizar negociação:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível finalizar a negociação",
+        variant: "destructive"
+      });
     }
   };
 
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case 'alta':
-        return <Badge variant="destructive">Alta</Badge>;
-      case 'media':
-        return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">Média</Badge>;
-      case 'baixa':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Baixa</Badge>;
-      default:
-        return <Badge variant="outline">{priority}</Badge>;
-    }
-  };
-
-  // Formatação de data
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  // Renderizar estatísticas
+  const renderStats = () => {
+    const totalNegociacao = maintenances.filter(m => m.status === "em_negociacao").length;
+    const totalAprovado = maintenances.filter(m => m.status === "orcamento_aprovado").length;
+    const totalPendente = maintenances.filter(m => !m.finalBudget && !m.isFinalized).length;
+    
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Em Negociação</CardTitle>
+            <Clock className="h-4 w-4 text-yellow-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalNegociacao}</div>
+            <p className="text-xs text-muted-foreground">
+              Orçamentos aguardando aprovação
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Aprovados</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalAprovado}</div>
+            <p className="text-xs text-muted-foreground">
+              Orçamentos finalizados e aprovados
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
+            <AlertCircle className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalPendente}</div>
+            <p className="text-xs text-muted-foreground">
+              Orçamentos ainda não finalizados
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   };
 
   return (
     <AppLayout>
       <div className="container mx-auto py-6">
-        <div className="flex flex-col gap-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold flex items-center">
-                <DollarSign className="mr-2 h-8 w-8" />
-                Gestão de Orçamentos
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Gerencie orçamentos enviados pelas oficinas e realize tratativas
-              </p>
-            </div>
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Gestão de Orçamentos</h1>
+            <p className="text-muted-foreground">
+              Acompanhe e aprove orçamentos de manutenção de veículos
+            </p>
           </div>
+          <Button onClick={() => fetchMaintenancesWithChats()}>Atualizar</Button>
+        </div>
 
+      {renderStats()}
+
+      <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="all">Todos</TabsTrigger>
+          <TabsTrigger value="negotiation">Em Negociação</TabsTrigger>
+          <TabsTrigger value="approved">Aprovados</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="all" className="mt-0">
           <Card>
             <CardHeader>
-              <CardTitle className="text-xl">Orçamentos e Negociações</CardTitle>
+              <CardTitle>Orçamentos de Manutenção</CardTitle>
               <CardDescription>
-                Acompanhe e gerencie as negociações de orçamentos de manutenções
+                Lista de todas as manutenções com orçamentos registrados
               </CardDescription>
-              <div className="flex flex-col sm:flex-row gap-4 mt-4 items-start sm:items-center">
-                <div className="relative w-full sm:w-96">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar por veículo, descrição ou oficina..."
-                    className="pl-8"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-                <Select
-                  value={statusFilter}
-                  onValueChange={(value) => setStatusFilter(value)}
-                >
-                  <SelectTrigger className="w-full sm:w-48">
-                    <SelectValue placeholder="Filtrar por status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os status</SelectItem>
-                    <SelectItem value="waiting">Aguardando Orçamento</SelectItem>
-                    <SelectItem value="negotiating">Em Negociação</SelectItem>
-                    <SelectItem value="both">Ambos</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </CardHeader>
             <CardContent>
-              {isLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <span className="ml-2">Carregando orçamentos...</span>
+              {loading ? (
+                <div className="flex justify-center items-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
               ) : filteredMaintenances.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <ShieldAlert className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
-                  <h3 className="text-lg font-medium">Nenhuma manutenção com orçamento encontrada</h3>
-                  <p className="mt-1">
-                    Não há manutenções com orçamentos ou negociações para exibir com os filtros atuais.
-                  </p>
-                </div>
+                <Alert variant="default" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Nenhum dado encontrado</AlertTitle>
+                  <AlertDescription>
+                    Não há orçamentos de manutenção registrados.
+                  </AlertDescription>
+                </Alert>
               ) : (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Veículo</TableHead>
-                        <TableHead>Descrição</TableHead>
-                        <TableHead>Oficina</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Prioridade</TableHead>
-                        <TableHead>Data</TableHead>
-                        <TableHead>Ação</TableHead>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Veículo</TableHead>
+                      <TableHead>Oficina</TableHead>
+                      <TableHead>Base</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Prioridade</TableHead>
+                      <TableHead>Orçamento Inicial</TableHead>
+                      <TableHead>Orçamento Final</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredMaintenances.map((maintenance) => (
+                      <TableRow key={maintenance.maintenanceChatId}>
+                        <TableCell className="font-medium">
+                          {maintenance.vehiclePlate} - {maintenance.vehicleModel}
+                        </TableCell>
+                        <TableCell>{maintenance.workshopName}</TableCell>
+                        <TableCell>{maintenance.baseName}</TableCell>
+                        <TableCell>
+                          <Badge variant={statusMap[maintenance.status]?.color || "default"}>
+                            {statusMap[maintenance.status]?.label || maintenance.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={priorityMap[maintenance.priority]?.color || "default"}>
+                            {priorityMap[maintenance.priority]?.label || maintenance.priority}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {maintenance.initialBudget 
+                            ? formatCurrency(Number(maintenance.initialBudget)) 
+                            : "-"}
+                        </TableCell>
+                        <TableCell>
+                          {maintenance.finalBudget 
+                            ? formatCurrency(Number(maintenance.finalBudget)) 
+                            : "-"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => openChat(maintenance)}
+                          >
+                            {maintenance.status === "em_negociacao" ? "Negociar" : "Ver Chat"}
+                          </Button>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredMaintenances.map((maintenance) => (
-                        <TableRow key={maintenance.id}>
-                          <TableCell className="font-medium">{maintenance.id}</TableCell>
-                          <TableCell>{maintenance.vehicle_name}</TableCell>
-                          <TableCell className="max-w-xs truncate" title={maintenance.description}>
-                            {maintenance.description}
-                          </TableCell>
-                          <TableCell>{maintenance.oficina_name}</TableCell>
-                          <TableCell>{getStatusBadge(maintenance.status)}</TableCell>
-                          <TableCell>{getPriorityBadge(maintenance.priority)}</TableCell>
-                          <TableCell>{formatDate(maintenance.created_at)}</TableCell>
-                          <TableCell>
-                            <Button 
-                              size="sm" 
-                              onClick={() => openChat(maintenance)}
-                              variant="outline"
-                              className="flex items-center"
-                            >
-                              <MessageSquare className="h-4 w-4 mr-1" />
-                              {maintenance.maintenance_chat_id ? 'Ver Chat' : 'Iniciar Chat'}
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
             </CardContent>
           </Card>
-        </div>
-      </div>
-
-      {/* Diálogo do Chat de Orçamento */}
-      <Dialog open={chatOpen} onOpenChange={(open) => !open && closeChat()}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <DollarSign className="h-5 w-5 mr-2 text-primary" />
-              Negociação de Orçamento
-              {selectedMaintenance && (
-                <span className="ml-2 text-muted-foreground">
-                  (Manutenção #{selectedMaintenance.id})
-                </span>
+        </TabsContent>
+        
+        <TabsContent value="negotiation" className="mt-0">
+          <Card>
+            <CardHeader>
+              <CardTitle>Orçamentos em Negociação</CardTitle>
+              <CardDescription>
+                Lista de manutenções com orçamentos pendentes de aprovação
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* O mesmo conteúdo da tabela é renderizado pelo filtro */}
+              {loading ? (
+                <div className="flex justify-center items-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : filteredMaintenances.length === 0 ? (
+                <Alert variant="default" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Nenhum dado encontrado</AlertTitle>
+                  <AlertDescription>
+                    Não há orçamentos em negociação no momento.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Veículo</TableHead>
+                      <TableHead>Oficina</TableHead>
+                      <TableHead>Base</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Prioridade</TableHead>
+                      <TableHead>Orçamento Inicial</TableHead>
+                      <TableHead>Orçamento Final</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredMaintenances.map((maintenance) => (
+                      <TableRow key={maintenance.maintenanceChatId}>
+                        <TableCell className="font-medium">
+                          {maintenance.vehiclePlate} - {maintenance.vehicleModel}
+                        </TableCell>
+                        <TableCell>{maintenance.workshopName}</TableCell>
+                        <TableCell>{maintenance.baseName}</TableCell>
+                        <TableCell>
+                          <Badge variant={statusMap[maintenance.status]?.color || "default"}>
+                            {statusMap[maintenance.status]?.label || maintenance.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={priorityMap[maintenance.priority]?.color || "default"}>
+                            {priorityMap[maintenance.priority]?.label || maintenance.priority}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {maintenance.initialBudget 
+                            ? formatCurrency(Number(maintenance.initialBudget)) 
+                            : "-"}
+                        </TableCell>
+                        <TableCell>
+                          {maintenance.finalBudget 
+                            ? formatCurrency(Number(maintenance.finalBudget)) 
+                            : "-"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => openChat(maintenance)}
+                          >
+                            Negociar
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="approved" className="mt-0">
+          <Card>
+            <CardHeader>
+              <CardTitle>Orçamentos Aprovados</CardTitle>
+              <CardDescription>
+                Lista de manutenções com orçamentos já aprovados
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* O mesmo conteúdo da tabela é renderizado pelo filtro */}
+              {loading ? (
+                <div className="flex justify-center items-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : filteredMaintenances.length === 0 ? (
+                <Alert variant="default" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Nenhum dado encontrado</AlertTitle>
+                  <AlertDescription>
+                    Não há orçamentos aprovados no sistema.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Veículo</TableHead>
+                      <TableHead>Oficina</TableHead>
+                      <TableHead>Base</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Prioridade</TableHead>
+                      <TableHead>Orçamento Inicial</TableHead>
+                      <TableHead>Orçamento Final</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredMaintenances.map((maintenance) => (
+                      <TableRow key={maintenance.maintenanceChatId}>
+                        <TableCell className="font-medium">
+                          {maintenance.vehiclePlate} - {maintenance.vehicleModel}
+                        </TableCell>
+                        <TableCell>{maintenance.workshopName}</TableCell>
+                        <TableCell>{maintenance.baseName}</TableCell>
+                        <TableCell>
+                          <Badge variant={statusMap[maintenance.status]?.color || "default"}>
+                            {statusMap[maintenance.status]?.label || maintenance.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={priorityMap[maintenance.priority]?.color || "default"}>
+                            {priorityMap[maintenance.priority]?.label || maintenance.priority}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {maintenance.initialBudget 
+                            ? formatCurrency(Number(maintenance.initialBudget)) 
+                            : "-"}
+                        </TableCell>
+                        <TableCell>
+                          {maintenance.finalBudget 
+                            ? formatCurrency(Number(maintenance.finalBudget)) 
+                            : "-"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => openChat(maintenance)}
+                          >
+                            Ver Chat
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Dialog para exibir o chat */}
+      <Dialog open={chatDialogOpen} onOpenChange={setChatDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>
+              Negociação de Orçamento - {selectedMaintenance?.vehiclePlate} ({selectedMaintenance?.vehicleModel})
             </DialogTitle>
+            <DialogDescription>
+              Oficina: {selectedMaintenance?.workshopName}
+            </DialogDescription>
           </DialogHeader>
           
-          {selectedMaintenanceId && (
-            <div className="mt-2">
-              {selectedMaintenance && (
-                <div className="mb-4 space-y-2">
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <p className="font-medium">Veículo:</p>
-                      <p>{selectedMaintenance.vehicle_name}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Oficina:</p>
-                      <p>{selectedMaintenance.oficina_name}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="font-medium">Descrição:</p>
-                    <p className="text-sm">{selectedMaintenance.description}</p>
-                  </div>
-                </div>
-              )}
-              
-              <ChatOficina 
-                maintenanceId={selectedMaintenanceId}
-                chatId={selectedChatId}
-                initialBudget={selectedMaintenance?.initial_budget || undefined}
-              />
+          {fetchingMessages ? (
+            <div className="flex justify-center items-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
+          ) : (
+            <>
+              <div className="flex flex-col gap-2 mb-4">
+                <div>
+                  <span className="font-semibold text-sm">Descrição: </span>
+                  <span className="text-sm">{selectedMaintenance?.description}</span>
+                </div>
+                <div>
+                  <span className="font-semibold text-sm">Status: </span>
+                  <Badge variant={statusMap[selectedMaintenance?.status || ""]?.color || "default"}>
+                    {statusMap[selectedMaintenance?.status || ""]?.label || selectedMaintenance?.status}
+                  </Badge>
+                </div>
+                <div>
+                  <span className="font-semibold text-sm">Orçamento Inicial: </span>
+                  <span className="text-sm">
+                    {selectedMaintenance?.initialBudget 
+                      ? formatCurrency(Number(selectedMaintenance.initialBudget)) 
+                      : "Não informado"}
+                  </span>
+                </div>
+                <div>
+                  <span className="font-semibold text-sm">Orçamento Final: </span>
+                  <span className="text-sm">
+                    {selectedMaintenance?.finalBudget 
+                      ? formatCurrency(Number(selectedMaintenance.finalBudget)) 
+                      : "Ainda não finalizado"}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="border rounded-md p-4 h-64 overflow-y-auto">
+                {selectedMaintenance && (
+                  <MaintenanceChatHistory 
+                    maintenanceId={selectedMaintenance.id}
+                    chatId={selectedMaintenance.maintenanceChatId} 
+                    initialMessages={chatMessages}
+                    isWorkshop={false}
+                    refreshChat={() => fetchChatMessages(selectedMaintenance.id)}
+                    readOnly={selectedMaintenance.isFinalized || selectedMaintenance.status === "orcamento_aprovado"}
+                  />
+                )}
+              </div>
+              
+              <DialogFooter>
+                {!selectedMaintenance?.isFinalized && selectedMaintenance?.status === "em_negociacao" && (
+                  <Button 
+                    onClick={() => {
+                      if (selectedMaintenance && selectedMaintenance.initialBudget) {
+                        finalizeNegotiation(
+                          selectedMaintenance.maintenanceChatId, 
+                          Number(selectedMaintenance.initialBudget)
+                        );
+                      }
+                    }}
+                    variant="default"
+                  >
+                    Aprovar Orçamento
+                  </Button>
+                )}
+                <Button variant="outline" onClick={() => setChatDialogOpen(false)}>
+                  Fechar
+                </Button>
+              </DialogFooter>
+            </>
           )}
         </DialogContent>
       </Dialog>
+      </div>
     </AppLayout>
   );
-};
-
-export default BudgetManagementPage;
+}

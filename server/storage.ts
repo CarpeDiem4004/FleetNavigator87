@@ -93,6 +93,7 @@ export interface IStorage {
   updateMaintenanceChat(id: number, chat: Partial<InsertMaintenanceChat>): Promise<MaintenanceChat | undefined>;
   finalizeMaintenanceChat(id: number, finalBudget: number, finalizedBy: string): Promise<MaintenanceChat | undefined>;
   getAllMaintenanceChats(): Promise<MaintenanceChat[]>;
+  getMaintenanceEntriesWithChats(): Promise<any[]>;
   
   // Chat Message operations
   getChatMessage(id: number): Promise<ChatMessage | undefined>;
