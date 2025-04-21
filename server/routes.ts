@@ -2151,6 +2151,174 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ======= ROTAS PARA CONTROLE DE CICLO DE VIDA DE MANUTENÇÃO =======
+  
+  // API para registrar ou atualizar o ciclo de vida de uma manutenção
+  app.post("/api/workshop/maintenance-lifecycle", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const { 
+        maintenanceId, 
+        entryDate, 
+        maintenanceStartDate, 
+        expectedExitDate, 
+        actualExitDate,
+        vehiclePickupDate,
+        pickupPersonName,
+        pickupPersonCpf,
+        pickupComments
+      } = req.body;
+      
+      if (!maintenanceId) {
+        return res.status(400).json({ message: "ID da manutenção é obrigatório" });
+      }
+      
+      // Verificar se a manutenção existe
+      const maintenance = await storage.getMaintenance(maintenanceId);
+      if (!maintenance) {
+        return res.status(404).json({ message: "Manutenção não encontrada" });
+      }
+      
+      // Verificar se já existe um registro de ciclo de vida para esta manutenção
+      const query = `
+        SELECT * FROM maintenance_lifecycle 
+        WHERE maintenance_id = $1
+      `;
+      const result = await pool.query(query, [maintenanceId]);
+      
+      let lifecycleData;
+      
+      if (result.rows.length > 0) {
+        // Atualizar registro existente
+        const updateQuery = `
+          UPDATE maintenance_lifecycle
+          SET 
+            entry_date = COALESCE($1, entry_date),
+            maintenance_start_date = COALESCE($2, maintenance_start_date),
+            expected_exit_date = COALESCE($3, expected_exit_date),
+            actual_exit_date = COALESCE($4, actual_exit_date),
+            vehicle_pickup_date = COALESCE($5, vehicle_pickup_date),
+            pickup_person_name = COALESCE($6, pickup_person_name),
+            pickup_person_cpf = COALESCE($7, pickup_person_cpf),
+            pickup_comments = COALESCE($8, pickup_comments),
+            updated_at = NOW()
+          WHERE maintenance_id = $9
+          RETURNING *
+        `;
+        
+        const updateResult = await pool.query(updateQuery, [
+          entryDate,
+          maintenanceStartDate,
+          expectedExitDate,
+          actualExitDate,
+          vehiclePickupDate,
+          pickupPersonName,
+          pickupPersonCpf,
+          pickupComments,
+          maintenanceId
+        ]);
+        
+        lifecycleData = updateResult.rows[0];
+      } else {
+        // Criar novo registro
+        const insertQuery = `
+          INSERT INTO maintenance_lifecycle (
+            maintenance_id,
+            entry_date,
+            maintenance_start_date,
+            expected_exit_date,
+            actual_exit_date,
+            vehicle_pickup_date,
+            pickup_person_name,
+            pickup_person_cpf,
+            pickup_comments
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          RETURNING *
+        `;
+        
+        const insertResult = await pool.query(insertQuery, [
+          maintenanceId,
+          entryDate,
+          maintenanceStartDate,
+          expectedExitDate,
+          actualExitDate,
+          vehiclePickupDate,
+          pickupPersonName,
+          pickupPersonCpf,
+          pickupComments
+        ]);
+        
+        lifecycleData = insertResult.rows[0];
+      }
+      
+      // Atualizar o status da manutenção com base nas datas do ciclo de vida
+      if (vehiclePickupDate) {
+        // Se o veículo foi retirado, marcar como concluída (se ainda não estiver)
+        if (maintenance.status !== 'concluida') {
+          await storage.updateMaintenanceStatus(maintenanceId, 'concluida');
+        }
+      } else if (actualExitDate) {
+        // Se a manutenção foi finalizada (tem data de saída), mas o veículo ainda não foi retirado
+        // podemos manter como concluída ou criar um status específico se necessário
+        if (maintenance.status !== 'concluida') {
+          await storage.updateMaintenanceStatus(maintenanceId, 'concluida');
+        }
+      } else if (maintenanceStartDate && maintenance.status !== 'em_andamento' && 
+                 maintenance.status !== 'concluida' && maintenance.status !== 'cancelada') {
+        // Se a manutenção foi iniciada, mas não concluída/cancelada, atualizar para em andamento
+        await storage.updateMaintenanceStatus(maintenanceId, 'em_andamento');
+      }
+      
+      return res.status(200).json(lifecycleData);
+    } catch (error: any) {
+      console.error("Erro ao gerenciar ciclo de vida da manutenção:", error);
+      return res.status(500).json({ 
+        message: "Erro ao gerenciar ciclo de vida da manutenção",
+        error: error.message 
+      });
+    }
+  });
+  
+  // API para obter informações do ciclo de vida de uma manutenção
+  app.get("/api/workshop/maintenance-lifecycle/:maintenanceId", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const maintenanceId = parseInt(req.params.maintenanceId);
+      
+      if (isNaN(maintenanceId)) {
+        return res.status(400).json({ message: "ID de manutenção inválido" });
+      }
+      
+      // Verificar se a manutenção existe
+      const maintenance = await storage.getMaintenance(maintenanceId);
+      if (!maintenance) {
+        return res.status(404).json({ message: "Manutenção não encontrada" });
+      }
+      
+      // Buscar informações do ciclo de vida
+      const query = `
+        SELECT * FROM maintenance_lifecycle 
+        WHERE maintenance_id = $1
+      `;
+      const result = await pool.query(query, [maintenanceId]);
+      
+      if (result.rows.length > 0) {
+        return res.status(200).json(result.rows[0]);
+      } else {
+        // Se não encontrar, retornar um objeto vazio
+        return res.status(200).json({
+          maintenance_id: maintenanceId,
+          entry_date: maintenance.entryDate
+        });
+      }
+    } catch (error: any) {
+      console.error("Erro ao buscar ciclo de vida da manutenção:", error);
+      return res.status(500).json({ 
+        message: "Erro ao buscar ciclo de vida da manutenção",
+        error: error.message 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
