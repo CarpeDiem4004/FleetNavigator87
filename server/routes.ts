@@ -1586,6 +1586,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para receber cadastro externo de oficinas (acesso público)
+  app.post("/api/workshops/external", async (req, res) => {
+    try {
+      const {
+        nome_oficina,
+        cnpj,
+        telefone,
+        email,
+        endereco,
+        ramo_atuacao,
+        banco,
+        agencia,
+        conta,
+        tipo_conta,
+        placa_veiculo,
+        orcamento_url,
+        data_entrada,
+        previsao_entrega,
+        data_retirada,
+        servico_realizado,
+        observacoes,
+        forma_pagamento,
+        unificar_servicos,
+        valor_total
+      } = req.body;
+
+      // Verificação básica de dados
+      if (!nome_oficina) {
+        return res.status(400).json({ message: "O nome da oficina é obrigatório" });
+      }
+
+      // Como estamos usando o pool diretamente, vamos fazer as consultas SQL de forma mais segura
+      try {
+        // Verificar se a oficina já existe
+        const oficinaExistente = await pool.query(
+          "SELECT id FROM oficinas WHERE nome_oficina = $1 AND cnpj = $2",
+          [nome_oficina, cnpj || '']
+        );
+
+        let oficinaId: number;
+
+        // Se a oficina não existe, criar nova
+        if (oficinaExistente.rowCount === 0) {
+          // Inserir nova oficina
+          const novaOficina = await pool.query(
+            `INSERT INTO oficinas (
+              nome_oficina, cnpj, telefone, email, endereco, ramo_atuacao,
+              banco, agencia, conta, tipo_conta, status
+            ) VALUES (
+              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pendente'
+            ) RETURNING id`,
+            [
+              nome_oficina,
+              cnpj || null,
+              telefone || null,
+              email || null,
+              endereco || null,
+              ramo_atuacao || null,
+              banco || null,
+              agencia || null,
+              conta || null,
+              tipo_conta || null
+            ]
+          );
+
+          oficinaId = novaOficina.rows[0].id;
+        } else {
+          oficinaId = oficinaExistente.rows[0].id;
+        }
+
+        // Buscar o ID do veículo pela placa, se fornecida
+        let veiculoId = null;
+        if (placa_veiculo) {
+          const veiculos = await pool.query(
+            "SELECT id FROM veiculos WHERE plate = $1",
+            [placa_veiculo]
+          );
+
+          if (veiculos.rowCount > 0) {
+            veiculoId = veiculos.rows[0].id;
+          }
+        }
+
+        // Registrar o orçamento/serviço, mesmo se o veículo não for encontrado
+        await pool.query(
+          `INSERT INTO servicos_oficina (
+            oficina_id, veiculo_id, placa_veiculo, orcamento_url, data_entrada, 
+            previsao_entrega, data_retirada, servico_realizado, 
+            observacoes, forma_pagamento, unificar_servicos, valor_total, status
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pendente'
+          )`,
+          [
+            oficinaId,
+            veiculoId,
+            placa_veiculo || null,
+            orcamento_url || null,
+            data_entrada || null,
+            previsao_entrega || null,
+            data_retirada || null,
+            servico_realizado === true,
+            observacoes || null,
+            forma_pagamento || null,
+            unificar_servicos === true,
+            valor_total ? parseFloat(valor_total as string) : null
+          ]
+        );
+
+        res.status(201).json({
+          message: "Cadastro de oficina e orçamento recebido com sucesso",
+          oficinaId
+        });
+      } catch (dbError) {
+        console.error("Erro de banco de dados:", dbError);
+        res.status(500).json({ message: "Erro de banco de dados ao processar cadastro" });
+      }
+    } catch (error) {
+      console.error("Erro ao processar cadastro de oficina externa:", error);
+      res.status(500).json({ 
+        message: "Erro interno ao processar cadastro", 
+        error: error instanceof Error ? error.message : "Erro desconhecido" 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
