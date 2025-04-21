@@ -47,6 +47,9 @@ interface Maintenance {
   maintenanceChatId: number;
   initialBudget: number | null;
   finalBudget: number | null;
+  kmAtual: string | null;
+  prazoEstimado: string | null;
+  descricaoServico: string | null;
   isFinalized: boolean;
   chatCreatedAt: string;
 }
