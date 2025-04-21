@@ -49,10 +49,9 @@ const formatDate = (dateStr: string | null) => {
 const statusTranslation: Record<string, string> = {
   'pendente': 'Pendente',
   'aguardando_orcamento': 'Aguardando Orçamento',
-  'em_andamento': 'Em Negociação',
+  'em_andamento': 'Em Andamento / Negociação',
   'orcamento_aprovado': 'Orçamento Aprovado',
   'aguardando_pecas': 'Aguardando Peças',
-  'em_andamento': 'Em Andamento',
   'concluida': 'Concluída',
   'cancelada': 'Cancelada'
 };
@@ -102,8 +101,7 @@ const StatusIcon = ({ status }: { status: string }) => {
       return <Clock className="h-5 w-5 text-yellow-500" />;
     case 'aguardando_orcamento':
       return <AlertTriangle className="h-5 w-5 text-blue-500" />;
-    case 'em_negociacao':
-      return <Loader2 className="h-5 w-5 text-purple-500" />;
+    // Substituído pelo caso em_andamento
     case 'orcamento_aprovado':
       return <CheckCircle className="h-5 w-5 text-blue-600" />;
     case 'aguardando_pecas':
@@ -273,7 +271,7 @@ export default function OficinaDashboard() {
       // Atualizar o status da manutenção na lista local
       setMaintenanceItems(prev => 
         prev.map(item => item.id === selectedMaintenance.id 
-          ? { ...item, status: 'em_negociacao' } 
+          ? { ...item, status: 'em_andamento' } 
           : item
         )
       );
@@ -423,7 +421,7 @@ export default function OficinaDashboard() {
                 <SelectItem value="todos">Todos</SelectItem>
                 <SelectItem value="pendente">Pendente</SelectItem>
                 <SelectItem value="aguardando_orcamento">Aguardando Orçamento</SelectItem>
-                <SelectItem value="em_negociacao">Em Negociação</SelectItem>
+                {/* Removido item em_negociacao, usando em_andamento */}
                 <SelectItem value="orcamento_aprovado">Orçamento Aprovado</SelectItem>
                 <SelectItem value="aguardando_pecas">Aguardando Peças</SelectItem>
                 <SelectItem value="em_andamento">Em Andamento</SelectItem>
@@ -504,7 +502,7 @@ export default function OficinaDashboard() {
                               
                               {/* Botão para chat de orçamento */}
                               {(maintenance.status === 'aguardando_orcamento' || 
-                                maintenance.status === 'em_negociacao' || 
+                                /* Removida verificação de em_negociacao */ 
                                 maintenance.status === 'orcamento_aprovado') && (
                                 <Button 
                                   size="sm" 
@@ -556,166 +554,166 @@ export default function OficinaDashboard() {
       </Card>
       
       {/* Modal de chat de orçamento */}
-      <Dialog open={isChatDialogOpen} onOpenChange={setIsChatDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="pb-2">
-            <DialogTitle>
-              {selectedMaintenance?.status === 'aguardando_orcamento'
-                ? 'Enviar Orçamento'
-                : 'Negociação de Orçamento'}
-            </DialogTitle>
-            <DialogDescription className="text-xs">
-              {selectedMaintenance?.status === 'aguardando_orcamento'
-                ? 'Preencha o valor do orçamento inicial para esta manutenção'
-                : 'Acompanhe a negociação de orçamento com o gestor da frota'}
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedMaintenance?.status === 'aguardando_orcamento' ? (
-            <div className="py-2">
-              {/* Detalhes da Solicitação - Versão simplificada */}
-              <div className="mb-3 p-2 border text-xs rounded bg-muted/10">
-                <div className="flex items-center gap-1 mb-1 text-xs font-medium">
-                  <FileInput className="h-3 w-3" />
-                  <span>Detalhes da Solicitação</span>
-                </div>
-                <div className="grid grid-cols-1 gap-0.5">
-                  <div className="flex text-xs">
-                    <span className="font-medium w-28">Tipo:</span> 
-                    <span>{selectedMaintenance?.maintenanceType === 'preventiva' ? 'Preventiva' : 'Corretiva'}</span>
+      {isChatDialogOpen && selectedMaintenance && (
+        <Dialog open={true} onOpenChange={(open) => !open && setIsChatDialogOpen(false)}>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="pb-2">
+              <DialogTitle>
+                {selectedMaintenance.status === 'aguardando_orcamento'
+                  ? 'Enviar Orçamento'
+                  : 'Negociação de Orçamento'}
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                {selectedMaintenance.status === 'aguardando_orcamento'
+                  ? 'Preencha o valor do orçamento inicial para esta manutenção'
+                  : 'Acompanhe a negociação de orçamento com o gestor da frota'}
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedMaintenance.status === 'aguardando_orcamento' ? (
+              <div className="py-2">
+                {/* Detalhes da Solicitação - Versão simplificada */}
+                <div className="mb-3 p-2 border text-xs rounded bg-muted/10">
+                  <div className="flex items-center gap-1 mb-1 text-xs font-medium">
+                    <FileInput className="h-3 w-3" />
+                    <span>Detalhes da Solicitação</span>
                   </div>
-                  <div className="flex text-xs">
-                    <span className="font-medium w-28">Descrição:</span> 
-                    <span className="truncate">{selectedMaintenance?.description}</span>
+                  <div className="grid grid-cols-1 gap-0.5">
+                    <div className="flex text-xs">
+                      <span className="font-medium w-28">Tipo:</span> 
+                      <span>{selectedMaintenance.maintenanceType === 'preventiva' ? 'Preventiva' : 'Corretiva'}</span>
+                    </div>
+                    <div className="flex text-xs">
+                      <span className="font-medium w-28">Descrição:</span> 
+                      <span className="truncate">{selectedMaintenance.description}</span>
+                    </div>
                   </div>
-                </div>
-              </div>
-              
-              {/* Formulário de novo orçamento simplificado */}
-              <div className="mb-3 border rounded">
-                <div className="p-2 border-b bg-muted/10">
-                  <h3 className="text-sm font-medium">Novo Orçamento</h3>
                 </div>
                 
-                <div className="p-3 space-y-3">
-                  {/* Campo de placa */}
-                  <div>
-                    <Label htmlFor="vehiclePlate" className="text-xs font-medium flex items-center">
-                      <span className="mr-1">🚗</span>Placa do Veículo
-                    </Label>
-                    <Input
-                      id="vehiclePlate"
-                      value={vehiclePlate}
-                      onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())}
-                      placeholder="Digite a placa do veículo"
-                      className="uppercase mt-1 h-8 text-sm"
-                    />
+                {/* Formulário de novo orçamento simplificado */}
+                <div className="mb-3 border rounded">
+                  <div className="p-2 border-b bg-muted/10">
+                    <h3 className="text-sm font-medium">Novo Orçamento</h3>
                   </div>
                   
-                  {/* Grid de 2 colunas para valor e quilometragem */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 space-y-3">
+                    {/* Campo de placa */}
                     <div>
-                      <Label htmlFor="initialBudget" className="text-xs font-medium flex items-center">
-                        <span className="mr-1">💰</span>Valor (R$)
+                      <Label htmlFor="vehiclePlate" className="text-xs font-medium flex items-center">
+                        <span className="mr-1">🚗</span>Placa do Veículo
                       </Label>
                       <Input
-                        id="initialBudget"
+                        id="vehiclePlate"
+                        value={vehiclePlate}
+                        onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())}
+                        placeholder="Digite a placa do veículo"
+                        className="uppercase mt-1 h-8 text-sm"
+                      />
+                    </div>
+                    
+                    {/* Grid de 2 colunas para valor e quilometragem */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="initialBudget" className="text-xs font-medium flex items-center">
+                          <span className="mr-1">💰</span>Valor (R$)
+                        </Label>
+                        <Input
+                          id="initialBudget"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0,00"
+                          value={initialBudget}
+                          onChange={(e) => setInitialBudget(e.target.value)}
+                          className="mt-1 h-8 text-sm"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="kmAtual" className="text-xs font-medium flex items-center">
+                          <span className="mr-1">🔄</span>Quilometragem
+                        </Label>
+                        <Input
+                          id="kmAtual"
+                          type="number"
+                          min="0"
+                          placeholder="Ex: 45000"
+                          value={kmAtual}
+                          onChange={(e) => setKmAtual(e.target.value)}
+                          className="mt-1 h-8 text-sm"
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Prazo estimado */}
+                    <div>
+                      <Label htmlFor="prazoEstimado" className="text-xs font-medium flex items-center">
+                        <span className="mr-1">⏱️</span>Prazo para Conclusão (dias)
+                      </Label>
+                      <Input
+                        id="prazoEstimado"
                         type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0,00"
-                        value={initialBudget}
-                        onChange={(e) => setInitialBudget(e.target.value)}
+                        min="1"
+                        placeholder="Ex: 3"
+                        value={prazoEstimado}
+                        onChange={(e) => setPrazoEstimado(e.target.value)}
                         className="mt-1 h-8 text-sm"
                       />
                     </div>
                     
+                    {/* Descrição do serviço */}
                     <div>
-                      <Label htmlFor="kmAtual" className="text-xs font-medium flex items-center">
-                        <span className="mr-1">🔄</span>Quilometragem
+                      <Label htmlFor="descricaoServico" className="text-xs font-medium flex items-center">
+                        <span className="mr-1">📝</span>Descrição do Serviço
                       </Label>
-                      <Input
-                        id="kmAtual"
-                        type="number"
-                        min="0"
-                        placeholder="Ex: 45000"
-                        value={kmAtual}
-                        onChange={(e) => setKmAtual(e.target.value)}
-                        className="mt-1 h-8 text-sm"
+                      <textarea
+                        id="descricaoServico"
+                        placeholder="Descreva o serviço a ser realizado..."
+                        value={descricaoServico}
+                        onChange={(e) => setDescricaoServico(e.target.value)}
+                        rows={2}
+                        className="w-full mt-1 resize-none rounded-md border text-sm border-input p-2"
                       />
                     </div>
                   </div>
-                  
-                  {/* Prazo estimado */}
-                  <div>
-                    <Label htmlFor="prazoEstimado" className="text-xs font-medium flex items-center">
-                      <span className="mr-1">⏱️</span>Prazo para Conclusão (dias)
-                    </Label>
-                    <Input
-                      id="prazoEstimado"
-                      type="number"
-                      min="1"
-                      placeholder="Ex: 3"
-                      value={prazoEstimado}
-                      onChange={(e) => setPrazoEstimado(e.target.value)}
-                      className="mt-1 h-8 text-sm"
-                    />
-                  </div>
-                  
-                  {/* Descrição do serviço */}
-                  <div>
-                    <Label htmlFor="descricaoServico" className="text-xs font-medium flex items-center">
-                      <span className="mr-1">📝</span>Descrição do Serviço
-                    </Label>
-                    <textarea
-                      id="descricaoServico"
-                      placeholder="Descreva o serviço a ser realizado..."
-                      value={descricaoServico}
-                      onChange={(e) => setDescricaoServico(e.target.value)}
-                      rows={2}
-                      className="w-full mt-1 resize-none rounded-md border text-sm border-input p-2"
-                    />
-                  </div>
                 </div>
-              </div>
-              
-              {/* Barra de ações */}
-              <div className="flex justify-between items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  onClick={() => {
-                    // Limpar campos
-                    setVehiclePlate(selectedMaintenance?.vehiclePlate || "");
-                    setInitialBudget("");
-                    setKmAtual("");
-                    setPrazoEstimado("");
-                    setDescricaoServico("");
-                  }}
-                  className="flex items-center h-8 text-xs"
-                >
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Novo
-                </Button>
                 
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={closeBudgetChat} size="sm" className="h-8 text-xs">
-                    Cancelar
-                  </Button>
+                {/* Barra de ações */}
+                <div className="flex justify-between items-center gap-2">
                   <Button 
-                    onClick={createBudgetChat}
-                    disabled={isSubmittingBudget || !vehiclePlate || !initialBudget || !kmAtual || !prazoEstimado || !descricaoServico}
-                    size="sm"
-                    className="h-8 text-xs"
+                    variant="ghost" 
+                    onClick={() => {
+                      // Limpar campos
+                      setVehiclePlate(selectedMaintenance.vehiclePlate || "");
+                      setInitialBudget("");
+                      setKmAtual("");
+                      setPrazoEstimado("");
+                      setDescricaoServico("");
+                    }}
+                    className="flex items-center h-8 text-xs"
                   >
-                    {isSubmittingBudget && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Enviar Orçamento
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Novo
                   </Button>
+                  
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={closeBudgetChat} size="sm" className="h-8 text-xs">
+                      Cancelar
+                    </Button>
+                    <Button 
+                      onClick={createBudgetChat}
+                      disabled={isSubmittingBudget || !vehiclePlate || !initialBudget || !kmAtual || !prazoEstimado || !descricaoServico}
+                      size="sm"
+                      className="h-8 text-xs"
+                    >
+                      {isSubmittingBudget && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Enviar Orçamento
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div className="flex-1 overflow-hidden">
-              {selectedMaintenance && (
+            ) : (
+              <div className="flex-1 overflow-hidden">
                 <ChatOficina
                   maintenanceId={selectedMaintenance.id}
                   initialBudget={initialBudget || undefined} // Passar diretamente como string
@@ -725,30 +723,30 @@ export default function OficinaDashboard() {
                   vehiclePlate={vehiclePlate || undefined}
                   chatId={createdChatId}
                 />
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
       
       {/* Modal do ciclo de vida */}
-      <Dialog open={isLifecycleDialogOpen} onOpenChange={setIsLifecycleDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Ciclo de Vida da Manutenção</DialogTitle>
-            <DialogDescription>
-              Acompanhe e registre cada etapa do ciclo de vida do veículo durante o processo de manutenção
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedMaintenance && (
+      {isLifecycleDialogOpen && selectedMaintenance && (
+        <Dialog open={true} onOpenChange={(open) => !open && setIsLifecycleDialogOpen(false)}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Ciclo de Vida da Manutenção</DialogTitle>
+              <DialogDescription>
+                Acompanhe e registre cada etapa do ciclo de vida do veículo durante o processo de manutenção
+              </DialogDescription>
+            </DialogHeader>
+            
             <MaintenanceLifecycle 
               maintenanceId={selectedMaintenance.id}
               onStatusChange={closeLifecycleDialog}
             />
-          )}
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
