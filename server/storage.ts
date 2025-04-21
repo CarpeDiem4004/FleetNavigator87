@@ -95,7 +95,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Usar SQL direto para evitar problemas com o campo oficina_id
       const query = `
-        SELECT id, name, email, password, role, "baseId", basename 
+        SELECT id, name, email, password, role, "baseId", basename, oficina_id
         FROM users 
         WHERE email = $1
       `;

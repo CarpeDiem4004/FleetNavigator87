@@ -3,6 +3,37 @@ import { pool } from './db';
 export async function runMigrations() {
   try {
     console.log("Iniciando migrações...");
+
+    // Verificar se a tabela 'oficinas' existe no esquema público
+    const checkOficinasTableQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' AND table_name = 'oficinas'
+      );
+    `;
+    
+    const oficinasTableResult = await pool.query(checkOficinasTableQuery);
+    const oficinasTableExists = oficinasTableResult.rows[0].exists;
+    
+    if (!oficinasTableExists) {
+      console.log("Tabela 'oficinas' não existe. Criando tabela...");
+      
+      // Criar tabela 'oficinas' seguindo o schema.ts
+      await pool.query(`
+        CREATE TABLE oficinas (
+          id SERIAL PRIMARY KEY,
+          name TEXT NOT NULL,
+          address TEXT,
+          phone TEXT,
+          is_active BOOLEAN DEFAULT TRUE,
+          created_at TIMESTAMP DEFAULT NOW()
+        );
+      `);
+      
+      console.log("Tabela 'oficinas' criada com sucesso");
+    } else {
+      console.log("Tabela 'oficinas' já existe");
+    }
     
     // Verificar se a coluna 'oficina_id' já existe na tabela 'users'
     const checkColumnQuery = `
