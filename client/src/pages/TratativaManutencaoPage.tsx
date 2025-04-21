@@ -29,7 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Search, Clock, CheckCircle2, TimerOff, AlertCircle } from "lucide-react";
+import { Search, Clock, CheckCircle2, TimerOff, AlertCircle, DollarSign, MessageSquare } from "lucide-react";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/context/AuthContext';
@@ -41,6 +41,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import MaintenanceChatHistory from '@/components/chat/MaintenanceChatHistory';
 
 // Interfaces para tipagem
 interface Maintenance {
@@ -69,6 +70,7 @@ const TratativaManutencaoPage: React.FC = () => {
   const [selectedMaintenanceId, setSelectedMaintenanceId] = useState<number | null>(null);
   const [responsavelNome, setResponsavelNome] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isChatDialogOpen, setIsChatDialogOpen] = useState(false);
 
   // Carregar manutenções
   useEffect(() => {
@@ -132,7 +134,15 @@ const TratativaManutencaoPage: React.FC = () => {
       if (activeTab === 'pendentes') {
         return matchesSearch && manutencao.status === 'pendente';
       } else if (activeTab === 'andamento') {
-        return matchesSearch && manutencao.status === 'em_andamento';
+        // Considerar todos os status em andamento na aba "Em Andamento"
+        const statusAndamento = [
+          'em_andamento', 
+          'aguardando_orcamento', 
+          'em_negociacao', 
+          'orcamento_aprovado',
+          'aguardando_pecas'
+        ];
+        return matchesSearch && statusAndamento.includes(manutencao.status);
       } else if (activeTab === 'concluidas') {
         return matchesSearch && manutencao.status === 'concluida';
       }
@@ -146,6 +156,12 @@ const TratativaManutencaoPage: React.FC = () => {
     setSelectedMaintenanceId(id);
     setResponsavelNome(user?.name || '');
     setIsDialogOpen(true);
+  };
+  
+  // Abrir diálogo de chat/negociação
+  const handleOpenChatDialog = (id: number) => {
+    setSelectedMaintenanceId(id);
+    setIsChatDialogOpen(true);
   };
 
   // Função para iniciar tratativa
@@ -267,6 +283,16 @@ const TratativaManutencaoPage: React.FC = () => {
         return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">Em Andamento</Badge>;
       case 'concluida':
         return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">Concluída</Badge>;
+      case 'aguardando_orcamento':
+        return <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300">Aguardando Orçamento</Badge>;
+      case 'em_negociacao':
+        return <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300">Em Negociação</Badge>;
+      case 'orcamento_aprovado':
+        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">Orçamento Aprovado</Badge>;
+      case 'aguardando_pecas':
+        return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">Aguardando Peças</Badge>;
+      case 'cancelada':
+        return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">Cancelada</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
