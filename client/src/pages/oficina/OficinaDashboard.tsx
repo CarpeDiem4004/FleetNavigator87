@@ -49,7 +49,7 @@ const formatDate = (dateStr: string | null) => {
 const statusTranslation: Record<string, string> = {
   'pendente': 'Pendente',
   'aguardando_orcamento': 'Aguardando Orçamento',
-  'em_negociacao': 'Em Negociação',
+  'em_andamento': 'Em Negociação',
   'orcamento_aprovado': 'Orçamento Aprovado',
   'aguardando_pecas': 'Aguardando Peças',
   'em_andamento': 'Em Andamento',
@@ -68,9 +68,7 @@ const StatusBadge = ({ status }: { status: string }) => {
     case 'aguardando_orcamento':
       variant = "secondary";
       break;
-    case 'em_negociacao':
-      variant = "secondary";
-      break;
+    // Removido caso em_negociacao, usando em_andamento
     case 'orcamento_aprovado':
       variant = "default";
       break;
