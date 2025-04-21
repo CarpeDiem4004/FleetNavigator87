@@ -142,10 +142,27 @@ export default function BudgetsPage() {
     );
   });
   
+  // Referência para verificar se o componente está montado
+  const isMounted = React.useRef(true);
+  
+  // Efeito para limpar a referência quando o componente desmontar
+  React.useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+  
   // Abrir diálogo de chat para negociação
   const handleOpenChatDialog = (chat: BudgetChat) => {
-    setSelectedChat(chat);
-    setIsChatDialogOpen(true);
+    if (isMounted.current) {
+      setSelectedChat(chat);
+      // Atraso pequeno para garantir que o estado anterior seja processado
+      setTimeout(() => {
+        if (isMounted.current) {
+          setIsChatDialogOpen(true);
+        }
+      }, 10);
+    }
   };
   
   // Função para formatar data

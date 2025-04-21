@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -59,6 +59,16 @@ export default function ChatOficina({
   const [message, setMessage] = useState('');
   const [proposedBudget, setProposedBudget] = useState<string>('');
   const [chatId, setChatId] = useState<number | null>(externalChatId || null);
+  
+  // Referência para verificar se o componente está montado
+  const isMounted = useRef(true);
+  
+  // Limpar referência quando o componente for desmontado
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   // Buscar ou criar chat
   const {
