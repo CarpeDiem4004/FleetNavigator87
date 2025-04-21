@@ -75,6 +75,61 @@ export async function runMigrations() {
       console.log("Valor 'oficina' já existe no enum 'user_role'");
     }
     
+    // Adicionar novas colunas para rastreamento do ciclo de vida do veículo na tabela manutencao
+    const novosAtributosCicloVida = [
+      {
+        nome: "maintenance_start_date",
+        tipo: "DATE",
+        descricao: "Data de início efetivo da manutenção"
+      },
+      {
+        nome: "vehicle_pickup_date",
+        tipo: "TIMESTAMP",
+        descricao: "Data e hora da retirada do veículo"
+      },
+      {
+        nome: "pickup_person_name",
+        tipo: "TEXT",
+        descricao: "Nome da pessoa que retirou o veículo"
+      },
+      {
+        nome: "pickup_person_cpf",
+        tipo: "TEXT",
+        descricao: "CPF da pessoa que retirou o veículo"
+      },
+      {
+        nome: "pickup_comments",
+        tipo: "TEXT",
+        descricao: "Observações sobre a retirada do veículo"
+      }
+    ];
+    
+    // Verificar e adicionar cada coluna na tabela de manutenção
+    for (const coluna of novosAtributosCicloVida) {
+      // Verificar se a coluna já existe
+      const checkColuna = `
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'manutencao' AND column_name = $1
+      `;
+      
+      const colunaExiste = await pool.query(checkColuna, [coluna.nome]);
+      
+      if (colunaExiste.rows.length === 0) {
+        console.log(`Adicionando coluna '${coluna.nome}' à tabela 'manutencao'`);
+        
+        // Adicionar a nova coluna
+        await pool.query(`
+          ALTER TABLE manutencao 
+          ADD COLUMN ${coluna.nome} ${coluna.tipo}
+        `);
+        
+        console.log(`Coluna '${coluna.nome}' adicionada com sucesso`);
+      } else {
+        console.log(`Coluna '${coluna.nome}' já existe na tabela 'manutencao'`);
+      }
+    }
+    
     console.log("Migrações concluídas com sucesso!");
     return true;
   } catch (error) {

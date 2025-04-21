@@ -74,8 +74,17 @@ export const maintenance = pgTable("manutencao", {
   workshopId: integer("workshop_id").notNull().references(() => workshops.id),
   requestBaseId: integer("request_base_id").notNull().references(() => bases.id),
   entryDate: date("entry_date").notNull(),
+  maintenanceStartDate: date("maintenance_start_date"),  // Data de início efetivo da manutenção
   expectedExitDate: date("expected_exit_date"),
   actualExitDate: date("actual_exit_date"),
+  
+  // Informações de retirada do veículo
+  vehiclePickupDate: timestamp("vehicle_pickup_date"),  // Data e hora da retirada do veículo
+  pickupPersonName: text("pickup_person_name"),  // Nome da pessoa que retirou o veículo
+  pickupPersonCPF: text("pickup_person_cpf"),  // CPF da pessoa que retirou o veículo
+  pickupComments: text("pickup_comments"),  // Observações sobre a retirada
+
+  // Dados gerais
   status: maintenanceStatusEnum("status").notNull(),
   maintenanceType: maintenanceTypeEnum("maintenance_type").notNull(),
   initialCost: decimal("initial_cost", { precision: 10, scale: 2 }),
