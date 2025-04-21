@@ -269,8 +269,11 @@ export default function OficinaDashboard() {
       // Atualizar o ID do chat criado
       setCreatedChatId(data.id);
       
-      // Atualizar a lista de manutenções
-      fetchMaintenance();
+      // Atualizar a lista de manutenções com um pequeno atraso
+      // para garantir que o status foi atualizado no banco de dados
+      setTimeout(() => {
+        fetchMaintenance();
+      }, 500);
       
       // Fechar o diálogo e mostrar mensagem de sucesso
       setIsChatDialogOpen(false);
@@ -354,13 +357,16 @@ export default function OficinaDashboard() {
               // Forçar atualização dos dados
               fetchMaintenance();
               toast({
-                title: "Atualizando",
-                description: "Lista de manutenções atualizada.",
+                title: "Lista Atualizada",
+                description: "Os dados foram atualizados com sucesso.",
+                variant: "success"
               });
             }} 
             variant="outline"
+            className="flex items-center gap-1"
           >
-            Atualizar
+            <RefreshCw className="h-4 w-4" />
+            Atualizar Lista
           </Button>
         </div>
       </div>
@@ -579,12 +585,15 @@ export default function OficinaDashboard() {
             // Fechar o diálogo
             setIsChatDialogOpen(false);
             
-            // Se o chat foi criado recentemente, reagendar a atualização dos dados
+            // Sempre atualizar os dados quando o diálogo é fechado
+            // Isso garante que qualquer alteração de status seja refletida na lista
+            setTimeout(() => {
+              fetchMaintenance();
+            }, 500);
+            
+            // Limpar ID do chat criado se existir
             if (createdChatId) {
               setCreatedChatId(null);
-              setTimeout(() => {
-                fetchMaintenance();
-              }, 500);
             }
           }
         }}
