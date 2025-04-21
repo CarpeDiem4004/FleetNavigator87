@@ -547,9 +547,36 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllMaintenance(): Promise<Maintenance[]> {
-    // A tabela no banco de dados agora se chama "manutencao"
-    // Mas a variável no código continua sendo "maintenance"
-    return await db.select().from(maintenance).orderBy(desc(maintenance.entryDate));
+    // Usar SQL direto para evitar problemas de colunas que podem não existir no banco
+    try {
+      const query = `
+        SELECT * FROM manutencao
+        ORDER BY entry_date DESC
+      `;
+      
+      const result = await pool.query(query);
+      
+      return result.rows.map(row => ({
+        id: row.id,
+        vehiclePlate: row.vehicle_plate,
+        description: row.description,
+        status: row.status,
+        workshopId: row.workshop_id,
+        requestBaseId: row.request_base_id, 
+        entryDate: row.entry_date,
+        expectedExitDate: row.expected_exit_date,
+        actualExitDate: row.actual_exit_date,
+        maintenanceType: row.maintenance_type,
+        initialCost: row.initial_cost,
+        finalCost: row.final_cost,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        responsiblePerson: row.responsible_person
+      }));
+    } catch (error) {
+      console.error("Erro ao buscar todas as manutenções:", error);
+      return [];
+    }
   }
 
   async createMaintenance(maintenanceData: InsertMaintenance): Promise<Maintenance> {

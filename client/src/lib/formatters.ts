@@ -16,15 +16,8 @@ export function formatCurrency(value: number): string {
  * @returns String formatada no padrão DD/MM/YYYY
  */
 export function formatDate(date: Date | string): string {
-  if (typeof date === 'string') {
-    date = new Date(date);
-  }
-  
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(date);
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return new Intl.DateTimeFormat('pt-BR').format(dateObj);
 }
 
 /**
@@ -33,17 +26,14 @@ export function formatDate(date: Date | string): string {
  * @returns String formatada no padrão DD/MM/YYYY HH:MM
  */
 export function formatDateTime(date: Date | string): string {
-  if (typeof date === 'string') {
-    date = new Date(date);
-  }
-  
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
   return new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(date);
+  }).format(dateObj);
 }
 
 /**
@@ -61,7 +51,7 @@ export function formatDecimal(value: number): string {
  * @returns String formatada (ex: 10,5 L)
  */
 export function formatVolume(value: number): string {
-  return `${formatDecimal(value)} L`;
+  return `${value.toFixed(1).replace('.', ',')} L`;
 }
 
 /**
@@ -70,5 +60,34 @@ export function formatVolume(value: number): string {
  * @returns String formatada (ex: 75%)
  */
 export function formatPercentage(value: number): string {
-  return `${Math.round(value)}%`;
+  return `${value.toFixed(0)}%`;
+}
+
+/**
+ * Formata um número para exibição em português
+ * @param value - O valor numérico
+ * @returns String formatada com separador de milhares
+ */
+export function formatNumber(value: number): string {
+  return new Intl.NumberFormat('pt-BR').format(value);
+}
+
+/**
+ * Formata uma distância em quilômetros
+ * @param value - O valor em quilômetros
+ * @returns String formatada (ex: 10.500 km)
+ */
+export function formatDistance(value: number): string {
+  return `${new Intl.NumberFormat('pt-BR').format(value)} km`;
+}
+
+/**
+ * Trunca uma string caso exceda o tamanho máximo
+ * @param text - O texto a ser truncado
+ * @param maxLength - Tamanho máximo permitido
+ * @returns String truncada com reticências
+ */
+export function truncateText(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + '...';
 }

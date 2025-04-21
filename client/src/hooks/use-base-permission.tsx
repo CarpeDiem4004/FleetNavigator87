@@ -137,6 +137,7 @@ export function useBasePermission(): BasePermissionHook {
         '/gestao-de-frotas', 
         '/fleet-management',                          // Página principal da Gestão de Frotas
         '/fleet-management/maintenance',              // Sistema de manutenção
+        '/fleet-management/budgets',                  // Sistema de orçamentos
         '/fleet-management/workshops',                // Oficinas credenciadas
         '/fleet-management/operational-analysis',     // Análise da operação  
         '/fleet-management/fleet-overview',           // Visão geral da frota
