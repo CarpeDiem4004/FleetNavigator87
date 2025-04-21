@@ -420,6 +420,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Rota para cadastro externo de oficinas (formulário público)
+  app.post("/api/workshops/external", async (req, res) => {
+    try {
+      console.log("Recebendo cadastro externo de oficina:", req.body);
+      
+      // Aqui você pode implementar uma validação de dados mais específica
+      if (!req.body.nome_oficina) {
+        return res.status(400).json({ message: "Nome da oficina é obrigatório" });
+      }
+      
+      // Criar registro de oficina externa
+      // Nota: Este é um exemplo, a implementação real dependerá da estrutura do seu banco de dados
+      const officina = {
+        name: req.body.nome_oficina,
+        address: req.body.endereco || '',
+        phone: req.body.telefone || '',
+        isActive: true,
+        isExternal: true,
+        externalData: req.body
+      };
+      
+      const newWorkshop = await storage.createWorkshop(officina);
+      console.log(`Oficina externa cadastrada com ID ${newWorkshop.id}`);
+      
+      // Notificação para o time de gestão de frotas pode ser implementada aqui
+      // Ex: envio de e-mail, notificação no sistema, etc.
+      
+      return res.status(201).json({ 
+        message: "Cadastro recebido com sucesso! A equipe de gestão de frotas analisará as informações.", 
+        id: newWorkshop.id 
+      });
+    } catch (error) {
+      console.error("Erro ao cadastrar oficina externa:", error);
+      return res.status(500).json({ message: "Erro ao processar cadastro da oficina" });
+    }
+  });
+  
   app.post("/api/workshops", async (req, res) => {
     try {
       const result = insertWorkshopSchema.safeParse(req.body);

@@ -52,6 +52,7 @@ import DriverChecklist from "@/pages/DriverChecklist";
 import DriversPage from "@/pages/DriversPage";
 import ManutencaoPage from "@/pages/ManutencaoPage";
 import TratativaManutencaoPage from "@/pages/TratativaManutencaoPage";
+import OficinasExternaPage from "@/pages/OficinasExternaPage";
 
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
@@ -131,6 +132,11 @@ function App() {
           {/* Rota pública para checklist do motorista */}
           <Route path="/checklist/:id">
             <DriverChecklist />
+          </Route>
+          
+          {/* Rota pública para cadastro de oficinas */}
+          <Route path="/oficinas/cadastro">
+            <OficinasExternaPage />
           </Route>
           
           {/* Rotas públicas para os postos de abastecimento - sem proteção e sem status de tanques */}
