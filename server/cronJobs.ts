@@ -29,11 +29,7 @@ function initCronJobs() {
         .select('*', { count: 'exact', head: true })
         .eq('status', 'pendente')
 
-      // Obter LineHall parados
-      const { count: linehallParados } = await supabase
-        .from('linha_corredor')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'parado')
+      // LineHall removido conforme solicitação
 
       // Calcular dias parados totais
       const { data: veiculosParadosData } = await supabase
@@ -65,15 +61,11 @@ function initCronJobs() {
       const litrosTotais = abastecimentos?.reduce((sum, ab) => sum + (ab.quantidade_litros || 0), 0)
       const valorTotal = abastecimentos?.reduce((sum, ab) => sum + (ab.valor_total || 0), 0)
 
-      // Buscar dados de viagens
-      const { data: viagens } = await supabase
-        .from('linha_corredor')
-        .select('status')
-        .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1))
-
-      const viagensConcluidas = viagens?.filter(v => v.status === 'finalizada').length || 0
-      const viagensNoShow = viagens?.filter(v => v.status === 'no_show').length || 0
-      const viagensCanceladas = viagens?.filter(v => v.status === 'cancelada').length || 0
+      // Buscar dados de viagens - tabela linha_corredor removida conforme solicitação
+      // Valores padrão para viagens
+      const viagensConcluidas = 0
+      const viagensNoShow = 0
+      const viagensCanceladas = 0
 
       // Buscar dados de segurança
       const { data: sinistros } = await supabase
@@ -136,7 +128,7 @@ function initCronJobs() {
             diasParadosTotal || 0,
             manutencoesPendentes || 0,
             tempoMedioManutencao,
-            linehallParados || 0,
+            0, // linehall removido
             viagensConcluidas || 0,
             viagensNoShow || 0,
             viagensCanceladas || 0,
