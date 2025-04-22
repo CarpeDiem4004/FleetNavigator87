@@ -766,6 +766,336 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Rotas para Fuel Card (Cartão de Combustível)
+  // GET - Obter todas as solicitações de cartão de combustível (com filtragem opcional por status/base)
+  app.get('/api/fuel-card', isAuthenticated, async (req, res) => {
+    try {
+      const { status } = req.query;
+      const user = req.user as any;
+      
+      // Constrói a consulta SQL baseada nos parâmetros
+      let query = `
+        SELECT fcr.*, b.name as base_name
+        FROM fuel_card_requests fcr
+        LEFT JOIN bases b ON fcr.base_id = b.id
+        WHERE 1=1
+      `;
+      
+      const queryParams: any[] = [];
+      
+      // Filtra por status se fornecido
+      if (status) {
+        query += ` AND fcr.status = $${queryParams.length + 1}`;
+        queryParams.push(status);
+      }
+      
+      // Se não for administrador ou gestor, filtra apenas as solicitações da base do usuário
+      if (user.role !== 'admin' && user.role !== 'gestor' && user.baseId) {
+        query += ` AND fcr.base_id = $${queryParams.length + 1}`;
+        queryParams.push(user.baseId);
+      }
+      
+      // Ordena por data de solicitação (mais recente primeiro)
+      query += ` ORDER BY fcr.requested_at DESC`;
+      
+      const result = await pool.query(query, queryParams);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        count: result.rowCount || 0
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar solicitações de cartão de combustível:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar solicitações',
+        error: error.message
+      });
+    }
+  });
+
+  // GET - Obter solicitações pendentes (para aprovação/rejeição)
+  app.get('/api/fuel-card/pending', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      // Verifica se o usuário tem permissão (apenas admin ou gestor)
+      if (user.role !== 'admin' && user.role !== 'gestor') {
+        return res.status(403).json({
+          success: false,
+          message: 'Sem permissão para acessar solicitações pendentes'
+        });
+      }
+      
+      const query = `
+        SELECT fcr.*, b.name as base_name
+        FROM fuel_card_requests fcr
+        LEFT JOIN bases b ON fcr.base_id = b.id
+        WHERE fcr.status = 'pendente'
+        ORDER BY fcr.requested_at ASC
+      `;
+      
+      const result = await pool.query(query);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        count: result.rowCount || 0
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar solicitações pendentes:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar solicitações pendentes',
+        error: error.message
+      });
+    }
+  });
+
+  // POST - Criar nova solicitação de recarga
+  app.post('/api/fuel-card', isAuthenticated, async (req, res) => {
+    try {
+      const { plate, cardNumber, amount, reason, requestedBy } = req.body;
+      const user = req.user as any;
+      
+      // Validação básica
+      if (!plate || !cardNumber || !amount || !reason) {
+        return res.status(400).json({
+          success: false,
+          message: 'Dados incompletos para solicitação'
+        });
+      }
+      
+      // Usar a base do usuário autenticado se disponível
+      const baseId = user.baseId || null;
+      const solicitante = requestedBy || user.name || 'Usuário';
+      
+      const query = `
+        INSERT INTO fuel_card_requests
+          (plate, card_number, amount, reason, requested_by, base_id, status, requested_at, created_at, updated_at)
+        VALUES
+          ($1, $2, $3, $4, $5, $6, 'pendente', NOW(), NOW(), NOW())
+        RETURNING *
+      `;
+      
+      const result = await pool.query(query, [
+        plate.toUpperCase(),
+        cardNumber,
+        parseFloat(amount),
+        reason,
+        solicitante,
+        baseId
+      ]);
+      
+      return res.status(201).json({
+        success: true,
+        data: result.rows[0],
+        message: 'Solicitação de recarga criada com sucesso'
+      });
+    } catch (error: any) {
+      console.error('Erro ao criar solicitação de recarga:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao criar solicitação de recarga',
+        error: error.message
+      });
+    }
+  });
+
+  // POST - Aprovar solicitação de recarga
+  app.post('/api/fuel-card/:id/approve', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = req.user as any;
+      
+      // Verifica se o usuário tem permissão para aprovar (admin ou gestor)
+      if (user.role !== 'admin' && user.role !== 'gestor') {
+        return res.status(403).json({
+          success: false,
+          message: 'Sem permissão para aprovar solicitações'
+        });
+      }
+      
+      // Verifica se a solicitação existe e está pendente
+      const checkQuery = `
+        SELECT * FROM fuel_card_requests
+        WHERE id = $1
+      `;
+      
+      const checkResult = await pool.query(checkQuery, [id]);
+      
+      if (checkResult.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Solicitação não encontrada'
+        });
+      }
+      
+      if (checkResult.rows[0].status !== 'pendente') {
+        return res.status(400).json({
+          success: false,
+          message: `Solicitação já foi ${checkResult.rows[0].status}`
+        });
+      }
+      
+      // Atualiza o status para aprovado
+      const updateQuery = `
+        UPDATE fuel_card_requests
+        SET 
+          status = 'aprovado',
+          approved_by = $1,
+          approved_at = NOW(),
+          updated_at = NOW()
+        WHERE id = $2
+        RETURNING *
+      `;
+      
+      const result = await pool.query(updateQuery, [
+        user.name || 'Admin',
+        id
+      ]);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows[0],
+        message: 'Solicitação aprovada com sucesso'
+      });
+    } catch (error: any) {
+      console.error('Erro ao aprovar solicitação:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao aprovar solicitação',
+        error: error.message
+      });
+    }
+  });
+
+  // POST - Rejeitar solicitação de recarga
+  app.post('/api/fuel-card/:id/reject', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { rejectionReason } = req.body;
+      const user = req.user as any;
+      
+      // Verifica se o usuário tem permissão para rejeitar (admin ou gestor)
+      if (user.role !== 'admin' && user.role !== 'gestor') {
+        return res.status(403).json({
+          success: false,
+          message: 'Sem permissão para rejeitar solicitações'
+        });
+      }
+      
+      // Validação do motivo de rejeição
+      if (!rejectionReason) {
+        return res.status(400).json({
+          success: false,
+          message: 'Motivo da rejeição é obrigatório'
+        });
+      }
+      
+      // Verifica se a solicitação existe e está pendente
+      const checkQuery = `
+        SELECT * FROM fuel_card_requests
+        WHERE id = $1
+      `;
+      
+      const checkResult = await pool.query(checkQuery, [id]);
+      
+      if (checkResult.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Solicitação não encontrada'
+        });
+      }
+      
+      if (checkResult.rows[0].status !== 'pendente') {
+        return res.status(400).json({
+          success: false,
+          message: `Solicitação já foi ${checkResult.rows[0].status}`
+        });
+      }
+      
+      // Atualiza o status para rejeitado
+      const updateQuery = `
+        UPDATE fuel_card_requests
+        SET 
+          status = 'rejeitado',
+          rejected_by = $1,
+          rejected_at = NOW(),
+          rejection_reason = $2,
+          updated_at = NOW()
+        WHERE id = $3
+        RETURNING *
+      `;
+      
+      const result = await pool.query(updateQuery, [
+        user.name || 'Admin',
+        rejectionReason,
+        id
+      ]);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows[0],
+        message: 'Solicitação rejeitada com sucesso'
+      });
+    } catch (error: any) {
+      console.error('Erro ao rejeitar solicitação:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao rejeitar solicitação',
+        error: error.message
+      });
+    }
+  });
+
+  // GET - Obter detalhes de uma solicitação específica
+  app.get('/api/fuel-card/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = req.user as any;
+      
+      const query = `
+        SELECT fcr.*, b.name as base_name
+        FROM fuel_card_requests fcr
+        LEFT JOIN bases b ON fcr.base_id = b.id
+        WHERE fcr.id = $1
+      `;
+      
+      const result = await pool.query(query, [id]);
+      
+      if (result.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Solicitação não encontrada'
+        });
+      }
+      
+      // Se não for admin/gestor, verifica se a solicitação pertence à base do usuário
+      if (user.role !== 'admin' && user.role !== 'gestor' && user.baseId) {
+        if (result.rows[0].base_id !== user.baseId) {
+          return res.status(403).json({
+            success: false,
+            message: 'Sem permissão para acessar esta solicitação'
+          });
+        }
+      }
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows[0]
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar detalhes da solicitação:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar detalhes da solicitação',
+        error: error.message
+      });
+    }
+  });
+  
   // Endpoint para diagnóstico do Supabase
   app.get("/api/diagnostico/supabase", isAdmin, async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
