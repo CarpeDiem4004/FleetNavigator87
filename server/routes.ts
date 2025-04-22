@@ -310,12 +310,49 @@ async function criarTabelaSolicitacoesPneus() {
   }
 }
 
+async function criarTabelaLineHallShopee() {
+  // Verificar se a tabela já existe
+  const checkTableQuery = "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'line_hall_shopee')";
+  const tableExistsResult = await pool.query(checkTableQuery);
+  
+  if (tableExistsResult.rows[0].exists) {
+    console.log("Tabela line_hall_shopee já existe, pulando criação.");
+    return;
+  }
+
+  console.log("Criando tabela line_hall_shopee...");
+  
+  // Ler o arquivo SQL
+  const fs = await import('fs');
+  const path = await import('path');
+  const url = await import('url');
+  const __filename = url.fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const sqlFilePath = path.join(__dirname, 'scripts', 'createLineHallShopeeTable.sql');
+  
+  if (!fs.existsSync(sqlFilePath)) {
+    console.error(`Arquivo SQL não encontrado: ${sqlFilePath}`);
+    return;
+  }
+  
+  const sqlContent = fs.readFileSync(sqlFilePath, 'utf8');
+  
+  try {
+    // Executar o script SQL
+    await pool.query(sqlContent);
+    console.log("Tabela line_hall_shopee criada com sucesso!");
+  } catch (error) {
+    console.error("Erro ao criar tabela line_hall_shopee:", error);
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Criar tabelas necessárias se não existirem
   await criarTabelaAbastecimentos();
   await criarTabelaMovimentacoesPatio();
   await criarTabelaMontagemPneus();
   await criarTabelaSolicitacoesPneus();
+  await criarTabelaLineHallShopee();
   // Rota para verificação de abastecimentos no banco
   app.get('/api/diagnostico/abastecimentos/:posto', async (req, res) => {
     try {
@@ -414,6 +451,294 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   // Configuração do passport para autenticação
   setupAuth(app);
+  
+  // Rotas para Line Hall Shopee
+  app.get('/api/line-hall-shopee', isAuthenticated, async (req, res) => {
+    try {
+      // Consultar todas as viagens
+      const query = `
+        SELECT * FROM line_hall_shopee
+        ORDER BY created_at DESC
+      `;
+      
+      const result = await pool.query(query);
+      
+      return res.status(200).json({
+        success: true,
+        count: result.rowCount || 0,
+        data: result.rows
+      });
+    } catch (error: any) {
+      console.error('Erro ao listar viagens Line Hall Shopee:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao listar viagens',
+        error: error.message
+      });
+    }
+  });
+  
+  app.get('/api/line-hall-shopee/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Consultar uma viagem específica
+      const query = `
+        SELECT * FROM line_hall_shopee
+        WHERE id = $1
+      `;
+      
+      const result = await pool.query(query, [id]);
+      
+      if (result.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Viagem não encontrada'
+        });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows[0]
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar viagem Line Hall Shopee:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar viagem',
+        error: error.message
+      });
+    }
+  });
+  
+  app.post('/api/line-hall-shopee', isAuthenticated, async (req, res) => {
+    try {
+      const {
+        placa_cavalo,
+        placa_carreta_1,
+        placa_carreta_2,
+        motorista_id,
+        motorista_nome,
+        local_carregamento,
+        local_descarregamento,
+        km_inicial,
+        km_final,
+        status_viagem,
+        data_inicio,
+        data_fim,
+        observacoes
+      } = req.body;
+      
+      // Validar campos obrigatórios
+      if (!placa_cavalo || !placa_carreta_1 || !motorista_id || !motorista_nome || 
+          !local_carregamento || !local_descarregamento || !km_inicial || !km_final || !status_viagem) {
+        return res.status(400).json({
+          success: false,
+          message: 'Campos obrigatórios não preenchidos'
+        });
+      }
+      
+      // Verificar se km_final é maior que km_inicial
+      if (parseInt(km_final) < parseInt(km_inicial)) {
+        return res.status(400).json({
+          success: false,
+          message: 'O KM final deve ser maior que o KM inicial'
+        });
+      }
+      
+      // Inserir viagem
+      const query = `
+        INSERT INTO line_hall_shopee (
+          placa_cavalo,
+          placa_carreta_1,
+          placa_carreta_2,
+          motorista_id,
+          motorista_nome,
+          local_carregamento,
+          local_descarregamento,
+          km_inicial,
+          km_final,
+          status_viagem,
+          data_inicio,
+          data_fim,
+          observacoes,
+          created_at,
+          updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW()
+        ) RETURNING id
+      `;
+      
+      const values = [
+        placa_cavalo.toUpperCase(),
+        placa_carreta_1.toUpperCase(),
+        placa_carreta_2 ? placa_carreta_2.toUpperCase() : null,
+        parseInt(motorista_id),
+        motorista_nome,
+        local_carregamento,
+        local_descarregamento,
+        parseInt(km_inicial),
+        parseInt(km_final),
+        status_viagem,
+        data_inicio || new Date(),
+        data_fim || null,
+        observacoes || null
+      ];
+      
+      const result = await pool.query(query, values);
+      
+      if (result.rows && result.rows.length > 0) {
+        return res.status(201).json({
+          success: true,
+          id: result.rows[0].id,
+          message: 'Viagem registrada com sucesso'
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          message: 'Erro ao registrar viagem'
+        });
+      }
+    } catch (error: any) {
+      console.error('Erro ao registrar viagem Line Hall Shopee:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao registrar viagem',
+        error: error.message
+      });
+    }
+  });
+  
+  app.put('/api/line-hall-shopee/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const {
+        placa_cavalo,
+        placa_carreta_1,
+        placa_carreta_2,
+        motorista_id,
+        motorista_nome,
+        local_carregamento,
+        local_descarregamento,
+        km_inicial,
+        km_final,
+        status_viagem,
+        data_inicio,
+        data_fim,
+        observacoes
+      } = req.body;
+      
+      // Verificar se a viagem existe
+      const checkQuery = `
+        SELECT id FROM line_hall_shopee
+        WHERE id = $1
+      `;
+      
+      const checkResult = await pool.query(checkQuery, [id]);
+      
+      if (checkResult.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Viagem não encontrada'
+        });
+      }
+      
+      // Atualizar viagem
+      const updateQuery = `
+        UPDATE line_hall_shopee
+        SET 
+          placa_cavalo = $1,
+          placa_carreta_1 = $2,
+          placa_carreta_2 = $3,
+          motorista_id = $4,
+          motorista_nome = $5,
+          local_carregamento = $6,
+          local_descarregamento = $7,
+          km_inicial = $8,
+          km_final = $9,
+          status_viagem = $10,
+          data_inicio = $11,
+          data_fim = $12,
+          observacoes = $13,
+          updated_at = NOW()
+        WHERE id = $14
+        RETURNING *
+      `;
+      
+      const updateValues = [
+        placa_cavalo ? placa_cavalo.toUpperCase() : checkResult.rows[0].placa_cavalo,
+        placa_carreta_1 ? placa_carreta_1.toUpperCase() : checkResult.rows[0].placa_carreta_1,
+        placa_carreta_2 ? placa_carreta_2.toUpperCase() : checkResult.rows[0].placa_carreta_2,
+        motorista_id ? parseInt(motorista_id) : checkResult.rows[0].motorista_id,
+        motorista_nome || checkResult.rows[0].motorista_nome,
+        local_carregamento || checkResult.rows[0].local_carregamento,
+        local_descarregamento || checkResult.rows[0].local_descarregamento,
+        km_inicial ? parseInt(km_inicial) : checkResult.rows[0].km_inicial,
+        km_final ? parseInt(km_final) : checkResult.rows[0].km_final,
+        status_viagem || checkResult.rows[0].status_viagem,
+        data_inicio || checkResult.rows[0].data_inicio,
+        data_fim || checkResult.rows[0].data_fim,
+        observacoes || checkResult.rows[0].observacoes,
+        id
+      ];
+      
+      const updateResult = await pool.query(updateQuery, updateValues);
+      
+      return res.status(200).json({
+        success: true,
+        data: updateResult.rows[0],
+        message: 'Viagem atualizada com sucesso'
+      });
+    } catch (error: any) {
+      console.error('Erro ao atualizar viagem Line Hall Shopee:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao atualizar viagem',
+        error: error.message
+      });
+    }
+  });
+  
+  app.delete('/api/line-hall-shopee/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Verificar se a viagem existe
+      const checkQuery = `
+        SELECT id FROM line_hall_shopee
+        WHERE id = $1
+      `;
+      
+      const checkResult = await pool.query(checkQuery, [id]);
+      
+      if (checkResult.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Viagem não encontrada'
+        });
+      }
+      
+      // Excluir viagem
+      const deleteQuery = `
+        DELETE FROM line_hall_shopee
+        WHERE id = $1
+      `;
+      
+      await pool.query(deleteQuery, [id]);
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Viagem excluída com sucesso'
+      });
+    } catch (error: any) {
+      console.error('Erro ao excluir viagem Line Hall Shopee:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao excluir viagem',
+        error: error.message
+      });
+    }
+  });
   
   // Endpoint para diagnóstico do Supabase
   app.get("/api/diagnostico/supabase", isAdmin, async (req, res) => {
