@@ -52,6 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   // Lista completa de itens de navegação disponíveis
   const allNavItems = [
     { name: 'Dashboard', href: '/', icon: Gauge },
+    { name: 'Dashboard Executivo', href: '/executive-dashboard', icon: BarChart4 },
     { name: 'Veículos', href: '/vehicles', icon: Truck },
     { name: 'Motoristas', href: '/drivers', icon: Users },
     // { name: 'Manutenções', href: '/maintenance', icon: Wrench },

@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import DashboardNew from "@/pages/DashboardNew";
 import Dashboard from "@/pages/index";
+import ExecutiveDashboard from "@/pages/ExecutiveDashboard";
 import VehiclesNew from "@/pages/VehiclesNew";
 import MaintenanceNew from "@/pages/MaintenanceNew";
 import TiresPage from "@/pages/TiresPage";
@@ -96,6 +97,7 @@ function App() {
           
           {/* Novo Dashboard com KPIs */}
           <ProtectedRoute path="/" component={Dashboard} />
+          <ProtectedRoute path="/executive-dashboard" component={ExecutiveDashboard} />
           
           {/* Rotas protegidas com verificação de permissão de base */}
           <ProtectedRoute path="/vehicles" component={VehiclesNew} />
