@@ -176,6 +176,98 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    console.log("Atualizando usuário ID:", id, "com os seguintes dados:", {
+      ...userData,
+      password: userData.password ? "***********" : undefined
+    });
+    
+    try {
+      // Verificar se o usuário existe
+      const existingUser = await this.getUser(id);
+      if (!existingUser) {
+        console.error("Usuário não encontrado para atualizar:", id);
+        return undefined;
+      }
+      
+      // Construir a query de atualização dinamicamente
+      let query = "UPDATE users SET";
+      const updates: string[] = [];
+      const params: any[] = [];
+      let paramIndex = 1;
+      
+      // Adicionar campos para atualização, se fornecidos
+      if (userData.name !== undefined) {
+        updates.push(` name = $${paramIndex++}`);
+        params.push(userData.name);
+      }
+      
+      if (userData.email !== undefined) {
+        updates.push(` email = $${paramIndex++}`);
+        params.push(userData.email);
+      }
+      
+      if (userData.password !== undefined) {
+        updates.push(` password = $${paramIndex++}`);
+        params.push(userData.password);
+      }
+      
+      if (userData.role !== undefined) {
+        updates.push(` role = $${paramIndex++}`);
+        params.push(userData.role);
+      }
+      
+      if (userData.baseId !== undefined) {
+        updates.push(` base_id = $${paramIndex++}`);
+        params.push(userData.baseId);
+      }
+      
+      if (userData.basename !== undefined) {
+        updates.push(` basename = $${paramIndex++}`);
+        params.push(userData.basename);
+      }
+      
+      if (userData.oficina_id !== undefined) {
+        updates.push(` oficina_id = $${paramIndex++}`);
+        params.push(userData.oficina_id);
+      }
+      
+      // Se não há campos para atualizar, retornar o usuário existente
+      if (updates.length === 0) {
+        console.log("Nenhum campo para atualizar, retornando usuário existente");
+        return existingUser;
+      }
+      
+      query += updates.join(",");
+      query += ` WHERE id = $${paramIndex} RETURNING *`;
+      params.push(id);
+      
+      const result = await pool.query(query, params);
+      
+      if (result.rows.length === 0) {
+        console.error("Falha ao atualizar usuário, nenhuma linha retornada");
+        return undefined;
+      }
+      
+      const updatedUser: User = {
+        id: result.rows[0].id,
+        name: result.rows[0].name,
+        email: result.rows[0].email,
+        password: result.rows[0].password,
+        role: result.rows[0].role,
+        baseId: result.rows[0].base_id,
+        basename: result.rows[0].basename,
+        oficina_id: result.rows[0].oficina_id || null
+      };
+      
+      console.log("Usuário atualizado com sucesso:", { id: updatedUser.id, email: updatedUser.email });
+      return updatedUser;
+    } catch (error) {
+      console.error("Erro ao atualizar usuário:", error);
+      return undefined;
+    }
+  }
+  
   async createUser(user: InsertUser): Promise<User> {
     console.log("Criando usuário com os seguintes dados:", { 
       ...user, 
@@ -241,14 +333,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined> {
-    const [updated] = await db
-      .update(users)
-      .set(user)
-      .where(eq(users.id, id))
-      .returning();
-    return updated || undefined;
-  }
+  // Método updateUser já implementado anteriormente
 
   async deleteUser(id: number): Promise<boolean> {
     const [deleted] = await db

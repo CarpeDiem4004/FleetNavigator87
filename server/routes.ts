@@ -1141,9 +1141,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }]);
     } catch (error) {
       console.error("Error fetching users:", error);
-      return res.status(500).json({ message: "Server error" });
     }
   });
+  
+  // Rota para redefinir a senha de um usuário
+  app.post("/api/users/:id/reset-password", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { password } = req.body;
+      
+      if (!password) {
+        return res.status(400).json({ message: "Senha é obrigatória" });
+      }
+      
+      console.log(`Redefinindo senha para usuário ID ${userId}...`);
+      
+      // Hash da nova senha
+      const hashedPassword = await hashPassword(password);
+      
+      // Atualizar o usuário no banco de dados
+      const updatedUser = await storage.updateUser(userId, { password: hashedPassword });
+      
+      if (!updatedUser) {
+        console.log(`Usuário ID ${userId} não encontrado.`);
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+      
+      console.log(`Senha do usuário ID ${userId} (${updatedUser.email}) redefinida com sucesso.`);
+      
+      // Retornar sucesso sem expor a senha
+      res.json({ 
+        message: "Senha redefinida com sucesso",
+        user: { 
+          id: updatedUser.id, 
+          name: updatedUser.name, 
+          email: updatedUser.email 
+        }
+      });
+    } catch (error) {
+      console.error("Erro ao redefinir senha:", error);
+      res.status(500).json({ message: "Erro ao redefinir senha" });
+    }
+  });
+
+  // Rota para users (tem problema no fechamento do endpoint anterior)
 
   // Dashboard API
   app.get("/api/dashboard/kpis", isAuthenticated, getDashboardKPIs);
