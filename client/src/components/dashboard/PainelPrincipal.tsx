@@ -8,7 +8,6 @@ interface PainelData {
   tempo_medio_manutencao: string;
   veiculos_parados: number;
   dias_parados_total: number;
-  linehall_parados: number;
   viagens_concluidas: number;
   viagens_no_show: number;
   viagens_canceladas_cliente: number;
@@ -101,8 +100,7 @@ export default function PainelPrincipal() {
         <KpiCard label="Veículos Parados" value={painel.veiculos_parados} />
         <KpiCard label="Dias Parados (Total)" value={painel.dias_parados_total} />
 
-        {/* Line Hall */}
-        <KpiCard label="Line Hall Parados" value={painel.linehall_parados} />
+        {/* Viagens */}
         <KpiCard label="Viagens Concluídas" value={painel.viagens_concluidas} />
         <KpiCard label="No Show" value={painel.viagens_no_show} />
         <KpiCard label="Canceladas pelo Cliente" value={painel.viagens_canceladas_cliente} />

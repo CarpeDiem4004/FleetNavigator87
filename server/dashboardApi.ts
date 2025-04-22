@@ -11,7 +11,6 @@ interface PainelPrincipalData {
   tempo_medio_manutencao: string;
   veiculos_parados: number;
   dias_parados_total: number;
-  linehall_parados: number;
   viagens_concluidas: number;
   viagens_no_show: number;
   viagens_canceladas_cliente: number;
@@ -70,8 +69,7 @@ export async function getDashboardKPIs(req: Request, res: Response) {
         manutencoes_pendentes: 12,
         tempo_medio_manutencao: "3.5 dias",
         veiculos_parados: 8,
-        dias_parados_total: 24, 
-        linehall_parados: 3,
+        dias_parados_total: 24,
         viagens_concluidas: 145,
         viagens_no_show: 5,
         viagens_canceladas_cliente: 7,
@@ -148,8 +146,7 @@ export async function getPainelPrincipal(req: Request, res: Response) {
           manutencoes_pendentes: 12,
           tempo_medio_manutencao: "3.5 dias",
           veiculos_parados: 8,
-          dias_parados_total: 24, 
-          linehall_parados: 3,
+          dias_parados_total: 24,
           viagens_concluidas: 145,
           viagens_no_show: 5,
           viagens_canceladas_cliente: 7,
