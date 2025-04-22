@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Table, 
   TableBody, 
@@ -134,6 +135,7 @@ const TiresPage: React.FC = () => {
     profundidade_sulco: 12.0,
     localizacao: 'almoxarifado',
     status: 'estoque',
+    tem_estepe: false,
     observacao: ''
   });
 
@@ -254,6 +256,7 @@ const TiresPage: React.FC = () => {
           profundidade_sulco: 12.0,
           localizacao: 'almoxarifado',
           status: 'estoque',
+          tem_estepe: false,
           observacao: ''
         });
       }
@@ -644,6 +647,22 @@ const TiresPage: React.FC = () => {
                       onChange={(e) => setNewTire({...newTire, observacao: e.target.value})}
                       placeholder="Observações adicionais"
                     />
+                  </div>
+                  
+                  <div className="flex items-center space-x-2 mt-2">
+                    <Checkbox 
+                      id="tem_estepe" 
+                      checked={newTire.tem_estepe || false}
+                      onCheckedChange={(checked) => 
+                        setNewTire({...newTire, tem_estepe: Boolean(checked)})
+                      }
+                    />
+                    <Label 
+                      htmlFor="tem_estepe" 
+                      className="font-medium cursor-pointer"
+                    >
+                      Veículo possui estepe
+                    </Label>
                   </div>
                 </div>
                 <DialogFooter>
