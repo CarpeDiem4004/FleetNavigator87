@@ -130,7 +130,8 @@ export class DatabaseStorage implements IStorage {
         baseId: result.rows[0].base_id, // Corrigido para usar base_id, nome da coluna no banco
         basename: result.rows[0].basename,
         oficina_id: result.rows[0].oficina_id || null,
-        isActive: result.rows[0].is_active !== false // Se não for explicitamente false, consideramos true
+        isActive: result.rows[0].is_active !== false, // Se não for explicitamente false, consideramos true
+        lastLogin: null // Campo não utilizado no login
       };
       
       return user;
@@ -165,7 +166,8 @@ export class DatabaseStorage implements IStorage {
         baseId: row.base_id,
         basename: row.basename,
         oficina_id: row.oficina_id || null,
-        isActive: row.is_active !== false
+        isActive: row.is_active !== false,
+        lastLogin: null // Campo não utilizado na listagem
       }));
       
       return users;
@@ -295,7 +297,9 @@ export class DatabaseStorage implements IStorage {
         role: result.rows[0].role,
         baseId: result.rows[0].base_id,
         basename: result.rows[0].basename,
-        oficina_id: result.rows[0].oficina_id || null
+        oficina_id: result.rows[0].oficina_id || null,
+        isActive: result.rows[0].is_active !== false,
+        lastLogin: null
       };
       
       console.log("Usuário atualizado com sucesso:", { id: updatedUser.id, email: updatedUser.email });
@@ -360,7 +364,9 @@ export class DatabaseStorage implements IStorage {
         role: result.rows[0].role,
         baseId: result.rows[0].base_id,
         basename: result.rows[0].basename,
-        oficina_id: result.rows[0].oficina_id || null
+        oficina_id: result.rows[0].oficina_id || null,
+        isActive: result.rows[0].is_active !== false,
+        lastLogin: null
       };
       
       console.log("Usuário criado com sucesso:", { id: newUser.id, email: newUser.email });
