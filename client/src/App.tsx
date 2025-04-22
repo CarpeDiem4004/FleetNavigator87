@@ -10,7 +10,7 @@ import MaintenanceNew from "@/pages/MaintenanceNew";
 import TiresPage from "@/pages/TiresPage";
 import RefuelingNew from "@/pages/RefuelingNew";
 import FinesNew from "@/pages/FinesNew";
-import EntradaOperacoes from "@/pages/EntradaOperacoes";
+// EntradaOperacoes removido (LineHall)
 import UsersNew from "@/pages/UsersNew";
 import Bases from "@/pages/Bases";
 import SignIn from "@/pages/SignIn";
@@ -49,7 +49,7 @@ import MaintenancePage from "@/pages/fleet-management/MaintenancePage";
 import BudgetManagementPage from "@/pages/fleet-management/BudgetManagementPage";
 import InventoryPage from "@/pages/fleet-management/InventoryPage";
 import TiresEntrada from "@/pages/TiresEntrada";
-import LineHallShopee from "@/pages/LineHallShopee";
+// LineHallShopee removido conforme solicitação
 import DriverChecklist from "@/pages/DriverChecklist";
 import DriversPage from "@/pages/DriversPage";
 import ManutencaoPage from "@/pages/ManutencaoPage";
@@ -101,7 +101,7 @@ function App() {
           <ProtectedRoute path="/tires/entrada" component={TiresEntrada} />
           <ProtectedRoute path="/refueling" component={RefuelingNew} />
           <ProtectedRoute path="/fines" component={FinesNew} />
-          <ProtectedRoute path="/line-hall" component={EntradaOperacoes} />
+          {/* Line Hall removido conforme solicitação */}
           <ProtectedRoute path="/fleet-management" component={FleetManagement} />
           <ProtectedRoute path="/fleet-management/inventory" component={InventoryPage} />
           <ProtectedRoute path="/fleet-management/workshops" component={WorkshopsPage} />
@@ -131,7 +131,7 @@ function App() {
           <ProtectedRoute path="/diagnostico/api-tester" component={ApiTester} />
           <ProtectedRoute path="/admin/utils" component={AdminUtils} />
           <ProtectedRoute path="/limpar-dados" component={LimparDados} />
-          <ProtectedRoute path="/line-hall-shopee" component={LineHallShopee} />
+          {/* Line Hall Shopee removido conforme solicitação */}
           <ProtectedRoute path="/drivers" component={DriversPage} />
           <ProtectedRoute path="/manutencao" component={ManutencaoPage} />
           <ProtectedRoute path="/tratativa-manutencao" component={TratativaManutencaoPage} />
