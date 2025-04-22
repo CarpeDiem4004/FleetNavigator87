@@ -147,8 +147,8 @@ export function useBasePermission(): BasePermissionHook {
     }
     
     // Administradores têm acesso a todas as rotas
-    if (user.role === 'admin') {
-      console.log(`Permission granted for admin user to route: ${route}`);
+    if (user.role === 'admin' || user.role === 'ADMIN') {
+      console.log(`Permission granted for admin user to route: ${route} (admin role: ${user.role})`);
       return true;
     }
     
@@ -310,7 +310,7 @@ export function useBasePermission(): BasePermissionHook {
   
   // Verifica se o usuário pertence a uma base específica
   const isUserFromBase = useCallback((baseId: number): boolean => {
-    if (user?.role === 'admin') return true;
+    if (user?.role === 'admin' || user?.role === 'ADMIN') return true;
     return user?.baseId === baseId;
   }, [user]);
   
