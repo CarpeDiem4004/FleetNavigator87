@@ -42,9 +42,11 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
       
       // Usando o cliente Supabase para buscar dados
       const response = await fetchRecords('abastecimentos_postos', {
-        filter: { posto: formatPosto(postId) },
+        filter: { posto_id: postId },  // Mudado de 'posto' para 'posto_id'
         limit: 100
       });
+      
+      console.log("[FETCH] Resposta completa:", response);
       
       // Verificar se a resposta foi bem-sucedida e tem dados
       if (response.success && response.data) {
