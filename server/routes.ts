@@ -1050,6 +1050,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para solicitação de recarga de cartão de combustível por motorista do Line Hall
+  app.post('/api/fuel-card/request', async (req, res) => {
+    try {
+      const { 
+        plate, 
+        card_number, 
+        amount, 
+        reason, 
+        requested_by, 
+        receipt_url,
+        driver_id,
+        source
+      } = req.body;
+      
+      // Validação básica
+      if (!plate || !card_number || !amount || !reason) {
+        return res.status(400).json({
+          success: false,
+          message: 'Dados incompletos para solicitação. Informe placa, número do cartão, valor e motivo.'
+        });
+      }
+      
+      const query = `
+        INSERT INTO fuel_card_requests
+          (plate, card_number, amount, reason, requested_by, receipt_url, driver_id, source, status, requested_at, created_at, updated_at)
+        VALUES
+          ($1, $2, $3, $4, $5, $6, $7, $8, 'pendente', NOW(), NOW(), NOW())
+        RETURNING *
+      `;
+      
+      const result = await pool.query(query, [
+        plate.toUpperCase(),
+        card_number,
+        parseFloat(amount),
+        reason,
+        requested_by || 'Motorista Line Hall',
+        receipt_url,
+        driver_id,
+        source || 'line_hall'
+      ]);
+      
+      return res.status(201).json({
+        success: true,
+        data: result.rows[0],
+        message: 'Solicitação de recarga criada com sucesso'
+      });
+    } catch (error: any) {
+      console.error('Erro ao criar solicitação de recarga via Line Hall:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao criar solicitação de recarga',
+        error: error.message
+      });
+    }
+  });
+
   // GET - Obter detalhes de uma solicitação específica
   app.get('/api/fuel-card/:id', isAuthenticated, async (req, res) => {
     try {
