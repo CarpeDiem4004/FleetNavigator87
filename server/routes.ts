@@ -346,6 +346,45 @@ async function criarTabelaLineHallShopee() {
   }
 }
 
+/**
+ * Cria a tabela fuel_card_requests se não existir
+ */
+async function criarTabelaFuelCardRequests() {
+  // Verificar se a tabela já existe
+  const checkTableQuery = "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'fuel_card_requests')";
+  const tableExistsResult = await pool.query(checkTableQuery);
+  
+  if (tableExistsResult.rows[0].exists) {
+    console.log("Tabela fuel_card_requests já existe, pulando criação.");
+    return;
+  }
+
+  console.log("Criando tabela fuel_card_requests...");
+  
+  // Ler o arquivo SQL
+  const fs = await import('fs');
+  const path = await import('path');
+  const url = await import('url');
+  const __filename = url.fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const sqlFilePath = path.join(__dirname, 'scripts', 'createFuelCardTable.sql');
+  
+  if (!fs.existsSync(sqlFilePath)) {
+    console.error(`Arquivo SQL não encontrado: ${sqlFilePath}`);
+    return;
+  }
+  
+  const sqlContent = fs.readFileSync(sqlFilePath, 'utf8');
+  
+  try {
+    // Executar o script SQL
+    await pool.query(sqlContent);
+    console.log("Tabela fuel_card_requests criada com sucesso!");
+  } catch (error) {
+    console.error("Erro ao criar tabela fuel_card_requests:", error);
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Criar tabelas necessárias se não existirem
   await criarTabelaAbastecimentos();
@@ -353,6 +392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await criarTabelaMontagemPneus();
   await criarTabelaSolicitacoesPneus();
   await criarTabelaLineHallShopee();
+  await criarTabelaFuelCardRequests();
   // Rota para verificação de abastecimentos no banco
   app.get('/api/diagnostico/abastecimentos/:posto', async (req, res) => {
     try {
