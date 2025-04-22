@@ -17,7 +17,9 @@ import {
   AlertCircle,
   ShieldCheck,
   FileText,
-  MessageSquare
+  MessageSquare,
+  Package,
+  Boxes
 } from 'lucide-react';
 import backgroundImage from '../../assets/background.jpeg';
 import { Button } from '@/components/ui/button';
