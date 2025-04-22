@@ -23,7 +23,8 @@ import {
   ShieldAlert,
   FileText,
   Package,
-  Map
+  Map,
+  CreditCard
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -50,6 +51,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
     { name: 'Abastecimentos', href: '/refueling', icon: Fuel },
+    { name: 'Cartão de Combustível', href: '/fuel-card', icon: CreditCard },
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
     { name: 'Line Hall Shopee', href: '/line-hall-shopee', icon: Map },
     { name: 'Bases', href: '/bases', icon: Warehouse },
@@ -64,6 +66,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Oficinas Credenciadas', href: '/fleet-management/workshops', icon: ClipboardList },
     { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package },
+    { name: 'Cartão de Combustível', href: '/fuel-card', icon: CreditCard },
     { name: 'Line Hall Shopee', href: '/line-hall-shopee', icon: Map },
     { name: 'Análise da Operação', href: '/fleet-management/operational-analysis', icon: BarChart4 },
     { name: 'Visão Geral da Frota', href: '/fleet-management/fleet-overview', icon: Activity },
