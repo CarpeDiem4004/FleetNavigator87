@@ -165,27 +165,37 @@ const HistoricoGeralPage: React.FC = () => {
     
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      const placaMatch = item.placa.toLowerCase().includes(term);
-      const motoristaMatch = item.nome_motorista.toLowerCase().includes(term);
-      const postoMatch = item.posto.toLowerCase().includes(term);
-      let projectMatch = false;
       
-      if (item.project) {
-        projectMatch = item.project.toLowerCase().includes(term);
+      // Verifica se os campos existem e não são nulos antes de tentar fazer toLowerCase
+      const placaMatch = item.placa?.toLowerCase().includes(term) || false;
+      const motoristaMatch = item.nome_motorista?.toLowerCase().includes(term) || false;
+      const postoMatch = item.posto?.toLowerCase().includes(term) || false;
+      const projectMatch = item.project?.toLowerCase().includes(term) || false;
+      const kmMatch = item.km_atual?.toString().includes(term) || false;
+      const tipoMatch = item.tipo_combustivel?.toLowerCase().includes(term) || false;
+      
+      passesSearch = placaMatch || motoristaMatch || projectMatch || postoMatch || kmMatch || tipoMatch;
+    }
+    
+    if (dateStart && item.created_at) {
+      try {
+        const startDate = new Date(dateStart);
+        const itemDate = new Date(item.created_at);
+        passesDateFilter = passesDateFilter && itemDate >= startDate;
+      } catch (e) {
+        console.error("Erro ao comparar datas:", e);
       }
-      
-      passesSearch = placaMatch || motoristaMatch || projectMatch || postoMatch;
     }
     
-    if (dateStart) {
-      const startDate = new Date(dateStart);
-      passesDateFilter = passesDateFilter && new Date(item.created_at) >= startDate;
-    }
-    
-    if (dateEnd) {
-      const endDate = new Date(dateEnd);
-      endDate.setHours(23, 59, 59, 999);
-      passesDateFilter = passesDateFilter && new Date(item.created_at) <= endDate;
+    if (dateEnd && item.created_at) {
+      try {
+        const endDate = new Date(dateEnd);
+        endDate.setHours(23, 59, 59, 999);
+        const itemDate = new Date(item.created_at);
+        passesDateFilter = passesDateFilter && itemDate <= endDate;
+      } catch (e) {
+        console.error("Erro ao comparar datas:", e);
+      }
     }
     
     return passesSearch && passesDateFilter;
@@ -198,6 +208,16 @@ const HistoricoGeralPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-800">Histórico Geral de Abastecimentos</h1>
           
           <div className="flex items-center space-x-2 mt-4 sm:mt-0">
+            <button 
+              onClick={fetchAllAbastecimentos}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center mr-2"
+              disabled={isLoading}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Atualizar
+            </button>
             <button 
               onClick={handleExportarExcel}
               className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center"
