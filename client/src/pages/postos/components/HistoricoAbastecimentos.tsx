@@ -242,7 +242,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
         
         // Busca todos os IDs de abastecimentos para este posto
         const response = await fetchRecords('abastecimentos_postos', {
-          filter: { posto: formatPosto(postId) }
+          filter: { posto_id: postId }
         });
         
         // Verificar se a resposta foi bem-sucedida e tem dados
