@@ -37,6 +37,7 @@ const allRoutes = [
   '/refueling',                        // Abastecimentos
   '/abastecimento',                    // Alias para Abastecimentos
   '/fuel-card',                        // Cartão de Combustível
+  '/fuel-card-requests',               // Painel de Solicitações Fuel Card
   '/fines',                            // Multas
   '/multas',                           // Alias para Multas
   '/line-hall',                        // Line Hall (antigo)
@@ -81,7 +82,8 @@ const baseRouteMapping = {
     '/fines',
     '/multas',
     '/line-hall-shopee',
-    '/fuel-card'
+    '/fuel-card',
+    '/fuel-card-requests'
   ],
   'frota': [
     '/gestao-de-frotas', 
@@ -100,7 +102,8 @@ const baseRouteMapping = {
     '/fines',
     '/multas',
     '/line-hall-shopee',
-    '/fuel-card'
+    '/fuel-card',
+    '/fuel-card-requests'
   ],
   'segurança do trabalho': [
     '/work-safety',
@@ -128,6 +131,7 @@ const basicRoutes = [
   '/pneus',                  // Alias para pneus
   '/refueling',              // Registros de abastecimento
   '/fuel-card',              // Cartão de Combustível
+  '/fuel-card-requests',     // Painel de Solicitações Fuel Card
   '/work-safety',            // Informar acidentes de trabalho
   '/seguranca-trabalho',     // Alias para segurança do trabalho
   '/theft',                  // Registro de roubos
@@ -223,6 +227,7 @@ export function useBasePermission(): BasePermissionHook {
         '/vehicles',                                  // Veículos
         '/refueling',                                 // Abastecimentos
         '/fuel-card',                                 // Cartão de Combustível
+        '/fuel-card-requests',                        // Painel de Solicitações Fuel Card
         '/tires',                                     // Pneus
         '/fines',                                     // Multas
         '/line-hall-shopee',                          // Line Hall Shopee
