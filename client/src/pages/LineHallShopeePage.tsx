@@ -22,9 +22,7 @@ interface LineHallTrip {
   motorista_nome: string;
   local_carregamento: string;
   local_descarregamento: string;
-  km_inicial: number;
-  km_final: number;
-  distancia_percorrida: number;
+  horario_carregamento?: string | null;
   status_viagem: string;
   data_inicio: string;
   data_fim?: string | null;
@@ -56,8 +54,7 @@ export default function LineHallShopeePage() {
     motorista_nome: '',
     local_carregamento: '',
     local_descarregamento: '',
-    km_inicial: 0,
-    km_final: 0,
+    horario_carregamento: '',
     status_viagem: 'Concluída',
     observacoes: ''
   });
@@ -96,21 +93,10 @@ export default function LineHallShopeePage() {
       // Validar campos obrigatórios
       if (!currentTrip.placa_cavalo || !currentTrip.placa_carreta_1 || 
           !currentTrip.motorista_nome || !currentTrip.local_carregamento || 
-          !currentTrip.local_descarregamento || !currentTrip.km_inicial || 
-          !currentTrip.km_final || !currentTrip.status_viagem) {
+          !currentTrip.local_descarregamento || !currentTrip.status_viagem) {
         toast({
           title: "Campos obrigatórios",
           description: "Preencha todos os campos obrigatórios",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Validar KM
-      if (currentTrip.km_final! < currentTrip.km_inicial!) {
-        toast({
-          title: "KM inválido",
-          description: "O KM final deve ser maior que o KM inicial",
           variant: "destructive"
         });
         return;
@@ -135,8 +121,7 @@ export default function LineHallShopeePage() {
           motorista_nome: '',
           local_carregamento: '',
           local_descarregamento: '',
-          km_inicial: 0,
-          km_final: 0,
+          horario_carregamento: '',
           status_viagem: 'Concluída',
           observacoes: ''
         });
@@ -350,29 +335,16 @@ export default function LineHallShopeePage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="km_inicial">KM Inicial *</Label>
+                      <Label htmlFor="horario_carregamento">Horário de Carregamento</Label>
                       <Input
-                        id="km_inicial"
-                        name="km_inicial"
-                        type="number"
-                        placeholder="0"
-                        value={currentTrip.km_inicial || ''}
+                        id="horario_carregamento"
+                        name="horario_carregamento"
+                        type="time"
+                        placeholder="HH:MM"
+                        value={currentTrip.horario_carregamento || ''}
                         onChange={handleInputChange}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="km_final">KM Final *</Label>
-                      <Input
-                        id="km_final"
-                        name="km_final"
-                        type="number"
-                        placeholder="0"
-                        value={currentTrip.km_final || ''}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="status_viagem">Status da Viagem *</Label>
                       <Select 
@@ -391,6 +363,7 @@ export default function LineHallShopeePage() {
                       </Select>
                     </div>
                   </div>
+
                   <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="observacoes">Observações</Label>
