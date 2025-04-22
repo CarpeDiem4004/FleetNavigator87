@@ -8,6 +8,7 @@ import { fetchRecords } from '@/lib/supabase-client';
 
 interface HistoricoMovimentacoesProps {
   postId: string;
+  refreshTrigger?: number;
 }
 
 interface Movimentacao {
@@ -20,7 +21,7 @@ interface Movimentacao {
   created_at: string;
 }
 
-export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ postId }) => {
+export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ postId, refreshTrigger = 0 }) => {
   const [movimentacoes, setMovimentacoes] = useState<Movimentacao[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(new Date());
@@ -61,6 +62,7 @@ export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ 
     }
   };
   
+  // Efeito para carregar dados iniciais e configurar atualização automática
   useEffect(() => {
     fetchMovimentacoes();
     
@@ -71,6 +73,14 @@ export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ 
     
     return () => clearInterval(interval);
   }, [postId]);
+  
+  // Efeito para reagir a mudanças no refreshTrigger (atualizações forçadas)
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      console.log("[HISTORICO] Atualizando movimentações por causa do refreshTrigger:", refreshTrigger);
+      fetchMovimentacoes();
+    }
+  }, [refreshTrigger]);
   
   const formatarData = (dataString: string) => {
     const data = new Date(dataString);

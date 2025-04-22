@@ -4,6 +4,7 @@ import { deleteRecord, deleteRecords, fetchRecords } from '@/lib/supabase-client
 interface HistoricoAbastecimentosProps {
   postId: string;
   showLimparButton?: boolean;
+  refreshTrigger?: number;
 }
 
 interface Abastecimento {
@@ -21,7 +22,7 @@ interface Abastecimento {
   created_at: string;
 }
 
-const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postId, showLimparButton = true }) => {
+const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postId, showLimparButton = true, refreshTrigger = 0 }) => {
   const [abastecimentos, setAbastecimentos] = useState<Abastecimento[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -118,6 +119,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
     }, 300);
   }, []);
   
+  // Efeito para carregar dados iniciais e configurar atualização automática
   useEffect(() => {
     console.log("[HISTORICO] Montando componente - buscando dados");
     fetchAbastecimentos();
@@ -130,6 +132,14 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
     
     return () => clearInterval(interval);
   }, [postId]);
+  
+  // Efeito para reagir a mudanças no refreshTrigger (atualizações forçadas)
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      console.log("[HISTORICO] Atualizando dados por causa do refreshTrigger:", refreshTrigger);
+      fetchAbastecimentos();
+    }
+  }, [refreshTrigger]);
   
   // Força a atualização ao clicar no botão "Ver Histórico" através da detecção de rota
   useEffect(() => {

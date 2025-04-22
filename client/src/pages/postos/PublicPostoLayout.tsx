@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Fuel, TruckIcon, Truck, History } from 'lucide-react';
@@ -14,6 +14,19 @@ interface PublicPostoLayoutProps {
 }
 
 export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePosto }) => {
+  // Referências para os componentes de histórico para atualização
+  const historicoAbastecimentosRef = useRef<any>(null);
+  const historicoMovimentacoesRef = useRef<any>(null);
+  
+  // Estado para controlar atualizações
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
+  // Função para atualizar o histórico de abastecimentos
+  const atualizarHistoricos = () => {
+    console.log("[HISTORICO] Atualizando dados automaticamente");
+    setRefreshTrigger(prev => prev + 1);
+  };
+  
   return (
     <div className="w-full p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
@@ -53,11 +66,17 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
                   </TabsTrigger>
                 </TabsList>
                 
-                <FormularioAbastecimento postId={id} />
+                <FormularioAbastecimento 
+                  postId={id} 
+                  onRegistroSucesso={atualizarHistoricos} 
+                />
                 {/* Temporariamente desativado 
                 <FormularioRecebimento postId={id} />
                 */}
-                <FormularioControlePatio postId={id} />
+                <FormularioControlePatio 
+                  postId={id} 
+                  onRegistroSucesso={atualizarHistoricos} 
+                />
               </Tabs>
             </CardContent>
           </Card>
@@ -70,8 +89,17 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
             Históricos
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <HistoricoAbastecimentos postId={id} showLimparButton={false} />
-            <HistoricoMovimentacoes postId={id} />
+            <HistoricoAbastecimentos 
+              ref={historicoAbastecimentosRef}
+              postId={id} 
+              showLimparButton={false} 
+              refreshTrigger={refreshTrigger}
+            />
+            <HistoricoMovimentacoes 
+              ref={historicoMovimentacoesRef}
+              postId={id} 
+              refreshTrigger={refreshTrigger}
+            />
           </div>
         </div>
       </div>
