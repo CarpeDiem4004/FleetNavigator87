@@ -132,6 +132,44 @@ const hasBaseAccess = (req: Request, res: Response, next: NextFunction) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Rota para verificação de abastecimentos no banco
+  app.get('/api/diagnostico/abastecimentos/:posto', async (req, res) => {
+    try {
+      const { posto } = req.params;
+      
+      // Formatar nome do posto (primeira letra maiúscula)
+      const formattedPosto = posto.charAt(0).toUpperCase() + posto.slice(1);
+      
+      console.log(`Verificando abastecimentos para posto: ${formattedPosto}`);
+      
+      // Consulta SQL direta para verificar os registros existentes
+      const query = `
+        SELECT * FROM abastecimentos_postos 
+        WHERE posto = $1
+        ORDER BY created_at DESC
+        LIMIT 100
+      `;
+      
+      const result = await pool.query(query, [formattedPosto]);
+      
+      console.log(`Abastecimentos encontrados: ${result.rowCount || 0}`);
+      
+      return res.status(200).json({
+        success: true,
+        count: result.rowCount || 0,
+        data: result.rows,
+        message: `Encontrados ${result.rowCount || 0} registros para o posto ${formattedPosto}`
+      });
+    } catch (error) {
+      console.error('Erro ao verificar abastecimentos:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao verificar abastecimentos',
+        error: String(error)
+      });
+    }
+  });
+  
   // Rota para registro de abastecimento
   app.post('/api/registro/abastecimento', isAuthenticated, async (req, res) => {
     try {

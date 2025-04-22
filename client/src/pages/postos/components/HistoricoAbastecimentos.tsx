@@ -39,24 +39,49 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
       setIsLoading(true);
       console.log("[FETCH] Buscando abastecimentos para o posto:", postId);
       
-      // CORREÇÃO: Usar apenas o campo "posto" que existe na tabela
-      // A coluna "posto_id" não existe conforme erro reportado nos logs
+      // Formatar nome do posto com primeira letra maiúscula
       const formattedPostName = formatPosto(postId);
       console.log("[FETCH] Usando nome de posto formatado:", formattedPostName);
       
-      // Buscar por posto (único campo disponível)
+      // Método alternativo 1: Usar API local diretamente
+      try {
+        const response = await fetch(`/api/diagnostico/abastecimentos/${postId}`);
+        const data = await response.json();
+        
+        console.log("[FETCH] Resposta da API local:", data);
+        
+        if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
+          // Ordenar por data (mais recentes primeiro)
+          const resultados = data.data.sort((a: any, b: any) => {
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          });
+          
+          console.log("[FETCH] Dados recuperados via API local:", resultados.length);
+          
+          // Atualizar o estado com os dados
+          setAbastecimentos(resultados as Abastecimento[]);
+          setIsLoading(false);
+          return;
+        } else {
+          console.log("[FETCH] API local não retornou dados, tentando método alternativo");
+        }
+      } catch (error) {
+        console.error("[FETCH] Erro ao buscar pela API local, tentando método alternativo:", error);
+      }
+      
+      // Método alternativo 2: Buscar pelo Supabase (método anterior)
       const response = await fetchRecords('abastecimentos_postos', {
         filter: { posto: formattedPostName },
         limit: 100
       });
       
-      console.log("[FETCH] Resposta da busca:", response);
+      console.log("[FETCH] Resposta da busca via Supabase:", response);
       
       // Processar resultados
       let dadosCombinados: Abastecimento[] = [];
       
       if (response.success && response.data && Array.isArray(response.data)) {
-        console.log("[FETCH] Dados recuperados:", response.data.length);
+        console.log("[FETCH] Dados recuperados via Supabase:", response.data.length);
         dadosCombinados = response.data;
       }
       
@@ -72,7 +97,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
       
       // Verificar se não encontrou nada
       if (dadosCombinados.length === 0) {
-        console.log("[FETCH] Nenhum dado recuperado em ambas as tentativas");
+        console.log("[FETCH] Nenhum dado recuperado em nenhum método");
       }
     } catch (error) {
       console.error('Erro ao buscar histórico de abastecimentos:', error);
