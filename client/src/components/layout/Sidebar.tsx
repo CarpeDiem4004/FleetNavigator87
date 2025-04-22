@@ -135,8 +135,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
                   <div key={item.name}>
                     {item.subItems ? (
                       // Use um botão se tiver subitens
-                      <button 
-                        onClick={() => closeSidebar()}
+                      <Link 
+                        href={item.href}
+                        onClick={() => {}}
                         className={`flex w-full items-center px-4 py-3 rounded-md group transition-colors duration-200 text-left ${
                           isActive || isSubItemActive
                             ? 'text-white bg-primary-900' 
