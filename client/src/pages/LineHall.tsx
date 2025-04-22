@@ -178,6 +178,76 @@ const LineHall: React.FC = () => {
     // vehicles agora é sempre um array por causa do valor padrão
     return vehicles.filter((v: any) => v.vehicleType === 'carreta');
   };
+  
+  // Mutation para adicionar uma nova viagem
+  const addTripMutation = useMutation({
+    mutationFn: async (tripData: any) => {
+      const response = await fetch('/api/line-hall', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(tripData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao adicionar viagem');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      // Recarregar os dados após o cadastro bem-sucedido
+      queryClient.invalidateQueries({ queryKey: ['/api/line-hall'] });
+      
+      toast({
+        title: "Viagem adicionada",
+        description: "A viagem foi adicionada com sucesso.",
+        variant: "default"
+      });
+      
+      // Fechar o diálogo e limpar o formulário
+      setIsAddDialogOpen(false);
+      setNewTrip({
+        truckPlate: '',
+        trailer1Plate: '',
+        trailer2Plate: '',
+        loadingTime: new Date().toISOString().split('.')[0],
+        destination: '',
+        tripStatus: 'programada',
+        notes: ''
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao adicionar viagem",
+        description: error.message || "Ocorreu um erro inesperado",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Handler para atualizar os campos do novo registro
+  const handleNewTripChange = (field: string, value: string) => {
+    setNewTrip(prev => ({ ...prev, [field]: value }));
+  };
+  
+  // Handler para salvar uma nova viagem
+  const handleAddTrip = () => {
+    // Validar dados obrigatórios
+    if (!newTrip.truckPlate || !newTrip.trailer1Plate || !newTrip.loadingTime || !newTrip.destination) {
+      toast({
+        title: "Dados incompletos",
+        description: "Preencha todos os campos obrigatórios (cavalo, carreta 1, data/hora de carregamento e destino).",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Enviar dados para a API
+    addTripMutation.mutate(newTrip);
+  };
 
   return (
     <div className="space-y-6">
@@ -380,17 +450,26 @@ const LineHall: React.FC = () => {
           <div className="grid gap-4 py-4">
             <div className="flex flex-col space-y-1.5">
               <label htmlFor="truck" className="text-sm font-medium">Cavalo</label>
-              <Select>
+              <Select
+                value={newTrip.truckPlate}
+                onValueChange={(value) => handleNewTripChange('truckPlate', value)}
+              >
                 <SelectTrigger id="truck">
                   <SelectValue placeholder="Selecione o cavalo" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    {getTrucks().map((vehicle: any) => (
-                      <SelectItem key={vehicle.id} value={vehicle.plate}>
-                        {vehicle.plate} - {vehicle.model}
-                      </SelectItem>
-                    ))}
+                    {isLoadingVehicles ? (
+                      <SelectItem value="" disabled>Carregando veículos...</SelectItem>
+                    ) : getTrucks().length === 0 ? (
+                      <SelectItem value="" disabled>Nenhum cavalo cadastrado</SelectItem>
+                    ) : (
+                      getTrucks().map((vehicle: any) => (
+                        <SelectItem key={vehicle.id} value={vehicle.plate}>
+                          {vehicle.plate} - {vehicle.model}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -398,17 +477,26 @@ const LineHall: React.FC = () => {
             
             <div className="flex flex-col space-y-1.5">
               <label htmlFor="trailer1" className="text-sm font-medium">Carreta 1</label>
-              <Select>
+              <Select
+                value={newTrip.trailer1Plate}
+                onValueChange={(value) => handleNewTripChange('trailer1Plate', value)}
+              >
                 <SelectTrigger id="trailer1">
                   <SelectValue placeholder="Selecione a carreta 1" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    {getTrailers().map((vehicle: any) => (
-                      <SelectItem key={vehicle.id} value={vehicle.plate}>
-                        {vehicle.plate} - {vehicle.model}
-                      </SelectItem>
-                    ))}
+                    {isLoadingVehicles ? (
+                      <SelectItem value="" disabled>Carregando veículos...</SelectItem>
+                    ) : getTrailers().length === 0 ? (
+                      <SelectItem value="" disabled>Nenhuma carreta cadastrada</SelectItem>
+                    ) : (
+                      getTrailers().map((vehicle: any) => (
+                        <SelectItem key={vehicle.id} value={vehicle.plate}>
+                          {vehicle.plate} - {vehicle.model}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -416,17 +504,26 @@ const LineHall: React.FC = () => {
             
             <div className="flex flex-col space-y-1.5">
               <label htmlFor="trailer2" className="text-sm font-medium">Carreta 2 (opcional)</label>
-              <Select>
+              <Select
+                value={newTrip.trailer2Plate}
+                onValueChange={(value) => handleNewTripChange('trailer2Plate', value)}
+              >
                 <SelectTrigger id="trailer2">
                   <SelectValue placeholder="Selecione a carreta 2 (opcional)" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Nenhuma</SelectItem>
-                  {getTrailers().map((vehicle: any) => (
-                    <SelectItem key={vehicle.id} value={vehicle.plate}>
-                      {vehicle.plate} - {vehicle.model}
-                    </SelectItem>
-                  ))}
+                  {isLoadingVehicles ? (
+                    <SelectItem value="" disabled>Carregando veículos...</SelectItem>
+                  ) : getTrailers().length === 0 ? (
+                    <SelectItem value="" disabled>Nenhuma carreta cadastrada</SelectItem>
+                  ) : (
+                    getTrailers().map((vehicle: any) => (
+                      <SelectItem key={vehicle.id} value={vehicle.plate}>
+                        {vehicle.plate} - {vehicle.model}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -434,11 +531,19 @@ const LineHall: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col space-y-1.5">
                 <label htmlFor="loading-time" className="text-sm font-medium">Data/Hora de Carregamento</label>
-                <Input id="loading-time" type="datetime-local" />
+                <Input 
+                  id="loading-time" 
+                  type="datetime-local" 
+                  value={newTrip.loadingTime}
+                  onChange={(e) => handleNewTripChange('loadingTime', e.target.value)}
+                />
               </div>
               <div className="flex flex-col space-y-1.5">
                 <label htmlFor="status" className="text-sm font-medium">Status</label>
-                <Select>
+                <Select
+                  value={newTrip.tripStatus}
+                  onValueChange={(value) => handleNewTripChange('tripStatus', value)}
+                >
                   <SelectTrigger id="status">
                     <SelectValue placeholder="Selecione o status" />
                   </SelectTrigger>
@@ -457,16 +562,41 @@ const LineHall: React.FC = () => {
             
             <div className="flex flex-col space-y-1.5">
               <label htmlFor="destination" className="text-sm font-medium">Destino</label>
-              <Input id="destination" placeholder="Cidade - UF" />
+              <Input 
+                id="destination" 
+                placeholder="Cidade - UF" 
+                value={newTrip.destination}
+                onChange={(e) => handleNewTripChange('destination', e.target.value)}
+              />
+            </div>
+            
+            <div className="flex flex-col space-y-1.5">
+              <label htmlFor="notes" className="text-sm font-medium">Observações (opcional)</label>
+              <Input 
+                id="notes" 
+                placeholder="Observações adicionais" 
+                value={newTrip.notes || ''}
+                onChange={(e) => handleNewTripChange('notes', e.target.value)}
+              />
             </div>
           </div>
           
-          <div className="flex justify-end space-x-2">
+          <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button>Salvar</Button>
-          </div>
+            <Button 
+              onClick={handleAddTrip}
+              disabled={addTripMutation.isPending}
+            >
+              {addTripMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : 'Salvar'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       
