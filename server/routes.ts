@@ -1132,15 +1132,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Users routes (admin only)
   app.get("/api/users", isAdmin, async (req, res) => {
     try {
-      const users = await storage.getAllBases(); // Isso é um placeholder, precisamos implementar getAllUsers
-      return res.status(200).json([{
-        id: 1,
-        name: "Administrador",
-        email: "admin@muricionfleet.com",
-        role: "admin"
-      }]);
+      const users = await storage.getAllUsers();
+      return res.status(200).json(users);
     } catch (error) {
-      console.error("Error fetching users:", error);
+      console.error("Erro ao buscar usuários:", error);
+      res.status(500).json({ message: 'Erro ao buscar usuários' });
     }
   });
   

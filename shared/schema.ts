@@ -67,6 +67,8 @@ export const users = pgTable("users", {
   baseId: integer("base_id").references(() => bases.id),
   basename: text("basename"),
   oficina_id: integer("oficina_id").references(() => workshops.id),
+  lastLogin: timestamp("last_login", { mode: "date" }),
+  isActive: boolean("is_active").default(true),
 });
 
 // Create the maintenance table (manutencao)
