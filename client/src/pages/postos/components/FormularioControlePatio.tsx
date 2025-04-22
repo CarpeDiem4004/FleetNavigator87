@@ -6,11 +6,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Truck } from 'lucide-react';
+import { Truck, Loader2 } from 'lucide-react';
 import { TabsContent } from '@/components/ui/tabs';
-import { insertData, checkConnection } from '@/lib/supabase-client';
 
 // Schema de validação para o formulário de controle de pátio
 const controlePatiocientema = z.object({
@@ -31,6 +29,7 @@ interface FormularioControlePatioProp {
 
 export const FormularioControlePatio: React.FC<FormularioControlePatioProp> = ({ postId, onRegistroSucesso }) => {
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   
   const form = useForm<ControlePatiocientes>({
     resolver: zodResolver(controlePatiocientema),
@@ -44,6 +43,8 @@ export const FormularioControlePatio: React.FC<FormularioControlePatioProp> = ({
 
   async function onSubmit(data: ControlePatiocientes) {
     try {
+      setIsSubmitting(true);
+      
       // Prepara os dados no formato esperado pela API
       // Capitaliza a primeira letra do posto
       const formatPosto = (posto: string) => {
@@ -60,20 +61,27 @@ export const FormularioControlePatio: React.FC<FormularioControlePatioProp> = ({
       
       console.log('Dados a enviar:', movimentoData);
       
-      // Verifica conexão com Supabase antes de tentar enviar
       toast({
-        title: 'Verificando conexão',
-        description: 'Aguarde enquanto verificamos a conexão com o servidor...',
+        title: 'Enviando dados',
+        description: 'Aguarde enquanto registramos a movimentação...',
       });
       
-      const conexaoSupabase = await checkConnection();
-      if (!conexaoSupabase) {
-        throw new Error('Não foi possível conectar ao servidor Supabase. Verifique sua conexão e tente novamente mais tarde.');
+      // Nova implementação: usando a API do servidor diretamente
+      const response = await fetch('/api/registro/movimentacao-patio', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(movimentoData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao registrar movimento');
       }
       
-      // Envia os dados para o Supabase usando o cliente de serviço (contorna RLS)
-      const response = await insertData('movimentacoes_patio', movimentoData);
-      console.log('Resposta do servidor:', response);
+      const result = await response.json();
+      console.log('Resposta do servidor:', result);
       
       toast({
         title: 'Movimento registrado!',
@@ -94,6 +102,8 @@ export const FormularioControlePatio: React.FC<FormularioControlePatioProp> = ({
         description: error instanceof Error ? error.message : 'Verifique sua conexão e tente novamente.',
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -192,8 +202,20 @@ export const FormularioControlePatio: React.FC<FormularioControlePatioProp> = ({
               </div>
               
               <div className="flex justify-end">
-                <Button type="submit" size="lg" className="w-full md:w-auto">
-                  Registrar Movimento de Veículo
+                <Button 
+                  type="submit" 
+                  size="lg" 
+                  className="w-full md:w-auto"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Registrando...
+                    </>
+                  ) : (
+                    "Registrar Movimento de Veículo"
+                  )}
                 </Button>
               </div>
             </form>

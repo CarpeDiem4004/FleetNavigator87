@@ -4,7 +4,6 @@ import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, Tabl
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Truck, ArrowUpRight, ArrowDownLeft, Settings, RefreshCw, Download } from 'lucide-react';
-import { fetchRecords } from '@/lib/supabase-client';
 
 interface HistoricoMovimentacoesProps {
   postId: string;
@@ -37,19 +36,23 @@ export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ 
       console.log("[FETCH] Buscando movimentações de pátio para o posto:", postId);
       console.log("[FETCH] Usando nome capitalizado:", formatPosto(postId));
       
-      // Usando o cliente Supabase para buscar dados com permissões administrativas
-      const result = await fetchRecords('movimentacoes_patio', {
-        filter: { posto: formatPosto(postId) },
-        order: { column: 'created_at', ascending: false },
-        limit: 20
-      });
+      // Usando a API do servidor para buscar os dados
+      const response = await fetch(`/api/movimentacoes-patio/${postId}`);
+      
+      if (!response.ok) {
+        console.error('[FETCH] Erro ao buscar movimentações:', response.statusText);
+        setMovimentacoes([]);
+        return;
+      }
+      
+      const result = await response.json();
       
       // Verificar se a operação foi bem-sucedida e extrair os dados
-      if (result.success && result.data) {
-        console.log("[FETCH] Movimentações recuperadas:", result.data.length || 0);
+      if (result.success) {
+        console.log("[FETCH] Movimentações recuperadas:", result.data?.length || 0);
         setMovimentacoes(result.data || []);
       } else {
-        console.error('[FETCH] Erro ao buscar movimentações:', result.error);
+        console.error('[FETCH] Erro ao buscar movimentações:', result.message);
         setMovimentacoes([]);
       }
       
