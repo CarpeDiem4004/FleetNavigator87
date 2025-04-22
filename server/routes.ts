@@ -2220,6 +2220,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Payload recebido:", req.body);
       
+      // Verificar se o usuário está autenticado e tem oficina_id
+      if (!req.user || !req.user.oficina_id) {
+        return res.status(401).json({ 
+          message: "Usuário não autenticado ou sem associação com oficina" 
+        });
+      }
+      
       // Validar dados do corpo da requisição
       const result = insertMaintenanceChatSchema.safeParse(req.body);
       if (!result.success) {
@@ -2230,20 +2237,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Garantir que temos a placa do veículo
-      if (!result.data.vehiclePlate && result.data.maintenanceId) {
-        // Buscar a manutenção para pegar a placa caso não tenha sido informada
-        const maintenance = await storage.getMaintenance(result.data.maintenanceId);
+      // Verificar se é preciso criar uma manutenção para este chat
+      let maintenanceId = result.data.maintenanceId;
+      let vehiclePlate = result.data.vehiclePlate;
+      
+      if (!maintenanceId || maintenanceId <= 0) {
+        console.log("ID de manutenção inválido ou temporário, criando nova manutenção");
+        
+        if (!vehiclePlate) {
+          return res.status(400).json({ 
+            message: "Placa do veículo é obrigatória ao criar uma nova manutenção" 
+          });
+        }
+        
+        try {
+          // Verificar se o veículo existe
+          const vehicle = await storage.getVehicleByPlate(vehiclePlate);
+          if (!vehicle) {
+            return res.status(404).json({ message: "Veículo não encontrado" });
+          }
+          
+          // Criar a manutenção automaticamente
+          const novaManutenao = {
+            vehiclePlate: vehiclePlate,
+            description: req.body.descricaoServico || "Orçamento gerado pela oficina",
+            status: "aguardando_orcamento",
+            priority: "normal",
+            maintenanceType: "preventiva",
+            workshopId: req.user.oficina_id,
+            requestBaseId: vehicle.base_id || 1, // Usar a base do veículo ou uma padrão
+            estimatedCompletion: new Date(Date.now() + (parseInt(req.body.prazoEstimado) || 5) * 24 * 60 * 60 * 1000).toISOString()
+          };
+          
+          // Criar a manutenção no banco
+          const newMaintenance = await storage.createMaintenance(novaManutenao);
+          maintenanceId = newMaintenance.id;
+          console.log(`Nova manutenção criada com ID ${maintenanceId}`);
+          
+          // Atualizar o objeto de dados com o novo ID
+          result.data.maintenanceId = maintenanceId;
+        } catch (maintenanceError) {
+          console.error("Erro ao criar manutenção automática:", maintenanceError);
+          return res.status(500).json({ 
+            message: "Erro ao criar manutenção automática",
+            error: maintenanceError instanceof Error ? maintenanceError.message : "Erro desconhecido" 
+          });
+        }
+      } else if (!vehiclePlate) {
+        // Garantir que temos a placa do veículo para manutenções existentes
+        const maintenance = await storage.getMaintenance(maintenanceId);
         if (maintenance && maintenance.vehiclePlate) {
-          result.data.vehiclePlate = maintenance.vehiclePlate;
+          vehiclePlate = maintenance.vehiclePlate;
+          result.data.vehiclePlate = vehiclePlate;
+        } else {
+          return res.status(400).json({ 
+            message: "Placa do veículo é obrigatória"
+          });
         }
       }
       
-      // Criar chat
+      // Criar chat com os dados atualizados
       const chat = await storage.createMaintenanceChat(result.data);
       
-      // Buscar manutenção relacionada para ajustar status se necessário
-      const maintenance = await storage.getMaintenance(chat.maintenanceId);
+      // Não precisamos buscar a manutenção novamente se acabamos de criá-la
+      const maintenance = maintenanceId <= 0 ? null : await storage.getMaintenance(chat.maintenanceId);
       
       // Atualizar status da manutenção para em_andamento após cada chat, independente do status atual
       // Garante que qualquer chat de orçamento muda a manutenção para em_andamento

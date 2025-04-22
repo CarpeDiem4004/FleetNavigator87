@@ -260,6 +260,8 @@ export default function OficinaDashboard() {
     try {
       setIsSubmittingBudget(true);
       
+      console.log("Enviando orçamento para maintenanceId:", selectedMaintenance.id);
+      
       // Criar o chat de orçamento
       const response = await fetch("/api/workshop/maintenance-chat", {
         method: "POST",
@@ -268,7 +270,7 @@ export default function OficinaDashboard() {
         },
         body: JSON.stringify({
           maintenanceId: selectedMaintenance.id,
-          vehiclePlate: vehiclePlate.toUpperCase(),  // Enviar a placa digitada pela oficina
+          vehiclePlate: vehiclePlate.toUpperCase(),  // Enviar a placa selecionada pelo dropdown
           initialBudget: initialBudget, // Enviar como string, sem converter para número
           kmAtual: kmAtual,
           prazoEstimado: prazoEstimado,
