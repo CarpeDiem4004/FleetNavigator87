@@ -189,20 +189,15 @@ export function useBasePermission(): BasePermissionHook {
     
     // Pneus - permite acesso somente aos pneus (sem acesso ao dashboard)
     if (user.basename === "Pneus" || user.baseId === 10 || user.role === 'pneus') {
-      const hasAccess = route === '/pneus' || route === '/tires';
+      // Lista de rotas permitidas para usuários de pneus
+      const tiresRoutes = ['/pneus', '/tires', '/tires/entrada'];
+      const hasAccess = tiresRoutes.includes(route);
       console.log(`Pneus user permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
       
-      // Se o usuário está tentando acessar o dashboard, redirecionar para a página de pneus
+      // NEGAR explicitamente o acesso ao dashboard - o redirecionamento será feito pelo ProtectedRoute
       if (route === '/') {
-        console.log(`Usuário de Pneus tentando acessar o dashboard - redirecionando para /tires`);
-        
-        // Redirecionar programaticamente para a página de pneus
-        setTimeout(() => {
-          window.location.href = '/tires';
-        }, 100);
-        
-        // Temporariamente permitir acesso ao dashboard enquanto redireciona
-        return true;
+        console.log(`Acesso NEGADO ao dashboard para usuário de Pneus`);
+        return false;
       }
       
       return hasAccess;
