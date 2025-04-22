@@ -137,11 +137,21 @@ const UsersNew: React.FC = () => {
   });
   
   // Buscar usuários da API
-  const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
+  const { data: users = [], isLoading: usersLoading, error: usersError } = useQuery<User[]>({
     queryKey: ['/api/users'],
     staleTime: 10000, // Considerar stale após 10 segundos para permitir atualizações frequentes
     queryFn: getQueryFn({ on401: "returnNull" }), // Adicionado para lidar com erros 401
   });
+  
+  // Log para debug
+  useEffect(() => {
+    console.log('UsersNew - Dados recebidos:', {
+      users,
+      usersLoading,
+      usersError,
+      filteredUsersLength: users?.length || 0
+    });
+  }, [users, usersLoading, usersError]);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
