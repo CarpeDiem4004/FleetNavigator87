@@ -385,6 +385,57 @@ async function criarTabelaFuelCardRequests() {
   }
 }
 
+/**
+ * Cria a tabela driver_checklists se não existir
+ */
+async function criarTabelaDriverChecklists() {
+  // Verificar se a tabela já existe
+  const checkTableQuery = "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'driver_checklists')";
+  const tableExistsResult = await pool.query(checkTableQuery);
+  
+  if (tableExistsResult.rows[0].exists) {
+    console.log("Tabela driver_checklists já existe, pulando criação.");
+    return;
+  }
+
+  console.log("Criando tabela driver_checklists...");
+  
+  try {
+    // Criar a tabela
+    const createTableQuery = `
+      CREATE TABLE driver_checklists (
+        id SERIAL PRIMARY KEY,
+        driver_id INTEGER,
+        driver_name VARCHAR(255) NOT NULL,
+        vehicle_plate VARCHAR(20) NOT NULL,
+        km_atual INTEGER,
+        condicao_pneus VARCHAR(50),
+        condicao_luzes VARCHAR(50),
+        condicao_freios VARCHAR(50),
+        condicao_parabrisa VARCHAR(50),
+        nivel_oleo VARCHAR(50),
+        nivel_agua VARCHAR(50),
+        estrutura_cavalo VARCHAR(50),
+        estrutura_carreta VARCHAR(50),
+        avarias TEXT[],
+        fotos TEXT[],
+        observacoes TEXT,
+        status VARCHAR(50) DEFAULT 'pendente',
+        viagem_id INTEGER,
+        source VARCHAR(50) DEFAULT 'line_hall',
+        driver_type VARCHAR(50) DEFAULT 'line_hall',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+    
+    await pool.query(createTableQuery);
+    console.log("Tabela driver_checklists criada com sucesso!");
+  } catch (error) {
+    console.error("Erro ao criar tabela driver_checklists:", error);
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Criar tabelas necessárias se não existirem
   await criarTabelaAbastecimentos();
@@ -393,6 +444,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await criarTabelaSolicitacoesPneus();
   await criarTabelaLineHallShopee();
   await criarTabelaFuelCardRequests();
+  await criarTabelaDriverChecklists();
   // Rota para verificação de abastecimentos no banco
   app.get('/api/diagnostico/abastecimentos/:posto', async (req, res) => {
     try {
@@ -1045,6 +1097,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({
         success: false,
         message: 'Erro ao rejeitar solicitação',
+        error: error.message
+      });
+    }
+  });
+
+  // Estatísticas de checklists de motoristas do Line Hall
+  app.get('/api/line-hall/checklist-stats', isAuthenticated, async (req, res) => {
+    try {
+      // Consultar estatísticas de checklists
+      const query = `
+        SELECT 
+          COUNT(*) FILTER (WHERE status = 'pendente') as pendentes,
+          COUNT(*) FILTER (WHERE status = 'concluido') as concluidos,
+          COUNT(*) as total
+        FROM driver_checklists
+        WHERE source = 'line_hall' OR driver_type = 'line_hall'
+      `;
+      
+      const result = await pool.query(query);
+      
+      if (!result.rows || result.rows.length === 0) {
+        return res.status(200).json({
+          success: true,
+          pendentes: 0,
+          concluidos: 0,
+          total: 0
+        });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        ...result.rows[0]
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar estatísticas de checklists:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar estatísticas de checklists',
+        error: error.message
+      });
+    }
+  });
+  
+  // Estatísticas de manutenções solicitadas por motoristas do Line Hall
+  app.get('/api/line-hall/maintenance-stats', isAuthenticated, async (req, res) => {
+    try {
+      // Consultar estatísticas de manutenções
+      const query = `
+        SELECT 
+          COUNT(*) FILTER (WHERE status = 'pendente') as pendentes,
+          COUNT(*) FILTER (WHERE status = 'em_andamento') as "emAndamento",
+          COUNT(*) FILTER (WHERE status = 'concluida') as concluidas,
+          COUNT(*) as total
+        FROM maintenance
+        WHERE source = 'line_hall' OR requested_by_driver = true
+      `;
+      
+      const result = await pool.query(query);
+      
+      if (!result.rows || result.rows.length === 0) {
+        return res.status(200).json({
+          success: true,
+          pendentes: 0,
+          emAndamento: 0,
+          concluidas: 0,
+          total: 0
+        });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        ...result.rows[0]
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar estatísticas de manutenções:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar estatísticas de manutenções',
         error: error.message
       });
     }

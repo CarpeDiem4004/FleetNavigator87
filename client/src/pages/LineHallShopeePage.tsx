@@ -456,6 +456,104 @@ export default function LineHallShopeePage() {
             />
           </div>
         </div>
+        
+        {/* Cards de estatísticas */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Card de Checklist */}
+          <Card className="overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-blue-100 to-blue-50 dark:from-blue-950 dark:to-blue-900">
+              <CardTitle className="flex items-center text-lg">
+                <CheckSquare className="mr-2 h-5 w-5 text-blue-600 dark:text-blue-400" />
+                Checklists de Motoristas
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="flex flex-col space-y-4">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex flex-col items-center justify-center p-3 bg-green-50 dark:bg-green-900/20 rounded-md">
+                    <span className="text-2xl font-bold text-green-600 dark:text-green-400">{checklistStats.concluidos}</span>
+                    <span className="text-sm text-muted-foreground">Concluídos</span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center p-3 bg-amber-50 dark:bg-amber-900/20 rounded-md">
+                    <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">{checklistStats.pendentes}</span>
+                    <span className="text-sm text-muted-foreground">Pendentes</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Total de checklists</span>
+                  <span className="font-medium">{checklistStats.total}</span>
+                </div>
+                <Button variant="outline" size="sm" className="w-full" onClick={fetchDriverStats}>
+                  <RefreshCcw className="mr-2 h-4 w-4" />
+                  Atualizar Dados
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Card de Manutenção */}
+          <Card className="overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-orange-100 to-orange-50 dark:from-orange-950 dark:to-orange-900">
+              <CardTitle className="flex items-center text-lg">
+                <Wrench className="mr-2 h-5 w-5 text-orange-600 dark:text-orange-400" />
+                Solicitações de Manutenção
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="flex flex-col space-y-4">
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="flex flex-col items-center justify-center p-3 bg-amber-50 dark:bg-amber-900/20 rounded-md">
+                    <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">{maintenanceStats.pendentes}</span>
+                    <span className="text-xs text-muted-foreground">Pendentes</span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+                    <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{maintenanceStats.emAndamento}</span>
+                    <span className="text-xs text-muted-foreground">Em Andamento</span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center p-3 bg-green-50 dark:bg-green-900/20 rounded-md">
+                    <span className="text-2xl font-bold text-green-600 dark:text-green-400">{maintenanceStats.concluidas}</span>
+                    <span className="text-xs text-muted-foreground">Concluídas</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Total de solicitações</span>
+                  <span className="font-medium">{maintenanceStats.total}</span>
+                </div>
+                <Button variant="outline" size="sm" className="w-full" onClick={fetchDriverStats}>
+                  <RefreshCcw className="mr-2 h-4 w-4" />
+                  Atualizar Dados
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Card de Acesso */}
+          <Card className="overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-purple-100 to-purple-50 dark:from-purple-950 dark:to-purple-900">
+              <CardTitle className="flex items-center text-lg">
+                <AlertCircle className="mr-2 h-5 w-5 text-purple-600 dark:text-purple-400" />
+                Acesso para Motoristas
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="flex flex-col space-y-4">
+                <p className="text-sm">
+                  Os motoristas podem acessar a interface dedicada para realizar checklists de veículos, 
+                  solicitar manutenções e recargas de cartão de combustível.
+                </p>
+                <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-md">
+                  <p className="text-sm font-medium text-center">URL de acesso:</p>
+                  <p className="text-sm text-center text-purple-600 dark:text-purple-400 break-all">
+                    {window.location.origin}/line-hall-driver
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" className="w-full" onClick={() => window.open('/line-hall-driver', '_blank')}>
+                  Acessar Interface do Motorista
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         <Card>
           <CardHeader>
