@@ -132,6 +132,64 @@ const hasBaseAccess = (req: Request, res: Response, next: NextFunction) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Rota para registro de abastecimento
+  app.post('/api/registro/abastecimento', isAuthenticated, async (req, res) => {
+    try {
+      console.log('Recebendo requisição para registro de abastecimento:', req.body);
+      
+      // Validando dados básicos
+      const { placa, km, tipo, quantidade, motorista, operador, posto } = req.body;
+      
+      if (!placa || !km || !tipo || !quantidade || !motorista || !operador || !posto) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Dados incompletos para registro de abastecimento' 
+        });
+      }
+
+      // Criar registro no banco de dados
+      const query = `
+        INSERT INTO abastecimentos_postos 
+        (placa, km_atual, tipo_combustivel, litros, nome_motorista, nome_operador, posto, created_at, project)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), $8)
+        RETURNING id
+      `;
+      
+      const values = [
+        placa.toUpperCase(),
+        parseInt(km, 10),
+        tipo,
+        parseFloat(quantidade),
+        motorista,
+        operador,
+        posto, // Usando o campo 'posto' corretamente
+        req.body.projeto || 'N/A'
+      ];
+      
+      const result = await pool.query(query, values);
+      
+      if (result.rows && result.rows.length > 0) {
+        console.log('Abastecimento registrado com sucesso, ID:', result.rows[0].id);
+        return res.status(200).json({ 
+          success: true, 
+          id: result.rows[0].id,
+          message: 'Abastecimento registrado com sucesso' 
+        });
+      } else {
+        console.error('Erro ao registrar abastecimento - nenhum ID retornado');
+        return res.status(500).json({ 
+          success: false, 
+          message: 'Erro ao registrar abastecimento' 
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao processar registro de abastecimento:', error);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Erro interno ao processar registro de abastecimento' 
+      });
+    }
+  });
   // Configuração do passport para autenticação
   setupAuth(app);
   
