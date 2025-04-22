@@ -13,6 +13,7 @@ import {
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import { getDashboardKPIs, getPainelPrincipal } from "./dashboardApi";
+import { getExecutiveDashboard } from "./executiveDashboard";
 import { runSupabaseDiagnostic } from "./supabaseDiagnostic";
 import { compareSchemas } from "./compareSchemas";
 import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
@@ -3401,6 +3402,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Endpoint legado para KPIs do dashboard - manter por compatibilidade
   app.get("/api/dashboard/kpis", isAuthenticated, getDashboardKPIs);
+  
+  // Novo endpoint para o dashboard executivo
+  app.get("/api/dashboard", isAuthenticated, getExecutiveDashboard);
   
   // Solicitações de manutenção - API para página de solicitação de manutenção
   app.get("/api/solicitacoes-manutencao", hasMaintenanceAccess, async (req, res) => {
