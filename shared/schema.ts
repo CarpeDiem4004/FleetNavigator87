@@ -532,3 +532,24 @@ export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 
 export type MaintenanceLifecycle = typeof maintenanceLifecycle.$inferSelect;
 export type InsertMaintenanceLifecycle = z.infer<typeof insertMaintenanceLifecycleSchema>;
+
+// Esquemas de inserção para as novas tabelas de solicitações da base
+export const insertBaseRequestSchema = createInsertSchema(baseRequests).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  resolvedAt: true,
+});
+
+export const insertBaseRequestUpdateSchema = createInsertSchema(baseRequestUpdates).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Tipos para as novas tabelas
+export type BaseRequest = typeof baseRequests.$inferSelect;
+export type BaseRequestUpdate = typeof baseRequestUpdates.$inferSelect;
+
+// Tipos para inserção
+export type InsertBaseRequest = z.infer<typeof insertBaseRequestSchema>;
+export type InsertBaseRequestUpdate = z.infer<typeof insertBaseRequestUpdateSchema>;

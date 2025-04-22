@@ -1,13 +1,14 @@
 import { 
   users, vehicles, maintenance, tires, refueling, fines, lineHall, bases, workshops, painelPrincipal, operations,
-  maintenanceChat, chatMessages,
+  maintenanceChat, chatMessages, baseRequests, baseRequestUpdates,
   type User, type InsertUser, type Vehicle, type InsertVehicle,
   type Maintenance, type InsertMaintenance, type Tire, type InsertTire,
   type Refueling, type InsertRefueling, type Fine, type InsertFine,
   type LineHall, type InsertLineHall, type Base, type InsertBase,
   type Workshop, type InsertWorkshop, type Operation, type InsertOperation,
   type PainelPrincipal, type InsertPainelPrincipal, type MaintenanceChat, type InsertMaintenanceChat,
-  type ChatMessage, type InsertChatMessage
+  type ChatMessage, type InsertChatMessage, type BaseRequest, type InsertBaseRequest,
+  type BaseRequestUpdate, type InsertBaseRequestUpdate
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, like, desc, sql } from "drizzle-orm";
@@ -27,6 +28,20 @@ export interface IStorage {
   createBase(base: InsertBase): Promise<Base>;
   updateBase(id: number, base: Partial<InsertBase>): Promise<Base | undefined>;
   deleteBase(id: number): Promise<boolean>;
+  
+  // Base Requests (Solicitações das bases)
+  createBaseRequest(request: InsertBaseRequest): Promise<BaseRequest>;
+  getBaseRequest(id: number): Promise<BaseRequest | undefined>;
+  getBaseRequestsByBase(baseId: number): Promise<BaseRequest[]>;
+  getBaseRequestsByType(requestType: string): Promise<BaseRequest[]>;
+  getBaseRequestsByStatus(status: string): Promise<BaseRequest[]>;
+  updateBaseRequestStatus(id: number, status: string, assignedUserId?: number): Promise<BaseRequest | undefined>;
+  deleteBaseRequest(id: number): Promise<boolean>;
+  
+  // Base Request Updates (Tratativas)
+  createBaseRequestUpdate(update: InsertBaseRequestUpdate): Promise<BaseRequestUpdate>;
+  getBaseRequestUpdates(requestId: number): Promise<BaseRequestUpdate[]>;
+  deleteBaseRequestUpdate(id: number): Promise<boolean>;
   
   // Vehicle operations
   getVehicle(id: number): Promise<Vehicle | undefined>;
@@ -1197,6 +1212,405 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Erro ao criar mensagem de chat:", error);
       throw error;
+    }
+  }
+
+  // Implementação das operações de solicitações das bases
+  async createBaseRequest(request: InsertBaseRequest): Promise<BaseRequest> {
+    try {
+      const query = `
+        INSERT INTO base_requests (
+          base_id, request_type, title, description, status, priority,
+          requester_user_id, vehicle_plate
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8
+        ) RETURNING *
+      `;
+      
+      const params = [
+        request.baseId,
+        request.requestType,
+        request.title,
+        request.description,
+        request.status || 'pendente',
+        request.priority || 'normal',
+        request.requesterUserId,
+        request.vehiclePlate || null
+      ];
+      
+      const result = await pool.query(query, params);
+      
+      if (result.rows.length === 0) {
+        throw new Error("Falha ao criar solicitação da base");
+      }
+      
+      // Converter campos conforme necessário
+      const newRequest: BaseRequest = {
+        id: result.rows[0].id,
+        baseId: result.rows[0].base_id,
+        requestType: result.rows[0].request_type,
+        title: result.rows[0].title,
+        description: result.rows[0].description,
+        status: result.rows[0].status,
+        priority: result.rows[0].priority,
+        requesterUserId: result.rows[0].requester_user_id,
+        assignedUserId: result.rows[0].assigned_user_id,
+        createdAt: result.rows[0].created_at,
+        updatedAt: result.rows[0].updated_at,
+        resolvedAt: result.rows[0].resolved_at,
+        vehiclePlate: result.rows[0].vehicle_plate
+      };
+      
+      return newRequest;
+    } catch (error) {
+      console.error("Erro ao criar solicitação da base:", error);
+      throw error;
+    }
+  }
+
+  async getBaseRequest(id: number): Promise<BaseRequest | undefined> {
+    try {
+      const query = `
+        SELECT br.*, b.name as base_name, u1.name as requester_name, u2.name as assigned_name
+        FROM base_requests br
+        JOIN bases b ON br.base_id = b.id
+        JOIN users u1 ON br.requester_user_id = u1.id
+        LEFT JOIN users u2 ON br.assigned_user_id = u2.id
+        WHERE br.id = $1
+      `;
+      
+      const result = await pool.query(query, [id]);
+      
+      if (result.rows.length === 0) {
+        return undefined;
+      }
+      
+      // Converter o resultado
+      const request: BaseRequest = {
+        id: result.rows[0].id,
+        baseId: result.rows[0].base_id,
+        requestType: result.rows[0].request_type,
+        title: result.rows[0].title,
+        description: result.rows[0].description,
+        status: result.rows[0].status,
+        priority: result.rows[0].priority,
+        requesterUserId: result.rows[0].requester_user_id,
+        assignedUserId: result.rows[0].assigned_user_id,
+        createdAt: result.rows[0].created_at,
+        updatedAt: result.rows[0].updated_at,
+        resolvedAt: result.rows[0].resolved_at,
+        vehiclePlate: result.rows[0].vehicle_plate
+      };
+      
+      return request;
+    } catch (error) {
+      console.error("Erro ao buscar solicitação da base:", error);
+      return undefined;
+    }
+  }
+
+  async getBaseRequestsByBase(baseId: number): Promise<BaseRequest[]> {
+    try {
+      const query = `
+        SELECT br.*, b.name as base_name, u1.name as requester_name, u2.name as assigned_name
+        FROM base_requests br
+        JOIN bases b ON br.base_id = b.id
+        JOIN users u1 ON br.requester_user_id = u1.id
+        LEFT JOIN users u2 ON br.assigned_user_id = u2.id
+        WHERE br.base_id = $1
+        ORDER BY 
+          CASE 
+            WHEN br.status = 'pendente' THEN 1
+            WHEN br.status = 'em_analise' THEN 2
+            WHEN br.status = 'em_andamento' THEN 3
+            WHEN br.status = 'aguardando_informacao' THEN 4
+            WHEN br.status = 'concluido' THEN 5
+            WHEN br.status = 'cancelado' THEN 6
+            ELSE 7
+          END,
+          CASE 
+            WHEN br.priority = 'alta' THEN 1
+            WHEN br.priority = 'normal' THEN 2
+            WHEN br.priority = 'baixa' THEN 3
+            ELSE 4
+          END,
+          br.created_at DESC
+      `;
+      
+      const result = await pool.query(query, [baseId]);
+      
+      // Mapear os resultados
+      return result.rows.map(row => ({
+        id: row.id,
+        baseId: row.base_id,
+        requestType: row.request_type,
+        title: row.title,
+        description: row.description,
+        status: row.status,
+        priority: row.priority,
+        requesterUserId: row.requester_user_id,
+        assignedUserId: row.assigned_user_id,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        resolvedAt: row.resolved_at,
+        vehiclePlate: row.vehicle_plate
+      }));
+    } catch (error) {
+      console.error("Erro ao buscar solicitações por base:", error);
+      return [];
+    }
+  }
+
+  async getBaseRequestsByType(requestType: string): Promise<BaseRequest[]> {
+    try {
+      const query = `
+        SELECT br.*, b.name as base_name, u1.name as requester_name, u2.name as assigned_name
+        FROM base_requests br
+        JOIN bases b ON br.base_id = b.id
+        JOIN users u1 ON br.requester_user_id = u1.id
+        LEFT JOIN users u2 ON br.assigned_user_id = u2.id
+        WHERE br.request_type = $1
+        ORDER BY 
+          CASE 
+            WHEN br.status = 'pendente' THEN 1
+            WHEN br.status = 'em_analise' THEN 2
+            WHEN br.status = 'em_andamento' THEN 3
+            WHEN br.status = 'aguardando_informacao' THEN 4
+            WHEN br.status = 'concluido' THEN 5
+            WHEN br.status = 'cancelado' THEN 6
+            ELSE 7
+          END,
+          CASE 
+            WHEN br.priority = 'alta' THEN 1
+            WHEN br.priority = 'normal' THEN 2
+            WHEN br.priority = 'baixa' THEN 3
+            ELSE 4
+          END,
+          br.created_at DESC
+      `;
+      
+      const result = await pool.query(query, [requestType]);
+      
+      // Mapear os resultados
+      return result.rows.map(row => ({
+        id: row.id,
+        baseId: row.base_id,
+        requestType: row.request_type,
+        title: row.title,
+        description: row.description,
+        status: row.status,
+        priority: row.priority,
+        requesterUserId: row.requester_user_id,
+        assignedUserId: row.assigned_user_id,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        resolvedAt: row.resolved_at,
+        vehiclePlate: row.vehicle_plate
+      }));
+    } catch (error) {
+      console.error("Erro ao buscar solicitações por tipo:", error);
+      return [];
+    }
+  }
+
+  async getBaseRequestsByStatus(status: string): Promise<BaseRequest[]> {
+    try {
+      const query = `
+        SELECT br.*, b.name as base_name, u1.name as requester_name, u2.name as assigned_name
+        FROM base_requests br
+        JOIN bases b ON br.base_id = b.id
+        JOIN users u1 ON br.requester_user_id = u1.id
+        LEFT JOIN users u2 ON br.assigned_user_id = u2.id
+        WHERE br.status = $1
+        ORDER BY 
+          CASE 
+            WHEN br.priority = 'alta' THEN 1
+            WHEN br.priority = 'normal' THEN 2
+            WHEN br.priority = 'baixa' THEN 3
+            ELSE 4
+          END,
+          br.created_at DESC
+      `;
+      
+      const result = await pool.query(query, [status]);
+      
+      // Mapear os resultados
+      return result.rows.map(row => ({
+        id: row.id,
+        baseId: row.base_id,
+        requestType: row.request_type,
+        title: row.title,
+        description: row.description,
+        status: row.status,
+        priority: row.priority,
+        requesterUserId: row.requester_user_id,
+        assignedUserId: row.assigned_user_id,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        resolvedAt: row.resolved_at,
+        vehiclePlate: row.vehicle_plate
+      }));
+    } catch (error) {
+      console.error("Erro ao buscar solicitações por status:", error);
+      return [];
+    }
+  }
+
+  async updateBaseRequestStatus(id: number, status: string, assignedUserId?: number): Promise<BaseRequest | undefined> {
+    try {
+      let query = `
+        UPDATE base_requests
+        SET status = $1, updated_at = NOW()
+      `;
+      
+      const params: any[] = [status];
+      
+      // Se o status for 'concluido', incluir resolvedAt
+      if (status === 'concluido') {
+        query += `, resolved_at = NOW()`;
+      }
+      
+      // Se houver um usuário atribuído, atualizar também
+      if (assignedUserId) {
+        query += `, assigned_user_id = $${params.length + 1}`;
+        params.push(assignedUserId);
+      }
+      
+      query += ` WHERE id = $${params.length + 1} RETURNING *`;
+      params.push(id);
+      
+      const result = await pool.query(query, params);
+      
+      if (result.rows.length === 0) {
+        return undefined;
+      }
+      
+      // Converter o resultado
+      const updatedRequest: BaseRequest = {
+        id: result.rows[0].id,
+        baseId: result.rows[0].base_id,
+        requestType: result.rows[0].request_type,
+        title: result.rows[0].title,
+        description: result.rows[0].description,
+        status: result.rows[0].status,
+        priority: result.rows[0].priority,
+        requesterUserId: result.rows[0].requester_user_id,
+        assignedUserId: result.rows[0].assigned_user_id,
+        createdAt: result.rows[0].created_at,
+        updatedAt: result.rows[0].updated_at,
+        resolvedAt: result.rows[0].resolved_at,
+        vehiclePlate: result.rows[0].vehicle_plate
+      };
+      
+      return updatedRequest;
+    } catch (error) {
+      console.error("Erro ao atualizar status da solicitação:", error);
+      return undefined;
+    }
+  }
+
+  async deleteBaseRequest(id: number): Promise<boolean> {
+    try {
+      // Excluir primeiro todas as atualizações relacionadas a esta solicitação
+      await pool.query(`DELETE FROM base_request_updates WHERE request_id = $1`, [id]);
+      
+      // Agora excluir a solicitação
+      const result = await pool.query(`DELETE FROM base_requests WHERE id = $1`, [id]);
+      
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error("Erro ao excluir solicitação:", error);
+      return false;
+    }
+  }
+
+  // Implementação das operações de atualizações/tratativas
+  async createBaseRequestUpdate(update: InsertBaseRequestUpdate): Promise<BaseRequestUpdate> {
+    try {
+      const query = `
+        INSERT INTO base_request_updates (
+          request_id, user_id, user_name, user_role, message, new_status, attachment_url
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7
+        ) RETURNING *
+      `;
+      
+      const params = [
+        update.requestId,
+        update.userId,
+        update.userName,
+        update.userRole,
+        update.message,
+        update.newStatus || null,
+        update.attachmentUrl || null
+      ];
+      
+      const result = await pool.query(query, params);
+      
+      if (result.rows.length === 0) {
+        throw new Error("Falha ao criar atualização da solicitação");
+      }
+      
+      // Atualizar o status da solicitação, se houver novo status
+      if (update.newStatus) {
+        await this.updateBaseRequestStatus(update.requestId, update.newStatus);
+      }
+      
+      // Converter campos conforme necessário
+      const newUpdate: BaseRequestUpdate = {
+        id: result.rows[0].id,
+        requestId: result.rows[0].request_id,
+        userId: result.rows[0].user_id,
+        userName: result.rows[0].user_name,
+        userRole: result.rows[0].user_role,
+        message: result.rows[0].message,
+        newStatus: result.rows[0].new_status,
+        createdAt: result.rows[0].created_at,
+        attachmentUrl: result.rows[0].attachment_url
+      };
+      
+      return newUpdate;
+    } catch (error) {
+      console.error("Erro ao criar atualização da solicitação:", error);
+      throw error;
+    }
+  }
+
+  async getBaseRequestUpdates(requestId: number): Promise<BaseRequestUpdate[]> {
+    try {
+      const query = `
+        SELECT * FROM base_request_updates
+        WHERE request_id = $1
+        ORDER BY created_at ASC
+      `;
+      
+      const result = await pool.query(query, [requestId]);
+      
+      // Mapear os resultados
+      return result.rows.map(row => ({
+        id: row.id,
+        requestId: row.request_id,
+        userId: row.user_id,
+        userName: row.user_name,
+        userRole: row.user_role,
+        message: row.message,
+        newStatus: row.new_status,
+        createdAt: row.created_at,
+        attachmentUrl: row.attachment_url
+      }));
+    } catch (error) {
+      console.error("Erro ao buscar atualizações da solicitação:", error);
+      return [];
+    }
+  }
+
+  async deleteBaseRequestUpdate(id: number): Promise<boolean> {
+    try {
+      const result = await pool.query(`DELETE FROM base_request_updates WHERE id = $1`, [id]);
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error("Erro ao excluir atualização da solicitação:", error);
+      return false;
     }
   }
 }
