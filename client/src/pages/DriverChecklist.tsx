@@ -40,6 +40,10 @@ interface Checklist {
   condicaoParabrisa?: Condition;
   nivelOleo?: Condition;
   nivelAgua?: Condition;
+  condicaoCavalo?: Condition;
+  condicaoCarreta?: Condition;
+  avarias: string[];
+  fotos: string[];
   observacoes?: string;
   isChecklistInicial: boolean;
 }
