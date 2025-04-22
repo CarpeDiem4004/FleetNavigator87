@@ -16,7 +16,8 @@ import {
   LogOut,
   AlertCircle,
   ShieldCheck,
-  FileText
+  FileText,
+  MessageSquare
 } from 'lucide-react';
 import backgroundImage from '../../assets/background.jpeg';
 import { Button } from '@/components/ui/button';
@@ -89,6 +90,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     { href: '/work-safety', label: 'Segurança do Trabalho', icon: ShieldCheck },
     { href: '/users', label: 'Usuários', icon: Users },
     { href: '/bases', label: 'Bases', icon: Building2 },
+    { href: '/solicitacoes', label: 'Solicitações da Base', icon: MessageSquare },
   ];
 
   // Expandir automaticamente Abastecimento se estivermos em uma página de posto
