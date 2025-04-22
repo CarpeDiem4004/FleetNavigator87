@@ -36,6 +36,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
     return <Redirect to="/fleet-redirect" />;
   }
   
+  // Verificação especial para usuários de Pneus - redirecionar para a seção de pneus
+  if (path === "/" && user && (user.basename === "Pneus" || user.baseId === 10 || user.role === 'pneus')) {
+    console.log("Usuário de Pneus tentando acessar o dashboard - redirecionando para a seção de pneus...");
+    return <Redirect to="/tires" />;
+  }
+  
   // Verifica se o usuário tem permissão para acessar a rota
   const hasRoutePermission = hasPermission(path);
   console.log(`Verificação de permissão para ${path}: ${hasRoutePermission ? 'PERMITIDO' : 'NEGADO'}`);
