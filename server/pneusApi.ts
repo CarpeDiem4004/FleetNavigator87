@@ -268,4 +268,176 @@ export function registerPneusRoutes(app: Express) {
       });
     }
   });
+  
+  // ========= API de Solicitações de Pneus =========
+  
+  // Listar solicitações de pneus
+  app.get('/api/solicitacoes-pneus', async (req, res) => {
+    try {
+      const { base_id, status } = req.query;
+      
+      let query = 'SELECT * FROM solicitacoes_pneus';
+      const values: any[] = [];
+      let whereClause = '';
+      
+      if (base_id) {
+        whereClause = 'base_id = $1';
+        values.push(base_id);
+      }
+      
+      if (status) {
+        if (whereClause) {
+          whereClause += ' AND status = $' + (values.length + 1);
+        } else {
+          whereClause = 'status = $1';
+        }
+        values.push(status);
+      }
+      
+      if (whereClause) {
+        query += ' WHERE ' + whereClause;
+      }
+      
+      query += ' ORDER BY data_solicitacao DESC';
+      
+      const result = await pool.query(query, values);
+      
+      return res.status(200).json({
+        success: true,
+        count: result.rowCount || 0,
+        data: result.rows
+      });
+    } catch (error) {
+      console.error('Erro ao listar solicitações de pneus:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao listar solicitações de pneus',
+        error: String(error)
+      });
+    }
+  });
+  
+  // Criar solicitação de pneus
+  app.post('/api/solicitacoes-pneus', async (req, res) => {
+    try {
+      const novaSolicitacao = req.body;
+      
+      // Validação básica
+      if (!novaSolicitacao.base_id || !novaSolicitacao.marca || !novaSolicitacao.modelo || !novaSolicitacao.motivo) {
+        return res.status(400).json({
+          success: false,
+          message: 'Dados incompletos. Base, marca, modelo e motivo são obrigatórios.'
+        });
+      }
+      
+      // Inserir nova solicitação
+      const query = `
+        INSERT INTO solicitacoes_pneus (
+          base_id, base_nome, usuario_id, usuario_nome, marca, 
+          modelo, medida, tipo, quantidade, motivo,
+          status, data_solicitacao, observacoes,
+          created_at, updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, 
+          $6, $7, $8, $9, $10,
+          $11, $12, $13,
+          NOW(), NOW()
+        ) RETURNING *
+      `;
+      
+      const values = [
+        novaSolicitacao.base_id,
+        novaSolicitacao.base_nome,
+        novaSolicitacao.usuario_id,
+        novaSolicitacao.usuario_nome,
+        novaSolicitacao.marca,
+        novaSolicitacao.modelo,
+        novaSolicitacao.medida,
+        novaSolicitacao.tipo,
+        novaSolicitacao.quantidade || 1,
+        novaSolicitacao.motivo,
+        'pendente',
+        new Date(),
+        novaSolicitacao.observacoes || null
+      ];
+      
+      const result = await pool.query(query, values);
+      
+      return res.status(201).json({
+        success: true,
+        message: 'Solicitação registrada com sucesso',
+        data: result.rows[0]
+      });
+    } catch (error) {
+      console.error('Erro ao criar solicitação de pneus:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao criar solicitação de pneus',
+        error: String(error)
+      });
+    }
+  });
+  
+  // Atualizar status de solicitação (aprovar/rejeitar)
+  app.put('/api/solicitacoes-pneus/:id/status', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, aprovador_id, aprovador_nome } = req.body;
+      
+      if (!['aprovado', 'rejeitado', 'pendente'].includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Status inválido. Os valores aceitos são: aprovado, rejeitado, pendente'
+        });
+      }
+      
+      // Verificar se a solicitação existe
+      const checkQuery = 'SELECT * FROM solicitacoes_pneus WHERE id = $1';
+      const checkResult = await pool.query(checkQuery, [id]);
+      
+      if (checkResult.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Solicitação não encontrada'
+        });
+      }
+      
+      // Atualizar status
+      let query;
+      let values;
+      
+      if (status === 'aprovado' || status === 'rejeitado') {
+        query = `
+          UPDATE solicitacoes_pneus 
+          SET status = $1, data_aprovacao = $2, aprovador_id = $3, aprovador_nome = $4, updated_at = NOW()
+          WHERE id = $5
+          RETURNING *
+        `;
+        values = [status, new Date(), aprovador_id, aprovador_nome, id];
+      } else {
+        query = `
+          UPDATE solicitacoes_pneus 
+          SET status = $1, updated_at = NOW()
+          WHERE id = $2
+          RETURNING *
+        `;
+        values = [status, id];
+      }
+      
+      const result = await pool.query(query, values);
+      
+      return res.status(200).json({
+        success: true,
+        message: `Solicitação ${status === 'aprovado' ? 'aprovada' : (status === 'rejeitado' ? 'rejeitada' : 'atualizada')} com sucesso`,
+        data: result.rows[0]
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar status da solicitação:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao atualizar status da solicitação',
+        error: String(error)
+      });
+    }
+  });
 }

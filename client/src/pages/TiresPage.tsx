@@ -39,30 +39,10 @@ import { Search, Plus, FileEdit, Trash2, ArrowUpCircle, ShoppingBag, CheckCircle
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
-import { fetchRecords, createSupabaseClient, insertRecord, updateData } from '@/lib/supabase-client';
+import { fetchRecords } from '@/lib/supabase-client';
+import { Tire, getAllTires, createTire, updateTire, deleteTire } from '@/services/tiresService';
 import TireRequestForm from '@/components/tire/TireRequestForm';
 import TireMountingHistory from '@/components/tires/TireMountingHistory';
-
-// Interface para o modelo de pneus
-interface Tire {
-  id: number;
-  codigo: string;
-  marca: string;
-  modelo: string;
-  medida: string;
-  aro: string;
-  tipo: string;
-  origem: string;
-  data_aquisicao: string;
-  veiculo_placa: string | null;
-  posicao: string | null;
-  km_inicial: number;
-  km_atual: number;
-  profundidade_sulco: number;
-  localizacao: string;
-  status: 'em_uso' | 'estoque' | 'descartado';
-  observacao?: string;
-}
 
 // Interface para solicitações de pneus
 interface TireRequest {
@@ -180,13 +160,14 @@ const TiresPage: React.FC = () => {
     observacao: ''
   });
 
-  // Buscar pneus do Supabase
+  // Buscar pneus da API
   useEffect(() => {
     const loadTires = async () => {
       setIsLoading(true);
       try {
-        const response = await fetchRecords('pneus');
-        if (response.success && response.data) {
+        // Usar a nova API de pneus
+        const response = await getAllTires();
+        if (response.success) {
           setTires(response.data);
         } else {
           toast({
@@ -252,26 +233,20 @@ const TiresPage: React.FC = () => {
     }
 
     try {
-      const supabase = createSupabaseClient();
+      // Usar a nova API para adicionar pneus
+      const response = await createTire({
+        ...newTire,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
       
-      const { data, error } = await supabase
-        .from('pneus')
-        .insert([{
-          ...newTire,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }])
-        .select();
-      
-      if (error) throw error;
-      
-      if (data && data.length > 0) {
-        setTires([...tires, data[0] as Tire]);
+      if (response.success && response.data) {
+        setTires([...tires, response.data]);
         setIsAddDialogOpen(false);
         
         toast({
           title: "Pneu adicionado",
-          description: `Pneu ${data[0].codigo} adicionado com sucesso.`,
+          description: `Pneu ${response.data.codigo} adicionado com sucesso.`,
           variant: "default"
         });
         
@@ -312,22 +287,18 @@ const TiresPage: React.FC = () => {
     }
 
     try {
-      const supabase = createSupabaseClient();
+      // Usar a nova API para deletar pneus
+      const response = await deleteTire(id);
       
-      const { error } = await supabase
-        .from('pneus')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      setTires(tires.filter(tire => tire.id !== id));
-      
-      toast({
-        title: "Pneu excluído",
-        description: "O pneu foi excluído com sucesso.",
-        variant: "default"
-      });
+      if (response.success) {
+        setTires(tires.filter(tire => tire.id !== id));
+        
+        toast({
+          title: "Pneu excluído",
+          description: "O pneu foi excluído com sucesso.",
+          variant: "default"
+        });
+      }
     } catch (error) {
       console.error("Erro ao excluir pneu:", error);
       toast({
