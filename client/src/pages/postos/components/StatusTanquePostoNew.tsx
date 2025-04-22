@@ -382,11 +382,21 @@ export const StatusTanquePostoNew: React.FC<StatusTanqueProps> = ({ postId }) =>
       const abastecimentos = await fetchAbastecimentos(postId);
       const recebimentos = await fetchRecebimentos(postId);
       
+      // Adicionando mais logging para depuração
+      console.log("[DEBUG] Abastecimentos data:", abastecimentos);
+      
       // Calcular totais dos abastecimentos
+      // Verificando os tipos de dados que estamos recebendo do servidor
+      console.log("[DEBUG] Verificando formato dos abastecimentos:", 
+        Array.isArray(abastecimentos) && abastecimentos.length > 0 
+          ? abastecimentos[0] 
+          : "Nenhum abastecimento encontrado");
+      
       const totalDieselAbastecido = Array.isArray(abastecimentos) 
         ? abastecimentos
             .filter((a: AbastecimentoData) => a.tipo_combustivel === 'Diesel')
             .reduce((acc: number, curr: AbastecimentoData) => {
+              console.log("[DEBUG] Processando abastecimento diesel:", curr);
               const litros = typeof curr.litros === 'string' 
                 ? parseFloat(curr.litros) 
                 : curr.litros;
@@ -499,6 +509,18 @@ export const StatusTanquePostoNew: React.FC<StatusTanqueProps> = ({ postId }) =>
     return new Intl.NumberFormat('pt-BR').format(Math.round(valor));
   };
   
+  // Renderizar indicador de carregamento quando necessário
+  if (isLoading) {
+    return (
+      <div className="space-y-6 mt-6 flex items-center justify-center min-h-[300px]">
+        <div className="text-center">
+          <div className="animate-spin text-primary mb-4 mx-auto inline-block w-8 h-8 border-4 rounded-full border-current border-t-transparent"></div>
+          <p className="text-muted-foreground">Carregando dados dos tanques...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 mt-6">
       <div className="flex justify-between items-center">
