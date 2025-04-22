@@ -30,12 +30,18 @@ const HistoricoGeralPage: React.FC = () => {
       console.log("[FETCH] Buscando todos os abastecimentos");
       
       // Buscar todos os abastecimentos sem filtro de posto
-      const data = await fetchRecords('abastecimentos_postos', {
+      const response = await fetchRecords('abastecimentos_postos', {
         limit: 500 // Aumentamos o limite para trazer mais registros
       });
       
-      console.log("[FETCH] Dados recuperados:", data.length);
-      setAbastecimentos(data);
+      // Verificar se os dados são válidos e um array
+      if (response && response.success && Array.isArray(response.data)) {
+        console.log("[FETCH] Dados recuperados:", response.data.length);
+        setAbastecimentos(response.data);
+      } else {
+        console.error("[FETCH] Dados inválidos recebidos:", response);
+        setAbastecimentos([]);
+      }
     } catch (error) {
       console.error('Erro ao buscar histórico de abastecimentos:', error);
       setAbastecimentos([]);
