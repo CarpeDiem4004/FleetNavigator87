@@ -29,6 +29,30 @@ async function hashPassword(password: string) {
   return `${buf.toString("hex")}.${salt}`;
 }
 
+// Função para gerar senhas aleatórias
+function generateRandomPassword(length: number): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%&*';
+  const numbers = '0123456789';
+  const specialChars = '@#$%&*';
+  const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+  
+  // Garantir que temos pelo menos um de cada tipo
+  let password = '';
+  password += uppercase.charAt(Math.floor(Math.random() * uppercase.length));
+  password += lowercase.charAt(Math.floor(Math.random() * lowercase.length));
+  password += numbers.charAt(Math.floor(Math.random() * numbers.length));
+  password += specialChars.charAt(Math.floor(Math.random() * specialChars.length));
+  
+  // Preencher o resto da senha com caracteres aleatórios
+  for (let i = password.length; i < length; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  
+  // Embaralhar a senha para que os caracteres obrigatórios não fiquem sempre nas mesmas posições
+  return password.split('').sort(() => 0.5 - Math.random()).join('');
+}
+
 // Middleware para verificar autenticação em rotas protegidas
 const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
   if (req.isAuthenticated()) {
@@ -1139,6 +1163,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Erro ao buscar usuários:", error);
       res.status(500).json({ message: 'Erro ao buscar usuários' });
+    }
+  });
+  
+  // Rota para criar um novo usuário
+  app.post("/api/users", isAdmin, async (req, res) => {
+    try {
+      const { name, email, role, baseId, isActive } = req.body;
+      
+      // Verificar se o usuário já existe
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "Email já está em uso" });
+      }
+      
+      // Gerar senha aleatória se não for fornecida
+      const password = req.body.password || generateRandomPassword(10);
+      const plainPassword = password; // Guardar a senha em texto puro para retornar
+      
+      // Hash da senha
+      const hashedPassword = await hashPassword(password);
+      
+      // Criar o usuário
+      const newUser = await storage.createUser({
+        name,
+        email,
+        password: hashedPassword,
+        role,
+        baseId: baseId || null,
+        isActive: isActive !== undefined ? isActive : true
+      });
+      
+      // Retornar o usuário criado com a senha em texto puro
+      return res.status(201).json({
+        user: {
+          ...newUser,
+          password: undefined // Remover a senha hash da resposta
+        },
+        generatedPassword: plainPassword // Incluir a senha gerada para exibição
+      });
+    } catch (error) {
+      console.error("Erro ao criar usuário:", error);
+      return res.status(500).json({ message: "Erro ao criar usuário" });
     }
   });
   

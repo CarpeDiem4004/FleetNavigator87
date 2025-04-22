@@ -6,7 +6,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { 
   Loader2, Search, Plus, KeyRound, FileEdit, 
-  Trash2, UserX, UserCircle2, RefreshCw
+  Trash2, UserX, UserCircle2, RefreshCw, 
+  Copy, CheckCircle2
 } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { 
@@ -28,6 +29,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { 
   Select,
@@ -267,6 +269,21 @@ const UsersNew: React.FC = () => {
     queryClient.invalidateQueries({ queryKey: ['/api/users'] });
   };
 
+  // Estados para controlar o diálogo de senha gerada
+  const [isShowPasswordDialogOpen, setIsShowPasswordDialogOpen] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState('');
+  const [hasPasswordCopied, setHasPasswordCopied] = useState(false);
+  
+  // Função para copiar a senha gerada para a área de transferência
+  const copyPasswordToClipboard = () => {
+    navigator.clipboard.writeText(generatedPassword).then(() => {
+      setHasPasswordCopied(true);
+      setTimeout(() => setHasPasswordCopied(false), 3000);
+    }).catch(err => {
+      console.error('Erro ao copiar senha para a área de transferência:', err);
+    });
+  };
+  
   // Adicionar novo usuário
   const handleAddUser = async () => {
     // Validar dados
@@ -279,71 +296,65 @@ const UsersNew: React.FC = () => {
       return;
     }
 
-    if (!password) {
-      toast({
-        title: "Erro ao adicionar usuário",
-        description: "A senha é obrigatória",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      toast({
-        title: "Erro ao adicionar usuário",
-        description: "As senhas não coincidem",
-        variant: "destructive"
-      });
-      return;
-    }
-
     try {
       toast({
         title: "Processando",
         description: "Criando novo usuário...",
       });
       
-      // Fazer a requisição para a API de registro
-      // Preparar dados para envio, incluindo baseId se existir
-      const registerData: any = {
-        username: newUser.email,
-        password: password,
+      // Preparar dados para envio
+      const userData: any = {
         name: newUser.name,
-        role: newUser.role
+        email: newUser.email,
+        role: newUser.role,
+        isActive: newUser.isActive
       };
+      
+      // Adicionar senha se fornecida
+      if (password) {
+        userData.password = password;
+      }
       
       // Adicionar baseId apenas se não for null e maior que 0
       if (newUser.baseId && newUser.baseId > 0) {
-        registerData.baseId = newUser.baseId;
-        registerData.basename = newUser.baseName;
+        userData.baseId = newUser.baseId;
       }
       
-      console.log('Enviando dados de usuário:', { ...registerData, password: '***' });
+      console.log('Enviando dados de usuário:', { ...userData, password: password ? '***' : '[gerada automaticamente]' });
       
-      // Usar apiRequest para cadastrar novo usuário
-      const createdUser = await apiRequest('POST', '/api/register', registerData);
+      // Usar a nova rota de API para criação de usuários
+      const response = await apiRequest('POST', '/api/users', userData);
+      const data = await response.json();
       
-      // Limpar o modal e fechar
-      setIsAddDialogOpen(false);
+      // Armazenar a senha gerada e mostrar o diálogo
+      if (data.generatedPassword) {
+        setGeneratedPassword(data.generatedPassword);
+        setIsShowPasswordDialogOpen(true);
+      }
       
       // Atualizar a lista de usuários
       handleUserDataChanged();
       
-      // Limpar formulário
-      setNewUser({
-        name: '',
-        email: '',
-        role: 'operador',
-        baseId: null,
-        baseName: null,
-        lastLogin: null,
-        isActive: true
-      });
-      setPassword('');
-      setConfirmPassword('');
+      // Limpar formulário mas manter o modal aberto se precisar exibir a senha
+      if (!data.generatedPassword) {
+        // Se não tiver senha gerada, fechar o modal
+        setIsAddDialogOpen(false);
+        
+        // Limpar formulário
+        setNewUser({
+          name: '',
+          email: '',
+          role: 'operador',
+          baseId: null,
+          baseName: null,
+          lastLogin: null,
+          isActive: true
+        });
+        setPassword('');
+        setConfirmPassword('');
+      }
       
       // Atualizar lista de bases após adicionar um usuário
-      // Isso é útil se o usuário estiver associado a uma nova base
       queryClient.invalidateQueries({ queryKey: ['/api/bases'] });
       
       toast({
