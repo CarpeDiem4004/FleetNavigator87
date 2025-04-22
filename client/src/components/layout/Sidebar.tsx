@@ -108,7 +108,22 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
         <div className="overflow-y-auto">
           <nav className="flex-1 py-4">
             <div className="space-y-1 px-2">
-              {navItems.map((item) => {
+              {/* Item fixo para Cartão de Combustível */}
+              <Link 
+                href="/fuel-card" 
+                onClick={closeSidebar}
+                className={`flex items-center px-4 py-3 rounded-md group transition-colors duration-200 ${
+                  location === '/fuel-card' 
+                    ? 'text-white bg-primary-900' 
+                    : 'text-primary-100 hover:bg-primary-700'
+                }`}
+              >
+                <CreditCard className="w-6" size={18} />
+                <span className="ml-3">Cartão de Combustível</span>
+              </Link>
+
+              {/* Outros itens de navegação dinâmicos */}
+              {navItems.filter(item => item.href !== '/fuel-card').map((item) => {
                 const isActive = location === item.href;
                 const Icon = item.icon;
                 
