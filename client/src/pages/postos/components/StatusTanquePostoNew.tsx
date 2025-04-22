@@ -10,10 +10,9 @@ import {
   DialogDescription, 
   DialogFooter, 
   DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+  DialogTitle 
 } from "@/components/ui/dialog";
-import { Fuel, Droplet, Settings, Edit, Save, RefreshCw } from 'lucide-react';
+import { Fuel, Droplet, Settings, Save, RefreshCw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
 interface StatusTanqueProps {
@@ -22,7 +21,7 @@ interface StatusTanqueProps {
 
 interface AbastecimentoData {
   tipo_combustivel: string;
-  litros: number;
+  litros: string | number;
 }
 
 interface RecebimentoData {
@@ -58,7 +57,7 @@ interface ConfiguracaoTanques {
   updated_at?: string;
 }
 
-export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
+export const StatusTanquePostoNew: React.FC<StatusTanqueProps> = ({ postId }) => {
   const { toast } = useToast();
   
   const [statusTanque, setStatusTanque] = useState<StatusTanque>({
@@ -81,6 +80,7 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [configId, setConfigId] = useState<number | undefined>(undefined);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Estados para os campos do formulário
   const [dieselNivel, setDieselNivel] = useState<number>(statusTanque.diesel.nivel);
@@ -89,9 +89,14 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
   const [arlaCapacidade, setArlaCapacidade] = useState<number>(statusTanque.arla.capacidade);
   const [isSalvando, setIsSalvando] = useState(false);
   
+  // Função para formatar posto (primeira letra maiúscula)
+  const formatPosto = (posto: string): string => {
+    return posto.charAt(0).toUpperCase() + posto.slice(1);
+  };
+
   // Mapa de configurações em memória (sem necessidade de API)
   // Usamos localStorage para persistir os dados entre sessões
-  const getStoredConfig = (posto: string) => {
+  const getStoredConfig = (posto: string): ConfiguracaoTanques | null => {
     try {
       const storedConfig = localStorage.getItem(`config_tanques_${posto}`);
       if (storedConfig) {
@@ -104,7 +109,7 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
     }
   };
   
-  const saveStoredConfig = (posto: string, config: ConfiguracaoTanques) => {
+  const saveStoredConfig = (posto: string, config: ConfiguracaoTanques): boolean => {
     try {
       localStorage.setItem(`config_tanques_${posto}`, JSON.stringify(config));
       return true;
@@ -113,89 +118,120 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
       return false;
     }
   };
-  
-  // Função para formatar posto (primeira letra maiúscula)
-  const formatPosto = (posto: string) => {
-    return posto.charAt(0).toUpperCase() + posto.slice(1);
-  };
 
-  // Função para buscar configurações do tanque
-  const fetchConfigTanques = async () => {
+  // Função para buscar abastecimentos da API
+  const fetchAbastecimentos = async (posto: string): Promise<AbastecimentoData[]> => {
     try {
-      // Primeiro tentamos buscar do localStorage
-      const configLocal = getStoredConfig(postId);
+      console.log("[FETCH] Buscando abastecimentos para o posto:", posto);
       
-      if (configLocal) {
-        console.log("Configuração carregada do localStorage:", configLocal);
-        
-        // Atualizar os estados do formulário
-        setDieselNivel(configLocal.diesel_nivel);
-        setDieselCapacidade(configLocal.diesel_capacidade);
-        setArlaNivel(configLocal.arla_nivel);
-        setArlaCapacidade(configLocal.arla_capacidade);
+      // Usar a nova API para obter os abastecimentos
+      const response = await fetch(`/api/diagnostico/abastecimentos/${posto}`);
+      
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar abastecimentos: ${response.status}`);
       }
       
-      // Independente de encontrar local, tenta buscar da API (PostgreSQL)
-      try {
-        // Formatar o nome do posto para primeira letra maiúscula
-        const formattedPosto = formatPosto(postId);
-        console.log("Buscando configurações de tanque para:", formattedPosto);
+      const result = await response.json();
+      
+      if (result.success && Array.isArray(result.data)) {
+        console.log("[FETCH] Dados recuperados via API local:", result.data.length);
+        return result.data;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('[FETCH] Erro ao buscar abastecimentos:', error);
+      return [];
+    }
+  };
+  
+  // Função para buscar recebimentos (por enquanto do localStorage)
+  const fetchRecebimentos = async (posto: string): Promise<RecebimentoData[]> => {
+    try {
+      // Por enquanto, não temos uma API para recebimentos no PostgreSQL,
+      // então tentamos usar os dados armazenados localmente
+      const localKey = `recebimentos_combustivel_${posto}`;
+      const storedData = localStorage.getItem(localKey);
+      
+      if (storedData) {
+        const data = JSON.parse(storedData);
+        console.log("[FETCH] Recuperados recebimentos de combustível do localStorage:", data.length);
+        return data;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('[FETCH] Erro ao buscar recebimentos:', error);
+      return [];
+    }
+  };
+
+  // Função para buscar configuração dos tanques da API
+  const fetchConfigTanques = async (): Promise<{
+    dieselNivel: number;
+    dieselCapacidade: number;
+    arlaNivel: number;
+    arlaCapacidade: number;
+  } | null> => {
+    try {
+      // Formatar o nome do posto para primeira letra maiúscula
+      const formattedPosto = formatPosto(postId);
+      console.log("Buscando configurações de tanque para:", formattedPosto);
+      
+      // Fazer requisição para a nova API
+      const response = await fetch(`/api/configuracao-tanques/${formattedPosto}`);
+      
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar configuração: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        const config = result.data;
+        console.log("Configuração de tanques obtida via API:", config);
         
-        // Fazer requisição para a nova API
-        const response = await fetch(`/api/configuracao-tanques/${formattedPosto}`);
+        setConfigId(config.id);
         
-        if (!response.ok) {
-          throw new Error(`Erro ao buscar configuração: ${response.status}`);
-        }
+        // Atualizar os estados do formulário
+        setDieselNivel(config.diesel_nivel);
+        setDieselCapacidade(config.diesel_capacidade);
+        setArlaNivel(config.arla_nivel);
+        setArlaCapacidade(config.arla_capacidade);
         
-        const result = await response.json();
+        // Salvar também no localStorage como backup
+        saveStoredConfig(postId, config);
         
-        if (result.success && result.data) {
-          const config = result.data;
-          console.log("Configuração de tanques obtida via API:", config);
-          
-          setConfigId(config.id);
-          
-          // Atualizar os estados do formulário
-          setDieselNivel(config.diesel_nivel);
-          setDieselCapacidade(config.diesel_capacidade);
-          setArlaNivel(config.arla_nivel);
-          setArlaCapacidade(config.arla_capacidade);
-          
-          // Salvar também no localStorage como backup
-          saveStoredConfig(postId, config);
-          
-          // Retornar as configurações
-          return {
-            dieselNivel: config.diesel_nivel,
-            dieselCapacidade: config.diesel_capacidade,
-            arlaNivel: config.arla_nivel,
-            arlaCapacidade: config.arla_capacidade
-          };
-        }
-      } catch (apiError) {
-        console.log("API não disponível, usando apenas localStorage:", apiError);
-        
-        // Se temos configuração local, retornamos ela
-        if (configLocal) {
-          return {
-            dieselNivel: configLocal.diesel_nivel,
-            dieselCapacidade: configLocal.diesel_capacidade,
-            arlaNivel: configLocal.arla_nivel,
-            arlaCapacidade: configLocal.arla_capacidade
-          };
-        }
+        // Retornar as configurações
+        return {
+          dieselNivel: config.diesel_nivel,
+          dieselCapacidade: config.diesel_capacidade,
+          arlaNivel: config.arla_nivel,
+          arlaCapacidade: config.arla_capacidade
+        };
       }
       
       return null;
     } catch (error) {
       console.error('Erro ao buscar configurações dos tanques:', error);
+      
+      // Se houver erro, tente usar configuração local
+      const configLocal = getStoredConfig(postId);
+      if (configLocal) {
+        return {
+          dieselNivel: configLocal.diesel_nivel,
+          dieselCapacidade: configLocal.diesel_capacidade,
+          arlaNivel: configLocal.arla_nivel,
+          arlaCapacidade: configLocal.arla_capacidade
+        };
+      }
+      
       return null;
     }
   };
   
   // Função para salvar configurações do tanque
-  const salvarConfigTanques = async () => {
+  const salvarConfigTanques = async (): Promise<void> => {
     try {
       setIsSalvando(true);
       
@@ -258,7 +294,7 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
           apiSuccess = true;
           
           // Atualizar o ID de configuração se for novo
-          if (result.data.id) {
+          if (result.data && result.data.id) {
             setConfigId(result.data.id);
           }
         }
@@ -292,6 +328,9 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
         
         // Fechar o diálogo
         setIsDialogOpen(false);
+        
+        // Atualizar dados
+        await fetchDados();
       } else {
         throw new Error("Não foi possível salvar as configurações em nenhum local.");
       }
@@ -306,82 +345,13 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
       setIsSalvando(false);
     }
   };
-  
-  // Função para abrir o diálogo de edição
-  const abrirDialogEdicao = () => {
-    // Preencher o formulário com os valores atuais
-    setDieselNivel(statusTanque.diesel.nivel);
-    setDieselCapacidade(statusTanque.diesel.capacidade);
-    setArlaNivel(statusTanque.arla.nivel);
-    setArlaCapacidade(statusTanque.arla.capacidade);
-    
-    // Abrir o diálogo
-    setIsDialogOpen(true);
-  };
 
-  const fetchAbastecimentos = async (posto: string) => {
-    try {
-      // Formatar o nome do posto para primeira letra maiúscula
-      const formattedPosto = formatPosto(posto);
-      console.log("[FETCH] Buscando abastecimentos para o posto:", formattedPosto);
-      
-      // Usar a nova API para obter os abastecimentos
-      const response = await fetch(`/api/diagnostico/abastecimentos/${posto}`);
-      
-      if (!response.ok) {
-        throw new Error(`Erro ao buscar abastecimentos: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      
-      if (result.success && Array.isArray(result.data)) {
-        console.log("[FETCH] Dados recuperados via API local:", result.data.length);
-        return result.data;
-      }
-      
-      return [];
-    } catch (error) {
-      console.error('[FETCH] Erro ao buscar abastecimentos:', error);
-      return [];
-    }
-  };
-  
-  const fetchRecebimentos = async (posto: string) => {
-    try {
-      // Por enquanto, não temos uma API para recebimentos no PostgreSQL,
-      // então tentamos usar os dados armazenados localmente
-      const localKey = `recebimentos_combustivel_${posto}`;
-      const storedData = localStorage.getItem(localKey);
-      
-      if (storedData) {
-        const data = JSON.parse(storedData);
-        console.log("[FETCH] Recuperados recebimentos de combustível do localStorage:", data.length);
-        return data;
-      }
-      
-      return [];
-    } catch (error) {
-      console.error('[FETCH] Erro ao buscar recebimentos:', error);
-      return [];
-    }
-  };
-
-  // Adiciona um botão para atualizar os dados
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    fetchDados().finally(() => {
-      setIsRefreshing(false);
-    });
-  };
-  
-  // Define a fetchDados function 
-  const fetchDados = async () => {
+  // Função principal para buscar todos os dados
+  const fetchDados = async (): Promise<void> => {
     try {
       setIsLoading(true);
       
-      // Primeiro tenta carregar as configurações locais
+      // Primeiro tenta carregar as configurações locais para mostrar algo rápido
       const configLocal = getStoredConfig(postId);
       if (configLocal) {
         console.log("Usando configuração armazenada localmente para:", postId);
@@ -403,16 +373,12 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
             ultimosRecebimentos: 0
           }
         });
-        
-        setIsLoading(false);
-        
-        // Continue tentando buscar dados da API em segundo plano
       }
       
-      // Buscar configurações de tanques da API
+      // Buscar configurações de tanques da API (pode sobrescrever as configurações locais)
       const config = await fetchConfigTanques();
       
-      // Tenta buscar abastecimentos e recebimentos da API
+      // Buscar abastecimentos e recebimentos
       const abastecimentos = await fetchAbastecimentos(postId);
       const recebimentos = await fetchRecebimentos(postId);
       
@@ -420,13 +386,23 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
       const totalDieselAbastecido = Array.isArray(abastecimentos) 
         ? abastecimentos
             .filter((a: AbastecimentoData) => a.tipo_combustivel === 'Diesel')
-            .reduce((acc: number, curr: AbastecimentoData) => acc + parseFloat(curr.litros as any), 0)
+            .reduce((acc: number, curr: AbastecimentoData) => {
+              const litros = typeof curr.litros === 'string' 
+                ? parseFloat(curr.litros) 
+                : curr.litros;
+              return acc + litros;
+            }, 0)
         : 0;
         
       const totalArlaAbastecido = Array.isArray(abastecimentos)
         ? abastecimentos
             .filter((a: AbastecimentoData) => a.tipo_combustivel === 'ARLA')
-            .reduce((acc: number, curr: AbastecimentoData) => acc + parseFloat(curr.litros as any), 0)
+            .reduce((acc: number, curr: AbastecimentoData) => {
+              const litros = typeof curr.litros === 'string' 
+                ? parseFloat(curr.litros) 
+                : curr.litros;
+              return acc + litros;
+            }, 0)
         : 0;
         
       const totalDieselRecebido = Array.isArray(recebimentos)
@@ -464,24 +440,24 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
         1000;
       
       // Calcular níveis atuais e porcentagens
-      const nivelDiesel = Math.min(dieselCapacidade, nivelDieselBase - totalDieselAbastecido + totalDieselRecebido);
-      const nivelArla = Math.min(arlaCapacidade, nivelArlaBase - totalArlaAbastecido + totalArlaRecebido);
+      const nivelDiesel = Math.max(0, Math.min(dieselCapacidade, nivelDieselBase - totalDieselAbastecido + totalDieselRecebido));
+      const nivelArla = Math.max(0, Math.min(arlaCapacidade, nivelArlaBase - totalArlaAbastecido + totalArlaRecebido));
       
-      const porcentagemDiesel = (nivelDiesel / dieselCapacidade) * 100;
-      const porcentagemArla = (nivelArla / arlaCapacidade) * 100;
+      const porcentagemDiesel = dieselCapacidade > 0 ? (nivelDiesel / dieselCapacidade) * 100 : 0;
+      const porcentagemArla = arlaCapacidade > 0 ? (nivelArla / arlaCapacidade) * 100 : 0;
       
       setStatusTanque({
         diesel: {
           capacidade: dieselCapacidade,
-          nivel: nivelDiesel > 0 ? nivelDiesel : 0,
-          porcentagem: porcentagemDiesel > 0 ? porcentagemDiesel : 0,
+          nivel: nivelDiesel,
+          porcentagem: porcentagemDiesel,
           ultimosAbastecimentos: totalDieselAbastecido,
           ultimosRecebimentos: totalDieselRecebido
         },
         arla: {
           capacidade: arlaCapacidade,
-          nivel: nivelArla > 0 ? nivelArla : 0,
-          porcentagem: porcentagemArla > 0 ? porcentagemArla : 0,
+          nivel: nivelArla,
+          porcentagem: porcentagemArla,
           ultimosAbastecimentos: totalArlaAbastecido,
           ultimosRecebimentos: totalArlaRecebido
         }
@@ -491,15 +467,35 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
       // Em caso de erro, manter os valores padrão
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
+
+  // Função para abrir o diálogo de edição
+  const abrirDialogEdicao = (): void => {
+    // Preencher o formulário com os valores atuais
+    setDieselNivel(statusTanque.diesel.nivel);
+    setDieselCapacidade(statusTanque.diesel.capacidade);
+    setArlaNivel(statusTanque.arla.nivel);
+    setArlaCapacidade(statusTanque.arla.capacidade);
+    
+    // Abrir o diálogo
+    setIsDialogOpen(true);
+  };
   
-  // Use effect to fetch data when component mounts
+  // Função para atualizar manualmente os dados
+  const handleRefresh = (): void => {
+    setIsRefreshing(true);
+    fetchDados();
+  };
+  
+  // Atualizar dados quando o componente montar ou quando o postId mudar
   useEffect(() => {
     fetchDados();
   }, [postId]);
   
-  const formatarNumero = (valor: number) => {
+  // Formatar números com separador de milhares
+  const formatarNumero = (valor: number): string => {
     return new Intl.NumberFormat('pt-BR').format(Math.round(valor));
   };
   
@@ -507,14 +503,26 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
     <div className="space-y-6 mt-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold">Status dos Tanques</h2>
-        <Button 
-          variant="outline" 
-          className="flex items-center gap-2"
-          onClick={abrirDialogEdicao}
-        >
-          <Settings className="h-4 w-4" />
-          Atualizar Configurações
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="flex items-center gap-1" 
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Atualizando...' : 'Atualizar'}
+          </Button>
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={abrirDialogEdicao}
+          >
+            <Settings className="h-4 w-4" />
+            Configurações
+          </Button>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -666,17 +674,29 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button 
+              type="button" 
+              variant="secondary"
+              onClick={() => setIsDialogOpen(false)}
+            >
               Cancelar
             </Button>
             <Button 
-              onClick={salvarConfigTanques} 
+              type="button" 
+              onClick={salvarConfigTanques}
               disabled={isSalvando}
-              className="flex items-center gap-2"
             >
-              {isSalvando && <span className="animate-spin">⏳</span>}
-              <Save className="h-4 w-4" />
-              {isSalvando ? 'Salvando...' : 'Salvar Configurações'}
+              {isSalvando ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Salvar Configurações
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -684,5 +704,3 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
     </div>
   );
 };
-
-export default StatusTanquePosto;
