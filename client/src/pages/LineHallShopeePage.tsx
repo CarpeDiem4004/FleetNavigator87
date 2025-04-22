@@ -220,14 +220,16 @@ export default function LineHallShopeePage() {
   };
 
   const filteredTrips = trips.filter(trip => {
+    if (!searchTerm) return true;
+    
     const searchLower = searchTerm.toLowerCase();
     return (
-      trip.placa_cavalo.toLowerCase().includes(searchLower) ||
-      trip.placa_carreta_1.toLowerCase().includes(searchLower) ||
-      (trip.placa_carreta_2 && trip.placa_carreta_2.toLowerCase().includes(searchLower)) ||
-      trip.motorista_nome.toLowerCase().includes(searchLower) ||
-      trip.local_carregamento.toLowerCase().includes(searchLower) ||
-      trip.local_descarregamento.toLowerCase().includes(searchLower)
+      (trip.placa_cavalo?.toLowerCase() || '').includes(searchLower) ||
+      (trip.placa_carreta_1?.toLowerCase() || '').includes(searchLower) ||
+      (trip.placa_carreta_2?.toLowerCase() || '').includes(searchLower) ||
+      (trip.motorista_nome?.toLowerCase() || '').includes(searchLower) ||
+      (trip.local_carregamento?.toLowerCase() || '').includes(searchLower) ||
+      (trip.local_descarregamento?.toLowerCase() || '').includes(searchLower)
     );
   });
 
