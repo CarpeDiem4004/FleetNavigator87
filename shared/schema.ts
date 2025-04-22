@@ -21,6 +21,26 @@ export const refuelingCardStatusEnum = pgEnum('refueling_card_status', ['pendent
 export const messageAuthorEnum = pgEnum('message_author', ['oficina', 'frota']);
 export const vehicleOwnershipEnum = pgEnum('vehicle_ownership', ['murici', 'locado']);
 
+// Enum para os tipos de solicitação que uma base pode fazer
+export const requestTypeEnum = pgEnum('request_type', [
+  'manutencao', // Manutenção
+  'pneus',      // Solicitação de pneus
+  'roubo',      // Registro de roubo
+  'sinistro',   // Registro de sinistro
+  'acidente',   // Registro de acidente
+  'seguranca'   // Segurança do trabalho
+]);
+
+// Enum para o status de solicitações
+export const requestStatusEnum = pgEnum('request_status', [
+  'pendente',             // Aguardando análise inicial
+  'em_analise',           // Em análise pela equipe responsável
+  'em_andamento',         // Em processamento/resolução
+  'aguardando_informacao',// Aguardando informações adicionais
+  'concluido',            // Solicitação atendida/concluída
+  'cancelado'             // Solicitação cancelada
+]);
+
 // Create the bases table
 export const bases = pgTable("bases", {
   id: serial("id").primaryKey(),
@@ -32,7 +52,38 @@ export const bases = pgTable("bases", {
   operation: text("operation"),
   hasMaintenance: boolean("has_maintenance").default(false),
   hasTires: boolean("has_tires").default(false),
+  requestsEnabled: boolean("requests_enabled").default(true), // Permite que a base faça solicitações
   created_at: timestamp("created_at").defaultNow(),
+});
+
+// Tabela para armazenar solicitações de bases
+export const baseRequests = pgTable("base_requests", {
+  id: serial("id").primaryKey(),
+  baseId: integer("base_id").notNull().references(() => bases.id),
+  requestType: requestTypeEnum("request_type").notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  status: requestStatusEnum("request_status").notNull().default('pendente'),
+  priority: text("priority").default('normal'), // alta, normal, baixa
+  requesterUserId: integer("requester_user_id").notNull().references(() => users.id),
+  assignedUserId: integer("assigned_user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  resolvedAt: timestamp("resolved_at"),
+  vehiclePlate: text("vehicle_plate").references(() => vehicles.plate), // Se for relacionado a veículo
+});
+
+// Tabela para armazenar as atualizações/tratativas de solicitações
+export const baseRequestUpdates = pgTable("base_request_updates", {
+  id: serial("id").primaryKey(),
+  requestId: integer("request_id").notNull().references(() => baseRequests.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  userName: text("user_name").notNull(),
+  userRole: text("user_role").notNull(),
+  message: text("message").notNull(),
+  newStatus: requestStatusEnum("new_status"),
+  createdAt: timestamp("created_at").defaultNow(),
+  attachmentUrl: text("attachment_url"), // URL para anexo (se houver)
 });
 
 // Create the vehicles table (veiculos)

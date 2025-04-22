@@ -26,21 +26,33 @@ interface BasePermissionHook {
 
 // Lista de todas as rotas disponíveis no sistema
 const allRoutes = [
-  '/',                // Dashboard
-  '/vehicles',        // Veículos
-  '/maintenance',     // Manutenções
-  '/tires',           // Pneus
-  '/pneus',           // Alias para Pneus
-  '/refueling',       // Abastecimentos
-  '/fines',           // Multas
-  '/multas',          // Alias para Multas
-  '/line-hall',       // Line Hall
-  '/fleet-management', // Gestão de Frota
-  '/gestao-de-frotas', // Alias para Gestão de Frota
-  '/users'            // Usuários (só admin)
+  '/',                       // Dashboard
+  '/vehicles',               // Veículos
+  '/drivers',                // Motoristas
+  '/maintenance',            // Manutenções
+  '/manutencao',             // Alias para Manutenções
+  '/tires',                  // Pneus
+  '/pneus',                  // Alias para Pneus
+  '/refueling',              // Abastecimentos
+  '/abastecimento',          // Alias para Abastecimentos
+  '/fines',                  // Multas
+  '/multas',                 // Alias para Multas
+  '/line-hall',              // Line Hall
+  '/fleet-management',       // Gestão de Frota
+  '/gestao-de-frotas',       // Alias para Gestão de Frota
+  '/work-safety',            // Segurança do Trabalho
+  '/seguranca-trabalho',     // Alias para Segurança do Trabalho
+  '/theft',                  // Roubo
+  '/roubo',                  // Alias para Roubo
+  '/sinister',               // Sinistro
+  '/sinistro',               // Alias para Sinistro
+  '/accidents',              // Acidentes
+  '/acidentes',              // Alias para Acidentes
+  '/users',                  // Usuários (só admin)
+  '/bases'                   // Bases (só admin)
 ];
 
-// Regras de correspondência entre bases e rotas
+// Regras de correspondência entre bases e rotas específicas
 const baseRouteMapping = {
   'line hall': ['/line-hall'],
   'multas': ['/multas', '/fines'],
@@ -49,24 +61,61 @@ const baseRouteMapping = {
     '/gestao-de-frotas', 
     '/fleet-management', 
     '/maintenance', 
+    '/manutencao',
     '/vehicles', 
     '/refueling',
+    '/abastecimento',
     '/tires',
-    '/fines'
+    '/pneus',
+    '/fines',
+    '/multas'
   ],
   'frota': [
     '/gestao-de-frotas', 
     '/fleet-management', 
     '/maintenance', 
+    '/manutencao',
     '/vehicles', 
     '/refueling',
+    '/abastecimento',
     '/tires',
-    '/fines'
+    '/pneus',
+    '/fines',
+    '/multas'
+  ],
+  'segurança do trabalho': [
+    '/work-safety',
+    '/seguranca-trabalho'
+  ],
+  'sinistro': [
+    '/theft',
+    '/roubo',
+    '/sinister',
+    '/sinistro',
+    '/accidents',
+    '/acidentes'
   ]
 };
 
-// Rotas básicas que todos os usuários têm acesso (exceto os que têm base específica)
-const basicRoutes = ['/', '/vehicles', '/refueling'];
+// Rotas básicas que TODAS as bases têm acesso (modelo padrão de acesso para qualquer base)
+const basicRoutes = [
+  '/',                       // Dashboard
+  '/vehicles',               // Cadastro e gestão de veículos
+  '/drivers',                // Cadastro e gestão de motoristas
+  '/maintenance',            // Solicitações de manutenção
+  '/manutencao',             // Alias para manutenção
+  '/tires',                  // Solicitações de pneus
+  '/pneus',                  // Alias para pneus
+  '/refueling',              // Registros de abastecimento
+  '/work-safety',            // Informar acidentes de trabalho
+  '/seguranca-trabalho',     // Alias para segurança do trabalho
+  '/theft',                  // Registro de roubos
+  '/roubo',                  // Alias para roubo
+  '/sinister',               // Registros de sinistros
+  '/sinistro',               // Alias para sinistro
+  '/accidents',              // Registros de acidentes
+  '/acidentes'               // Alias para acidentes
+];
 
 export function useBasePermission(): BasePermissionHook {
   const { user: authUser } = useAuth();
@@ -221,14 +270,28 @@ export function useBasePermission(): BasePermissionHook {
       return hasAccess;
     }
     
-    // Para outras bases específicas, usar o mapeamento
-    if (user.basename) {
-      const hasAccess = isRouteForBase(route, user.basename);
-      console.log(`User with base "${user.basename}" permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
-      return hasAccess;
+    // Modelo padrão de base - TODAS as bases têm acesso a estas funcionalidades
+    if (user.baseId || user.basename) {
+      // Primeiro, verificar se a rota está nas rotas básicas (modelo padrão para todas as bases)
+      if (basicRoutes.includes(route)) {
+        console.log(`Acesso PERMITIDO para base ${user.basename || user.baseId} à rota básica: ${route}`);
+        return true;
+      }
+      
+      // Depois, verificar se a base tem permissões adicionais específicas via mapeamento
+      if (user.basename) {
+        const hasSpecificAccess = isRouteForBase(route, user.basename);
+        if (hasSpecificAccess) {
+          console.log(`Acesso PERMITIDO para base específica "${user.basename}" à rota: ${route}`);
+          return true;
+        }
+      }
+      
+      console.log(`Acesso NEGADO para base ${user.basename || user.baseId} à rota não básica: ${route}`);
+      return false;
     }
     
-    // Se o usuário não tem base específica mas não é admin, permitir apenas rotas básicas
+    // Se o usuário não tem base específica (caso raro), permitir apenas rotas básicas
     if (!user.baseId && !user.basename) {
       const hasAccess = basicRoutes.includes(route);
       console.log(`User without specific base permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
