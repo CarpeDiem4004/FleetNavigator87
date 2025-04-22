@@ -50,6 +50,7 @@ import BudgetManagementPage from "@/pages/fleet-management/BudgetManagementPage"
 import InventoryPage from "@/pages/fleet-management/InventoryPage";
 import TiresEntrada from "@/pages/TiresEntrada";
 import LineHallShopeePage from "@/pages/LineHallShopeePage";
+import FuelCardPage from "@/pages/FuelCardPage";
 import DriverChecklist from "@/pages/DriverChecklist";
 import DriversPage from "@/pages/DriversPage";
 import ManutencaoPage from "@/pages/ManutencaoPage";
@@ -133,6 +134,7 @@ function App() {
           <ProtectedRoute path="/admin/utils" component={AdminUtils} />
           <ProtectedRoute path="/limpar-dados" component={LimparDados} />
           <ProtectedRoute path="/line-hall-shopee" component={LineHallShopeePage} />
+          <ProtectedRoute path="/fuel-card" component={FuelCardPage} />
           <ProtectedRoute path="/drivers" component={DriversPage} />
           <ProtectedRoute path="/manutencao" component={ManutencaoPage} />
           <ProtectedRoute path="/tratativa-manutencao" component={TratativaManutencaoPage} />
