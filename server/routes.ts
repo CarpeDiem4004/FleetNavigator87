@@ -14,6 +14,13 @@ import {
 import { setupAuth } from "./auth";
 import { getDashboardKPIs, getPainelPrincipal } from "./dashboardApi";
 import { getExecutiveDashboard } from "./executiveDashboard";
+import { 
+  getFuelCardSolicitations, 
+  getFuelCardSolicitation, 
+  createFuelCardSolicitation, 
+  updateFuelCardSolicitation, 
+  deleteFuelCardSolicitation 
+} from "./fuelCardSolicitationsApi";
 import { runSupabaseDiagnostic } from "./supabaseDiagnostic";
 import { compareSchemas } from "./compareSchemas";
 import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
