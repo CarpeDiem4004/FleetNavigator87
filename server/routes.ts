@@ -46,10 +46,24 @@ const isAdmin = (req: Request, res: Response, next: NextFunction) => {
 // Middleware para verificar se o usuário tem permissão para acessar funcionalidades de manutenção
 // Permite acesso para usuários com role='admin' ou baseId=12 (Gestão de Frotas)
 const hasMaintenanceAccess = (req: Request, res: Response, next: NextFunction) => {
-  if (req.isAuthenticated() && req.user && (req.user.role === 'admin' || req.user.baseId === 12 || req.user.role === 'oficina')) {
+  // Verifica se o usuário está autenticado e tem permissão de acesso a manutenção
+  if (req.isAuthenticated() && req.user && (
+      req.user.role === 'admin' || 
+      req.user.role === 'gestor' || 
+      req.user.baseId === 12 || 
+      req.user.role === 'oficina'
+    )) {
     return next();
   }
-  res.status(403).json({ message: "Acesso negado. Permissão de gestão de frotas, admin ou oficina necessária." });
+  
+  console.log("Acesso negado a recurso de manutenção:", {
+    autenticado: req.isAuthenticated(),
+    role: req.user?.role,
+    baseId: req.user?.baseId,
+    url: req.originalUrl
+  });
+  
+  res.status(403).json({ message: "Acesso negado. Permissão de gestão de frotas, admin, gestor ou oficina necessária." });
 };
 
 // Middleware para verificar se o usuário tem permissão para acessar funcionalidades de pneus
