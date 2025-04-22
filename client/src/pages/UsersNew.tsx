@@ -48,58 +48,7 @@ interface User {
 }
 
 // Dados mockados para a tabela de usuários
-const mockUsers: User[] = [
-  {
-    id: 1,
-    name: 'Admin Master',
-    email: 'master@muricionfleet.com',
-    role: 'admin',
-    baseId: null,
-    baseName: null,
-    lastLogin: '2025-04-15T10:30:00Z',
-    isActive: true
-  },
-  {
-    id: 2,
-    name: 'João Silva',
-    email: 'joao@muricionfleet.com',
-    role: 'gestor',
-    baseId: 1,
-    baseName: 'Multas',
-    lastLogin: '2025-04-14T14:15:00Z',
-    isActive: true
-  },
-  {
-    id: 3,
-    name: 'Carlos Santos',
-    email: 'carlos@muricionfleet.com',
-    role: 'operador',
-    baseId: 2,
-    baseName: 'Pneus',
-    lastLogin: '2025-04-15T08:45:00Z',
-    isActive: true
-  },
-  {
-    id: 4,
-    name: 'Ana Souza',
-    email: 'ana@muricionfleet.com',
-    role: 'gestor',
-    baseId: 3,
-    baseName: 'Line Hall',
-    lastLogin: '2025-04-10T09:20:00Z',
-    isActive: true
-  },
-  {
-    id: 5,
-    name: 'Marcos Oliveira',
-    email: 'marcos@muricionfleet.com',
-    role: 'operador',
-    baseId: 4,
-    baseName: 'Gestão de Frotas',
-    lastLogin: '2025-04-13T11:35:00Z',
-    isActive: true
-  }
-];
+// Interface para as bases
 
 // Interface para as bases
 interface Base {
@@ -168,7 +117,6 @@ const generateRandomPassword = (length: number = 8): string => {
 };
 
 const UsersNew: React.FC = () => {
-  const [users, setUsers] = useState<User[]>(mockUsers);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -180,6 +128,12 @@ const UsersNew: React.FC = () => {
     baseName: null,
     lastLogin: null,
     isActive: true
+  });
+  
+  // Buscar usuários da API
+  const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
+    queryKey: ['/api/users'],
+    staleTime: 10000, // Considerar stale após 10 segundos para permitir atualizações frequentes
   });
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -268,6 +222,12 @@ const UsersNew: React.FC = () => {
         variant: "destructive"
       });
     }
+  };
+
+  // Atualizar lista de usuários após adicionar um novo ou resetar senha
+  const handleUserDataChanged = () => {
+    // Invalidar a query para forçar uma nova requisição e atualizar os dados
+    queryClient.invalidateQueries({ queryKey: ['/api/users'] });
   };
 
   // Adicionar novo usuário
