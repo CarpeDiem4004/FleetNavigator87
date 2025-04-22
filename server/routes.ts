@@ -231,16 +231,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/bases", isAdmin, async (req, res) => {
     try {
+      console.log("POST /api/bases - Dados recebidos:", req.body);
+      
       const result = insertBaseSchema.safeParse(req.body);
       if (!result.success) {
+        console.error("Erro de validação dos dados da base:", result.error.format());
         return res.status(400).json({ message: "Invalid base data", errors: result.error.format() });
       }
       
+      console.log("Dados validados com sucesso, criando base...");
       const newBase = await storage.createBase(result.data);
+      console.log("Base criada com sucesso:", newBase);
       return res.status(201).json(newBase);
     } catch (error) {
-      console.error("Error creating base:", error);
-      return res.status(500).json({ message: "Server error" });
+      console.error("Erro detalhado ao criar base:", error);
+      return res.status(500).json({ message: "Server error", error: String(error) });
     }
   });
   
