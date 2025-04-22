@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MainLayoutSimple } from '@/components/layout/MainLayoutSimple';
+import MainLayoutSimple from '@/components/layouts/MainLayoutSimple';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';

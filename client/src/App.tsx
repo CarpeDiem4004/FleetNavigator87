@@ -49,7 +49,7 @@ import MaintenancePage from "@/pages/fleet-management/MaintenancePage";
 import BudgetManagementPage from "@/pages/fleet-management/BudgetManagementPage";
 import InventoryPage from "@/pages/fleet-management/InventoryPage";
 import TiresEntrada from "@/pages/TiresEntrada";
-// LineHallShopee removido conforme solicitação
+import LineHallShopeePage from "@/pages/LineHallShopeePage";
 import DriverChecklist from "@/pages/DriverChecklist";
 import DriversPage from "@/pages/DriversPage";
 import ManutencaoPage from "@/pages/ManutencaoPage";
@@ -132,7 +132,7 @@ function App() {
           <ProtectedRoute path="/diagnostico/api-tester" component={ApiTester} />
           <ProtectedRoute path="/admin/utils" component={AdminUtils} />
           <ProtectedRoute path="/limpar-dados" component={LimparDados} />
-          {/* Line Hall Shopee removido conforme solicitação */}
+          <ProtectedRoute path="/line-hall-shopee" component={LineHallShopeePage} />
           <ProtectedRoute path="/drivers" component={DriversPage} />
           <ProtectedRoute path="/manutencao" component={ManutencaoPage} />
           <ProtectedRoute path="/tratativa-manutencao" component={TratativaManutencaoPage} />
