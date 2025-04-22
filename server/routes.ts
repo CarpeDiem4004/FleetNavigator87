@@ -6,8 +6,10 @@ import {
   insertWorkshopSchema, insertTireSchema, insertRefuelingSchema, 
   insertFineSchema, insertLineHallSchema, insertUserSchema,
   insertMaintenanceChatSchema, insertChatMessageSchema,
+  insertBaseRequestSchema, insertBaseRequestUpdateSchema, 
   type InsertWorkshop, type InsertUser, type InsertMaintenance,
-  type InsertMaintenanceChat, type InsertChatMessage
+  type InsertMaintenanceChat, type InsertChatMessage,
+  type InsertBaseRequest, type InsertBaseRequestUpdate
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import { getDashboardKPIs, getPainelPrincipal } from "./dashboardApi";
@@ -2767,6 +2769,258 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({
         message: "Erro ao redefinir senha",
         error: error.message
+      });
+    }
+  });
+
+  // Rotas para solicitações das bases (base_requests)
+  // Criar uma nova solicitação
+  app.post("/api/base-requests", isAuthenticated, async (req, res) => {
+    try {
+      console.log("POST /api/base-requests - Dados recebidos:", req.body);
+      
+      if (!req.user) {
+        return res.status(401).json({ message: "Usuário não autenticado" });
+      }
+      
+      // Validar dados da solicitação
+      const result = insertBaseRequestSchema.safeParse(req.body);
+      if (!result.success) {
+        console.error("Erro de validação:", result.error.format());
+        return res.status(400).json({ 
+          message: "Dados de solicitação inválidos", 
+          errors: result.error.format() 
+        });
+      }
+      
+      // Garantir que o usuário solicitante seja o usuário logado
+      const requestData = {
+        ...result.data,
+        requesterUserId: req.user.id
+      };
+      
+      // Criar a solicitação
+      const newRequest = await storage.createBaseRequest(requestData);
+      
+      // Registrar a primeira atualização da solicitação (criação)
+      await storage.createBaseRequestUpdate({
+        requestId: newRequest.id,
+        userId: req.user.id,
+        userName: req.user.name,
+        userRole: req.user.role,
+        message: "Solicitação criada",
+        newStatus: "pendente"
+      });
+      
+      console.log("Solicitação criada com sucesso:", newRequest);
+      return res.status(201).json(newRequest);
+    } catch (error: any) {
+      console.error("Erro ao criar solicitação:", error);
+      return res.status(500).json({ 
+        message: "Erro ao criar solicitação", 
+        error: error.message 
+      });
+    }
+  });
+  
+  // Listar solicitações de uma base específica
+  app.get("/api/bases/:baseId/requests", isAuthenticated, hasBaseAccess, async (req, res) => {
+    try {
+      const baseId = parseInt(req.params.baseId);
+      const requests = await storage.getBaseRequestsByBase(baseId);
+      return res.status(200).json(requests);
+    } catch (error: any) {
+      console.error("Erro ao buscar solicitações da base:", error);
+      return res.status(500).json({ 
+        message: "Erro ao buscar solicitações", 
+        error: error.message 
+      });
+    }
+  });
+  
+  // Listar solicitações por tipo
+  app.get("/api/base-requests/by-type/:requestType", isAuthenticated, async (req, res) => {
+    try {
+      // Verificar se o usuário tem permissão para ver este tipo de solicitação
+      // Por exemplo, apenas usuários de pneus podem ver solicitações do tipo 'pneus'
+      const requestType = req.params.requestType;
+      
+      if (requestType === 'pneus' && req.user?.role !== 'pneus' && req.user?.role !== 'admin') {
+        return res.status(403).json({ message: "Sem permissão para acessar solicitações de pneus" });
+      }
+      
+      if (requestType === 'manutencao' && !['admin', 'gestor'].includes(req.user?.role || '') && req.user?.baseId !== 12) {
+        return res.status(403).json({ message: "Sem permissão para acessar solicitações de manutenção" });
+      }
+      
+      const requests = await storage.getBaseRequestsByType(requestType);
+      return res.status(200).json(requests);
+    } catch (error: any) {
+      console.error("Erro ao buscar solicitações por tipo:", error);
+      return res.status(500).json({ 
+        message: "Erro ao buscar solicitações", 
+        error: error.message 
+      });
+    }
+  });
+  
+  // Obter uma solicitação específica por ID
+  app.get("/api/base-requests/:id", isAuthenticated, async (req, res) => {
+    try {
+      const requestId = parseInt(req.params.id);
+      const request = await storage.getBaseRequest(requestId);
+      
+      if (!request) {
+        return res.status(404).json({ message: "Solicitação não encontrada" });
+      }
+      
+      // Verificar permissão do usuário para acessar esta solicitação
+      // Apenas admins, ou usuários da mesma base da solicitação, ou responsáveis atribuídos podem ver
+      if (req.user?.role !== 'admin' && 
+          req.user?.baseId !== request.baseId && 
+          req.user?.id !== request.assignedUserId &&
+          req.user?.id !== request.requesterUserId) {
+        return res.status(403).json({ message: "Sem permissão para acessar esta solicitação" });
+      }
+      
+      // Buscar também as atualizações/tratativas desta solicitação
+      const updates = await storage.getBaseRequestUpdates(requestId);
+      
+      return res.status(200).json({
+        request,
+        updates
+      });
+    } catch (error: any) {
+      console.error("Erro ao buscar detalhes da solicitação:", error);
+      return res.status(500).json({ 
+        message: "Erro ao buscar detalhes da solicitação", 
+        error: error.message 
+      });
+    }
+  });
+  
+  // Atualizar status de uma solicitação
+  app.patch("/api/base-requests/:id/status", isAuthenticated, async (req, res) => {
+    try {
+      const requestId = parseInt(req.params.id);
+      const { status, assignedUserId } = req.body;
+      
+      if (!status) {
+        return res.status(400).json({ message: "Status não informado" });
+      }
+      
+      // Verificar se a solicitação existe
+      const existingRequest = await storage.getBaseRequest(requestId);
+      if (!existingRequest) {
+        return res.status(404).json({ message: "Solicitação não encontrada" });
+      }
+      
+      // Verificar permissão para atualizar esta solicitação
+      if (req.user?.role !== 'admin' && 
+          req.user?.baseId !== existingRequest.baseId && 
+          req.user?.id !== existingRequest.assignedUserId) {
+        return res.status(403).json({ message: "Sem permissão para atualizar esta solicitação" });
+      }
+      
+      // Atualizar o status
+      const updatedRequest = await storage.updateBaseRequestStatus(
+        requestId, 
+        status, 
+        assignedUserId === undefined ? undefined : parseInt(assignedUserId)
+      );
+      
+      if (!updatedRequest) {
+        return res.status(500).json({ message: "Erro ao atualizar status da solicitação" });
+      }
+      
+      // Registrar a atualização
+      await storage.createBaseRequestUpdate({
+        requestId,
+        userId: req.user!.id,
+        userName: req.user!.name,
+        userRole: req.user!.role,
+        message: `Status alterado para "${status}"`,
+        newStatus: status
+      });
+      
+      return res.status(200).json(updatedRequest);
+    } catch (error: any) {
+      console.error("Erro ao atualizar status:", error);
+      return res.status(500).json({ 
+        message: "Erro ao atualizar status", 
+        error: error.message 
+      });
+    }
+  });
+  
+  // Adicionar uma nova atualização/tratativa a uma solicitação
+  app.post("/api/base-requests/:id/updates", isAuthenticated, async (req, res) => {
+    try {
+      const requestId = parseInt(req.params.id);
+      const { message, newStatus, attachmentUrl } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({ message: "Mensagem não informada" });
+      }
+      
+      // Verificar se a solicitação existe
+      const existingRequest = await storage.getBaseRequest(requestId);
+      if (!existingRequest) {
+        return res.status(404).json({ message: "Solicitação não encontrada" });
+      }
+      
+      // Verificar permissão para atualizar esta solicitação
+      if (req.user?.role !== 'admin' && 
+          req.user?.baseId !== existingRequest.baseId && 
+          req.user?.id !== existingRequest.assignedUserId &&
+          req.user?.id !== existingRequest.requesterUserId) {
+        return res.status(403).json({ message: "Sem permissão para adicionar tratativas a esta solicitação" });
+      }
+      
+      // Criar a atualização
+      const newUpdate = await storage.createBaseRequestUpdate({
+        requestId,
+        userId: req.user!.id,
+        userName: req.user!.name,
+        userRole: req.user!.role,
+        message,
+        newStatus,
+        attachmentUrl
+      });
+      
+      // Se foi fornecido um novo status, atualizar também a solicitação
+      if (newStatus) {
+        await storage.updateBaseRequestStatus(requestId, newStatus);
+      }
+      
+      return res.status(201).json(newUpdate);
+    } catch (error: any) {
+      console.error("Erro ao adicionar tratativa:", error);
+      return res.status(500).json({ 
+        message: "Erro ao adicionar tratativa", 
+        error: error.message 
+      });
+    }
+  });
+  
+  // Deletar uma solicitação (apenas para admin)
+  app.delete("/api/base-requests/:id", isAdmin, async (req, res) => {
+    try {
+      const requestId = parseInt(req.params.id);
+      
+      // Tentar excluir a solicitação e suas atualizações
+      const success = await storage.deleteBaseRequest(requestId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Solicitação não encontrada ou erro ao excluir" });
+      }
+      
+      return res.status(200).json({ message: "Solicitação excluída com sucesso" });
+    } catch (error: any) {
+      console.error("Erro ao excluir solicitação:", error);
+      return res.status(500).json({ 
+        message: "Erro ao excluir solicitação", 
+        error: error.message 
       });
     }
   });
