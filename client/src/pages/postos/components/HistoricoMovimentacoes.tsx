@@ -13,11 +13,15 @@ interface HistoricoMovimentacoesProps {
 interface Movimentacao {
   id: number;
   placa: string;
-  tipo_movimento: string;
-  nome_motorista: string;
-  nome_operador: string;
+  tipo_movimento: string | null;
+  nome_motorista: string | null;
+  nome_operador: string | null;
   posto: string;
   created_at: string;
+  motivo?: string | null;
+  data_entrada?: string | null;
+  data_saida?: string | null;
+  motorista?: string | null;
 }
 
 export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ postId, refreshTrigger = 0 }) => {
@@ -90,7 +94,9 @@ export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ 
     return data.toLocaleDateString('pt-BR') + ' ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   };
   
-  const getTipoIcon = (tipo: string) => {
+  const getTipoIcon = (tipo: string | null) => {
+    if (!tipo) return <Settings className="h-4 w-4 text-orange-500" />;
+    
     if (tipo.includes('Entrada')) {
       return <ArrowDownLeft className="h-4 w-4 text-green-500" />;
     } else if (tipo.includes('Saída')) {
@@ -100,7 +106,9 @@ export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ 
     }
   };
   
-  const getTipoBadge = (tipo: string) => {
+  const getTipoBadge = (tipo: string | null) => {
+    if (!tipo) return <Badge variant="outline">Desconhecido</Badge>;
+    
     if (tipo.includes('Entrada')) {
       return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Entrada</Badge>;
     } else if (tipo.includes('Saída para rota')) {

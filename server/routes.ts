@@ -470,11 +470,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data_saida = new Date();
       }
       
+      // Verificar se a tabela tem os campos atualizados
+      try {
+        const checkQuery = `
+          SELECT column_name 
+          FROM information_schema.columns 
+          WHERE table_name = 'movimentacoes_patio' AND column_name = 'nome_motorista';
+        `;
+        
+        const checkResult = await pool.query(checkQuery);
+        
+        if (checkResult.rows.length === 0) {
+          // Alterar a tabela para adicionar os novos campos
+          await pool.query(`
+            ALTER TABLE movimentacoes_patio 
+            ADD COLUMN IF NOT EXISTS nome_motorista TEXT,
+            ADD COLUMN IF NOT EXISTS nome_operador TEXT,
+            ADD COLUMN IF NOT EXISTS tipo_movimento TEXT;
+          `);
+          
+          console.log('Tabela movimentacoes_patio atualizada com novos campos');
+        }
+      } catch (e) {
+        console.error('Erro ao verificar ou atualizar estrutura da tabela:', e);
+        // Continuar mesmo com erro na atualização da estrutura
+      }
+      
       // Inserindo registro no banco
       const query = `
         INSERT INTO movimentacoes_patio 
-        (placa, motorista, data_entrada, data_saida, motivo, posto, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, NOW())
+        (placa, motorista, nome_motorista, nome_operador, tipo_movimento, data_entrada, data_saida, motivo, posto, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
         RETURNING id
       `;
       
@@ -482,7 +508,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const result = await pool.query(query, [
         placa.toUpperCase(),
+        nome_motorista, // Mantemos o campo motorista para compatibilidade
         nome_motorista,
+        nome_operador,
+        tipo_movimento,
         data_entrada,
         data_saida,
         motivo,
