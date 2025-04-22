@@ -521,8 +521,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         motorista_nome,
         local_carregamento,
         local_descarregamento,
-        km_inicial,
-        km_final,
+        horario_carregamento,
         status_viagem,
         data_inicio,
         data_fim,
@@ -531,18 +530,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Validar campos obrigatórios
       if (!placa_cavalo || !placa_carreta_1 || !motorista_id || !motorista_nome || 
-          !local_carregamento || !local_descarregamento || !km_inicial || !km_final || !status_viagem) {
+          !local_carregamento || !local_descarregamento || !status_viagem) {
         return res.status(400).json({
           success: false,
           message: 'Campos obrigatórios não preenchidos'
-        });
-      }
-      
-      // Verificar se km_final é maior que km_inicial
-      if (parseInt(km_final) < parseInt(km_inicial)) {
-        return res.status(400).json({
-          success: false,
-          message: 'O KM final deve ser maior que o KM inicial'
         });
       }
       
@@ -556,8 +547,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           motorista_nome,
           local_carregamento,
           local_descarregamento,
-          km_inicial,
-          km_final,
+          horario_carregamento,
           status_viagem,
           data_inicio,
           data_fim,
@@ -565,7 +555,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           created_at,
           updated_at
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW()
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()
         ) RETURNING id
       `;
       
@@ -577,8 +567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         motorista_nome,
         local_carregamento,
         local_descarregamento,
-        parseInt(km_inicial),
-        parseInt(km_final),
+        horario_carregamento || null,
         status_viagem,
         data_inicio || new Date(),
         data_fim || null,
@@ -620,8 +609,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         motorista_nome,
         local_carregamento,
         local_descarregamento,
-        km_inicial,
-        km_final,
+        horario_carregamento,
         status_viagem,
         data_inicio,
         data_fim,
@@ -654,14 +642,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           motorista_nome = $5,
           local_carregamento = $6,
           local_descarregamento = $7,
-          km_inicial = $8,
-          km_final = $9,
-          status_viagem = $10,
-          data_inicio = $11,
-          data_fim = $12,
-          observacoes = $13,
+          horario_carregamento = $8,
+          status_viagem = $9,
+          data_inicio = $10,
+          data_fim = $11,
+          observacoes = $12,
           updated_at = NOW()
-        WHERE id = $14
+        WHERE id = $13
         RETURNING *
       `;
       
@@ -673,8 +660,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         motorista_nome || checkResult.rows[0].motorista_nome,
         local_carregamento || checkResult.rows[0].local_carregamento,
         local_descarregamento || checkResult.rows[0].local_descarregamento,
-        km_inicial ? parseInt(km_inicial) : checkResult.rows[0].km_inicial,
-        km_final ? parseInt(km_final) : checkResult.rows[0].km_final,
+        horario_carregamento || checkResult.rows[0].horario_carregamento,
         status_viagem || checkResult.rows[0].status_viagem,
         data_inicio || checkResult.rows[0].data_inicio,
         data_fim || checkResult.rows[0].data_fim,

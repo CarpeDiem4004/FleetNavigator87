@@ -8,9 +8,7 @@ CREATE TABLE IF NOT EXISTS line_hall_shopee (
   motorista_nome VARCHAR(100) NOT NULL,
   local_carregamento VARCHAR(255) NOT NULL,
   local_descarregamento VARCHAR(255) NOT NULL,
-  km_inicial INTEGER NOT NULL,
-  km_final INTEGER NOT NULL,
-  distancia_percorrida INTEGER GENERATED ALWAYS AS (km_final - km_inicial) STORED,
+  horario_carregamento TIME,
   status_viagem VARCHAR(50) NOT NULL,
   data_inicio TIMESTAMP NOT NULL DEFAULT NOW(),
   data_fim TIMESTAMP,
@@ -33,9 +31,7 @@ COMMENT ON COLUMN line_hall_shopee.motorista_id IS 'ID do motorista';
 COMMENT ON COLUMN line_hall_shopee.motorista_nome IS 'Nome do motorista';
 COMMENT ON COLUMN line_hall_shopee.local_carregamento IS 'Local de carregamento';
 COMMENT ON COLUMN line_hall_shopee.local_descarregamento IS 'Local de descarregamento';
-COMMENT ON COLUMN line_hall_shopee.km_inicial IS 'Quilometragem inicial do veículo';
-COMMENT ON COLUMN line_hall_shopee.km_final IS 'Quilometragem final do veículo';
-COMMENT ON COLUMN line_hall_shopee.distancia_percorrida IS 'Distância percorrida durante a viagem (km_final - km_inicial)';
+COMMENT ON COLUMN line_hall_shopee.horario_carregamento IS 'Horário de carregamento da carreta';
 COMMENT ON COLUMN line_hall_shopee.status_viagem IS 'Status da viagem (Concluída, No Show, Cancelada pelo Cliente)';
 COMMENT ON COLUMN line_hall_shopee.data_inicio IS 'Data de início da viagem';
 COMMENT ON COLUMN line_hall_shopee.data_fim IS 'Data de finalização da viagem';
