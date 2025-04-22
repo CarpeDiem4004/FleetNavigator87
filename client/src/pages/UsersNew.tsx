@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
+import { getQueryFn } from '@/lib/queryClient';
 import { 
   Loader2, Search, Plus, KeyRound, FileEdit, 
   Trash2, UserX, UserCircle2, RefreshCw, 
@@ -139,6 +140,7 @@ const UsersNew: React.FC = () => {
   const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
     queryKey: ['/api/users'],
     staleTime: 10000, // Considerar stale após 10 segundos para permitir atualizações frequentes
+    queryFn: getQueryFn({ on401: "returnNull" }), // Adicionado para lidar com erros 401
   });
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -150,7 +152,8 @@ const UsersNew: React.FC = () => {
   
   // Buscar bases disponíveis usando React Query
   const { data: bases, isLoading: basesLoading } = useQuery<Base[]>({
-    queryKey: ['/api/bases']
+    queryKey: ['/api/bases'],
+    queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
   // Filtrar usuários com base no termo de busca
