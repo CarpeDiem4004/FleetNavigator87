@@ -21,9 +21,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
-import { CircleCheck, AlertCircle, Info, Truck, CheckSquare, XCircle, Wrench as Tool, CreditCard } from "lucide-react";
+import { 
+  CircleCheck, 
+  AlertCircle, 
+  Info, 
+  Truck, 
+  CheckSquare, 
+  XCircle, 
+  Wrench as Tool, 
+  CreditCard, 
+  Camera, 
+  Upload, 
+  FileWarning,
+  ShieldAlert
+} from "lucide-react";
 
 // Tipos de condição para componentes do veículo
 type Condition = 'bom' | 'regular' | 'ruim' | undefined;
@@ -73,6 +99,7 @@ interface RefuelingCardRequest {
   numeroCartao?: string;
   valorSolicitado: number;
   justificativa: string;
+  comprovante?: string;
 }
 
 // Componente para condição com ícones de cor
@@ -130,6 +157,8 @@ const DriverChecklist: React.FC = () => {
   const [checklist, setChecklist] = useState<Checklist>({
     tripId: 0,
     motoristaNome: '',
+    avarias: [],
+    fotos: [],
     isChecklistInicial: true
   });
   
@@ -144,6 +173,22 @@ const DriverChecklist: React.FC = () => {
     valorSolicitado: 0,
     justificativa: ''
   });
+  
+  // Estado para upload de imagens
+  const [uploading, setUploading] = useState(false);
+  const [avisoAvaria, setAvisoAvaria] = useState<string>('');
+  const [avariasOptions] = useState([
+    { id: 'amassado_frontal', label: 'Amassado na parte frontal' },
+    { id: 'amassado_lateral', label: 'Amassado na lateral' },
+    { id: 'amassado_traseiro', label: 'Amassado na parte traseira' },
+    { id: 'arranhao', label: 'Arranhão na pintura' },
+    { id: 'farol_quebrado', label: 'Farol/lanterna quebrado' },
+    { id: 'retrovisor_quebrado', label: 'Retrovisor quebrado/danificado' },
+    { id: 'para_choque_danificado', label: 'Para-choque danificado' },
+    { id: 'pneu_danificado', label: 'Pneu danificado' },
+    { id: 'vidro_trincado', label: 'Vidro trincado/quebrado' },
+    { id: 'outro', label: 'Outro (descrever nas observações)' }
+  ]);
 
   useEffect(() => {
     // Extrair o ID da viagem da URL
@@ -293,6 +338,131 @@ const DriverChecklist: React.FC = () => {
     return true;
   };
 
+  // Função para fazer upload de uma imagem
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) {
+      return;
+    }
+    
+    const file = e.target.files[0];
+    setUploading(true);
+    
+    try {
+      // Criar um nome único para o arquivo usando o ID da viagem e timestamp
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${tripId}_${Date.now()}.${fileExt}`;
+      const filePath = `checklist-fotos/${fileName}`;
+      
+      // Upload do arquivo para o Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('uploads')
+        .upload(filePath, file);
+        
+      if (uploadError) throw uploadError;
+      
+      // Obter URL pública do arquivo
+      const { data } = supabase.storage
+        .from('uploads')
+        .getPublicUrl(filePath);
+        
+      if (data) {
+        // Adicionar URL à lista de fotos do checklist
+        setChecklist(prev => ({
+          ...prev,
+          fotos: [...prev.fotos, data.publicUrl]
+        }));
+        
+        toast({
+          title: 'Imagem enviada',
+          description: 'A foto foi adicionada ao checklist',
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao fazer upload da imagem:', error);
+      toast({
+        title: 'Erro no upload',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+      // Limpar o input de arquivo
+      if (e.target) {
+        e.target.value = '';
+      }
+    }
+  };
+  
+  // Função para adicionar ou remover uma avaria da lista
+  const toggleAvaria = (avariaId: string) => {
+    setChecklist(prev => {
+      const avarias = [...prev.avarias];
+      
+      if (avarias.includes(avariaId)) {
+        // Remover avaria se já estiver na lista
+        return { ...prev, avarias: avarias.filter(id => id !== avariaId) };
+      } else {
+        // Adicionar avaria se não estiver na lista
+        return { ...prev, avarias: [...avarias, avariaId] };
+      }
+    });
+  };
+  
+  // Função para anexar uma imagem para solicitação de recarga de cartão
+  const handleCardReceiptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) {
+      return;
+    }
+    
+    const file = e.target.files[0];
+    setUploading(true);
+    
+    try {
+      // Criar um nome único para o arquivo usando o ID da viagem e timestamp
+      const fileExt = file.name.split('.').pop();
+      const fileName = `cartao_${tripId}_${Date.now()}.${fileExt}`;
+      const filePath = `recarga-comprovantes/${fileName}`;
+      
+      // Upload do arquivo para o Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('uploads')
+        .upload(filePath, file);
+        
+      if (uploadError) throw uploadError;
+      
+      // Obter URL pública do arquivo
+      const { data } = supabase.storage
+        .from('uploads')
+        .getPublicUrl(filePath);
+        
+      if (data) {
+        // Atualizar o request com o URL do comprovante
+        setRefuelingRequest(prev => ({
+          ...prev,
+          comprovante: data.publicUrl
+        }));
+        
+        toast({
+          title: 'Comprovante enviado',
+          description: 'O comprovante foi anexado à solicitação',
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao fazer upload do comprovante:', error);
+      toast({
+        title: 'Erro no upload',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+      // Limpar o input de arquivo
+      if (e.target) {
+        e.target.value = '';
+      }
+    }
+  };
+
   // Função para enviar o checklist e as solicitações
   const submitChecklist = async () => {
     if (!validateChecklist()) return;
@@ -314,6 +484,10 @@ const DriverChecklist: React.FC = () => {
           condicao_parabrisa: checklist.condicaoParabrisa,
           nivel_oleo: checklist.nivelOleo,
           nivel_agua: checklist.nivelAgua,
+          condicao_cavalo: checklist.condicaoCavalo,
+          condicao_carreta: checklist.condicaoCarreta,
+          avarias: checklist.avarias,
+          fotos: checklist.fotos,
           observacoes: checklist.observacoes,
           status: 'concluido',
           checklist_inicial: checklist.isChecklistInicial,
@@ -369,6 +543,7 @@ const DriverChecklist: React.FC = () => {
             numero_cartao: refuelingRequest.numeroCartao,
             valor_solicitado: refuelingRequest.valorSolicitado,
             justificativa: refuelingRequest.justificativa,
+            comprovante: refuelingRequest.comprovante,
             status: 'pendente'
           });
           
@@ -580,54 +755,172 @@ const DriverChecklist: React.FC = () => {
               <CardDescription>Verifique as condições do veículo</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ConditionSelect
-                  label="Condição dos Pneus"
-                  value={checklist.condicaoPneus}
-                  onChange={(value) => setChecklist(prev => ({ ...prev, condicaoPneus: value }))}
-                />
-                
-                <ConditionSelect
-                  label="Condição das Luzes"
-                  value={checklist.condicaoLuzes}
-                  onChange={(value) => setChecklist(prev => ({ ...prev, condicaoLuzes: value }))}
-                />
-                
-                <ConditionSelect
-                  label="Condição dos Freios"
-                  value={checklist.condicaoFreios}
-                  onChange={(value) => setChecklist(prev => ({ ...prev, condicaoFreios: value }))}
-                />
-                
-                <ConditionSelect
-                  label="Condição do Para-brisa"
-                  value={checklist.condicaoParabrisa}
-                  onChange={(value) => setChecklist(prev => ({ ...prev, condicaoParabrisa: value }))}
-                />
-                
-                <ConditionSelect
-                  label="Nível de Óleo"
-                  value={checklist.nivelOleo}
-                  onChange={(value) => setChecklist(prev => ({ ...prev, nivelOleo: value }))}
-                />
-                
-                <ConditionSelect
-                  label="Nível de Água"
-                  value={checklist.nivelAgua}
-                  onChange={(value) => setChecklist(prev => ({ ...prev, nivelAgua: value }))}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="observations">Observações</Label>
-                <Textarea
-                  id="observations"
-                  placeholder="Descreva observações adicionais sobre o estado do veículo..."
-                  value={checklist.observacoes || ''}
-                  onChange={(e) => setChecklist(prev => ({ ...prev, observacoes: e.target.value }))}
-                  rows={4}
-                />
-              </div>
+              <Tabs defaultValue="condicoes" className="w-full">
+                <TabsList className="grid grid-cols-3 mb-4">
+                  <TabsTrigger value="condicoes">Condições</TabsTrigger>
+                  <TabsTrigger value="avarias">Avarias</TabsTrigger>
+                  <TabsTrigger value="fotos">Fotos</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="condicoes" className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ConditionSelect
+                      label="Condição dos Pneus"
+                      value={checklist.condicaoPneus}
+                      onChange={(value) => setChecklist(prev => ({ ...prev, condicaoPneus: value }))}
+                    />
+                    
+                    <ConditionSelect
+                      label="Condição das Luzes"
+                      value={checklist.condicaoLuzes}
+                      onChange={(value) => setChecklist(prev => ({ ...prev, condicaoLuzes: value }))}
+                    />
+                    
+                    <ConditionSelect
+                      label="Condição dos Freios"
+                      value={checklist.condicaoFreios}
+                      onChange={(value) => setChecklist(prev => ({ ...prev, condicaoFreios: value }))}
+                    />
+                    
+                    <ConditionSelect
+                      label="Condição do Para-brisa"
+                      value={checklist.condicaoParabrisa}
+                      onChange={(value) => setChecklist(prev => ({ ...prev, condicaoParabrisa: value }))}
+                    />
+                    
+                    <ConditionSelect
+                      label="Nível de Óleo"
+                      value={checklist.nivelOleo}
+                      onChange={(value) => setChecklist(prev => ({ ...prev, nivelOleo: value }))}
+                    />
+                    
+                    <ConditionSelect
+                      label="Nível de Água"
+                      value={checklist.nivelAgua}
+                      onChange={(value) => setChecklist(prev => ({ ...prev, nivelAgua: value }))}
+                    />
+
+                    <ConditionSelect
+                      label="Condição do Cavalo Mecânico"
+                      value={checklist.condicaoCavalo}
+                      onChange={(value) => setChecklist(prev => ({ ...prev, condicaoCavalo: value }))}
+                    />
+                    
+                    <ConditionSelect
+                      label="Condição da Carreta"
+                      value={checklist.condicaoCarreta}
+                      onChange={(value) => setChecklist(prev => ({ ...prev, condicaoCarreta: value }))}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="observations">Observações</Label>
+                    <Textarea
+                      id="observations"
+                      placeholder="Descreva observações adicionais sobre o estado do veículo..."
+                      value={checklist.observacoes || ''}
+                      onChange={(e) => setChecklist(prev => ({ ...prev, observacoes: e.target.value }))}
+                      rows={4}
+                    />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="avarias" className="space-y-4">
+                  <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 mb-4 flex items-start">
+                    <ShieldAlert className="h-5 w-5 text-amber-600 mr-2 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-amber-800 font-medium">
+                        Registro de Avarias
+                      </p>
+                      <p className="text-xs text-amber-700">
+                        Selecione todas as avarias identificadas no veículo. Recomendamos adicionar fotos de cada avaria na aba "Fotos".
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {avariasOptions.map((avaria) => (
+                      <div key={avaria.id} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={avaria.id} 
+                          checked={checklist.avarias.includes(avaria.id)}
+                          onCheckedChange={() => toggleAvaria(avaria.id)}
+                        />
+                        <label
+                          htmlFor={avaria.id}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          {avaria.label}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+
+                  {checklist.avarias.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <Label htmlFor="damage-observations">Detalhes das Avarias</Label>
+                      <Textarea
+                        id="damage-observations"
+                        placeholder="Descreva em detalhes as avarias identificadas..."
+                        value={avisoAvaria}
+                        onChange={(e) => setAvisoAvaria(e.target.value)}
+                        rows={3}
+                      />
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="fotos" className="space-y-4">
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="flex items-center mb-2">
+                      <Camera className="h-5 w-5 mr-2 text-blue-600" />
+                      <h3 className="font-medium text-gray-900">Adicionar Fotos</h3>
+                    </div>
+                    <p className="text-sm text-gray-500 mb-3">
+                      Adicione fotos do veículo, especialmente de qualquer avaria identificada
+                    </p>
+
+                    <div className="flex items-center justify-center w-full">
+                      <label htmlFor="image-upload" className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 border-gray-300">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          <Upload className="w-8 h-8 mb-2 text-gray-400" />
+                          <p className="mb-2 text-sm text-gray-500">
+                            Clique para enviar foto{" "}
+                            <span className="font-semibold">ou arraste e solte</span>
+                          </p>
+                          <p className="text-xs text-gray-500">PNG, JPG ou JPEG</p>
+                        </div>
+                        <input 
+                          id="image-upload" 
+                          type="file" 
+                          accept="image/*"
+                          className="hidden" 
+                          onChange={handleImageUpload}
+                          disabled={uploading}
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Mostrar fotos enviadas */}
+                  {checklist.fotos.length > 0 && (
+                    <div className="mt-4">
+                      <h3 className="text-sm font-medium mb-2">Fotos Enviadas ({checklist.fotos.length})</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {checklist.fotos.map((foto, index) => (
+                          <div key={index} className="relative aspect-square overflow-hidden rounded-md border border-gray-200">
+                            <img 
+                              src={foto} 
+                              alt={`Foto ${index + 1}`} 
+                              className="object-cover w-full h-full" 
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
             </CardContent>
             <CardFooter className="flex justify-between">
               <Button variant="outline" onClick={prevStep}>Voltar</Button>
@@ -750,6 +1043,68 @@ const DriverChecklist: React.FC = () => {
                           onChange={(e) => setRefuelingRequest(prev => ({ ...prev, justificativa: e.target.value }))}
                           rows={3}
                         />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Anexar Comprovante</Label>
+                        <div className="border border-dashed border-gray-300 rounded-md p-4">
+                          <div className="flex items-center justify-center flex-col">
+                            <FileWarning className="h-8 w-8 text-blue-500 mb-2" />
+                            <p className="text-sm text-gray-500 mb-2 text-center">
+                              Anexe uma foto do comprovante de abastecimento ou nota fiscal
+                            </p>
+                            <label htmlFor="receipt-upload" className="inline-flex cursor-pointer">
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm"
+                                disabled={uploading}
+                              >
+                                {uploading ? (
+                                  <span className="flex items-center">
+                                    <span className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" />
+                                    Enviando...
+                                  </span>
+                                ) : (
+                                  <span className="flex items-center">
+                                    <Upload className="h-4 w-4 mr-2" />
+                                    Selecionar Arquivo
+                                  </span>
+                                )}
+                              </Button>
+                              <input 
+                                id="receipt-upload" 
+                                type="file" 
+                                accept="image/*"
+                                className="hidden" 
+                                onChange={handleCardReceiptUpload}
+                                disabled={uploading}
+                              />
+                            </label>
+                          </div>
+                          
+                          {refuelingRequest.comprovante && (
+                            <div className="mt-3 flex items-center justify-center">
+                              <div className="relative w-32 h-32 border border-gray-200 rounded overflow-hidden">
+                                <img 
+                                  src={refuelingRequest.comprovante} 
+                                  alt="Comprovante" 
+                                  className="object-cover w-full h-full" 
+                                />
+                                <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm"
+                                    onClick={() => setRefuelingRequest(prev => ({ ...prev, comprovante: undefined }))}
+                                    className="w-8 h-8 p-0"
+                                  >
+                                    <XCircle className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
