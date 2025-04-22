@@ -372,14 +372,14 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       // Dados formatados para inserção
       const abastecimentoData = {
         placa: data.placa.toUpperCase(),
-        km: Number(data.km),
-        tipo: data.tipo,
-        quantidade: Number(data.quantidade),
-        projeto: data.projeto,
-        motorista: data.motorista,
-        operador: data.operador,
-        posto: formatPosto(postId), // Use o campo 'posto' em vez de 'posto_id'
-        data_registro: new Date().toISOString()
+        km_atual: Number(data.km),
+        tipo_combustivel: data.tipo,
+        litros: Number(data.quantidade),
+        project: data.projeto,
+        nome_motorista: data.motorista,
+        nome_operador: data.operador,
+        posto: formatPosto(postId) // Use o campo 'posto' em vez de 'posto_id'
+        // Removido o data_registro - será gerado automaticamente no banco de dados com NOW()
       };
       
       // Verificação de conexão
@@ -443,20 +443,20 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
           try {
             console.log('Tentativa 3.1: Via API local');
             
-            // Enviamos para uma rota de API local que fará o trabalho
+            // Enviamos para a rota de API local que fará o trabalho
             const localResponse = await fetch('/api/registro/abastecimento', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               credentials: 'include', // Envia os cookies de autenticação
               body: JSON.stringify({
                 placa: abastecimentoData.placa,
-                km: Number(data.km),
-                tipo: data.tipo,
-                quantidade: Number(data.quantidade),
-                projeto: abastecimentoData.projeto,
-                motorista: abastecimentoData.motorista,
-                operador: abastecimentoData.operador,
-                posto: formatPosto(postId) // Use "posto" em vez de "posto_id"
+                km: abastecimentoData.km_atual,
+                tipo: abastecimentoData.tipo_combustivel,
+                quantidade: abastecimentoData.litros,
+                projeto: data.projeto,
+                motorista: data.motorista,
+                operador: data.operador,
+                posto: abastecimentoData.posto // Use "posto" em vez de "posto_id"
               })
             });
             
