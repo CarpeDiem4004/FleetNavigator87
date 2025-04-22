@@ -28,12 +28,18 @@ const HistoricoPatioPage: React.FC = () => {
       console.log("[FETCH] Buscando todas as movimentações de pátio");
       
       // Buscar todas as movimentações sem filtro de posto
-      const data = await fetchRecords('movimentacoes_patio', {
+      const response = await fetchRecords('movimentacoes_patio', {
         limit: 500 // Aumentamos o limite para trazer mais registros
       });
       
-      console.log("[FETCH] Dados recuperados:", data.length);
-      setMovimentacoes(data);
+      // Verificar se os dados são válidos e um array
+      if (response && response.success && Array.isArray(response.data)) {
+        console.log("[FETCH] Dados recuperados:", response.data.length);
+        setMovimentacoes(response.data);
+      } else {
+        console.error("[FETCH] Dados inválidos recebidos:", response);
+        setMovimentacoes([]);
+      }
     } catch (error) {
       console.error('Erro ao buscar histórico de movimentações de pátio:', error);
       setMovimentacoes([]);

@@ -180,9 +180,57 @@ async function criarTabelaAbastecimentos() {
   }
 }
 
+// Função para criar tabela de movimentações de pátio se não existir
+async function criarTabelaMovimentacoesPatio() {
+  try {
+    console.log("Verificando se a tabela movimentacoes_patio existe...");
+    
+    // Verificar se a tabela já existe
+    const checkQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'movimentacoes_patio'
+      );
+    `;
+    
+    const checkResult = await pool.query(checkQuery);
+    const tabelaExiste = checkResult.rows[0].exists;
+    
+    if (tabelaExiste) {
+      console.log("Tabela movimentacoes_patio já existe, pulando criação.");
+      return;
+    }
+    
+    console.log("Criando tabela movimentacoes_patio...");
+    
+    // Criar tabela
+    const createTableQuery = `
+      CREATE TABLE movimentacoes_patio (
+        id SERIAL PRIMARY KEY,
+        placa TEXT NOT NULL,
+        tipo_veiculo TEXT,
+        motorista TEXT NOT NULL,
+        data_entrada TIMESTAMP NOT NULL,
+        data_saida TIMESTAMP,
+        motivo TEXT,
+        observacoes TEXT,
+        posto TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+    
+    await pool.query(createTableQuery);
+    console.log("Tabela movimentacoes_patio criada com sucesso!");
+    
+  } catch (error) {
+    console.error("Erro ao criar tabela movimentacoes_patio:", error);
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Criar tabela de abastecimentos se não existir
+  // Criar tabelas necessárias se não existirem
   await criarTabelaAbastecimentos();
+  await criarTabelaMovimentacoesPatio();
   // Rota para verificação de abastecimentos no banco
   app.get('/api/diagnostico/abastecimentos/:posto', async (req, res) => {
     try {
