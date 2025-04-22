@@ -101,6 +101,8 @@ const FuelCardHistory: React.FC = () => {
         return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><CheckCircle2 className="w-3 h-3 mr-1" /> Aprovado</span>;
       case 'rejeitado':
         return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"><XCircle className="w-3 h-3 mr-1" /> Rejeitado</span>;
+      case 'processado':
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"><CircleCheck className="w-3 h-3 mr-1" /> Processado</span>;
       case 'pendente':
       default:
         return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"><FileText className="w-3 h-3 mr-1" /> Pendente</span>;

@@ -1656,6 +1656,170 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // GET - Obter solicitações aprovadas para processamento
+  app.get('/api/fuel-card/approved', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      // Verifica se o usuário tem permissão (apenas admin ou gestor)
+      if (user.role !== 'admin' && user.role !== 'gestor') {
+        return res.status(403).json({
+          success: false,
+          message: 'Permissão negada: apenas administradores e gestores podem processar solicitações'
+        });
+      }
+      
+      // Consulta solicitações aprovadas que ainda não foram processadas
+      const query = `
+        SELECT fcr.*, b.name as base_name
+        FROM fuel_card_requests fcr
+        LEFT JOIN bases b ON fcr.base_id = b.id
+        WHERE fcr.status = 'aprovado'
+        ORDER BY fcr.approved_at ASC
+      `;
+      
+      const result = await pool.query(query);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        count: result.rowCount || 0
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar solicitações aprovadas:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar solicitações',
+        error: error.message
+      });
+    }
+  });
+  
+  // POST - Processar uma operação de adição de saldo
+  app.post('/api/fuel-card/process', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { requestId, operationDate, confirmationCode, operationNotes } = req.body;
+      
+      // Verifica se o usuário tem permissão (apenas admin ou gestor)
+      if (user.role !== 'admin' && user.role !== 'gestor') {
+        return res.status(403).json({
+          success: false,
+          message: 'Permissão negada: apenas administradores e gestores podem processar operações'
+        });
+      }
+      
+      // Valida os dados
+      if (!requestId || !operationDate || !confirmationCode) {
+        return res.status(400).json({
+          success: false,
+          message: 'Dados inválidos: ID da solicitação, data da operação e código de confirmação são obrigatórios'
+        });
+      }
+      
+      // Verifica se a tabela possui as colunas necessárias para a operação
+      try {
+        const columnsCheck = await pool.query(`
+          SELECT column_name 
+          FROM information_schema.columns 
+          WHERE table_name = 'fuel_card_requests' 
+          AND column_name IN ('processed_by', 'processed_at', 'confirmation_code', 'operation_date', 'operation_notes')
+        `);
+        
+        // Se alguma coluna estiver faltando, vamos adicioná-la
+        if (columnsCheck.rowCount < 5) {
+          console.log('Adicionando colunas necessárias para operações de cartão de combustível');
+          
+          await pool.query(`
+            ALTER TABLE fuel_card_requests
+            ADD COLUMN IF NOT EXISTS processed_by VARCHAR(255),
+            ADD COLUMN IF NOT EXISTS processed_at TIMESTAMP,
+            ADD COLUMN IF NOT EXISTS confirmation_code VARCHAR(255),
+            ADD COLUMN IF NOT EXISTS operation_date DATE,
+            ADD COLUMN IF NOT EXISTS operation_notes TEXT
+          `);
+        }
+      } catch (schemaError) {
+        console.error('Erro ao verificar/atualizar schema para operações:', schemaError);
+        // Continua a execução mesmo se houver erro na verificação do schema
+      }
+      
+      // Busca a solicitação para verificar se existe e se pode ser processada
+      const checkRequest = await pool.query(
+        'SELECT * FROM fuel_card_requests WHERE id = $1',
+        [requestId]
+      );
+      
+      if (checkRequest.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Solicitação não encontrada'
+        });
+      }
+      
+      const request = checkRequest.rows[0];
+      
+      if (request.status !== 'aprovado') {
+        return res.status(400).json({
+          success: false,
+          message: `Solicitação não pode ser processada: status atual é '${request.status}'`
+        });
+      }
+      
+      // Armazena os dados da operação e atualiza o status da solicitação
+      const result = await pool.query(
+        `UPDATE fuel_card_requests 
+         SET status = 'processado', 
+             processed_by = $1, 
+             processed_at = NOW(), 
+             confirmation_code = $2,
+             operation_date = $3,
+             operation_notes = $4,
+             updated_at = NOW()
+         WHERE id = $5
+         RETURNING *`,
+        [user.name, confirmationCode, operationDate, operationNotes || null, requestId]
+      );
+      
+      // Registra a operação no log do sistema (se existir a tabela system_logs)
+      try {
+        await pool.query(
+          `INSERT INTO system_logs 
+           (action, user_id, user_name, data, created_at) 
+           VALUES ($1, $2, $3, $4, NOW())`,
+          [
+            'fuel_card_operation',
+            user.id,
+            user.name,
+            JSON.stringify({
+              requestId,
+              operationDate,
+              confirmationCode,
+              amount: request.amount,
+              cardNumber: request.card_number,
+              plate: request.plate
+            })
+          ]
+        );
+      } catch (logError) {
+        console.warn('Aviso: Não foi possível registrar log da operação (tabela system_logs pode não existir)');
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Operação registrada com sucesso',
+        data: result.rows[0]
+      });
+    } catch (error: any) {
+      console.error('Erro ao processar operação de cartão de combustível:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao processar operação',
+        error: error.message
+      });
+    }
+  });
+  
   // Endpoint para diagnóstico do Supabase
   app.get("/api/diagnostico/supabase", isAdmin, async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
