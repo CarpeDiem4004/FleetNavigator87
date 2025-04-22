@@ -79,8 +79,28 @@ const LineHall: React.FC = () => {
     loadingTime: new Date().toISOString().split('.')[0],
     destination: '',
     tripStatus: 'programada',
-    notes: ''
+    notes: '',
+    driver: '',
+    phone: '',
+    loadingDate: new Date().toISOString().split('T')[0],
+    loadingHour: '08:00',
+    unloadingDate: new Date(Date.now() + 24*60*60*1000).toISOString().split('T')[0],
+    unloadingHour: '16:00',
   });
+  
+  // Lista de motoristas para o recurso de autocompletar
+  const [drivers, setDrivers] = useState([
+    { id: 1, nome: 'João Silva', telefone: '(11) 98765-4321' },
+    { id: 2, nome: 'Carlos Oliveira', telefone: '(11) 97654-3210' },
+    { id: 3, nome: 'Marcos Santos', telefone: '(11) 96543-2109' },
+    { id: 4, nome: 'Roberto Lima', telefone: '(11) 95432-1098' },
+    { id: 5, nome: 'Fernando Pereira', telefone: '(11) 94321-0987' },
+    { id: 6, nome: 'Luiz Costa', telefone: '(11) 93210-9876' },
+  ]);
+  
+  // Estado para armazenar a lista filtrada de motoristas
+  const [filteredDrivers, setFilteredDrivers] = useState<any[]>([]);
+  const [showDriverSuggestions, setShowDriverSuggestions] = useState(false);
   
   const { data: lineHall = [], isLoading } = useQuery<any[]>({
     queryKey: ['/api/line-hall', filters],
@@ -216,7 +236,13 @@ const LineHall: React.FC = () => {
         loadingTime: new Date().toISOString().split('.')[0],
         destination: '',
         tripStatus: 'programada',
-        notes: ''
+        notes: '',
+        driver: '',
+        phone: '',
+        loadingDate: new Date().toISOString().split('T')[0],
+        loadingHour: '08:00',
+        unloadingDate: new Date(Date.now() + 24*60*60*1000).toISOString().split('T')[0],
+        unloadingHour: '16:00',
       });
     },
     onError: (error: Error) => {
@@ -231,12 +257,49 @@ const LineHall: React.FC = () => {
   // Handler para atualizar os campos do novo registro
   const handleNewTripChange = (field: string, value: string) => {
     setNewTrip(prev => ({ ...prev, [field]: value }));
+    
+    // Tratamento especial para o campo de motorista - atualiza sugestões
+    if (field === 'driver') {
+      filterDriversByName(value);
+    }
+  };
+  
+  // Função para filtrar motoristas por nome
+  const filterDriversByName = (search: string) => {
+    if (!search.trim()) {
+      setFilteredDrivers([]);
+      setShowDriverSuggestions(false);
+      return;
+    }
+    
+    const searchLower = search.toLowerCase();
+    const filtered = drivers.filter(driver => 
+      driver.nome.toLowerCase().includes(searchLower)
+    );
+    
+    setFilteredDrivers(filtered);
+    setShowDriverSuggestions(filtered.length > 0);
+  };
+  
+  // Função para selecionar um motorista da lista de sugestões
+  const selectDriver = (driver: any) => {
+    setNewTrip(prev => ({
+      ...prev,
+      driver: driver.nome,
+      phone: driver.telefone
+    }));
+    setShowDriverSuggestions(false);
+  };
+  
+  // Função para combinar data e hora em um único timestamp
+  const combineDateTime = (date: string, time: string) => {
+    return `${date}T${time}:00`;
   };
   
   // Handler para salvar uma nova viagem
   const handleAddTrip = () => {
     // Validar dados obrigatórios
-    if (!newTrip.truckPlate || !newTrip.trailer1Plate || !newTrip.loadingTime || !newTrip.destination) {
+    if (!newTrip.truckPlate || !newTrip.trailer1Plate || !newTrip.loadingDate || !newTrip.loadingHour || !newTrip.destination) {
       toast({
         title: "Dados incompletos",
         description: "Preencha todos os campos obrigatórios (cavalo, carreta 1, data/hora de carregamento e destino).",
@@ -245,8 +308,21 @@ const LineHall: React.FC = () => {
       return;
     }
     
+    // Combinar data e hora de carregamento e descarregamento
+    const tripData: any = {
+      ...newTrip,
+      loadingTime: combineDateTime(newTrip.loadingDate, newTrip.loadingHour),
+      unloadingTime: combineDateTime(newTrip.unloadingDate, newTrip.unloadingHour),
+    };
+    
+    // Remover campos temporários usados apenas no formulário
+    delete tripData.loadingDate;
+    delete tripData.loadingHour;
+    delete tripData.unloadingDate;
+    delete tripData.unloadingHour;
+    
     // Enviar dados para a API
-    addTripMutation.mutate(newTrip);
+    addTripMutation.mutate(tripData);
   };
 
   return (
@@ -528,36 +604,114 @@ const LineHall: React.FC = () => {
               </Select>
             </div>
             
+            {/* Campos de Carregamento */}
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col space-y-1.5">
-                <label htmlFor="loading-time" className="text-sm font-medium">Data/Hora de Carregamento</label>
+                <label htmlFor="loading-date" className="text-sm font-medium">Data de Carregamento</label>
                 <Input 
-                  id="loading-time" 
-                  type="datetime-local" 
-                  value={newTrip.loadingTime}
-                  onChange={(e) => handleNewTripChange('loadingTime', e.target.value)}
+                  id="loading-date" 
+                  type="date" 
+                  value={newTrip.loadingDate}
+                  onChange={(e) => handleNewTripChange('loadingDate', e.target.value)}
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
-                <label htmlFor="status" className="text-sm font-medium">Status</label>
-                <Select
-                  value={newTrip.tripStatus}
-                  onValueChange={(value) => handleNewTripChange('tripStatus', value)}
-                >
-                  <SelectTrigger id="status">
-                    <SelectValue placeholder="Selecione o status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="programada">Programada</SelectItem>
-                      <SelectItem value="carregando">Carregando</SelectItem>
-                      <SelectItem value="aguardando_carga">Aguardando carga</SelectItem>
-                      <SelectItem value="em_transito">Em trânsito</SelectItem>
-                      <SelectItem value="finalizada">Finalizada</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                <label htmlFor="loading-hour" className="text-sm font-medium">Hora de Carregamento</label>
+                <Input 
+                  id="loading-hour" 
+                  type="time" 
+                  value={newTrip.loadingHour}
+                  onChange={(e) => handleNewTripChange('loadingHour', e.target.value)}
+                />
               </div>
+            </div>
+            
+            {/* Campos de Descarregamento */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col space-y-1.5">
+                <label htmlFor="unloading-date" className="text-sm font-medium">Data de Descarregamento</label>
+                <Input 
+                  id="unloading-date" 
+                  type="date" 
+                  value={newTrip.unloadingDate}
+                  onChange={(e) => handleNewTripChange('unloadingDate', e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <label htmlFor="unloading-hour" className="text-sm font-medium">Hora de Descarregamento</label>
+                <Input 
+                  id="unloading-hour" 
+                  type="time" 
+                  value={newTrip.unloadingHour}
+                  onChange={(e) => handleNewTripChange('unloadingHour', e.target.value)}
+                />
+              </div>
+            </div>
+            
+            {/* Campos de Motorista e Telefone */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col space-y-1.5 relative">
+                <label htmlFor="driver" className="text-sm font-medium">Motorista</label>
+                <Input 
+                  id="driver" 
+                  placeholder="Nome do motorista" 
+                  value={newTrip.driver}
+                  onChange={(e) => handleNewTripChange('driver', e.target.value)}
+                  onFocus={() => filterDriversByName(newTrip.driver)}
+                  onBlur={() => {
+                    // Pequeno atraso para permitir clicar nas sugestões
+                    setTimeout(() => setShowDriverSuggestions(false), 200);
+                  }}
+                />
+                
+                {/* Lista de sugestões de motoristas */}
+                {showDriverSuggestions && (
+                  <div className="absolute top-full left-0 w-full mt-1 z-50 bg-white rounded-md shadow-lg border border-gray-200 max-h-48 overflow-y-auto">
+                    {filteredDrivers.map((driver) => (
+                      <div
+                        key={driver.id}
+                        className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                        onMouseDown={(e) => {
+                          e.preventDefault(); // Evita o trigger do onBlur
+                          selectDriver(driver);
+                        }}
+                      >
+                        {driver.nome}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <label htmlFor="phone" className="text-sm font-medium">Telefone</label>
+                <Input 
+                  id="phone" 
+                  placeholder="Telefone do motorista" 
+                  value={newTrip.phone}
+                  onChange={(e) => handleNewTripChange('phone', e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <div className="flex flex-col space-y-1.5">
+              <label htmlFor="status" className="text-sm font-medium">Status</label>
+              <Select
+                value={newTrip.tripStatus}
+                onValueChange={(value) => handleNewTripChange('tripStatus', value)}
+              >
+                <SelectTrigger id="status">
+                  <SelectValue placeholder="Selecione o status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="programada">Programada</SelectItem>
+                    <SelectItem value="carregando">Carregando</SelectItem>
+                    <SelectItem value="aguardando_carga">Aguardando carga</SelectItem>
+                    <SelectItem value="em_transito">Em trânsito</SelectItem>
+                    <SelectItem value="finalizada">Finalizada</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
             
             <div className="flex flex-col space-y-1.5">
