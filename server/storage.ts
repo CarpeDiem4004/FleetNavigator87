@@ -380,11 +380,19 @@ export class DatabaseStorage implements IStorage {
   // Método updateUser já implementado anteriormente
 
   async deleteUser(id: number): Promise<boolean> {
-    const [deleted] = await db
-      .delete(users)
-      .where(eq(users.id, id))
-      .returning();
-    return !!deleted;
+    try {
+      console.log(`Excluindo usuário ID ${id} usando SQL direto...`);
+      
+      // Usar SQL direto para evitar problemas com possíveis diferenças entre o esquema e a tabela física
+      const query = `DELETE FROM users WHERE id = $1 RETURNING id`;
+      const result = await pool.query(query, [id]);
+      
+      // Verificar se alguma linha foi afetada
+      return result.rowCount !== null && result.rowCount > 0;
+    } catch (error) {
+      console.error(`Erro ao excluir usuário ID ${id}:`, error);
+      return false;
+    }
   }
   
   // Base operations
