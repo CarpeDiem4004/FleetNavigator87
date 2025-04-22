@@ -33,15 +33,46 @@ export const supabaseAdmin = createSupabaseAdmin();
 
 export async function checkSupabaseConnection(): Promise<boolean> {
   try {
-    const client = createSupabaseClient();
-    const { data, error } = await client.from('estoque_pneus').select('count()', { count: 'exact' });
+    console.log('Verificando conexão com Supabase...');
     
-    if (error) {
-      console.error('Erro ao conectar ao Supabase:', error);
-      return false;
+    // Usamos uma tabela simples para verificar a conexão que é menos provável de ter problemas de permissão
+    const client = createSupabaseClient();
+    
+    // Tentamos primeiro com uma tabela comum com baixa chance de erro de permissão
+    try {
+      const { data, error } = await client.from('abastecimentos_postos').select('count()', { count: 'exact' });
+      if (!error) {
+        console.log('Conexão com Supabase estabelecida com sucesso (abastecimentos_postos)');
+        return true;
+      }
+    } catch (firstError) {
+      console.log('Primeiro método de verificação falhou, tentando alternativa:', firstError);
     }
     
-    return true;
+    // Se o primeiro método falhar, tenta com outra tabela
+    try {
+      const { data, error } = await client.from('veiculos').select('count()', { count: 'exact' });
+      if (!error) {
+        console.log('Conexão com Supabase estabelecida com sucesso (veiculos)');
+        return true;
+      }
+    } catch (secondError) {
+      console.log('Segundo método de verificação falhou:', secondError);
+    }
+    
+    // Se ainda falhar, tenta com ping simples
+    try {
+      const { data, error } = await client.rpc('ping');
+      if (!error) {
+        console.log('Conexão com Supabase estabelecida com sucesso (ping)');
+        return true;
+      }
+    } catch (thirdError) {
+      console.log('Terceiro método de verificação falhou:', thirdError);
+    }
+    
+    console.error('Todos os métodos de verificação de conexão falharam');
+    return false;
   } catch (error) {
     console.error('Erro ao verificar conexão com Supabase:', error);
     return false;
@@ -69,11 +100,13 @@ export async function getSupabaseTables(): Promise<string[]> {
 
 export async function checkAllConnections(): Promise<{
   supabase: boolean;
+  baseConnection: boolean; // Adicionado para compatibilidade com o código existente
 }> {
   const supabaseConnected = await checkSupabaseConnection();
   
   return {
-    supabase: supabaseConnected
+    supabase: supabaseConnected,
+    baseConnection: supabaseConnected // Usa o mesmo valor para manter compatibilidade
   };
 }
 

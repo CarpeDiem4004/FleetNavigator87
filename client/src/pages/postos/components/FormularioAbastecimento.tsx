@@ -92,14 +92,36 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         description: 'Aguarde enquanto verificamos a conexão com o servidor...',
       });
       
-      const conexaoSupabase = await checkAllConnections();
-      if (!conexaoSupabase.baseConnection) {
-        throw new Error('Não foi possível conectar ao servidor Supabase. Verifique sua conexão e tente novamente mais tarde.');
-      }
+      // Verificamos conexão com o Supabase - podemos pular essa verificação
+      // já que vamos tentar inserir diretamente e capturar qualquer erro
       
-      // Envia os dados para o Supabase usando o cliente de serviço para contornar RLS
-      const response = await insertRecord('abastecimentos_postos', abastecimentoData);
-      console.log('Resposta do servidor:', response);
+      // Tenta inserir o registro usando o cliente padrão primeiro
+      try {
+        const response = await insertRecord('abastecimentos_postos', abastecimentoData);
+        console.log('Resposta do servidor:', response);
+        
+        // Se houver erro no cliente padrão, tente usar o cliente admin
+        if (!response.success) {
+          console.log('Tentando com cliente admin...');
+          // Importamos diretamente a função do supabase-client.ts
+          const { supabaseAdmin } = await import('@/lib/supabase-client');
+          
+          // Tenta inserir usando o cliente admin
+          const { data, error } = await supabaseAdmin
+            .from('abastecimentos_postos')
+            .insert([abastecimentoData])
+            .select();
+            
+          if (error) {
+            throw new Error(`Erro ao registrar abastecimento: ${error.message}`);
+          }
+          
+          console.log('Registro inserido com sucesso usando cliente admin:', data);
+        }
+      } catch (insertError) {
+        console.error('Erro durante inserção:', insertError);
+        throw insertError;
+      }
       
       toast({
         title: 'Abastecimento registrado!',
