@@ -27,6 +27,13 @@ import {
   CreditCard
 } from 'lucide-react';
 
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ElementType;
+  subItems?: NavItem[];
+}
+
 interface SidebarProps {
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -50,8 +57,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText },
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
-    { name: 'Abastecimentos', href: '/refueling', icon: Fuel },
-    { name: 'Cartão de Combustível', href: '/fuel-card', icon: CreditCard },
+    { name: 'Abastecimentos', href: '/refueling', icon: Fuel, subItems: [
+      { name: 'Cartão de Combustível', href: '/fuel-card', icon: CreditCard }
+    ]},
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
     { name: 'Line Hall Shopee', href: '/line-hall-shopee', icon: Map },
     { name: 'Bases', href: '/bases', icon: Warehouse },
@@ -66,7 +74,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Oficinas Credenciadas', href: '/fleet-management/workshops', icon: ClipboardList },
     { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package },
-    { name: 'Cartão de Combustível', href: '/fuel-card', icon: CreditCard },
+    { name: 'Abastecimentos', href: '/refueling', icon: Fuel, subItems: [
+      { name: 'Cartão de Combustível', href: '/fuel-card', icon: CreditCard }
+    ]},
     { name: 'Line Hall Shopee', href: '/line-hall-shopee', icon: Map },
     { name: 'Análise da Operação', href: '/fleet-management/operational-analysis', icon: BarChart4 },
     { name: 'Visão Geral da Frota', href: '/fleet-management/fleet-overview', icon: Activity },
@@ -108,65 +118,70 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
         <div className="overflow-y-auto">
           <nav className="flex-1 py-4">
             <div className="space-y-1 px-2">
-              {/* Itens fixos que sempre aparecem */}
-              <Link 
-                href="/" 
-                onClick={closeSidebar}
-                className={`flex items-center px-4 py-3 rounded-md group transition-colors duration-200 ${
-                  location === '/' 
-                    ? 'text-white bg-primary-900' 
-                    : 'text-primary-100 hover:bg-primary-700'
-                }`}
-              >
-                <Gauge className="w-6" size={18} />
-                <span className="ml-3">Dashboard</span>
-              </Link>
-              
-              <Link 
-                href="/vehicles" 
-                onClick={closeSidebar}
-                className={`flex items-center px-4 py-3 rounded-md group transition-colors duration-200 ${
-                  location === '/vehicles' 
-                    ? 'text-white bg-primary-900' 
-                    : 'text-primary-100 hover:bg-primary-700'
-                }`}
-              >
-                <Truck className="w-6" size={18} />
-                <span className="ml-3">Veículos</span>
-              </Link>
-              
-              <Link 
-                href="/fuel-card" 
-                onClick={closeSidebar}
-                className={`flex items-center px-4 py-3 rounded-md group transition-colors duration-200 ${
-                  location === '/fuel-card' 
-                    ? 'text-white bg-primary-900' 
-                    : 'text-primary-100 hover:bg-primary-700'
-                }`}
-              >
-                <CreditCard className="w-6" size={18} />
-                <span className="ml-3">Cartão de Combustível</span>
-              </Link>
-
-              {/* Outros itens de navegação dinâmicos */}
-              {navItems.filter(item => item.href !== '/fuel-card' && item.href !== '/' && item.href !== '/vehicles').map((item) => {
+              {/* Todos os itens de navegação incluindo Dashboard e Veículos */}
+              {navItems.map((item) => {
                 const isActive = location === item.href;
+                const isSubItemActive = item.subItems?.some(subItem => location === subItem.href);
                 const Icon = item.icon;
                 
+                // Use um elemento diferente se tiver subitens para evitar aninhar <a> dentro de <a>
                 return (
-                  <Link 
-                    key={item.name} 
-                    href={item.href} 
-                    onClick={closeSidebar}
-                    className={`flex items-center px-4 py-3 rounded-md group transition-colors duration-200 ${
-                      isActive 
-                        ? 'text-white bg-primary-900' 
-                        : 'text-primary-100 hover:bg-primary-700'
-                    }`}
-                  >
-                    <Icon className="w-6" size={18} />
-                    <span className="ml-3">{item.name}</span>
-                  </Link>
+                  <div key={item.name}>
+                    {item.subItems ? (
+                      // Use um botão se tiver subitens
+                      <button 
+                        onClick={() => closeSidebar()}
+                        className={`flex w-full items-center px-4 py-3 rounded-md group transition-colors duration-200 text-left ${
+                          isActive || isSubItemActive
+                            ? 'text-white bg-primary-900' 
+                            : 'text-primary-100 hover:bg-primary-700'
+                        }`}
+                      >
+                        <Icon className="w-6" size={18} />
+                        <span className="ml-3">{item.name}</span>
+                      </button>
+                    ) : (
+                      // Use Link se não tiver subitens
+                      <Link 
+                        href={item.href} 
+                        onClick={closeSidebar}
+                        className={`flex items-center px-4 py-3 rounded-md group transition-colors duration-200 ${
+                          isActive || isSubItemActive
+                            ? 'text-white bg-primary-900' 
+                            : 'text-primary-100 hover:bg-primary-700'
+                        }`}
+                      >
+                        <Icon className="w-6" size={18} />
+                        <span className="ml-3">{item.name}</span>
+                      </Link>
+                    )}
+                    
+                    {/* Renderizar subitens se existirem */}
+                    {item.subItems && (
+                      <div className="ml-8 mt-1 space-y-1">
+                        {item.subItems.map(subItem => {
+                          const SubIcon = subItem.icon;
+                          const isSubActive = location === subItem.href;
+                          
+                          return (
+                            <Link
+                              key={subItem.name}
+                              href={subItem.href}
+                              onClick={closeSidebar}
+                              className={`flex items-center px-4 py-2 rounded-md group transition-colors duration-200 ${
+                                isSubActive
+                                  ? 'text-white bg-primary-900' 
+                                  : 'text-primary-100 hover:bg-primary-700'
+                              }`}
+                            >
+                              <SubIcon className="w-5" size={16} />
+                              <span className="ml-2 text-sm">{subItem.name}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
