@@ -238,6 +238,63 @@ async function criarTabelaMovimentacoesPatio() {
   }
 }
 
+// Função para criar tabela configuracao_tanques se não existir
+async function criarTabelaConfiguracaoTanques() {
+  try {
+    console.log("Verificando se a tabela configuracao_tanques existe...");
+    
+    // Verificar se a tabela já existe
+    const checkQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'configuracao_tanques'
+      );
+    `;
+    
+    const checkResult = await pool.query(checkQuery);
+    const tabelaExiste = checkResult.rows[0].exists;
+    
+    if (tabelaExiste) {
+      console.log("Tabela configuracao_tanques já existe, pulando criação.");
+      return;
+    }
+    
+    console.log("Criando tabela configuracao_tanques...");
+    
+    // Criar tabela
+    const createTableQuery = `
+      CREATE TABLE configuracao_tanques (
+        id SERIAL PRIMARY KEY,
+        posto TEXT NOT NULL UNIQUE,
+        diesel_capacidade NUMERIC NOT NULL DEFAULT 20000,
+        diesel_nivel NUMERIC NOT NULL DEFAULT 15000,
+        arla_capacidade NUMERIC NOT NULL DEFAULT 1000,
+        arla_nivel NUMERIC NOT NULL DEFAULT 750,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+    
+    await pool.query(createTableQuery);
+    
+    // Inserir valores padrão para postos conhecidos
+    const postos = ['Osasco', 'Campinas', 'Contagem', 'Goiania'];
+    for (const posto of postos) {
+      const insertQuery = `
+        INSERT INTO configuracao_tanques (posto, diesel_capacidade, diesel_nivel, arla_capacidade, arla_nivel)
+        VALUES ($1, 20000, 15000, 1000, 750)
+        ON CONFLICT (posto) DO NOTHING;
+      `;
+      await pool.query(insertQuery, [posto]);
+    }
+    
+    console.log("Tabela configuracao_tanques criada com sucesso e postos padrão inseridos!");
+    
+  } catch (error) {
+    console.error("Erro ao criar tabela configuracao_tanques:", error);
+  }
+}
+
 async function criarTabelaMontagemPneus() {
   // Verificar se a tabela já existe
   const checkTableQuery = "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'montagem_pneus')";
@@ -445,6 +502,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await criarTabelaLineHallShopee();
   await criarTabelaFuelCardRequests();
   await criarTabelaDriverChecklists();
+  await criarTabelaConfiguracaoTanques();
   // Rota para registro de movimentações de pátio
   app.post('/api/registro/movimentacao-patio', async (req, res) => {
     try {
@@ -617,6 +675,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Rota para obter configuração dos tanques
+  app.get('/api/configuracao-tanques/:posto', async (req, res) => {
+    try {
+      const { posto } = req.params;
+      
+      // Formatar nome do posto (primeira letra maiúscula)
+      const formattedPosto = posto.charAt(0).toUpperCase() + posto.slice(1);
+      
+      console.log(`Buscando configuração de tanques para posto: ${formattedPosto}`);
+      
+      // Consulta SQL para buscar a configuração
+      const query = `
+        SELECT * FROM configuracao_tanques 
+        WHERE posto = $1
+      `;
+      
+      const result = await pool.query(query, [formattedPosto]);
+      
+      if (result.rowCount === 0) {
+        // Se não existir configuração, criar com valores padrão
+        const insertQuery = `
+          INSERT INTO configuracao_tanques 
+          (posto, diesel_capacidade, diesel_nivel, arla_capacidade, arla_nivel, created_at, updated_at)
+          VALUES ($1, 20000, 15000, 1000, 750, NOW(), NOW())
+          RETURNING *;
+        `;
+        
+        const insertResult = await pool.query(insertQuery, [formattedPosto]);
+        
+        console.log(`Configuração de tanques criada para posto: ${formattedPosto}`);
+        
+        return res.status(200).json({
+          success: true,
+          data: insertResult.rows[0],
+          message: `Configuração de tanques criada para o posto ${formattedPosto}`
+        });
+      }
+      
+      console.log(`Configuração de tanques encontrada para posto: ${formattedPosto}`);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows[0]
+      });
+    } catch (error) {
+      console.error('Erro ao buscar configuração de tanques:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar configuração de tanques',
+        error: String(error)
+      });
+    }
+  });
+  
+  // Rota para atualizar configuração dos tanques
+  app.post('/api/configuracao-tanques/:posto', async (req, res) => {
+    try {
+      const { posto } = req.params;
+      const { diesel_capacidade, diesel_nivel, arla_capacidade, arla_nivel } = req.body;
+      
+      // Formatar nome do posto (primeira letra maiúscula)
+      const formattedPosto = posto.charAt(0).toUpperCase() + posto.slice(1);
+      
+      console.log(`Atualizando configuração de tanques para posto: ${formattedPosto}`, req.body);
+      
+      // Verificar se é necessário converter valores de string para número
+      const dieselCapacidade = typeof diesel_capacidade === 'string' ? parseFloat(diesel_capacidade) : diesel_capacidade;
+      const dieselNivel = typeof diesel_nivel === 'string' ? parseFloat(diesel_nivel) : diesel_nivel;
+      const arlaCapacidade = typeof arla_capacidade === 'string' ? parseFloat(arla_capacidade) : arla_capacidade;
+      const arlaNivel = typeof arla_nivel === 'string' ? parseFloat(arla_nivel) : arla_nivel;
+      
+      // Consulta SQL para atualizar a configuração
+      const query = `
+        INSERT INTO configuracao_tanques 
+        (posto, diesel_capacidade, diesel_nivel, arla_capacidade, arla_nivel, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+        ON CONFLICT (posto) 
+        DO UPDATE SET 
+          diesel_capacidade = $2,
+          diesel_nivel = $3,
+          arla_capacidade = $4,
+          arla_nivel = $5,
+          updated_at = NOW()
+        RETURNING *;
+      `;
+      
+      const result = await pool.query(query, [
+        formattedPosto,
+        dieselCapacidade,
+        dieselNivel,
+        arlaCapacidade,
+        arlaNivel
+      ]);
+      
+      console.log(`Configuração de tanques atualizada para posto: ${formattedPosto}`);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows[0],
+        message: `Configuração de tanques atualizada para o posto ${formattedPosto}`
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar configuração de tanques:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao atualizar configuração de tanques',
+        error: String(error)
+      });
+    }
+  });
+
   // Rota para registro de abastecimento - temporariamente sem autenticação para testes
   app.post('/api/registro/abastecimento', async (req, res) => {
     try {
@@ -632,6 +801,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Formatar nome do posto (primeira letra maiúscula)
+      const formattedPosto = posto.charAt(0).toUpperCase() + posto.slice(1);
+      const qtdCombustivel = parseFloat(quantidade);
+      
       // Criar registro no banco de dados
       const query = `
         INSERT INTO abastecimentos_postos 
@@ -644,10 +817,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         placa.toUpperCase(),
         parseInt(km, 10),
         tipo,
-        parseFloat(quantidade),
+        qtdCombustivel,
         motorista,
         operador,
-        posto, // Usando o campo 'posto' corretamente
+        formattedPosto, // Usando o campo 'posto' corretamente
         req.body.projeto || 'N/A'
       ];
       
@@ -655,6 +828,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (result.rows && result.rows.length > 0) {
         console.log('Abastecimento registrado com sucesso, ID:', result.rows[0].id);
+        
+        // Atualizar nível do tanque
+        try {
+          // Verificar qual tanque atualizar
+          const tanqueField = tipo === 'ARLA' ? 'arla_nivel' : 'diesel_nivel';
+          
+          // Buscar configuração atual do tanque
+          const configQuery = `
+            SELECT * FROM configuracao_tanques 
+            WHERE posto = $1
+          `;
+          
+          const configResult = await pool.query(configQuery, [formattedPosto]);
+          
+          // Se não existir configuração, criar
+          if (configResult.rowCount === 0) {
+            console.log(`Configuração de tanques não encontrada para posto ${formattedPosto}, criando...`);
+            
+            // Valores padrão
+            const dieselCapacidade = 20000;
+            const dieselNivel = tipo === 'ARLA' ? 15000 : Math.max(15000 - qtdCombustivel, 0);
+            const arlaCapacidade = 1000;
+            const arlaNivel = tipo === 'ARLA' ? Math.max(750 - qtdCombustivel, 0) : 750;
+            
+            const insertQuery = `
+              INSERT INTO configuracao_tanques 
+              (posto, diesel_capacidade, diesel_nivel, arla_capacidade, arla_nivel)
+              VALUES ($1, $2, $3, $4, $5)
+            `;
+            
+            await pool.query(insertQuery, [
+              formattedPosto,
+              dieselCapacidade,
+              dieselNivel,
+              arlaCapacidade,
+              arlaNivel
+            ]);
+            
+            console.log(`Configuração de tanques criada para posto ${formattedPosto}`);
+          } else {
+            // Atualizar o nível do tanque
+            const config = configResult.rows[0];
+            
+            // Calcular novo nível (nunca permitir que fique negativo)
+            const nivelAtual = tipo === 'ARLA' ? config.arla_nivel : config.diesel_nivel;
+            const novoNivel = Math.max(nivelAtual - qtdCombustivel, 0);
+            
+            const updateQuery = `
+              UPDATE configuracao_tanques 
+              SET ${tanqueField} = $1,
+              updated_at = NOW()
+              WHERE posto = $2
+            `;
+            
+            await pool.query(updateQuery, [novoNivel, formattedPosto]);
+            
+            console.log(`Nível do tanque de ${tipo} atualizado para posto ${formattedPosto}: ${nivelAtual} -> ${novoNivel}`);
+          }
+        } catch (tankError) {
+          console.error('Erro ao atualizar nível do tanque:', tankError);
+          // Não interrompe a transação, apenas registra o erro
+        }
+        
         return res.status(200).json({ 
           success: true, 
           id: result.rows[0].id,

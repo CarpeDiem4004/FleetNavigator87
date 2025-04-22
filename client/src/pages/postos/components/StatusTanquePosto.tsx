@@ -13,8 +13,7 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from "@/components/ui/dialog";
-import { Fuel, Droplet, Settings, Edit, Save } from 'lucide-react';
-import { fetchRecords, insertData, updateData, checkConnection } from '@/lib/supabase-client';
+import { Fuel, Droplet, Settings, Edit, Save, RefreshCw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
 interface StatusTanqueProps {
