@@ -778,7 +778,7 @@ const DriverChecklist: React.FC = () => {
   }
 
   // Exibir formulário de autenticação por CPF
-  if (step === 'auth' && !tripId) {
+  if (step === 'auth') {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
         <div className="text-center mb-6">
@@ -800,7 +800,158 @@ const DriverChecklist: React.FC = () => {
     );
   }
 
-  if (!tripInfo) {
+  // Tela quando o motorista está autenticado, mas não tem viagem (modo seleção manual)
+  if (step === 'info' && !tripInfo && motorista) {
+    // Estado local para armazenar os dados do formulário
+    const [placaCavalo, setPlacaCavalo] = useState<string>('');
+    const [placaCarreta, setPlacaCarreta] = useState<string>('');
+    
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-2xl">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-center mb-1">Checklist do Veículo</h1>
+            <p className="text-center text-gray-500">Informações do Veículo e Motorista</p>
+            <div className="mt-4">
+              <Progress value={progress} className="h-2" />
+            </div>
+          </div>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Informações Básicas</CardTitle>
+              <CardDescription>Motorista: {motorista.nome}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="placa_cavalo">Placa do Cavalo Mecânico</Label>
+                <Input
+                  id="placa_cavalo"
+                  placeholder="Informe a placa do veículo (Ex: ABC1234)"
+                  value={placaCavalo}
+                  onChange={(e) => setPlacaCavalo(e.target.value.toUpperCase())}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="placa_carreta">Placa da Carreta</Label>
+                <Input
+                  id="placa_carreta"
+                  placeholder="Informe a placa da carreta (Ex: XYZ9876)"
+                  value={placaCarreta}
+                  onChange={(e) => setPlacaCarreta(e.target.value.toUpperCase())}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="driver_name">Nome do Motorista</Label>
+                <Input
+                  id="driver_name"
+                  placeholder="Informe o nome do motorista"
+                  value={motorista.nome}
+                  disabled
+                />
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-center mb-1">
+                  <Label className="font-medium">Tipo de Checklist</Label>
+                </div>
+                <div className="flex space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="initial"
+                      checked={checklist.isChecklistInicial}
+                      onChange={() => setChecklist(prev => ({ ...prev, isChecklistInicial: true }))}
+                      className="h-4 w-4 text-blue-600"
+                    />
+                    <Label htmlFor="initial">Checklist Inicial (Saída)</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="final"
+                      checked={!checklist.isChecklistInicial}
+                      onChange={() => setChecklist(prev => ({ ...prev, isChecklistInicial: false }))}
+                      className="h-4 w-4 text-blue-600"
+                    />
+                    <Label htmlFor="final">Checklist Final (Retorno)</Label>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="km">
+                  {checklist.isChecklistInicial ? 'Quilometragem Inicial (KM)' : 'Quilometragem Final (KM)'}
+                </Label>
+                <Input
+                  id="km"
+                  type="number"
+                  placeholder="Informe a quilometragem atual"
+                  value={checklist.isChecklistInicial 
+                    ? checklist.kmInicial?.toString() || '' 
+                    : checklist.kmFinal?.toString() || ''}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value);
+                    if (checklist.isChecklistInicial) {
+                      setChecklist(prev => ({ ...prev, kmInicial: isNaN(value) ? undefined : value }));
+                    } else {
+                      setChecklist(prev => ({ ...prev, kmFinal: isNaN(value) ? undefined : value }));
+                    }
+                  }}
+                />
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline" onClick={() => setStep('auth')}>Voltar</Button>
+              <Button 
+                onClick={() => {
+                  if (placaCavalo) {
+                    // Criar uma viagem temporária para armazenar os dados do checklist
+                    const viagemTemp: TripInfo = {
+                      id: 0,
+                      data_viagem: new Date().toISOString(),
+                      cavalo_placa: placaCavalo,
+                      carreta1_placa: placaCarreta,
+                      motorista_id: motorista.id,
+                      motorista_nome: motorista.nome,
+                      horario_carregamento: '',
+                      status: 'em_andamento',
+                      base_origem_nome: '',
+                      base_destino_nome: ''
+                    };
+                    
+                    setTripInfo(viagemTemp);
+                    
+                    // Atualizar o checklist com os dados da "viagem" temporária
+                    setChecklist(prev => ({
+                      ...prev,
+                      tripId: 0,
+                      motoristaNome: motorista.nome
+                    }));
+                    
+                    setStep('checklist');
+                  } else {
+                    toast({
+                      title: 'Informação necessária',
+                      description: 'Por favor, informe a placa do cavalo mecânico.',
+                      variant: 'destructive',
+                    });
+                  }
+                }}
+              >
+                Próximo
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Tela para informar que nenhuma viagem foi encontrada (caso antigo)
+  if ((step === 'info' || step === 'checklist' || step === 'requests' || step === 'success') && !tripInfo && !motorista) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
         <Card className="w-full max-w-md">
@@ -815,6 +966,29 @@ const DriverChecklist: React.FC = () => {
           </CardContent>
           <CardFooter className="flex justify-center">
             <Button onClick={() => window.close()}>Fechar</Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
+  // Garantir que tripInfo não é nulo aqui
+  if (!tripInfo) {
+    // Se tripInfo for nulo neste ponto, algo deu errado
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle>Erro ao Carregar Dados</CardTitle>
+            <CardDescription>Não foi possível carregar os dados do veículo para o checklist.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-center">
+              <AlertCircle className="h-12 w-12 text-red-500" />
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-center">
+            <Button onClick={() => setStep('auth')}>Voltar</Button>
           </CardFooter>
         </Card>
       </div>
