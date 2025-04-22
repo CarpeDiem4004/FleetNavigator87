@@ -276,12 +276,46 @@ const UsersNew: React.FC = () => {
   
   // Função para copiar a senha gerada para a área de transferência
   const copyPasswordToClipboard = () => {
-    navigator.clipboard.writeText(generatedPassword).then(() => {
+    try {
+      // Método alternativo para copiar para a área de transferência
+      // Criar um elemento temporário
+      const textArea = document.createElement('textarea');
+      textArea.value = generatedPassword;
+      
+      // Configurar o elemento para não ser visível
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      
+      // Selecionar e copiar o texto
+      textArea.focus();
+      textArea.select();
+      document.execCommand('copy');
+      
+      // Limpar
+      document.body.removeChild(textArea);
+      
+      // Atualizar estado
       setHasPasswordCopied(true);
       setTimeout(() => setHasPasswordCopied(false), 3000);
-    }).catch(err => {
+    } catch (err) {
       console.error('Erro ao copiar senha para a área de transferência:', err);
-    });
+      // Tentar o método moderno como fallback
+      navigator.clipboard?.writeText?.(generatedPassword)
+        .then(() => {
+          setHasPasswordCopied(true);
+          setTimeout(() => setHasPasswordCopied(false), 3000);
+        })
+        .catch(clipErr => {
+          console.error('Falha no método alternativo também:', clipErr);
+          toast({
+            title: "Erro ao copiar senha",
+            description: "Não foi possível copiar a senha. Por favor, copie manualmente.",
+            variant: "destructive"
+          });
+        });
+    }
   };
   
   // Adicionar novo usuário
