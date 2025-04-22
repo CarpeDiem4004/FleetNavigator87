@@ -16,9 +16,9 @@ interface SignInProps {
 }
 
 export default function SignIn({ oficina = false }: SignInProps) {
-  // Define os valores iniciais com base no tipo de login
-  const [email, setEmail] = useState(oficina ? '' : 'rogerio@muricionfleet.com');
-  const [password, setPassword] = useState(oficina ? '' : 'Murici@rogerio25');
+  // Campos de formulário sem pré-preenchimento
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const [_, navigate] = useLocation();
