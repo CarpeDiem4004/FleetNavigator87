@@ -17,7 +17,7 @@ import SignIn from "@/pages/SignIn";
 import RegisterNew from "@/pages/RegisterNew";
 import AccessDeniedPage from "@/pages/access-denied";
 import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
-import LineHallRedirect from "@/components/permission/LineHallRedirect";
+// LineHallRedirect removido conforme solicitação
 import FleetManagementRedirect from "@/components/permission/FleetManagementRedirect";
 import { AuthProvider } from "@/context/AuthContext";
 
@@ -83,8 +83,9 @@ function App() {
           </Route>
           
           {/* Componentes de redirecionamento para usuários específicos */}
+          {/* Rota removida - antigas páginas LineHall */}
           <Route path="/old-dashboard">
-            <LineHallRedirect />
+            <Dashboard />
           </Route>
           
           <Route path="/fleet-redirect">
