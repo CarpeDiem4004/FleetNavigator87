@@ -18,7 +18,7 @@ export const operationStatusEnum = pgEnum('operation_status', ['pendente', 'em_a
 export const checklistStatusEnum = pgEnum('checklist_status', ['pendente', 'iniciado', 'concluido']);
 export const maintenanceRequestStatusEnum = pgEnum('maintenance_request_status', ['pendente', 'aprovada', 'rejeitada', 'concluida']);
 export const refuelingCardStatusEnum = pgEnum('refueling_card_status', ['pendente', 'aprovada', 'rejeitada']);
-export const messageAuthorEnum = pgEnum('message_author', ['oficina', 'gestor_frota']);
+export const messageAuthorEnum = pgEnum('message_author', ['oficina', 'frota']);
 export const vehicleOwnershipEnum = pgEnum('vehicle_ownership', ['murici', 'locado']);
 
 // Create the bases table

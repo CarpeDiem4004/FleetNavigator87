@@ -2392,7 +2392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Preparar dados da mensagem
       const messageData: InsertChatMessage = {
         chatId: req.body.chatId,
-        author: req.user.role === 'oficina' ? 'oficina' : 'gestor_frota',
+        author: req.user.role === 'oficina' ? 'oficina' : 'frota', // Corrigido para 'frota' conforme definido no banco de dados
         authorId: req.user.id,
         authorName: req.user.name,
         message: req.body.message,
