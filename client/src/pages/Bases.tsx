@@ -51,6 +51,13 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Building2, 
   Plus, 
@@ -79,6 +86,28 @@ export default function BasesPage() {
   const [importingBases, setImportingBases] = useState(false);
   const [importPreview, setImportPreview] = useState<Partial<Base>[]>([]);
   const { toast } = useToast();
+  
+  // Obter as operações cadastradas no sistema
+  const existingOperations = React.useMemo(() => {
+    if (!bases) return [];
+    
+    // Filtrar bases que têm operação definida e são do tipo operacao
+    const operations = bases
+      .filter(base => base.operation && base.type === 'operacao')
+      .map(base => base.operation)
+      .filter((operation): operation is string => operation !== null && operation !== undefined && operation !== '');
+      
+    // Remover duplicatas usando um array temporário para evitar problemas com o Set
+    const uniqueOperations: string[] = [];
+    operations.forEach(op => {
+      if (op && !uniqueOperations.includes(op)) {
+        uniqueOperations.push(op);
+      }
+    });
+    
+    // Ordenar as operações
+    return uniqueOperations.sort();
+  }, [bases]);
 
   // Formulário para adicionar/editar base
   const form = useForm<z.infer<typeof baseFormSchema>>({
@@ -413,8 +442,26 @@ export default function BasesPage() {
                         <FormItem>
                           <FormLabel>Operação</FormLabel>
                           <FormControl>
-                            <Input placeholder="Ex: COCA COLA" {...field} />
+                            <div className="flex space-x-2">
+                              <Select
+                                value={field.value || ''}
+                                onValueChange={field.onChange}
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Selecione uma operação existente" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="">Nenhuma operação</SelectItem>
+                                  {existingOperations.map((op) => (
+                                    <SelectItem key={op} value={op}>{op}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </FormControl>
+                          <FormDescription>
+                            Selecione uma das operações existentes ou digite uma nova.
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
