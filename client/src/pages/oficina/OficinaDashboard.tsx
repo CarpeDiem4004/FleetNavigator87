@@ -262,6 +262,13 @@ export default function OficinaDashboard() {
       
       console.log("Enviando orçamento para maintenanceId:", selectedMaintenance.id);
       
+      // Converter campos numéricos para seus tipos apropriados
+      const initialBudgetNumber = parseFloat(initialBudget);
+      
+      if (isNaN(initialBudgetNumber)) {
+        throw new Error("O valor do orçamento deve ser um número válido");
+      }
+      
       // Criar o chat de orçamento
       const response = await fetch("/api/workshop/maintenance-chat", {
         method: "POST",
@@ -271,7 +278,7 @@ export default function OficinaDashboard() {
         body: JSON.stringify({
           maintenanceId: selectedMaintenance.id,
           vehiclePlate: vehiclePlate.toUpperCase(),  // Enviar a placa selecionada pelo dropdown
-          initialBudget: initialBudget, // Enviar como string, sem converter para número
+          initialBudget: initialBudgetNumber, // Converter para número
           kmAtual: kmAtual,
           prazoEstimado: prazoEstimado,
           descricaoServico: descricaoServico,
@@ -280,7 +287,9 @@ export default function OficinaDashboard() {
       });
       
       if (!response.ok) {
-        throw new Error("Erro ao criar chat de orçamento");
+        const errorData = await response.json();
+        console.error("Erro na resposta do servidor:", errorData);
+        throw new Error(errorData.message || "Erro ao criar chat de orçamento");
       }
       
       const data = await response.json();
@@ -306,7 +315,7 @@ export default function OficinaDashboard() {
       console.error("Erro ao criar chat de orçamento:", error);
       toast({
         title: "Erro",
-        description: "Falha ao enviar orçamento. Tente novamente mais tarde.",
+        description: error instanceof Error ? error.message : "Falha ao enviar orçamento. Tente novamente mais tarde.",
         variant: "destructive"
       });
     } finally {

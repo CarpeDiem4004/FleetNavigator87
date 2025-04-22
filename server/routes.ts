@@ -2235,8 +2235,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Verificar e normalizar os dados do orçamento
+      const payload = {
+        ...req.body,
+        // Garantir que initialBudget é um número
+        initialBudget: typeof req.body.initialBudget === 'string' 
+          ? parseFloat(req.body.initialBudget) 
+          : req.body.initialBudget
+      };
+      
       // Validar dados do corpo da requisição
-      const result = insertMaintenanceChatSchema.safeParse(req.body);
+      const result = insertMaintenanceChatSchema.safeParse(payload);
       if (!result.success) {
         console.log("Erro de validação:", result.error.format());
         return res.status(400).json({ 
@@ -2304,34 +2313,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Criar chat com os dados atualizados
-      const chat = await storage.createMaintenanceChat(result.data);
+      // Log dos dados processados
+      console.log("Dados validados para criar chat:", {
+        maintenanceId: result.data.maintenanceId,
+        vehiclePlate: result.data.vehiclePlate,
+        initialBudget: result.data.initialBudget,
+        tipo: typeof result.data.initialBudget
+      });
       
-      // Não precisamos buscar a manutenção novamente se acabamos de criá-la
-      const maintenance = maintenanceId <= 0 ? null : await storage.getMaintenance(chat.maintenanceId);
-      
-      // Atualizar status da manutenção para em_andamento após cada chat, independente do status atual
-      // Garante que qualquer chat de orçamento muda a manutenção para em_andamento
       try {
-        // Usar SQL direto para evitar problema com coluna maintenance_start_date
-        await pool.query(`
-          UPDATE manutencao
-          SET status = 'em_andamento', updated_at = NOW()
-          WHERE id = $1
-        `, [chat.maintenanceId]);
+        // Criar chat com os dados atualizados
+        const chat = await storage.createMaintenanceChat(result.data);
         
-        console.log(`Status da manutenção ${chat.maintenanceId} atualizado para em_andamento (negociação em progresso)`);
-      } catch (updateError) {
-        console.error("Erro ao atualizar status da manutenção:", updateError);
-        // Continuar mesmo com erro no status para pelo menos cadastrar o chat
+        // Atualizar status da manutenção para em_andamento após cada chat, independente do status atual
+        try {
+          // Usar SQL direto para evitar problema com coluna maintenance_start_date
+          await pool.query(`
+            UPDATE manutencao
+            SET status = 'em_andamento', updated_at = NOW()
+            WHERE id = $1
+          `, [chat.maintenanceId]);
+          
+          console.log(`Status da manutenção ${chat.maintenanceId} atualizado para em_andamento (negociação em progresso)`);
+        } catch (updateError) {
+          console.error("Erro ao atualizar status da manutenção:", updateError);
+          // Continuar mesmo com erro no status para pelo menos cadastrar o chat
+        }
+        
+        // Retornar o chat criado
+        return res.status(201).json(chat);
+      } catch (chatError) {
+        console.error("Erro ao criar chat de manutenção:", chatError);
+        return res.status(500).json({ 
+          message: "Erro ao criar chat de manutenção",
+          error: chatError instanceof Error ? chatError.message : "Erro desconhecido" 
+        });
       }
-      
-      // Retornar o chat criado
-      return res.status(201).json(chat);
     } catch (error: any) {
-      console.error("Erro ao criar chat de manutenção:", error);
+      console.error("Erro ao processar requisição de chat:", error);
       return res.status(500).json({ 
-        message: "Erro ao criar chat",
+        message: "Erro ao processar requisição",
         error: error.message 
       });
     }
