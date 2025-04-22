@@ -203,6 +203,24 @@ export function useBasePermission(): BasePermissionHook {
       return hasAccess;
     }
     
+    // Usuário Micael - acesso específico para Goiânia SGO4
+    if (user.email === "micael@muricionfleet.com" || 
+        (user.name === "micael" && user.baseId === 101 && user.basename === "Goiânia SGO4")) {
+      
+      // Permitir acesso à manutenção e pneus + dashboard
+      const micaelRoutes = ['/', '/maintenance', '/manutencao', '/tires', '/pneus'];
+      const hasAccess = micaelRoutes.includes(route);
+      
+      // Negar explicitamente acesso ao painel de controle
+      if (route === '/control-panel' || route === '/dashboard/control') {
+        console.log(`Acesso NEGADO ao painel de controle para usuário Micael`);
+        return false;
+      }
+      
+      console.log(`Usuário Micael permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
+      return hasAccess;
+    }
+    
     // Para outras bases específicas, usar o mapeamento
     if (user.basename) {
       const hasAccess = isRouteForBase(route, user.basename);
