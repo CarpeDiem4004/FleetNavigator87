@@ -316,9 +316,11 @@ const TiresPage: React.FC = () => {
       
       if (response.success && response.data) {
         // Atualizar a lista de solicitações
-        setTireRequests(tireRequests.map(req => 
-          req.id === requestId ? response.data : req
-        ));
+        setTireRequests((currentRequests) => 
+          currentRequests ? currentRequests.map(req => 
+            req.id === requestId ? response.data : req
+          ) : []
+        );
         
         toast({
           title: "Solicitação aprovada",
@@ -356,9 +358,11 @@ const TiresPage: React.FC = () => {
       
       if (response.success && response.data) {
         // Atualizar a lista de solicitações
-        setTireRequests(tireRequests.map(req => 
-          req.id === requestId ? response.data : req
-        ));
+        setTireRequests((currentRequests) => 
+          currentRequests ? currentRequests.map(req => 
+            req.id === requestId ? response.data : req
+          ) : []
+        );
         
         toast({
           title: "Solicitação rejeitada",
@@ -758,7 +762,7 @@ const TiresPage: React.FC = () => {
                     </div>
                   ) : (
                     <>
-                      {tireRequests.filter(req => req.status === 'pendente').length === 0 ? (
+                      {!tireRequests || tireRequests.length === 0 || tireRequests.filter(req => req.status === 'pendente').length === 0 ? (
                         <div className="text-center text-gray-500 my-8">
                           Não há solicitações pendentes
                         </div>
@@ -841,7 +845,7 @@ const TiresPage: React.FC = () => {
                     </div>
                   ) : (
                     <>
-                      {tireRequests.filter(req => req.status === 'aprovado').length === 0 ? (
+                      {!tireRequests || tireRequests.length === 0 || tireRequests.filter(req => req.status === 'aprovado').length === 0 ? (
                         <div className="text-center text-gray-500 my-8">
                           Não há solicitações aprovadas
                         </div>
@@ -904,7 +908,7 @@ const TiresPage: React.FC = () => {
                     </div>
                   ) : (
                     <>
-                      {tireRequests.filter(req => req.status === 'rejeitado').length === 0 ? (
+                      {!tireRequests || tireRequests.length === 0 || tireRequests.filter(req => req.status === 'rejeitado').length === 0 ? (
                         <div className="text-center text-gray-500 my-8">
                           Não há solicitações rejeitadas
                         </div>
