@@ -430,7 +430,7 @@ export default function LineHallShopeePage() {
                       <TableHead>Carreta(s)</TableHead>
                       <TableHead>Motorista</TableHead>
                       <TableHead>Origem-Destino</TableHead>
-                      <TableHead>KM Percorrido</TableHead>
+                      <TableHead>Horário Carreg.</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Data</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
@@ -451,7 +451,7 @@ export default function LineHallShopeePage() {
                           <span className="mx-1">→</span> 
                           <span>{trip.local_descarregamento}</span>
                         </TableCell>
-                        <TableCell>{trip.distancia_percorrida} km</TableCell>
+                        <TableCell>{trip.horario_carregamento || '-'}</TableCell>
                         <TableCell>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusLabels[trip.status_viagem] || 'bg-gray-100'}`}>
                             {trip.status_viagem}
@@ -565,29 +565,16 @@ export default function LineHallShopeePage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit_km_inicial">KM Inicial *</Label>
+                <Label htmlFor="edit_horario_carregamento">Horário de Carregamento</Label>
                 <Input
-                  id="edit_km_inicial"
-                  name="km_inicial"
-                  type="number"
-                  placeholder="0"
-                  value={currentTrip.km_inicial || ''}
+                  id="edit_horario_carregamento"
+                  name="horario_carregamento"
+                  type="time"
+                  placeholder="HH:MM"
+                  value={currentTrip.horario_carregamento || ''}
                   onChange={handleInputChange}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit_km_final">KM Final *</Label>
-                <Input
-                  id="edit_km_final"
-                  name="km_final"
-                  type="number"
-                  placeholder="0"
-                  value={currentTrip.km_final || ''}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit_status_viagem">Status da Viagem *</Label>
                 <Select 
@@ -606,6 +593,7 @@ export default function LineHallShopeePage() {
                 </Select>
               </div>
             </div>
+
             <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit_observacoes">Observações</Label>
