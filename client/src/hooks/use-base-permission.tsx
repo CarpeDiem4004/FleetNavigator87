@@ -78,7 +78,8 @@ const baseRouteMapping = {
     '/pneus',
     '/fines',
     '/multas',
-    '/line-hall-shopee'
+    '/line-hall-shopee',
+    '/fuel-card'
   ],
   'frota': [
     '/gestao-de-frotas', 
@@ -95,7 +96,8 @@ const baseRouteMapping = {
     '/pneus',
     '/fines',
     '/multas',
-    '/line-hall-shopee'
+    '/line-hall-shopee',
+    '/fuel-card'
   ],
   'segurança do trabalho': [
     '/work-safety',
