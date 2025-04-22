@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { apiRequest } from '@/lib/queryClient';
-import { CreditCard, Plus, FileText, History, CheckCircle2, XCircle } from 'lucide-react';
+import { CreditCard, Plus, FileText, History, CheckCircle2, XCircle, DollarSign, CircleCheck } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -38,7 +38,7 @@ interface FuelCardRequestHistory {
   reason: string;
   requestedBy: string;
   requestedAt: string;
-  status: 'pendente' | 'aprovado' | 'rejeitado';
+  status: 'pendente' | 'aprovado' | 'rejeitado' | 'processado';
   approvedBy?: string;
   approvedAt?: string;
   rejectedBy?: string;
@@ -46,7 +46,17 @@ interface FuelCardRequestHistory {
   rejectionReason?: string;
   baseId?: number;
   baseName?: string;
+  processedBy?: string;
+  processedAt?: string;
 }
+
+// Esquema para as operações de adição de saldo
+const cardOperationSchema = z.object({
+  requestId: z.string().min(1, { message: 'A solicitação é obrigatória' }),
+  operationDate: z.string().min(1, { message: 'A data da operação é obrigatória' }),
+  confirmationCode: z.string().min(1, { message: 'O código de confirmação é obrigatório' }),
+  operationNotes: z.string().optional(),
+});
 
 // Componente para exibir o histórico de solicitações
 const FuelCardHistory: React.FC = () => {
