@@ -141,7 +141,10 @@ const UsersNew: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] = useState(false);
+  const [isViewUserDialogOpen, setIsViewUserDialogOpen] = useState(false);
+  const [isDeleteUserDialogOpen, setIsDeleteUserDialogOpen] = useState(false);
   
   // Buscar bases disponíveis usando React Query
   const { data: bases, isLoading: basesLoading } = useQuery<Base[]>({
@@ -189,6 +192,56 @@ const UsersNew: React.FC = () => {
       setConfirmPassword(newPassword);
     }
   }, [isAddDialogOpen]);
+  
+  // Função para visualizar detalhes do usuário
+  const handleViewUser = (user: User) => {
+    setSelectedUser(user);
+    setIsViewUserDialogOpen(true);
+  };
+  
+  // Função para iniciar processo de exclusão do usuário
+  const handleDeleteUserConfirm = (userId: number) => {
+    setSelectedUserId(userId);
+    setIsDeleteUserDialogOpen(true);
+  };
+  
+  // Função para excluir um usuário
+  const handleDeleteUser = async () => {
+    if (!selectedUserId) return;
+    
+    try {
+      // Chamar API para excluir o usuário
+      const response = await fetch(`/api/users/${selectedUserId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao excluir usuário');
+      }
+      
+      // Fechar o diálogo
+      setIsDeleteUserDialogOpen(false);
+      
+      // Atualizar a lista de usuários
+      handleUserDataChanged();
+      
+      toast({
+        title: "Usuário excluído",
+        description: "Usuário excluído com sucesso.",
+      });
+    } catch (error: any) {
+      console.error('Erro ao excluir usuário:', error);
+      toast({
+        title: "Erro ao excluir usuário",
+        description: error.message || "Ocorreu um erro ao tentar excluir o usuário.",
+        variant: "destructive"
+      });
+    }
+  };
   
   // Função para resetar a senha de um usuário
   const handleResetPassword = async () => {
@@ -578,10 +631,20 @@ const UsersNew: React.FC = () => {
                           >
                             <KeyRound className="h-4 w-4" />
                           </Button>
-                          <Button variant="outline" size="icon" title="Editar usuário">
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            title="Visualizar detalhes"
+                            onClick={() => handleViewUser(user)}
+                          >
                             <FileEdit className="h-4 w-4" />
                           </Button>
-                          <Button variant="outline" size="icon" title="Excluir usuário">
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            title="Excluir usuário"
+                            onClick={() => handleDeleteUserConfirm(user.id)}
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -594,6 +657,7 @@ const UsersNew: React.FC = () => {
           </CardContent>
         </Card>
         
+        {/* Diálogo de redefinição de senha */}
         {/* Diálogo de redefinição de senha */}
         <Dialog open={isResetPasswordDialogOpen} onOpenChange={setIsResetPasswordDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
@@ -610,6 +674,83 @@ const UsersNew: React.FC = () => {
               </Button>
               <Button onClick={handleResetPassword}>
                 Redefinir Senha
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Diálogo de visualização de detalhes do usuário */}
+        <Dialog open={isViewUserDialogOpen} onOpenChange={setIsViewUserDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Detalhes do Usuário</DialogTitle>
+            </DialogHeader>
+            {selectedUser && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="font-medium">Nome:</div>
+                  <div className="col-span-2">{selectedUser.name}</div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="font-medium">E-mail:</div>
+                  <div className="col-span-2">{selectedUser.email}</div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="font-medium">Perfil:</div>
+                  <div className="col-span-2">
+                    <span className={`px-2 py-1 text-xs rounded-full ${getRoleBadgeClass(selectedUser.role)}`}>
+                      {translateUserRole(selectedUser.role)}
+                    </span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="font-medium">Base:</div>
+                  <div className="col-span-2">{selectedUser.baseName || 'Global'}</div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="font-medium">Último acesso:</div>
+                  <div className="col-span-2">{formatDateTime(selectedUser.lastLogin) || 'Nunca acessou'}</div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="font-medium">Status:</div>
+                  <div className="col-span-2">
+                    {selectedUser.isActive ? (
+                      <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                        Ativo
+                      </span>
+                    ) : (
+                      <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
+                        Inativo
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button onClick={() => setIsViewUserDialogOpen(false)}>
+                Fechar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Diálogo de exclusão de usuário */}
+        <Dialog open={isDeleteUserDialogOpen} onOpenChange={setIsDeleteUserDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Excluir Usuário</DialogTitle>
+              <DialogDescription>
+                Tem certeza que deseja excluir este usuário?
+                Esta ação não poderá ser desfeita.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDeleteUserDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteUser}>
+                Excluir
               </Button>
             </DialogFooter>
           </DialogContent>
