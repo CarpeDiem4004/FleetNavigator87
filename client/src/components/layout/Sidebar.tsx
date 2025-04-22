@@ -21,7 +21,8 @@ import {
   Timer,
   ChevronsDown,
   ShieldAlert,
-  FileText
+  FileText,
+  Package
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -60,6 +61,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText },
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Oficinas Credenciadas', href: '/fleet-management/workshops', icon: ClipboardList },
+    { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package },
     { name: 'Análise da Operação', href: '/fleet-management/operational-analysis', icon: BarChart4 },
     { name: 'Visão Geral da Frota', href: '/fleet-management/fleet-overview', icon: Activity },
     { name: 'Veículos Parados', href: '/fleet-management/downtime-analysis', icon: ChevronsDown },

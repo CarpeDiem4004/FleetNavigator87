@@ -188,6 +188,7 @@ export function useBasePermission(): BasePermissionHook {
         '/fleet-management/maintenance',              // Sistema de manutenção
         '/fleet-management/budgets',                  // Sistema de orçamentos
         '/fleet-management/workshops',                // Oficinas credenciadas
+        '/fleet-management/inventory',                // Gestão de estoque
         '/fleet-management/operational-analysis',     // Análise da operação  
         '/fleet-management/fleet-overview',           // Visão geral da frota
         '/fleet-management/downtime-analysis',        // Dias de veículos parados em manutenção
