@@ -44,6 +44,13 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   const [location] = useLocation();
   const { user, logout } = useAuth();
   const { hasPermission } = useBasePermission();
+  
+  // Função para fechar o sidebar em telas menores quando um item é clicado
+  const closeSidebar = () => {
+    if (window.innerWidth < 1024) {
+      setOpen(false);
+    }
+  };
 
   if (!user) {
     return null;
@@ -99,12 +106,6 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   // Filtrando itens de navegação com base nas permissões do usuário
   const navItems = navItemsBase.filter(item => hasPermission(item.href));
 
-  const closeSidebar = () => {
-    if (window.innerWidth < 768) {
-      setOpen(false);
-    }
-  };
-
   return (
     <div
       className={`${
@@ -134,10 +135,13 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
                 return (
                   <div key={item.name}>
                     {item.subItems ? (
-                      // Use um botão se tiver subitens
-                      <Link 
-                        href={item.href}
-                        onClick={() => {}}
+                      // Use um div se tiver subitens
+                      <button
+                        onClick={() => {
+                          // Se houver subitens, apenas ative o item visualmente
+                          // Não navegar para a página do item principal
+                          closeSidebar();
+                        }}
                         className={`flex w-full items-center px-4 py-3 rounded-md group transition-colors duration-200 text-left ${
                           isActive || isSubItemActive
                             ? 'text-white bg-primary-900' 
