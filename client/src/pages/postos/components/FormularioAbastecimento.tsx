@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { CheckCircle2, Fuel } from "lucide-react";
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +25,7 @@ import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 
-// Schema de validação para o formulário
+// Schema de validação
 const abastecimentoSchema = z.object({
   placa: z.string().min(7, 'A placa deve ter no mínimo 7 caracteres'),
   km: z.string().min(1, 'O KM é obrigatório'),
@@ -46,20 +46,9 @@ interface FormularioAbastecimentoProps {
   postId: string;
 }
 
-export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = ({ postId }) => {
-  const { toast } = useToast();
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [registroSucesso, setRegistroSucesso] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // useRef para manter referência estável aos estados e evitar problemas com callbacks assíncronos
-  const isSubmittingRef = React.useRef(false);
-  
-  // Efeito para sincronizar o ref com o estado
-  React.useEffect(() => {
-    isSubmittingRef.current = isSubmitting;
-  }, [isSubmitting]);
-  
+// Componente Form separado para evitar re-renders múltiplos do mesmo form
+const FormularioForm = ({ onSubmit, isSubmitting, postId }) => {
+  // Formulário sempre instanciado uma única vez
   const form = useForm<AbastecimentoValues>({
     resolver: zodResolver(abastecimentoSchema),
     defaultValues: {
@@ -73,111 +62,364 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     },
   });
 
-  async function onSubmit(data: AbastecimentoValues) {
-    // Usar o ref para verificar mais seguramente o estado de submissão
-    if (isSubmittingRef.current) {
-      console.log('Submissão já em andamento, ignorando clique duplicado');
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Formulário otimizado para dispositivos móveis */}
+        <div className="grid grid-cols-1 gap-4">
+          {/* Seção de identificação do veículo */}
+          <div className="bg-gray-50 dark:bg-gray-800/30 p-4 rounded-lg mb-2">
+            <h3 className="text-md font-semibold mb-3">Informações do Veículo</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="placa"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Placa do Veículo</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="ABC1234" 
+                        {...field} 
+                        className="uppercase text-lg font-medium"
+                        style={{height: '48px'}} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="km"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>KM Atual</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="tel" 
+                        inputMode="numeric" 
+                        placeholder="123456" 
+                        {...field} 
+                        className="text-lg font-medium"
+                        style={{height: '48px'}} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+          
+          {/* Seção de abastecimento */}
+          <div className="bg-gray-50 dark:bg-gray-800/30 p-4 rounded-lg mb-2">
+            <h3 className="text-md font-semibold mb-3">Dados do Abastecimento</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="tipo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo de Combustível</FormLabel>
+                    <FormControl>
+                      <select
+                        className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-background px-4 py-2 text-lg font-medium ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                      >
+                        <option value="" disabled>Selecione</option>
+                        <option value="Diesel">Diesel</option>
+                        <option value="ARLA">ARLA</option>
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="quantidade"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quantidade (Litros)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="tel" 
+                        inputMode="decimal" 
+                        placeholder="100" 
+                        {...field} 
+                        className="text-lg font-medium"
+                        style={{height: '48px'}} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+          
+          {/* Seção do projeto e pessoas */}
+          <div className="bg-gray-50 dark:bg-gray-800/30 p-4 rounded-lg">
+            <h3 className="text-md font-semibold mb-3">Projeto e Responsáveis</h3>
+            <div className="grid grid-cols-1 gap-4">
+              <FormField
+                control={form.control}
+                name="projeto"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Projeto</FormLabel>
+                    <FormControl>
+                      <select
+                        className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-background px-4 py-2 text-lg font-medium ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                      >
+                        <option value="" disabled>Selecione o projeto</option>
+                        <option value="GRUPO PEREIRA">GRUPO PEREIRA</option>
+                        <option value="COCA COLA">COCA COLA</option>
+                        <option value="SHOPEE">SHOPEE</option>
+                        <option value="MERCADO LIVRE">MERCADO LIVRE</option>
+                        <option value="LINE HALL SHOPEE">LINE HALL SHOPEE</option>
+                        <option value="MADEIRA MADEIRA">MADEIRA MADEIRA</option>
+                        <option value="MAGALU">MAGALU</option>
+                        <option value="NATURA">NATURA</option>
+                        <option value="OXXO">OXXO</option>
+                        <option value="PETLOVE">PETLOVE</option>
+                        <option value="Outro">Outro</option>
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="motorista"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome do Motorista</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="João Silva" 
+                        {...field} 
+                        className="text-lg"
+                        style={{height: '48px'}}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="operador"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome do Operador</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Carlos Oliveira" 
+                        {...field} 
+                        className="text-lg"
+                        style={{height: '48px'}}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+        </div>
+        
+        {/* Botão de submissão */}
+        <div className="mt-6">
+          <Button 
+            type="submit" 
+            size="lg" 
+            className="w-full py-6 text-lg font-medium"
+            disabled={isSubmitting}
+            style={{
+              background: 'linear-gradient(to right, #10b981, #059669)',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+            }}
+          >
+            {isSubmitting ? (
+              <>
+                <span className="mr-3 h-5 w-5 animate-spin rounded-full border-2 border-b-transparent"></span>
+                Registrando...
+              </>
+            ) : (
+              'REGISTRAR ABASTECIMENTO'
+            )}
+          </Button>
+        </div>
+        
+        <p className="text-center text-sm text-muted-foreground mt-2">
+          Toque no botão acima para registrar o abastecimento
+        </p>
+      </form>
+    </Form>
+  );
+};
+
+// Componente de sucesso separado
+const TelaSucesso = ({ onHistorico, onNovoRegistro }) => {
+  return (
+    <div className="flex flex-col items-center justify-center py-8">
+      <div className="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-full p-8">
+        <CheckCircle2 className="h-20 w-20 text-green-500" />
+      </div>
+      <h2 className="text-2xl font-bold mb-4 text-center" style={{color: '#10b981'}}>
+        Abastecimento Registrado com Sucesso!
+      </h2>
+      <p className="text-muted-foreground mb-8 text-center max-w-md text-lg">
+        O abastecimento foi registrado corretamente no sistema.
+      </p>
+      <div className="flex flex-col w-full gap-4 mt-2">
+        <Button 
+          onClick={onHistorico} 
+          className="w-full py-5 text-lg font-medium"
+          style={{
+            background: 'linear-gradient(to right, #10b981, #059669)',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+          }}
+        >
+          Ver Histórico de Abastecimentos
+        </Button>
+        <Button 
+          onClick={onNovoRegistro} 
+          variant="outline"
+          className="w-full py-5 text-lg font-medium"
+        >
+          Registrar Novo Abastecimento
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+// Componente principal - versão totalmente refatorada para evitar erros de DOM
+export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = ({ postId }) => {
+  const { toast } = useToast();
+  const [registroSucesso, setRegistroSucesso] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const processingRef = useRef(false);
+  
+  // Limpeza das refs quando o componente é desmontado
+  useEffect(() => {
+    return () => {
+      processingRef.current = false;
+    };
+  }, []);
+  
+  // Manipulador de histórico
+  const handleVerHistorico = useCallback(() => {
+    const historicosSection = document.getElementById("historicos-section");
+    if (historicosSection) {
+      historicosSection.scrollIntoView({ behavior: "smooth" });
+    }
+    setRegistroSucesso(false);
+  }, []);
+  
+  // Manipulador de novo registro
+  const handleNovoRegistro = useCallback(() => {
+    setRegistroSucesso(false);
+  }, []);
+  
+  // Função para processamento do formulário
+  const processarSubmissao = useCallback(async (data: AbastecimentoValues) => {
+    // Verificação adicional para prevenir envios duplicados
+    if (processingRef.current) {
+      console.log('Já existe um processamento em andamento');
       return;
     }
     
+    // Marca como em processamento
+    processingRef.current = true;
     setIsSubmitting(true);
-    console.log('Iniciando processo de envio de abastecimento');
     
     try {
-      // Prepara os dados no formato esperado pela API
-      const formatPosto = (posto: string) => {
-        return posto.charAt(0).toUpperCase() + posto.slice(1);
-      };
+      console.log('Iniciando registro de abastecimento');
       
+      // Dados formatados para inserção
       const abastecimentoData = {
         placa: data.placa.toUpperCase(),
-        km_atual: Number(data.km),
-        tipo_combustivel: data.tipo,
-        litros: Number(data.quantidade),
+        km: Number(data.km),
+        tipo: data.tipo,
+        quantidade: Number(data.quantidade),
         projeto: data.projeto,
-        nome_motorista: data.motorista,
-        nome_operador: data.operador,
-        posto: formatPosto(postId),
-        data_hora: new Date().toISOString()
+        motorista: data.motorista,
+        operador: data.operador,
+        posto_id: postId,
+        data_registro: new Date().toISOString()
       };
       
-      console.log('Dados preparados para envio:', abastecimentoData);
-      
-      // Verificação básica de conexão
+      // Verificação de conexão
       if (!navigator.onLine) {
-        console.error('Sem conexão com a internet detectada');
         throw new Error('Sem conexão com a internet. Verifique sua rede e tente novamente.');
       }
       
-      // Notificação ao usuário
+      // Notifica usuário sobre o início do processamento
       toast({
-        title: 'Registrando abastecimento',
-        description: 'Aguarde enquanto seu registro é processado...',
+        title: 'Processando registro',
+        description: 'Enviando informações para o servidor...',
       });
       
-      // VERSÃO SIMPLIFICADA COM MÚLTIPLAS ABORDAGENS DE INSERÇÃO
-      let inseridoComSucesso = false;
-      let resultado = null;
+      // Tenta três abordagens diferentes para garantir inserção
+      let registroSalvo = false;
       
-      // Tentativa 1: Cliente Admin com conversão simplificada dos campos
+      // Tentativa 1: Via cliente admin
       try {
-        console.log('Tentativa 1: Cliente Admin direto');
-        
-        // Forçar um objeto simplificado para evitar problemas de conversão
-        const dadosSimplificados = {
-          placa: abastecimentoData.placa,
-          km: Number(data.km), // Usar campo original para evitar conversões problemáticas
-          tipo: abastecimentoData.tipo_combustivel,
-          quantidade: Number(data.quantidade), // Usar campo original 
-          projeto: abastecimentoData.projeto,
-          motorista: abastecimentoData.nome_motorista,
-          operador: abastecimentoData.nome_operador,
-          posto_id: postId,
-          data_registro: abastecimentoData.data_hora
-        };
-        
+        console.log('Tentativa 1: Inserindo via cliente admin');
         const { supabaseAdmin } = await import('@/lib/supabase-client');
-        const { data: resultadoInsercao, error } = await supabaseAdmin
-          .from('abastecimentos_postos')
-          .insert([dadosSimplificados]);
         
+        const { error } = await supabaseAdmin
+          .from('abastecimentos_postos')
+          .insert([abastecimentoData]);
+          
         if (!error) {
-          console.log('Tentativa 1 bem-sucedida');
-          inseridoComSucesso = true;
-          resultado = resultadoInsercao;
+          console.log('Registro via cliente admin bem-sucedido');
+          registroSalvo = true;
         } else {
-          console.warn('Tentativa 1 falhou com erro:', error.message);
+          console.warn('Erro na tentativa 1:', error.message);
         }
-      } catch (erro1) {
-        console.error('Erro na Tentativa 1:', erro1);
+      } catch (e) {
+        console.error('Exceção na tentativa 1:', e);
       }
       
-      // Tentativa 2: Usando a função auxiliar insertData
-      if (!inseridoComSucesso) {
+      // Tentativa 2: Via insertData
+      if (!registroSalvo) {
         try {
-          console.log('Tentativa 2: Usando função insertData');
-          
+          console.log('Tentativa 2: Inserindo via insertData');
           const { insertData } = await import('@/lib/supabase-client');
-          const resposta = await insertData('abastecimentos_postos', abastecimentoData);
           
-          if (resposta.success) {
-            console.log('Tentativa 2 bem-sucedida');
-            inseridoComSucesso = true;
-            resultado = resposta.data;
+          const resultado = await insertData('abastecimentos_postos', abastecimentoData);
+          
+          if (resultado.success) {
+            console.log('Registro via insertData bem-sucedido');
+            registroSalvo = true;
           } else {
-            console.warn('Tentativa 2 falhou com erro:', resposta.error);
+            console.warn('Erro na tentativa 2:', resultado.error);
           }
-        } catch (erro2) {
-          console.error('Erro na Tentativa 2:', erro2);
+        } catch (e) {
+          console.error('Exceção na tentativa 2:', e);
         }
       }
       
-      // Tentativa 3: Abordagem direta com POST via fetch
-      if (!inseridoComSucesso) {
+      // Tentativa 3: Via fetch direto
+      if (!registroSalvo) {
         try {
-          console.log('Tentativa 3: Último recurso via fetch');
+          console.log('Tentativa 3: Inserindo via fetch direto');
           
-          // Criar uma opção de último recurso usando fetch diretamente
           const response = await fetch('https://hvsmxxqkuyjhpsiojupb.supabase.co/rest/v1/abastecimentos_postos', {
             method: 'POST',
             headers: {
@@ -190,112 +432,59 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
           });
           
           if (response.ok) {
-            console.log('Tentativa 3 bem-sucedida');
-            inseridoComSucesso = true;
+            console.log('Registro via fetch direto bem-sucedido');
+            registroSalvo = true;
           } else {
-            console.warn('Tentativa 3 falhou com status:', response.status);
+            console.warn('Erro na tentativa 3:', response.status);
           }
-        } catch (erro3) {
-          console.error('Erro na Tentativa 3:', erro3);
+        } catch (e) {
+          console.error('Exceção na tentativa 3:', e);
         }
       }
       
-      // Verificação final
-      if (!inseridoComSucesso) {
-        throw new Error('Não foi possível registrar o abastecimento após múltiplas tentativas');
+      // Verifica resultado final
+      if (!registroSalvo) {
+        throw new Error('Não foi possível salvar o registro após múltiplas tentativas');
       }
       
-      // Se chegou aqui, o registro foi bem-sucedido por algum dos métodos
-      console.log('Registro completado com sucesso!');
-      
-      // Notificar usuário  
+      // Notifica sucesso
       toast({
         title: 'Abastecimento registrado!',
         description: `Veículo ${data.placa} abastecido com sucesso.`,
       });
       
-      // Atualizar a interface e limpar formulário
-      setRegistroSucesso(true); 
-      setSuccessMessage('Abastecimento registrado com sucesso!');
-      form.reset();
+      // Atualiza interface
+      setRegistroSucesso(true);
+      
     } catch (error: any) {
-      console.error('Erro ao registrar abastecimento:', error);
+      // Tratamento de erro
+      console.error('Erro no processamento:', error);
       
-      // Mensagem de erro mais específica
-      let errorMessage = 'Verifique sua conexão e tente novamente.';
+      // Mensagem personalizada
+      let mensagem = 'Erro ao registrar abastecimento. Tente novamente.';
       
-      // Tentativa de melhorar a mensagem de erro com base no tipo
-      if (error.name === 'AbortError') {
-        errorMessage = 'O servidor demorou muito para responder. Tente novamente mais tarde.';
-      } else if (error.message && error.message.includes('Failed to fetch')) {
-        errorMessage = 'Falha na conexão com o servidor. Verifique se você tem acesso à internet.';
-      } else if (error.message) {
-        errorMessage = error.message;
+      if (error.message) {
+        if (error.message.includes('fetch')) {
+          mensagem = 'Falha na conexão com o servidor. Verifique sua internet.';
+        } else {
+          mensagem = error.message;
+        }
       }
       
+      // Notifica erro
       toast({
-        title: 'Erro ao registrar abastecimento',
-        description: errorMessage,
+        title: 'Falha no registro',
+        description: mensagem,
         variant: 'destructive',
       });
     } finally {
+      // Sempre limpa estados
       setIsSubmitting(false);
+      processingRef.current = false;
     }
-  }
-
-  // Função para lidar com a navegação entre abas na página principal
-  const handleVerHistorico = () => {
-    // Este script vai rolar a página para a seção de histórico
-    const historicosSection = document.getElementById("historicos-section");
-    if (historicosSection) {
-      historicosSection.scrollIntoView({ behavior: "smooth" });
-    }
-    // Resetamos o estado para permitir novos registros
-    setRegistroSucesso(false);
-  };
+  }, [postId, toast]);
   
-  const handleNovoRegistro = () => {
-    // Resetamos o estado para permitir um novo registro
-    setRegistroSucesso(false);
-    setSuccessMessage(null);
-  };
-
-  // Função para renderizar a tela de sucesso separadamente para evitar problemas de renderização
-  const renderTelaSuccesso = () => {
-    return (
-      <div className="flex flex-col items-center justify-center py-8">
-        <div className="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-full p-8">
-          <CheckCircle2 className="h-20 w-20 text-green-500" />
-        </div>
-        <h2 className="text-2xl font-bold mb-4 text-center" style={{color: '#10b981'}}>
-          Abastecimento Registrado com Sucesso!
-        </h2>
-        <p className="text-muted-foreground mb-8 text-center max-w-md text-lg">
-          O abastecimento foi registrado corretamente no sistema.
-        </p>
-        <div className="flex flex-col w-full gap-4 mt-2">
-          <Button 
-            onClick={handleVerHistorico} 
-            className="w-full py-5 text-lg font-medium"
-            style={{
-              background: 'linear-gradient(to right, #10b981, #059669)',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-            }}
-          >
-            Ver Histórico de Abastecimentos
-          </Button>
-          <Button 
-            onClick={handleNovoRegistro} 
-            variant="outline"
-            className="w-full py-5 text-lg font-medium"
-          >
-            Registrar Novo Abastecimento
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
+  // Renderização com componentes isolados para evitar problemas de DOM
   return (
     <TabsContent value="abastecimento" className="mt-4">
       <Card>
@@ -309,227 +498,17 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {registroSucesso ? renderTelaSuccesso() : (
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {successMessage && (
-                  <div className="col-span-full mb-4">
-                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-4 text-sm text-green-800 dark:text-green-400">
-                      <div className="flex items-center">
-                        <svg className="h-4 w-4 mr-2 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                          <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
-                        </svg>
-                        {successMessage}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              
-                {/* Formulário otimizado para dispositivos móveis */}
-                <div className="grid grid-cols-1 gap-4">
-                  {/* Seção de identificação do veículo */}
-                  <div className="bg-gray-50 dark:bg-gray-800/30 p-4 rounded-lg mb-2">
-                    <h3 className="text-md font-semibold mb-3">Informações do Veículo</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="placa"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Placa do Veículo</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="ABC1234" 
-                                {...field} 
-                                className="uppercase text-lg font-medium"
-                                style={{height: '48px'}} // Altura maior para facilitar o toque
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="km"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>KM Atual</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="tel" 
-                                inputMode="numeric" 
-                                placeholder="123456" 
-                                {...field} 
-                                className="text-lg font-medium"
-                                style={{height: '48px'}} // Altura maior para facilitar o toque
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-                  
-                  {/* Seção de abastecimento */}
-                  <div className="bg-gray-50 dark:bg-gray-800/30 p-4 rounded-lg mb-2">
-                    <h3 className="text-md font-semibold mb-3">Dados do Abastecimento</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="tipo"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Tipo de Combustível</FormLabel>
-                            <FormControl>
-                              <select
-                                className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-background px-4 py-2 text-lg font-medium ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                value={field.value}
-                                onChange={field.onChange}
-                                onBlur={field.onBlur}
-                              >
-                                <option value="" disabled>Selecione</option>
-                                <option value="Diesel">Diesel</option>
-                                <option value="ARLA">ARLA</option>
-                              </select>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="quantidade"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Quantidade (Litros)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="tel" 
-                                inputMode="decimal" 
-                                placeholder="100" 
-                                {...field} 
-                                className="text-lg font-medium"
-                                style={{height: '48px'}} // Altura maior para facilitar o toque
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-                  
-                  {/* Seção do projeto e pessoas */}
-                  <div className="bg-gray-50 dark:bg-gray-800/30 p-4 rounded-lg">
-                    <h3 className="text-md font-semibold mb-3">Projeto e Responsáveis</h3>
-                    <div className="grid grid-cols-1 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="projeto"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Projeto</FormLabel>
-                            <FormControl>
-                              <select
-                                className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-background px-4 py-2 text-lg font-medium ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                value={field.value}
-                                onChange={field.onChange}
-                                onBlur={field.onBlur}
-                              >
-                                <option value="" disabled>Selecione o projeto</option>
-                                <option value="GRUPO PEREIRA">GRUPO PEREIRA</option>
-                                <option value="COCA COLA">COCA COLA</option>
-                                <option value="SHOPEE">SHOPEE</option>
-                                <option value="MERCADO LIVRE">MERCADO LIVRE</option>
-                                <option value="LINE HALL SHOPEE">LINE HALL SHOPEE</option>
-                                <option value="MADEIRA MADEIRA">MADEIRA MADEIRA</option>
-                                <option value="MAGALU">MAGALU</option>
-                                <option value="NATURA">NATURA</option>
-                                <option value="OXXO">OXXO</option>
-                                <option value="PETLOVE">PETLOVE</option>
-                                <option value="Outro">Outro</option>
-                              </select>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="motorista"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nome do Motorista</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="João Silva" 
-                                {...field} 
-                                className="text-lg"
-                                style={{height: '48px'}} // Altura maior para facilitar o toque
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="operador"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nome do Operador</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="Carlos Oliveira" 
-                                {...field} 
-                                className="text-lg"
-                                style={{height: '48px'}} // Altura maior para facilitar o toque
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Botão de submissão grande e amigável para mobile */}
-                <div className="mt-6">
-                  <Button 
-                    type="submit" 
-                    size="lg" 
-                    className="w-full py-6 text-lg font-medium"
-                    disabled={isSubmitting}
-                    style={{
-                      background: 'linear-gradient(to right, #10b981, #059669)',
-                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-                    }}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <span className="mr-3 h-5 w-5 animate-spin rounded-full border-2 border-b-transparent"></span>
-                        Registrando...
-                      </>
-                    ) : (
-                      'REGISTRAR ABASTECIMENTO'
-                    )}
-                  </Button>
-                </div>
-                
-                {/* Texto de ajuda abaixo do botão */}
-                <p className="text-center text-sm text-muted-foreground mt-2">
-                  Toque no botão acima para registrar o abastecimento
-                </p>
-              </form>
-            </Form>
-          )}
+          {registroSucesso ? 
+            <TelaSucesso 
+              onHistorico={handleVerHistorico} 
+              onNovoRegistro={handleNovoRegistro} 
+            /> : 
+            <FormularioForm 
+              onSubmit={processarSubmissao} 
+              isSubmitting={isSubmitting}
+              postId={postId} 
+            />
+          }
         </CardContent>
         <CardFooter className="flex justify-between border-t pt-4 text-sm text-muted-foreground">
           <p>Data e hora serão registradas automaticamente.</p>
