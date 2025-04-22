@@ -52,10 +52,109 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import InventoryItemsTable from './components/inventory/InventoryItemsTable';
-import InventoryMovements from './components/inventory/InventoryMovements';
-import InventoryStockByLocation from './components/inventory/InventoryStockByLocation';
-import InventoryItemsForm from './components/inventory/InventoryItemsForm';
+// Placeholder components para desenvolvimento
+const InventoryItemsTable = () => (
+  <Card>
+    <CardHeader>
+      <CardTitle>Itens Cadastrados</CardTitle>
+      <CardDescription>
+        Listagem dos itens disponíveis no sistema
+      </CardDescription>
+    </CardHeader>
+    <CardContent>
+      <div className="flex justify-center py-8">
+        <div className="text-center text-muted-foreground">
+          <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p>Componente em desenvolvimento</p>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const InventoryMovements = () => (
+  <Card>
+    <CardHeader>
+      <CardTitle>Movimentações de Estoque</CardTitle>
+      <CardDescription>
+        Histórico de movimentações de itens
+      </CardDescription>
+    </CardHeader>
+    <CardContent>
+      <div className="flex justify-center py-8">
+        <div className="text-center text-muted-foreground">
+          <Send className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p>Componente em desenvolvimento</p>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const InventoryStockByLocation = () => (
+  <Card>
+    <CardHeader>
+      <CardTitle>Estoque por Localização</CardTitle>
+      <CardDescription>
+        Visualização de estoque por base/oficina
+      </CardDescription>
+    </CardHeader>
+    <CardContent>
+      <div className="flex justify-center py-8">
+        <div className="text-center text-muted-foreground">
+          <Truck className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p>Componente em desenvolvimento</p>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const InventoryItemsForm = ({ onSuccess }: { onSuccess: () => void }) => (
+  <div className="space-y-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <Label htmlFor="name">Nome do Item</Label>
+        <Input id="name" placeholder="Ex: Filtro de Óleo" />
+      </div>
+      <div>
+        <Label htmlFor="code">Código/SKU</Label>
+        <Input id="code" placeholder="Ex: FO-1234" />
+      </div>
+      <div>
+        <Label htmlFor="category">Categoria</Label>
+        <Select>
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione uma categoria" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="filtros">Filtros</SelectItem>
+            <SelectItem value="motor">Motor</SelectItem>
+            <SelectItem value="freios">Freios</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label htmlFor="unit">Unidade de Medida</Label>
+        <Select defaultValue="un">
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="un">Unidade (un)</SelectItem>
+            <SelectItem value="kg">Quilograma (kg)</SelectItem>
+            <SelectItem value="l">Litro (l)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+    
+    <div className="flex justify-end space-x-2 pt-4">
+      <Button variant="outline" onClick={onSuccess}>Cancelar</Button>
+      <Button onClick={onSuccess}>Cadastrar Item</Button>
+    </div>
+  </div>
+);
 
 export default function InventoryPage() {
   const { user } = useAuth();

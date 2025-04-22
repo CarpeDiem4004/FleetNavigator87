@@ -47,6 +47,7 @@ import WorkSafety from "@/pages/work-safety";
 import WorkshopsPage from "@/pages/fleet-management/WorkshopsPage";
 import MaintenancePage from "@/pages/fleet-management/MaintenancePage";
 import BudgetManagementPage from "@/pages/fleet-management/BudgetManagementPage";
+import InventoryPage from "@/pages/fleet-management/InventoryPage";
 import TiresEntrada from "@/pages/TiresEntrada";
 import LineHallShopee from "@/pages/LineHallShopee";
 import DriverChecklist from "@/pages/DriverChecklist";
@@ -102,6 +103,7 @@ function App() {
           <ProtectedRoute path="/fines" component={FinesNew} />
           <ProtectedRoute path="/line-hall" component={EntradaOperacoes} />
           <ProtectedRoute path="/fleet-management" component={FleetManagement} />
+          <ProtectedRoute path="/fleet-management/inventory" component={InventoryPage} />
           <ProtectedRoute path="/fleet-management/workshops" component={WorkshopsPage} />
           <ProtectedRoute path="/fleet-management/maintenance" component={MaintenancePage} />
           <ProtectedRoute path="/fleet-management/budgets" component={BudgetManagementPage} />
