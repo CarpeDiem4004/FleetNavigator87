@@ -108,7 +108,33 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
         <div className="overflow-y-auto">
           <nav className="flex-1 py-4">
             <div className="space-y-1 px-2">
-              {/* Item fixo para Cartão de Combustível */}
+              {/* Itens fixos que sempre aparecem */}
+              <Link 
+                href="/" 
+                onClick={closeSidebar}
+                className={`flex items-center px-4 py-3 rounded-md group transition-colors duration-200 ${
+                  location === '/' 
+                    ? 'text-white bg-primary-900' 
+                    : 'text-primary-100 hover:bg-primary-700'
+                }`}
+              >
+                <Gauge className="w-6" size={18} />
+                <span className="ml-3">Dashboard</span>
+              </Link>
+              
+              <Link 
+                href="/vehicles" 
+                onClick={closeSidebar}
+                className={`flex items-center px-4 py-3 rounded-md group transition-colors duration-200 ${
+                  location === '/vehicles' 
+                    ? 'text-white bg-primary-900' 
+                    : 'text-primary-100 hover:bg-primary-700'
+                }`}
+              >
+                <Truck className="w-6" size={18} />
+                <span className="ml-3">Veículos</span>
+              </Link>
+              
               <Link 
                 href="/fuel-card" 
                 onClick={closeSidebar}
@@ -123,7 +149,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
               </Link>
 
               {/* Outros itens de navegação dinâmicos */}
-              {navItems.filter(item => item.href !== '/fuel-card').map((item) => {
+              {navItems.filter(item => item.href !== '/fuel-card' && item.href !== '/' && item.href !== '/vehicles').map((item) => {
                 const isActive = location === item.href;
                 const Icon = item.icon;
                 
