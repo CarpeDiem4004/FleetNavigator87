@@ -17,6 +17,7 @@ import { runSupabaseDiagnostic } from "./supabaseDiagnostic";
 import { compareSchemas } from "./compareSchemas";
 import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
 import { db, pool } from "./db";
+import { atualizarTabelaPneus } from "./updatePneus";
 import { randomBytes, scrypt } from "crypto";
 import { promisify } from "util";
 
@@ -503,6 +504,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await criarTabelaFuelCardRequests();
   await criarTabelaDriverChecklists();
   await criarTabelaConfiguracaoTanques();
+  await atualizarTabelaPneus();
   // Rota para registro de movimentações de pátio
   app.post('/api/registro/movimentacao-patio', async (req, res) => {
     try {
