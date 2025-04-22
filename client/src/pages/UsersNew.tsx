@@ -658,7 +658,6 @@ const UsersNew: React.FC = () => {
         </Card>
         
         {/* Diálogo de redefinição de senha */}
-        {/* Diálogo de redefinição de senha */}
         <Dialog open={isResetPasswordDialogOpen} onOpenChange={setIsResetPasswordDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
