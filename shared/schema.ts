@@ -21,6 +21,30 @@ export const refuelingCardStatusEnum = pgEnum('refueling_card_status', ['pendent
 export const messageAuthorEnum = pgEnum('message_author', ['oficina', 'frota']);
 export const vehicleOwnershipEnum = pgEnum('vehicle_ownership', ['murici', 'locado']);
 
+// Enums para sistema de estoque
+export const inventoryMovementTypeEnum = pgEnum('inventory_movement_type', [
+  'entrada',         // Entrada no estoque
+  'saida',           // Saída do estoque
+  'transferencia',   // Transferência entre bases/oficinas
+  'ajuste',          // Ajuste de inventário
+  'descarte'         // Descarte de material
+]);
+
+export const inventoryItemCategoryEnum = pgEnum('inventory_item_category', [
+  'motor',            // Peças de motor
+  'freios',           // Sistema de freios
+  'suspensao',        // Suspensão
+  'transmissao',      // Transmissão
+  'eletrica',         // Parte elétrica
+  'carroceria',       // Carroceria
+  'pneus',            // Pneus e rodas
+  'lubrificantes',    // Óleos e lubrificantes
+  'filtros',          // Filtros diversos
+  'acessorios',       // Acessórios
+  'ferramentas',      // Ferramentas
+  'outros'            // Outros itens
+]);
+
 // Enum para os tipos de solicitação que uma base pode fazer
 export const requestTypeEnum = pgEnum('request_type', [
   'manutencao', // Manutenção
@@ -546,10 +570,132 @@ export const insertBaseRequestUpdateSchema = createInsertSchema(baseRequestUpdat
   createdAt: true,
 });
 
+// Tabela de itens de estoque
+export const inventoryItems = pgTable("inventory_items", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),                                            // Nome da peça/item
+  code: text("code").notNull().unique(),                                   // Código/SKU do item
+  category: inventoryItemCategoryEnum("category").notNull(),               // Categoria do item
+  unit: text("unit").notNull().default('un'),                              // Unidade de medida (un, kg, l, etc)
+  minimumStock: integer("minimum_stock").notNull().default(0),             // Estoque mínimo
+  unitCost: decimal("unit_cost", { precision: 10, scale: 2 }).notNull(),   // Custo unitário
+  description: text("description"),                                        // Descrição detalhada
+  imageUrl: text("image_url"),                                             // URL da imagem do item (se houver)
+  isActive: boolean("is_active").default(true),                            // Se o item está ativo no catálogo
+  notes: text("notes"),                                                    // Observações gerais
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela de estoque por local (bases e oficinas)
+export const inventoryStock = pgTable("inventory_stock", {
+  id: serial("id").primaryKey(),
+  itemId: integer("item_id").notNull().references(() => inventoryItems.id),        // Referência ao item
+  baseId: integer("base_id").references(() => bases.id),                           // Referência à base (se estoque em base)
+  workshopId: integer("workshop_id").references(() => workshops.id),               // Referência à oficina (se estoque em oficina)
+  quantity: integer("quantity").notNull().default(0),                              // Quantidade disponível
+  location: text("location"),                                                      // Localização física dentro do estoque (prateleira, armário, etc)
+  lastUpdated: timestamp("last_updated").defaultNow(),                             // Última atualização do estoque
+  notes: text("notes"),                                                            // Observações específicas deste estoque
+});
+
+// Tabela de movimentações de estoque
+export const inventoryMovements = pgTable("inventory_movements", {
+  id: serial("id").primaryKey(),
+  itemId: integer("item_id").notNull().references(() => inventoryItems.id),        // Item movimentado
+  sourceBaseId: integer("source_base_id").references(() => bases.id),              // Base de origem (se aplicável)
+  sourceWorkshopId: integer("source_workshop_id").references(() => workshops.id),  // Oficina de origem (se aplicável)
+  destinationBaseId: integer("destination_base_id").references(() => bases.id),    // Base de destino (se aplicável)
+  destinationWorkshopId: integer("destination_workshop_id").references(() => workshops.id), // Oficina de destino (se aplicável)
+  vehiclePlate: text("vehicle_plate").references(() => vehicles.plate),            // Veículo relacionado (se aplicável)
+  maintenanceId: integer("maintenance_id").references(() => maintenance.id),       // Manutenção relacionada (se aplicável)
+  quantity: integer("quantity").notNull(),                                         // Quantidade movimentada
+  movementType: inventoryMovementTypeEnum("movement_type").notNull(),              // Tipo de movimentação
+  unitCost: decimal("unit_cost", { precision: 10, scale: 2 }).notNull(),           // Custo unitário no momento da movimentação
+  totalCost: decimal("total_cost", { precision: 10, scale: 2 }).notNull(),         // Custo total da movimentação
+  requestedBy: integer("requested_by").notNull().references(() => users.id),       // Usuário que solicitou
+  approvedBy: integer("approved_by").references(() => users.id),                   // Usuário que aprovou (se aplicável)
+  documentNumber: text("document_number"),                                         // Número do documento relacionado (NF, ordem de serviço, etc)
+  reasonForMovement: text("reason_for_movement").notNull(),                        // Motivo da movimentação
+  notes: text("notes"),                                                            // Observações
+  createdAt: timestamp("created_at").defaultNow(),                                 // Data de criação do registro
+});
+
+// Relações para o sistema de estoque
+export const inventoryItemsRelations = relations(inventoryItems, ({ many }) => ({
+  stocks: many(inventoryStock),
+  movements: many(inventoryMovements)
+}));
+
+export const inventoryStockRelations = relations(inventoryStock, ({ one }) => ({
+  item: one(inventoryItems, {
+    fields: [inventoryStock.itemId],
+    references: [inventoryItems.id]
+  }),
+  base: one(bases, {
+    fields: [inventoryStock.baseId],
+    references: [bases.id]
+  }),
+  workshop: one(workshops, {
+    fields: [inventoryStock.workshopId],
+    references: [workshops.id]
+  })
+}));
+
+export const inventoryMovementsRelations = relations(inventoryMovements, ({ one }) => ({
+  item: one(inventoryItems, {
+    fields: [inventoryMovements.itemId],
+    references: [inventoryItems.id]
+  }),
+  sourceBase: one(bases, {
+    fields: [inventoryMovements.sourceBaseId],
+    references: [bases.id]
+  }),
+  sourceWorkshop: one(workshops, {
+    fields: [inventoryMovements.sourceWorkshopId],
+    references: [workshops.id]
+  }),
+  destinationBase: one(bases, {
+    fields: [inventoryMovements.destinationBaseId],
+    references: [bases.id]
+  }),
+  destinationWorkshop: one(workshops, {
+    fields: [inventoryMovements.destinationWorkshopId],
+    references: [workshops.id]
+  }),
+  vehicle: one(vehicles, {
+    fields: [inventoryMovements.vehiclePlate],
+    references: [vehicles.plate]
+  }),
+  maintenance: one(maintenance, {
+    fields: [inventoryMovements.maintenanceId],
+    references: [maintenance.id]
+  }),
+  requestedByUser: one(users, {
+    fields: [inventoryMovements.requestedBy],
+    references: [users.id]
+  }),
+  approvedByUser: one(users, {
+    fields: [inventoryMovements.approvedBy],
+    references: [users.id]
+  })
+}));
+
+// Schemas de inserção para o sistema de estoque
+export const insertInventoryItemSchema = createInsertSchema(inventoryItems);
+export const insertInventoryStockSchema = createInsertSchema(inventoryStock);
+export const insertInventoryMovementSchema = createInsertSchema(inventoryMovements);
+
 // Tipos para as novas tabelas
+export type InventoryItem = typeof inventoryItems.$inferSelect;
+export type InventoryStock = typeof inventoryStock.$inferSelect;
+export type InventoryMovement = typeof inventoryMovements.$inferSelect;
 export type BaseRequest = typeof baseRequests.$inferSelect;
 export type BaseRequestUpdate = typeof baseRequestUpdates.$inferSelect;
 
 // Tipos para inserção
+export type InsertInventoryItem = z.infer<typeof insertInventoryItemSchema>;
+export type InsertInventoryStock = z.infer<typeof insertInventoryStockSchema>;
+export type InsertInventoryMovement = z.infer<typeof insertInventoryMovementSchema>;
 export type InsertBaseRequest = z.infer<typeof insertBaseRequestSchema>;
 export type InsertBaseRequestUpdate = z.infer<typeof insertBaseRequestUpdateSchema>;
