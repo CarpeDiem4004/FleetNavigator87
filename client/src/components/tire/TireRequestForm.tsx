@@ -21,7 +21,8 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { ShoppingBag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { fetchRecords, createSupabaseClient } from '@/lib/supabase-client';
+import { api } from '@/services/api';
+import { TireRequest, createTireRequest } from '@/services/tireRequestsService';
 
 interface TireRequestFormProps {
   onRequestSubmitted?: () => void;
@@ -56,9 +57,9 @@ const TireRequestForm: React.FC<TireRequestFormProps> = ({ onRequestSubmitted })
   useEffect(() => {
     const loadBases = async () => {
       try {
-        const response = await fetchRecords('bases');
-        if (response.success && response.data) {
-          setBases(response.data);
+        const response = await api.get('/api/bases');
+        if (response.data && response.data.data) {
+          setBases(response.data.data);
         }
       } catch (error) {
         console.error('Erro ao carregar bases:', error);
@@ -95,7 +96,7 @@ const TireRequestForm: React.FC<TireRequestFormProps> = ({ onRequestSubmitted })
     setObservacao('');
   };
 
-  // Enviar solicitação
+  // Enviar solicitação usando a nova API
   const handleSubmit = async () => {
     if (!baseId) {
       toast({
@@ -122,30 +123,29 @@ const TireRequestForm: React.FC<TireRequestFormProps> = ({ onRequestSubmitted })
       const selectedBase = bases.find(b => b.id === Number(baseId));
       const baseName = selectedBase?.nome || '';
 
-      const supabase = createSupabaseClient();
+      const request: TireRequest = {
+        base_id: Number(baseId),
+        base_nome: baseName,
+        usuario_id: currentUser?.id || 0,
+        usuario_nome: currentUser?.name || '',
+        marca,
+        modelo,
+        medida,
+        tipo,
+        quantidade,
+        motivo,
+        status: 'pendente',
+        data_solicitacao: new Date().toISOString(),
+        observacoes: observacao,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
       
-      const { data, error } = await supabase
-        .from('solicitacoes_pneus')
-        .insert([{
-          base_id: Number(baseId),
-          base_nome: baseName,
-          usuario_id: currentUser?.id || 0,
-          usuario_nome: currentUser?.name || '',
-          marca,
-          modelo,
-          medida,
-          tipo,
-          quantidade,
-          motivo,
-          status: 'pendente',
-          data_solicitacao: new Date().toISOString(),
-          observacao,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }])
-        .select();
+      const response = await createTireRequest(request);
       
-      if (error) throw error;
+      if (!response.success) {
+        throw new Error(response.error || 'Falha ao criar solicitação');
+      }
       
       toast({
         title: "Solicitação enviada",

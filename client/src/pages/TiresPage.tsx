@@ -39,33 +39,10 @@ import { Search, Plus, FileEdit, Trash2, ArrowUpCircle, ShoppingBag, CheckCircle
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
-import { fetchRecords } from '@/lib/supabase-client';
 import { Tire, getAllTires, createTire, updateTire, deleteTire } from '@/services/tiresService';
+import { TireRequest, getAllTireRequests, updateTireRequestStatus } from '@/services/tireRequestsService';
 import TireRequestForm from '@/components/tire/TireRequestForm';
 import TireMountingHistory from '@/components/tires/TireMountingHistory';
-
-// Interface para solicitações de pneus
-interface TireRequest {
-  id: number;
-  base_id: number;
-  base_nome: string;
-  usuario_id: number;
-  usuario_nome: string;
-  marca: string;
-  modelo: string;
-  medida: string;
-  tipo: string;
-  quantidade: number;
-  motivo: string;
-  status: 'pendente' | 'aprovado' | 'rejeitado';
-  data_solicitacao: string;
-  data_aprovacao?: string;
-  aprovador_id?: number;
-  aprovador_nome?: string;
-  observacao?: string;
-  created_at: string;
-  updated_at: string;
-}
 
 // Função para traduzir os status de pneus
 const translateTireStatus = (status: string): string => {
@@ -191,26 +168,36 @@ const TiresPage: React.FC = () => {
     loadTires();
   }, [toast]);
 
-  // Carregar solicitações de pneus
+  // Carregar solicitações de pneus usando a nova API
   useEffect(() => {
     const loadTireRequests = async () => {
       setIsLoadingRequests(true);
       try {
-        const response = await fetchRecords('solicitacoes_pneus');
-        if (response.success && response.data) {
+        const response = await getAllTireRequests();
+        if (response.success) {
           setTireRequests(response.data);
         } else {
           console.error("Falha ao carregar solicitações de pneus:", response.error);
+          toast({
+            title: "Erro ao carregar solicitações",
+            description: "Não foi possível carregar a lista de solicitações de pneus.",
+            variant: "destructive"
+          });
         }
       } catch (error) {
         console.error("Erro ao buscar solicitações de pneus:", error);
+        toast({
+          title: "Erro ao carregar solicitações",
+          description: error instanceof Error ? error.message : "Erro desconhecido",
+          variant: "destructive"
+        });
       } finally {
         setIsLoadingRequests(false);
       }
     };
 
     loadTireRequests();
-  }, []);
+  }, [toast]);
 
   // Filtrar pneus com base no termo de busca
   const filteredTires = tires.filter(
@@ -311,41 +298,36 @@ const TiresPage: React.FC = () => {
 
   // Handle tire requests logic moved to TireRequestForm component
 
-  // Aprovar solicitação de pneus
+  // Aprovar solicitação de pneus usando a nova API
   const handleApproveRequest = async (requestId: number) => {
     try {
-      const supabase = createSupabaseClient();
-      
       // Valores simulados para teste - em produção viria do usuário logado
       const currentUser = {
         id: 12,
         name: "Administrador"
       };
       
-      const { data, error } = await supabase
-        .from('solicitacoes_pneus')
-        .update({
-          status: 'aprovado',
-          data_aprovacao: new Date().toISOString(),
-          aprovador_id: currentUser.id,
-          aprovador_nome: currentUser.name,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', requestId)
-        .select();
+      const response = await updateTireRequestStatus(
+        requestId,
+        'aprovado',
+        currentUser.id,
+        currentUser.name
+      );
       
-      if (error) throw error;
-      
-      // Atualizar a lista de solicitações
-      setTireRequests(tireRequests.map(req => 
-        req.id === requestId ? (data[0] as TireRequest) : req
-      ));
-      
-      toast({
-        title: "Solicitação aprovada",
-        description: "A solicitação de pneus foi aprovada com sucesso.",
-        variant: "default"
-      });
+      if (response.success && response.data) {
+        // Atualizar a lista de solicitações
+        setTireRequests(tireRequests.map(req => 
+          req.id === requestId ? response.data : req
+        ));
+        
+        toast({
+          title: "Solicitação aprovada",
+          description: "A solicitação de pneus foi aprovada com sucesso.",
+          variant: "default"
+        });
+      } else {
+        throw new Error(response.error || "Erro ao aprovar solicitação");
+      }
     } catch (error) {
       console.error("Erro ao aprovar solicitação:", error);
       toast({
@@ -356,41 +338,36 @@ const TiresPage: React.FC = () => {
     }
   };
 
-  // Rejeitar solicitação de pneus
+  // Rejeitar solicitação de pneus usando a nova API
   const handleRejectRequest = async (requestId: number) => {
     try {
-      const supabase = createSupabaseClient();
-      
       // Valores simulados para teste - em produção viria do usuário logado
       const currentUser = {
         id: 12,
         name: "Administrador"
       };
       
-      const { data, error } = await supabase
-        .from('solicitacoes_pneus')
-        .update({
-          status: 'rejeitado',
-          data_aprovacao: new Date().toISOString(),
-          aprovador_id: currentUser.id,
-          aprovador_nome: currentUser.name,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', requestId)
-        .select();
+      const response = await updateTireRequestStatus(
+        requestId,
+        'rejeitado',
+        currentUser.id,
+        currentUser.name
+      );
       
-      if (error) throw error;
-      
-      // Atualizar a lista de solicitações
-      setTireRequests(tireRequests.map(req => 
-        req.id === requestId ? (data[0] as TireRequest) : req
-      ));
-      
-      toast({
-        title: "Solicitação rejeitada",
-        description: "A solicitação de pneus foi rejeitada.",
-        variant: "default"
-      });
+      if (response.success && response.data) {
+        // Atualizar a lista de solicitações
+        setTireRequests(tireRequests.map(req => 
+          req.id === requestId ? response.data : req
+        ));
+        
+        toast({
+          title: "Solicitação rejeitada",
+          description: "A solicitação de pneus foi rejeitada.",
+          variant: "default"
+        });
+      } else {
+        throw new Error(response.error || "Erro ao rejeitar solicitação");
+      }
     } catch (error) {
       console.error("Erro ao rejeitar solicitação:", error);
       toast({
@@ -446,8 +423,8 @@ const TiresPage: React.FC = () => {
                 const loadTireRequests = async () => {
                   setIsLoadingRequests(true);
                   try {
-                    const response = await fetchRecords('solicitacoes_pneus');
-                    if (response.success && response.data) {
+                    const response = await getAllTireRequests();
+                    if (response.success) {
                       setTireRequests(response.data);
                     }
                   } catch (error) {
