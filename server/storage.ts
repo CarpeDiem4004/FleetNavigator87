@@ -107,7 +107,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Usar SQL direto para evitar problemas com o campo oficina_id
       const query = `
-        SELECT id, name, email, password, role, base_id, basename, oficina_id
+        SELECT id, name, email, password, role, base_id, basename, oficina_id, last_login, is_active
         FROM users 
         WHERE id = $1
       `;
@@ -129,13 +129,51 @@ export class DatabaseStorage implements IStorage {
         role: result.rows[0].role,
         baseId: result.rows[0].base_id, // Corrigido para usar base_id, nome da coluna no banco
         basename: result.rows[0].basename,
-        oficina_id: result.rows[0].oficina_id || null
+        oficina_id: result.rows[0].oficina_id || null,
+        lastLogin: result.rows[0].last_login,
+        isActive: result.rows[0].is_active !== false // Se não for explicitamente false, consideramos true
       };
       
       return user;
     } catch (error) {
       console.error("Erro ao buscar usuário por ID:", error);
       return undefined;
+    }
+  }
+  
+  async getAllUsers(): Promise<User[]> {
+    try {
+      // Usar SQL direto para buscar todos os usuários
+      const query = `
+        SELECT u.id, u.name, u.email, u.role, u.base_id, b.name as basename, 
+               u.oficina_id, u.last_login, u.is_active
+        FROM users u
+        LEFT JOIN bases b ON u.base_id = b.id
+        ORDER BY u.id
+      `;
+      
+      const result = await pool.query(query);
+      
+      console.log(`Encontrados ${result.rows.length} usuários no sistema`);
+      
+      // Mapear resultados para o formato User
+      const users = result.rows.map(row => ({
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        password: '', // Não retornamos a senha
+        role: row.role,
+        baseId: row.base_id,
+        basename: row.basename,
+        oficina_id: row.oficina_id || null,
+        lastLogin: row.last_login,
+        isActive: row.is_active !== false
+      }));
+      
+      return users;
+    } catch (error) {
+      console.error("Erro ao buscar todos os usuários:", error);
+      return [];
     }
   }
 
