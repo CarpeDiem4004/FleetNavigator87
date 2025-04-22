@@ -26,30 +26,34 @@ interface BasePermissionHook {
 
 // Lista de todas as rotas disponíveis no sistema
 const allRoutes = [
-  '/',                       // Dashboard
-  '/vehicles',               // Veículos
-  '/drivers',                // Motoristas
-  '/maintenance',            // Manutenções
-  '/manutencao',             // Alias para Manutenções
-  '/tires',                  // Pneus
-  '/pneus',                  // Alias para Pneus
-  '/refueling',              // Abastecimentos
-  '/abastecimento',          // Alias para Abastecimentos
-  '/fines',                  // Multas
-  '/multas',                 // Alias para Multas
-  '/line-hall',              // Line Hall
-  '/fleet-management',       // Gestão de Frota
-  '/gestao-de-frotas',       // Alias para Gestão de Frota
-  '/work-safety',            // Segurança do Trabalho
-  '/seguranca-trabalho',     // Alias para Segurança do Trabalho
-  '/theft',                  // Roubo
-  '/roubo',                  // Alias para Roubo
-  '/sinister',               // Sinistro
-  '/sinistro',               // Alias para Sinistro
-  '/accidents',              // Acidentes
-  '/acidentes',              // Alias para Acidentes
-  '/users',                  // Usuários (só admin)
-  '/bases'                   // Bases (só admin)
+  '/',                                 // Dashboard
+  '/vehicles',                         // Veículos
+  '/drivers',                          // Motoristas
+  '/maintenance',                      // Manutenções
+  '/manutencao',                       // Alias para Manutenções
+  '/tires',                            // Pneus
+  '/pneus',                            // Alias para Pneus
+  '/refueling',                        // Abastecimentos
+  '/abastecimento',                    // Alias para Abastecimentos
+  '/fines',                            // Multas
+  '/multas',                           // Alias para Multas
+  '/line-hall',                        // Line Hall
+  '/fleet-management',                 // Gestão de Frota
+  '/gestao-de-frotas',                 // Alias para Gestão de Frota
+  '/fleet-management/inventory',       // Gestão de Estoque
+  '/fleet-management/maintenance',     // Sistema de Manutenção
+  '/fleet-management/workshops',       // Oficinas Credenciadas
+  '/fleet-management/budgets',         // Orçamentos
+  '/work-safety',                      // Segurança do Trabalho
+  '/seguranca-trabalho',               // Alias para Segurança do Trabalho
+  '/theft',                            // Roubo
+  '/roubo',                            // Alias para Roubo
+  '/sinister',                         // Sinistro
+  '/sinistro',                         // Alias para Sinistro
+  '/accidents',                        // Acidentes
+  '/acidentes',                        // Alias para Acidentes
+  '/users',                            // Usuários (só admin)
+  '/bases'                             // Bases (só admin)
 ];
 
 // Regras de correspondência entre bases e rotas específicas
@@ -60,6 +64,9 @@ const baseRouteMapping = {
   'gestão de frotas': [
     '/gestao-de-frotas', 
     '/fleet-management', 
+    '/fleet-management/inventory',
+    '/fleet-management/maintenance',
+    '/fleet-management/workshops',
     '/maintenance', 
     '/manutencao',
     '/vehicles', 
@@ -73,6 +80,9 @@ const baseRouteMapping = {
   'frota': [
     '/gestao-de-frotas', 
     '/fleet-management', 
+    '/fleet-management/inventory',
+    '/fleet-management/maintenance',
+    '/fleet-management/workshops',
     '/maintenance', 
     '/manutencao',
     '/vehicles', 
