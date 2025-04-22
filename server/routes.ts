@@ -18,6 +18,7 @@ import { compareSchemas } from "./compareSchemas";
 import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
 import { db, pool } from "./db";
 import { atualizarTabelaPneus } from "./updatePneus";
+import { registerPneusRoutes } from "./pneusApi";
 import { randomBytes, scrypt } from "crypto";
 import { promisify } from "util";
 
@@ -4547,6 +4548,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // Registrar rotas de pneus
+  registerPneusRoutes(app);
 
   const httpServer = createServer(app);
   return httpServer;
