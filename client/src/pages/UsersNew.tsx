@@ -38,7 +38,7 @@ interface User {
   id: number;
   name: string;
   email: string;
-  role: 'admin' | 'gestor' | 'operador';
+  role: 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus';
   baseId: number | null;
   baseName: string | null;
   lastLogin: string | null;
@@ -120,7 +120,9 @@ const translateUserRole = (role: string): string => {
   const roles: Record<string, string> = {
     admin: 'Administrador',
     gestor: 'Gestor',
-    operador: 'Operador'
+    operador: 'Operador',
+    oficina: 'Oficina',
+    pneus: 'Especialista em Pneus'
   };
   return roles[role] || role;
 };
@@ -130,7 +132,9 @@ const getRoleBadgeClass = (role: string): string => {
   const classes: Record<string, string> = {
     admin: 'bg-purple-100 text-purple-800',
     gestor: 'bg-blue-100 text-blue-800',
-    operador: 'bg-green-100 text-green-800'
+    operador: 'bg-green-100 text-green-800',
+    oficina: 'bg-amber-100 text-amber-800',
+    pneus: 'bg-teal-100 text-teal-800'
   };
   return classes[role] || 'bg-gray-100 text-gray-800';
 };
@@ -354,11 +358,13 @@ const UsersNew: React.FC = () => {
                     <NativeSelect
                       id="role"
                       value={newUser.role}
-                      onChange={(e) => setNewUser({...newUser, role: e.target.value as 'admin' | 'gestor' | 'operador'})}
+                      onChange={(e) => setNewUser({...newUser, role: e.target.value as 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus'})}
                       options={[
                         { value: 'admin', label: 'Administrador' },
                         { value: 'gestor', label: 'Gestor' },
-                        { value: 'operador', label: 'Operador' }
+                        { value: 'operador', label: 'Operador' },
+                        { value: 'oficina', label: 'Oficina' },
+                        { value: 'pneus', label: 'Especialista em Pneus' }
                       ]}
                       placeholder="Selecione o perfil"
                     />
