@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS montagem_pneus (
   placa_veiculo VARCHAR(20) NOT NULL,
   km_instalacao INTEGER NOT NULL,
   km_remocao INTEGER,
+  distancia_percorrida INTEGER,
   data_instalacao TIMESTAMP NOT NULL DEFAULT NOW(),
   data_remocao TIMESTAMP,
   motivo_remocao VARCHAR(255),
@@ -26,6 +27,7 @@ COMMENT ON COLUMN montagem_pneus.pneu_id IS 'ID do pneu na tabela pneus';
 COMMENT ON COLUMN montagem_pneus.placa_veiculo IS 'Placa do veículo onde o pneu foi montado';
 COMMENT ON COLUMN montagem_pneus.km_instalacao IS 'Quilometragem do veículo no momento da instalação';
 COMMENT ON COLUMN montagem_pneus.km_remocao IS 'Quilometragem do veículo no momento da remoção';
+COMMENT ON COLUMN montagem_pneus.distancia_percorrida IS 'Distância total percorrida pelo pneu (km_remocao - km_instalacao)';
 COMMENT ON COLUMN montagem_pneus.data_instalacao IS 'Data e hora da instalação do pneu';
 COMMENT ON COLUMN montagem_pneus.data_remocao IS 'Data e hora da remoção do pneu';
 COMMENT ON COLUMN montagem_pneus.motivo_remocao IS 'Motivo da remoção do pneu';

@@ -219,7 +219,7 @@ export default function TireMountingHistory() {
   };
 
   // Função para remover um pneu
-  const handleRemoveTire = async (mountingId: number, tireId: number) => {
+  const handleRemoveTire = async (mountingId: number, tireId: number, kmInstalacao: number) => {
     // Solicitar a quilometragem de remoção
     const kmRemocao = prompt("Informe a quilometragem atual do veículo:");
     
@@ -236,6 +236,19 @@ export default function TireMountingHistory() {
       return;
     }
     
+    // Verificação se a quilometragem de remoção é menor que a de instalação
+    if (kmRemovalValue < kmInstalacao) {
+      toast({
+        title: "Quilometragem inválida",
+        description: "A quilometragem de remoção deve ser maior que a de instalação",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Calcular a distância percorrida
+    const distanciaPercorrida = kmRemovalValue - kmInstalacao;
+    
     // Solicitar o motivo da remoção
     const motivoRemocao = prompt("Informe o motivo da remoção do pneu:");
     
@@ -246,6 +259,7 @@ export default function TireMountingHistory() {
         .update({
           data_remocao: new Date().toISOString(),
           km_remocao: kmRemovalValue,
+          distancia_percorrida: distanciaPercorrida,
           motivo_remocao: motivoRemocao || 'Não especificado'
         })
         .eq('id', mountingId);
@@ -264,10 +278,10 @@ export default function TireMountingHistory() {
 
       if (updateTireError) throw updateTireError;
 
-      // 3. Exibir mensagem de sucesso
+      // 3. Exibir mensagem de sucesso com a distância percorrida
       toast({
         title: "Pneu removido com sucesso",
-        description: "O pneu foi removido e seu status foi atualizado para estoque",
+        description: `O pneu foi removido após percorrer ${distanciaPercorrida.toLocaleString('pt-BR')} km`,
         variant: "default"
       });
 
@@ -376,6 +390,7 @@ export default function TireMountingHistory() {
                     <TableHead>Posição</TableHead>
                     <TableHead className="text-right">KM Instalação</TableHead>
                     <TableHead className="text-right">KM Remoção</TableHead>
+                    <TableHead className="text-right">KM Rodados</TableHead>
                     <TableHead>Data Instalação</TableHead>
                     <TableHead>Data Remoção</TableHead>
                     <TableHead>Status</TableHead>
@@ -396,6 +411,14 @@ export default function TireMountingHistory() {
                       <TableCell className="text-right">{mount.km_instalacao.toLocaleString('pt-BR')}</TableCell>
                       <TableCell className="text-right">
                         {mount.km_remocao ? mount.km_remocao.toLocaleString('pt-BR') : '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {mount.distancia_percorrida 
+                          ? <span className="font-medium text-green-600">{mount.distancia_percorrida.toLocaleString('pt-BR')}</span> 
+                          : mount.km_remocao 
+                            ? <span className="text-orange-500">{(mount.km_remocao - mount.km_instalacao).toLocaleString('pt-BR')}</span>
+                            : '-'
+                        }
                       </TableCell>
                       <TableCell>
                         {mount.data_instalacao ? format(new Date(mount.data_instalacao), 'dd/MM/yyyy', { locale: ptBR }) : '-'}
@@ -419,7 +442,7 @@ export default function TireMountingHistory() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleRemoveTire(mount.id, mount.pneu_id)}
+                            onClick={() => handleRemoveTire(mount.id, mount.pneu_id, mount.km_instalacao)}
                             title="Remover pneu"
                           >
                             <Wrench className="h-4 w-4" />
