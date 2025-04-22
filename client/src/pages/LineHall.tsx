@@ -72,12 +72,21 @@ const LineHall: React.FC = () => {
     destination: '',
     status: '',
   });
+  const [newTrip, setNewTrip] = useState({
+    truckPlate: '',
+    trailer1Plate: '',
+    trailer2Plate: '',
+    loadingTime: new Date().toISOString().split('.')[0],
+    destination: '',
+    tripStatus: 'programada',
+    notes: ''
+  });
   
   const { data: lineHall = [], isLoading } = useQuery<any[]>({
     queryKey: ['/api/line-hall', filters],
   });
   
-  const { data: vehicles = [] } = useQuery<any[]>({
+  const { data: vehicles = [], isLoading: isLoadingVehicles } = useQuery<any[]>({
     queryKey: ['/api/vehicles'],
   });
   
