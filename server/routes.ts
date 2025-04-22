@@ -1910,13 +1910,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             break;
             
-          case 'linha_corredor':
-            // Buscar todos os registros e excluir um por um
-            const lineHalls = await storage.getAllLineHall();
-            for (const lh of lineHalls) {
-              await storage.deleteLineHall(lh.id);
-            }
-            break;
+          // Caso 'linha_corredor' removido conforme solicitação
+            
             
           case 'veiculos':
             // Buscar todos os registros e excluir um por um
@@ -1971,15 +1966,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'abastecimentos',
           'manutencao',
           'oficinas',
-          'linha_corredor',
+          // 'linha_corredor' removido conforme solicitação
           // Possibilidade de tabelas com nomes antigos em inglês
           'vehicles',
           'tires',
           'maintenance',
           'workshops',
           'fines',
-          'refueling',
-          'line_hall'
+          'refueling'
+          // 'line_hall' removido conforme solicitação
         ];
         
         console.log("Iniciando limpeza de dados do Supabase via API REST...");
