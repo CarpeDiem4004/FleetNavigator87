@@ -107,7 +107,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Usar SQL direto para evitar problemas com o campo oficina_id
       const query = `
-        SELECT id, name, email, password, role, base_id, basename, oficina_id, is_active
+        SELECT id, name, email, password, role, base_id, basename, oficina_id
         FROM users 
         WHERE id = $1
       `;
@@ -130,7 +130,7 @@ export class DatabaseStorage implements IStorage {
         baseId: result.rows[0].base_id, // Corrigido para usar base_id, nome da coluna no banco
         basename: result.rows[0].basename,
         oficina_id: result.rows[0].oficina_id || null,
-        isActive: result.rows[0].is_active !== false, // Se não for explicitamente false, consideramos true
+        isActive: true, // Define como ativo por padrão
         lastLogin: null // Campo não utilizado no login
       };
       
@@ -146,7 +146,7 @@ export class DatabaseStorage implements IStorage {
       // Usar SQL direto para buscar todos os usuários
       const query = `
         SELECT u.id, u.name, u.email, u.role, u.base_id, b.name as basename, 
-               u.oficina_id, u.is_active
+               u.oficina_id
         FROM users u
         LEFT JOIN bases b ON u.base_id = b.id
         ORDER BY u.id
@@ -166,7 +166,7 @@ export class DatabaseStorage implements IStorage {
         baseId: row.base_id,
         basename: row.basename,
         oficina_id: row.oficina_id || null,
-        isActive: row.is_active !== false,
+        isActive: true, // Definir como ativo por padrão
         lastLogin: null // Campo não utilizado na listagem
       }));
       
@@ -181,7 +181,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Usar SQL direto para evitar problemas com o campo oficina_id
       const query = `
-        SELECT id, name, email, password, role, base_id, basename, oficina_id, is_active
+        SELECT id, name, email, password, role, base_id, basename, oficina_id
         FROM users 
         WHERE email = $1
       `;
@@ -205,7 +205,7 @@ export class DatabaseStorage implements IStorage {
         baseId: result.rows[0].base_id, // Corrigido para usar base_id, nome da coluna no banco
         basename: result.rows[0].basename,
         oficina_id: result.rows[0].oficina_id || null,
-        isActive: result.rows[0].is_active !== false,
+        isActive: true, // Define como ativo por padrão
         lastLogin: null // Campo não utilizado no login
       };
       
@@ -298,7 +298,7 @@ export class DatabaseStorage implements IStorage {
         baseId: result.rows[0].base_id,
         basename: result.rows[0].basename,
         oficina_id: result.rows[0].oficina_id || null,
-        isActive: result.rows[0].is_active !== false,
+        isActive: true, // Define como ativo por padrão
         lastLogin: null
       };
       
@@ -365,7 +365,7 @@ export class DatabaseStorage implements IStorage {
         baseId: result.rows[0].base_id,
         basename: result.rows[0].basename,
         oficina_id: result.rows[0].oficina_id || null,
-        isActive: result.rows[0].is_active !== false,
+        isActive: true, // Define como ativo por padrão
         lastLogin: null
       };
       
