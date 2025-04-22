@@ -139,6 +139,11 @@ function App() {
             <DriverChecklist />
           </Route>
           
+          {/* Rota pública para acesso ao checklist do motorista */}
+          <Route path="/driver-checklist">
+            <DriverChecklist />
+          </Route>
+          
           {/* Rota pública para cadastro de oficinas */}
           <Route path="/oficinas/cadastro">
             <OficinasExternaPage />
