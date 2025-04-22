@@ -2241,11 +2241,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/workshop/maintenance-chat", hasMaintenanceAccess, async (req, res) => {
     try {
       console.log("Payload recebido:", req.body);
+      console.log("Usuário:", req.user);
       
-      // Verificar se o usuário está autenticado e tem oficina_id
-      if (!req.user || !req.user.oficina_id) {
+      // Verificar se o usuário está autenticado
+      if (!req.user) {
         return res.status(401).json({ 
-          message: "Usuário não autenticado ou sem associação com oficina" 
+          message: "Usuário não autenticado" 
+        });
+      }
+      
+      // Se for usuário de oficina, verificar se tem oficina_id
+      if (req.user.role === 'oficina' && !req.user.oficina_id) {
+        console.log("Usuário de oficina sem oficina_id:", req.user);
+        return res.status(400).json({ 
+          message: "Usuário de oficina sem associação com uma oficina específica" 
         });
       }
       
