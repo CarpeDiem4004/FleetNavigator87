@@ -238,6 +238,39 @@ async function criarTabelaMovimentacoesPatio() {
   }
 }
 
+async function criarTabelaMontagemPneus() {
+  // Verificar se a tabela já existe
+  const checkTableQuery = "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'montagem_pneus')";
+  const tableExists = await db.unsafe(checkTableQuery);
+  
+  if (tableExists.rows[0].exists) {
+    console.log("Tabela montagem_pneus já existe, pulando criação.");
+    return;
+  }
+
+  console.log("Criando tabela montagem_pneus...");
+  
+  // Ler o arquivo SQL
+  const fs = await import('fs');
+  const path = await import('path');
+  const sqlFilePath = path.join(__dirname, 'scripts', 'createTireMountingTable.sql');
+  
+  if (!fs.existsSync(sqlFilePath)) {
+    console.error(`Arquivo SQL não encontrado: ${sqlFilePath}`);
+    return;
+  }
+  
+  const sqlContent = fs.readFileSync(sqlFilePath, 'utf8');
+  
+  try {
+    // Executar o script SQL
+    await db.unsafe(sqlContent);
+    console.log("Tabela montagem_pneus criada com sucesso!");
+  } catch (error) {
+    console.error("Erro ao criar tabela montagem_pneus:", error);
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Criar tabelas necessárias se não existirem
   await criarTabelaAbastecimentos();
