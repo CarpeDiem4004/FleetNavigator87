@@ -320,7 +320,7 @@ export const painelPrincipal = pgTable("painel_principal", {
 // Tabela para checklist de veículos
 export const vehicleChecklist = pgTable("vehicle_checklist", {
   id: serial("id").primaryKey(),
-  tripId: integer("trip_id").notNull().references(() => lineHall.id),
+  tripId: integer("trip_id").notNull(), // referência ao lineHall removida conforme solicitação
   driverName: text("driver_name").notNull(),
   checkDate: timestamp("check_date").notNull().defaultNow(),
   initialKm: integer("initial_km"),
@@ -341,7 +341,7 @@ export const vehicleChecklist = pgTable("vehicle_checklist", {
 // Tabela para solicitações de manutenção pelo motorista
 export const driverMaintenanceRequest = pgTable("driver_maintenance_request", {
   id: serial("id").primaryKey(),
-  tripId: integer("trip_id").references(() => lineHall.id),
+  tripId: integer("trip_id"), // referência ao lineHall removida conforme solicitação
   vehiclePlate: text("vehicle_plate").notNull().references(() => vehicles.plate),
   driverName: text("driver_name").notNull(),
   requestDate: timestamp("request_date").notNull().defaultNow(),
@@ -358,7 +358,7 @@ export const driverMaintenanceRequest = pgTable("driver_maintenance_request", {
 // Tabela para solicitações de recarga de cartão de abastecimento
 export const refuelingCardRequest = pgTable("refueling_card_request", {
   id: serial("id").primaryKey(),
-  tripId: integer("trip_id").references(() => lineHall.id),
+  tripId: integer("trip_id"), // referência ao lineHall removida conforme solicitação
   vehiclePlate: text("vehicle_plate").notNull().references(() => vehicles.plate),
   driverName: text("driver_name").notNull(),
   requestDate: timestamp("request_date").notNull().defaultNow(),
@@ -439,24 +439,14 @@ export const operationsRelations = relations(operations, ({ one }) => ({
   }),
 }));
 
-export const lineHallRelations = relations(lineHall, ({ many }) => ({
-  checklists: many(vehicleChecklist),
-  maintenanceRequests: many(driverMaintenanceRequest),
-  cardRequests: many(refuelingCardRequest),
-}));
+// Relação lineHallRelations removida conforme solicitação
 
-export const vehicleChecklistRelations = relations(vehicleChecklist, ({ one }) => ({
-  trip: one(lineHall, {
-    fields: [vehicleChecklist.tripId],
-    references: [lineHall.id],
-  }),
+export const vehicleChecklistRelations = relations(vehicleChecklist, ({ }) => ({
+  // referência trip ao lineHall removida conforme solicitação
 }));
 
 export const driverMaintenanceRequestRelations = relations(driverMaintenanceRequest, ({ one }) => ({
-  trip: one(lineHall, {
-    fields: [driverMaintenanceRequest.tripId],
-    references: [lineHall.id],
-  }),
+  // referência trip ao lineHall removida conforme solicitação
   vehicle: one(vehicles, {
     fields: [driverMaintenanceRequest.vehiclePlate],
     references: [vehicles.plate],
