@@ -1,10 +1,10 @@
 import { 
-  users, vehicles, maintenance, tires, refueling, fines, lineHall, bases, workshops, painelPrincipal, operations,
+  users, vehicles, maintenance, tires, refueling, fines, bases, workshops, painelPrincipal, operations,
   maintenanceChat, chatMessages, baseRequests, baseRequestUpdates,
   type User, type InsertUser, type Vehicle, type InsertVehicle,
   type Maintenance, type InsertMaintenance, type Tire, type InsertTire,
   type Refueling, type InsertRefueling, type Fine, type InsertFine,
-  type LineHall, type InsertLineHall, type Base, type InsertBase,
+  type Base, type InsertBase,
   type Workshop, type InsertWorkshop, type Operation, type InsertOperation,
   type PainelPrincipal, type InsertPainelPrincipal, type MaintenanceChat, type InsertMaintenanceChat,
   type ChatMessage, type InsertChatMessage, type BaseRequest, type InsertBaseRequest,

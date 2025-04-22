@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { 
   insertBaseSchema, insertVehicleSchema, insertMaintenanceSchema,
   insertWorkshopSchema, insertTireSchema, insertRefuelingSchema, 
-  insertFineSchema, insertLineHallSchema, insertUserSchema,
+  insertFineSchema, insertUserSchema,
   insertMaintenanceChatSchema, insertChatMessageSchema,
   insertBaseRequestSchema, insertBaseRequestUpdateSchema, 
   type InsertWorkshop, type InsertUser, type InsertMaintenance,

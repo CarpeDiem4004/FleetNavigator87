@@ -236,27 +236,7 @@ export const fines = pgTable("multas", {
   value: decimal("value", { precision: 10, scale: 2 }).notNull(),
 });
 
-// Create the lineHall table (linha_corredor)
-export const lineHall = pgTable("linha_corredor", {
-  id: serial("id").primaryKey(),
-  truckPlate: text("truck_plate").notNull().references(() => vehicles.plate),
-  trailer1Plate: text("trailer1_plate").notNull().references(() => vehicles.plate),
-  trailer2Plate: text("trailer2_plate").references(() => vehicles.plate),
-  driverName: text("driver_name").notNull(),
-  driverPhone: text("driver_phone"),
-  loadingLocation: text("loading_location").notNull(), // CD de carregamento
-  loadingTime: timestamp("loading_time").notNull(),
-  unloadingLocation: text("unloading_location").notNull(), // CD de descarregamento
-  estimatedUnloadingTime: timestamp("estimated_unloading_time"),
-  actualUnloadingTime: timestamp("actual_unloading_time"),
-  initialKm: integer("initial_km"),
-  finalKm: integer("final_km"),
-  checklistStatus: checklistStatusEnum("checklist_status").default('pendente'),
-  tripNotes: text("trip_notes"),
-  tripStatus: tripStatusEnum("trip_status").notNull(),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
-});
+// Definição da tabela lineHall (linha_corredor) removida conforme solicitação
 
 // Create the operations table (operacoes)
 export const operations = pgTable("operacoes", {
@@ -458,10 +438,7 @@ export const driverMaintenanceRequestRelations = relations(driverMaintenanceRequ
 }));
 
 export const refuelingCardRequestRelations = relations(refuelingCardRequest, ({ one }) => ({
-  trip: one(lineHall, {
-    fields: [refuelingCardRequest.tripId],
-    references: [lineHall.id],
-  }),
+  // referência trip ao lineHall removida conforme solicitação
   vehicle: one(vehicles, {
     fields: [refuelingCardRequest.vehiclePlate],
     references: [vehicles.plate],
@@ -476,7 +453,7 @@ export const insertMaintenanceSchema = createInsertSchema(maintenance);
 export const insertTireSchema = createInsertSchema(tires);
 export const insertRefuelingSchema = createInsertSchema(refueling);
 export const insertFineSchema = createInsertSchema(fines);
-export const insertLineHallSchema = createInsertSchema(lineHall);
+// insertLineHallSchema removido conforme solicitação
 export const insertOperationSchema = createInsertSchema(operations);
 export const insertVehicleChecklistSchema = createInsertSchema(vehicleChecklist);
 export const insertDriverMaintenanceRequestSchema = createInsertSchema(driverMaintenanceRequest);
@@ -517,8 +494,7 @@ export type InsertRefueling = z.infer<typeof insertRefuelingSchema>;
 export type Fine = typeof fines.$inferSelect;
 export type InsertFine = z.infer<typeof insertFineSchema>;
 
-export type LineHall = typeof lineHall.$inferSelect;
-export type InsertLineHall = z.infer<typeof insertLineHallSchema>;
+// Tipos LineHall removidos conforme solicitação
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
