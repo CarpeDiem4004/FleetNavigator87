@@ -32,6 +32,7 @@ interface NavItem {
   href: string;
   icon: React.ElementType;
   subItems?: NavItem[];
+  showInMenu?: boolean;
 }
 
 interface SidebarProps {
@@ -60,6 +61,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Abastecimentos', href: '/refueling', icon: Fuel, subItems: [
       { name: 'Cartão de Combustível', href: '/fuel-card', icon: CreditCard }
     ]},
+    { name: 'Cartão de Combustível', href: '/fuel-card', icon: CreditCard, showInMenu: false }, // Adicionado com showInMenu: false para manter permissão
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
     { name: 'Line Hall Shopee', href: '/line-hall-shopee', icon: Map },
     { name: 'Bases', href: '/bases', icon: Warehouse },
@@ -77,6 +79,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Abastecimentos', href: '/refueling', icon: Fuel, subItems: [
       { name: 'Cartão de Combustível', href: '/fuel-card', icon: CreditCard }
     ]},
+    { name: 'Cartão de Combustível', href: '/fuel-card', icon: CreditCard, showInMenu: false }, // Adicionado com showInMenu: false para manter permissão
     { name: 'Line Hall Shopee', href: '/line-hall-shopee', icon: Map },
     { name: 'Análise da Operação', href: '/fleet-management/operational-analysis', icon: BarChart4 },
     { name: 'Visão Geral da Frota', href: '/fleet-management/fleet-overview', icon: Activity },
@@ -90,8 +93,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   // Selecionando os itens de navegação apropriados
   const navItemsBase = isFleetUser ? fleetManagementItems : allNavItems;
   
-  // Filtrando itens de navegação com base nas permissões do usuário
-  const navItems = navItemsBase.filter(item => hasPermission(item.href));
+  // Filtrando itens de navegação com base nas permissões do usuário e exibição no menu
+  const navItems = navItemsBase.filter(item => hasPermission(item.href) && item.showInMenu !== false);
 
   const closeSidebar = () => {
     if (window.innerWidth < 768) {
