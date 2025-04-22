@@ -27,6 +27,7 @@ interface BasePermissionHook {
 // Lista de todas as rotas disponíveis no sistema
 const allRoutes = [
   '/',                                 // Dashboard
+  '/executive-dashboard',              // Dashboard Executivo
   '/vehicles',                         // Veículos
   '/drivers',                          // Motoristas
   '/maintenance',                      // Manutenções
@@ -66,6 +67,7 @@ const baseRouteMapping = {
   'gestão de frotas': [
     '/gestao-de-frotas', 
     '/fleet-management', 
+    '/executive-dashboard',
     '/fleet-management/inventory',
     '/fleet-management/maintenance',
     '/fleet-management/workshops',
@@ -84,6 +86,7 @@ const baseRouteMapping = {
   'frota': [
     '/gestao-de-frotas', 
     '/fleet-management', 
+    '/executive-dashboard',
     '/fleet-management/inventory',
     '/fleet-management/maintenance',
     '/fleet-management/workshops',
@@ -116,6 +119,7 @@ const baseRouteMapping = {
 // Rotas básicas que TODAS as bases têm acesso (modelo padrão de acesso para qualquer base)
 const basicRoutes = [
   '/',                       // Dashboard
+  '/executive-dashboard',    // Dashboard Executivo
   '/vehicles',               // Cadastro e gestão de veículos
   '/drivers',                // Cadastro e gestão de motoristas
   '/maintenance',            // Solicitações de manutenção
@@ -202,6 +206,7 @@ export function useBasePermission(): BasePermissionHook {
       const frotaRoutes = [
         '/gestao-de-frotas', 
         '/fleet-management',                          // Página principal da Gestão de Frotas
+        '/executive-dashboard',                       // Dashboard Executivo
         '/fleet-management/maintenance',              // Sistema de manutenção
         '/fleet-management/budgets',                  // Sistema de orçamentos
         '/fleet-management/workshops',                // Oficinas credenciadas
