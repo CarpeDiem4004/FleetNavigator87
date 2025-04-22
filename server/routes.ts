@@ -1140,6 +1140,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Rota para excluir um usuário
+  app.delete("/api/users/:id", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "ID de usuário inválido" });
+      }
+      
+      // Verificar se o usuário existe
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+      
+      // Impedir que o usuário exclua a si mesmo
+      if (req.user && req.user.id === userId) {
+        return res.status(400).json({ message: "Não é possível excluir o próprio usuário logado" });
+      }
+      
+      console.log(`Excluindo usuário ID ${userId}...`);
+      
+      // Excluir o usuário
+      const success = await storage.deleteUser(userId);
+      
+      if (!success) {
+        return res.status(500).json({ message: "Falha ao excluir usuário" });
+      }
+      
+      console.log(`Usuário ID ${userId} excluído com sucesso.`);
+      
+      return res.status(200).json({ 
+        message: "Usuário excluído com sucesso"
+      });
+    } catch (error) {
+      console.error("Erro ao excluir usuário:", error);
+      return res.status(500).json({ message: "Erro ao excluir usuário" });
+    }
+  });
+  
   // Rota para redefinir a senha de um usuário
   app.post("/api/users/:id/reset-password", isAdmin, async (req, res) => {
     try {

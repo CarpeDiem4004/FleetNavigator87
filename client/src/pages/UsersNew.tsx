@@ -210,18 +210,8 @@ const UsersNew: React.FC = () => {
     if (!selectedUserId) return;
     
     try {
-      // Chamar API para excluir o usuário
-      const response = await fetch(`/api/users/${selectedUserId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao excluir usuário');
-      }
+      // Chamar API para excluir o usuário usando apiRequest
+      await apiRequest('DELETE', `/api/users/${selectedUserId}`);
       
       // Fechar o diálogo
       setIsDeleteUserDialogOpen(false);
