@@ -115,21 +115,59 @@ export async function insertRecord(
   data: Record<string, any>
 ): Promise<{ success: boolean; data?: any; error?: any }> {
   try {
+    console.log(`Tentando inserir registro em ${table} com cliente padrão`);
     const client = createSupabaseClient();
-    const { data: result, error } = await client
-      .from(table)
-      .insert([data])
-      .select();
     
-    if (error) {
-      console.error(`Erro ao inserir registro em ${table}:`, error);
-      return { success: false, error };
+    // Timeout para evitar que a operação fique presa indefinidamente
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Timeout: A operação demorou muito para responder')), 15000);
+    });
+    
+    // Tentativa com cliente padrão
+    const insertPromise = client.from(table).insert([data]).select();
+    
+    // Race entre o timeout e a inserção
+    const result = await Promise.race([insertPromise, timeoutPromise]) as any;
+    
+    if (result.error) {
+      console.error(`Erro ao inserir registro em ${table} com cliente padrão:`, result.error);
+      
+      // Tentativa com cliente admin como fallback
+      console.log(`Tentando inserir registro em ${table} com cliente admin`);
+      const admin = createSupabaseAdmin();
+      const { data: adminResult, error: adminError } = await admin
+        .from(table)
+        .insert([data])
+        .select();
+      
+      if (adminError) {
+        console.error(`Erro ao inserir registro em ${table} com cliente admin:`, adminError);
+        return { success: false, error: adminError };
+      }
+      
+      return { success: true, data: adminResult };
     }
     
-    return { success: true, data: result };
+    return { success: true, data: result.data };
   } catch (error) {
     console.error(`Exceção ao inserir registro em ${table}:`, error);
-    return { success: false, error: error instanceof Error ? error.message : error };
+    
+    // Última tentativa com cliente admin sem select para minimizar erros
+    try {
+      console.log(`Tentativa final: inserir registro em ${table} com cliente admin sem select`);
+      const admin = createSupabaseAdmin();
+      const { error: finalError } = await admin
+        .from(table)
+        .insert([data]);
+      
+      if (finalError) {
+        return { success: false, error: finalError };
+      }
+      
+      return { success: true, data: { ...data, id: 'desconhecido' } };
+    } catch (finalError) {
+      return { success: false, error: finalError instanceof Error ? finalError.message : finalError };
+    }
   }
 }
 

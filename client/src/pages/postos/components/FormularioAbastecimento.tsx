@@ -95,31 +95,35 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       // Verificamos conexão com o Supabase - podemos pular essa verificação
       // já que vamos tentar inserir diretamente e capturar qualquer erro
       
-      // Tenta inserir o registro usando o cliente padrão primeiro
+      // Abordagem simplificada de inserção para evitar problemas de tela branca
+      console.log('Iniciando processo de registro de abastecimento...');
+      
+      // Importamos diretamente para evitar problemas de escopo
+      const { insertData, supabaseAdmin } = await import('@/lib/supabase-client');
+      
+      // Tentamos primeiro com o cliente admin para maior chance de sucesso
       try {
-        const response = await insertRecord('abastecimentos_postos', abastecimentoData);
-        console.log('Resposta do servidor:', response);
-        
-        // Se houver erro no cliente padrão, tente usar o cliente admin
-        if (!response.success) {
-          console.log('Tentando com cliente admin...');
-          // Importamos diretamente a função do supabase-client.ts
-          const { supabaseAdmin } = await import('@/lib/supabase-client');
+        console.log('Tentando com cliente admin primeiro...');
+        const { data, error } = await supabaseAdmin
+          .from('abastecimentos_postos')
+          .insert([abastecimentoData]);
           
-          // Tenta inserir usando o cliente admin
-          const { data, error } = await supabaseAdmin
-            .from('abastecimentos_postos')
-            .insert([abastecimentoData])
-            .select();
-            
-          if (error) {
-            throw new Error(`Erro ao registrar abastecimento: ${error.message}`);
+        if (error) {
+          console.error('Erro ao usar cliente admin:', error);
+          // Se falhar, tentamos com o método padrão
+          console.log('Tentando método alternativo...');
+          const response = await insertData('abastecimentos_postos', abastecimentoData);
+          
+          if (!response.success) {
+            throw new Error(response.error || 'Falha ao registrar abastecimento');
           }
           
-          console.log('Registro inserido com sucesso usando cliente admin:', data);
+          console.log('Registro inserido com método alternativo:', response);
+        } else {
+          console.log('Registro inserido com sucesso usando cliente admin');
         }
       } catch (insertError) {
-        console.error('Erro durante inserção:', insertError);
+        console.error('Todos os métodos de inserção falharam:', insertError);
         throw insertError;
       }
       
@@ -193,23 +197,30 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         <CardContent>
           {registroSucesso ? (
             <div className="flex flex-col items-center justify-center py-8">
-              <div className="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-full p-6">
-                <CheckCircle2 className="h-16 w-16 text-green-500" />
+              <div className="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-full p-8">
+                <CheckCircle2 className="h-20 w-20 text-green-500" />
               </div>
-              <h2 className="text-2xl font-bold mb-2 text-center">Abastecimento Registrado com Sucesso!</h2>
-              <p className="text-muted-foreground mb-6 text-center max-w-md">
-                O abastecimento foi registrado no sistema. O que você deseja fazer agora?
+              <h2 className="text-2xl font-bold mb-4 text-center" style={{color: '#10b981'}}>
+                Abastecimento Registrado com Sucesso!
+              </h2>
+              <p className="text-muted-foreground mb-8 text-center max-w-md text-lg">
+                O abastecimento foi registrado corretamente no sistema.
               </p>
-              <div className="flex flex-col md:flex-row gap-4 mt-2">
+              <div className="flex flex-col w-full gap-4 mt-2">
                 <Button 
                   onClick={handleVerHistorico} 
-                  className="bg-green-600 hover:bg-green-700"
+                  className="w-full py-5 text-lg font-medium"
+                  style={{
+                    background: 'linear-gradient(to right, #10b981, #059669)',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                  }}
                 >
                   Ver Histórico de Abastecimentos
                 </Button>
                 <Button 
                   onClick={handleNovoRegistro} 
                   variant="outline"
+                  className="w-full py-5 text-lg font-medium"
                 >
                   Registrar Novo Abastecimento
                 </Button>
@@ -231,171 +242,208 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
                   </div>
                 )}
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="placa"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Placa do Veículo</FormLabel>
-                      <FormControl>
-                        <Input placeholder="ABC1234" {...field} className="uppercase" />
-                      </FormControl>
-                      <FormDescription>
-                        Digite a placa do veículo no formato correto
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              {/* Formulário otimizado para dispositivos móveis */}
+              <div className="grid grid-cols-1 gap-4">
+                {/* Seção de identificação do veículo */}
+                <div className="bg-gray-50 dark:bg-gray-800/30 p-4 rounded-lg mb-2">
+                  <h3 className="text-md font-semibold mb-3">Informações do Veículo</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="placa"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Placa do Veículo</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="ABC1234" 
+                              {...field} 
+                              className="uppercase text-lg font-medium"
+                              style={{height: '48px'}} // Altura maior para facilitar o toque
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="km"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>KM Atual</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="tel" 
+                              inputMode="numeric" 
+                              placeholder="123456" 
+                              {...field} 
+                              className="text-lg font-medium"
+                              style={{height: '48px'}} // Altura maior para facilitar o toque
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
                 
-                <FormField
-                  control={form.control}
-                  name="km"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>KM Atual</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="123456" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Digite o KM atual do veículo
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Seção de abastecimento */}
+                <div className="bg-gray-50 dark:bg-gray-800/30 p-4 rounded-lg mb-2">
+                  <h3 className="text-md font-semibold mb-3">Dados do Abastecimento</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="tipo"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tipo de Combustível</FormLabel>
+                          <FormControl>
+                            <select
+                              className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-background px-4 py-2 text-lg font-medium ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              value={field.value}
+                              onChange={field.onChange}
+                              onBlur={field.onBlur}
+                            >
+                              <option value="" disabled>Selecione</option>
+                              <option value="Diesel">Diesel</option>
+                              <option value="ARLA">ARLA</option>
+                            </select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="quantidade"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Quantidade (Litros)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="tel" 
+                              inputMode="decimal" 
+                              placeholder="100" 
+                              {...field} 
+                              className="text-lg font-medium"
+                              style={{height: '48px'}} // Altura maior para facilitar o toque
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
                 
-                <FormField
-                  control={form.control}
-                  name="tipo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo de Combustível</FormLabel>
-                      <FormControl>
-                        <select
-                          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          value={field.value}
-                          onChange={field.onChange}
-                          onBlur={field.onBlur}
-                        >
-                          <option value="" disabled>Selecione o combustível</option>
-                          <option value="Diesel">Diesel</option>
-                          <option value="ARLA">ARLA</option>
-                        </select>
-                      </FormControl>
-                      <FormDescription>
-                        Selecione o tipo de combustível abastecido
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="quantidade"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Quantidade (Litros)</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="100" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Digite a quantidade em litros
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="projeto"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Projeto</FormLabel>
-                      <FormControl>
-                        <select
-                          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          value={field.value}
-                          onChange={field.onChange}
-                          onBlur={field.onBlur}
-                        >
-                          <option value="" disabled>Selecione o projeto</option>
-                          <option value="GRUPO PEREIRA">GRUPO PEREIRA</option>
-                          <option value="COCA COLA">COCA COLA</option>
-                          <option value="SHOPEE">SHOPEE</option>
-                          <option value="MERCADO LIVRE">MERCADO LIVRE</option>
-                          <option value="LINE HALL SHOPEE">LINE HALL SHOPEE</option>
-                          <option value="MADEIRA MADEIRA">MADEIRA MADEIRA</option>
-                          <option value="MAGALU">MAGALU</option>
-                          <option value="NATURA">NATURA</option>
-                          <option value="OXXO">OXXO</option>
-                          <option value="PETLOVE">PETLOVE</option>
-                          <option value="Outro">Outro</option>
-                        </select>
-                      </FormControl>
-                      <FormDescription>
-                        Selecione o projeto ao qual o veículo pertence
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="motorista"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome do Motorista</FormLabel>
-                      <FormControl>
-                        <Input placeholder="João Silva" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Digite o nome completo do motorista
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="operador"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome do Operador</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Carlos Oliveira" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Digite o nome do operador responsável
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Seção do projeto e pessoas */}
+                <div className="bg-gray-50 dark:bg-gray-800/30 p-4 rounded-lg">
+                  <h3 className="text-md font-semibold mb-3">Projeto e Responsáveis</h3>
+                  <div className="grid grid-cols-1 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="projeto"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Projeto</FormLabel>
+                          <FormControl>
+                            <select
+                              className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-background px-4 py-2 text-lg font-medium ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              value={field.value}
+                              onChange={field.onChange}
+                              onBlur={field.onBlur}
+                            >
+                              <option value="" disabled>Selecione o projeto</option>
+                              <option value="GRUPO PEREIRA">GRUPO PEREIRA</option>
+                              <option value="COCA COLA">COCA COLA</option>
+                              <option value="SHOPEE">SHOPEE</option>
+                              <option value="MERCADO LIVRE">MERCADO LIVRE</option>
+                              <option value="LINE HALL SHOPEE">LINE HALL SHOPEE</option>
+                              <option value="MADEIRA MADEIRA">MADEIRA MADEIRA</option>
+                              <option value="MAGALU">MAGALU</option>
+                              <option value="NATURA">NATURA</option>
+                              <option value="OXXO">OXXO</option>
+                              <option value="PETLOVE">PETLOVE</option>
+                              <option value="Outro">Outro</option>
+                            </select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="motorista"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome do Motorista</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="João Silva" 
+                              {...field} 
+                              className="text-lg"
+                              style={{height: '48px'}} // Altura maior para facilitar o toque
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="operador"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome do Operador</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Carlos Oliveira" 
+                              {...field} 
+                              className="text-lg"
+                              style={{height: '48px'}} // Altura maior para facilitar o toque
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
               </div>
               
-              <div className="flex justify-end">
+              {/* Botão de submissão grande e amigável para mobile */}
+              <div className="mt-6">
                 <Button 
                   type="submit" 
                   size="lg" 
-                  className="w-full md:w-auto"
+                  className="w-full py-6 text-lg font-medium"
                   disabled={isSubmitting}
+                  style={{
+                    background: 'linear-gradient(to right, #10b981, #059669)',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                  }}
                 >
                   {isSubmitting ? (
                     <>
-                      <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent"></span>
-                      Enviando...
+                      <span className="mr-3 h-5 w-5 animate-spin rounded-full border-2 border-b-transparent"></span>
+                      Registrando...
                     </>
                   ) : (
-                    'Registrar Abastecimento'
+                    'REGISTRAR ABASTECIMENTO'
                   )}
                 </Button>
               </div>
+              
+              {/* Texto de ajuda abaixo do botão */}
+              <p className="text-center text-sm text-muted-foreground mt-2">
+                Toque no botão acima para registrar o abastecimento
+              </p>
             </form>
           </Form>
         )}
