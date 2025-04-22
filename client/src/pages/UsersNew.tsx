@@ -240,19 +240,10 @@ const UsersNew: React.FC = () => {
     try {
       const newPassword = generateRandomPassword(10);
       
-      // Chamar API para atualizar a senha do usuário
-      const response = await fetch(`/api/users/${selectedUserId}/reset-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ password: newPassword }),
+      // Chamar API para atualizar a senha do usuário usando apiRequest
+      await apiRequest('POST', `/api/users/${selectedUserId}/reset-password`, { 
+        password: newPassword 
       });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao redefinir senha');
-      }
       
       // Fechar o diálogo e mostrar a nova senha
       setIsResetPasswordDialogOpen(false);
@@ -329,20 +320,8 @@ const UsersNew: React.FC = () => {
       
       console.log('Enviando dados de usuário:', { ...registerData, password: '***' });
       
-      const response = await fetch('/api/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(registerData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao registrar usuário');
-      }
-
-      const createdUser = await response.json();
+      // Usar apiRequest para cadastrar novo usuário
+      const createdUser = await apiRequest('POST', '/api/register', registerData);
       
       // Limpar o modal e fechar
       setIsAddDialogOpen(false);
