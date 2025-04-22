@@ -445,6 +445,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await criarTabelaLineHallShopee();
   await criarTabelaFuelCardRequests();
   await criarTabelaDriverChecklists();
+  // Rota para registro de movimentações de pátio
+  app.post('/api/registro/movimentacao-patio', async (req, res) => {
+    try {
+      console.log('Recebendo requisição para registro de movimentação de pátio:', req.body);
+      
+      // Validando dados básicos
+      const { placa, tipo_movimento, nome_motorista, nome_operador, posto } = req.body;
+      
+      if (!placa || !tipo_movimento || !nome_motorista || !nome_operador || !posto) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Dados incompletos para registro da movimentação' 
+        });
+      }
+      
+      // Processando o tipo de movimento para definir as datas
+      let data_entrada = null;
+      let data_saida = null;
+      
+      if (tipo_movimento.includes('Entrada')) {
+        data_entrada = new Date();
+      } else if (tipo_movimento.includes('Saída')) {
+        data_saida = new Date();
+      }
+      
+      // Inserindo registro no banco
+      const query = `
+        INSERT INTO movimentacoes_patio 
+        (placa, motorista, data_entrada, data_saida, motivo, posto, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, NOW())
+        RETURNING id
+      `;
+      
+      const motivo = tipo_movimento; // Usado como motivo para manter registros anteriores compatíveis
+      
+      const result = await pool.query(query, [
+        placa.toUpperCase(),
+        nome_motorista,
+        data_entrada,
+        data_saida,
+        motivo,
+        posto
+      ]);
+      
+      console.log('Movimentação registrada com sucesso:', result.rows[0]);
+      
+      return res.status(201).json({
+        success: true,
+        message: 'Movimentação registrada com sucesso',
+        data: {
+          id: result.rows[0].id,
+          placa,
+          tipo_movimento,
+          nome_motorista,
+          nome_operador,
+          posto
+        }
+      });
+    } catch (error) {
+      console.error('Erro ao registrar movimentação de pátio:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao registrar movimentação de pátio',
+        error: String(error)
+      });
+    }
+  });
+  
+  // Rota para recuperar movimentações de pátio por posto
+  app.get('/api/movimentacoes-patio/:posto', async (req, res) => {
+    try {
+      const { posto } = req.params;
+      
+      // Formatar nome do posto (primeira letra maiúscula)
+      const formattedPosto = posto.charAt(0).toUpperCase() + posto.slice(1);
+      
+      console.log(`Buscando movimentações de pátio para posto: ${formattedPosto}`);
+      
+      // Consulta SQL para buscar registros
+      const query = `
+        SELECT * FROM movimentacoes_patio 
+        WHERE posto = $1
+        ORDER BY created_at DESC
+        LIMIT 100
+      `;
+      
+      const result = await pool.query(query, [formattedPosto]);
+      
+      console.log(`Movimentações encontradas: ${result.rowCount || 0}`);
+      
+      return res.status(200).json({
+        success: true,
+        count: result.rowCount || 0,
+        data: result.rows
+      });
+    } catch (error) {
+      console.error('Erro ao buscar movimentações de pátio:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar movimentações de pátio',
+        error: String(error)
+      });
+    }
+  });
+  
   // Rota para verificação de abastecimentos no banco
   app.get('/api/diagnostico/abastecimentos/:posto', async (req, res) => {
     try {
