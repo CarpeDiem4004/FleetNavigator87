@@ -160,6 +160,7 @@ const TiresPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState("inventory");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   const [newTire, setNewTire] = useState<Partial<Tire>>({
     codigo: '',
     marca: '',
