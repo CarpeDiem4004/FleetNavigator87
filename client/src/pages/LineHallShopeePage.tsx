@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, RefreshCcw, Search, Edit, Trash2, Truck, FileText } from 'lucide-react';
+import { Loader2, Plus, RefreshCcw, Search, Edit, Trash2, Truck, FileText, CheckSquare, Wrench, AlertCircle } from 'lucide-react';
 import { api } from '@/services/api';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -45,6 +45,20 @@ export default function LineHallShopeePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
+  // Estados para acompanhamento de checklists e manutenção
+  const [checklistStats, setChecklistStats] = useState({
+    pendentes: 0,
+    concluidos: 0,
+    total: 0
+  });
+  
+  const [maintenanceStats, setMaintenanceStats] = useState({
+    pendentes: 0,
+    emAndamento: 0,
+    concluidas: 0,
+    total: 0
+  });
+  
   // Form states
   const [currentTrip, setCurrentTrip] = useState<Partial<LineHallTrip>>({
     placa_cavalo: '',
@@ -61,6 +75,7 @@ export default function LineHallShopeePage() {
 
   useEffect(() => {
     fetchTrips();
+    fetchDriverStats();
   }, []);
 
   const fetchTrips = async () => {
@@ -217,6 +232,47 @@ export default function LineHallShopeePage() {
 
   const handleSelectChange = (name: string, value: string) => {
     setCurrentTrip(prev => ({ ...prev, [name]: value }));
+  };
+  
+  // Função para buscar estatísticas de checklist e manutenção
+  const fetchDriverStats = async () => {
+    try {
+      // Buscar estatísticas de checklist
+      const checklistResponse = await api.get('/line-hall/checklist-stats');
+      if (checklistResponse.data.success) {
+        setChecklistStats({
+          pendentes: checklistResponse.data.pendentes || 0,
+          concluidos: checklistResponse.data.concluidos || 0,
+          total: checklistResponse.data.total || 0
+        });
+      }
+      
+      // Buscar estatísticas de manutenção
+      const maintenanceResponse = await api.get('/line-hall/maintenance-stats');
+      if (maintenanceResponse.data.success) {
+        setMaintenanceStats({
+          pendentes: maintenanceResponse.data.pendentes || 0,
+          emAndamento: maintenanceResponse.data.emAndamento || 0,
+          concluidas: maintenanceResponse.data.concluidas || 0,
+          total: maintenanceResponse.data.total || 0
+        });
+      }
+    } catch (error: any) {
+      console.error("Erro ao buscar estatísticas:", error);
+      // Usar valores padrão para casos de falha
+      setChecklistStats({
+        pendentes: 0,
+        concluidos: 0,
+        total: 0
+      });
+      
+      setMaintenanceStats({
+        pendentes: 0,
+        emAndamento: 0,
+        concluidas: 0,
+        total: 0
+      });
+    }
   };
 
   const filteredTrips = trips.filter(trip => {

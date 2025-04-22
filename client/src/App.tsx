@@ -50,6 +50,7 @@ import BudgetManagementPage from "@/pages/fleet-management/BudgetManagementPage"
 import InventoryPage from "@/pages/fleet-management/InventoryPage";
 import TiresEntrada from "@/pages/TiresEntrada";
 import LineHallShopeePage from "@/pages/LineHallShopeePage";
+import LineHallDriverPage from "@/pages/LineHallDriverPage";
 import FuelCardPage from "@/pages/FuelCardPage";
 import DriverChecklist from "@/pages/DriverChecklist";
 import DriversPage from "@/pages/DriversPage";
@@ -147,6 +148,11 @@ function App() {
           {/* Rota para verificação de motorista por CPF */}
           <Route path="/driver-checklist">
             <DriverChecklist />
+          </Route>
+          
+          {/* Rota para acesso de motoristas do Line Hall */}
+          <Route path="/line-hall-driver">
+            <LineHallDriverPage />
           </Route>
           
           {/* Rota pública para cadastro de oficinas */}
