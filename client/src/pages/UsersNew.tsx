@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { 
   Table, 
   TableBody, 
@@ -22,7 +24,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Search, Plus, FileEdit, Trash2, UserCircle2 } from 'lucide-react';
+import { Search, Plus, FileEdit, Trash2, UserCircle2, Loader2 } from 'lucide-react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { 
   Select,
@@ -99,21 +101,17 @@ const mockUsers: User[] = [
   }
 ];
 
-// Bases disponíveis (para o select de bases)
-const availableBases = [
-  { id: 9, name: 'Multas' },
-  { id: 10, name: 'Pneus' },
-  { id: 11, name: 'Line Hall' },
-  { id: 12, name: 'Gestão de Frotas' },
-  { id: 31, name: 'Osasco' },
-  { id: 32, name: 'Guarulhos' },
-  { id: 33, name: 'São Paulo' },
-  { id: 34, name: 'Campinas' },
-  { id: 35, name: 'ABC' },
-  { id: 36, name: 'Socorro' },
-  { id: 37, name: 'Sorocaba' },
-  { id: 88, name: 'ABC (Coca Cola)' }
-];
+// Interface para as bases
+interface Base {
+  id: number;
+  name: string;
+  location?: string;
+  operation?: string;
+  active?: boolean;
+  hasMaintenance?: boolean;
+  hasTires?: boolean;
+  created_at?: string;
+}
 
 // Função para traduzir os tipos de perfil
 const translateUserRole = (role: string): string => {
@@ -165,6 +163,11 @@ const UsersNew: React.FC = () => {
   });
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  
+  // Buscar bases disponíveis usando React Query
+  const { data: bases, isLoading: basesLoading } = useQuery<Base[]>({
+    queryKey: ['/api/bases']
+  });
 
   // Filtrar usuários com base no termo de busca
   const filteredUsers = users.filter(
@@ -186,13 +189,21 @@ const UsersNew: React.FC = () => {
     }
     
     const id = parseInt(baseId);
-    const base = availableBases.find(b => b.id === id);
+    const base = bases?.find(b => b.id === id);
     setNewUser({
       ...newUser,
       baseId: id,
       baseName: base?.name || null
     });
   };
+  
+  // Efeito para invalidar a query de bases quando o modal de adicionar usuário é aberto
+  useEffect(() => {
+    if (isAddDialogOpen) {
+      // Forçar uma atualização da lista de bases quando o modal é aberto
+      queryClient.invalidateQueries({ queryKey: ['/api/bases'] });
+    }
+  }, [isAddDialogOpen]);
 
   // Adicionar novo usuário
   const handleAddUser = async () => {
@@ -375,19 +386,25 @@ const UsersNew: React.FC = () => {
                     Base
                   </Label>
                   <div className="col-span-3">
-                    <NativeSelect
-                      id="base"
-                      value={newUser.baseId?.toString() || '0'}
-                      onChange={(e) => handleBaseChange(e.target.value)}
-                      options={[
-                        { value: '0', label: 'Nenhuma (Global)' },
-                        ...availableBases.map(base => ({
-                          value: base.id.toString(),
-                          label: base.name
-                        }))
-                      ]}
-                      placeholder="Selecione a base (opcional)"
-                    />
+                    {basesLoading ? (
+                      <div className="flex items-center justify-center h-10">
+                        <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
+                      </div>
+                    ) : (
+                      <NativeSelect
+                        id="base"
+                        value={newUser.baseId?.toString() || '0'}
+                        onChange={(e) => handleBaseChange(e.target.value)}
+                        options={[
+                          { value: '0', label: 'Nenhuma (Global)' },
+                          ...(bases || []).map(base => ({
+                            value: base.id.toString(),
+                            label: base.name
+                          }))
+                        ]}
+                        placeholder="Selecione a base (opcional)"
+                      />
+                    )}
                   </div>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
