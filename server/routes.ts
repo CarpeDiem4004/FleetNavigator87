@@ -131,7 +131,58 @@ const hasBaseAccess = (req: Request, res: Response, next: NextFunction) => {
   res.status(403).json({ message: "Acesso negado. Você só pode acessar dados da sua própria base." });
 };
 
+// Função para criar tabela de abastecimentos se não existir
+async function criarTabelaAbastecimentos() {
+  try {
+    console.log("Verificando se a tabela abastecimentos_postos existe...");
+    
+    // Verificar se a tabela já existe
+    const checkQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'abastecimentos_postos'
+      );
+    `;
+    
+    const checkResult = await pool.query(checkQuery);
+    const tabelaExiste = checkResult.rows[0].exists;
+    
+    if (tabelaExiste) {
+      console.log("Tabela abastecimentos_postos já existe, pulando criação.");
+      return;
+    }
+    
+    console.log("Criando tabela abastecimentos_postos...");
+    
+    // Criar tabela
+    const createTableQuery = `
+      CREATE TABLE abastecimentos_postos (
+        id SERIAL PRIMARY KEY,
+        placa TEXT NOT NULL,
+        km_atual INTEGER NOT NULL,
+        tipo_combustivel TEXT NOT NULL,
+        litros NUMERIC(10,2) NOT NULL,
+        nome_motorista TEXT NOT NULL,
+        nome_operador TEXT NOT NULL,
+        posto TEXT NOT NULL,
+        project TEXT,
+        preco_litro NUMERIC(10,2),
+        valor_total NUMERIC(10,2),
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+    
+    await pool.query(createTableQuery);
+    console.log("Tabela abastecimentos_postos criada com sucesso!");
+    
+  } catch (error) {
+    console.error("Erro ao criar tabela abastecimentos_postos:", error);
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Criar tabela de abastecimentos se não existir
+  await criarTabelaAbastecimentos();
   // Rota para verificação de abastecimentos no banco
   app.get('/api/diagnostico/abastecimentos/:posto', async (req, res) => {
     try {
