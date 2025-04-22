@@ -73,6 +73,7 @@ import {
 // Schema para o formulário, estendendo o schema existente
 const baseFormSchema = insertBaseSchema.extend({
   name: z.string().min(3, 'O nome da base deve ter pelo menos 3 caracteres'),
+  type: z.string().optional(),
 });
 
 // Componente da página de Bases
@@ -85,7 +86,28 @@ export default function BasesPage() {
   const [importText, setImportText] = useState('');
   const [importingBases, setImportingBases] = useState(false);
   const [importPreview, setImportPreview] = useState<Partial<Base>[]>([]);
+  const [customOperation, setCustomOperation] = useState('');
   const { toast } = useToast();
+  
+  // Formulário para adicionar/editar base
+  const form = useForm<z.infer<typeof baseFormSchema>>({
+    resolver: zodResolver(baseFormSchema),
+    defaultValues: {
+      name: '',
+      location: '',
+      operation: '',
+      type: '',
+      active: true,
+      hasMaintenance: false,
+      hasTires: false,
+    },
+  });
+
+  // Query para buscar as bases
+  const { data: bases, isLoading, refetch } = useQuery<Base[]>({
+    queryKey: ['/api/bases'],
+    queryFn: () => apiRequest('GET', '/api/bases').then(res => res.json()),
+  });
   
   // Obter as operações cadastradas no sistema
   const existingOperations = React.useMemo(() => {
@@ -108,25 +130,6 @@ export default function BasesPage() {
     // Ordenar as operações
     return uniqueOperations.sort();
   }, [bases]);
-
-  // Formulário para adicionar/editar base
-  const form = useForm<z.infer<typeof baseFormSchema>>({
-    resolver: zodResolver(baseFormSchema),
-    defaultValues: {
-      name: '',
-      location: '',
-      operation: '',
-      active: true,
-      hasMaintenance: false,
-      hasTires: false,
-    },
-  });
-
-  // Query para buscar as bases
-  const { data: bases, isLoading, refetch } = useQuery<Base[]>({
-    queryKey: ['/api/bases'],
-    queryFn: () => apiRequest('GET', '/api/bases').then(res => res.json()),
-  });
 
   // Mutation para adicionar uma nova base
   const createBaseMutation = useMutation({
@@ -207,6 +210,7 @@ export default function BasesPage() {
       name: base.name,
       location: base.location || '',
       operation: base.operation || '',
+      type: base.type || '',
       active: base.active,
       hasMaintenance: base.hasMaintenance || false,
       hasTires: base.hasTires || false,
@@ -239,7 +243,8 @@ export default function BasesPage() {
   };
 
   // Formatar data
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | Date | null) => {
+    if (!dateString) return '-';
     try {
       return format(new Date(dateString), 'dd/MM/yyyy HH:mm', { locale: ptBR });
     } catch (error) {
@@ -435,6 +440,38 @@ export default function BasesPage() {
                         </FormItem>
                       )}
                     />
+                    
+                    <FormField
+                      control={form.control}
+                      name="type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tipo de Base</FormLabel>
+                          <FormControl>
+                            <Select
+                              value={field.value || ''}
+                              onValueChange={field.onChange}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Selecione o tipo de base" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="">Nenhum tipo</SelectItem>
+                                <SelectItem value="filial">Filial</SelectItem>
+                                <SelectItem value="sc">Centro de Serviço (SC)</SelectItem>
+                                <SelectItem value="operacao">Operação</SelectItem>
+                                <SelectItem value="base_avançada">Base Avançada</SelectItem>
+                                <SelectItem value="administracao">Administração</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormDescription>
+                            O tipo de base define suas características e permissões no sistema.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <FormField
                       control={form.control}
                       name="operation"
@@ -442,10 +479,13 @@ export default function BasesPage() {
                         <FormItem>
                           <FormLabel>Operação</FormLabel>
                           <FormControl>
-                            <div className="flex space-x-2">
+                            <div className="flex flex-col space-y-2">
                               <Select
                                 value={field.value || ''}
-                                onValueChange={field.onChange}
+                                onValueChange={(value) => {
+                                  field.onChange(value);
+                                  setCustomOperation('');
+                                }}
                               >
                                 <SelectTrigger className="w-full">
                                   <SelectValue placeholder="Selecione uma operação existente" />
@@ -455,12 +495,29 @@ export default function BasesPage() {
                                   {existingOperations.map((op) => (
                                     <SelectItem key={op} value={op}>{op}</SelectItem>
                                   ))}
+                                  <SelectItem value="custom">-- Adicionar nova operação --</SelectItem>
                                 </SelectContent>
                               </Select>
+                              
+                              {field.value === 'custom' && (
+                                <div className="mt-2">
+                                  <Input
+                                    placeholder="Digite o nome da nova operação"
+                                    value={customOperation}
+                                    onChange={(e) => {
+                                      setCustomOperation(e.target.value);
+                                      // Atualiza o campo do formulário com o valor personalizado
+                                      if (e.target.value) {
+                                        field.onChange(e.target.value);
+                                      }
+                                    }}
+                                  />
+                                </div>
+                              )}
                             </div>
                           </FormControl>
                           <FormDescription>
-                            Selecione uma das operações existentes ou digite uma nova.
+                            Selecione uma das operações existentes ou adicione uma nova.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -598,6 +655,7 @@ export default function BasesPage() {
                       <TableHead>ID</TableHead>
                       <TableHead>Nome</TableHead>
                       <TableHead>Localização</TableHead>
+                      <TableHead>Tipo</TableHead>
                       <TableHead>Operação</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Manutenção</TableHead>
@@ -613,6 +671,21 @@ export default function BasesPage() {
                           <TableCell className="font-medium">{base.id}</TableCell>
                           <TableCell>{base.name}</TableCell>
                           <TableCell>{base.location || '-'}</TableCell>
+                          <TableCell>
+                            {base.type ? (
+                              <div className="flex items-center gap-2">
+                                <Building className="h-4 w-4 text-blue-500" />
+                                {base.type === 'sc' ? 'Centro de Serviço' :
+                                 base.type === 'filial' ? 'Filial' :
+                                 base.type === 'operacao' ? 'Operação' :
+                                 base.type === 'base_avançada' ? 'Base Avançada' :
+                                 base.type === 'administracao' ? 'Administração' :
+                                 base.type}
+                              </div>
+                            ) : (
+                              '-'
+                            )}
+                          </TableCell>
                           <TableCell>
                             {base.operation ? (
                               <div className="flex items-center gap-2">
