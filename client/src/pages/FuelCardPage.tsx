@@ -420,6 +420,269 @@ const FuelCardRequestForm: React.FC = () => {
   );
 };
 
+// Componente para processar operações de adição de saldo
+const FuelCardOperations: React.FC = () => {
+  const [approvedRequests, setApprovedRequests] = useState<FuelCardRequestHistory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedRequest, setSelectedRequest] = useState<FuelCardRequestHistory | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+  const form = useForm({
+    resolver: zodResolver(cardOperationSchema),
+    defaultValues: {
+      requestId: '',
+      operationDate: new Date().toISOString().split('T')[0],
+      confirmationCode: '',
+      operationNotes: ''
+    }
+  });
+
+  useEffect(() => {
+    const fetchApprovedRequests = async () => {
+      try {
+        setLoading(true);
+        // Buscar solicitações aprovadas que ainda não foram processadas
+        const response = await apiRequest('GET', '/api/fuel-card/approved');
+        const data = await response.json();
+        
+        if (data.success) {
+          setApprovedRequests(data.data);
+        } else {
+          toast({
+            title: 'Erro ao carregar solicitações',
+            description: data.message || 'Não foi possível carregar as solicitações aprovadas',
+            variant: 'destructive',
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao buscar solicitações aprovadas:', error);
+        toast({
+          title: 'Erro ao carregar solicitações',
+          description: 'Não foi possível carregar as solicitações aprovadas',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchApprovedRequests();
+  }, [toast]);
+
+  const handleSelectRequest = (request: FuelCardRequestHistory) => {
+    setSelectedRequest(request);
+    form.setValue('requestId', request.id.toString());
+    setIsDialogOpen(true);
+  };
+
+  const onSubmit = async (data: any) => {
+    if (!selectedRequest) return;
+    
+    try {
+      setIsProcessing(true);
+      
+      const operationData = {
+        requestId: parseInt(data.requestId),
+        operationDate: data.operationDate,
+        confirmationCode: data.confirmationCode,
+        operationNotes: data.operationNotes,
+        processedBy: user?.name
+      };
+      
+      const response = await apiRequest('POST', '/api/fuel-card/process', operationData);
+      const responseData = await response.json();
+      
+      if (responseData.success) {
+        toast({
+          title: 'Operação registrada',
+          description: 'A recarga do cartão foi registrada com sucesso',
+        });
+        
+        // Atualizar a lista de solicitações aprovadas
+        setApprovedRequests(prev => prev.filter(req => req.id !== selectedRequest.id));
+        setIsDialogOpen(false);
+        form.reset();
+      } else {
+        toast({
+          title: 'Erro ao registrar operação',
+          description: responseData.message || 'Não foi possível registrar a operação',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao processar operação:', error);
+      toast({
+        title: 'Erro ao registrar operação',
+        description: 'Ocorreu um erro ao registrar a operação',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('pt-BR');
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (approvedRequests.length === 0) {
+    return (
+      <div className="text-center p-8">
+        <p className="text-muted-foreground">Não há solicitações aprovadas pendentes de processamento.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Cartões Aprovados Pendentes de Recarga</CardTitle>
+          <CardDescription>
+            Registre aqui as operações de adição de saldo realizadas nos cartões de combustível
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Veículo</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cartão</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solicitante</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data Aprovação</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ação</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {approvedRequests.map((request) => (
+                  <tr key={request.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">{request.plate}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">{request.cardNumber}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{formatCurrency(request.amount)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">{request.requestedBy}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">{request.approvedAt ? formatDate(request.approvedAt) : '-'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <Button size="sm" onClick={() => handleSelectRequest(request)}>
+                        <DollarSign className="h-4 w-4 mr-1" />
+                        Registrar Recarga
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Registrar Operação de Recarga</DialogTitle>
+          </DialogHeader>
+          {selectedRequest && (
+            <div className="mb-4 p-3 bg-gray-50 rounded-md">
+              <p><strong>Veículo:</strong> {selectedRequest.plate}</p>
+              <p><strong>Cartão:</strong> {selectedRequest.cardNumber}</p>
+              <p><strong>Valor:</strong> {formatCurrency(selectedRequest.amount)}</p>
+            </div>
+          )}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="operationDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data da Operação</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="confirmationCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Código de Confirmação</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Código de confirmação da operação" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="operationNotes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Observações (opcional)</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Observações sobre a operação"
+                        className="resize-none"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsDialogOpen(false)}
+                  disabled={isProcessing}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={isProcessing}
+                >
+                  {isProcessing && (
+                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                  )}
+                  Confirmar Recarga
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
 // Componente para aprovação/rejeição de solicitações (somente para administradores)
 const FuelCardApproval: React.FC = () => {
   const [pendingRequests, setPendingRequests] = useState<FuelCardRequestHistory[]>([]);
@@ -686,6 +949,12 @@ const FuelCardPage: React.FC = () => {
                 Aprovações
               </TabsTrigger>
             )}
+            {(user?.role === 'admin' || user?.role === 'gestor') && (
+              <TabsTrigger value="operations">
+                <DollarSign className="w-4 h-4 mr-2" />
+                Operações
+              </TabsTrigger>
+            )}
           </TabsList>
           
           <TabsContent value="request" className="space-y-4">
@@ -699,6 +968,12 @@ const FuelCardPage: React.FC = () => {
           {(user?.role === 'admin' || user?.role === 'gestor') && (
             <TabsContent value="approval" className="space-y-4">
               <FuelCardApproval />
+            </TabsContent>
+          )}
+          
+          {(user?.role === 'admin' || user?.role === 'gestor') && (
+            <TabsContent value="operations" className="space-y-4">
+              <FuelCardOperations />
             </TabsContent>
           )}
         </Tabs>
