@@ -56,13 +56,16 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function onSubmit(data: AbastecimentoValues) {
-    if (isSubmitting) return;
+    if (isSubmitting) {
+      console.log('Submissão já em andamento, ignorando clique duplicado');
+      return;
+    }
     
     setIsSubmitting(true);
+    console.log('Iniciando processo de envio de abastecimento');
     
     try {
       // Prepara os dados no formato esperado pela API
-      // Capitaliza a primeira letra do posto
       const formatPosto = (posto: string) => {
         return posto.charAt(0).toUpperCase() + posto.slice(1);
       };
@@ -75,70 +78,126 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         projeto: data.projeto,
         nome_motorista: data.motorista,
         nome_operador: data.operador,
-        posto: formatPosto(postId), // Primeira letra maiúscula
-        data_hora: new Date().toISOString() // Adiciona a data e hora atual
+        posto: formatPosto(postId),
+        data_hora: new Date().toISOString()
       };
       
-      console.log('Dados a enviar:', abastecimentoData);
+      console.log('Dados preparados para envio:', abastecimentoData);
       
-      // Verifica conexão com a internet antes de enviar
+      // Verificação básica de conexão
       if (!navigator.onLine) {
+        console.error('Sem conexão com a internet detectada');
         throw new Error('Sem conexão com a internet. Verifique sua rede e tente novamente.');
       }
       
-      // Verifica conectividade com Supabase antes de tentar enviar
+      // Notificação ao usuário
       toast({
-        title: 'Verificando conexão',
-        description: 'Aguarde enquanto verificamos a conexão com o servidor...',
+        title: 'Registrando abastecimento',
+        description: 'Aguarde enquanto seu registro é processado...',
       });
       
-      // Verificamos conexão com o Supabase - podemos pular essa verificação
-      // já que vamos tentar inserir diretamente e capturar qualquer erro
+      // VERSÃO SIMPLIFICADA COM MÚLTIPLAS ABORDAGENS DE INSERÇÃO
+      let inseridoComSucesso = false;
+      let resultado = null;
       
-      // Abordagem simplificada de inserção para evitar problemas de tela branca
-      console.log('Iniciando processo de registro de abastecimento...');
-      
-      // Importamos diretamente para evitar problemas de escopo
-      const { insertData, supabaseAdmin } = await import('@/lib/supabase-client');
-      
-      // Tentamos primeiro com o cliente admin para maior chance de sucesso
+      // Tentativa 1: Cliente Admin com conversão simplificada dos campos
       try {
-        console.log('Tentando com cliente admin primeiro...');
-        const { data, error } = await supabaseAdmin
+        console.log('Tentativa 1: Cliente Admin direto');
+        
+        // Forçar um objeto simplificado para evitar problemas de conversão
+        const dadosSimplificados = {
+          placa: abastecimentoData.placa,
+          km: Number(data.km), // Usar campo original para evitar conversões problemáticas
+          tipo: abastecimentoData.tipo_combustivel,
+          quantidade: Number(data.quantidade), // Usar campo original 
+          projeto: abastecimentoData.projeto,
+          motorista: abastecimentoData.nome_motorista,
+          operador: abastecimentoData.nome_operador,
+          posto_id: postId,
+          data_registro: abastecimentoData.data_hora
+        };
+        
+        const { supabaseAdmin } = await import('@/lib/supabase-client');
+        const { data: resultadoInsercao, error } = await supabaseAdmin
           .from('abastecimentos_postos')
-          .insert([abastecimentoData]);
-          
-        if (error) {
-          console.error('Erro ao usar cliente admin:', error);
-          // Se falhar, tentamos com o método padrão
-          console.log('Tentando método alternativo...');
-          const response = await insertData('abastecimentos_postos', abastecimentoData);
-          
-          if (!response.success) {
-            throw new Error(response.error || 'Falha ao registrar abastecimento');
-          }
-          
-          console.log('Registro inserido com método alternativo:', response);
+          .insert([dadosSimplificados]);
+        
+        if (!error) {
+          console.log('Tentativa 1 bem-sucedida');
+          inseridoComSucesso = true;
+          resultado = resultadoInsercao;
         } else {
-          console.log('Registro inserido com sucesso usando cliente admin');
+          console.warn('Tentativa 1 falhou com erro:', error.message);
         }
-      } catch (insertError) {
-        console.error('Todos os métodos de inserção falharam:', insertError);
-        throw insertError;
+      } catch (erro1) {
+        console.error('Erro na Tentativa 1:', erro1);
       }
       
+      // Tentativa 2: Usando a função auxiliar insertData
+      if (!inseridoComSucesso) {
+        try {
+          console.log('Tentativa 2: Usando função insertData');
+          
+          const { insertData } = await import('@/lib/supabase-client');
+          const resposta = await insertData('abastecimentos_postos', abastecimentoData);
+          
+          if (resposta.success) {
+            console.log('Tentativa 2 bem-sucedida');
+            inseridoComSucesso = true;
+            resultado = resposta.data;
+          } else {
+            console.warn('Tentativa 2 falhou com erro:', resposta.error);
+          }
+        } catch (erro2) {
+          console.error('Erro na Tentativa 2:', erro2);
+        }
+      }
+      
+      // Tentativa 3: Abordagem direta com POST via fetch
+      if (!inseridoComSucesso) {
+        try {
+          console.log('Tentativa 3: Último recurso via fetch');
+          
+          // Criar uma opção de último recurso usando fetch diretamente
+          const response = await fetch('https://hvsmxxqkuyjhpsiojupb.supabase.co/rest/v1/abastecimentos_postos', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDkwMzQ2MiwiZXhwIjoyMDYwMjc5NDYyfQ.M5Yf9Y-YRsF1hRfpZcnJHWdDR3x8T0yzIKbXZTXZQOY',
+              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDkwMzQ2MiwiZXhwIjoyMDYwMjc5NDYyfQ.M5Yf9Y-YRsF1hRfpZcnJHWdDR3x8T0yzIKbXZTXZQOY',
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify(abastecimentoData)
+          });
+          
+          if (response.ok) {
+            console.log('Tentativa 3 bem-sucedida');
+            inseridoComSucesso = true;
+          } else {
+            console.warn('Tentativa 3 falhou com status:', response.status);
+          }
+        } catch (erro3) {
+          console.error('Erro na Tentativa 3:', erro3);
+        }
+      }
+      
+      // Verificação final
+      if (!inseridoComSucesso) {
+        throw new Error('Não foi possível registrar o abastecimento após múltiplas tentativas');
+      }
+      
+      // Se chegou aqui, o registro foi bem-sucedido por algum dos métodos
+      console.log('Registro completado com sucesso!');
+      
+      // Notificar usuário  
       toast({
         title: 'Abastecimento registrado!',
         description: `Veículo ${data.placa} abastecido com sucesso.`,
       });
       
-      // Mostra a tela de registro bem-sucedido com opções para o usuário
-      setRegistroSucesso(true);
-      
-      // Exibimos o toast de sucesso
+      // Atualizar a interface e limpar formulário
+      setRegistroSucesso(true); 
       setSuccessMessage('Abastecimento registrado com sucesso!');
-      
-      // Limpa o formulário 
       form.reset();
     } catch (error: any) {
       console.error('Erro ao registrar abastecimento:', error);
