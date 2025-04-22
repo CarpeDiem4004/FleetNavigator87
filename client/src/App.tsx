@@ -139,7 +139,7 @@ function App() {
             <DriverChecklist />
           </Route>
           
-          {/* Rota pública para acesso ao checklist do motorista */}
+          {/* Rota para verificação de motorista por CPF */}
           <Route path="/driver-checklist">
             <DriverChecklist />
           </Route>

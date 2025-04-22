@@ -48,7 +48,8 @@ import {
   Camera, 
   Upload, 
   FileWarning,
-  ShieldAlert
+  ShieldAlert,
+  Loader2
 } from "lucide-react";
 
 // Tipos de condição para componentes do veículo
@@ -150,8 +151,10 @@ const DriverChecklist: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tripId, setTripId] = useState<number | null>(null);
   const [tripInfo, setTripInfo] = useState<TripInfo | null>(null);
-  const [step, setStep] = useState<'info' | 'checklist' | 'requests' | 'success'>('info');
+  const [step, setStep] = useState<'auth' | 'info' | 'checklist' | 'requests' | 'success'>('auth');
   const [progress, setProgress] = useState(0);
+  const [cpf, setCpf] = useState<string>('');
+  const [motorista, setMotorista] = useState<{id: number, nome: string, cpf: string} | null>(null);
   
   // Checklist state
   const [checklist, setChecklist] = useState<Checklist>({
@@ -196,13 +199,19 @@ const DriverChecklist: React.FC = () => {
     const match = path.match(/\/checklist\/(\d+)/);
     
     if (match && match[1]) {
+      // Caso 1: URL tem ID da viagem - acessar direto informações da viagem
       const id = parseInt(match[1]);
       setTripId(id);
       loadTripInfo(id);
+    } else if (path === '/driver-checklist') {
+      // Caso 2: URL é /driver-checklist - iniciar com autenticação por CPF
+      setIsLoading(false);
+      // Estamos iniciando no passo 'auth', então não precisamos fazer nada aqui
     } else {
+      // Caso 3: URL inválida
       toast({
         title: 'Link inválido',
-        description: 'O link do checklist é inválido. Por favor, solicite um novo link.',
+        description: 'O link do checklist é inválido. Por favor, verifique o endereço ou use a página principal de checklist.',
         variant: 'destructive',
       });
       setIsLoading(false);
@@ -268,17 +277,121 @@ const DriverChecklist: React.FC = () => {
     }
   };
 
+  // Verificar o motorista por CPF
+  const verificarMotorista = async () => {
+    if (!cpf || cpf.length < 11) {
+      toast({
+        title: 'CPF inválido',
+        description: 'Por favor, informe um CPF válido.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Limpar formatação do CPF
+      const cpfLimpo = cpf.replace(/\D/g, '');
+      
+      const { data, error } = await supabase
+        .from('motoristas')
+        .select('*')
+        .eq('cpf', cpfLimpo)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data) {
+        toast({
+          title: 'Motorista não encontrado',
+          description: 'CPF não encontrado no sistema. Por favor, verifique se o CPF está correto ou entre em contato com o suporte.',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      setMotorista({
+        id: data.id,
+        nome: data.nome,
+        cpf: data.cpf
+      });
+
+      toast({
+        title: 'Motorista identificado',
+        description: `Bem-vindo, ${data.nome}!`,
+      });
+
+      // Buscar a viagem ativa mais recente para este motorista
+      try {
+        const { data: viagem, error: viagemError } = await supabase
+          .from('linehall_shopee')
+          .select('*')
+          .eq('motorista_id', data.id)
+          .order('data_viagem', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (viagemError) {
+          console.error('Erro ao buscar viagem do motorista:', viagemError);
+          toast({
+            title: 'Atenção',
+            description: 'Não foi possível encontrar uma viagem associada ao seu CPF.',
+          });
+          // Mesmo sem viagem, seguimos para a tela de informações
+          setStep('info');
+          return;
+        }
+        
+        if (viagem) {
+          // Encontrou uma viagem, definir como tripId atual
+          setTripId(viagem.id);
+          // Carregar dados da viagem
+          await loadTripInfo(viagem.id);
+          // Avançar para o passo de informações
+          setStep('info');
+        } else {
+          // Nenhuma viagem encontrada
+          toast({
+            title: 'Nenhuma viagem encontrada',
+            description: 'Não há viagens registradas para este motorista.',
+          });
+          setStep('info');
+        }
+      } catch (error) {
+        console.error('Erro ao buscar viagens:', error);
+        // Mesmo com erro, continuamos para a tela de info
+        setStep('info');
+      }
+      
+    } catch (error) {
+      console.error('Erro ao verificar motorista:', error);
+      toast({
+        title: 'Erro ao verificar motorista',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Atualizar progresso com base no passo atual
   useEffect(() => {
     switch (step) {
+      case 'auth':
+        setProgress(10);
+        break;
       case 'info':
-        setProgress(25);
+        setProgress(30);
         break;
       case 'checklist':
-        setProgress(50);
+        setProgress(60);
         break;
       case 'requests':
-        setProgress(75);
+        setProgress(85);
         break;
       case 'success':
         setProgress(100);
@@ -565,6 +678,87 @@ const DriverChecklist: React.FC = () => {
     }
   };
 
+  // Componente para autenticação do motorista
+  const DriverAuthForm: React.FC<{
+    cpf: string;
+    setCpf: (value: string) => void;
+    onSubmit: () => void;
+    isLoading: boolean;
+  }> = ({ cpf, setCpf, onSubmit, isLoading }) => {
+    // Função para formatar CPF enquanto o usuário digita
+    const formatCPF = (value: string) => {
+      // Remove tudo que não é número
+      const numbersOnly = value.replace(/\D/g, '');
+      
+      // Aplica a formatação de CPF (000.000.000-00)
+      let formattedCPF = numbersOnly;
+      if (numbersOnly.length > 3) {
+        formattedCPF = `${numbersOnly.slice(0, 3)}.${numbersOnly.slice(3)}`;
+      }
+      if (numbersOnly.length > 6) {
+        formattedCPF = `${formattedCPF.slice(0, 7)}.${formattedCPF.slice(7)}`;
+      }
+      if (numbersOnly.length > 9) {
+        formattedCPF = `${formattedCPF.slice(0, 11)}-${formattedCPF.slice(11, 13)}`;
+      }
+      
+      return formattedCPF;
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setCpf(formatCPF(value));
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      onSubmit();
+    };
+
+    return (
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle>Acesso ao Checklist</CardTitle>
+          <CardDescription>
+            Por favor, digite seu CPF para acessar o sistema de checklist do veículo
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="cpf">CPF do Motorista</Label>
+              <Input
+                id="cpf"
+                type="text"
+                value={cpf}
+                onChange={handleChange}
+                placeholder="000.000.000-00"
+                maxLength={14}
+                required
+                disabled={isLoading}
+                className="text-center text-lg"
+              />
+            </div>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isLoading || cpf.length < 14}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Verificando...
+                </>
+              ) : (
+                'Acessar Checklist'
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    );
+  };
+  
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
@@ -579,6 +773,29 @@ const DriverChecklist: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  // Exibir formulário de autenticação por CPF
+  if (step === 'auth' && !tripId) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-bold mb-2">Checklist de Veículo</h1>
+          <p className="text-gray-500">Acesso restrito a motoristas cadastrados</p>
+        </div>
+        
+        <DriverAuthForm 
+          cpf={cpf} 
+          setCpf={setCpf} 
+          onSubmit={verificarMotorista} 
+          isLoading={isLoading} 
+        />
+        
+        <div className="mt-8 text-center text-sm text-gray-500">
+          <p>Em caso de dúvidas, entre em contato com o suporte</p>
+        </div>
       </div>
     );
   }
