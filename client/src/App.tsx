@@ -33,6 +33,8 @@ import PostoSocorro from "@/pages/postos/Socorro";
 import PostoSorocaba from "@/pages/postos/Sorocaba";
 import HistoricoGeralPage from "@/pages/postos/HistoricoGeralPage";
 import HistoricoPatioPage from "@/pages/postos/HistoricoPatioPage";
+import PostosVisaoGeralPage from "@/pages/postos/PostosVisaoGeralPage";
+import PostoDetalhesPage from "@/pages/postos/PostoDetalhesPage";
 import SupabaseDiagnostico from "@/pages/diagnostico/SupabaseDiagnostico";
 import SupabaseConsole from "@/pages/diagnostico/SupabaseConsole";
 import ComparacaoEsquemas from "@/pages/diagnostico/ComparacaoEsquemas";
@@ -131,6 +133,8 @@ function App() {
           <ProtectedRoute path="/posto/sorocaba" component={PostoSorocaba} />
           <ProtectedRoute path="/postos/historico-geral" component={HistoricoGeralPage} />
           <ProtectedRoute path="/postos/historico-patio" component={HistoricoPatioPage} />
+          <ProtectedRoute path="/postos/visao-geral" component={PostosVisaoGeralPage} />
+          <ProtectedRoute path="/postos/:id" component={PostoDetalhesPage} />
           <ProtectedRoute path="/diagnostico/supabase" component={SupabaseDiagnostico} />
           <ProtectedRoute path="/diagnostico/supabase-console" component={SupabaseConsole} />
           <ProtectedRoute path="/diagnostico/comparacao-esquemas" component={ComparacaoEsquemas} />
