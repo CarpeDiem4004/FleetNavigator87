@@ -26,9 +26,10 @@ type ControlePatiocientes = z.infer<typeof controlePatiocientema>;
 
 interface FormularioControlePatioProp {
   postId: string;
+  onRegistroSucesso?: () => void;
 }
 
-export const FormularioControlePatio: React.FC<FormularioControlePatioProp> = ({ postId }) => {
+export const FormularioControlePatio: React.FC<FormularioControlePatioProp> = ({ postId, onRegistroSucesso }) => {
   const { toast } = useToast();
   
   const form = useForm<ControlePatiocientes>({
@@ -80,6 +81,12 @@ export const FormularioControlePatio: React.FC<FormularioControlePatioProp> = ({
       });
       
       form.reset();
+      
+      // Notifica o componente pai para atualizar o histórico
+      if (onRegistroSucesso) {
+        console.log("[PATIO] Notificando componente pai para atualizar histórico de movimentações");
+        onRegistroSucesso();
+      }
     } catch (error) {
       console.error('Erro ao registrar movimento:', error);
       toast({
