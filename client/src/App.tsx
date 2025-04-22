@@ -53,6 +53,7 @@ import TiresEntrada from "@/pages/TiresEntrada";
 import LineHallShopeePage from "@/pages/LineHallShopeePage";
 import LineHallDriverPage from "@/pages/LineHallDriverPage";
 import FuelCardPage from "@/pages/FuelCardPage";
+import FuelCardRequestsPanel from "@/pages/FuelCardRequestsPanel";
 import DriverChecklist from "@/pages/DriverChecklist";
 import DriversPage from "@/pages/DriversPage";
 import ManutencaoPage from "@/pages/ManutencaoPage";
@@ -138,6 +139,7 @@ function App() {
           <ProtectedRoute path="/limpar-dados" component={LimparDados} />
           <ProtectedRoute path="/line-hall-shopee" component={LineHallShopeePage} />
           <ProtectedRoute path="/fuel-card" component={FuelCardPage} />
+          <ProtectedRoute path="/fuel-card-requests" component={FuelCardRequestsPanel} />
           <ProtectedRoute path="/drivers" component={DriversPage} />
           <ProtectedRoute path="/manutencao" component={ManutencaoPage} />
           <ProtectedRoute path="/tratativa-manutencao" component={TratativaManutencaoPage} />
