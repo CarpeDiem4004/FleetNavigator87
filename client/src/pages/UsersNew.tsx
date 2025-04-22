@@ -189,7 +189,8 @@ const UsersNew: React.FC = () => {
     }
     
     const id = parseInt(baseId);
-    const base = bases?.find(b => b.id === id);
+    // TypeScript segurança: garantir que bases é um array antes de chamar find
+    const base = Array.isArray(bases) ? bases.find(b => b.id === id) : undefined;
     setNewUser({
       ...newUser,
       baseId: id,
@@ -295,6 +296,10 @@ const UsersNew: React.FC = () => {
       });
       setPassword('');
       setConfirmPassword('');
+      
+      // Atualizar lista de bases após adicionar um usuário
+      // Isso é útil se o usuário estiver associado a uma nova base
+      queryClient.invalidateQueries({ queryKey: ['/api/bases'] });
       
       toast({
         title: "Usuário adicionado",
