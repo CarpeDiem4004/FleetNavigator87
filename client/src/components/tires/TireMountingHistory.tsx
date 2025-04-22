@@ -70,6 +70,7 @@ interface TireMounting {
   placa_veiculo: string;
   km_instalacao: number;
   km_remocao?: number | null;
+  distancia_percorrida?: number | null;
   data_instalacao: string;
   data_remocao?: string | null;
   motivo_remocao?: string | null;
