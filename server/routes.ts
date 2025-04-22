@@ -747,8 +747,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // API para obter todos os veículos cadastrados
-  app.get("/api/workshop/vehicles", isWorkshop, async (req, res) => {
+  // API para obter todos os veículos cadastrados - sem restrição de acesso por enquanto
+  app.get("/api/workshop/vehicles", async (req, res) => {
     try {
       // Buscar todos os veículos - adaptado para as colunas existentes
       const query = `
