@@ -1,30 +1,33 @@
--- Verifica se a tabela montagem_pneus existe
-DO $$ 
-BEGIN
-    IF NOT EXISTS (SELECT FROM pg_tables WHERE tablename = 'montagem_pneus') THEN
-        -- Cria a tabela montagem_pneus
-        CREATE TABLE montagem_pneus (
-            id SERIAL PRIMARY KEY,
-            pneu_id INTEGER NOT NULL REFERENCES pneus(id),
-            placa_veiculo TEXT NOT NULL,
-            km_instalacao INTEGER NOT NULL,
-            km_remocao INTEGER,
-            data_instalacao TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-            data_remocao TIMESTAMP WITH TIME ZONE,
-            motivo_remocao TEXT,
-            posicao TEXT,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-        );
+-- Criação da tabela para histórico de montagem de pneus
+CREATE TABLE IF NOT EXISTS montagem_pneus (
+  id SERIAL PRIMARY KEY,
+  pneu_id INTEGER NOT NULL,
+  placa_veiculo VARCHAR(20) NOT NULL,
+  km_instalacao INTEGER NOT NULL,
+  km_remocao INTEGER,
+  data_instalacao TIMESTAMP NOT NULL DEFAULT NOW(),
+  data_remocao TIMESTAMP,
+  motivo_remocao VARCHAR(255),
+  posicao VARCHAR(50),
+  observacoes TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
 
-        -- Adiciona comentário na tabela
-        COMMENT ON TABLE montagem_pneus IS 'Tabela para armazenar o histórico de montagem e remoção de pneus nos veículos';
-        
-        -- Cria índices para melhorar a performance
-        CREATE INDEX idx_montagem_pneus_pneu_id ON montagem_pneus(pneu_id);
-        CREATE INDEX idx_montagem_pneus_placa_veiculo ON montagem_pneus(placa_veiculo);
-        
-        RAISE NOTICE 'Tabela montagem_pneus criada com sucesso.';
-    ELSE
-        RAISE NOTICE 'Tabela montagem_pneus já existe.';
-    END IF;
-END $$;
+-- Índice para pesquisas por pneu
+CREATE INDEX IF NOT EXISTS idx_montagem_pneus_pneu_id ON montagem_pneus(pneu_id);
+
+-- Índice para pesquisas por veículo
+CREATE INDEX IF NOT EXISTS idx_montagem_pneus_placa_veiculo ON montagem_pneus(placa_veiculo);
+
+-- Comentários da tabela
+COMMENT ON TABLE montagem_pneus IS 'Registra o histórico de montagem e remoção de pneus em veículos';
+COMMENT ON COLUMN montagem_pneus.pneu_id IS 'ID do pneu na tabela pneus';
+COMMENT ON COLUMN montagem_pneus.placa_veiculo IS 'Placa do veículo onde o pneu foi montado';
+COMMENT ON COLUMN montagem_pneus.km_instalacao IS 'Quilometragem do veículo no momento da instalação';
+COMMENT ON COLUMN montagem_pneus.km_remocao IS 'Quilometragem do veículo no momento da remoção';
+COMMENT ON COLUMN montagem_pneus.data_instalacao IS 'Data e hora da instalação do pneu';
+COMMENT ON COLUMN montagem_pneus.data_remocao IS 'Data e hora da remoção do pneu';
+COMMENT ON COLUMN montagem_pneus.motivo_remocao IS 'Motivo da remoção do pneu';
+COMMENT ON COLUMN montagem_pneus.posicao IS 'Posição de montagem do pneu no veículo';
+COMMENT ON COLUMN montagem_pneus.observacoes IS 'Observações adicionais sobre a montagem ou remoção';

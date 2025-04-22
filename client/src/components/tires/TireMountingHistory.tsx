@@ -36,7 +36,7 @@ import {
   RefreshCcw,
   Plus,
   History,
-  Tool,
+  Wrench,
   Trash2,
   Search,
   ArrowLeftRight
@@ -422,7 +422,7 @@ export default function TireMountingHistory() {
                             onClick={() => handleRemoveTire(mount.id, mount.pneu_id)}
                             title="Remover pneu"
                           >
-                            <Tool className="h-4 w-4" />
+                            <Wrench className="h-4 w-4" />
                           </Button>
                         )}
                       </TableCell>

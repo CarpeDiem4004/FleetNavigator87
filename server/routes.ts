@@ -241,9 +241,9 @@ async function criarTabelaMovimentacoesPatio() {
 async function criarTabelaMontagemPneus() {
   // Verificar se a tabela já existe
   const checkTableQuery = "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'montagem_pneus')";
-  const tableExists = await db.unsafe(checkTableQuery);
+  const tableExistsResult = await pool.query(checkTableQuery);
   
-  if (tableExists.rows[0].exists) {
+  if (tableExistsResult.rows[0].exists) {
     console.log("Tabela montagem_pneus já existe, pulando criação.");
     return;
   }
@@ -253,6 +253,9 @@ async function criarTabelaMontagemPneus() {
   // Ler o arquivo SQL
   const fs = await import('fs');
   const path = await import('path');
+  const url = await import('url');
+  const __filename = url.fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
   const sqlFilePath = path.join(__dirname, 'scripts', 'createTireMountingTable.sql');
   
   if (!fs.existsSync(sqlFilePath)) {
@@ -264,7 +267,7 @@ async function criarTabelaMontagemPneus() {
   
   try {
     // Executar o script SQL
-    await db.unsafe(sqlContent);
+    await pool.query(sqlContent);
     console.log("Tabela montagem_pneus criada com sucesso!");
   } catch (error) {
     console.error("Erro ao criar tabela montagem_pneus:", error);
@@ -275,6 +278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Criar tabelas necessárias se não existirem
   await criarTabelaAbastecimentos();
   await criarTabelaMovimentacoesPatio();
+  await criarTabelaMontagemPneus();
   // Rota para verificação de abastecimentos no banco
   app.get('/api/diagnostico/abastecimentos/:posto', async (req, res) => {
     try {

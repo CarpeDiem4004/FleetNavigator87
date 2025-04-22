@@ -41,6 +41,7 @@ import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { fetchRecords, createSupabaseClient, insertRecord, updateData } from '@/lib/supabase-client';
 import TireRequestForm from '@/components/tire/TireRequestForm';
+import TireMountingHistory from '@/components/tires/TireMountingHistory';
 
 // Interface para o modelo de pneus
 interface Tire {
@@ -702,9 +703,10 @@ const TiresPage: React.FC = () => {
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
-          <TabsList className="grid w-full md:w-[400px] grid-cols-2">
+          <TabsList className="grid w-full md:w-[600px] grid-cols-3">
             <TabsTrigger value="inventory">Inventário</TabsTrigger>
             <TabsTrigger value="requests">Solicitações</TabsTrigger>
+            <TabsTrigger value="mounting">Histórico de Montagem</TabsTrigger>
           </TabsList>
           
           <TabsContent value="inventory" className="mt-4">
@@ -1008,6 +1010,10 @@ const TiresPage: React.FC = () => {
                 </CardFooter>
               </Card>
             </div>
+          </TabsContent>
+          
+          <TabsContent value="mounting" className="mt-4">
+            <TireMountingHistory />
           </TabsContent>
         </Tabs>
       </div>
