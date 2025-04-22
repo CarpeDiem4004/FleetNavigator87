@@ -368,27 +368,32 @@ export default function OficinaDashboard() {
               // Carregar veículos antes de abrir o diálogo
               fetchVehicles();
               
-              // Verificar se existem manutenções
-              if (maintenanceItems.length > 0) {
-                // Usamos a primeira manutenção disponível como referência
-                const maintenance = maintenanceItems[0];
-                console.log("Abrindo formulário para manutenção:", maintenance.id);
-                
-                // Configurar o formulário e abrir o diálogo
-                setSelectedMaintenance(maintenance);
-                setVehiclePlate('');
-                setInitialBudget('');
-                setKmAtual('');
-                setPrazoEstimado('');
-                setDescricaoServico('');
-                setIsChatDialogOpen(true);
-              } else {
-                toast({
-                  title: "Atenção",
-                  description: "Não há manutenções disponíveis no momento.",
-                  variant: "default"
-                });
-              }
+              // Criar uma manutenção virtual para o orçamento
+              // Isso permite que o formulário funcione mesmo sem manutenções existentes
+              const dummyMaintenance: Maintenance = {
+                id: 0, // ID temporário, será substituído pelo backend
+                vehiclePlate: "",
+                description: "Novo orçamento",
+                status: "aguardando_orcamento",
+                priority: "normal",
+                createdAt: new Date().toISOString(),
+                estimatedCompletion: "",
+                actualCompletion: null,
+                workshopId: user?.oficina_id || 0,
+                requestBaseId: 0,
+                maintenanceType: "preventiva"
+              };
+              
+              console.log("Abrindo formulário para novo orçamento");
+              
+              // Configurar o formulário e abrir o diálogo
+              setSelectedMaintenance(dummyMaintenance);
+              setVehiclePlate('');
+              setInitialBudget('');
+              setKmAtual('');
+              setPrazoEstimado('');
+              setDescricaoServico('');
+              setIsChatDialogOpen(true);
             }}
             variant="default"
           >
@@ -619,9 +624,9 @@ export default function OficinaDashboard() {
         </CardContent>
       </Card>
       
-      {/* Modal de chat de orçamento - Nova versão sem renderização condicional */}
+      {/* Modal de chat de orçamento - Simplificado para abrir sempre */}
       <Dialog 
-        open={isChatDialogOpen && selectedMaintenance !== null}
+        open={isChatDialogOpen}
         onOpenChange={(open) => {
           if (!open) {
             // Fechar o diálogo
