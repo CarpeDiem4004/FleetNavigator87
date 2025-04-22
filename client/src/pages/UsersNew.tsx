@@ -4,6 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
+import { 
+  Loader2, Search, Plus, KeyRound, FileEdit, 
+  Trash2, UserX, UserCircle2, RefreshCw
+} from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { 
   Table, 
@@ -24,7 +28,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Search, Plus, FileEdit, Trash2, UserCircle2, Loader2, KeyRound, RefreshCw } from 'lucide-react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { 
   Select,
@@ -298,15 +301,11 @@ const UsersNew: React.FC = () => {
 
       const createdUser = await response.json();
       
-      // Adicionar à lista local
-      const user = {
-        ...newUser,
-        id: createdUser.id,
-        lastLogin: null
-      } as User;
-      
-      setUsers([...users, user]);
+      // Limpar o modal e fechar
       setIsAddDialogOpen(false);
+      
+      // Atualizar a lista de usuários
+      handleUserDataChanged();
       
       // Limpar formulário
       setNewUser({
@@ -525,51 +524,71 @@ const UsersNew: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 text-xs rounded-full ${getRoleBadgeClass(user.role)}`}>
-                        {translateUserRole(user.role)}
-                      </span>
-                    </TableCell>
-                    <TableCell>{user.baseName || 'Global'}</TableCell>
-                    <TableCell>{formatDateTime(user.lastLogin)}</TableCell>
-                    <TableCell>
-                      {user.isActive ? (
-                        <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
-                          Ativo
-                        </span>
-                      ) : (
-                        <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
-                          Inativo
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="icon"
-                          onClick={() => {
-                            setSelectedUserId(user.id);
-                            setIsResetPasswordDialogOpen(true);
-                          }}
-                          title="Redefinir senha"
-                        >
-                          <KeyRound className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="icon" title="Editar usuário">
-                          <FileEdit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="icon" title="Excluir usuário">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                {usersLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="h-24 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-gray-500 mb-2" />
+                        <span className="text-gray-500">Carregando usuários...</span>
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : filteredUsers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="h-24 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <UserX className="h-8 w-8 text-gray-400 mb-2" />
+                        <span className="text-gray-500">Nenhum usuário encontrado</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.name}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 text-xs rounded-full ${getRoleBadgeClass(user.role)}`}>
+                          {translateUserRole(user.role)}
+                        </span>
+                      </TableCell>
+                      <TableCell>{user.baseName || 'Global'}</TableCell>
+                      <TableCell>{formatDateTime(user.lastLogin)}</TableCell>
+                      <TableCell>
+                        {user.isActive ? (
+                          <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                            Ativo
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
+                            Inativo
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="icon"
+                            onClick={() => {
+                              setSelectedUserId(user.id);
+                              setIsResetPasswordDialogOpen(true);
+                            }}
+                            title="Redefinir senha"
+                          >
+                            <KeyRound className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="icon" title="Editar usuário">
+                            <FileEdit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="icon" title="Excluir usuário">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </CardContent>
