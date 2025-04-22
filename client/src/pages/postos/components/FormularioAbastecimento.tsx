@@ -328,6 +328,11 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
   const [isSubmitting, setIsSubmitting] = useState(false);
   const processingRef = useRef(false);
   
+  // Função auxiliar para formatar o nome do posto
+  const formatPosto = (posto: string) => {
+    return posto.charAt(0).toUpperCase() + posto.slice(1);
+  };
+  
   // Limpeza das refs quando o componente é desmontado
   useEffect(() => {
     return () => {
@@ -373,7 +378,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         projeto: data.projeto,
         motorista: data.motorista,
         operador: data.operador,
-        posto_id: postId,
+        posto: formatPosto(postId), // Use o campo 'posto' em vez de 'posto_id'
         data_registro: new Date().toISOString()
       };
       
@@ -451,7 +456,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
                 projeto: abastecimentoData.projeto,
                 motorista: abastecimentoData.motorista,
                 operador: abastecimentoData.operador,
-                posto_id: postId
+                posto: formatPosto(postId) // Use "posto" em vez de "posto_id"
               })
             });
             
@@ -474,7 +479,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               const dadosSimples = {
                 placa: data.placa.toUpperCase(),
                 quantidade: data.quantidade,
-                posto_id: postId,
+                posto: formatPosto(postId), // Use "posto" em vez de "posto_id"
                 data_hora: new Date().toISOString(),
                 motorista: data.motorista
               };

@@ -39,37 +39,25 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
       setIsLoading(true);
       console.log("[FETCH] Buscando abastecimentos para o posto:", postId);
       
-      // ALTERAÇÃO: Usar várias estratégias de busca para garantir que os dados sejam encontrados
-      // Tentativa 1: Buscar por posto_id (campo novo)
-      const response1 = await fetchRecords('abastecimentos_postos', {
-        filter: { posto_id: postId },
+      // CORREÇÃO: Usar apenas o campo "posto" que existe na tabela
+      // A coluna "posto_id" não existe conforme erro reportado nos logs
+      const formattedPostName = formatPosto(postId);
+      console.log("[FETCH] Usando nome de posto formatado:", formattedPostName);
+      
+      // Buscar por posto (único campo disponível)
+      const response = await fetchRecords('abastecimentos_postos', {
+        filter: { posto: formattedPostName },
         limit: 100
       });
       
-      console.log("[FETCH] Resposta com posto_id:", response1);
+      console.log("[FETCH] Resposta da busca:", response);
       
-      // Tentativa 2: Buscar por posto (campo anterior)
-      const response2 = await fetchRecords('abastecimentos_postos', {
-        filter: { posto: formatPosto(postId) },
-        limit: 100
-      });
-      
-      console.log("[FETCH] Resposta com posto:", response2);
-      
-      // Criar um conjunto mesclado de resultados
+      // Processar resultados
       let dadosCombinados: Abastecimento[] = [];
       
-      if (response1.success && response1.data && Array.isArray(response1.data)) {
-        console.log("[FETCH] Dados via posto_id:", response1.data.length);
-        dadosCombinados = [...dadosCombinados, ...response1.data];
-      }
-      
-      if (response2.success && response2.data && Array.isArray(response2.data)) {
-        console.log("[FETCH] Dados via posto:", response2.data.length);
-        // Filtrar apenas registros que não estão já incluídos (por ID)
-        const idsExistentes = new Set(dadosCombinados.map(item => item.id));
-        const novosRegistros = response2.data.filter(item => !idsExistentes.has(item.id));
-        dadosCombinados = [...dadosCombinados, ...novosRegistros];
+      if (response.success && response.data && Array.isArray(response.data)) {
+        console.log("[FETCH] Dados recuperados:", response.data.length);
+        dadosCombinados = response.data;
       }
       
       // Ordenar por data (mais recentes primeiro)
@@ -319,7 +307,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
         
         // Busca todos os IDs de abastecimentos para este posto
         const response = await fetchRecords('abastecimentos_postos', {
-          filter: { posto_id: postId }
+          filter: { posto: formatPosto(postId) }
         });
         
         // Verificar se a resposta foi bem-sucedida e tem dados
