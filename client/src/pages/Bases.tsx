@@ -60,6 +60,7 @@ import {
 } from "@/components/ui/select";
 import { 
   Building2, 
+  Building,
   Plus, 
   Edit, 
   Trash2, 
@@ -392,6 +393,7 @@ export default function BasesPage() {
                     name: '',
                     location: '',
                     operation: '',
+                    type: '',
                     active: true,
                     hasMaintenance: false,
                     hasTires: false,
@@ -674,7 +676,7 @@ export default function BasesPage() {
                           <TableCell>
                             {base.type ? (
                               <div className="flex items-center gap-2">
-                                <Building className="h-4 w-4 text-blue-500" />
+                                <Building2 className="h-4 w-4 text-blue-500" />
                                 {base.type === 'sc' ? 'Centro de Serviço' :
                                  base.type === 'filial' ? 'Filial' :
                                  base.type === 'operacao' ? 'Operação' :
@@ -747,7 +749,7 @@ export default function BasesPage() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
+                        <TableCell colSpan={10} className="text-center py-6 text-muted-foreground">
                           Nenhuma base cadastrada
                         </TableCell>
                       </TableRow>
