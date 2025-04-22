@@ -44,6 +44,7 @@ type AbastecimentoValues = z.infer<typeof abastecimentoSchema>;
 
 interface FormularioAbastecimentoProps {
   postId: string;
+  onRegistroSucesso?: () => void;
 }
 
 // Componente Form separado para evitar re-renders múltiplos do mesmo form
@@ -322,7 +323,7 @@ const TelaSucesso = ({
 };
 
 // Componente principal - versão totalmente refatorada para evitar erros de DOM
-export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = ({ postId }) => {
+export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = ({ postId, onRegistroSucesso }) => {
   const { toast } = useToast();
   const [registroSucesso, setRegistroSucesso] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -546,6 +547,12 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       // Atualiza interface
       setRegistroSucesso(true);
       
+      // Notifica o componente pai para atualizar o histórico
+      if (onRegistroSucesso) {
+        console.log("[REGISTRO] Notificando componente pai para atualizar histórico");
+        onRegistroSucesso();
+      }
+      
     } catch (error: any) {
       // Tratamento de erro
       console.error('Erro no processamento:', error);
@@ -572,7 +579,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       setIsSubmitting(false);
       processingRef.current = false;
     }
-  }, [postId, toast]);
+  }, [postId, toast, onRegistroSucesso]);
   
   // Renderização com componentes isolados para evitar problemas de DOM
   return (
