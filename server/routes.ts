@@ -503,6 +503,58 @@ async function criarTabelaDriverChecklists() {
   }
 }
 
+/**
+ * Cria a tabela solicitacoes_fuel_card se não existir
+ */
+async function criarTabelaSolicitacoesFuelCard() {
+  try {
+    console.log("Verificando se a tabela solicitacoes_fuel_card existe...");
+    
+    // Verificar se a tabela já existe
+    const checkQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'solicitacoes_fuel_card'
+      );
+    `;
+    
+    const checkResult = await pool.query(checkQuery);
+    const tabelaExiste = checkResult.rows[0].exists;
+    
+    if (tabelaExiste) {
+      console.log("Tabela solicitacoes_fuel_card já existe, pulando criação.");
+      return;
+    }
+    
+    console.log("Criando tabela solicitacoes_fuel_card...");
+    
+    // Criar tabela
+    const createTableQuery = `
+      CREATE TABLE solicitacoes_fuel_card (
+        id SERIAL PRIMARY KEY,
+        placa VARCHAR(20) NOT NULL,
+        motorista VARCHAR(100) NOT NULL,
+        valor_solicitado NUMERIC(10, 2) NOT NULL,
+        km_veiculo INTEGER,
+        tipo_cartao VARCHAR(50),
+        observacoes TEXT,
+        status VARCHAR(20) DEFAULT 'Pendente',
+        data_solicitacao TIMESTAMP DEFAULT NOW(),
+        atendido_por VARCHAR(100),
+        data_atendimento TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+    
+    await pool.query(createTableQuery);
+    console.log("Tabela solicitacoes_fuel_card criada com sucesso!");
+    
+  } catch (error) {
+    console.error("Erro ao criar tabela solicitacoes_fuel_card:", error);
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Criar tabelas necessárias se não existirem
   await criarTabelaAbastecimentos();
@@ -513,6 +565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await criarTabelaFuelCardRequests();
   await criarTabelaDriverChecklists();
   await criarTabelaConfiguracaoTanques();
+  await criarTabelaSolicitacoesFuelCard();
   await atualizarTabelaPneus();
   // Rota para registro de movimentações de pátio
   app.post('/api/registro/movimentacao-patio', async (req, res) => {
@@ -3576,6 +3629,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Novo endpoint para o dashboard executivo
   app.get("/api/dashboard", isAuthenticated, getExecutiveDashboard);
+  
+  // Rotas para solicitações de cartão de combustível
+  app.get('/api/fuel-card-solicitations', isAuthenticated, getFuelCardSolicitations);
+  app.get('/api/fuel-card-solicitations/:id', isAuthenticated, getFuelCardSolicitation);
+  app.post('/api/fuel-card-solicitations', isAuthenticated, createFuelCardSolicitation);
+  app.patch('/api/fuel-card-solicitations/:id', isAuthenticated, updateFuelCardSolicitation);
+  app.delete('/api/fuel-card-solicitations/:id', isAuthenticated, deleteFuelCardSolicitation);
   
   // Solicitações de manutenção - API para página de solicitação de manutenção
   app.get("/api/solicitacoes-manutencao", hasMaintenanceAccess, async (req, res) => {
