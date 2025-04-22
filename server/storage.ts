@@ -107,7 +107,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Usar SQL direto para evitar problemas com o campo oficina_id
       const query = `
-        SELECT id, name, email, password, role, base_id, basename, oficina_id, last_login, is_active
+        SELECT id, name, email, password, role, base_id, basename, oficina_id, is_active
         FROM users 
         WHERE id = $1
       `;
@@ -130,7 +130,6 @@ export class DatabaseStorage implements IStorage {
         baseId: result.rows[0].base_id, // Corrigido para usar base_id, nome da coluna no banco
         basename: result.rows[0].basename,
         oficina_id: result.rows[0].oficina_id || null,
-        lastLogin: result.rows[0].last_login,
         isActive: result.rows[0].is_active !== false // Se não for explicitamente false, consideramos true
       };
       
@@ -146,7 +145,7 @@ export class DatabaseStorage implements IStorage {
       // Usar SQL direto para buscar todos os usuários
       const query = `
         SELECT u.id, u.name, u.email, u.role, u.base_id, b.name as basename, 
-               u.oficina_id, u.last_login, u.is_active
+               u.oficina_id, u.is_active
         FROM users u
         LEFT JOIN bases b ON u.base_id = b.id
         ORDER BY u.id
@@ -166,7 +165,6 @@ export class DatabaseStorage implements IStorage {
         baseId: row.base_id,
         basename: row.basename,
         oficina_id: row.oficina_id || null,
-        lastLogin: row.last_login,
         isActive: row.is_active !== false
       }));
       
@@ -181,7 +179,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Usar SQL direto para evitar problemas com o campo oficina_id
       const query = `
-        SELECT id, name, email, password, role, base_id, basename, oficina_id
+        SELECT id, name, email, password, role, base_id, basename, oficina_id, is_active
         FROM users 
         WHERE email = $1
       `;
@@ -204,7 +202,9 @@ export class DatabaseStorage implements IStorage {
         role: result.rows[0].role,
         baseId: result.rows[0].base_id, // Corrigido para usar base_id, nome da coluna no banco
         basename: result.rows[0].basename,
-        oficina_id: result.rows[0].oficina_id || null
+        oficina_id: result.rows[0].oficina_id || null,
+        isActive: result.rows[0].is_active !== false,
+        lastLogin: null // Campo não utilizado no login
       };
       
       return user;
