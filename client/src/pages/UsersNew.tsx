@@ -734,6 +734,72 @@ const UsersNew: React.FC = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Diálogo para exibir a senha gerada automaticamente */}
+        <Dialog 
+          open={isShowPasswordDialogOpen} 
+          onOpenChange={(open) => {
+            setIsShowPasswordDialogOpen(open);
+            // Limpar formulário e fechar modal de adição quando fechar o diálogo de senha
+            if (!open) {
+              setIsAddDialogOpen(false);
+              setNewUser({
+                name: '',
+                email: '',
+                role: 'operador',
+                baseId: null,
+                baseName: null,
+                lastLogin: null,
+                isActive: true
+              });
+              setPassword('');
+              setConfirmPassword('');
+              setGeneratedPassword('');
+              setHasPasswordCopied(false);
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Senha do Novo Usuário</DialogTitle>
+              <DialogDescription>
+                Esta senha foi gerada automaticamente. Anote-a pois não será exibida novamente.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Alert className="bg-amber-50 text-amber-900 border-amber-500">
+                <AlertTitle className="flex items-center">
+                  <KeyRound className="h-4 w-4 mr-2" />
+                  Importante
+                </AlertTitle>
+                <AlertDescription>
+                  Forneça esta senha ao usuário de forma segura. Após fechar esta janela, a senha não poderá ser recuperada.
+                </AlertDescription>
+              </Alert>
+              
+              <div className="bg-gray-100 p-4 rounded-md flex items-center justify-between">
+                <div className="font-mono text-base font-bold">{generatedPassword}</div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={copyPasswordToClipboard}
+                  disabled={hasPasswordCopied}
+                  className="ml-2"
+                >
+                  {hasPasswordCopied ? 
+                    <><CheckCircle2 className="h-4 w-4 mr-1" /> Copiado</> : 
+                    <><Copy className="h-4 w-4 mr-1" /> Copiar</>
+                  }
+                </Button>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setIsShowPasswordDialogOpen(false)}>
+                Entendi
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayoutSimple>
   );
