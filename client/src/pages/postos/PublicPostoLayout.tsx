@@ -14,9 +14,7 @@ interface PublicPostoLayoutProps {
 }
 
 export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePosto }) => {
-  // Referências para os componentes de histórico para atualização
-  const historicoAbastecimentosRef = useRef<any>(null);
-  const historicoMovimentacoesRef = useRef<any>(null);
+  // Estado para controlar atualizações de históricos
   
   // Estado para controlar atualizações
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -90,13 +88,11 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <HistoricoAbastecimentos 
-              ref={historicoAbastecimentosRef}
               postId={id} 
               showLimparButton={false} 
               refreshTrigger={refreshTrigger}
             />
             <HistoricoMovimentacoes 
-              ref={historicoMovimentacoesRef}
               postId={id} 
               refreshTrigger={refreshTrigger}
             />
