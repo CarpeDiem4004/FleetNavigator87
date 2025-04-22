@@ -210,8 +210,8 @@ export default function BasesPage() {
     form.reset({
       name: base.name,
       location: base.location || '',
-      operation: base.operation || '',
-      type: base.type || '',
+      operation: base.operation || 'nenhuma',
+      type: base.type || 'nenhum',
       active: base.active,
       hasMaintenance: base.hasMaintenance || false,
       hasTires: base.hasTires || false,
@@ -392,8 +392,8 @@ export default function BasesPage() {
                   form.reset({
                     name: '',
                     location: '',
-                    operation: '',
-                    type: '',
+                    operation: 'nenhuma',
+                    type: 'nenhum',
                     active: true,
                     hasMaintenance: false,
                     hasTires: false,
@@ -458,7 +458,7 @@ export default function BasesPage() {
                                 <SelectValue placeholder="Selecione o tipo de base" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="">Nenhum tipo</SelectItem>
+                                <SelectItem value="nenhum">Nenhum tipo</SelectItem>
                                 <SelectItem value="filial">Filial</SelectItem>
                                 <SelectItem value="sc">Centro de Serviço (SC)</SelectItem>
                                 <SelectItem value="operacao">Operação</SelectItem>
@@ -493,7 +493,7 @@ export default function BasesPage() {
                                   <SelectValue placeholder="Selecione uma operação existente" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="">Nenhuma operação</SelectItem>
+                                  <SelectItem value="nenhuma">Nenhuma operação</SelectItem>
                                   {existingOperations.map((op) => (
                                     <SelectItem key={op} value={op}>{op}</SelectItem>
                                   ))}
