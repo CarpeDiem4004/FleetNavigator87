@@ -24,7 +24,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Search, Plus, FileEdit, Trash2, UserCircle2, Loader2 } from 'lucide-react';
+import { Search, Plus, FileEdit, Trash2, UserCircle2, Loader2, KeyRound, RefreshCw } from 'lucide-react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { 
   Select,
@@ -147,6 +147,26 @@ const formatDateTime = (dateTimeString: string | null): string => {
   }).format(date);
 };
 
+// Função para gerar senha aleatória
+const generateRandomPassword = (length: number = 8): string => {
+  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*";
+  let password = "";
+  
+  // Garantir pelo menos um caractere de cada categoria
+  password += charset.substring(0, 26).charAt(Math.floor(Math.random() * 26)); // minúscula
+  password += charset.substring(26, 52).charAt(Math.floor(Math.random() * 26)); // maiúscula
+  password += charset.substring(52, 62).charAt(Math.floor(Math.random() * 10)); // número
+  password += charset.substring(62).charAt(Math.floor(Math.random() * (charset.length - 62))); // especial
+  
+  // Preencher o restante da senha aleatoriamente
+  for (let i = 4; i < length; i++) {
+    password += charset.charAt(Math.floor(Math.random() * charset.length));
+  }
+  
+  // Embaralhar a senha para que os caracteres obrigatórios não fiquem sempre nas mesmas posições
+  return password.split('').sort(() => 0.5 - Math.random()).join('');
+};
+
 const UsersNew: React.FC = () => {
   const [users, setUsers] = useState<User[]>(mockUsers);
   const [searchTerm, setSearchTerm] = useState('');
@@ -163,6 +183,8 @@ const UsersNew: React.FC = () => {
   });
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] = useState(false);
   
   // Buscar bases disponíveis usando React Query
   const { data: bases, isLoading: basesLoading } = useQuery<Base[]>({
@@ -203,8 +225,50 @@ const UsersNew: React.FC = () => {
     if (isAddDialogOpen) {
       // Forçar uma atualização da lista de bases quando o modal é aberto
       queryClient.invalidateQueries({ queryKey: ['/api/bases'] });
+      
+      // Gerar senha aleatória para novo usuário
+      const newPassword = generateRandomPassword(10);
+      setPassword(newPassword);
+      setConfirmPassword(newPassword);
     }
   }, [isAddDialogOpen]);
+  
+  // Função para resetar a senha de um usuário
+  const handleResetPassword = async () => {
+    if (!selectedUserId) return;
+    
+    try {
+      const newPassword = generateRandomPassword(10);
+      
+      // Chamar API para atualizar a senha do usuário
+      const response = await fetch(`/api/users/${selectedUserId}/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password: newPassword }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao redefinir senha');
+      }
+      
+      // Fechar o diálogo e mostrar a nova senha
+      setIsResetPasswordDialogOpen(false);
+      toast({
+        title: "Senha redefinida com sucesso",
+        description: `A nova senha é: ${newPassword}`,
+      });
+    } catch (error: any) {
+      console.error('Erro ao redefinir senha:', error);
+      toast({
+        title: "Erro ao redefinir senha",
+        description: error.message || "Ocorreu um erro ao tentar redefinir a senha.",
+        variant: "destructive"
+      });
+    }
+  };
 
   // Adicionar novo usuário
   const handleAddUser = async () => {
@@ -525,10 +589,21 @@ const UsersNew: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2">
-                        <Button variant="outline" size="icon">
+                        <Button 
+                          variant="outline" 
+                          size="icon"
+                          onClick={() => {
+                            setSelectedUserId(user.id);
+                            setIsResetPasswordDialogOpen(true);
+                          }}
+                          title="Redefinir senha"
+                        >
+                          <KeyRound className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="icon" title="Editar usuário">
                           <FileEdit className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="icon">
+                        <Button variant="outline" size="icon" title="Excluir usuário">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -539,6 +614,27 @@ const UsersNew: React.FC = () => {
             </Table>
           </CardContent>
         </Card>
+        
+        {/* Diálogo de redefinição de senha */}
+        <Dialog open={isResetPasswordDialogOpen} onOpenChange={setIsResetPasswordDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Redefinir Senha</DialogTitle>
+              <DialogDescription>
+                Tem certeza que deseja gerar uma nova senha para este usuário?
+                A senha atual será perdida e uma nova senha será gerada automaticamente.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsResetPasswordDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleResetPassword}>
+                Redefinir Senha
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayoutSimple>
   );
