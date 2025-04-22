@@ -686,35 +686,45 @@ export default function OficinaDashboard() {
                   </div>
                   
                   <div className="p-3 space-y-3">
-                    {/* Campo de placa (somente seletor de veículos cadastrados) */}
+                    {/* Campo de placa (versão simplificada para evitar problemas de DOM) */}
                     <div>
                       <Label htmlFor="vehiclePlate" className="text-xs font-medium flex items-center">
                         <span className="mr-1">🚗</span>Placa do Veículo (Somente Cadastrados)
                       </Label>
+                      
+                      {/* Versão simplificada do select para evitar erros de DOM */}
                       <div className="relative mt-1">
-                        <Select
-                          value={vehiclePlate}
-                          onValueChange={(value) => setVehiclePlate(value)}
-                        >
-                          <SelectTrigger className="h-9 text-sm">
-                            <SelectValue placeholder="Selecione um veículo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {!loadingVehicles && vehicles.map((vehicle) => (
-                              <SelectItem key={vehicle.id} value={vehicle.plate}>
-                                {vehicle.plate} - {vehicle.make} {vehicle.model} ({vehicle.year})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        
-                        {/* Indicador de carregamento absoluto */}
-                        {loadingVehicles && (
-                          <div className="absolute inset-y-0 right-8 flex items-center pr-2">
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                        {/* Estado de carregamento - mostra um select desabilitado com indicador de carga */}
+                        {loadingVehicles ? (
+                          <div className="relative">
+                            <select
+                              disabled
+                              className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                            >
+                              <option>Carregando veículos...</option>
+                            </select>
+                            <div className="absolute inset-y-0 right-2 flex items-center">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            </div>
                           </div>
+                        ) : (
+                          /* Select nativo quando dados estão carregados */
+                          <select
+                            value={vehiclePlate}
+                            onChange={(e) => setVehiclePlate(e.target.value)}
+                            className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                          >
+                            <option value="">Selecione um veículo</option>
+                            {vehicles.map((vehicle) => (
+                              <option key={vehicle.id} value={vehicle.plate}>
+                                {vehicle.plate} - {vehicle.model}
+                              </option>
+                            ))}
+                          </select>
                         )}
                       </div>
+                      
+                      {/* Mensagem quando não há veículos */}
                       {vehicles.length === 0 && !loadingVehicles && (
                         <div className="text-xs text-orange-500 mt-1">
                           Nenhum veículo cadastrado encontrado no sistema.
