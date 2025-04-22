@@ -53,16 +53,16 @@ export async function runMigrations() {
     }
     
     // Verificar se o tipo 'oficina' já existe no enum 'user_role'
-    const checkEnumQuery = `
+    const checkEnumOficinaQuery = `
       SELECT enumlabel
       FROM pg_enum
       JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
       WHERE pg_type.typname = 'user_role' AND enumlabel = 'oficina'
     `;
     
-    const enumResult = await pool.query(checkEnumQuery);
+    const enumOficinaResult = await pool.query(checkEnumOficinaQuery);
     
-    if (enumResult.rows.length === 0) {
+    if (enumOficinaResult.rows.length === 0) {
       console.log("Adicionando valor 'oficina' ao enum 'user_role'");
       
       // Adicionar valor 'oficina' ao enum 'user_role'
@@ -73,6 +73,29 @@ export async function runMigrations() {
       console.log("Valor 'oficina' adicionado ao enum 'user_role' com sucesso");
     } else {
       console.log("Valor 'oficina' já existe no enum 'user_role'");
+    }
+    
+    // Verificar se o tipo 'pneus' já existe no enum 'user_role'
+    const checkEnumPneusQuery = `
+      SELECT enumlabel
+      FROM pg_enum
+      JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+      WHERE pg_type.typname = 'user_role' AND enumlabel = 'pneus'
+    `;
+    
+    const enumPneusResult = await pool.query(checkEnumPneusQuery);
+    
+    if (enumPneusResult.rows.length === 0) {
+      console.log("Adicionando valor 'pneus' ao enum 'user_role'");
+      
+      // Adicionar valor 'pneus' ao enum 'user_role'
+      await pool.query(`
+        ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'pneus'
+      `);
+      
+      console.log("Valor 'pneus' adicionado ao enum 'user_role' com sucesso");
+    } else {
+      console.log("Valor 'pneus' já existe no enum 'user_role'");
     }
     
     // Verificar se a tabela maintenance_lifecycle existe e, se não, criá-la

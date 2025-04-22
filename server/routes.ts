@@ -52,6 +52,14 @@ const hasMaintenanceAccess = (req: Request, res: Response, next: NextFunction) =
   res.status(403).json({ message: "Acesso negado. Permissão de gestão de frotas, admin ou oficina necessária." });
 };
 
+// Middleware para verificar se o usuário tem permissão para acessar funcionalidades de pneus
+const hasTiresAccess = (req: Request, res: Response, next: NextFunction) => {
+  if (req.isAuthenticated() && req.user && (req.user.role === 'admin' || req.user.baseId === 12 || req.user.role === 'pneus')) {
+    return next();
+  }
+  res.status(403).json({ message: "Acesso negado. Permissão de gestão de frotas, admin ou especialista de pneus necessária." });
+};
+
 // Middleware para verificar se o usuário tem perfil de oficina
 const isWorkshop = (req: Request, res: Response, next: NextFunction) => {
   if (req.isAuthenticated() && req.user && req.user.role === 'oficina') {
@@ -1010,8 +1018,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Tires routes
-  app.get("/api/tires", isAuthenticated, async (req, res) => {
+  // Tires routes - now with dedicated access control
+  app.get("/api/tires", hasTiresAccess, async (req, res) => {
     try {
       const tires = await storage.getAllTires();
       return res.status(200).json(tires);
