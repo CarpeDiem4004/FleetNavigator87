@@ -59,12 +59,11 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText },
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
-    { name: 'Abastecimentos', href: '/refueling', icon: Fuel, subItems: [
-      { name: 'Cartão de Combustível', href: '/fuel-card', icon: CreditCard },
+    { name: 'Abastecimentos', href: '/refueling', icon: Fuel },
+    { name: 'Cartão de Combustível', href: '/fuel-card', icon: CreditCard, subItems: [
+      { name: 'Operações', href: '/fuel-card', icon: CreditCard },
       { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList }
     ]},
-    { name: 'Cartão de Combustível', href: '/fuel-card', icon: CreditCard, showInMenu: false }, // Adicionado com showInMenu: false para manter permissão
-    { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList, showInMenu: false }, // Adicionado com showInMenu: false para manter permissão
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
     { name: 'Line Hall Shopee', href: '/line-hall-shopee', icon: Map },
     { name: 'Bases', href: '/bases', icon: Warehouse },
@@ -79,12 +78,11 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Oficinas Credenciadas', href: '/fleet-management/workshops', icon: ClipboardList },
     { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package },
-    { name: 'Abastecimentos', href: '/refueling', icon: Fuel, subItems: [
-      { name: 'Cartão de Combustível', href: '/fuel-card', icon: CreditCard },
+    { name: 'Abastecimentos', href: '/refueling', icon: Fuel },
+    { name: 'Cartão de Combustível', href: '/fuel-card', icon: CreditCard, subItems: [
+      { name: 'Operações', href: '/fuel-card', icon: CreditCard },
       { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList }
     ]},
-    { name: 'Cartão de Combustível', href: '/fuel-card', icon: CreditCard, showInMenu: false }, // Adicionado com showInMenu: false para manter permissão
-    { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList, showInMenu: false }, // Adicionado com showInMenu: false para manter permissão
     { name: 'Line Hall Shopee', href: '/line-hall-shopee', icon: Map },
     { name: 'Análise da Operação', href: '/fleet-management/operational-analysis', icon: BarChart4 },
     { name: 'Visão Geral da Frota', href: '/fleet-management/fleet-overview', icon: Activity },
@@ -98,8 +96,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   // Selecionando os itens de navegação apropriados
   const navItemsBase = isFleetUser ? fleetManagementItems : allNavItems;
   
-  // Filtrando itens de navegação com base nas permissões do usuário e exibição no menu
-  const navItems = navItemsBase.filter(item => hasPermission(item.href) && item.showInMenu !== false);
+  // Filtrando itens de navegação com base nas permissões do usuário
+  const navItems = navItemsBase.filter(item => hasPermission(item.href));
 
   const closeSidebar = () => {
     if (window.innerWidth < 768) {
