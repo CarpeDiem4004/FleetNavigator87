@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { deleteRecord, deleteRecords, fetchRecords } from '@/lib/supabase-client';
 
 interface HistoricoAbastecimentosProps {
@@ -38,23 +38,53 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
     try {
       setIsLoading(true);
       console.log("[FETCH] Buscando abastecimentos para o posto:", postId);
-      console.log("[FETCH] Usando nome capitalizado:", formatPosto(postId));
       
-      // Usando o cliente Supabase para buscar dados
-      const response = await fetchRecords('abastecimentos_postos', {
-        filter: { posto_id: postId },  // Mudado de 'posto' para 'posto_id'
+      // ALTERAÇÃO: Usar várias estratégias de busca para garantir que os dados sejam encontrados
+      // Tentativa 1: Buscar por posto_id (campo novo)
+      const response1 = await fetchRecords('abastecimentos_postos', {
+        filter: { posto_id: postId },
         limit: 100
       });
       
-      console.log("[FETCH] Resposta completa:", response);
+      console.log("[FETCH] Resposta com posto_id:", response1);
       
-      // Verificar se a resposta foi bem-sucedida e tem dados
-      if (response.success && response.data) {
-        console.log("[FETCH] Dados recuperados:", response.data.length);
-        setAbastecimentos(response.data as Abastecimento[]);
-      } else {
-        console.log("[FETCH] Nenhum dado recuperado ou erro:", response.error);
-        setAbastecimentos([]);
+      // Tentativa 2: Buscar por posto (campo anterior)
+      const response2 = await fetchRecords('abastecimentos_postos', {
+        filter: { posto: formatPosto(postId) },
+        limit: 100
+      });
+      
+      console.log("[FETCH] Resposta com posto:", response2);
+      
+      // Criar um conjunto mesclado de resultados
+      let dadosCombinados: Abastecimento[] = [];
+      
+      if (response1.success && response1.data && Array.isArray(response1.data)) {
+        console.log("[FETCH] Dados via posto_id:", response1.data.length);
+        dadosCombinados = [...dadosCombinados, ...response1.data];
+      }
+      
+      if (response2.success && response2.data && Array.isArray(response2.data)) {
+        console.log("[FETCH] Dados via posto:", response2.data.length);
+        // Filtrar apenas registros que não estão já incluídos (por ID)
+        const idsExistentes = new Set(dadosCombinados.map(item => item.id));
+        const novosRegistros = response2.data.filter(item => !idsExistentes.has(item.id));
+        dadosCombinados = [...dadosCombinados, ...novosRegistros];
+      }
+      
+      // Ordenar por data (mais recentes primeiro)
+      dadosCombinados.sort((a, b) => {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      
+      console.log("[FETCH] Total de dados combinados:", dadosCombinados.length);
+      
+      // Atualizar o estado com os dados combinados
+      setAbastecimentos(dadosCombinados as Abastecimento[]);
+      
+      // Verificar se não encontrou nada
+      if (dadosCombinados.length === 0) {
+        console.log("[FETCH] Nenhum dado recuperado em ambas as tentativas");
       }
     } catch (error) {
       console.error('Erro ao buscar histórico de abastecimentos:', error);
@@ -64,16 +94,63 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
     }
   };
   
+  // Adicionar botão de atualização manual
+  const handleAtualizar = useCallback(() => {
+    // Exibe um indicador de carregamento
+    setIsLoading(true);
+    
+    // Aguarda um momento para garantir que o estado seja atualizado
+    setTimeout(() => {
+      fetchAbastecimentos();
+    }, 300);
+  }, []);
+  
   useEffect(() => {
+    console.log("[HISTORICO] Montando componente - buscando dados");
     fetchAbastecimentos();
     
-    // Atualiza os dados a cada 2 minutos
+    // Atualiza os dados a cada 1 minuto
     const interval = setInterval(() => {
+      console.log("[HISTORICO] Atualizando dados automaticamente");
       fetchAbastecimentos();
-    }, 120000);
+    }, 60000);
     
     return () => clearInterval(interval);
   }, [postId]);
+  
+  // Força a atualização ao clicar no botão "Ver Histórico" através da detecção de rota
+  useEffect(() => {
+    // Verifica se o URL contém um marcador para atualizar o histórico 
+    if (window.location.hash === '#historicos-section') {
+      console.log("[HISTORICO] Hash detectado - atualizando dados");
+      fetchAbastecimentos();
+    }
+    
+    // Observer para detecção de scrolling para a seção de históricos
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            console.log("[HISTORICO] Seção visível - atualizando dados");
+            fetchAbastecimentos();
+          }
+        });
+      },
+      { threshold: 0.1 } // 10% visível é suficiente para disparar
+    );
+    
+    // Observe a seção de históricos
+    const historicosSection = document.getElementById('historicos-section');
+    if (historicosSection) {
+      observer.observe(historicosSection);
+    }
+    
+    return () => {
+      if (historicosSection) {
+        observer.unobserve(historicosSection);
+      }
+    };
+  }, []);
   
   const formatarData = (dataString: string) => {
     try {
@@ -278,6 +355,18 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
             <h2 className="text-2xl font-bold">Histórico de Abastecimentos</h2>
+            
+            {/* Botão de atualização manual */}
+            <button 
+              className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-1"
+              onClick={handleAtualizar}
+              disabled={isLoading}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Atualizar
+            </button>
             
             {showLimparButton && (
               <button 
