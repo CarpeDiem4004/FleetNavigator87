@@ -37,7 +37,8 @@ const allRoutes = [
   '/abastecimento',                    // Alias para Abastecimentos
   '/fines',                            // Multas
   '/multas',                           // Alias para Multas
-  '/line-hall',                        // Line Hall
+  '/line-hall',                        // Line Hall (antigo)
+  '/line-hall-shopee',                 // Line Hall Shopee (novo)
   '/fleet-management',                 // Gestão de Frota
   '/gestao-de-frotas',                 // Alias para Gestão de Frota
   '/fleet-management/inventory',       // Gestão de Estoque
@@ -58,7 +59,7 @@ const allRoutes = [
 
 // Regras de correspondência entre bases e rotas específicas
 const baseRouteMapping = {
-  'line hall': ['/line-hall'],
+  'line hall': ['/line-hall', '/line-hall-shopee'],
   'multas': ['/multas', '/fines'],
   'pneus': ['/pneus', '/tires'],
   'gestão de frotas': [
@@ -75,7 +76,8 @@ const baseRouteMapping = {
     '/tires',
     '/pneus',
     '/fines',
-    '/multas'
+    '/multas',
+    '/line-hall-shopee'
   ],
   'frota': [
     '/gestao-de-frotas', 
@@ -91,7 +93,8 @@ const baseRouteMapping = {
     '/tires',
     '/pneus',
     '/fines',
-    '/multas'
+    '/multas',
+    '/line-hall-shopee'
   ],
   'segurança do trabalho': [
     '/work-safety',
@@ -184,7 +187,7 @@ export function useBasePermission(): BasePermissionHook {
     // Line Hall - permite acesso somente ao Line Hall e bloqueia outras rotas específicas
     if (user.basename === "Line Hall" || user.baseId === 11) {
       // Se o usuário for Line Hall, só mostra Line Hall no menu e dashboard
-      const hasAccess = route === '/line-hall' || route === '/';
+      const hasAccess = route === '/line-hall' || route === '/line-hall-shopee' || route === '/';
       console.log(`Line Hall user permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'} (baseId=${user.baseId}, basename=${user.basename})`);
       return hasAccess;
     }
@@ -212,6 +215,7 @@ export function useBasePermission(): BasePermissionHook {
         '/refueling',                                 // Abastecimentos
         '/tires',                                     // Pneus
         '/fines',                                     // Multas
+        '/line-hall-shopee',                          // Line Hall Shopee
         '/accidents',                                 // Acidentes/Roubos
         '/work-safety'                                // Segurança do Trabalho
       ];

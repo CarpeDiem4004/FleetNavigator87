@@ -22,7 +22,8 @@ import {
   ChevronsDown,
   ShieldAlert,
   FileText,
-  Package
+  Package,
+  Map
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -50,6 +51,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Pneus', href: '/tires', icon: CircleDot },
     { name: 'Abastecimentos', href: '/refueling', icon: Fuel },
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
+    { name: 'Line Hall Shopee', href: '/line-hall-shopee', icon: Map },
     { name: 'Bases', href: '/bases', icon: Warehouse },
     { name: 'Usuários', href: '/users', icon: Users },
   ];
@@ -62,6 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Oficinas Credenciadas', href: '/fleet-management/workshops', icon: ClipboardList },
     { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package },
+    { name: 'Line Hall Shopee', href: '/line-hall-shopee', icon: Map },
     { name: 'Análise da Operação', href: '/fleet-management/operational-analysis', icon: BarChart4 },
     { name: 'Visão Geral da Frota', href: '/fleet-management/fleet-overview', icon: Activity },
     { name: 'Veículos Parados', href: '/fleet-management/downtime-analysis', icon: ChevronsDown },
