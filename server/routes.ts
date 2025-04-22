@@ -63,9 +63,20 @@ const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
 
 // Middleware para verificar se o usuário é admin
 const isAdmin = (req: Request, res: Response, next: NextFunction) => {
-  if (req.isAuthenticated() && req.user && req.user.role === 'admin') {
+  console.log("Verificando permissão de administrador:", {
+    autenticado: req.isAuthenticated(),
+    temUsuario: !!req.user,
+    userRole: req.user?.role,
+    userId: req.user?.id,
+    userEmail: req.user?.email
+  });
+  
+  if (req.isAuthenticated() && req.user && (req.user.role === 'admin' || req.user.role === 'ADMIN')) {
+    console.log("Permissão de administrador concedida");
     return next();
   }
+  
+  console.log("Acesso negado - Permissão de administrador necessária");
   res.status(403).json({ message: "Acesso negado. Permissão de administrador necessária." });
 };
 
