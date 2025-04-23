@@ -16,6 +16,8 @@ import UsersNew from "@/pages/UsersNew";
 import Bases from "@/pages/Bases";
 import SignIn from "@/pages/SignIn";
 import RegisterNew from "@/pages/RegisterNew";
+import LoginWithSupabase from "@/pages/LoginWithSupabase";
+import RegisterWithSupabase from "@/pages/RegisterWithSupabase";
 import AccessDeniedPage from "@/pages/access-denied";
 import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
 // LineHallRedirect removido conforme solicitação
@@ -61,6 +63,7 @@ import FuelCardRequestsPanel from "@/pages/FuelCardRequestsPanel";
 import PostoRemediosPage from "@/pages/PostoRemediosPage";
 import PostoRemediosStandalone from "@/pages/PostoRemediosStandalone";
 import AbastecimentoPostoRemediosPage from "@/pages/AbastecimentoPostoRemediosPage";
+import ProfileWithSupabase from "@/pages/ProfileWithSupabase";
 import DriverChecklist from "@/pages/DriverChecklist";
 import DriversPage from "@/pages/DriversPage";
 import ManutencaoPage from "@/pages/ManutencaoPage";
@@ -90,8 +93,14 @@ function App() {
             <Route path="/login">
               <SignIn />
             </Route>
+            <Route path="/login-supabase">
+              <LoginWithSupabase />
+            </Route>
             <Route path="/register">
               <RegisterNew />
+            </Route>
+            <Route path="/register-supabase">
+              <RegisterWithSupabase />
             </Route>
             <Route path="/acesso-negado">
               <AccessDeniedPage />
@@ -172,6 +181,11 @@ function App() {
             <DriverChecklist />
           </Route>
           
+          {/* Rota para o perfil do usuário Supabase */}
+          <Route path="/profile-supabase">
+            <ProfileWithSupabase />
+          </Route>
+          
           {/* Rota para acesso de motoristas do Line Hall */}
           <Route path="/line-hall-driver">
             <LineHallDriverPage />
@@ -185,6 +199,9 @@ function App() {
           {/* Rota de acesso para oficinas - login específico */}
           <Route path="/oficina">
             <SignIn oficina={true} />
+          </Route>
+          <Route path="/oficina-supabase">
+            <LoginWithSupabase oficina={true} />
           </Route>
           
           {/* Rotas protegidas para oficinas */}
