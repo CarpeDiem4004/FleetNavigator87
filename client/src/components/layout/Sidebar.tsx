@@ -97,14 +97,15 @@ const NavItemWithSubmenu: React.FC<{
             const isSubActive = currentLocation === subItem.href;
             
             return (
-              <Link
-                key={subItem.name}
-                href={subItem.href}
-                onClick={() => {
-                  onClose();
-                }}
-              >
-                <div
+              <div key={subItem.name}>
+                <a
+                  href={subItem.href}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.history.pushState(null, "", subItem.href);
+                    window.dispatchEvent(new PopStateEvent("popstate"));
+                    onClose();
+                  }}
                   className={`flex items-center px-4 py-2 rounded-md group transition-all duration-200 cursor-pointer ${
                     isSubActive
                       ? 'text-white bg-primary-900 shadow-md shadow-primary-900/20 border-l-2 border-white font-medium' 
@@ -113,8 +114,8 @@ const NavItemWithSubmenu: React.FC<{
                 >
                   <SubIcon className="w-5" size={16} />
                   <span className="ml-2 text-sm">{subItem.name}</span>
-                </div>
-              </Link>
+                </a>
+              </div>
             );
           })}
         </div>
@@ -132,13 +133,15 @@ const NavItem: React.FC<{
   const Icon = item.icon;
   
   return (
-    <Link
-      href={item.href}
-      onClick={() => {
-        onClose();
-      }}
-    >
-      <div
+    <div>
+      <a
+        href={item.href}
+        onClick={(e) => {
+          e.preventDefault();
+          window.history.pushState(null, "", item.href);
+          window.dispatchEvent(new PopStateEvent("popstate"));
+          onClose();
+        }}
         className={`flex items-center px-4 py-3 rounded-md group transition-all duration-200 cursor-pointer ${
           isActive
             ? 'text-white bg-primary-900 shadow-lg shadow-primary-900/30 border-l-4 border-white font-medium' 
@@ -147,8 +150,8 @@ const NavItem: React.FC<{
       >
         <Icon className="w-6" size={18} />
         <span className="ml-3">{item.name}</span>
-      </div>
-    </Link>
+      </a>
+    </div>
   );
 };
 
