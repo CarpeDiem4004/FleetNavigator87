@@ -1133,7 +1133,7 @@ const LineHallDriverPage: React.FC = () => {
     return (
       <Card className="w-full max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">Solicitar Recarga de Cartão</CardTitle>
+          <CardTitle className="text-2xl font-bold">Solicitar Recarga de Cartão de Abastecimento</CardTitle>
           <CardDescription>
             Veículo: {selectedVehicle}
           </CardDescription>
@@ -1147,7 +1147,7 @@ const LineHallDriverPage: React.FC = () => {
             </Label>
             <Input
               id="numeroCartao"
-              placeholder="Informe o número do cartão de combustível"
+              placeholder="Informe o número do cartão de abastecimento"
               value={fuelCardRequest.numeroCartao}
               onChange={(e) => setFuelCardRequest(prev => ({ ...prev, numeroCartao: e.target.value }))}
             />
