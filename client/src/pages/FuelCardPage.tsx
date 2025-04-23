@@ -921,7 +921,7 @@ const FuelCardApproval: React.FC = () => {
   );
 };
 
-// Página principal do Cartão de Combustível
+// Página principal do Cartão de Abastecimento
 const FuelCardPage: React.FC = () => {
   const { user } = useAuth();
   
@@ -931,7 +931,7 @@ const FuelCardPage: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold tracking-tight">
             <CreditCard className="inline-block mr-2" />
-            Cartão de Combustível
+            Cartão de Abastecimento
           </h1>
         </div>
 
