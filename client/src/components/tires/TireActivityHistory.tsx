@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ClipboardList, Tool, Truck, Trash2, ArrowDownUp, FileEdit, AlertTriangle } from 'lucide-react';
+import { ClipboardList, Wrench, Truck, Trash2, ArrowDownUp, FileEdit, AlertTriangle } from 'lucide-react';
 
 interface TireActivityHistoryProps {
   tireId: number;
@@ -47,7 +47,7 @@ export default function TireActivityHistory({ tireId }: TireActivityHistoryProps
       case 'descarte':
         return <Trash2 className="h-5 w-5 mr-2 text-red-500" />;
       case 'manutencao':
-        return <Tool className="h-5 w-5 mr-2 text-blue-500" />;
+        return <Wrench className="h-5 w-5 mr-2 text-blue-500" />;
       case 'cadastro':
         return <ClipboardList className="h-5 w-5 mr-2 text-purple-500" />;
       case 'atualizacao':

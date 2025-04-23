@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Truck, ArrowDownUp, Trash2, Tool, AlertTriangle, RotateCcw, ChevronLeft, ClipboardList } from 'lucide-react';
+import { Truck, ArrowDownUp, Trash2, Wrench, AlertTriangle, RotateCcw, ChevronLeft, ClipboardList } from 'lucide-react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { useToast } from '@/hooks/use-toast';
 import { Tire, getTireById } from '@/services/tiresService';
@@ -94,7 +94,7 @@ export default function TireDetailPage() {
       case 'descartado':
         return <Trash2 className="h-5 w-5 mr-2 text-red-600" />;
       case 'manutencao':
-        return <Tool className="h-5 w-5 mr-2 text-amber-600" />;
+        return <Wrench className="h-5 w-5 mr-2 text-amber-600" />;
       default:
         return <AlertTriangle className="h-5 w-5 mr-2 text-gray-600" />;
     }
@@ -218,7 +218,7 @@ export default function TireDetailPage() {
             </CardContent>
             <CardFooter className="flex justify-between">
               <Button variant="outline">
-                <Tool className="h-4 w-4 mr-2" />
+                <Wrench className="h-4 w-4 mr-2" />
                 Registrar Manutenção
               </Button>
               <Button variant="destructive">

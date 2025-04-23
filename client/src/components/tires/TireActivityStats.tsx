@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
-import { Tool, Truck, Trash2, ArrowDownUp, UserCircle } from 'lucide-react';
+import { Wrench, Truck, Trash2, ArrowDownUp, UserCircle } from 'lucide-react';
 
 export default function TireActivityStats() {
   const [stats, setStats] = useState<{
@@ -175,7 +175,6 @@ export default function TireActivityStats() {
                 <Progress 
                   value={(stats.totalMontagens / (totalOperacoes || 1)) * 100} 
                   className="h-2 bg-muted" 
-                  indicatorClassName="bg-green-500" 
                 />
               </div>
               
@@ -189,21 +188,19 @@ export default function TireActivityStats() {
                 <Progress 
                   value={(stats.totalRemocoes / (totalOperacoes || 1)) * 100} 
                   className="h-2 bg-muted" 
-                  indicatorClassName="bg-amber-500" 
                 />
               </div>
               
               {/* Manutenções */}
               <div className="space-y-2">
                 <div className="flex items-center">
-                  <Tool className="h-5 w-5 mr-2 text-blue-500" />
+                  <Wrench className="h-5 w-5 mr-2 text-blue-500" />
                   <h3 className="text-lg font-medium">Manutenções</h3>
                   <span className="ml-auto font-bold">{stats.totalManutencoes}</span>
                 </div>
                 <Progress 
                   value={(stats.totalManutencoes / (totalOperacoes || 1)) * 100} 
                   className="h-2 bg-muted" 
-                  indicatorClassName="bg-blue-500" 
                 />
               </div>
               
