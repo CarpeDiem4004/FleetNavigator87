@@ -38,6 +38,7 @@ const allRoutes = [
   '/abastecimento',                    // Alias para Abastecimentos
   '/fuel-card',                        // Cartão de Combustível
   '/fuel-card-requests',               // Painel de Solicitações Fuel Card
+  '/posto-remedios',                   // Posto Remédios
   '/fines',                            // Multas
   '/multas',                           // Alias para Multas
   '/line-hall',                        // Line Hall (antigo)
@@ -134,6 +135,7 @@ const basicRoutes = [
   '/refueling',              // Registros de abastecimento
   '/fuel-card',              // Cartão de Combustível
   '/fuel-card-requests',     // Painel de Solicitações Fuel Card
+  '/posto-remedios',         // Posto Remédios
   '/work-safety',            // Informar acidentes de trabalho
   '/seguranca-trabalho',     // Alias para segurança do trabalho
   '/theft',                  // Registro de roubos
@@ -235,6 +237,7 @@ export function useBasePermission(): BasePermissionHook {
         '/refueling',                                 // Abastecimentos
         '/fuel-card',                                 // Cartão de Combustível
         '/fuel-card-requests',                        // Painel de Solicitações Fuel Card
+        '/posto-remedios',                            // Posto Remédios
         '/tires',                                     // Pneus
         '/fines',                                     // Multas
         '/line-hall-shopee',                          // Line Hall Shopee

@@ -57,6 +57,7 @@ import LineHallDriverPage from "@/pages/LineHallDriverPage";
 import FuelCardPage from "@/pages/FuelCardPage";
 import FuelCard from "@/pages/FuelCard";
 import FuelCardRequestsPanel from "@/pages/FuelCardRequestsPanel";
+import PostoRemediosPage from "@/pages/PostoRemediosPage";
 import DriverChecklist from "@/pages/DriverChecklist";
 import DriversPage from "@/pages/DriversPage";
 import ManutencaoPage from "@/pages/ManutencaoPage";
@@ -146,6 +147,7 @@ function App() {
           <ProtectedRoute path="/fuel-card-old" component={FuelCardPage} />
           <ProtectedRoute path="/fuel-card" component={FuelCard} />
           <ProtectedRoute path="/fuel-card-requests" component={FuelCardRequestsPanel} />
+          <ProtectedRoute path="/posto-remedios" component={PostoRemediosPage} />
           <ProtectedRoute path="/drivers" component={DriversPage} />
           <ProtectedRoute path="/manutencao" component={ManutencaoPage} />
           <ProtectedRoute path="/tratativa-manutencao" component={TratativaManutencaoPage} />
