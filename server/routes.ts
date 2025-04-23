@@ -82,7 +82,10 @@ const isAdmin = (req: Request, res: Response, next: NextFunction) => {
     userEmail: req.user?.email
   });
   
-  if (req.isAuthenticated() && req.user && (req.user.role === 'admin' || req.user.role === 'ADMIN')) {
+  if (req.isAuthenticated() && req.user && (
+      req.user.role?.toLowerCase() === 'admin' || 
+      req.user.role?.toUpperCase() === 'ADMIN'
+    )) {
     console.log("Permissão de administrador concedida");
     return next();
   }
