@@ -39,6 +39,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { Loader2, CheckCircle2 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
+import HistoricoAbastecimentosTabela from '@/components/posto-remedios/HistoricoAbastecimentosTabela';
 
 // Esquema de validação para o formulário de abastecimento
 const abastecimentoFormSchema = z.object({
