@@ -599,8 +599,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (tipo_movimento.includes('Entrada')) {
         data_entrada = new Date();
+        // Em entradas, data_saida permanece null
       } else if (tipo_movimento.includes('Saída')) {
-        data_saida = new Date();
+        data_saida = new Date(); // Registro da data de saída
+        
+        // Para registros de saída, precisamos buscar o registro de entrada correspondente para vincular
+        try {
+          // Verificar se existe um registro de entrada para esta placa sem saída registrada
+          const checkQuery = `
+            SELECT id FROM movimentacoes_patio 
+            WHERE placa = $1 AND data_saida IS NULL
+            ORDER BY data_entrada DESC
+            LIMIT 1
+          `;
+          
+          const checkResult = await pool.query(checkQuery, [placa.toUpperCase()]);
+          
+          if (checkResult.rowCount > 0) {
+            // Registros de saída atualizam a entrada existente (não criam novo registro)
+            const updateQuery = `
+              UPDATE movimentacoes_patio 
+              SET data_saida = $1, 
+                  tipo_movimento = $2,
+                  nome_operador = $3,
+                  motivo = $4
+              WHERE id = $5
+              RETURNING id
+            `;
+            
+            const updateResult = await pool.query(updateQuery, [
+              data_saida,
+              tipo_movimento,
+              nome_operador,
+              tipo_movimento, // Motivo é o mesmo que tipo de movimento
+              checkResult.rows[0].id
+            ]);
+            
+            console.log('Registro de saída atualizado com sucesso:', updateResult.rows[0]);
+            
+            return res.status(200).json({
+              success: true,
+              message: 'Saída registrada com sucesso',
+              data: {
+                id: updateResult.rows[0].id,
+                placa,
+                tipo_movimento,
+                nome_motorista,
+                nome_operador,
+                posto
+              }
+            });
+          }
+        } catch (err) {
+          console.error('Erro ao verificar registro de entrada existente:', err);
+          // Continuar com o fluxo normal mesmo se ocorrer erro na verificação
+        }
       }
       
       // Verificar se a tabela tem os campos atualizados
