@@ -44,11 +44,13 @@ interface SidebarProps {
 const NavItemWithSubmenu: React.FC<{
   item: NavItem;
   isActive: boolean;
-  isSubItemActive: boolean;
+  isSubItemActive: boolean | undefined;
   onClose: () => void;
   currentLocation: string;
 }> = ({ item, isActive, isSubItemActive, onClose, currentLocation }) => {
-  const [expanded, setExpanded] = useState(isActive || isSubItemActive);
+  // Se isSubItemActive for undefined, defina como false
+  const subItemActive = isSubItemActive === true;
+  const [expanded, setExpanded] = useState(isActive || subItemActive);
   const Icon = item.icon;
 
   const toggleExpanded = () => {
@@ -60,7 +62,7 @@ const NavItemWithSubmenu: React.FC<{
       <div
         onClick={toggleExpanded}
         className={`flex w-full items-center justify-between px-4 py-3 rounded-md group transition-colors duration-200 text-left cursor-pointer ${
-          isActive || isSubItemActive
+          isActive || subItemActive
             ? 'text-white bg-primary-900' 
             : 'text-primary-100 hover:bg-primary-700'
         }`}
@@ -246,7 +248,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
                       <NavItemWithSubmenu 
                         item={item} 
                         isActive={isActive} 
-                        isSubItemActive={isSubItemActive}
+                        isSubItemActive={isSubItemActive || false}
                         onClose={closeSidebar}
                         currentLocation={location}
                       />
