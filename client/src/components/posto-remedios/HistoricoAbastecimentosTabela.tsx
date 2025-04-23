@@ -81,18 +81,18 @@ export default function HistoricoAbastecimentosTabela({
     }
 
     try {
-      // Preparar dados para exportação
+      // Preparar dados para exportação com formatação apropriada
       const dadosParaExportar = registros.map(reg => ({
         'ID': reg.id,
         'Placa': reg.placa,
         'Quilometragem': reg.km,
-        'Projeto': reg.projeto,
+        'Projeto': reg.projeto || '-',
         'Motorista': reg.motorista_nome,
         'RG Motorista': reg.motorista_rg,
         'Combustível': reg.tipo_combustivel || 'N/A',
-        'Litros': reg.quantidade_litros || 0,
-        'Valor/Litro (R$)': reg.valor_litro || 0,
-        'Valor Total (R$)': reg.valor_total || 0,
+        'Litros': reg.quantidade_litros ? Number(reg.quantidade_litros).toFixed(2) : '-',
+        'Valor/Litro (R$)': reg.valor_litro ? `R$ ${Number(reg.valor_litro).toFixed(2)}` : '-',
+        'Valor Total (R$)': reg.valor_total ? `R$ ${Number(reg.valor_total).toFixed(2)}` : '-',
         'Lavagem': reg.lavagem ? 'Sim' : 'Não',
         'Tipo Lavagem': reg.tipo_lavagem || 'N/A',
         'Observações': reg.observacoes || '',
@@ -101,16 +101,37 @@ export default function HistoricoAbastecimentosTabela({
 
       // Criar uma planilha
       const ws = XLSX.utils.json_to_sheet(dadosParaExportar);
+      
+      // Definir larguras de colunas para melhor visualização
+      const wscols = [
+        { wch: 6 },   // ID
+        { wch: 10 },  // Placa
+        { wch: 14 },  // Quilometragem
+        { wch: 15 },  // Projeto
+        { wch: 20 },  // Motorista
+        { wch: 14 },  // RG Motorista
+        { wch: 12 },  // Combustível
+        { wch: 10 },  // Litros
+        { wch: 14 },  // Valor/Litro (R$)
+        { wch: 14 },  // Valor Total (R$)
+        { wch: 8 },   // Lavagem
+        { wch: 15 },  // Tipo Lavagem
+        { wch: 30 },  // Observações
+        { wch: 20 }   // Data
+      ];
+      ws['!cols'] = wscols;
+      
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Abastecimentos");
       
-      // Salvar o arquivo
+      // Salvar o arquivo com nome descritivo
       const fileName = `historico_${posto.toLowerCase().replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
       XLSX.writeFile(wb, fileName);
       
       toast({
         title: 'Sucesso',
         description: 'Exportação concluída com sucesso',
+        variant: 'default',
       });
     } catch (error) {
       console.error('Erro ao exportar para Excel:', error);
