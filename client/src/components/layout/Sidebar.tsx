@@ -172,7 +172,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Pneus', href: '/tires', icon: CircleDot },
     { name: 'Abastecimentos', href: '#', icon: Fuel, subItems: [
       { name: 'Histórico', href: '/refueling', icon: ClipboardList },
-      { name: 'Painel de Postos', href: '/abastecimento', icon: Fuel },
+      { name: 'Painel de Postos', href: '/abastecimento', icon: Fuel }
+    ]},
+    { name: 'Postos Externos', href: '#', icon: Warehouse, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
       { name: 'Cartão de Abastecimento', href: '/cartao-abastecimento', icon: CreditCard }
     ]},
@@ -196,7 +198,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package },
     { name: 'Abastecimentos', href: '#', icon: Fuel, subItems: [
       { name: 'Histórico', href: '/refueling', icon: ClipboardList },
-      { name: 'Painel de Postos', href: '/abastecimento', icon: Fuel },
+      { name: 'Painel de Postos', href: '/abastecimento', icon: Fuel }
+    ]},
+    { name: 'Postos Externos', href: '#', icon: Warehouse, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
       { name: 'Cartão de Abastecimento', href: '/cartao-abastecimento', icon: CreditCard }
     ]},
