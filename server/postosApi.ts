@@ -50,8 +50,8 @@ export async function getPostosResumo(req: Request, res: Response) {
         posto as localizacao,
         diesel_capacidade as capacidade_total,
         diesel_nivel as volume_atual,
-        COALESCE((SELECT COUNT(*) FROM abastecimentos_postos WHERE posto_id = configuracao_tanques.id), 0) as total_abastecimentos,
-        COALESCE((SELECT SUM(litros) FROM abastecimentos_postos WHERE posto_id = configuracao_tanques.id), 0) as total_litros,
+        COALESCE((SELECT COUNT(*) FROM abastecimentos_postos WHERE posto = configuracao_tanques.posto), 0) as total_abastecimentos,
+        COALESCE((SELECT SUM(litros) FROM abastecimentos_postos WHERE posto = configuracao_tanques.posto), 0) as total_litros,
         (diesel_nivel / diesel_capacidade * 100) as percentual,
         CASE WHEN (diesel_nivel / diesel_capacidade * 100) < 15 THEN true ELSE false END as alerta_nivel_baixo,
         updated_at as ultima_atualizacao
@@ -206,8 +206,8 @@ export async function getPostoDetalhes(req: Request, res: Response) {
         posto as localizacao,
         diesel_capacidade as capacidade_total,
         diesel_nivel as volume_atual,
-        COALESCE((SELECT COUNT(*) FROM abastecimentos_postos WHERE posto_id = configuracao_tanques.id), 0) as total_abastecimentos,
-        COALESCE((SELECT SUM(litros) FROM abastecimentos_postos WHERE posto_id = configuracao_tanques.id), 0) as total_litros,
+        COALESCE((SELECT COUNT(*) FROM abastecimentos_postos WHERE posto = configuracao_tanques.posto), 0) as total_abastecimentos,
+        COALESCE((SELECT SUM(litros) FROM abastecimentos_postos WHERE posto = configuracao_tanques.posto), 0) as total_litros,
         (diesel_nivel / diesel_capacidade * 100) as percentual,
         CASE WHEN (diesel_nivel / diesel_capacidade * 100) < 15 THEN true ELSE false END as alerta_nivel_baixo,
         updated_at as ultima_atualizacao
@@ -295,16 +295,19 @@ export async function getPostoDetalhes(req: Request, res: Response) {
     }
     
     // Buscar histórico de abastecimentos
+    const postoNomeQuery = await pool.query('SELECT posto FROM configuracao_tanques WHERE id = $1', [id]);
+    const postoNome = postoNomeQuery.rows[0]?.posto;
+    
     const abastecimentosQuery = `
       SELECT a.id, a.placa, a.created_at as data, a.nome_motorista as motorista, 
              a.litros, a.valor_total
       FROM abastecimentos_postos a
-      WHERE a.posto_id = $1
+      WHERE a.posto = $1
       ORDER BY a.created_at DESC
       LIMIT 50
     `;
     
-    const abastecimentosResult = await pool.query(abastecimentosQuery, [id]);
+    const abastecimentosResult = await pool.query(abastecimentosQuery, [postoNome]);
     
     // Buscar histórico de volume (podem ser registros de reabastecimento do tanque)
     const historicoQuery = `
