@@ -21,6 +21,7 @@ import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
 // LineHallRedirect removido conforme solicitação
 import FleetManagementRedirect from "@/components/permission/FleetManagementRedirect";
 import { AuthProvider } from "@/context/AuthContext";
+import { SupabaseAuthProvider } from "@/context/SupabaseAuthContext";
 
 // Importação das páginas de postos
 import IndexPostos from "@/pages/postos/IndexPostos";
@@ -83,27 +84,28 @@ import SorocabaPublic from "@/pages/postos/public/SorocabaPublic";
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Switch>
-          <Route path="/login">
-            <SignIn />
-          </Route>
-          <Route path="/register">
-            <RegisterNew />
-          </Route>
-          <Route path="/acesso-negado">
-            <AccessDeniedPage />
-          </Route>
-          
-          {/* Componentes de redirecionamento para usuários específicos */}
-          {/* Rota removida - antigas páginas LineHall */}
-          <Route path="/old-dashboard">
-            <Dashboard />
-          </Route>
-          
-          <Route path="/fleet-redirect">
-            <FleetManagementRedirect />
-          </Route>
+      <SupabaseAuthProvider>
+        <AuthProvider>
+          <Switch>
+            <Route path="/login">
+              <SignIn />
+            </Route>
+            <Route path="/register">
+              <RegisterNew />
+            </Route>
+            <Route path="/acesso-negado">
+              <AccessDeniedPage />
+            </Route>
+            
+            {/* Componentes de redirecionamento para usuários específicos */}
+            {/* Rota removida - antigas páginas LineHall */}
+            <Route path="/old-dashboard">
+              <Dashboard />
+            </Route>
+            
+            <Route path="/fleet-redirect">
+              <FleetManagementRedirect />
+            </Route>
           
           {/* Novo Dashboard com KPIs */}
           <ProtectedRoute path="/" component={Dashboard} />
@@ -227,7 +229,8 @@ function App() {
           </Route>
         </Switch>
         <Toaster />
-      </AuthProvider>
+        </AuthProvider>
+      </SupabaseAuthProvider>
     </QueryClientProvider>
   );
 }

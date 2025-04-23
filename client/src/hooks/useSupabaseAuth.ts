@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabaseClient';
-import { Session, User } from '@supabase/supabase-js';
+import supabase from '@/lib/supabaseClient';
+import { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -62,11 +62,13 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
     setSupabaseSession();
 
     // Configurar listener para mudanças na autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
-      setSupabaseUser(newSession?.user || null);
-      setLoading(false);
-    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event: AuthChangeEvent, newSession: Session | null) => {
+        setSession(newSession);
+        setSupabaseUser(newSession?.user || null);
+        setLoading(false);
+      }
+    );
 
     // Limpar o subscription quando o componente for desmontado
     return () => {
