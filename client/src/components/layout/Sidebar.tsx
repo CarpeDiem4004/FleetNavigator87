@@ -63,8 +63,48 @@ const NavItemWithSubmenu: React.FC<{
   
   const Icon = item.icon;
 
-  const toggleExpanded = () => {
+  const toggleExpanded = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setExpanded(!expanded);
+  };
+
+  // Renderização segura dos subitens condicionalmente
+  const renderSubItems = () => {
+    if (!expanded || !item.subItems) return null;
+    
+    return (
+      <div className="ml-8 mt-1 space-y-1">
+        {item.subItems.map(subItem => {
+          const SubIcon = subItem.icon;
+          const isSubActive = currentLocation === subItem.href;
+          
+          return (
+            <div key={subItem.name}>
+              <Link 
+                href={subItem.href}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  // Usar wouter para navegação em vez de manipular history diretamente
+                  window.history.pushState(null, "", subItem.href);
+                  window.dispatchEvent(new PopStateEvent("popstate"));
+                  onClose();
+                }}
+                className={`flex items-center px-4 py-2 rounded-md group transition-all duration-200 cursor-pointer ${
+                  isSubActive
+                    ? 'text-white bg-primary-900 shadow-md shadow-primary-900/20 border-l-2 border-white font-medium' 
+                    : 'text-primary-100 hover:bg-primary-700 hover:shadow-sm'
+                } ${subItem.className || ''}`}
+              >
+                <SubIcon className="w-5" size={16} />
+                <span className="ml-2 text-sm">{subItem.name}</span>
+              </Link>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   return (
@@ -90,36 +130,7 @@ const NavItemWithSubmenu: React.FC<{
         </div>
       </div>
       
-      {expanded && item.subItems && (
-        <div className="ml-8 mt-1 space-y-1">
-          {item.subItems.map(subItem => {
-            const SubIcon = subItem.icon;
-            const isSubActive = currentLocation === subItem.href;
-            
-            return (
-              <div key={subItem.name}>
-                <a
-                  href={subItem.href}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    window.history.pushState(null, "", subItem.href);
-                    window.dispatchEvent(new PopStateEvent("popstate"));
-                    onClose();
-                  }}
-                  className={`flex items-center px-4 py-2 rounded-md group transition-all duration-200 cursor-pointer ${
-                    isSubActive
-                      ? 'text-white bg-primary-900 shadow-md shadow-primary-900/20 border-l-2 border-white font-medium' 
-                      : 'text-primary-100 hover:bg-primary-700 hover:shadow-sm'
-                  } ${subItem.className || ''}`}
-                >
-                  <SubIcon className="w-5" size={16} />
-                  <span className="ml-2 text-sm">{subItem.name}</span>
-                </a>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {renderSubItems()}
     </div>
   );
 };
@@ -134,10 +145,11 @@ const NavItem: React.FC<{
   
   return (
     <div>
-      <a
+      <Link
         href={item.href}
         onClick={(e) => {
           e.preventDefault();
+          e.stopPropagation();
           window.history.pushState(null, "", item.href);
           window.dispatchEvent(new PopStateEvent("popstate"));
           onClose();
@@ -150,7 +162,7 @@ const NavItem: React.FC<{
       >
         <Icon className="w-6" size={18} />
         <span className="ml-3">{item.name}</span>
-      </a>
+      </Link>
     </div>
   );
 };
