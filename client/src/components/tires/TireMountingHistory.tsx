@@ -374,7 +374,8 @@ export default function TireMountingHistory() {
           mount.placa_veiculo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           mount.pneu?.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           mount.pneu?.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          mount.pneu?.modelo?.toLowerCase().includes(searchTerm.toLowerCase())
+          mount.pneu?.modelo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          mount.responsavel?.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : mountHistory;
 
@@ -419,7 +420,7 @@ export default function TireMountingHistory() {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Buscar por placa ou código do pneu..."
+            placeholder="Buscar por placa, código do pneu ou responsável..."
             className="pl-8"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
