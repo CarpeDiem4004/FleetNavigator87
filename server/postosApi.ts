@@ -464,3 +464,48 @@ export async function registrarEntradaCombustivel(req: Request, res: Response) {
     });
   }
 }
+
+/**
+ * Excluir posto São Paulo
+ */
+export const excluirPostoSaoPaulo = async (req: Request, res: Response) => {
+  // Verificar se o usuário é admin
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Apenas administradores podem excluir postos'
+    });
+  }
+
+  try {
+    // 1. Excluir configuração do posto
+    const deleteConfig = await pool.query(
+      'DELETE FROM configuracao_tanques WHERE posto = $1 RETURNING *',
+      ['Saopaulo']
+    );
+
+    // 2. Verificar se o posto foi encontrado e excluído
+    if (deleteConfig.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Posto São Paulo não encontrado ou já foi excluído'
+      });
+    }
+
+    // 3. Registrar a exclusão
+    console.log(`Posto São Paulo excluído com sucesso por ${req.user.name} (${req.user.email})`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Posto São Paulo excluído com sucesso',
+      data: deleteConfig.rows[0]
+    });
+  } catch (error) {
+    console.error('Erro ao excluir posto São Paulo:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao excluir posto São Paulo',
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+};

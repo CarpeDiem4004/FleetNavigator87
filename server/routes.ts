@@ -14,7 +14,7 @@ import {
 import { setupAuth } from "./auth";
 import { getDashboardKPIs, getPainelPrincipal } from "./dashboardApi";
 import { getExecutiveDashboard } from "./executiveDashboard";
-import { getPostosResumo, getPostoDetalhes, registrarEntradaCombustivel } from "./postosApi";
+import { getPostosResumo, getPostoDetalhes, registrarEntradaCombustivel, excluirPostoSaoPaulo } from "./postosApi";
 import { 
   getFuelCardSolicitations, 
   getFuelCardSolicitation, 
@@ -5181,6 +5181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/postos", isAuthenticated, getPostosResumo);
   app.get("/api/postos/:id", isAuthenticated, getPostoDetalhes);
   app.post("/api/postos/:id/entrada-combustivel", isAuthenticated, registrarEntradaCombustivel);
+  app.post("/api/postos/excluir-saopaulo", isAuthenticated, excluirPostoSaoPaulo);
 
   const httpServer = createServer(app);
   return httpServer;
