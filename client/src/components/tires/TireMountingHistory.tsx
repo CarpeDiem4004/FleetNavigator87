@@ -29,6 +29,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import {
   Truck,
@@ -75,6 +76,7 @@ interface TireMounting {
   data_remocao?: string | null;
   motivo_remocao?: string | null;
   posicao?: string | null;
+  veiculo_possui_estepe?: boolean;
   pneu?: Tire;
 }
 
@@ -173,7 +175,8 @@ export default function TireMountingHistory() {
           placa_veiculo: vehiclePlate.toUpperCase(),
           km_instalacao: parseInt(installationKm),
           data_instalacao: new Date().toISOString(),
-          posicao: position || null
+          posicao: position || null,
+          veiculo_possui_estepe: hasSpare
         })
         .select();
 
@@ -210,6 +213,7 @@ export default function TireMountingHistory() {
       setVehiclePlate('');
       setPosition('');
       setInstallationKm('');
+      setHasSpare(false);
       
     } catch (error: any) {
       toast({
@@ -395,6 +399,7 @@ export default function TireMountingHistory() {
                     <TableHead className="text-right">KM Rodados</TableHead>
                     <TableHead>Data Instalação</TableHead>
                     <TableHead>Data Remoção</TableHead>
+                    <TableHead>Estepe</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-center">Ações</TableHead>
                   </TableRow>
@@ -427,6 +432,19 @@ export default function TireMountingHistory() {
                       </TableCell>
                       <TableCell>
                         {mount.data_remocao ? format(new Date(mount.data_remocao), 'dd/MM/yyyy', { locale: ptBR }) : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {mount.veiculo_possui_estepe === true ? (
+                          <Badge variant="default" className="bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-800/20 dark:text-blue-400">
+                            Sim
+                          </Badge>
+                        ) : mount.veiculo_possui_estepe === false ? (
+                          <Badge variant="outline" className="bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-800/20 dark:text-gray-400">
+                            Não
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {!mount.data_remocao ? (
@@ -532,15 +550,31 @@ export default function TireMountingHistory() {
               </div>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="kmInstallation">Quilometragem de Instalação</Label>
-              <Input
-                id="kmInstallation"
-                type="number"
-                placeholder="Ex: 50000"
-                value={installationKm}
-                onChange={(e) => setInstallationKm(e.target.value)}
-              />
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="kmInstallation">Quilometragem de Instalação</Label>
+                <Input
+                  id="kmInstallation"
+                  type="number"
+                  placeholder="Ex: 50000"
+                  value={installationKm}
+                  onChange={(e) => setInstallationKm(e.target.value)}
+                />
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="hasSpare"
+                  checked={hasSpare}
+                  onCheckedChange={(checked) => setHasSpare(checked as boolean)}
+                />
+                <Label
+                  htmlFor="hasSpare"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Veículo possui estepe
+                </Label>
+              </div>
             </div>
           </div>
           
