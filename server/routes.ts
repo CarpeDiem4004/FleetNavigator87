@@ -99,7 +99,7 @@ const isAdmin = (req: Request, res: Response, next: NextFunction) => {
 const hasMaintenanceAccess = (req: Request, res: Response, next: NextFunction) => {
   // Verifica se o usuário está autenticado e tem permissão de acesso a manutenção
   if (req.isAuthenticated() && req.user && (
-      req.user.role === 'admin' || 
+      req.user.role?.toLowerCase() === 'admin' || 
       req.user.role === 'gestor' || 
       req.user.baseId === 12 || 
       req.user.role === 'oficina'
@@ -119,7 +119,11 @@ const hasMaintenanceAccess = (req: Request, res: Response, next: NextFunction) =
 
 // Middleware para verificar se o usuário tem permissão para acessar funcionalidades de pneus
 const hasTiresAccess = (req: Request, res: Response, next: NextFunction) => {
-  if (req.isAuthenticated() && req.user && (req.user.role === 'admin' || req.user.baseId === 12 || req.user.role === 'pneus')) {
+  if (req.isAuthenticated() && req.user && (
+    req.user.role?.toLowerCase() === 'admin' || 
+    req.user.baseId === 12 || 
+    req.user.role === 'pneus'
+  )) {
     return next();
   }
   res.status(403).json({ message: "Acesso negado. Permissão de gestão de frotas, admin ou especialista de pneus necessária." });
@@ -127,7 +131,10 @@ const hasTiresAccess = (req: Request, res: Response, next: NextFunction) => {
 
 // Middleware para verificar se o usuário tem perfil de oficina
 const isWorkshop = (req: Request, res: Response, next: NextFunction) => {
-  if (req.isAuthenticated() && req.user && req.user.role === 'oficina') {
+  if (req.isAuthenticated() && req.user && (
+    req.user.role === 'oficina' || 
+    req.user.role?.toLowerCase() === 'admin'
+  )) {
     return next();
   }
   res.status(403).json({ message: "Acesso negado. Apenas oficinas podem acessar este recurso." });
@@ -136,7 +143,7 @@ const isWorkshop = (req: Request, res: Response, next: NextFunction) => {
 // Middleware para verificar se o usuário tem acesso à base especificada
 const hasBaseAccess = (req: Request, res: Response, next: NextFunction) => {
   // Se o usuário for admin, permite acesso a todas as bases
-  if (req.user && req.user.role === 'admin') {
+  if (req.user && (req.user.role?.toLowerCase() === 'admin' || req.user.role?.toUpperCase() === 'ADMIN')) {
     return next();
   }
   
