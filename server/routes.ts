@@ -4031,7 +4031,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // ======= ROTAS PARA POSTO REMÉDIOS =======
   
-  // Listar registros de abastecimento e lavagem do posto Remédios
+  // Listar registros de abastecimento e lavagem do posto Remédios (versão autenticada)
   app.get("/api/posto-remedios/abastecimentos", isAuthenticated, async (req, res) => {
     try {
       const { startDate, endDate, placa } = req.query;
@@ -4072,7 +4072,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Adicionar novo registro de abastecimento/lavagem
+  // Listar registros de abastecimento e lavagem do posto Remédios (versão standalone - sem autenticação)
+  app.get("/api/posto-remedios-standalone/abastecimentos", async (req, res) => {
+    try {
+      const { startDate, endDate, placa } = req.query;
+      
+      let query = "SELECT * FROM posto_remedios_abastecimentos";
+      const queryParams = [];
+      const conditions = [];
+      
+      if (placa) {
+        conditions.push("placa ILIKE $" + (queryParams.length + 1));
+        queryParams.push(`%${placa}%`);
+      }
+      
+      if (startDate && endDate) {
+        conditions.push("data_registro BETWEEN $" + (queryParams.length + 1) + " AND $" + (queryParams.length + 2));
+        queryParams.push(startDate, endDate);
+      }
+      
+      if (conditions.length > 0) {
+        query += " WHERE " + conditions.join(" AND ");
+      }
+      
+      query += " ORDER BY data_registro DESC";
+      
+      const result = await pool.query(query, queryParams);
+      
+      return res.status(200).json({
+        success: true,
+        count: result.rowCount,
+        data: result.rows
+      });
+    } catch (error) {
+      console.error("Erro ao buscar registros do posto Remédios (standalone):", error);
+      return res.status(500).json({
+        success: false,
+        message: "Erro ao buscar registros do posto Remédios"
+      });
+    }
+  });
+  
+  // Adicionar novo registro de abastecimento/lavagem (versão autenticada)
   app.post("/api/posto-remedios/abastecimentos", isAuthenticated, async (req, res) => {
     try {
       const {
@@ -4137,6 +4178,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Erro ao adicionar registro do posto Remédios:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Erro ao adicionar registro do posto Remédios"
+      });
+    }
+  });
+  
+  // Adicionar novo registro de abastecimento/lavagem (versão standalone - sem autenticação)
+  app.post("/api/posto-remedios-standalone/abastecimentos", async (req, res) => {
+    try {
+      const {
+        placa,
+        km,
+        projeto,
+        motorista_nome,
+        motorista_rg,
+        tipo_combustivel,
+        quantidade_litros,
+        valor_litro,
+        valor_total,
+        lavagem,
+        tipo_lavagem,
+        observacoes
+      } = req.body;
+      
+      // Validar campos obrigatórios
+      if (!placa || !km || !projeto || !motorista_nome || !motorista_rg) {
+        return res.status(400).json({
+          success: false,
+          message: "Todos os campos obrigatórios devem ser preenchidos (placa, km, projeto, motorista_nome, motorista_rg)"
+        });
+      }
+      
+      // Validação de tipos de combustível
+      if (tipo_combustivel && !['diesel', 'gasolina', 'alcool'].includes(tipo_combustivel)) {
+        return res.status(400).json({
+          success: false,
+          message: "Tipo de combustível inválido. Valores permitidos: diesel, gasolina, alcool"
+        });
+      }
+      
+      const query = `
+        INSERT INTO posto_remedios_abastecimentos
+        (placa, km, projeto, motorista_nome, motorista_rg, tipo_combustivel, quantidade_litros, valor_litro, valor_total, lavagem, tipo_lavagem, observacoes)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        RETURNING *
+      `;
+      
+      const values = [
+        placa,
+        km,
+        projeto,
+        motorista_nome,
+        motorista_rg,
+        tipo_combustivel || null,
+        quantidade_litros || null,
+        valor_litro || null,
+        valor_total || null,
+        lavagem || false,
+        tipo_lavagem || null,
+        observacoes || null
+      ];
+      
+      const result = await pool.query(query, values);
+      
+      return res.status(201).json({
+        success: true,
+        message: "Registro adicionado com sucesso",
+        data: result.rows[0]
+      });
+    } catch (error) {
+      console.error("Erro ao adicionar registro do posto Remédios (standalone):", error);
       return res.status(500).json({
         success: false,
         message: "Erro ao adicionar registro do posto Remédios"

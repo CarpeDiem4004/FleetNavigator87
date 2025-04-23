@@ -90,7 +90,7 @@ export default function PostoRemediosStandalone() {
   const carregarRegistros = async () => {
     setLoadingRegistros(true);
     try {
-      let url = '/api/posto-remedios/abastecimentos';
+      let url = '/api/posto-remedios-standalone/abastecimentos';
       const params = new URLSearchParams();
       
       if (dataInicio && dataFim) {
@@ -139,7 +139,7 @@ export default function PostoRemediosStandalone() {
     setSuccess(false);
     
     try {
-      const response = await fetch('/api/posto-remedios/abastecimentos', {
+      const response = await fetch('/api/posto-remedios-standalone/abastecimentos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
