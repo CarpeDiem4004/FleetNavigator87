@@ -1,5 +1,5 @@
 import React from 'react';
-import FormularioAbastecimentoSimples from '@/components/posto-remedios/FormularioAbastecimentoSimples';
+import FormularioAbastecimentoStandalone from '@/components/posto-remedios/FormularioAbastecimentoStandalone';
 import { Toaster } from '@/components/ui/toaster';
 
 export default function AbastecimentoPostoRemediosPage() {
@@ -11,7 +11,7 @@ export default function AbastecimentoPostoRemediosPage() {
           <p className="text-gray-600 mt-2">Registro de abastecimentos e lavagens para a frota</p>
         </header>
         
-        <FormularioAbastecimentoSimples />
+        <FormularioAbastecimentoStandalone />
         
         <footer className="mt-12 text-center text-gray-500 text-sm">
           <p>&copy; {new Date().getFullYear()} Murici Fleet - Sistema de Gestão de Frotas</p>
