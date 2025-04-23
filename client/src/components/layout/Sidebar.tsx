@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/context/AuthContext';
 import { useBasePermission } from '@/hooks/use-base-permission';
@@ -11,20 +11,20 @@ import {
   CircleDot, 
   Fuel, 
   AlertTriangle, 
-  TrafficCone, 
   Warehouse, 
   Users, 
   LogOut,
   ClipboardList,
   BarChart4,
   Activity,
-  Timer,
   ChevronsDown,
   ShieldAlert,
   FileText,
   Package,
   Map,
-  CreditCard
+  CreditCard,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 
 interface NavItem {
@@ -39,6 +39,96 @@ interface SidebarProps {
   open: boolean;
   setOpen: (open: boolean) => void;
 }
+
+// Componente NavItemWithSubmenu para gerenciar itens de menu com submenus
+const NavItemWithSubmenu: React.FC<{
+  item: NavItem;
+  isActive: boolean;
+  isSubItemActive: boolean;
+  onClose: () => void;
+  currentLocation: string;
+}> = ({ item, isActive, isSubItemActive, onClose, currentLocation }) => {
+  const [expanded, setExpanded] = useState(isActive || isSubItemActive);
+  const Icon = item.icon;
+
+  const toggleExpanded = () => {
+    setExpanded(!expanded);
+  };
+
+  return (
+    <div className="mb-1">
+      <div
+        onClick={toggleExpanded}
+        className={`flex w-full items-center justify-between px-4 py-3 rounded-md group transition-colors duration-200 text-left cursor-pointer ${
+          isActive || isSubItemActive
+            ? 'text-white bg-primary-900' 
+            : 'text-primary-100 hover:bg-primary-700'
+        }`}
+      >
+        <div className="flex items-center">
+          <Icon className="w-6" size={18} />
+          <span className="ml-3">{item.name}</span>
+        </div>
+        <div>
+          {expanded ? (
+            <ChevronDown size={16} />
+          ) : (
+            <ChevronRight size={16} />
+          )}
+        </div>
+      </div>
+      
+      {expanded && item.subItems && (
+        <div className="ml-8 mt-1 space-y-1">
+          {item.subItems.map(subItem => {
+            const SubIcon = subItem.icon;
+            const isSubActive = currentLocation === subItem.href;
+            
+            return (
+              <Link
+                key={subItem.name}
+                href={subItem.href}
+                onClick={onClose}
+                className={`flex items-center px-4 py-2 rounded-md group transition-colors duration-200 ${
+                  isSubActive
+                    ? 'text-white bg-primary-900' 
+                    : 'text-primary-100 hover:bg-primary-700'
+                }`}
+              >
+                <SubIcon className="w-5" size={16} />
+                <span className="ml-2 text-sm">{subItem.name}</span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Componente NavItem para itens de menu simples sem submenu
+const NavItem: React.FC<{
+  item: NavItem;
+  isActive: boolean;
+  onClose: () => void;
+}> = ({ item, isActive, onClose }) => {
+  const Icon = item.icon;
+  
+  return (
+    <Link 
+      href={item.href} 
+      onClick={onClose}
+      className={`flex items-center px-4 py-3 rounded-md group transition-colors duration-200 ${
+        isActive
+          ? 'text-white bg-primary-900' 
+          : 'text-primary-100 hover:bg-primary-700'
+      }`}
+    >
+      <Icon className="w-6" size={18} />
+      <span className="ml-3">{item.name}</span>
+    </Link>
+  );
+};
 
 const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   const [location] = useLocation();
@@ -110,7 +200,17 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   const navItemsBase = isFleetUser ? fleetManagementItems : allNavItems;
   
   // Filtrando itens de navegação com base nas permissões do usuário
-  const navItems = navItemsBase.filter(item => hasPermission(item.href));
+  const navItems = navItemsBase.filter(item => {
+    // Sempre incluir menus com submenus (href='#')
+    if (item.href === '#') {
+      // Verificar se pelo menos um submenu é permitido
+      const hasSubItemPermission = item.subItems?.some(subItem => 
+        hasPermission(subItem.href)
+      );
+      return hasSubItemPermission;
+    }
+    return hasPermission(item.href);
+  });
 
   return (
     <div
@@ -131,68 +231,27 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
         <div className="overflow-y-auto">
           <nav className="flex-1 py-4">
             <div className="space-y-1 px-2">
-              {/* Todos os itens de navegação incluindo Dashboard e Veículos */}
+              {/* Renderizando itens de menu usando componentes dedicados */}
               {navItems.map((item) => {
                 const isActive = location === item.href;
                 const isSubItemActive = item.subItems?.some(subItem => location === subItem.href);
-                const Icon = item.icon;
                 
-                // Use um elemento diferente se tiver subitens para evitar aninhar <a> dentro de <a>
                 return (
-                  <div key={item.name}>
+                  <div key={item.name} className="mb-1">
                     {item.subItems ? (
-                      // Use um div se tiver subitens
-                      <div
-                        onClick={() => closeSidebar()}
-                        className={`flex w-full items-center px-4 py-3 rounded-md group transition-colors duration-200 text-left cursor-pointer ${
-                          isActive || isSubItemActive
-                            ? 'text-white bg-primary-900' 
-                            : 'text-primary-100 hover:bg-primary-700'
-                        }`}
-                      >
-                        <Icon className="w-6" size={18} />
-                        <span className="ml-3">{item.name}</span>
-                      </div>
+                      <NavItemWithSubmenu 
+                        item={item} 
+                        isActive={isActive} 
+                        isSubItemActive={isSubItemActive}
+                        onClose={closeSidebar}
+                        currentLocation={location}
+                      />
                     ) : (
-                      // Use Link se não tiver subitens
-                      <Link 
-                        href={item.href} 
-                        onClick={closeSidebar}
-                        className={`flex items-center px-4 py-3 rounded-md group transition-colors duration-200 ${
-                          isActive || isSubItemActive
-                            ? 'text-white bg-primary-900' 
-                            : 'text-primary-100 hover:bg-primary-700'
-                        }`}
-                      >
-                        <Icon className="w-6" size={18} />
-                        <span className="ml-3">{item.name}</span>
-                      </Link>
-                    )}
-                    
-                    {/* Renderizar subitens se existirem */}
-                    {item.subItems && (
-                      <div className="ml-8 mt-1 space-y-1">
-                        {item.subItems.map(subItem => {
-                          const SubIcon = subItem.icon;
-                          const isSubActive = location === subItem.href;
-                          
-                          return (
-                            <Link
-                              key={subItem.name}
-                              href={subItem.href}
-                              onClick={closeSidebar}
-                              className={`flex items-center px-4 py-2 rounded-md group transition-colors duration-200 ${
-                                isSubActive
-                                  ? 'text-white bg-primary-900' 
-                                  : 'text-primary-100 hover:bg-primary-700'
-                              }`}
-                            >
-                              <SubIcon className="w-5" size={16} />
-                              <span className="ml-2 text-sm">{subItem.name}</span>
-                            </Link>
-                          );
-                        })}
-                      </div>
+                      <NavItem 
+                        item={item} 
+                        isActive={isActive}
+                        onClose={closeSidebar}
+                      />
                     )}
                   </div>
                 );
