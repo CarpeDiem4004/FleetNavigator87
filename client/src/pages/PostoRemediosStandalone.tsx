@@ -512,111 +512,16 @@ export default function PostoRemediosStandalone() {
             <CardHeader>
               <CardTitle>Histórico de Registros</CardTitle>
               <CardDescription>
-                Visualize e filtre o histórico de abastecimentos e lavagens.
+                Visualize o histórico de abastecimentos e lavagens registrados no Posto Remédios.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div>
-                  <FormLabel>Data Início</FormLabel>
-                  <Input
-                    type="date"
-                    value={dataInicio}
-                    onChange={(e) => setDataInicio(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <FormLabel>Data Fim</FormLabel>
-                  <Input
-                    type="date"
-                    value={dataFim}
-                    onChange={(e) => setDataFim(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <FormLabel>Placa</FormLabel>
-                  <Input
-                    type="text"
-                    value={filtroPlaca}
-                    onChange={(e) => setFiltroPlaca(e.target.value)}
-                    placeholder="ABC1234"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end mb-4">
-                <Button onClick={carregarRegistros} disabled={loadingRegistros}>
-                  {loadingRegistros ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Carregando...
-                    </>
-                  ) : (
-                    'Filtrar'
-                  )}
-                </Button>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="px-4 py-2 text-left">Data</th>
-                      <th className="px-4 py-2 text-left">Placa</th>
-                      <th className="px-4 py-2 text-left">KM</th>
-                      <th className="px-4 py-2 text-left">Motorista</th>
-                      <th className="px-4 py-2 text-left">Projeto</th>
-                      <th className="px-4 py-2 text-left">Combustível</th>
-                      <th className="px-4 py-2 text-left">Litros</th>
-                      <th className="px-4 py-2 text-left">Valor</th>
-                      <th className="px-4 py-2 text-left">Lavagem</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loadingRegistros ? (
-                      <tr>
-                        <td colSpan={9} className="px-4 py-2 text-center">
-                          <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                        </td>
-                      </tr>
-                    ) : registros.length === 0 ? (
-                      <tr>
-                        <td colSpan={9} className="px-4 py-2 text-center">
-                          Nenhum registro encontrado
-                        </td>
-                      </tr>
-                    ) : (
-                      registros.map((registro) => (
-                        <tr key={registro.id} className="border-b hover:bg-gray-50">
-                          <td className="px-4 py-2">{formatarData(registro.data_registro)}</td>
-                          <td className="px-4 py-2">{registro.placa}</td>
-                          <td className="px-4 py-2">{registro.km}</td>
-                          <td className="px-4 py-2">{registro.motorista_nome}</td>
-                          <td className="px-4 py-2">{registro.projeto}</td>
-                          <td className="px-4 py-2">{registro.tipo_combustivel || '-'}</td>
-                          <td className="px-4 py-2">{registro.quantidade_litros || '-'}</td>
-                          <td className="px-4 py-2">
-                            {registro.valor_total
-                              ? `R$ ${Number(registro.valor_total).toFixed(2)}`
-                              : '-'}
-                          </td>
-                          <td className="px-4 py-2">
-                            {registro.lavagem ? registro.tipo_lavagem || 'Sim' : 'Não'}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <HistoricoAbastecimentosTabela 
+                posto="Remédios"
+                endpoint="/api/posto-remedios-standalone/abastecimentos" 
+                titulo="Histórico de Abastecimentos (Público)"
+              />
             </CardContent>
-            <CardFooter className="flex justify-between">
-              <p className="text-sm text-gray-500">
-                Total de registros: {registros.length}
-              </p>
-              <Button variant="outline" onClick={carregarRegistros}>
-                Atualizar
-              </Button>
-            </CardFooter>
           </Card>
         </TabsContent>
       </Tabs>
