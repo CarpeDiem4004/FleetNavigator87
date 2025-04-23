@@ -40,6 +40,8 @@ export default function PainelPostosPage() {
   const { toast } = useToast();
   const [limitePostoRemedios, setLimitePostoRemedios] = useState(5000);
   const [gastoPostoRemedios, setGastoPostoRemedios] = useState(2350);
+  const [limitePostoAlair, setLimitePostoAlair] = useState(6500);
+  const [gastoPostoAlair, setGastoPostoAlair] = useState(2100);
   const [dialogLimiteAberto, setDialogLimiteAberto] = useState(false);
   const [novoLimite, setNovoLimite] = useState('');
   const [postoSelecionado, setPostoSelecionado] = useState<Posto | null>(null);
@@ -67,6 +69,17 @@ export default function PainelPostosPage() {
       limiteMensal: 7500,
       gastoAtual: 4200,
       porcentagemUtilizada: (4200 / 7500) * 100
+    },
+    {
+      id: 3,
+      nome: 'Posto Alair',
+      descricao: 'Controle de abastecimento e serviços realizados no Posto Alair.',
+      icone: <Fuel className="h-10 w-10" />,
+      cor: 'bg-gradient-to-br from-purple-500 to-purple-700',
+      rota: '/posto-alair',
+      limiteMensal: limitePostoAlair,
+      gastoAtual: gastoPostoAlair,
+      porcentagemUtilizada: (gastoPostoAlair / limitePostoAlair) * 100
     }
   ];
 
@@ -86,6 +99,8 @@ export default function PainelPostosPage() {
     // Atualiza o limite conforme o posto selecionado
     if (postoSelecionado.id === 1) {
       setLimitePostoRemedios(valor);
+    } else if (postoSelecionado.id === 3) {
+      setLimitePostoAlair(valor);
     }
     
     toast({
@@ -126,6 +141,16 @@ export default function PainelPostosPage() {
                 </div>
                 <Button asChild size="sm" variant="default" className="ml-auto bg-green-700 hover:bg-green-800">
                   <Link href="/posto-contagem">Acessar Diretamente</Link>
+                </Button>
+              </div>
+              <div className="rounded-lg bg-purple-100 border border-purple-200 p-3 flex items-center gap-2 flex-1">
+                <Fuel className="text-purple-700" />
+                <div>
+                  <h3 className="font-medium text-purple-900">Posto Alair</h3>
+                  <p className="text-xs text-purple-700">Limite: R$ {limitePostoAlair.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                </div>
+                <Button asChild size="sm" variant="default" className="ml-auto bg-purple-700 hover:bg-purple-800">
+                  <Link href="/posto-alair">Acessar Diretamente</Link>
                 </Button>
               </div>
             </div>
