@@ -235,65 +235,44 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
     }
   };
   
-  const handleExportarExcel = () => {
-    // Filtrar dados de acordo com a data e busca
-    let dadosFiltrados = [...filteredData];
-    
-    // Preparar dados para CSV
-    const headers = [
-      'Data', 'Placa', 'KM', 'Tipo Combustível', 
-      'Litros', 'Preço/L', 'Valor Total', 'Motorista', 
-      'Operador', 'Projeto', 'Posto'
-    ];
-    
-    const csvData = dadosFiltrados.map(item => [
-      formatarData(item.created_at),
-      item.placa,
-      item.km_atual.toString(),
-      item.tipo_combustivel,
-      formatarNumero(item.litros),
-      item.preco_litro ? item.preco_litro.toFixed(2).replace('.', ',') : '-',
-      item.valor_total ? item.valor_total.toFixed(2).replace('.', ',') : '-',
-      item.nome_motorista,
-      item.nome_operador,
-      item.project || '-',
-      item.posto
-    ]);
-    
-    // Combinar headers e dados
-    const csvContent = [
-      headers.join(';'),
-      ...csvData.map(row => row.join(';'))
-    ].join('\n');
-    
-    // Criar e download do arquivo usando uma abordagem mais segura
+  const handleExportarExcel = async () => {
     try {
-      // Criar Blob com os dados CSV
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      // Importar a biblioteca xlsx dinamicamente
+      const XLSX = await import('xlsx');
       
-      // Métodos específicos para navegadores legados foram removidos
-      // Usaremos apenas a abordagem moderna para todos os navegadores
+      // Filtrar dados de acordo com a data e busca
+      let dadosFiltrados = [...filteredData];
       
-      // Para navegadores modernos
-      const url = URL.createObjectURL(blob);
+      // Preparar os dados para Excel
+      const excelData = dadosFiltrados.map(item => ({
+        'Data': formatarData(item.created_at),
+        'Placa': item.placa,
+        'KM': item.km_atual,
+        'Combustível': item.tipo_combustivel,
+        'Litros': item.litros,
+        'Preço/L': item.preco_litro ? `R$ ${item.preco_litro.toFixed(2)}` : '-',
+        'Valor Total': item.valor_total ? `R$ ${item.valor_total.toFixed(2)}` : '-',
+        'Motorista': item.nome_motorista,
+        'Operador': item.nome_operador,
+        'Projeto': item.project || '-',
+        'Posto': item.posto
+      }));
       
-      // Criar link para download sem anexá-lo ao DOM
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `abastecimentos_${formatPosto(postId)}_${new Date().toISOString().slice(0, 10)}.csv`;
+      // Criar uma nova planilha
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
       
-      // Esta abordagem funciona sem problemas de removeChild
-      document.body.appendChild(a);
-      a.click();
+      // Criar um novo livro
+      const workbook = XLSX.utils.book_new();
       
-      // Remover o elemento e liberar o recurso
-      window.setTimeout(() => {
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-      }, 100);
+      // Adicionar a planilha ao livro
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Abastecimentos');
+      
+      // Gerar arquivo e fazer download
+      XLSX.writeFile(workbook, `abastecimentos_${formatPosto(postId)}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      
+      console.log('Exportação concluída com sucesso');
     } catch (error) {
-      console.error('Erro ao criar arquivo para download:', error);
+      console.error('Erro ao exportar para Excel:', error);
       alert('Erro ao exportar dados. Por favor, tente novamente.');
     }
   };
@@ -389,6 +368,18 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
               Atualizar
+            </button>
+            
+            {/* Botão de exportação para Excel */}
+            <button 
+              className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600 flex items-center gap-1"
+              onClick={handleExportarExcel}
+              disabled={isLoading || filteredData.length === 0}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Exportar Excel
             </button>
             
             {showLimparButton && (
