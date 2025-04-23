@@ -102,11 +102,33 @@ export default function PainelPostosPage() {
     <AppLayout>
       <div className="container mx-auto py-8">
         <div className="flex flex-col gap-6">
-          <div>
-            <h1 className="text-3xl font-bold">Visão Geral dos Postos de Abastecimento</h1>
+          <div className="bg-blue-50 p-6 rounded-xl border border-blue-100 shadow-sm">
+            <h1 className="text-3xl font-bold text-blue-900">Visão Geral dos Postos de Abastecimento</h1>
             <p className="text-muted-foreground mt-2">
               Gestão e controle dos postos de abastecimento com monitoramento de limites e gastos.
             </p>
+            <div className="mt-4 flex flex-col md:flex-row gap-4">
+              <div className="rounded-lg bg-blue-100 border border-blue-200 p-3 flex items-center gap-2 flex-1">
+                <Fuel className="text-blue-700" />
+                <div>
+                  <h3 className="font-medium text-blue-900">Posto Remédios</h3>
+                  <p className="text-xs text-blue-700">Limite: R$ {limitePostoRemedios.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                </div>
+                <Button asChild size="sm" variant="default" className="ml-auto bg-blue-700 hover:bg-blue-800">
+                  <Link href="/posto-remedios">Acessar Diretamente</Link>
+                </Button>
+              </div>
+              <div className="rounded-lg bg-green-100 border border-green-200 p-3 flex items-center gap-2 flex-1">
+                <Droplets className="text-green-700" />
+                <div>
+                  <h3 className="font-medium text-green-900">Posto Contagem</h3>
+                  <p className="text-xs text-green-700">Limite: R$ 7.500,00</p>
+                </div>
+                <Button asChild size="sm" variant="default" className="ml-auto bg-green-700 hover:bg-green-800">
+                  <Link href="/posto-contagem">Acessar Diretamente</Link>
+                </Button>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
