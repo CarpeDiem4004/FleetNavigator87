@@ -9,7 +9,7 @@ export const POSTO_SOROCABA = "sorocaba";
 
 // Nomes de exibição dos postos
 export const NOME_POSTO_OSASCO = "Osasco";
-export const NOME_POSTO_GUARULHOS = "Guarulhos";
+export const NOME_POSTO_GUARULHOS = "Alair";
 export const NOME_POSTO_SAOPAULO = "São Paulo";
 export const NOME_POSTO_CAMPINAS = "Campinas";
 export const NOME_POSTO_ABC = "ABC";
@@ -26,7 +26,7 @@ export const POSTOS_INFO = [
   { 
     id: POSTO_GUARULHOS, 
     nome: NOME_POSTO_GUARULHOS, 
-    descricao: 'Posto de abastecimento da região de Guarulhos' 
+    descricao: 'Posto de abastecimento Alair' 
   },
   { 
     id: POSTO_SAOPAULO, 

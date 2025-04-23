@@ -7,7 +7,7 @@ import { Fuel, Droplets, Map } from 'lucide-react';
 const IndexPostos: React.FC = () => {
   const postos = [
     { id: 'osasco', nome: 'Osasco', descricao: 'Posto de abastecimento da região de Osasco' },
-    { id: 'guarulhos', nome: 'Guarulhos', descricao: 'Posto de abastecimento da região de Guarulhos' },
+    { id: 'guarulhos', nome: 'Alair', descricao: 'Posto de abastecimento Alair' },
     { id: 'saopaulo', nome: 'São Paulo', descricao: 'Posto de abastecimento da região de São Paulo' },
     { id: 'campinas', nome: 'Campinas', descricao: 'Posto de abastecimento da região de Campinas' },
     { id: 'abc', nome: 'ABC', descricao: 'Posto de abastecimento da região do ABC Paulista' },
