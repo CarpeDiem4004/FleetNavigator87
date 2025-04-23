@@ -167,12 +167,12 @@ const UsersNew: React.FC = () => {
   });
 
   // Filtrar usuários com base no termo de busca
-  const filteredUsers = users.filter(
+  const filteredUsers = Array.isArray(users) ? users.filter(
     (user) => 
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (user.baseName && user.baseName.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  ) : [];
 
   // Atualizar o nome da base ao selecionar uma base
   const handleBaseChange = (baseId: string) => {
