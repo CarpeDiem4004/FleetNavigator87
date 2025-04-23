@@ -15,6 +15,7 @@ interface FormValues {
   lavagem: boolean;
   tipo_lavagem: string;
   observacoes: string;
+  tipo_veiculo: string;
 }
 
 export default function PostoRemediosForm() {
@@ -31,7 +32,8 @@ export default function PostoRemediosForm() {
     valor_total: "",
     lavagem: false,
     tipo_lavagem: "",
-    observacoes: ""
+    observacoes: "",
+    tipo_veiculo: "frota"
   });
 
   const [status, setStatus] = useState("");
@@ -104,7 +106,8 @@ export default function PostoRemediosForm() {
           valor_total: "",
           lavagem: false,
           tipo_lavagem: "",
-          observacoes: ""
+          observacoes: "",
+          tipo_veiculo: "frota"
         });
       } else {
         const errorData = await response.json();
@@ -157,6 +160,12 @@ export default function PostoRemediosForm() {
     { value: 'completa', label: 'Lavagem Completa' },
     { value: 'simples', label: 'Lavagem Simples' },
     { value: 'interna', label: 'Lavagem Interna' }
+  ];
+  
+  // Opções de tipos de veículo
+  const tiposVeiculoOptions = [
+    { value: 'frota', label: 'Frota' },
+    { value: 'agregado', label: 'Agregado' }
   ];
 
   return (
