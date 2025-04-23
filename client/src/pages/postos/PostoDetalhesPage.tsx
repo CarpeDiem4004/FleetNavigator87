@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, useLocation } from 'wouter';
 import { format } from 'date-fns';
-import { AlertTriangle, ArrowLeft, DropletIcon, FileText, Fuel, Plus, RefreshCw } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, DropletIcon, FileText, Fuel, LogIn, Plus, RefreshCw } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -101,12 +101,16 @@ export default function PostoDetalhesPage() {
   const { toast } = useToast();
 
   // Buscar detalhes do posto
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: [`/api/postos/${params.id}`],
     queryFn: async () => {
       const res = await fetch(`/api/postos/${params.id}`);
       if (!res.ok) {
-        throw new Error('Erro ao buscar detalhes do posto');
+        const errorData = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          throw new Error('Você precisa estar autenticado para acessar esta página');
+        }
+        throw new Error(errorData.message || 'Erro ao buscar detalhes do posto');
       }
       const data = await res.json();
       return data.data as PostoDetalhes;
@@ -202,16 +206,25 @@ export default function PostoDetalhesPage() {
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="text-center py-8 text-red-500">
             <AlertTriangle className="h-10 w-10 mx-auto mb-2" />
-            <p>Erro ao carregar detalhes do posto. Por favor, tente novamente.</p>
+            <p>{error instanceof Error ? error.message : 'Erro ao carregar detalhes do posto.'}</p>
             <div className="flex justify-center gap-4 mt-4">
-              <Button variant="outline" onClick={() => setLocation('/postos')}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Voltar
-              </Button>
-              <Button onClick={() => refetch()}>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Tentar novamente
-              </Button>
+              {error instanceof Error && error.message.includes('autenticado') ? (
+                <Button onClick={() => setLocation('/auth')}>
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Fazer login
+                </Button>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={() => setLocation('/postos')}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Voltar
+                  </Button>
+                  <Button onClick={() => refetch()}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Tentar novamente
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
