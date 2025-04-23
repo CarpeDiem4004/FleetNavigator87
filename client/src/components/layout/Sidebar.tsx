@@ -183,7 +183,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     // Modificado para apontar para a página principal em vez de submenu
     { name: 'Abastecimentos', href: '/abastecimentos', icon: Fuel },
     { name: 'Histórico Abastecimento', href: '/refueling', icon: ClipboardList },
-    { name: 'Postos Externos', href: '#', icon: Warehouse, subItems: [
+    // Alterado para usar o ícone de posto de gasolina (Droplets) em vez de Warehouse para Postos Externos
+    { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
       { name: 'Cartão de Abastecimento', href: '/cartao-abastecimento', icon: CreditCard }
     ]},
@@ -208,7 +209,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     // Modificado para apontar para a página principal em vez de submenu
     { name: 'Abastecimentos', href: '/abastecimentos', icon: Fuel },
     { name: 'Histórico Abastecimento', href: '/refueling', icon: ClipboardList },
-    { name: 'Postos Externos', href: '#', icon: Warehouse, subItems: [
+    // Corrigido para usar o mesmo ícone e estrutura em ambas as listas de navegação
+    { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
       { name: 'Cartão de Abastecimento', href: '/cartao-abastecimento', icon: CreditCard }
     ]},
@@ -234,12 +236,16 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     // Sempre incluir menus com submenus (href='#')
     if (item.href === '#') {
       // Verificar se pelo menos um submenu é permitido
-      const hasSubItemPermission = item.subItems?.some(subItem => 
-        hasPermission(subItem.href)
-      );
+      const hasSubItemPermission = item.subItems?.some(subItem => {
+        console.log(`Verificando permissão para submenu ${subItem.name} (${subItem.href}): ${hasPermission(subItem.href) ? 'PERMITIDO' : 'NEGADO'}`);
+        return hasPermission(subItem.href);
+      });
+      console.log(`Menu com submenu "${item.name}" tem permissão: ${hasSubItemPermission ? 'SIM' : 'NÃO'}`);
       return hasSubItemPermission;
     }
-    return hasPermission(item.href);
+    const has = hasPermission(item.href);
+    console.log(`Item de menu "${item.name}" (${item.href}) tem permissão: ${has ? 'SIM' : 'NÃO'}`);
+    return has;
   });
 
   return (
