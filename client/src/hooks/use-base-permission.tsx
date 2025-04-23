@@ -57,7 +57,9 @@ const allRoutes = [
   '/accidents',                        // Acidentes
   '/acidentes',                        // Alias para Acidentes
   '/users',                            // Usuários (só admin)
-  '/bases'                             // Bases (só admin)
+  '/bases',                            // Bases (só admin)
+  '/postos/visao-geral',               // Visão Geral dos Postos
+  '/postos'                            // Postos de Abastecimento
 ];
 
 // Regras de correspondência entre bases e rotas específicas
@@ -139,7 +141,9 @@ const basicRoutes = [
   '/sinister',               // Registros de sinistros
   '/sinistro',               // Alias para sinistro
   '/accidents',              // Registros de acidentes
-  '/acidentes'               // Alias para acidentes
+  '/acidentes',              // Alias para acidentes
+  '/postos/visao-geral',     // Visão Geral dos Postos
+  '/postos'                  // Postos de Abastecimento
 ];
 
 export function useBasePermission(): BasePermissionHook {
@@ -232,7 +236,9 @@ export function useBasePermission(): BasePermissionHook {
         '/fines',                                     // Multas
         '/line-hall-shopee',                          // Line Hall Shopee
         '/accidents',                                 // Acidentes/Roubos
-        '/work-safety'                                // Segurança do Trabalho
+        '/work-safety',                               // Segurança do Trabalho
+        '/postos/visao-geral',                        // Visão Geral dos Postos
+        '/postos'                                     // Postos de Abastecimento
       ];
       
       const hasAccess = frotaRoutes.includes(route);
