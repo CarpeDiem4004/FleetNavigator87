@@ -67,6 +67,7 @@ import TratativaManutencaoPage from "@/pages/TratativaManutencaoPage";
 import OficinasExternaPage from "@/pages/OficinasExternaPage";
 import OficinaDashboard from "@/pages/oficina/OficinaDashboard";
 import BaseRequests from "@/pages/BaseRequests";
+import CartaoAbastecimentoPage from "@/pages/CartaoAbastecimentoPage";
 
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
@@ -150,6 +151,7 @@ function App() {
           <ProtectedRoute path="/fuel-card" component={FuelCard} />
           <ProtectedRoute path="/fuel-card-requests" component={FuelCardRequestsPanel} />
           <ProtectedRoute path="/posto-remedios" component={PostoRemediosPage} />
+          <ProtectedRoute path="/cartao-abastecimento" component={CartaoAbastecimentoPage} />
           <ProtectedRoute path="/drivers" component={DriversPage} />
           <ProtectedRoute path="/manutencao" component={ManutencaoPage} />
           <ProtectedRoute path="/tratativa-manutencao" component={TratativaManutencaoPage} />

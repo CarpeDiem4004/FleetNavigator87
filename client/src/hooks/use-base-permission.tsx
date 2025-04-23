@@ -39,6 +39,7 @@ const allRoutes = [
   '/fuel-card',                        // Cartão de Combustível
   '/fuel-card-requests',               // Painel de Solicitações Fuel Card
   '/posto-remedios',                   // Posto Remédios
+  '/cartao-abastecimento',            // Cartão de Abastecimento
   '/fines',                            // Multas
   '/multas',                           // Alias para Multas
   '/line-hall',                        // Line Hall (antigo)
