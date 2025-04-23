@@ -43,8 +43,8 @@ export function setupAuth(app: Express) {
   const sessionStore = !useMemoryStore
     ? new PgStore({
         pool,
-        tableName: 'sessions', // Nome da tabela para armazenar sessões
-        createTableIfMissing: true, // Criar tabela se não existir
+        tableName: 'session', // Usando 'session' em vez de 'sessions' para corresponder à tabela existente
+        createTableIfMissing: false, // Não tentar criar a tabela, pois ela já existe
         pruneSessionInterval: 24 * 60 * 60 // Limpar sessões expiradas a cada 24 horas
       })
     : new MemoryStore({
