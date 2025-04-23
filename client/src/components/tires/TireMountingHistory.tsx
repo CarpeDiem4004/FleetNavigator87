@@ -10,6 +10,7 @@ import {
   deleteTireMovement,
   TireMovement
 } from '@/services/tireMoveService';
+import { useSupabaseAuthContext } from '@/context/SupabaseAuthContext';
 import {
   Card,
   CardContent,
@@ -85,12 +86,14 @@ interface TireMounting {
   motivo_remocao?: string | null;
   posicao?: string | null;
   veiculo_possui_estepe?: boolean;
+  responsavel?: string | null;
   pneu?: Tire;
 }
 
 // Componente principal
 export default function TireMountingHistory() {
   const { toast } = useToast();
+  const { user, supabaseUser } = useSupabaseAuthContext();
   const [availableTires, setAvailableTires] = useState<Tire[]>([]);
   const [mountHistory, setMountHistory] = useState<TireMounting[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -184,6 +187,7 @@ export default function TireMountingHistory() {
               motivo_remocao: isMounting ? null : move.motivo,
               posicao: move.local || null,
               veiculo_possui_estepe: move.possui_estepe || false,
+              responsavel: move.responsavel || null,
               pneu
             };
           });
@@ -216,6 +220,9 @@ export default function TireMountingHistory() {
     }
 
     try {
+      // Determinar o nome do usuário responsável
+      const responsibleUser = supabaseUser?.user_metadata?.name || user?.name || supabaseUser?.email || 'Usuário';
+      
       // Criar o objeto de movimentação para enviar à API
       const tireMovement: TireMovement = {
         id_pneu: parseInt(selectedTireId),
@@ -224,7 +231,8 @@ export default function TireMountingHistory() {
         km: parseInt(installationKm),
         data: new Date().toISOString(),
         local: position || undefined,
-        possui_estepe: hasSpare
+        possui_estepe: hasSpare,
+        responsavel: responsibleUser
       };
       
       // Enviar a requisição para a API
@@ -314,6 +322,9 @@ export default function TireMountingHistory() {
         return;
       }
       
+      // Determinar o nome do usuário responsável
+      const responsibleUser = supabaseUser?.user_metadata?.name || user?.name || supabaseUser?.email || 'Usuário';
+      
       // Criar o objeto de movimentação para remoção
       const tireMovement: TireMovement = {
         id_pneu: tireId,
@@ -322,7 +333,8 @@ export default function TireMountingHistory() {
         km: kmRemovalValue,
         data: new Date().toISOString(),
         motivo: motivoRemocao || 'Não especificado',
-        distancia_percorrida: distanciaPercorrida
+        distancia_percorrida: distanciaPercorrida,
+        responsavel: responsibleUser
       };
       
       // Enviar a requisição para a API
@@ -451,6 +463,7 @@ export default function TireMountingHistory() {
                     <TableHead>Data Instalação</TableHead>
                     <TableHead>Data Remoção</TableHead>
                     <TableHead>Estepe</TableHead>
+                    <TableHead>Responsável</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-center">Ações</TableHead>
                   </TableRow>
@@ -496,6 +509,9 @@ export default function TireMountingHistory() {
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        {mount.responsavel || 'Não identificado'}
                       </TableCell>
                       <TableCell>
                         {!mount.data_remocao ? (
