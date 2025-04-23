@@ -494,87 +494,11 @@ export default function PostoRemediosPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-col md:flex-row gap-4 mb-4">
-                  <div className="flex-1">
-                    <Input
-                      placeholder="Filtrar por placa"
-                      value={filtroPlaca}
-                      onChange={(e) => setFiltroPlaca(e.target.value)}
-                    />
-                  </div>
-                  <Button onClick={carregarRegistros} disabled={loadingRegistros}>
-                    {loadingRegistros ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Carregando...
-                      </>
-                    ) : (
-                      'Filtrar'
-                    )}
-                  </Button>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="px-4 py-2 text-left">Data</th>
-                        <th className="px-4 py-2 text-left">Placa</th>
-                        <th className="px-4 py-2 text-left">KM</th>
-                        <th className="px-4 py-2 text-left">Motorista</th>
-                        <th className="px-4 py-2 text-left">Projeto</th>
-                        <th className="px-4 py-2 text-left">Combustível</th>
-                        <th className="px-4 py-2 text-left">Litros</th>
-                        <th className="px-4 py-2 text-left">Valor</th>
-                        <th className="px-4 py-2 text-left">Lavagem</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {loadingRegistros ? (
-                        <tr>
-                          <td colSpan={9} className="px-4 py-2 text-center">
-                            <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                          </td>
-                        </tr>
-                      ) : registros.length === 0 ? (
-                        <tr>
-                          <td colSpan={9} className="px-4 py-2 text-center">
-                            Nenhum registro encontrado
-                          </td>
-                        </tr>
-                      ) : (
-                        registros.map((registro) => (
-                          <tr key={registro.id} className="border-b hover:bg-gray-50">
-                            <td className="px-4 py-2">{formatarData(registro.data_registro)}</td>
-                            <td className="px-4 py-2">{registro.placa}</td>
-                            <td className="px-4 py-2">{registro.km}</td>
-                            <td className="px-4 py-2">{registro.motorista_nome}</td>
-                            <td className="px-4 py-2">{registro.projeto}</td>
-                            <td className="px-4 py-2">{registro.tipo_combustivel || '-'}</td>
-                            <td className="px-4 py-2">{registro.quantidade_litros || '-'}</td>
-                            <td className="px-4 py-2">
-                              {registro.valor_total
-                                ? `R$ ${Number(registro.valor_total).toFixed(2)}`
-                                : '-'}
-                            </td>
-                            <td className="px-4 py-2">
-                              {registro.lavagem ? registro.tipo_lavagem || 'Sim' : 'Não'}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                <HistoricoAbastecimentosTabela 
+                  posto="Remédios"
+                  endpoint="/api/posto-remedios/abastecimentos" 
+                />
               </CardContent>
-              <CardFooter className="flex justify-between">
-                <p className="text-sm text-gray-500">
-                  Total de registros: {registros.length}
-                </p>
-                <Button variant="outline" onClick={carregarRegistros}>
-                  Atualizar
-                </Button>
-              </CardFooter>
             </Card>
           </TabsContent>
         </Tabs>
