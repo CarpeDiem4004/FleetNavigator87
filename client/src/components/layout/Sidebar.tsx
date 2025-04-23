@@ -136,13 +136,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
                   <div key={item.name}>
                     {item.subItems ? (
                       // Use um div se tiver subitens
-                      <button
-                        onClick={() => {
-                          // Se houver subitens, apenas ative o item visualmente
-                          // Não navegar para a página do item principal
-                          closeSidebar();
-                        }}
-                        className={`flex w-full items-center px-4 py-3 rounded-md group transition-colors duration-200 text-left ${
+                      <div
+                        onClick={() => closeSidebar()}
+                        className={`flex w-full items-center px-4 py-3 rounded-md group transition-colors duration-200 text-left cursor-pointer ${
                           isActive || isSubItemActive
                             ? 'text-white bg-primary-900' 
                             : 'text-primary-100 hover:bg-primary-700'
@@ -150,7 +146,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
                       >
                         <Icon className="w-6" size={18} />
                         <span className="ml-3">{item.name}</span>
-                      </button>
+                      </div>
                     ) : (
                       // Use Link se não tiver subitens
                       <Link 
