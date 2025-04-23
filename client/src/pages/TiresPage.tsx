@@ -649,21 +649,7 @@ const TiresPage: React.FC = () => {
                     />
                   </div>
                   
-                  <div className="flex items-center space-x-2 mt-2">
-                    <Checkbox 
-                      id="tem_estepe" 
-                      checked={newTire.tem_estepe || false}
-                      onCheckedChange={(checked) => 
-                        setNewTire({...newTire, tem_estepe: Boolean(checked)})
-                      }
-                    />
-                    <Label 
-                      htmlFor="tem_estepe" 
-                      className="font-medium cursor-pointer"
-                    >
-                      Veículo possui estepe
-                    </Label>
-                  </div>
+                  {/* Opção "Veículo possui estepe" removida porque a coluna não existe na tabela pneus_completo */}
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancelar</Button>
