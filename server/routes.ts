@@ -432,7 +432,28 @@ async function criarTabelaPostoRemediosAbastecimentos() {
   const tableExistsResult = await pool.query(checkTableQuery);
   
   if (tableExistsResult.rows[0].exists) {
-    console.log("Tabela posto_remedios_abastecimentos já existe, pulando criação.");
+    console.log("Tabela posto_remedios_abastecimentos já existe, verificando estrutura...");
+    
+    // Verificar se a coluna valor_litro existe
+    const checkColumnQuery = "SELECT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'posto_remedios_abastecimentos' AND column_name = 'valor_litro')";
+    const columnExistsResult = await pool.query(checkColumnQuery);
+    
+    if (!columnExistsResult.rows[0].exists) {
+      // Adicionar a coluna valor_litro se não existir
+      console.log("Adicionando coluna valor_litro à tabela posto_remedios_abastecimentos...");
+      try {
+        await pool.query(`
+          ALTER TABLE posto_remedios_abastecimentos
+          ADD COLUMN valor_litro DECIMAL(10, 2)
+        `);
+        console.log("Coluna valor_litro adicionada com sucesso!");
+      } catch (columnError) {
+        console.error("Erro ao adicionar coluna valor_litro:", columnError);
+      }
+    } else {
+      console.log("Coluna valor_litro já existe na tabela posto_remedios_abastecimentos.");
+    }
+    
     return;
   }
 
@@ -449,6 +470,7 @@ async function criarTabelaPostoRemediosAbastecimentos() {
         motorista_rg VARCHAR(20) NOT NULL,
         tipo_combustivel VARCHAR(20) CHECK (tipo_combustivel IN ('diesel', 'gasolina', 'alcool')),
         quantidade_litros DECIMAL(10, 2),
+        valor_litro DECIMAL(10, 2),
         valor_total DECIMAL(10, 2),
         lavagem BOOLEAN DEFAULT FALSE,
         tipo_lavagem VARCHAR(50),
@@ -4061,6 +4083,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         motorista_rg,
         tipo_combustivel,
         quantidade_litros,
+        valor_litro,
         valor_total,
         lavagem,
         tipo_lavagem,
@@ -4085,8 +4108,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const query = `
         INSERT INTO posto_remedios_abastecimentos
-        (placa, km, projeto, motorista_nome, motorista_rg, tipo_combustivel, quantidade_litros, valor_total, lavagem, tipo_lavagem, observacoes)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        (placa, km, projeto, motorista_nome, motorista_rg, tipo_combustivel, quantidade_litros, valor_litro, valor_total, lavagem, tipo_lavagem, observacoes)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
       `;
       
@@ -4098,6 +4121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         motorista_rg,
         tipo_combustivel || null,
         quantidade_litros || null,
+        valor_litro || null,
         valor_total || null,
         lavagem || false,
         tipo_lavagem || null,
