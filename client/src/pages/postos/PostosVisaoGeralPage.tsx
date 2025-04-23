@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { format } from 'date-fns';
-import { AlertTriangle, DropletIcon, Filter, Fuel, RefreshCw, Search } from 'lucide-react';
+import { AlertTriangle, DropletIcon, Filter, Fuel, LogIn, RefreshCw, Search } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -57,12 +57,16 @@ export default function PostosVisaoGeralPage() {
   const { toast } = useToast();
 
   // Buscar lista de postos
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['/api/postos'],
     queryFn: async () => {
       const res = await fetch('/api/postos');
       if (!res.ok) {
-        throw new Error('Erro ao buscar dados dos postos');
+        const errorData = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          throw new Error('Você precisa estar autenticado para acessar esta página');
+        }
+        throw new Error(errorData.message || 'Erro ao buscar dados dos postos');
       }
       const data = await res.json();
       return data.data as PostoResumo[];
@@ -133,11 +137,18 @@ export default function PostosVisaoGeralPage() {
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="text-center py-8 text-red-500">
             <AlertTriangle className="h-10 w-10 mx-auto mb-2" />
-            <p>Erro ao carregar dados dos postos. Por favor, tente novamente.</p>
-            <Button className="mt-4" onClick={() => refetch()}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Tentar novamente
-            </Button>
+            <p>{error instanceof Error ? error.message : 'Erro ao carregar dados dos postos.'}</p>
+            {error instanceof Error && error.message.includes('autenticado') ? (
+              <Button className="mt-4" onClick={() => setLocation('/auth')}>
+                <LogIn className="mr-2 h-4 w-4" />
+                Fazer login
+              </Button>
+            ) : (
+              <Button className="mt-4" onClick={() => refetch()}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Tentar novamente
+              </Button>
+            )}
           </div>
         </div>
       </div>
