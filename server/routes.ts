@@ -23,11 +23,12 @@ import {
   deleteFuelCardSolicitation 
 } from "./fuelCardSolicitationsApi";
 import { runSupabaseDiagnostic } from "./supabaseDiagnostic";
+import { registerPneusRoutes } from "./pneusApi";
+import { registerTireMoveRoutes } from "./tireMoveApi";
 import { compareSchemas } from "./compareSchemas";
 import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
 import { db, pool } from "./db";
 import { atualizarTabelaPneus } from "./updatePneus";
-import { registerPneusRoutes } from "./pneusApi";
 import { randomBytes, scrypt } from "crypto";
 import { promisify } from "util";
 
@@ -630,6 +631,60 @@ async function criarTabelaDriverChecklists() {
 }
 
 /**
+ * Cria a tabela movimentacao_pneu se não existir
+ */
+async function criarTabelaMovimentacaoPneu() {
+  try {
+    console.log("Verificando se a tabela movimentacao_pneu existe...");
+    
+    // Verificar se a tabela já existe
+    const checkQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'movimentacao_pneu'
+      );
+    `;
+    
+    const checkResult = await pool.query(checkQuery);
+    const tabelaExiste = checkResult.rows[0].exists;
+    
+    if (tabelaExiste) {
+      console.log("Tabela movimentacao_pneu já existe, pulando criação.");
+      return;
+    }
+    
+    console.log("Criando tabela movimentacao_pneu...");
+    
+    // Criar tabela
+    const createTableQuery = `
+      CREATE TABLE movimentacao_pneu (
+        id SERIAL PRIMARY KEY,
+        id_pneu INTEGER NOT NULL,
+        id_veiculo TEXT,
+        tipo_movimentacao TEXT NOT NULL,
+        km INTEGER NOT NULL,
+        data TIMESTAMP NOT NULL DEFAULT NOW(),
+        local TEXT,
+        responsavel TEXT,
+        possui_estepe BOOLEAN DEFAULT FALSE,
+        motivo TEXT,
+        distancia_percorrida INTEGER,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+      
+      CREATE INDEX IF NOT EXISTS idx_movimentacao_pneu_id_pneu ON movimentacao_pneu(id_pneu);
+      CREATE INDEX IF NOT EXISTS idx_movimentacao_pneu_veiculo ON movimentacao_pneu(id_veiculo);
+    `;
+    
+    await pool.query(createTableQuery);
+    console.log("Tabela movimentacao_pneu criada com sucesso!");
+    
+  } catch (error) {
+    console.error("Erro ao criar tabela movimentacao_pneu:", error);
+  }
+}
+
+/**
  * Cria a tabela solicitacoes_fuel_card se não existir
  */
 async function criarTabelaSolicitacoesFuelCard() {
@@ -693,6 +748,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await criarTabelaConfiguracaoTanques();
   await criarTabelaSolicitacoesFuelCard();
   await criarTabelaPostoRemediosAbastecimentos();
+  await criarTabelaMovimentacaoPneu();
   await atualizarTabelaPneus();
   // Rota para registro de movimentações de pátio
   app.post('/api/registro/movimentacao-patio', async (req, res) => {
@@ -5232,6 +5288,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Registrar rotas de pneus
   registerPneusRoutes(app);
+  
+  // Verificar e criar tabela de movimentação de pneus se necessário
+  await criarTabelaMovimentacaoPneu();
+  
+  // Registrar rotas de movimentação de pneus
+  registerTireMoveRoutes(app);
   
   // Rotas para postos de abastecimento - acessíveis para usuários autenticados
   // Não é necessário middleware adicional pois a verificação de admin já está implementada no hook useBasePermission
