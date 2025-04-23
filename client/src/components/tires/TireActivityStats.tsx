@@ -214,7 +214,6 @@ export default function TireActivityStats() {
                 <Progress 
                   value={(stats.totalDescartes / (totalOperacoes || 1)) * 100} 
                   className="h-2 bg-muted" 
-                  indicatorClassName="bg-red-500" 
                 />
               </div>
               

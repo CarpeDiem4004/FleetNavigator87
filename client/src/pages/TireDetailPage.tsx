@@ -17,7 +17,7 @@ export default function TireDetailPage() {
   const params = useParams<{ id: string }>();
   const tireId = parseInt(params.id);
   const { toast } = useToast();
-  const { user } = useSupabaseAuth();
+  const { supabaseUser } = useSupabaseAuth();
   
   const [tire, setTire] = useState<Tire | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,7 +40,7 @@ export default function TireDetailPage() {
               acao: 'atualizacao',
               detalhes: { tipo: 'visualizacao', data: new Date().toISOString() }
             },
-            user
+            supabaseUser
           );
         }
       } catch (err) {
@@ -54,7 +54,7 @@ export default function TireDetailPage() {
     if (tireId) {
       loadTireDetails();
     }
-  }, [tireId, user]);
+  }, [tireId, supabaseUser]);
   
   // Função para obter classe CSS baseada no status do pneu
   const getStatusBadgeClass = (status: string | undefined) => {

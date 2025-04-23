@@ -91,7 +91,11 @@ interface TireMounting {
 }
 
 // Componente principal
-export default function TireMountingHistory() {
+interface TireMountingHistoryProps {
+  tireId?: number;
+}
+
+export default function TireMountingHistory({ tireId }: TireMountingHistoryProps) {
   const { toast } = useToast();
   const { user, supabaseUser } = useSupabaseAuthContext();
   const [availableTires, setAvailableTires] = useState<Tire[]>([]);
@@ -112,7 +116,7 @@ export default function TireMountingHistory() {
   useEffect(() => {
     fetchAvailableTires();
     fetchMountingHistory();
-  }, []);
+  }, [tireId]);
 
   // Funções para buscar dados
   const fetchAvailableTires = async () => {
@@ -153,7 +157,14 @@ export default function TireMountingHistory() {
     setIsHistoryLoading(true);
     try {
       // Obter movimentações de pneus da API
-      const response = await getAllTireMovements();
+      let response;
+      if (tireId) {
+        // Se tireId foi fornecido, buscar apenas as movimentações deste pneu
+        response = await getTireMovementsByTireId(tireId);
+      } else {
+        // Caso contrário, buscar todas as movimentações
+        response = await getAllTireMovements();
+      }
       
       if (response && response.data) {
         // Converter do formato da API para o formato esperado pelo componente
@@ -386,32 +397,34 @@ export default function TireMountingHistory() {
         <div>
           <h2 className="text-xl font-bold flex items-center">
             <ArrowLeftRight className="mr-2 h-5 w-5" />
-            Montagem e Histórico de Pneus
+            {tireId ? 'Histórico de Montagens' : 'Montagem e Histórico de Pneus'}
           </h2>
           <p className="text-muted-foreground">
-            Gerencie a montagem e remoção de pneus nos veículos
+            {tireId ? 'Visualização das montagens deste pneu' : 'Gerencie a montagem e remoção de pneus nos veículos'}
           </p>
         </div>
-        <div className="flex space-x-2">
-          <Button 
-            onClick={() => setShowMountingDialog(true)}
-            className="flex items-center"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Montar Pneu
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              fetchAvailableTires();
-              fetchMountingHistory();
-            }}
-            className="flex items-center"
-          >
-            <RefreshCcw className="mr-2 h-4 w-4" />
-            Atualizar
-          </Button>
-        </div>
+        {!tireId && (
+          <div className="flex space-x-2">
+            <Button 
+              onClick={() => setShowMountingDialog(true)}
+              className="flex items-center"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Montar Pneu
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                fetchAvailableTires();
+                fetchMountingHistory();
+              }}
+              className="flex items-center"
+            >
+              <RefreshCcw className="mr-2 h-4 w-4" />
+              Atualizar
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Pesquisa */}
@@ -526,7 +539,7 @@ export default function TireMountingHistory() {
                         )}
                       </TableCell>
                       <TableCell className="text-center">
-                        {!mount.data_remocao && (
+                        {!mount.data_remocao && !tireId && (
                           <Button
                             variant="outline"
                             size="sm"

@@ -9,6 +9,7 @@ import ExecutiveDashboard from "@/pages/ExecutiveDashboard";
 import VehiclesNew from "@/pages/VehiclesNew";
 import MaintenanceNew from "@/pages/MaintenanceNew";
 import TiresPage from "@/pages/TiresPage";
+import TireDetailPage from "@/pages/TireDetailPage";
 import RefuelingNew from "@/pages/RefuelingNew";
 import FinesNew from "@/pages/FinesNew";
 // EntradaOperacoes removido (LineHall)
@@ -125,6 +126,7 @@ function App() {
           {/* <ProtectedRoute path="/maintenance" component={MaintenanceNew} /> */}
           <ProtectedRoute path="/tires" component={TiresPage} />
           <ProtectedRoute path="/tires/entrada" component={TiresEntrada} />
+          <ProtectedRoute path="/tires/:id" component={TireDetailPage} />
           <ProtectedRoute path="/refueling" component={RefuelingNew} />
           <ProtectedRoute path="/fines" component={FinesNew} />
           {/* Line Hall removido conforme solicitação */}
