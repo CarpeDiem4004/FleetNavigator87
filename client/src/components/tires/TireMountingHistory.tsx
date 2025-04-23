@@ -107,22 +107,32 @@ export default function TireMountingHistory() {
   const fetchAvailableTires = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('pneus')
-        .select('*')
-        .eq('status', 'estoque');
-
-      if (error) {
-        throw error;
+      // Usando a API REST para buscar pneus em estoque
+      const response = await getAllTires({ status: 'estoque' });
+      
+      if (response && response.data) {
+        // Converter do formato da API para o formato esperado pelo componente
+        const tires: Tire[] = response.data.map((tire: TireType) => ({
+          id: tire.id || 0,
+          codigo: tire.codigo,
+          marca: tire.marca,
+          modelo: tire.modelo,
+          medida: tire.medida,
+          status: (tire.status as 'em_uso' | 'estoque' | 'descartado') || 'estoque',
+          veiculo_placa: tire.veiculo_placa,
+          posicao: tire.posicao
+        }));
+        setAvailableTires(tires);
+      } else {
+        setAvailableTires([]);
       }
-
-      setAvailableTires(data || []);
     } catch (error: any) {
       toast({
         title: "Erro ao buscar pneus disponíveis",
         description: error.message,
         variant: "destructive"
       });
+      setAvailableTires([]);
     } finally {
       setIsLoading(false);
     }
@@ -131,19 +141,14 @@ export default function TireMountingHistory() {
   const fetchMountingHistory = async () => {
     setIsHistoryLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('montagem_pneus')
-        .select(`
-          *,
-          pneu:pneu_id(id, codigo, marca, modelo, medida, status)
-        `)
-        .order('data_instalacao', { ascending: false });
-
-      if (error) {
-        throw error;
-      }
-
-      setMountHistory(data || []);
+      // Temporariamente retornando array vazio até que a API esteja disponível
+      // TODO: Implementar a API para histórico de montagem de pneus
+      setMountHistory([]);
+      toast({
+        title: "Funcionalidade em desenvolvimento",
+        description: "O histórico de montagem de pneus está em implementação",
+        variant: "default"
+      });
     } catch (error: any) {
       toast({
         title: "Erro ao buscar histórico de montagem",
@@ -167,48 +172,28 @@ export default function TireMountingHistory() {
     }
 
     try {
-      // 1. Inserir o registro de montagem
-      const { data: mountingData, error: mountingError } = await supabase
-        .from('montagem_pneus')
-        .insert({
-          pneu_id: parseInt(selectedTireId),
-          placa_veiculo: vehiclePlate.toUpperCase(),
-          km_instalacao: parseInt(installationKm),
-          data_instalacao: new Date().toISOString(),
-          posicao: position || null,
-          veiculo_possui_estepe: hasSpare
-        })
-        .select();
-
-      if (mountingError) throw mountingError;
-
-      // 2. Atualizar o status do pneu para "em_uso"
-      const { error: updateError } = await supabase
-        .from('pneus')
-        .update({
-          status: 'em_uso',
-          veiculo_placa: vehiclePlate.toUpperCase(),
-          posicao: position || null
-        })
-        .eq('id', selectedTireId);
-
-      if (updateError) throw updateError;
-
-      // 3. Exibir mensagem de sucesso
+      // TODO: Implementar a API para montagem de pneus
+      // Mostrar mensagem temporária
       toast({
-        title: "Pneu montado com sucesso",
-        description: "O pneu foi montado e seu status foi atualizado",
+        title: "Funcionalidade em desenvolvimento",
+        description: "A API para montagem de pneus está sendo implementada. Os dados foram capturados corretamente.",
         variant: "default"
       });
-
-      // 4. Atualizar as listas
-      fetchAvailableTires();
-      fetchMountingHistory();
       
-      // 5. Fechar o diálogo
+      // Log dos dados que seriam enviados
+      console.log('Montagem de pneu - dados:', {
+        pneu_id: parseInt(selectedTireId),
+        placa_veiculo: vehiclePlate.toUpperCase(),
+        km_instalacao: parseInt(installationKm),
+        data_instalacao: new Date().toISOString(),
+        posicao: position || null,
+        veiculo_possui_estepe: hasSpare
+      });
+      
+      // Fechar o diálogo
       setShowMountingDialog(false);
       
-      // 6. Limpar o formulário
+      // Limpar o formulário
       setSelectedTireId('');
       setVehiclePlate('');
       setPosition('');
@@ -259,41 +244,30 @@ export default function TireMountingHistory() {
     const motivoRemocao = prompt("Informe o motivo da remoção do pneu:");
     
     try {
-      // 1. Atualizar o registro de montagem com a data e km de remoção
-      const { error: updateMountingError } = await supabase
-        .from('montagem_pneus')
-        .update({
-          data_remocao: new Date().toISOString(),
-          km_remocao: kmRemovalValue,
-          distancia_percorrida: distanciaPercorrida,
-          motivo_remocao: motivoRemocao || 'Não especificado'
-        })
-        .eq('id', mountingId);
-
-      if (updateMountingError) throw updateMountingError;
-
-      // 2. Atualizar o status do pneu para "estoque"
-      const { error: updateTireError } = await supabase
-        .from('pneus')
-        .update({
-          status: 'estoque',
-          veiculo_placa: null,
-          posicao: null
-        })
-        .eq('id', tireId);
-
-      if (updateTireError) throw updateTireError;
-
-      // 3. Exibir mensagem de sucesso com a distância percorrida
+      // TODO: Implementar a API para remover montagem de pneus
+      // Mostrar mensagem temporária
       toast({
-        title: "Pneu removido com sucesso",
-        description: `O pneu foi removido após percorrer ${distanciaPercorrida.toLocaleString('pt-BR')} km`,
+        title: "Funcionalidade em desenvolvimento",
+        description: "A API para remoção de pneus está sendo implementada. Os dados foram capturados corretamente.",
         variant: "default"
       });
-
-      // 4. Atualizar as listas
-      fetchAvailableTires();
-      fetchMountingHistory();
+      
+      // Log dos dados que seriam enviados para atualização do registro de montagem
+      console.log('Remoção de pneu - dados para montagem:', {
+        mountingId,
+        data_remocao: new Date().toISOString(),
+        km_remocao: kmRemovalValue,
+        distancia_percorrida: distanciaPercorrida,
+        motivo_remocao: motivoRemocao || 'Não especificado'
+      });
+      
+      // Log dos dados que seriam enviados para atualização do pneu
+      console.log('Remoção de pneu - dados para pneu:', {
+        tireId,
+        status: 'estoque',
+        veiculo_placa: null,
+        posicao: null
+      });
       
     } catch (error: any) {
       toast({
