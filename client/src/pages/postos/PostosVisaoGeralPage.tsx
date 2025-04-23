@@ -44,7 +44,7 @@ const formatarNumero = (valor: number): string => {
 
 // Função para formatação de percentual
 const formatarPercentual = (valor: number): string => {
-  return valor.toFixed(1).replace('.', ',') + '%';
+  return Number(valor).toFixed(1).replace('.', ',') + '%';
 };
 
 export default function PostosVisaoGeralPage() {
