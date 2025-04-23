@@ -138,8 +138,16 @@ const hasMaintenanceAccess = (req: Request, res: Response, next: NextFunction) =
 
 // Middleware para verificar se o usuário tem permissão para acessar funcionalidades de pneus
 const hasTiresAccess = (req: Request, res: Response, next: NextFunction) => {
+  // Lista de emails de administradores específicos
+  const adminEmails = [
+    'joao.paulo@muricionfleet.com',
+    'regio@muricionfleet.com',
+    'andre.rosa@muricionfleet.com'
+  ];
+  
   if (req.isAuthenticated() && req.user && (
     (req.user.role && req.user.role.toLowerCase().includes('admin')) || 
+    (req.user.email && adminEmails.includes(req.user.email.toLowerCase())) ||
     req.user.baseId === 12 || 
     req.user.role === 'pneus'
   )) {
@@ -150,9 +158,17 @@ const hasTiresAccess = (req: Request, res: Response, next: NextFunction) => {
 
 // Middleware para verificar se o usuário tem perfil de oficina
 const isWorkshop = (req: Request, res: Response, next: NextFunction) => {
+  // Lista de emails de administradores específicos
+  const adminEmails = [
+    'joao.paulo@muricionfleet.com',
+    'regio@muricionfleet.com',
+    'andre.rosa@muricionfleet.com'
+  ];
+  
   if (req.isAuthenticated() && req.user && (
     req.user.role === 'oficina' || 
-    (req.user.role && req.user.role.toLowerCase().includes('admin'))
+    (req.user.role && req.user.role.toLowerCase().includes('admin')) ||
+    (req.user.email && adminEmails.includes(req.user.email.toLowerCase()))
   )) {
     return next();
   }
@@ -161,8 +177,18 @@ const isWorkshop = (req: Request, res: Response, next: NextFunction) => {
 
 // Middleware para verificar se o usuário tem acesso à base especificada
 const hasBaseAccess = (req: Request, res: Response, next: NextFunction) => {
-  // Se o usuário for admin, permite acesso a todas as bases
-  if (req.user && req.user.role && req.user.role.toLowerCase().includes('admin')) {
+  // Lista de emails de administradores específicos
+  const adminEmails = [
+    'joao.paulo@muricionfleet.com',
+    'regio@muricionfleet.com',
+    'andre.rosa@muricionfleet.com'
+  ];
+  
+  // Se o usuário for admin ou tiver email específico, permite acesso a todas as bases
+  if (req.user && (
+      (req.user.role && req.user.role.toLowerCase().includes('admin')) ||
+      (req.user.email && adminEmails.includes(req.user.email.toLowerCase()))
+    )) {
     return next();
   }
   
@@ -178,6 +204,13 @@ const hasBaseAccess = (req: Request, res: Response, next: NextFunction) => {
     // Se não estiver solicitando uma base específica, continuar mas será filtrado depois
     return next();
   }
+  
+  console.log("Acesso negado à base:", {
+    userEmail: req.user?.email,
+    userRole: req.user?.role,
+    userBaseId: req.user?.baseId,
+    requestedBaseId
+  });
   
   res.status(403).json({ message: "Acesso negado. Você só pode acessar dados da sua própria base." });
 };

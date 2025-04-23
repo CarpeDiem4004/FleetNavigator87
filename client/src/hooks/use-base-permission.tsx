@@ -149,7 +149,7 @@ const basicRoutes = [
   '/users'                   // Página de Usuários (acesso para todos, verificação adicional feita no hasPermission)
 ];
 
-export function useBasePermission(): BasePermissionHook {
+export const useBasePermission = (): BasePermissionHook => {
   const { user: authUser } = useAuth();
   const user = authUser as User | null;
   
@@ -187,7 +187,7 @@ export function useBasePermission(): BasePermissionHook {
     // Verificamos admin com case-insensitive e também verificamos emails específicos de admin
     if (
       user.role?.toLowerCase() === 'admin' || 
-      ['joao.paulo@muricionfleet.com', 'regio@muricionfleet.com', 'andre.rosa@muricionfleet.com'].includes(user.email?.toLowerCase())
+      (user.email && ['joao.paulo@muricionfleet.com', 'regio@muricionfleet.com', 'andre.rosa@muricionfleet.com'].includes(user.email.toLowerCase()))
     ) {
       console.log(`Permission granted for admin user to route: ${route} (admin role: ${user.role}, email: ${user.email})`);
       return true;
@@ -373,11 +373,12 @@ export function useBasePermission(): BasePermissionHook {
     }
     
     // Tenta obter o nome da base da relação ou do campo basename
-    const baseName = user.bases?.name || user.basename;
+    // Temos que fazer uma verificação de tipo para baseName
+    const baseName = user.bases?.name || user.basename || null;
     
     return {
       id: user.baseId || null,
-      name: baseName || null
+      name: baseName
     };
   }, [user]);
 
