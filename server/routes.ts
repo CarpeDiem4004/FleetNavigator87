@@ -31,6 +31,7 @@ import { db, pool } from "./db";
 import { atualizarTabelaPneus } from "./updatePneus";
 import { randomBytes, scrypt } from "crypto";
 import { promisify } from "util";
+import { setupTireActivityRoutes, setupTireActivityTable } from "./tireActivityApi";
 
 // Função auxiliar para hash de senha (usada na criação de usuários de oficinas)
 const scryptAsync = promisify(scrypt);
@@ -750,6 +751,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await criarTabelaPostoRemediosAbastecimentos();
   await criarTabelaMovimentacaoPneu();
   await atualizarTabelaPneus();
+  await setupTireActivityTable();
   // Rota para registro de movimentações de pátio
   app.post('/api/registro/movimentacao-patio', async (req, res) => {
     try {
