@@ -4181,7 +4181,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         valor_total,
         lavagem,
         tipo_lavagem,
-        observacoes
+        observacoes,
+        tipo_veiculo
       } = req.body;
       
       // Validar campos obrigatórios
@@ -4253,7 +4254,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         valor_total,
         lavagem,
         tipo_lavagem,
-        observacoes
+        observacoes,
+        tipo_veiculo
       } = req.body;
       
       // Validar campos obrigatórios
