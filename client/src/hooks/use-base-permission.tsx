@@ -184,8 +184,12 @@ export function useBasePermission(): BasePermissionHook {
     }
     
     // Administradores têm acesso a todas as rotas
-    if (user.role === 'admin' || user.role === 'ADMIN') {
-      console.log(`Permission granted for admin user to route: ${route} (admin role: ${user.role})`);
+    // Verificamos admin com case-insensitive e também verificamos emails específicos de admin
+    if (
+      user.role?.toLowerCase() === 'admin' || 
+      ['joao.paulo@muricionfleet.com', 'regio@muricionfleet.com', 'andre.rosa@muricionfleet.com'].includes(user.email?.toLowerCase())
+    ) {
+      console.log(`Permission granted for admin user to route: ${route} (admin role: ${user.role}, email: ${user.email})`);
       return true;
     }
     

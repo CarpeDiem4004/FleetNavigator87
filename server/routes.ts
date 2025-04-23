@@ -82,10 +82,21 @@ const isAdmin = (req: Request, res: Response, next: NextFunction) => {
     userEmail: req.user?.email
   });
   
-  // Permitir acesso para qualquer role que contenha a palavra 'admin' independente de maiúsculas/minúsculas
-  if (req.isAuthenticated() && req.user && req.user.role && 
-      req.user.role.toLowerCase().includes('admin')) {
-    console.log("Permissão de administrador concedida para: " + req.user.role);
+  // Lista de emails de administradores específicos
+  const adminEmails = [
+    'joao.paulo@muricionfleet.com',
+    'regio@muricionfleet.com',
+    'andre.rosa@muricionfleet.com'
+  ];
+  
+  // Permitir acesso para:
+  // 1. Qualquer role que contenha a palavra 'admin' independente de maiúsculas/minúsculas
+  // 2. Emails específicos de administradores
+  if (req.isAuthenticated() && req.user && (
+      (req.user.role && req.user.role.toLowerCase().includes('admin')) ||
+      (req.user.email && adminEmails.includes(req.user.email.toLowerCase()))
+    )) {
+    console.log("Permissão de administrador concedida para: " + req.user.email);
     return next();
   }
   
@@ -96,9 +107,17 @@ const isAdmin = (req: Request, res: Response, next: NextFunction) => {
 // Middleware para verificar se o usuário tem permissão para acessar funcionalidades de manutenção
 // Permite acesso para usuários com role='admin' ou baseId=12 (Gestão de Frotas)
 const hasMaintenanceAccess = (req: Request, res: Response, next: NextFunction) => {
+  // Lista de emails de administradores específicos
+  const adminEmails = [
+    'joao.paulo@muricionfleet.com',
+    'regio@muricionfleet.com',
+    'andre.rosa@muricionfleet.com'
+  ];
+  
   // Verifica se o usuário está autenticado e tem permissão de acesso a manutenção
   if (req.isAuthenticated() && req.user && (
       (req.user.role && req.user.role.toLowerCase().includes('admin')) || 
+      (req.user.email && adminEmails.includes(req.user.email.toLowerCase())) ||
       req.user.role === 'gestor' || 
       req.user.baseId === 12 || 
       req.user.role === 'oficina'
@@ -110,6 +129,7 @@ const hasMaintenanceAccess = (req: Request, res: Response, next: NextFunction) =
     autenticado: req.isAuthenticated(),
     role: req.user?.role,
     baseId: req.user?.baseId,
+    email: req.user?.email,
     url: req.originalUrl
   });
   
