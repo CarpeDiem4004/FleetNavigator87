@@ -25,30 +25,56 @@ interface Abastecimento {
 }
 
 interface HistoricoAbastecimentosTabelaProps {
-  posto: string;
-  endpoint: string;
+  posto?: string;
+  endpoint?: string;
   titulo?: string;
+  registros?: Abastecimento[];
+  loading?: boolean;
+  onRefresh?: () => void;
 }
 
 export default function HistoricoAbastecimentosTabela({ 
-  posto, 
+  posto = 'Remédios', 
   endpoint,
-  titulo = 'Histórico de Abastecimentos'
+  titulo = 'Histórico de Abastecimentos',
+  registros: externalRegistros,
+  loading: externalLoading,
+  onRefresh
 }: HistoricoAbastecimentosTabelaProps) {
   const { toast } = useToast();
-  const [registros, setRegistros] = useState<Abastecimento[]>([]);
+  const [internalRegistros, setInternalRegistros] = useState<Abastecimento[]>([]);
   const [filtroPlaca, setFiltroPlaca] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [internalLoading, setInternalLoading] = useState(false);
   const [carregado, setCarregado] = useState(false);
 
-  // Carregar registros
+  // Usar registros externos se fornecidos, caso contrário, usar internos
+  const registros = externalRegistros || internalRegistros;
+  const loading = externalLoading !== undefined ? externalLoading : internalLoading;
+
+  // Carregar registros - dependendo do modo (interno ou externo)
   const carregarRegistros = async () => {
-    setLoading(true);
+    // Se temos uma função de atualização externa, usamos ela
+    if (onRefresh) {
+      onRefresh();
+      return;
+    }
+
+    // Caso contrário, usamos a lógica interna (requer endpoint)
+    if (!endpoint) {
+      toast({
+        title: 'Erro',
+        description: 'Endpoint não fornecido para carregar registros',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setInternalLoading(true);
     try {
       const response = await fetch(`${endpoint}${filtroPlaca ? `?placa=${filtroPlaca}` : ''}`);
       if (response.ok) {
         const data = await response.json();
-        setRegistros(data.data || []);
+        setInternalRegistros(data.data || []);
         setCarregado(true);
       } else {
         toast({
@@ -65,7 +91,7 @@ export default function HistoricoAbastecimentosTabela({
         variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      setInternalLoading(false);
     }
   };
 
