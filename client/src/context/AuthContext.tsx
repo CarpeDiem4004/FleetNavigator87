@@ -107,13 +107,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       console.log("Tentando fazer login com:", email);
       
-      const response = await apiRequest('POST', '/api/login', {
-        username: email,
-        password: password
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ username: email, password }),
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Erro na resposta de login:", response.status, errorData);
         throw new Error(errorData.message || 'Erro de autenticação');
       }
       
@@ -121,6 +126,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       console.log("Login bem-sucedido:", userData);
       
       setUser(userData);
+      
+      // Forçar uma verificação de autenticação após o login
+      setTimeout(() => {
+        fetch('/api/user', {
+          method: 'GET',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
+        })
+        .then(res => res.json())
+        .then(data => {
+          console.log("Verificação pós-login:", data);
+        })
+        .catch(error => {
+          console.error("Erro na verificação pós-login:", error);
+        });
+      }, 500);
       
       toast({
         title: "Login bem-sucedido",

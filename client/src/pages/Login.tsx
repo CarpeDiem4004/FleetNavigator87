@@ -105,6 +105,13 @@ export default function Login() {
                   </FormItem>
                 )}
               />
+              <div className="text-sm text-gray-600 my-2">
+                <p>Para testar login como admin:</p>
+                <ul className="list-disc pl-5 text-xs">
+                  <li>Email: regio@muricionfleet.com</li>
+                  <li>Senha: 12345678</li>
+                </ul>
+              </div>
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
