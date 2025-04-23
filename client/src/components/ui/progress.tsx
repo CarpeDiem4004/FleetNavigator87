@@ -3,10 +3,18 @@ import * as ProgressPrimitive from "@radix-ui/react-progress"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Interface estendida para o componente Progress para suportar cores personalizadas
+ */
 interface ProgressProps extends React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root> {
+  /** Classe CSS opcional para alterar a cor do indicador de progresso */
   indicatorColor?: string;
 }
 
+/**
+ * Componente Progress para exibir barras de progresso
+ * Suporta personalização de cores através da prop indicatorColor
+ */
 const Progress = React.forwardRef<
   React.ElementRef<typeof ProgressPrimitive.Root>,
   ProgressProps
@@ -28,6 +36,7 @@ const Progress = React.forwardRef<
     />
   </ProgressPrimitive.Root>
 ))
+
 Progress.displayName = ProgressPrimitive.Root.displayName
 
 export { Progress }
