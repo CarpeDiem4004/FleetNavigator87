@@ -82,11 +82,10 @@ const isAdmin = (req: Request, res: Response, next: NextFunction) => {
     userEmail: req.user?.email
   });
   
-  if (req.isAuthenticated() && req.user && (
-      req.user.role?.toLowerCase() === 'admin' || 
-      req.user.role?.toUpperCase() === 'ADMIN'
-    )) {
-    console.log("Permissão de administrador concedida");
+  // Permitir acesso para qualquer role que contenha a palavra 'admin' independente de maiúsculas/minúsculas
+  if (req.isAuthenticated() && req.user && req.user.role && 
+      req.user.role.toLowerCase().includes('admin')) {
+    console.log("Permissão de administrador concedida para: " + req.user.role);
     return next();
   }
   
