@@ -165,7 +165,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList }
     ]},
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
-    { name: 'Line Hall Shopee', href: '/line-hall-shopee', icon: Map },
+    { name: 'Line Hall', href: '/line-hall-shopee', icon: Map },
     { name: 'Bases', href: '/bases', icon: Warehouse },
     { name: 'Usuários', href: '/users', icon: Users },
   ];
