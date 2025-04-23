@@ -195,6 +195,7 @@ const FormularioForm = ({
                         <option value="SHOPEE">SHOPEE</option>
                         <option value="MERCADO LIVRE">MERCADO LIVRE</option>
                         <option value="LINE HALL SHOPEE">LINE HALL SHOPEE</option>
+                        <option value="FULL MELI">FULL MELI</option>
                         <option value="MADEIRA MADEIRA">MADEIRA MADEIRA</option>
                         <option value="MAGALU">MAGALU</option>
                         <option value="NATURA">NATURA</option>
