@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getAllTires, Tire as TireType } from '@/services/tiresService';
+import { 
+  getAllTireMovements, 
+  getTireMovementsByTireId, 
+  createTireMovement, 
+  updateTireMovement, 
+  deleteTireMovement,
+  TireMovement
+} from '@/services/tireMoveService';
 import {
   Card,
   CardContent,
@@ -141,20 +149,56 @@ export default function TireMountingHistory() {
   const fetchMountingHistory = async () => {
     setIsHistoryLoading(true);
     try {
-      // Temporariamente retornando array vazio até que a API esteja disponível
-      // TODO: Implementar a API para histórico de montagem de pneus
-      setMountHistory([]);
-      toast({
-        title: "Funcionalidade em desenvolvimento",
-        description: "O histórico de montagem de pneus está em implementação",
-        variant: "default"
-      });
+      // Obter movimentações de pneus da API
+      const response = await getAllTireMovements();
+      
+      if (response && response.data) {
+        // Converter do formato da API para o formato esperado pelo componente
+        const mountings: TireMounting[] = response.data
+          .filter((move: any) => move.tipo_movimentacao === 'montagem' || move.tipo_movimentacao === 'remocao')
+          .map((move: any) => {
+            // Determinar se é uma movimentação de montagem ou remoção
+            const isMounting = move.tipo_movimentacao === 'montagem';
+            
+            // Criar pneu relacionado
+            const pneu: Tire = {
+              id: move.id_pneu,
+              codigo: move.pneu_codigo || 'N/D',
+              marca: move.pneu_marca || 'N/D',
+              modelo: move.pneu_modelo || 'N/D',
+              medida: move.pneu_medida || 'N/D',
+              status: isMounting ? 'em_uso' : 'estoque',
+              veiculo_placa: isMounting ? move.id_veiculo : null,
+              posicao: move.local || null
+            };
+            
+            return {
+              id: move.id,
+              pneu_id: move.id_pneu,
+              placa_veiculo: move.id_veiculo || 'N/D',
+              km_instalacao: move.km,
+              km_remocao: isMounting ? null : move.km,
+              distancia_percorrida: move.distancia_percorrida || null,
+              data_instalacao: isMounting ? move.data : null,
+              data_remocao: isMounting ? null : move.data,
+              motivo_remocao: isMounting ? null : move.motivo,
+              posicao: move.local || null,
+              veiculo_possui_estepe: move.possui_estepe || false,
+              pneu
+            };
+          });
+          
+        setMountHistory(mountings);
+      } else {
+        setMountHistory([]);
+      }
     } catch (error: any) {
       toast({
         title: "Erro ao buscar histórico de montagem",
         description: error.message,
         variant: "destructive"
       });
+      setMountHistory([]);
     } finally {
       setIsHistoryLoading(false);
     }
@@ -172,23 +216,37 @@ export default function TireMountingHistory() {
     }
 
     try {
-      // TODO: Implementar a API para montagem de pneus
-      // Mostrar mensagem temporária
-      toast({
-        title: "Funcionalidade em desenvolvimento",
-        description: "A API para montagem de pneus está sendo implementada. Os dados foram capturados corretamente.",
-        variant: "default"
-      });
+      // Criar o objeto de movimentação para enviar à API
+      const tireMovement: TireMovement = {
+        id_pneu: parseInt(selectedTireId),
+        id_veiculo: vehiclePlate.toUpperCase(),
+        tipo_movimentacao: 'montagem',
+        km: parseInt(installationKm),
+        data: new Date().toISOString(),
+        local: position || undefined,
+        possui_estepe: hasSpare
+      };
       
-      // Log dos dados que seriam enviados
-      console.log('Montagem de pneu - dados:', {
-        pneu_id: parseInt(selectedTireId),
-        placa_veiculo: vehiclePlate.toUpperCase(),
-        km_instalacao: parseInt(installationKm),
-        data_instalacao: new Date().toISOString(),
-        posicao: position || null,
-        veiculo_possui_estepe: hasSpare
-      });
+      // Enviar a requisição para a API
+      const response = await createTireMovement(tireMovement);
+      
+      if (response && response.success) {
+        toast({
+          title: "Pneu montado com sucesso",
+          description: "A movimentação de montagem foi registrada com sucesso",
+          variant: "default"
+        });
+        
+        // Atualizar o histórico após a montagem
+        fetchMountingHistory();
+        fetchAvailableTires();
+      } else {
+        toast({
+          title: "Erro ao montar pneu",
+          description: response.message || "Ocorreu um erro ao registrar a montagem",
+          variant: "destructive"
+        });
+      }
       
       // Fechar o diálogo
       setShowMountingDialog(false);
@@ -203,7 +261,7 @@ export default function TireMountingHistory() {
     } catch (error: any) {
       toast({
         title: "Erro ao montar pneu",
-        description: error.message,
+        description: error.message || "Ocorreu um erro ao registrar a montagem",
         variant: "destructive"
       });
     }
@@ -244,35 +302,54 @@ export default function TireMountingHistory() {
     const motivoRemocao = prompt("Informe o motivo da remoção do pneu:");
     
     try {
-      // TODO: Implementar a API para remover montagem de pneus
-      // Mostrar mensagem temporária
-      toast({
-        title: "Funcionalidade em desenvolvimento",
-        description: "A API para remoção de pneus está sendo implementada. Os dados foram capturados corretamente.",
-        variant: "default"
-      });
+      // Obter o registro de montagem para pegar o veículo
+      const mountingRecord = mountHistory.find(m => m.id === mountingId);
       
-      // Log dos dados que seriam enviados para atualização do registro de montagem
-      console.log('Remoção de pneu - dados para montagem:', {
-        mountingId,
-        data_remocao: new Date().toISOString(),
-        km_remocao: kmRemovalValue,
-        distancia_percorrida: distanciaPercorrida,
-        motivo_remocao: motivoRemocao || 'Não especificado'
-      });
+      if (!mountingRecord) {
+        toast({
+          title: "Erro ao remover pneu",
+          description: "Registro de montagem não encontrado",
+          variant: "destructive"
+        });
+        return;
+      }
       
-      // Log dos dados que seriam enviados para atualização do pneu
-      console.log('Remoção de pneu - dados para pneu:', {
-        tireId,
-        status: 'estoque',
-        veiculo_placa: null,
-        posicao: null
-      });
+      // Criar o objeto de movimentação para remoção
+      const tireMovement: TireMovement = {
+        id_pneu: tireId,
+        id_veiculo: mountingRecord.placa_veiculo,
+        tipo_movimentacao: 'remocao',
+        km: kmRemovalValue,
+        data: new Date().toISOString(),
+        motivo: motivoRemocao || 'Não especificado',
+        distancia_percorrida: distanciaPercorrida
+      };
+      
+      // Enviar a requisição para a API
+      const response = await createTireMovement(tireMovement);
+      
+      if (response && response.success) {
+        toast({
+          title: "Pneu removido com sucesso",
+          description: "A movimentação de remoção foi registrada com sucesso",
+          variant: "default"
+        });
+        
+        // Atualizar o histórico e os pneus disponíveis
+        fetchMountingHistory();
+        fetchAvailableTires();
+      } else {
+        toast({
+          title: "Erro ao remover pneu",
+          description: response.message || "Ocorreu um erro ao registrar a remoção",
+          variant: "destructive"
+        });
+      }
       
     } catch (error: any) {
       toast({
         title: "Erro ao remover pneu",
-        description: error.message,
+        description: error.message || "Ocorreu um erro ao registrar a remoção",
         variant: "destructive"
       });
     }
