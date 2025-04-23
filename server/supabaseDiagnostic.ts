@@ -4,6 +4,14 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
 const supabaseKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';
 
+// Log para depuração
+console.log(`Configuração Supabase: URL=${supabaseUrl?.substring(0, 20)}..., Key disponível: ${!!supabaseKey}`);
+
+// Verificar se estamos conseguindo acessar as variáveis de ambiente corretamente
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+  console.warn('⚠️ Variáveis de ambiente do Supabase não encontradas, usando valores padrão.');
+}
+
 // Função auxiliar para criar cliente Supabase
 function createSupabaseClient(): SupabaseClient {
   return createClient(supabaseUrl, supabaseKey, {

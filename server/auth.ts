@@ -56,10 +56,19 @@ export function setupAuth(app: Express) {
     store: sessionStore,
     cookie: {
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 24 * 60 * 60 * 1000, // 24 horas
-      sameSite: 'lax' // Ajuda nas requisições cross-site (importante para APIs)
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
+      sameSite: 'lax', // Ajuda nas requisições cross-site (importante para APIs)
+      httpOnly: true,
+      path: '/'
     }
   };
+  
+  console.log(`Configuração da sessão: 
+  - Secure: ${process.env.NODE_ENV === 'production'}
+  - MaxAge: ${7 * 24 * 60 * 60 * 1000}ms (${7} dias)
+  - Store: ${usePostgresStore ? 'PostgreSQL' : 'Memory'}
+  - Environment: ${process.env.NODE_ENV || 'development'}`);
+  
 
   app.use(session(sessionSettings));
   app.use(passport.initialize());
