@@ -180,6 +180,22 @@ export default function PostoRemediosForm() {
           </div>
 
           <div>
+            <label htmlFor="tipo_veiculo" className="block text-sm font-medium text-gray-700 mb-1">Tipo de Veículo</label>
+            <select 
+              id="tipo_veiculo"
+              name="tipo_veiculo" 
+              value={form.tipo_veiculo} 
+              onChange={handleChange} 
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+            >
+              {tiposVeiculoOptions.map((tipo) => (
+                <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
             <label htmlFor="placa" className="block text-sm font-medium text-gray-700 mb-1">Placa</label>
             <input 
               id="placa"
