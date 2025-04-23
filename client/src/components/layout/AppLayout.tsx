@@ -114,12 +114,20 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const Sidebar = () => (
     <div className={cn("h-full flex flex-col bg-card border-r overflow-y-auto")}>
       <div className="flex items-center justify-between p-4 border-b">
-        <Link href="/">
-          <a className="flex items-center gap-2">
+        <div>
+          <a 
+            href="/"
+            onClick={(e) => {
+              e.preventDefault();
+              window.history.pushState(null, "", "/");
+              window.dispatchEvent(new PopStateEvent("popstate"));
+            }}
+            className="flex items-center gap-2"
+          >
             <Truck className="h-6 w-6 text-primary" />
             <span className="font-bold text-lg">Frota</span>
           </a>
-        </Link>
+        </div>
         {isMobile && (
           <Button
             variant="ghost"
@@ -166,29 +174,51 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                     <ul className="mt-1 ml-4 space-y-1 border-l pl-2">
                       {link.submenu?.map((subLink) => (
                         <li key={subLink.label}>
-                          <Link href={subLink.href}>
-                            <a className={cn(
-                              "block py-1.5 px-2 text-sm rounded-md hover:bg-accent",
-                              isActive(subLink.href) && "bg-accent font-medium text-accent-foreground"
-                            )}>
+                          <div>
+                            <a 
+                              href={subLink.href}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                window.history.pushState(null, "", subLink.href);
+                                window.dispatchEvent(new PopStateEvent("popstate"));
+                                if (isMobile) {
+                                  setSidebarOpen(false);
+                                }
+                              }}
+                              className={cn(
+                                "block py-1.5 px-2 text-sm rounded-md hover:bg-accent",
+                                isActive(subLink.href) && "bg-accent font-medium text-accent-foreground"
+                              )}
+                            >
                               {subLink.label}
                             </a>
-                          </Link>
+                          </div>
                         </li>
                       ))}
                     </ul>
                   )}
                 </div>
               ) : (
-                <Link href={link.href}>
-                  <a className={cn(
-                    "flex items-center gap-2 py-2 px-3 rounded-md hover:bg-accent",
-                    isActive(link.href) && "bg-accent text-accent-foreground font-medium"
-                  )}>
+                <div>
+                  <a 
+                    href={link.href}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.history.pushState(null, "", link.href);
+                      window.dispatchEvent(new PopStateEvent("popstate"));
+                      if (isMobile) {
+                        setSidebarOpen(false);
+                      }
+                    }}
+                    className={cn(
+                      "flex items-center gap-2 py-2 px-3 rounded-md hover:bg-accent",
+                      isActive(link.href) && "bg-accent text-accent-foreground font-medium"
+                    )}
+                  >
                     <link.icon className="h-4 w-4" />
                     <span>{link.label}</span>
                   </a>
-                </Link>
+                </div>
               )}
             </li>
           ))}
@@ -248,12 +278,21 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                   <Sidebar />
                 </SheetContent>
               </Sheet>
-              <Link href="/">
-                <a className="flex items-center gap-2">
+              <div>
+                <a 
+                  href="/"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.history.pushState(null, "", "/");
+                    window.dispatchEvent(new PopStateEvent("popstate"));
+                    setSidebarOpen(false);
+                  }}
+                  className="flex items-center gap-2"
+                >
                   <Truck className="h-5 w-5 text-primary" />
                   <span className="font-bold">Sistema de Gestão de Frotas</span>
                 </a>
-              </Link>
+              </div>
             </div>
           </header>
         )}
