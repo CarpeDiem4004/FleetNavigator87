@@ -158,13 +158,19 @@ export default function PostoRemediosPage() {
 
   // Opções de projetos
   const projetosOptions = [
-    'Shopee',
-    'Full Meli',
-    'Mercado Livre',
-    'Remédios',
-    'Magazine Luiza',
-    'Dafiti',
-    'Outros',
+    'GRUPO PEREIRA',
+    'COCA COLA',
+    'SHOPEE',
+    'MERCADO LIVRE',
+    'LINE HALL SHOPEE',
+    'FULL MELI',
+    'MADEIRA MADEIRA',
+    'MAGALU',
+    'NATURA',
+    'OXXO',
+    'PETLOVE',
+    'REMÉDIOS',
+    'Outro'
   ];
 
   // Formatar data
