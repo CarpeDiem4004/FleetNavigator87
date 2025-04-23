@@ -35,11 +35,11 @@ export function registerPneusRoutes(app: Express) {
         INSERT INTO pneus_completo (
           codigo, marca, modelo, medida, aro, tipo, origem, data_aquisicao,
           veiculo_placa, posicao, km_inicial, km_atual, profundidade_sulco,
-          localizacao, observacao, tire_number, change_date, change_km, status, tem_estepe
+          localizacao, observacao, tire_number, change_date, change_km, status
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, 
           $9, $10, $11, $12, $13,
-          $14, $15, $16, $17, $18, $19, $20
+          $14, $15, $16, $17, $18, $19
         ) RETURNING *
       `;
       
@@ -62,8 +62,7 @@ export function registerPneusRoutes(app: Express) {
         novoPneu.tire_number || novoPneu.codigo,
         novoPneu.change_date ? new Date(novoPneu.change_date) : null,
         novoPneu.change_km || 0,
-        novoPneu.status || 'disponivel',
-        novoPneu.tem_estepe === undefined ? false : novoPneu.tem_estepe
+        novoPneu.status || 'disponivel'
       ];
       
       const result = await pool.query(query, values);

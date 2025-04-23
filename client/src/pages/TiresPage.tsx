@@ -135,7 +135,7 @@ const TiresPage: React.FC = () => {
     profundidade_sulco: 12.0,
     localizacao: 'almoxarifado',
     status: 'estoque',
-    tem_estepe: false,
+    // tem_estepe removido - não existe na tabela
     observacao: ''
   });
 
@@ -256,7 +256,7 @@ const TiresPage: React.FC = () => {
           profundidade_sulco: 12.0,
           localizacao: 'almoxarifado',
           status: 'estoque',
-          tem_estepe: false,
+          // tem_estepe removido - não existe na tabela
           observacao: ''
         });
       }

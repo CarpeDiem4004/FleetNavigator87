@@ -19,7 +19,6 @@ export interface Tire {
   localizacao?: string;
   status?: string;
   observacao?: string;
-  tem_estepe?: boolean;
   created_at?: string;
   updated_at?: string;
 }
