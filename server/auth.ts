@@ -274,7 +274,14 @@ export function setupAuth(app: Express) {
 
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) {
-      console.log('Tentativa de acesso não autenticado a /api/user');
+      console.log('Tentativa de acesso não autenticado a /api/user', {
+        hasSession: !!req.session,
+        sessionID: req.sessionID,
+        cookies: req.headers.cookie,
+        origin: req.headers.origin,
+        referer: req.headers.referer,
+        userAgent: req.headers['user-agent']
+      });
       return res.status(401).json({ message: "Não autenticado" });
     }
     
@@ -282,5 +289,24 @@ export function setupAuth(app: Express) {
     // Não enviar a senha para o cliente
     const userWithoutPassword = { ...req.user, password: undefined };
     res.json(userWithoutPassword);
+  });
+  
+  // Rota adicional para diagnóstico
+  app.get("/api/auth-status", (req, res) => {
+    const status = {
+      isAuthenticated: req.isAuthenticated(),
+      hasSession: !!req.session,
+      sessionID: req.sessionID,
+      cookiePresent: !!req.headers.cookie,
+      user: req.isAuthenticated() ? {
+        id: req.user.id,
+        email: req.user.email,
+        name: req.user.name,
+        role: req.user.role
+      } : null
+    };
+    
+    console.log('Status de autenticação:', status);
+    res.json(status);
   });
 }

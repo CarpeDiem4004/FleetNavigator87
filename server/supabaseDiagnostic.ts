@@ -14,10 +14,18 @@ if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
 
 // Função auxiliar para criar cliente Supabase
 function createSupabaseClient(): SupabaseClient {
+  // Inicializar com opções mais completas para depuração e configuração cruzada
   return createClient(supabaseUrl, supabaseKey, {
     auth: {
       persistSession: false,
-      autoRefreshToken: false
+      autoRefreshToken: false,
+      storageKey: 'murici-fleet-auth',
+      detectSessionInUrl: true
+    },
+    global: {
+      headers: {
+        'x-application-name': 'MuriciFleet-Server',
+      },
     }
   });
 }

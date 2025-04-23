@@ -2150,6 +2150,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Rota pública para verificar status de autenticação (para diagnóstico)
+  app.get('/api/auth-status', (req, res) => {
+    const hasSession = !!req.session;
+    const sessionID = req.sessionID;
+    const sessionInfo = {
+      isAuthenticated: req.isAuthenticated(),
+      hasSession,
+      sessionID,
+      cookies: req.headers.cookie,
+      origin: req.headers.origin,
+      referer: req.headers.referer,
+      userAgent: req.headers['user-agent']
+    };
+    
+    // Log para diagnóstico de sessão
+    console.log('Status de autenticação solicitado:', sessionInfo);
+    
+    res.json(sessionInfo);
+  });
+  
   // Endpoint para comparação de esquemas entre Replit e Supabase
   app.get("/api/diagnostico/compare-schemas", isAdmin, async (req, res) => {
     res.setHeader('Content-Type', 'application/json');

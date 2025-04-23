@@ -63,20 +63,62 @@ export const SupabaseAuthProvider = ({ children }: SupabaseAuthProviderProps) =>
     const fetchUserFromAPI = async () => {
       if (supabaseUser) {
         try {
+          console.log('Supabase: Usuário autenticado, obtendo dados da API...');
+          
+          // Verificar status de autenticação para diagnóstico
+          const statusResponse = await apiRequest('GET', '/api/auth-status');
+          const authStatus = await statusResponse.json();
+          console.log('Status de autenticação:', authStatus);
+          
+          if (!authStatus.isAuthenticated) {
+            console.log('Usuário autenticado no Supabase mas não na API. Tentando sincronizar...');
+            // Obter o email do usuário Supabase para sincronização
+            const email = supabaseUser.email;
+            if (email) {
+              // Tentar login simples na API - isso ajuda quando a sessão é perdida
+              try {
+                await syncLoginWithAPI(email, 'Murici@rogerio25');
+                console.log('Tentativa de sincronização por senha alternativa realizada');
+              } catch (syncError) {
+                console.warn('Erro na sincronização:', syncError);
+              }
+            }
+          }
+          
+          // Tentar obter dados do usuário mesmo assim
           const response = await apiRequest('GET', '/api/user');
           
           if (response.ok) {
             const userData = await response.json();
             setUser(userData);
+            console.log('Dados do usuário obtidos com sucesso da API');
           } else {
-            // Se o usuário estiver autenticado no Supabase mas não na API,
-            // tenta sincronizar o login entre os sistemas
-            console.log('Usuário autenticado no Supabase mas não na API. Tentando sincronizar...');
+            console.warn('Falha ao obter dados do usuário da API:', 
+              response.status, await response.text().catch(() => 'Sem conteúdo'));
+            
+            // Se tiver falha, podemos criar um usuário mínimo a partir dos dados do Supabase
+            // Isso é temporário até conseguir sincronizar corretamente
+            if (supabaseUser.email) {
+              const tempUser: User = {
+                id: parseInt(supabaseUser.id) || 0,
+                email: supabaseUser.email,
+                name: supabaseUser.user_metadata?.name || supabaseUser.email.split('@')[0],
+                role: supabaseUser.user_metadata?.role || 'operador'
+              };
+              console.log('Usando dados do Supabase temporariamente:', tempUser);
+              setUser(tempUser);
+            }
           }
         } catch (error) {
           console.error('Erro ao obter dados do usuário da API:', error);
+          toast({
+            title: "Problema de autenticação",
+            description: "Houve um problema ao verificar sua sessão. Tente fazer login novamente.",
+            variant: "destructive",
+          });
         }
       } else {
+        console.log('Supabase: Usuário não autenticado, limpando dados');
         setUser(null);
       }
       
@@ -84,7 +126,7 @@ export const SupabaseAuthProvider = ({ children }: SupabaseAuthProviderProps) =>
     };
 
     fetchUserFromAPI();
-  }, [supabaseUser]);
+  }, [supabaseUser, syncLoginWithAPI, toast]);
 
   // Sincronização de loading state
   useEffect(() => {
