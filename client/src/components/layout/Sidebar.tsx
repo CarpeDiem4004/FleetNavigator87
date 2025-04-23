@@ -85,19 +85,21 @@ const NavItemWithSubmenu: React.FC<{
             const isSubActive = currentLocation === subItem.href;
             
             return (
-              <Link
+              <div
                 key={subItem.name}
-                href={subItem.href}
-                onClick={onClose}
-                className={`flex items-center px-4 py-2 rounded-md group transition-colors duration-200 ${
+                className={`flex items-center px-4 py-2 rounded-md group transition-colors duration-200 cursor-pointer ${
                   isSubActive
                     ? 'text-white bg-primary-900' 
                     : 'text-primary-100 hover:bg-primary-700'
                 }`}
+                onClick={() => {
+                  window.location.href = subItem.href;
+                  onClose();
+                }}
               >
                 <SubIcon className="w-5" size={16} />
                 <span className="ml-2 text-sm">{subItem.name}</span>
-              </Link>
+              </div>
             );
           })}
         </div>
@@ -115,10 +117,12 @@ const NavItem: React.FC<{
   const Icon = item.icon;
   
   return (
-    <Link 
-      href={item.href} 
-      onClick={onClose}
-      className={`flex items-center px-4 py-3 rounded-md group transition-colors duration-200 ${
+    <div
+      onClick={() => {
+        window.location.href = item.href;
+        onClose();
+      }}
+      className={`flex items-center px-4 py-3 rounded-md group transition-colors duration-200 cursor-pointer ${
         isActive
           ? 'text-white bg-primary-900' 
           : 'text-primary-100 hover:bg-primary-700'
@@ -126,7 +130,7 @@ const NavItem: React.FC<{
     >
       <Icon className="w-6" size={18} />
       <span className="ml-3">{item.name}</span>
-    </Link>
+    </div>
   );
 };
 
