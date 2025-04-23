@@ -61,10 +61,10 @@ const NavItemWithSubmenu: React.FC<{
     <div className="mb-1">
       <div
         onClick={toggleExpanded}
-        className={`flex w-full items-center justify-between px-4 py-3 rounded-md group transition-colors duration-200 text-left cursor-pointer ${
+        className={`flex w-full items-center justify-between px-4 py-3 rounded-md group transition-all duration-200 text-left cursor-pointer ${
           isActive || subItemActive
-            ? 'text-white bg-primary-900' 
-            : 'text-primary-100 hover:bg-primary-700'
+            ? 'text-white bg-primary-900 shadow-lg shadow-primary-900/30 border-l-4 border-white font-medium' 
+            : 'text-primary-100 hover:bg-primary-700 hover:shadow-md'
         }`}
       >
         <div className="flex items-center">
@@ -89,10 +89,10 @@ const NavItemWithSubmenu: React.FC<{
             return (
               <div
                 key={subItem.name}
-                className={`flex items-center px-4 py-2 rounded-md group transition-colors duration-200 cursor-pointer ${
+                className={`flex items-center px-4 py-2 rounded-md group transition-all duration-200 cursor-pointer ${
                   isSubActive
-                    ? 'text-white bg-primary-900' 
-                    : 'text-primary-100 hover:bg-primary-700'
+                    ? 'text-white bg-primary-900 shadow-md shadow-primary-900/20 border-l-2 border-white font-medium' 
+                    : 'text-primary-100 hover:bg-primary-700 hover:shadow-sm'
                 }`}
                 onClick={() => {
                   window.location.href = subItem.href;
@@ -124,10 +124,10 @@ const NavItem: React.FC<{
         window.location.href = item.href;
         onClose();
       }}
-      className={`flex items-center px-4 py-3 rounded-md group transition-colors duration-200 cursor-pointer ${
+      className={`flex items-center px-4 py-3 rounded-md group transition-all duration-200 cursor-pointer ${
         isActive
-          ? 'text-white bg-primary-900' 
-          : 'text-primary-100 hover:bg-primary-700'
+          ? 'text-white bg-primary-900 shadow-lg shadow-primary-900/30 border-l-4 border-white font-medium' 
+          : 'text-primary-100 hover:bg-primary-700 hover:shadow-md'
       }`}
     >
       <Icon className="w-6" size={18} />
@@ -224,7 +224,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
         open ? 'block' : 'hidden'
       } md:flex md:flex-shrink-0 transition-all duration-300 fixed md:relative inset-0 z-40 md:z-auto`}
     >
-      <div className="flex flex-col w-64 bg-primary-800 text-white shadow-lg">
+      <div className="flex flex-col w-64 bg-gradient-to-br from-primary-900 to-primary-800 text-white shadow-xl shadow-primary-900/25 border-r border-primary-900/20">
         {/* Logo */}
         <div className="flex items-center justify-center h-16 border-b border-primary-900">
           <h1 className="text-xl font-bold tracking-tight">
