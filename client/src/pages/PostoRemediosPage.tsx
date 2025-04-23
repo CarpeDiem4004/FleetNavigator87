@@ -49,6 +49,7 @@ const abastecimentoFormSchema = z.object({
   motorista_rg: z.string().min(1, { message: 'RG do motorista é obrigatório' }),
   tipo_combustivel: z.string().optional(),
   quantidade_litros: z.coerce.number().optional(),
+  valor_litro: z.coerce.number().optional(),
   valor_total: z.coerce.number().optional(),
   lavagem: z.boolean().default(false),
   tipo_lavagem: z.string().optional(),
@@ -75,6 +76,7 @@ export default function PostoRemediosPage() {
       motorista_rg: '',
       tipo_combustivel: 'diesel',
       quantidade_litros: undefined,
+      valor_litro: undefined,
       valor_total: undefined,
       lavagem: false,
       tipo_lavagem: '',
@@ -323,7 +325,49 @@ export default function PostoRemediosPage() {
                             <FormItem>
                               <FormLabel>Quantidade (L)</FormLabel>
                               <FormControl>
-                                <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                                <Input 
+                                  type="number" 
+                                  step="0.01" 
+                                  placeholder="0.00" 
+                                  {...field} 
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    // Calcular valor total automaticamente se tiver valor por litro
+                                    const qtd = parseFloat(e.target.value);
+                                    const valorLitro = form.getValues("valor_litro");
+                                    if (!isNaN(qtd) && valorLitro) {
+                                      form.setValue("valor_total", (qtd * valorLitro).toFixed(2));
+                                    }
+                                  }}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="valor_litro"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Valor por Litro (R$)</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  step="0.01" 
+                                  placeholder="0.00" 
+                                  {...field} 
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    // Calcular valor total automaticamente se tiver quantidade
+                                    const valorLitro = parseFloat(e.target.value);
+                                    const qtd = form.getValues("quantidade_litros");
+                                    if (!isNaN(valorLitro) && qtd) {
+                                      form.setValue("valor_total", (qtd * valorLitro).toFixed(2));
+                                    }
+                                  }}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -337,8 +381,18 @@ export default function PostoRemediosPage() {
                             <FormItem>
                               <FormLabel>Valor Total (R$)</FormLabel>
                               <FormControl>
-                                <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                                <Input 
+                                  type="number" 
+                                  step="0.01" 
+                                  placeholder="0.00" 
+                                  {...field} 
+                                  className="bg-gray-50"
+                                  readOnly
+                                />
                               </FormControl>
+                              <FormDescription>
+                                Calculado automaticamente
+                              </FormDescription>
                               <FormMessage />
                             </FormItem>
                           )}
