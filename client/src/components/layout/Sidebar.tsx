@@ -24,7 +24,8 @@ import {
   Map,
   CreditCard,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Droplets
 } from 'lucide-react';
 
 interface NavItem {
@@ -33,6 +34,7 @@ interface NavItem {
   icon: React.ElementType;
   subItems?: NavItem[];
   showInMenu?: boolean;
+  className?: string;
 }
 
 interface SidebarProps {
@@ -73,7 +75,7 @@ const NavItemWithSubmenu: React.FC<{
           isActive || subItemActive
             ? 'text-white bg-primary-900 shadow-lg shadow-primary-900/30 border-l-4 border-white font-medium' 
             : 'text-primary-100 hover:bg-primary-700 hover:shadow-md'
-        }`}
+        } ${item.className || ''}`}
       >
         <div className="flex items-center">
           <Icon className="w-6" size={18} />
@@ -95,21 +97,24 @@ const NavItemWithSubmenu: React.FC<{
             const isSubActive = currentLocation === subItem.href;
             
             return (
-              <div
+              <Link
                 key={subItem.name}
-                className={`flex items-center px-4 py-2 rounded-md group transition-all duration-200 cursor-pointer ${
-                  isSubActive
-                    ? 'text-white bg-primary-900 shadow-md shadow-primary-900/20 border-l-2 border-white font-medium' 
-                    : 'text-primary-100 hover:bg-primary-700 hover:shadow-sm'
-                }`}
+                href={subItem.href}
                 onClick={() => {
-                  window.location.href = subItem.href;
                   onClose();
                 }}
               >
-                <SubIcon className="w-5" size={16} />
-                <span className="ml-2 text-sm">{subItem.name}</span>
-              </div>
+                <div
+                  className={`flex items-center px-4 py-2 rounded-md group transition-all duration-200 cursor-pointer ${
+                    isSubActive
+                      ? 'text-white bg-primary-900 shadow-md shadow-primary-900/20 border-l-2 border-white font-medium' 
+                      : 'text-primary-100 hover:bg-primary-700 hover:shadow-sm'
+                  } ${subItem.className || ''}`}
+                >
+                  <SubIcon className="w-5" size={16} />
+                  <span className="ml-2 text-sm">{subItem.name}</span>
+                </div>
+              </Link>
             );
           })}
         </div>
@@ -127,20 +132,23 @@ const NavItem: React.FC<{
   const Icon = item.icon;
   
   return (
-    <div
+    <Link
+      href={item.href}
       onClick={() => {
-        window.location.href = item.href;
         onClose();
       }}
-      className={`flex items-center px-4 py-3 rounded-md group transition-all duration-200 cursor-pointer ${
-        isActive
-          ? 'text-white bg-primary-900 shadow-lg shadow-primary-900/30 border-l-4 border-white font-medium' 
-          : 'text-primary-100 hover:bg-primary-700 hover:shadow-md'
-      }`}
     >
-      <Icon className="w-6" size={18} />
-      <span className="ml-3">{item.name}</span>
-    </div>
+      <div
+        className={`flex items-center px-4 py-3 rounded-md group transition-all duration-200 cursor-pointer ${
+          isActive
+            ? 'text-white bg-primary-900 shadow-lg shadow-primary-900/30 border-l-4 border-white font-medium' 
+            : 'text-primary-100 hover:bg-primary-700 hover:shadow-md'
+        } ${item.className || ''}`}
+      >
+        <Icon className="w-6" size={18} />
+        <span className="ml-3">{item.name}</span>
+      </div>
+    </Link>
   );
 };
 
@@ -161,19 +169,17 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   }
   
   // Lista completa de itens de navegação disponíveis
-  const allNavItems = [
+  const allNavItems: NavItem[] = [
     { name: 'Dashboard', href: '/', icon: Gauge },
     { name: 'Dashboard Executivo', href: '/executive-dashboard', icon: BarChart4 },
     { name: 'Veículos', href: '/vehicles', icon: Truck },
     { name: 'Motoristas', href: '/drivers', icon: Users },
-    // { name: 'Manutenções', href: '/maintenance', icon: Wrench },
     { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText },
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
-    { name: 'Abastecimentos', href: '#', icon: Fuel, subItems: [
-      { name: 'Histórico', href: '/refueling', icon: ClipboardList },
-      { name: 'Painel de Postos', href: '/abastecimento', icon: Fuel }
-    ]},
+    // Modificado para apontar para a página principal em vez de submenu
+    { name: 'Abastecimentos', href: '/abastecimentos', icon: Fuel },
+    { name: 'Histórico Abastecimento', href: '/refueling', icon: ClipboardList },
     { name: 'Postos Externos', href: '#', icon: Warehouse, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
       { name: 'Cartão de Abastecimento', href: '/cartao-abastecimento', icon: CreditCard }
@@ -189,17 +195,16 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   ];
 
   // Itens específicos para Gestão de Frotas
-  const fleetManagementItems = [
+  const fleetManagementItems: NavItem[] = [
     { name: 'Gestão de Frotas', href: '/fleet-management', icon: Truck },
     { name: 'Sistema de Manutenção', href: '/fleet-management/maintenance', icon: Wrench },
     { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText },
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Oficinas Credenciadas', href: '/fleet-management/workshops', icon: ClipboardList },
     { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package },
-    { name: 'Abastecimentos', href: '#', icon: Fuel, subItems: [
-      { name: 'Histórico', href: '/refueling', icon: ClipboardList },
-      { name: 'Painel de Postos', href: '/abastecimento', icon: Fuel }
-    ]},
+    // Modificado para apontar para a página principal em vez de submenu
+    { name: 'Abastecimentos', href: '/abastecimentos', icon: Fuel },
+    { name: 'Histórico Abastecimento', href: '/refueling', icon: ClipboardList },
     { name: 'Postos Externos', href: '#', icon: Warehouse, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
       { name: 'Cartão de Abastecimento', href: '/cartao-abastecimento', icon: CreditCard }
@@ -309,122 +314,3 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
 };
 
 export default Sidebar;
-const isActive = location === item.href;
-const isSubItemActive = item.subItems?.some(
-  (subItem) => location === subItem.href
-);
-
-if (item.subItems && item.subItems.length > 0) {
-  return (
-    <NavItemWithSubmenu
-      key={item.name}
-      item={item}
-      isActive={isActive}
-      isSubItemActive={isSubItemActive}
-      onClose={closeSidebar}
-      currentLocation={location}
-    />
-  );
-}
-
-return (
-  <NavItem
-    key={item.name}
-    item={item}
-    isActive={isActive}
-    onClose={closeSidebar}
-  />
-);
-})}
-</div>
-</nav>
-</div>
-
-{/* Footer / Logout */}
-<div className="border-t border-primary-900 px-4 py-3">
-<button
-onClick={logout}
-className="flex items-center space-x-2 text-sm hover:text-red-500 transition-all duration-200"
->
-<LogOut className="w-4 h-4" />
-<span>Sair</span>
-</button>
-</div>
-</div>
-</div>
-);
-};
-
-export default Sidebar;
-{navItems.map((item) => {
-  const isActive = location === item.href;
-  const isSubItemActive = item.subItems?.some(subItem => location === subItem.href);
-
-  if (item.subItems) {
-    return (
-      <NavItemWithSubmenu
-        key={item.name}
-        item={item}
-        isActive={isActive}
-        isSubItemActive={isSubItemActive}
-        onClose={closeSidebar}
-        currentLocation={location}
-      />
-    );
-  }
-
-  return (
-    <NavItem
-      key={item.name}
-      item={item}
-      isActive={isActive}
-      onClose={closeSidebar}
-    />
-  );
-})}
-</div>
-</nav>
-</div>
-
-{/* Logout */}
-<div className="border-t border-primary-900 mt-auto">
-<button
-onClick={logout}
-className="w-full flex items-center px-4 py-3 text-left text-primary-100 hover:text-white hover:bg-primary-700 hover:shadow-md transition-all duration-200"
->
-<LogOut className="w-5" size={16} />
-<span className="ml-3 text-sm">Sair</span>
-</button>
-</div>
-</div>
-</div>
-);
-};
-
-export default Sidebar;
-{navItems.map((item) => {
-  const isActive = location === item.href;
-  const isSubItemActive = item.subItems?.some(sub => location === sub.href);
-
-  if (item.subItems && item.subItems.length > 0) {
-    return (
-      <NavItemWithSubmenu
-        key={item.name}
-        item={item}
-        isActive={isActive}
-        isSubItemActive={isSubItemActive}
-        onClose={closeSidebar}
-        currentLocation={location}
-      />
-    );
-  }
-
-  return (
-    <NavItem
-      key={item.name}
-      item={item}
-      isActive={isActive}
-      onClose={closeSidebar}
-    />
-  );
-})}
