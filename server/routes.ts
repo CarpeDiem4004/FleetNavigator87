@@ -98,7 +98,7 @@ const isAdmin = (req: Request, res: Response, next: NextFunction) => {
 const hasMaintenanceAccess = (req: Request, res: Response, next: NextFunction) => {
   // Verifica se o usuário está autenticado e tem permissão de acesso a manutenção
   if (req.isAuthenticated() && req.user && (
-      req.user.role?.toLowerCase() === 'admin' || 
+      (req.user.role && req.user.role.toLowerCase().includes('admin')) || 
       req.user.role === 'gestor' || 
       req.user.baseId === 12 || 
       req.user.role === 'oficina'
@@ -119,7 +119,7 @@ const hasMaintenanceAccess = (req: Request, res: Response, next: NextFunction) =
 // Middleware para verificar se o usuário tem permissão para acessar funcionalidades de pneus
 const hasTiresAccess = (req: Request, res: Response, next: NextFunction) => {
   if (req.isAuthenticated() && req.user && (
-    req.user.role?.toLowerCase() === 'admin' || 
+    (req.user.role && req.user.role.toLowerCase().includes('admin')) || 
     req.user.baseId === 12 || 
     req.user.role === 'pneus'
   )) {
@@ -132,7 +132,7 @@ const hasTiresAccess = (req: Request, res: Response, next: NextFunction) => {
 const isWorkshop = (req: Request, res: Response, next: NextFunction) => {
   if (req.isAuthenticated() && req.user && (
     req.user.role === 'oficina' || 
-    req.user.role?.toLowerCase() === 'admin'
+    (req.user.role && req.user.role.toLowerCase().includes('admin'))
   )) {
     return next();
   }
@@ -142,7 +142,7 @@ const isWorkshop = (req: Request, res: Response, next: NextFunction) => {
 // Middleware para verificar se o usuário tem acesso à base especificada
 const hasBaseAccess = (req: Request, res: Response, next: NextFunction) => {
   // Se o usuário for admin, permite acesso a todas as bases
-  if (req.user && (req.user.role?.toLowerCase() === 'admin' || req.user.role?.toUpperCase() === 'ADMIN')) {
+  if (req.user && req.user.role && req.user.role.toLowerCase().includes('admin')) {
     return next();
   }
   
