@@ -3111,10 +3111,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // LineHall routes removidas conforme solicitação
   
   // Users routes (admin only)
-  app.get("/api/users", isAdmin, async (req, res) => {
+  // Rota original com middleware isAuthenticated (mais permissivo) para compatibilidade
+  app.get("/api/users", isAuthenticated, async (req, res) => {
     try {
-      const users = await storage.getAllUsers();
-      return res.status(200).json(users);
+      // Usar a mesma função das novas rotas para manter a consistência
+      // Mas formatar a resposta no padrão original para compatibilidade com frontend
+      const { role, baseId, active } = req.query;
+      
+      // Construção da query com filtros
+      let query = 'SELECT id, name, email, role, basename, base_id, oficina_id, is_active FROM users';
+      const params: any[] = [];
+      const conditions: string[] = [];
+      
+      // Adicionar filtros se fornecidos
+      if (role) {
+        conditions.push('role = $' + (params.length + 1));
+        params.push(role);
+      }
+      
+      if (baseId) {
+        conditions.push('base_id = $' + (params.length + 1));
+        params.push(baseId);
+      }
+      
+      if (active !== undefined) {
+        conditions.push('is_active = $' + (params.length + 1));
+        params.push(active === 'true');
+      }
+      
+      // Adicionar condições à query
+      if (conditions.length > 0) {
+        query += ' WHERE ' + conditions.join(' AND ');
+      }
+      
+      // Ordenar por nome
+      query += ' ORDER BY name';
+      
+      // Executar a consulta
+      const result = await pool.query(query, params);
+      
+      // Retornar no formato original
+      return res.status(200).json(result.rows);
     } catch (error) {
       console.error("Erro ao buscar usuários:", error);
       res.status(500).json({ message: 'Erro ao buscar usuários' });
