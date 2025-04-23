@@ -42,11 +42,25 @@ export async function getPostosResumo(req: Request, res: Response) {
   try {
     const { ordenarPor = 'nome', direcao = 'asc', somenteComAlerta = false } = req.query;
     
-    let query = 'SELECT * FROM vw_resumo_postos';
+    // Consulta utilizando a tabela configuracao_tanques existente
+    let query = `
+      SELECT 
+        id, 
+        posto as nome,
+        posto as localizacao,
+        diesel_capacidade as capacidade_total,
+        diesel_nivel as volume_atual,
+        COALESCE((SELECT COUNT(*) FROM abastecimentos_postos WHERE posto_id = configuracao_tanques.id), 0) as total_abastecimentos,
+        COALESCE((SELECT SUM(litros) FROM abastecimentos_postos WHERE posto_id = configuracao_tanques.id), 0) as total_litros,
+        (diesel_nivel / diesel_capacidade * 100) as percentual,
+        CASE WHEN (diesel_nivel / diesel_capacidade * 100) < 15 THEN true ELSE false END as alerta_nivel_baixo,
+        updated_at as ultima_atualizacao
+      FROM configuracao_tanques
+    `;
     
     // Adicionar filtro de alerta se solicitado
     if (somenteComAlerta === 'true') {
-      query += ' WHERE alerta_nivel_baixo = true';
+      query += ' WHERE (diesel_nivel / diesel_capacidade * 100) < 15';
     }
     
     // Validar ordenação para evitar injeção SQL
@@ -56,7 +70,12 @@ export async function getPostosResumo(req: Request, res: Response) {
     const coluna = colunas.includes(ordenarPor as string) ? ordenarPor : 'nome';
     const dir = direcoes.includes(direcao as string) ? direcao : 'asc';
     
-    query += ` ORDER BY ${coluna} ${dir}`;
+    // Adaptando ordenação para os campos reais da tabela
+    const colunaReal = coluna === 'nome' ? 'posto' : 
+                     coluna === 'volume_atual' ? 'diesel_nivel' : 
+                     coluna === 'percentual' ? '(diesel_nivel / diesel_capacidade * 100)' : coluna;
+    
+    query += ` ORDER BY ${colunaReal} ${dir}`;
     
     const result = await pool.query(query);
     
@@ -179,8 +198,22 @@ export async function getPostoDetalhes(req: Request, res: Response) {
       });
     }
     
-    // Buscar detalhes do posto
-    const postoQuery = 'SELECT * FROM vw_resumo_postos WHERE id = $1';
+    // Buscar detalhes do posto usando a tabela configuracao_tanques
+    const postoQuery = `
+      SELECT 
+        id, 
+        posto as nome,
+        posto as localizacao,
+        diesel_capacidade as capacidade_total,
+        diesel_nivel as volume_atual,
+        COALESCE((SELECT COUNT(*) FROM abastecimentos_postos WHERE posto_id = configuracao_tanques.id), 0) as total_abastecimentos,
+        COALESCE((SELECT SUM(litros) FROM abastecimentos_postos WHERE posto_id = configuracao_tanques.id), 0) as total_litros,
+        (diesel_nivel / diesel_capacidade * 100) as percentual,
+        CASE WHEN (diesel_nivel / diesel_capacidade * 100) < 15 THEN true ELSE false END as alerta_nivel_baixo,
+        updated_at as ultima_atualizacao
+      FROM configuracao_tanques
+      WHERE id = $1
+    `;
     const postoResult = await pool.query(postoQuery, [id]);
     
     if (postoResult.rowCount === 0) {
@@ -345,7 +378,7 @@ export async function registrarEntradaCombustivel(req: Request, res: Response) {
     }
     
     // Verificar se o posto existe
-    const verificarPosto = await pool.query('SELECT id FROM postos WHERE id = $1', [id]);
+    const verificarPosto = await pool.query('SELECT id FROM configuracao_tanques WHERE id = $1', [id]);
     
     if (verificarPosto.rowCount === 0) {
       return res.status(404).json({ 
@@ -362,7 +395,7 @@ export async function registrarEntradaCombustivel(req: Request, res: Response) {
       
       // Obter volume atual
       const volumeAtualQuery = await client.query(
-        'SELECT volume_atual, capacidade_total FROM postos WHERE id = $1',
+        'SELECT diesel_nivel as volume_atual, diesel_capacidade as capacidade_total FROM configuracao_tanques WHERE id = $1',
         [id]
       );
       
@@ -380,7 +413,7 @@ export async function registrarEntradaCombustivel(req: Request, res: Response) {
       
       // Atualizar volume
       await client.query(
-        'UPDATE postos SET volume_atual = $1, ultima_atualizacao = NOW() WHERE id = $2',
+        'UPDATE configuracao_tanques SET diesel_nivel = $1, updated_at = NOW() WHERE id = $2',
         [novoVolume, id]
       );
       
