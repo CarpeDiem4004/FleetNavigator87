@@ -143,7 +143,8 @@ const basicRoutes = [
   '/accidents',              // Registros de acidentes
   '/acidentes',              // Alias para acidentes
   '/postos/visao-geral',     // Visão Geral dos Postos
-  '/postos'                  // Postos de Abastecimento
+  '/postos',                 // Postos de Abastecimento
+  '/users'                   // Página de Usuários (acesso para todos, verificação adicional feita no hasPermission)
 ];
 
 export function useBasePermission(): BasePermissionHook {
@@ -190,7 +191,9 @@ export function useBasePermission(): BasePermissionHook {
     }
     
     // Usuários não-admin não podem acessar a página de usuários ou bases
-    if (route === '/users' || route === '/bases') {
+    if ((route === '/users' || route === '/bases') && 
+        user.role?.toLowerCase() !== 'admin' && 
+        user.role?.toUpperCase() !== 'ADMIN') {
       console.log(`Permission denied for non-admin user to ${route}`);
       return false;
     }
