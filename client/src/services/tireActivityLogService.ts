@@ -163,13 +163,30 @@ export async function getTireActivityStats(): Promise<{
       .select('count')
       .eq('acao', 'manutencao');
 
-    // Usuários mais ativos
-    const { data: usuariosAtivos, error: usuariosError } = await supabase
+    // Usuários mais ativos - forma alternativa sem usar group
+    const { data: todasAtividades, error: atividadesError } = await supabase
       .from('pneus_atividades')
-      .select('usuario_nome, count(*)')
-      .group('usuario_nome')
-      .order('count', { ascending: false })
-      .limit(5);
+      .select('usuario_nome');
+    
+    // Se não conseguiu buscar atividades, retorna erro
+    if (atividadesError) {
+      throw new Error('Erro ao buscar atividades para contagem de usuários');
+    }
+    
+    // Calcular contagem manualmente
+    const contagem: Record<string, number> = {};
+    todasAtividades?.forEach(atividade => {
+      const nome = atividade.usuario_nome;
+      contagem[nome] = (contagem[nome] || 0) + 1;
+    });
+    
+    // Converter para array e ordenar
+    const usuariosAtivos = Object.entries(contagem)
+      .map(([usuario_nome, count]) => ({ usuario_nome, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+    
+    const usuariosError = null;
 
     if (montagensError || remocoesError || descartesError || manutencoesError || usuariosError) {
       console.error('Erro ao buscar estatísticas no Supabase');
@@ -187,7 +204,7 @@ export async function getTireActivityStats(): Promise<{
       totalRemocoes: remocoes?.length ? Number(remocoes[0].count) : 0,
       totalDescartes: descartes?.length ? Number(descartes[0].count) : 0,
       totalManutencoes: manutencoes?.length ? Number(manutencoes[0].count) : 0,
-      usuariosMaisAtivos: usuariosAtivos?.map(u => ({
+      usuariosMaisAtivos: usuariosAtivos?.map((u: { usuario_nome: string, count: number }) => ({
         usuario_nome: u.usuario_nome,
         total: Number(u.count)
       })) || []
