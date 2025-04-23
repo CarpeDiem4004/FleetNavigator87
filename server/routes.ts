@@ -28,6 +28,7 @@ import { registerTireMoveRoutes } from "./tireMoveApi";
 import { compareSchemas } from "./compareSchemas";
 import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
 import { db, pool } from "./db";
+import * as userHandler from "./handlers/userHandler";
 import { atualizarTabelaPneus } from "./updatePneus";
 import { randomBytes, scrypt } from "crypto";
 import { promisify } from "util";
@@ -2233,6 +2234,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Rotas para gestão de usuários
+  app.get("/api/usuarios", isAuthenticated, consultarUsuarios);
+  app.get("/api/usuarios/:id", isAuthenticated, consultarUsuarioPorId);
+  
+  // Rota pública para testes - remover em produção
+  app.get("/api/teste/usuarios", consultarUsuarios);
   
   // Base routes
   // Temporariamente sem autenticação para testes
