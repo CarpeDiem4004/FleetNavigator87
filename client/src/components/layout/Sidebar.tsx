@@ -305,3 +305,122 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
 };
 
 export default Sidebar;
+const isActive = location === item.href;
+const isSubItemActive = item.subItems?.some(
+  (subItem) => location === subItem.href
+);
+
+if (item.subItems && item.subItems.length > 0) {
+  return (
+    <NavItemWithSubmenu
+      key={item.name}
+      item={item}
+      isActive={isActive}
+      isSubItemActive={isSubItemActive}
+      onClose={closeSidebar}
+      currentLocation={location}
+    />
+  );
+}
+
+return (
+  <NavItem
+    key={item.name}
+    item={item}
+    isActive={isActive}
+    onClose={closeSidebar}
+  />
+);
+})}
+</div>
+</nav>
+</div>
+
+{/* Footer / Logout */}
+<div className="border-t border-primary-900 px-4 py-3">
+<button
+onClick={logout}
+className="flex items-center space-x-2 text-sm hover:text-red-500 transition-all duration-200"
+>
+<LogOut className="w-4 h-4" />
+<span>Sair</span>
+</button>
+</div>
+</div>
+</div>
+);
+};
+
+export default Sidebar;
+{navItems.map((item) => {
+  const isActive = location === item.href;
+  const isSubItemActive = item.subItems?.some(subItem => location === subItem.href);
+
+  if (item.subItems) {
+    return (
+      <NavItemWithSubmenu
+        key={item.name}
+        item={item}
+        isActive={isActive}
+        isSubItemActive={isSubItemActive}
+        onClose={closeSidebar}
+        currentLocation={location}
+      />
+    );
+  }
+
+  return (
+    <NavItem
+      key={item.name}
+      item={item}
+      isActive={isActive}
+      onClose={closeSidebar}
+    />
+  );
+})}
+</div>
+</nav>
+</div>
+
+{/* Logout */}
+<div className="border-t border-primary-900 mt-auto">
+<button
+onClick={logout}
+className="w-full flex items-center px-4 py-3 text-left text-primary-100 hover:text-white hover:bg-primary-700 hover:shadow-md transition-all duration-200"
+>
+<LogOut className="w-5" size={16} />
+<span className="ml-3 text-sm">Sair</span>
+</button>
+</div>
+</div>
+</div>
+);
+};
+
+export default Sidebar;
+{navItems.map((item) => {
+  const isActive = location === item.href;
+  const isSubItemActive = item.subItems?.some(sub => location === sub.href);
+
+  if (item.subItems && item.subItems.length > 0) {
+    return (
+      <NavItemWithSubmenu
+        key={item.name}
+        item={item}
+        isActive={isActive}
+        isSubItemActive={isSubItemActive}
+        onClose={closeSidebar}
+        currentLocation={location}
+      />
+    );
+  }
+
+  return (
+    <NavItem
+      key={item.name}
+      item={item}
+      isActive={isActive}
+      onClose={closeSidebar}
+    />
+  );
+})}
