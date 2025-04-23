@@ -817,7 +817,7 @@ const LineHallDriverPage: React.FC = () => {
               variant="outline"
             >
               <CreditCard className="h-5 w-5" />
-              Solicitar Recarga de Cartão
+              Solicitar Recarga de Cartão de Abastecimento
             </Button>
           </div>
         </CardContent>
@@ -1173,7 +1173,7 @@ const LineHallDriverPage: React.FC = () => {
             <Label htmlFor="justificativa">Justificativa</Label>
             <Textarea
               id="justificativa"
-              placeholder="Informe o motivo para a recarga do cartão"
+              placeholder="Informe o motivo para a recarga do cartão de abastecimento"
               value={fuelCardRequest.justificativa}
               onChange={(e) => setFuelCardRequest(prev => ({ ...prev, justificativa: e.target.value }))}
               rows={3}
