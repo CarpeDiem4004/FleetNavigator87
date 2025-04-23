@@ -424,6 +424,47 @@ async function criarTabelaLineHallShopee() {
 }
 
 /**
+ * Cria a tabela posto_remedios_abastecimentos se não existir
+ */
+async function criarTabelaPostoRemediosAbastecimentos() {
+  // Verificar se a tabela já existe
+  const checkTableQuery = "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'posto_remedios_abastecimentos')";
+  const tableExistsResult = await pool.query(checkTableQuery);
+  
+  if (tableExistsResult.rows[0].exists) {
+    console.log("Tabela posto_remedios_abastecimentos já existe, pulando criação.");
+    return;
+  }
+
+  console.log("Criando tabela posto_remedios_abastecimentos...");
+  
+  try {
+    await pool.query(`
+      CREATE TABLE posto_remedios_abastecimentos (
+        id SERIAL PRIMARY KEY,
+        placa VARCHAR(10) NOT NULL,
+        km INTEGER NOT NULL,
+        projeto VARCHAR(100) NOT NULL,
+        motorista_nome VARCHAR(200) NOT NULL,
+        motorista_rg VARCHAR(20) NOT NULL,
+        tipo_combustivel VARCHAR(20) CHECK (tipo_combustivel IN ('diesel', 'gasolina', 'alcool')),
+        quantidade_litros DECIMAL(10, 2),
+        valor_total DECIMAL(10, 2),
+        lavagem BOOLEAN DEFAULT FALSE,
+        tipo_lavagem VARCHAR(50),
+        observacoes TEXT,
+        data_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log("Tabela posto_remedios_abastecimentos criada com sucesso!");
+  } catch (error) {
+    console.error("Erro ao criar tabela posto_remedios_abastecimentos:", error);
+  }
+}
+
+/**
  * Cria a tabela fuel_card_requests se não existir
  */
 async function criarTabelaFuelCardRequests() {
@@ -576,6 +617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await criarTabelaDriverChecklists();
   await criarTabelaConfiguracaoTanques();
   await criarTabelaSolicitacoesFuelCard();
+  await criarTabelaPostoRemediosAbastecimentos();
   await atualizarTabelaPneus();
   // Rota para registro de movimentações de pátio
   app.post('/api/registro/movimentacao-patio', async (req, res) => {
@@ -3961,6 +4003,153 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         message: "Erro interno ao processar cadastro", 
         error: error instanceof Error ? error.message : "Erro desconhecido" 
+      });
+    }
+  });
+  
+  // ======= ROTAS PARA POSTO REMÉDIOS =======
+  
+  // Listar registros de abastecimento e lavagem do posto Remédios
+  app.get("/api/posto-remedios/abastecimentos", isAuthenticated, async (req, res) => {
+    try {
+      const { startDate, endDate, placa } = req.query;
+      
+      let query = "SELECT * FROM posto_remedios_abastecimentos";
+      const queryParams = [];
+      const conditions = [];
+      
+      if (placa) {
+        conditions.push("placa ILIKE $" + (queryParams.length + 1));
+        queryParams.push(`%${placa}%`);
+      }
+      
+      if (startDate && endDate) {
+        conditions.push("data_registro BETWEEN $" + (queryParams.length + 1) + " AND $" + (queryParams.length + 2));
+        queryParams.push(startDate, endDate);
+      }
+      
+      if (conditions.length > 0) {
+        query += " WHERE " + conditions.join(" AND ");
+      }
+      
+      query += " ORDER BY data_registro DESC";
+      
+      const result = await pool.query(query, queryParams);
+      
+      return res.status(200).json({
+        success: true,
+        count: result.rowCount,
+        data: result.rows
+      });
+    } catch (error) {
+      console.error("Erro ao buscar registros do posto Remédios:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Erro ao buscar registros do posto Remédios"
+      });
+    }
+  });
+  
+  // Adicionar novo registro de abastecimento/lavagem
+  app.post("/api/posto-remedios/abastecimentos", isAuthenticated, async (req, res) => {
+    try {
+      const {
+        placa,
+        km,
+        projeto,
+        motorista_nome,
+        motorista_rg,
+        tipo_combustivel,
+        quantidade_litros,
+        valor_total,
+        lavagem,
+        tipo_lavagem,
+        observacoes
+      } = req.body;
+      
+      // Validar campos obrigatórios
+      if (!placa || !km || !projeto || !motorista_nome || !motorista_rg) {
+        return res.status(400).json({
+          success: false,
+          message: "Todos os campos obrigatórios devem ser preenchidos (placa, km, projeto, motorista_nome, motorista_rg)"
+        });
+      }
+      
+      // Validação de tipos de combustível
+      if (tipo_combustivel && !['diesel', 'gasolina', 'alcool'].includes(tipo_combustivel)) {
+        return res.status(400).json({
+          success: false,
+          message: "Tipo de combustível inválido. Valores permitidos: diesel, gasolina, alcool"
+        });
+      }
+      
+      const query = `
+        INSERT INTO posto_remedios_abastecimentos
+        (placa, km, projeto, motorista_nome, motorista_rg, tipo_combustivel, quantidade_litros, valor_total, lavagem, tipo_lavagem, observacoes)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        RETURNING *
+      `;
+      
+      const values = [
+        placa,
+        km,
+        projeto,
+        motorista_nome,
+        motorista_rg,
+        tipo_combustivel || null,
+        quantidade_litros || null,
+        valor_total || null,
+        lavagem || false,
+        tipo_lavagem || null,
+        observacoes || null
+      ];
+      
+      const result = await pool.query(query, values);
+      
+      return res.status(201).json({
+        success: true,
+        message: "Registro adicionado com sucesso",
+        data: result.rows[0]
+      });
+    } catch (error) {
+      console.error("Erro ao adicionar registro do posto Remédios:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Erro ao adicionar registro do posto Remédios"
+      });
+    }
+  });
+  
+  // Obter um registro específico
+  app.get("/api/posto-remedios/abastecimentos/:id", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          message: "ID inválido"
+        });
+      }
+      
+      const result = await pool.query("SELECT * FROM posto_remedios_abastecimentos WHERE id = $1", [id]);
+      
+      if (result.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Registro não encontrado"
+        });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows[0]
+      });
+    } catch (error) {
+      console.error("Erro ao buscar registro específico do posto Remédios:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Erro ao buscar registro específico do posto Remédios"
       });
     }
   });
