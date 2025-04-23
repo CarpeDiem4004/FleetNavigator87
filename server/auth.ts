@@ -36,14 +36,16 @@ export function setupAuth(app: Express) {
   const MemoryStore = createMemoryStore(session);
   const PgStore = connectPg(session);
   
-  // Escolha entre armazenamento em memória ou PostgreSQL com base no ambiente
-  const usePostgresStore = process.env.NODE_ENV === 'production';
+  // Sempre usar armazenamento PostgreSQL para melhor persistência
+  // Apenas usaremos MemoryStore se especificamente solicitado por variável de ambiente
+  const useMemoryStore = process.env.USE_MEMORY_STORE === 'true';
   
-  const sessionStore = usePostgresStore
+  const sessionStore = !useMemoryStore
     ? new PgStore({
         pool,
-        tableName: 'session', // Nome da tabela para armazenar sessões
-        createTableIfMissing: true
+        tableName: 'sessions', // Nome da tabela para armazenar sessões
+        createTableIfMissing: true, // Criar tabela se não existir
+        pruneSessionInterval: 24 * 60 * 60 // Limpar sessões expiradas a cada 24 horas
       })
     : new MemoryStore({
         checkPeriod: 86400000 // Limpar sessões expiradas a cada 24 horas
@@ -66,7 +68,7 @@ export function setupAuth(app: Express) {
   console.log(`Configuração da sessão: 
   - Secure: ${process.env.NODE_ENV === 'production'}
   - MaxAge: ${7 * 24 * 60 * 60 * 1000}ms (${7} dias)
-  - Store: ${usePostgresStore ? 'PostgreSQL' : 'Memory'}
+  - Store: ${!useMemoryStore ? 'PostgreSQL' : 'Memory'}
   - Environment: ${process.env.NODE_ENV || 'development'}`);
   
 
@@ -293,20 +295,41 @@ export function setupAuth(app: Express) {
   
   // Rota adicional para diagnóstico
   app.get("/api/auth-status", (req, res) => {
+    // Para compatibilidade com tipos, não podemos acessar diretamente req.session.cookie
+    const sessionObj: any = req.session || {};
+    const cookieObj = sessionObj.cookie || {};
+    
     const status = {
       isAuthenticated: req.isAuthenticated(),
       hasSession: !!req.session,
       sessionID: req.sessionID,
       cookiePresent: !!req.headers.cookie,
+      cookies: req.headers.cookie,
+      sessionMaxAge: cookieObj.maxAge,
+      sessionExpires: cookieObj.expires,
+      sessionSettings: {
+        secure: cookieObj.secure,
+        httpOnly: cookieObj.httpOnly,
+        sameSite: cookieObj.sameSite,
+        path: cookieObj.path
+      },
+      requestHeaders: {
+        host: req.headers.host,
+        origin: req.headers.origin,
+        referer: req.headers.referer || req.headers.referrer,
+        userAgent: req.headers['user-agent']
+      },
       user: req.isAuthenticated() ? {
         id: req.user.id,
         email: req.user.email,
         name: req.user.name,
         role: req.user.role
-      } : null
+      } : null,
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development'
     };
     
-    console.log('Status de autenticação:', status);
+    console.log('Status de autenticação:', JSON.stringify(status, null, 2));
     res.json(status);
   });
 }
