@@ -172,6 +172,11 @@ export function useBasePermission(): BasePermissionHook {
   
   // Verifica se o usuário tem permissão para acessar a rota
   const hasPermission = useCallback((route: string): boolean => {
+    // Se for um link '#' usado para menus com subitens, sempre permitir
+    if (route === '#') {
+      return true;
+    }
+    
     // Se não houver usuário, não tem permissão para nada
     if (!user) {
       console.log(`Permission denied - No user`);

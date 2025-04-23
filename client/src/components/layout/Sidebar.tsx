@@ -66,12 +66,14 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText },
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
-    { name: 'Abastecimentos', href: '/refueling', icon: Fuel },
+    { name: 'Abastecimentos', href: '#', icon: Fuel, subItems: [
+      { name: 'Histórico', href: '/refueling', icon: ClipboardList },
+      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
+    ]},
     { name: 'Cartão de Abastecimento', href: '#', icon: CreditCard, subItems: [
       { name: 'Operações', href: '/fuel-card', icon: CreditCard },
       { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList }
     ]},
-    { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
     { name: 'Line Hall Shopee', href: '/line-hall-shopee', icon: Map },
     { name: 'Bases', href: '/bases', icon: Warehouse },
@@ -86,12 +88,14 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Oficinas Credenciadas', href: '/fleet-management/workshops', icon: ClipboardList },
     { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package },
-    { name: 'Abastecimentos', href: '/refueling', icon: Fuel },
+    { name: 'Abastecimentos', href: '#', icon: Fuel, subItems: [
+      { name: 'Histórico', href: '/refueling', icon: ClipboardList },
+      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
+    ]},
     { name: 'Cartão de Abastecimento', href: '#', icon: CreditCard, subItems: [
       { name: 'Operações', href: '/fuel-card', icon: CreditCard },
       { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList }
     ]},
-    { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
     { name: 'Line Hall Shopee', href: '/line-hall-shopee', icon: Map },
     { name: 'Análise da Operação', href: '/fleet-management/operational-analysis', icon: BarChart4 },
     { name: 'Visão Geral da Frota', href: '/fleet-management/fleet-overview', icon: Activity },
