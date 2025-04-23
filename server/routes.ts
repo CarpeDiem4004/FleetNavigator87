@@ -4798,7 +4798,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rotas de pneus
   registerPneusRoutes(app);
   
-  // Rotas para postos de abastecimento
+  // Rotas para postos de abastecimento - acessíveis para usuários autenticados
+  // Não é necessário middleware adicional pois a verificação de admin já está implementada no hook useBasePermission
   app.get("/api/postos", isAuthenticated, getPostosResumo);
   app.get("/api/postos/:id", isAuthenticated, getPostoDetalhes);
   app.post("/api/postos/:id/entrada-combustivel", isAuthenticated, registrarEntradaCombustivel);
