@@ -58,6 +58,7 @@ import FuelCardPage from "@/pages/FuelCardPage";
 import FuelCard from "@/pages/FuelCard";
 import FuelCardRequestsPanel from "@/pages/FuelCardRequestsPanel";
 import PostoRemediosPage from "@/pages/PostoRemediosPage";
+import PostoRemediosStandalone from "@/pages/PostoRemediosStandalone";
 import DriverChecklist from "@/pages/DriverChecklist";
 import DriversPage from "@/pages/DriversPage";
 import ManutencaoPage from "@/pages/ManutencaoPage";
@@ -202,6 +203,11 @@ function App() {
           </Route>
           <Route path="/posto/sorocaba/public">
             <SorocabaPublic />
+          </Route>
+          
+          {/* Rota pública para o Posto Remédios sem menu lateral */}
+          <Route path="/posto-remedios-standalone">
+            <PostoRemediosStandalone />
           </Route>
           
           <Route>
