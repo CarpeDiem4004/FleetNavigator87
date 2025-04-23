@@ -93,6 +93,7 @@ export default function TireMountingHistory() {
   const [vehiclePlate, setVehiclePlate] = useState('');
   const [position, setPosition] = useState('');
   const [installationKm, setInstallationKm] = useState('');
+  const [hasSpare, setHasSpare] = useState<boolean>(false);
 
   // Fetch available tires
   useEffect(() => {
