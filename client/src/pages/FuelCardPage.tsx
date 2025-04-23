@@ -273,7 +273,7 @@ const FuelCardRequestForm: React.FC = () => {
         </DialogTrigger>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Solicitar Recarga de Cartão</DialogTitle>
+            <DialogTitle>Solicitar Recarga de Cartão de Abastecimento</DialogTitle>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -313,7 +313,7 @@ const FuelCardRequestForm: React.FC = () => {
                   <FormItem>
                     <FormLabel>Número do Cartão</FormLabel>
                     <FormControl>
-                      <Input placeholder="Número do cartão de combustível" {...field} />
+                      <Input placeholder="Número do cartão de abastecimento" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -402,14 +402,14 @@ const FuelCardRequestForm: React.FC = () => {
         <CardHeader>
           <CardTitle>Instruções para Solicitação</CardTitle>
           <CardDescription>
-            Preencha o formulário para solicitar recargas nos cartões de combustível da frota.
+            Preencha o formulário para solicitar recargas nos cartões de abastecimento da frota.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
             <p><strong>1.</strong> Clique em "Nova Solicitação" acima.</p>
             <p><strong>2.</strong> Selecione o veículo para o qual a recarga é destinada.</p>
-            <p><strong>3.</strong> Informe o número do cartão de combustível vinculado ao veículo.</p>
+            <p><strong>3.</strong> Informe o número do cartão de abastecimento vinculado ao veículo.</p>
             <p><strong>4.</strong> Indique o valor necessário para a recarga.</p>
             <p><strong>5.</strong> Detalhe o motivo da solicitação.</p>
             <p className="text-muted-foreground text-sm mt-4">
@@ -560,7 +560,7 @@ const FuelCardOperations: React.FC = () => {
         <CardHeader>
           <CardTitle>Cartões Aprovados Pendentes de Recarga</CardTitle>
           <CardDescription>
-            Registre aqui as operações de adição de saldo realizadas nos cartões de combustível
+            Registre aqui as operações de adição de saldo realizadas nos cartões de abastecimento
           </CardDescription>
         </CardHeader>
         <CardContent>
