@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/context/AuthContext';
 import { useBasePermission } from '@/hooks/use-base-permission';
@@ -51,6 +51,14 @@ const NavItemWithSubmenu: React.FC<{
   // Se isSubItemActive for undefined, defina como false
   const subItemActive = isSubItemActive === true;
   const [expanded, setExpanded] = useState(isActive || subItemActive);
+  
+  // Garantir que o submenu seja expandido quando um subitem estiver ativo
+  useEffect(() => {
+    if (subItemActive && !expanded) {
+      setExpanded(true);
+    }
+  }, [subItemActive, expanded]);
+  
   const Icon = item.icon;
 
   const toggleExpanded = () => {
