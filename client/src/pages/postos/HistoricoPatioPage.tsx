@@ -81,66 +81,58 @@ const HistoricoPatioPage: React.FC = () => {
     }
   };
 
-  const handleExportarExcel = () => {
-    // Filtrar dados de acordo com a data e busca
-    let dadosFiltrados = [...filteredData];
-    
-    // Preparar dados para CSV
-    const headers = [
-      'Placa', 'Tipo Veículo', 'Motorista', 'Posto', 
-      'Data Entrada', 'Data Saída', 'Dias Parado', 
-      'Motivo', 'Observações'
-    ];
-    
-    const csvData = dadosFiltrados.map(item => [
-      item.placa,
-      item.tipo_veiculo || '-',
-      item.motorista,
-      item.posto,
-      formatarData(item.data_entrada),
-      formatarData(item.data_saida),
-      calcularDiasParado(item.data_entrada, item.data_saida).toString(),
-      item.motivo || '-',
-      item.observacoes || '-'
-    ]);
-    
-    // Combinar headers e dados
-    const csvContent = [
-      headers.join(';'),
-      ...csvData.map(row => row.join(';'))
-    ].join('\n');
-    
-    // Criar e download do arquivo de forma segura sem manipulação direta do DOM
+  const handleExportarExcel = async () => {
     try {
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      // Usar a API de navegação para iniciar download direto sem manipulação DOM
-      // Isso evita o erro 'removeChild' completamente
-      if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-        // Para IE/Edge
-        window.navigator.msSaveOrOpenBlob(blob, `historico_patio_${new Date().toISOString().slice(0, 10)}.csv`);
-        return;
-      }
+      // Importar a biblioteca xlsx dinamicamente
+      const XLSX = await import('xlsx');
       
-      // Para navegadores modernos
-      const url = URL.createObjectURL(blob);
+      // Filtrar dados de acordo com a data e busca
+      let dadosFiltrados = [...filteredData];
       
-      // Criar link para download sem anexá-lo ao DOM
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `historico_patio_${new Date().toISOString().slice(0, 10)}.csv`;
+      // Preparar os dados para Excel
+      const excelData = dadosFiltrados.map(item => ({
+        'Placa': item.placa,
+        'Tipo Veículo': item.tipo_veiculo || '-',
+        'Motorista': item.motorista,
+        'Posto': item.posto,
+        'Data Entrada': formatarData(item.data_entrada),
+        'Data Saída': formatarData(item.data_saida),
+        'Dias no Pátio': calcularDiasParado(item.data_entrada, item.data_saida),
+        'Status': item.data_saida ? 'Veículo Liberado' : 'No Pátio',
+        'Motivo': item.motivo || '-',
+        'Observações': item.observacoes || '-'
+      }));
       
-      // Esta abordagem funciona sem problemas de removeChild
-      document.body.appendChild(a);
-      a.click();
+      // Criar uma nova planilha
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
       
-      // Remover o elemento e liberar o recurso
-      window.setTimeout(() => {
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-      }, 100);
+      // Definir larguras de colunas para melhor visualização
+      const wscols = [
+        { wch: 10 }, // Placa
+        { wch: 12 }, // Tipo Veículo
+        { wch: 20 }, // Motorista
+        { wch: 15 }, // Posto
+        { wch: 12 }, // Data Entrada
+        { wch: 12 }, // Data Saída
+        { wch: 12 }, // Dias no Pátio
+        { wch: 15 }, // Status
+        { wch: 20 }, // Motivo
+        { wch: 30 }  // Observações
+      ];
+      worksheet['!cols'] = wscols;
+      
+      // Criar um novo livro
+      const workbook = XLSX.utils.book_new();
+      
+      // Adicionar a planilha ao livro
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Histórico Pátio');
+      
+      // Gerar arquivo e fazer download
+      XLSX.writeFile(workbook, `historico_patio_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      
+      console.log('Exportação concluída com sucesso');
     } catch (error) {
-      console.error('Erro ao criar arquivo para download:', error);
+      console.error('Erro ao exportar para Excel:', error);
       alert('Erro ao exportar dados. Por favor, tente novamente.');
     }
   };

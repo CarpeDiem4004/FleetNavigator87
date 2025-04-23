@@ -223,70 +223,60 @@ const HistoricoGeralPage: React.FC = () => {
     }
   };
 
-  const handleExportarExcel = () => {
-    // Filtrar dados de acordo com a data e busca
-    let dadosFiltrados = [...filteredData];
-    
-    // Preparar dados para CSV
-    const headers = [
-      'Data', 'Placa', 'KM', 'Tipo Combustível', 
-      'Litros', 'Preço/L', 'Valor Total', 'Motorista', 
-      'Operador', 'Projeto', 'Posto'
-    ];
-    
-    const csvData = dadosFiltrados.map(item => [
-      formatarData(item.created_at),
-      item.placa,
-      item.km_atual.toString(),
-      item.tipo_combustivel,
-      formatarNumero(item.litros),
-      item.preco_litro ? item.preco_litro.toFixed(2).replace('.', ',') : '-',
-      item.valor_total ? item.valor_total.toFixed(2).replace('.', ',') : '-',
-      item.nome_motorista,
-      item.nome_operador,
-      item.project || '-',
-      item.posto
-    ]);
-    
-    // Combinar headers e dados
-    const csvContent = [
-      headers.join(';'),
-      ...csvData.map(row => row.join(';'))
-    ].join('\n');
-    
-    // Criar e download do arquivo usando uma abordagem mais segura
+  const handleExportarExcel = async () => {
     try {
-      // Criar Blob com os dados CSV
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      // Importar a biblioteca xlsx dinamicamente
+      const XLSX = await import('xlsx');
       
-      // Usar a API de navegação para iniciar download direto sem manipulação DOM
-      // Isso evita o erro 'removeChild' completamente
-      if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-        // Para IE/Edge
-        window.navigator.msSaveOrOpenBlob(blob, `historico_abastecimentos_${new Date().toISOString().slice(0, 10)}.csv`);
-        return;
-      }
+      // Filtrar dados de acordo com a data e busca
+      let dadosFiltrados = [...filteredData];
       
-      // Para navegadores modernos
-      const url = URL.createObjectURL(blob);
+      // Preparar os dados para Excel
+      const excelData = dadosFiltrados.map(item => ({
+        'Data': formatarData(item.created_at),
+        'Placa': item.placa,
+        'KM': item.km_atual,
+        'Combustível': item.tipo_combustivel,
+        'Litros': item.litros,
+        'Preço/L': item.preco_litro ? `R$ ${item.preco_litro.toFixed(2)}` : '-',
+        'Valor Total': item.valor_total ? `R$ ${item.valor_total.toFixed(2)}` : '-',
+        'Motorista': item.nome_motorista,
+        'Operador': item.nome_operador,
+        'Projeto': item.project || '-',
+        'Posto': item.posto
+      }));
       
-      // Criar link para download sem anexá-lo ao DOM
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `historico_abastecimentos_${new Date().toISOString().slice(0, 10)}.csv`;
+      // Criar uma nova planilha
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
       
-      // Esta abordagem funciona sem problemas de removeChild
-      document.body.appendChild(a);
-      a.click();
+      // Definir larguras de colunas para melhor visualização
+      const wscols = [
+        { wch: 10 }, // Data
+        { wch: 10 }, // Placa
+        { wch: 8 },  // KM
+        { wch: 12 }, // Combustível
+        { wch: 8 },  // Litros
+        { wch: 10 }, // Preço/L
+        { wch: 12 }, // Valor Total
+        { wch: 20 }, // Motorista
+        { wch: 20 }, // Operador
+        { wch: 15 }, // Projeto
+        { wch: 15 }  // Posto
+      ];
+      worksheet['!cols'] = wscols;
       
-      // Remover o elemento e liberar o recurso
-      window.setTimeout(() => {
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-      }, 100);
+      // Criar um novo livro
+      const workbook = XLSX.utils.book_new();
+      
+      // Adicionar a planilha ao livro
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Histórico Abastecimentos');
+      
+      // Gerar arquivo e fazer download
+      XLSX.writeFile(workbook, `historico_abastecimentos_geral_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      
+      console.log('Exportação concluída com sucesso');
     } catch (error) {
-      console.error('Erro ao criar arquivo para download:', error);
+      console.error('Erro ao exportar para Excel:', error);
       alert('Erro ao exportar dados. Por favor, tente novamente.');
     }
   };

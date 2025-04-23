@@ -124,55 +124,39 @@ export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ 
     fetchMovimentacoes();
   };
   
-  const handleExportarExcel = () => {
+  const handleExportarExcel = async () => {
     if (movimentacoes.length === 0) return;
     
-    // Preparar dados para CSV
-    const headers = [
-      'Placa', 'Tipo de Movimento', 'Motorista', 'Operador',
-      'Posto', 'Data/Hora'
-    ];
-    
-    const csvData = movimentacoes.map(item => [
-      item.placa,
-      item.tipo_movimento,
-      item.nome_motorista,
-      item.nome_operador,
-      item.posto,
-      formatarData(item.created_at)
-    ]);
-    
-    // Combinar headers e dados
-    const csvContent = [
-      headers.join(';'),
-      ...csvData.map(row => row.join(';'))
-    ].join('\n');
-    
-    // Criar e download do arquivo usando uma abordagem segura
     try {
-      // Criar Blob com os dados CSV
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      // Importar a biblioteca xlsx dinamicamente
+      const XLSX = await import('xlsx');
       
-      // Para navegadores modernos
-      const url = URL.createObjectURL(blob);
+      // Preparar os dados para Excel
+      const excelData = movimentacoes.map(item => ({
+        'Placa': item.placa,
+        'Tipo de Movimento': item.tipo_movimento || '-',
+        'Motorista': item.nome_motorista || '-',
+        'Operador': item.nome_operador || '-',
+        'Posto': item.posto,
+        'Data/Hora': formatarData(item.created_at),
+        'Motivo': item.motivo || '-'
+      }));
       
-      // Criar link para download sem anexá-lo ao DOM
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `movimentacoes_patio_${formatPosto(postId)}_${new Date().toISOString().slice(0, 10)}.csv`;
+      // Criar uma nova planilha
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
       
-      // Esta abordagem funciona sem problemas de removeChild
-      document.body.appendChild(a);
-      a.click();
+      // Criar um novo livro
+      const workbook = XLSX.utils.book_new();
       
-      // Remover o elemento e liberar o recurso
-      window.setTimeout(() => {
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-      }, 100);
+      // Adicionar a planilha ao livro
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Movimentações');
+      
+      // Gerar arquivo e fazer download
+      XLSX.writeFile(workbook, `movimentacoes_patio_${formatPosto(postId)}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      
+      console.log('Exportação concluída com sucesso');
     } catch (error) {
-      console.error('Erro ao criar arquivo para download:', error);
+      console.error('Erro ao exportar para Excel:', error);
       alert('Erro ao exportar dados. Por favor, tente novamente.');
     }
   };
