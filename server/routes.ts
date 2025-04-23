@@ -32,6 +32,7 @@ import { atualizarTabelaPneus } from "./updatePneus";
 import { randomBytes, scrypt } from "crypto";
 import { promisify } from "util";
 import { setupTireActivityRoutes, setupTireActivityTable } from "./tireActivityApi";
+import { consultarUsuarios, consultarUsuarioPorId } from "./handlers/userHandler";
 
 // Função auxiliar para hash de senha (usada na criação de usuários de oficinas)
 const scryptAsync = promisify(scrypt);
@@ -3234,6 +3235,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Novas rotas de consulta de usuários (API alternativa)
+  
+  // Rota para listar todos os usuários com filtros opcionais (role, baseId, active)
+  // ex: /api/usuarios?role=admin&active=true
+  app.get("/api/usuarios", isAuthenticated, consultarUsuarios);
+  
+  // Rota para obter um usuário específico pelo ID
+  app.get("/api/usuarios/:id", isAuthenticated, consultarUsuarioPorId);
+  
+  // Rota de teste para consulta de usuários (sem autenticação - apenas para desenvolvimento)
+  app.get("/api/teste/usuarios", consultarUsuarios);
+  
   // Rota para users (tem problema no fechamento do endpoint anterior)
 
   // Dashboard API
