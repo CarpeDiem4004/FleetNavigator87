@@ -137,6 +137,7 @@ const basicRoutes = [
   '/fuel-card',              // Cartão de Combustível
   '/fuel-card-requests',     // Painel de Solicitações Fuel Card
   '/posto-remedios',         // Posto Remédios
+  '/cartao-abastecimento',  // Cartão de Abastecimento
   '/work-safety',            // Informar acidentes de trabalho
   '/seguranca-trabalho',     // Alias para segurança do trabalho
   '/theft',                  // Registro de roubos
@@ -248,6 +249,7 @@ export const useBasePermission = (): BasePermissionHook => {
         '/fuel-card',                                 // Cartão de Combustível
         '/fuel-card-requests',                        // Painel de Solicitações Fuel Card
         '/posto-remedios',                            // Posto Remédios
+        '/cartao-abastecimento',                     // Cartão de Abastecimento
         '/tires',                                     // Pneus
         '/fines',                                     // Multas
         '/line-hall-shopee',                          // Line Hall Shopee
