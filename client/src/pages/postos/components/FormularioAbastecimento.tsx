@@ -656,22 +656,22 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       // Obter data e hora atual
       const dataRegistro = new Date();
       
-      // Dados formatados para inserção
+      // Dados formatados para inserção - adaptados para o esquema do Supabase
       const abastecimentoData = {
         placa: data.placa.toUpperCase(),
-        km_atual: Number(data.km),
-        tipo_combustivel: data.tipo,
+        km: Number(data.km), // Mudado de km_atual para km conforme schema do Supabase
+        tipo_produto: data.tipo, // Mudado de tipo_combustivel para tipo_produto
         litros: Number(data.quantidade),
         valor_litro: valorPorLitro,
         valor_total: Number(data.valor_total),
         project: data.projeto,
         nome_motorista: data.motorista,
-        motorista_rg: data.motorista_rg, // Adicionado campo RG do motorista
+        motorista_rg: data.motorista_rg,
         nome_operador: data.operador,
-        posto: formatPosto(postId), // Use o campo 'posto' em vez de 'posto_id'
-        tipo_veiculo: data.tipo_veiculo, // Inclui o tipo de veículo (frota ou terceirizado)
-        data_registro: dataRegistro, // Adicionamos a data e hora atual
-        created_at: dataRegistro // Adicionamos também em created_at para compatibilidade
+        posto: formatPosto(postId),
+        tipo_veiculo: data.tipo_veiculo,
+        data_abastecimento: dataRegistro, // Mudado de data_registro para data_abastecimento
+        created_at: dataRegistro
       };
       
       console.log('Dados de abastecimento a serem enviados:', abastecimentoData);
@@ -749,22 +749,22 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
           try {
             const { supabase } = await import('@/lib/supabase-client');
             
-            // Dados formatados para o Supabase
+            // Dados formatados para o Supabase - ajustado ao esquema real
             const dadosAbastecimento = {
-              quantidade_litros: Number(data.quantidade),
+              litros: Number(data.quantidade), // Mudado de quantidade_litros para litros
               valor_litro: userRole === 'admin' ? Number(data.valor_litro) : undefined,
               valor_total: Number(data.valor_total),
               placa: data.placa.toUpperCase(),
-              km_atual: Number(data.km),
+              km: Number(data.km), // Mudado de km_atual para km
               posto: formatPosto(postId),
               nome_motorista: data.motorista,
-              motorista_rg: data.motorista_rg, // Adicionado campo RG do motorista
+              motorista_rg: data.motorista_rg, 
               nome_operador: data.operador,
               project: data.projeto,
-              tipo_combustivel: data.tipo,
+              tipo_produto: data.tipo, // Mudado de tipo_combustivel para tipo_produto
               tipo_veiculo: data.tipo_veiculo,
-              data_registro: dataRegistro, // Adicionamos a data e hora atual
-              created_at: dataRegistro // Compatibilidade com created_at
+              data_abastecimento: dataRegistro, // Mudado de data_registro para data_abastecimento
+              created_at: dataRegistro 
             };
             
             const { data: resultadoInsercao, error } = await supabase
@@ -792,20 +792,20 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               'Authorization': `Bearer ${userToken}` 
             },
             body: JSON.stringify({
-              quantidade_litros: Number(data.quantidade),
+              litros: Number(data.quantidade), // Mudado para campos compatíveis com o Supabase
               valor_litro: userRole === 'admin' ? Number(data.valor_litro) : undefined,
               valor_total: Number(data.valor_total),
-              placa: data.placa,
+              placa: data.placa.toUpperCase(),
               km: Number(data.km),
               posto: formatPosto(postId),
-              motorista: data.motorista,
-              motorista_rg: data.motorista_rg, // Adicionado campo RG do motorista
-              operador: data.operador,
-              projeto: data.projeto,
-              tipo_combustivel: data.tipo,
+              nome_motorista: data.motorista,
+              motorista_rg: data.motorista_rg,
+              nome_operador: data.operador,
+              project: data.projeto,
+              tipo_produto: data.tipo, // Mudado de tipo_combustivel para tipo_produto
               tipo_veiculo: data.tipo_veiculo,
-              data_registro: dataRegistro, // Adicionamos a data atual
-              created_at: dataRegistro // Para compatibilidade
+              data_abastecimento: dataRegistro, // Mudado para data_abastecimento
+              created_at: dataRegistro
             })
           });
           
@@ -837,8 +837,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               credentials: 'include', // Envia os cookies de autenticação
               body: JSON.stringify({
                 placa: abastecimentoData.placa,
-                km: abastecimentoData.km_atual,
-                tipo: abastecimentoData.tipo_combustivel,
+                km: abastecimentoData.km,
+                tipo: abastecimentoData.tipo_produto,
                 quantidade: abastecimentoData.litros,
                 valor_litro: abastecimentoData.valor_litro,
                 valor_total: abastecimentoData.valor_total,
