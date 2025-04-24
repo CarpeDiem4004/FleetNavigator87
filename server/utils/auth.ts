@@ -12,19 +12,20 @@ export class AuthError extends Error {
 export async function validateSupabaseToken(token: string) {
   // Verificar configurações do Supabase
   const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
   
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!supabaseUrl || !supabaseKey) {
     throw new Error('Configuração do Supabase não disponível');
   }
   
   // Criar cliente Supabase
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  const supabase = createClient(supabaseUrl, supabaseKey);
   
   // Verificar token
   const { data: { user }, error } = await supabase.auth.getUser(token);
   
   if (error || !user) {
+    console.error('[validateSupabaseToken] Erro ao validar token:', error);
     throw new AuthError();
   }
   
