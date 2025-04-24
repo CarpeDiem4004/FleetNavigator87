@@ -1,11 +1,17 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Valores padrão para desenvolvimento
+// Usando exatamente as mesmas chaves do .env
 const SUPABASE_URL = 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';
 const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDg5ODIwNiwiZXhwIjoyMDYwMjc0MjA2fQ.bvwwqQBQVUOlyHYMsX9C5dSQhsQYI2r8qmqRBHgG_0Y';
 
-// Usar variáveis de ambiente se disponíveis
+// Usar variáveis de ambiente se disponíveis (debug para depuração)
+console.log('Verificando variáveis de ambiente do Supabase:');
+console.log('- VITE_SUPABASE_URL disponível:', !!import.meta.env.VITE_SUPABASE_URL);
+console.log('- VITE_SUPABASE_ANON_KEY disponível:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
+console.log('- VITE_SUPABASE_SERVICE_KEY disponível:', !!import.meta.env.VITE_SUPABASE_SERVICE_KEY);
+
 export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || SUPABASE_URL;
 export const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
 export const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY || SUPABASE_SERVICE_KEY;

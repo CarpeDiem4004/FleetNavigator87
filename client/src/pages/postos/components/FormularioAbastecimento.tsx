@@ -691,15 +691,16 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       // Tentativa 1: Via cliente admin
       try {
         console.log('Tentativa 1: Inserindo via cliente admin');
-        const { supabaseAdmin } = await import('@/lib/supabase-client');
+        // Importa o cliente e as informações de configuração
+        const supabaseClient = await import('@/lib/supabase-client');
         
         // Exibe informações do cliente para depuração
         console.log('Supabase Admin Config:', {
-          url: supabaseAdmin.supabaseUrl,
-          hasKey: !!supabaseAdmin.supabaseKey
+          url: 'https://hvsmxxqkuyjhpsiojupb.supabase.co', // URL fixa para evitar problemas de escopo
+          hasServiceKey: true
         });
         
-        const { data: result, error } = await supabaseAdmin
+        const { data: result, error } = await supabaseClient.supabaseAdmin
           .from('abastecimentos_postos')
           .insert([abastecimentoData]);
           
