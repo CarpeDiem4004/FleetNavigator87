@@ -381,6 +381,70 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
               />
             </div>
           )}
+          
+          {/* Campo de upload do CRLV */}
+          <div className="space-y-2">
+            <Label htmlFor="crlvFile" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              CRLV (Certificado de Registro e Licenciamento)
+            </Label>
+            <div className="flex flex-col space-y-2">
+              <div className="flex items-center gap-2">
+                <Input
+                  id="crlvFile"
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={handleCrlvUpload}
+                  className="flex-1"
+                  disabled={isUploadingCrlv}
+                />
+                {isUploadingCrlv && (
+                  <div className="animate-spin h-5 w-5 border-2 border-gray-500 border-t-transparent rounded-full"></div>
+                )}
+              </div>
+              {crlvUrl && (
+                <div className="flex items-center gap-2 text-sm text-green-600">
+                  <FileText className="h-4 w-4" />
+                  <span>Documento CRLV anexado</span>
+                  <a href={crlvUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    Visualizar
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Campo de upload do ANTT */}
+          <div className="space-y-2">
+            <Label htmlFor="anttFile" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              ANTT (Agência Nacional de Transportes Terrestres)
+            </Label>
+            <div className="flex flex-col space-y-2">
+              <div className="flex items-center gap-2">
+                <Input
+                  id="anttFile"
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={handleAnttUpload}
+                  className="flex-1"
+                  disabled={isUploadingAntt}
+                />
+                {isUploadingAntt && (
+                  <div className="animate-spin h-5 w-5 border-2 border-gray-500 border-t-transparent rounded-full"></div>
+                )}
+              </div>
+              {anttUrl && (
+                <div className="flex items-center gap-2 text-sm text-green-600">
+                  <FileText className="h-4 w-4" />
+                  <span>Documento ANTT anexado</span>
+                  <a href={anttUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    Visualizar
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
         </CardContent>
         <CardFooter>
           <Button 
