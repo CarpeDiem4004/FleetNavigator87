@@ -662,6 +662,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         valor_total: Number(data.valor_total),
         project: data.projeto,
         nome_motorista: data.motorista,
+        motorista_rg: data.motorista_rg, // Adicionado campo RG do motorista
         nome_operador: data.operador,
         posto: formatPosto(postId), // Use o campo 'posto' em vez de 'posto_id'
         tipo_veiculo: data.tipo_veiculo // Inclui o tipo de veículo (frota ou terceirizado)
@@ -749,6 +750,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               km_atual: Number(data.km),
               posto: formatPosto(postId),
               nome_motorista: data.motorista,
+              motorista_rg: data.motorista_rg, // Adicionado campo RG do motorista
               nome_operador: data.operador,
               project: data.projeto,
               tipo_combustivel: data.tipo,
