@@ -79,7 +79,6 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
   
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isPrecosDialogOpen, setIsPrecosDialogOpen] = useState(false);
   const [configId, setConfigId] = useState<number | undefined>(undefined);
   
   // Estados para os campos do formulário
@@ -588,7 +587,19 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
             <Button 
               variant="outline" 
               className="flex items-center gap-2"
-              onClick={() => setIsPrecosDialogOpen(true)}
+              onClick={() => {
+                // Encontra o botão no cartão de preços e o clica
+                const precosBtn = document.querySelector('[data-precos-combustivel-btn]') as HTMLButtonElement;
+                if (precosBtn) {
+                  precosBtn.click();
+                } else {
+                  toast({
+                    title: "Atenção",
+                    description: "Não foi possível abrir o configurador de preços.",
+                    variant: "destructive"
+                  });
+                }
+              }}
             >
               <DollarSign className="h-4 w-4" />
               Preços
@@ -712,16 +723,7 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
         }}
       />
       
-      {/* Diálogo para configurar preços */}
-      <PrecosCombustivelDialog 
-        isOpen={isPrecosDialogOpen} 
-        onClose={() => setIsPrecosDialogOpen(false)}
-        onSave={() => {
-          // Atualizar os valores dos preços na interface
-          fetchDados();
-          setIsPrecosDialogOpen(false);
-        }}
-      />
+      {/* O diálogo de preços foi movido para o componente PrecosCombustivelCard */}
     </div>
   );
 };
