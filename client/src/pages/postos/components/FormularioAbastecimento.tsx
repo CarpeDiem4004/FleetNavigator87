@@ -81,7 +81,7 @@ const FormularioForm = ({
     defaultValues: {
       placa: '',
       km: '',
-      tipo: undefined,
+      tipo: '',
       quantidade: '',
       valor_litro: '',
       valor_total: '0',
@@ -209,7 +209,7 @@ const FormularioForm = ({
                         }}
                         onBlur={field.onBlur}
                       >
-                        <option value="" disabled>Selecione o combustível</option>
+                        <option value="">Selecione o combustível</option>
                         <option value="Diesel">Diesel</option>
                         <option value="ARLA">ARLA</option>
                       </select>
@@ -324,7 +324,7 @@ const FormularioForm = ({
                         onChange={field.onChange}
                         onBlur={field.onBlur}
                       >
-                        <option value="" disabled>Selecione o projeto</option>
+                        <option value="">Selecione o projeto</option>
                         <option value="GRUPO PEREIRA">GRUPO PEREIRA</option>
                         <option value="COCA COLA">COCA COLA</option>
                         <option value="SHOPEE">SHOPEE</option>
