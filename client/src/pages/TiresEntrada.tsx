@@ -38,6 +38,8 @@ interface Tire {
   profundidade_sulco: number;
   localizacao: string;
   status: 'estoque';
+  quantidade?: number;
+  valor_unitario?: number;
 }
 
 const TiresEntrada: React.FC = () => {
@@ -57,6 +59,8 @@ const TiresEntrada: React.FC = () => {
     profundidade_sulco: 12.0,
     localizacao: 'almoxarifado',
     status: 'estoque',
+    quantidade: 1,
+    valor_unitario: 0,
   });
   
   // Estado para lista de pneus a serem adicionados
@@ -125,8 +129,36 @@ const TiresEntrada: React.FC = () => {
     try {
       const supabase = createSupabaseClient();
       
+      // Expandir array para incluir múltiplas quantidades do mesmo pneu
+      const expandedTires: Tire[] = [];
+      
+      tiresQueue.forEach(tire => {
+        // Quantidade a processar (mínimo 1)
+        const quantidade = tire.quantidade && tire.quantidade > 1 ? tire.quantidade : 1;
+        
+        // Se quantidade for 1, adiciona o pneu diretamente
+        if (quantidade === 1) {
+          expandedTires.push({
+            ...tire,
+            // Garante que quantidade será 1 no registro
+            quantidade: 1
+          });
+        } else {
+          // Se quantidade > 1, cria múltiplos registros
+          // Para cada pneu, criamos um código único baseado no original
+          for (let i = 0; i < quantidade; i++) {
+            const codigoUnico = `${tire.codigo}-${i+1}`;
+            expandedTires.push({
+              ...tire,
+              codigo: codigoUnico,
+              quantidade: 1
+            });
+          }
+        }
+      });
+      
       // Preparar dados com created_at e updated_at
-      const tiresWithTimestamps = tiresQueue.map(tire => ({
+      const tiresWithTimestamps = expandedTires.map(tire => ({
         ...tire,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -140,9 +172,17 @@ const TiresEntrada: React.FC = () => {
       
       if (error) throw error;
       
+      const totalTires = tiresWithTimestamps.length;
+      const totalValor = tiresWithTimestamps.reduce((acc, tire) => 
+        acc + (tire.valor_unitario || 0), 0
+      );
+      
       toast({
         title: "Pneus cadastrados com sucesso",
-        description: `${data.length} pneus foram adicionados ao inventário.`,
+        description: `${totalTires} pneus foram adicionados ao inventário, totalizando ${totalValor.toLocaleString('pt-BR', {
+          style: 'currency',
+          currency: 'BRL'
+        })}.`,
         variant: "default"
       });
       
@@ -345,6 +385,34 @@ const TiresEntrada: React.FC = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                
+                {/* Quantidade e Valor Unitário */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="quantidade">Quantidade</Label>
+                    <Input
+                      id="quantidade"
+                      type="number"
+                      min="1"
+                      value={tireTemplate.quantidade?.toString() || '1'}
+                      onChange={(e) => setTireTemplate({...tireTemplate, quantidade: parseInt(e.target.value) || 1})}
+                      placeholder="Quantidade"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="valor_unitario">Valor Unitário (R$)</Label>
+                    <Input
+                      id="valor_unitario"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={tireTemplate.valor_unitario?.toString() || '0'}
+                      onChange={(e) => setTireTemplate({...tireTemplate, valor_unitario: parseFloat(e.target.value) || 0})}
+                      placeholder="Valor unitário"
+                    />
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -376,13 +444,30 @@ const TiresEntrada: React.FC = () => {
                 </div>
                 
                 <div className="mt-4">
-                  <h3 className="text-sm font-medium mb-2">Pneus na fila: {tiresQueue.length}</h3>
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-sm font-medium">Pneus na fila: {tiresQueue.length}</h3>
+                    {tiresQueue.length > 0 && (
+                      <div className="text-sm text-right">
+                        <span className="font-medium">Total: </span>
+                        {tiresQueue.reduce((total, tire) => {
+                          const quantidade = tire.quantidade || 1;
+                          const valorUnitario = tire.valor_unitario || 0;
+                          return total + (quantidade * valorUnitario);
+                        }, 0).toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        })}
+                      </div>
+                    )}
+                  </div>
                   {tiresQueue.length > 0 ? (
                     <div className="max-h-[350px] overflow-y-auto border rounded-md">
                       <Table>
                         <TableHeader>
                           <TableRow>
                             <TableHead>Código</TableHead>
+                            <TableHead>Qtd.</TableHead>
+                            <TableHead>Valor (R$)</TableHead>
                             <TableHead className="w-[80px]">Ação</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -390,6 +475,23 @@ const TiresEntrada: React.FC = () => {
                           {tiresQueue.map((tire) => (
                             <TableRow key={tire.codigo}>
                               <TableCell className="font-medium">{tire.codigo}</TableCell>
+                              <TableCell>{tire.quantidade || 1}</TableCell>
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span>{(tire.valor_unitario || 0).toLocaleString('pt-BR', {
+                                    style: 'currency',
+                                    currency: 'BRL'
+                                  })}</span>
+                                  {(tire.quantidade || 1) > 1 && (
+                                    <span className="text-xs text-muted-foreground">
+                                      Total: {((tire.valor_unitario || 0) * (tire.quantidade || 1)).toLocaleString('pt-BR', {
+                                        style: 'currency',
+                                        currency: 'BRL'
+                                      })}
+                                    </span>
+                                  )}
+                                </div>
+                              </TableCell>
                               <TableCell>
                                 <Button
                                   variant="ghost"
