@@ -54,6 +54,8 @@ interface ConfiguracaoTanques {
   diesel_nivel: number;
   arla_capacidade: number;
   arla_nivel: number;
+  diesel_valor_litro?: number;
+  arla_valor_litro?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -85,8 +87,10 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
   // Estados para os campos do formulário
   const [dieselNivel, setDieselNivel] = useState<number>(statusTanque.diesel.nivel);
   const [dieselCapacidade, setDieselCapacidade] = useState<number>(statusTanque.diesel.capacidade);
+  const [dieselValorLitro, setDieselValorLitro] = useState<number>(5.00);
   const [arlaNivel, setArlaNivel] = useState<number>(statusTanque.arla.nivel);
   const [arlaCapacidade, setArlaCapacidade] = useState<number>(statusTanque.arla.capacidade);
+  const [arlaValorLitro, setArlaValorLitro] = useState<number>(3.00);
   const [isSalvando, setIsSalvando] = useState(false);
   
   // Mapa de configurações em memória (sem necessidade de API)
@@ -133,6 +137,14 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
         setDieselCapacidade(configLocal.diesel_capacidade);
         setArlaNivel(configLocal.arla_nivel);
         setArlaCapacidade(configLocal.arla_capacidade);
+        
+        // Atualizar os valores de litro se existirem
+        if (configLocal.diesel_valor_litro) {
+          setDieselValorLitro(configLocal.diesel_valor_litro);
+        }
+        if (configLocal.arla_valor_litro) {
+          setArlaValorLitro(configLocal.arla_valor_litro);
+        }
       }
       
       // Independente de encontrar local, tenta buscar da API (PostgreSQL)
@@ -161,6 +173,14 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
           setDieselCapacidade(config.diesel_capacidade);
           setArlaNivel(config.arla_nivel);
           setArlaCapacidade(config.arla_capacidade);
+          
+          // Atualizar os valores de preço por litro se existirem
+          if (config.diesel_valor_litro) {
+            setDieselValorLitro(config.diesel_valor_litro);
+          }
+          if (config.arla_valor_litro) {
+            setArlaValorLitro(config.arla_valor_litro);
+          }
           
           // Salvar também no localStorage como backup
           saveStoredConfig(postId, config);
@@ -223,8 +243,10 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
       const dadosConfig = {
         diesel_capacidade: capacidadeDiesel,
         diesel_nivel: nivelDiesel,
+        diesel_valor_litro: Number(dieselValorLitro),
         arla_capacidade: capacidadeArla,
-        arla_nivel: nivelArla
+        arla_nivel: nivelArla,
+        arla_valor_litro: Number(arlaValorLitro)
       };
       
       // Salvar localmente primeiro (independente da API)
@@ -314,6 +336,17 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
     setDieselCapacidade(statusTanque.diesel.capacidade);
     setArlaNivel(statusTanque.arla.nivel);
     setArlaCapacidade(statusTanque.arla.capacidade);
+    
+    // Verificar se existe configuração local para pegar os valores de preço
+    const configLocal = getStoredConfig(postId);
+    if (configLocal) {
+      if (configLocal.diesel_valor_litro) {
+        setDieselValorLitro(configLocal.diesel_valor_litro);
+      }
+      if (configLocal.arla_valor_litro) {
+        setArlaValorLitro(configLocal.arla_valor_litro);
+      }
+    }
     
     // Abrir o diálogo
     setIsDialogOpen(true);
@@ -633,6 +666,17 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
                     min={1000}
                   />
                 </div>
+                <div className="space-y-1">
+                  <Label htmlFor="dieselValorLitro">Valor por Litro (R$)</Label>
+                  <Input
+                    id="dieselValorLitro"
+                    type="number"
+                    step="0.01"
+                    value={dieselValorLitro}
+                    onChange={(e) => setDieselValorLitro(Number(e.target.value))}
+                    min={0}
+                  />
+                </div>
               </div>
             </div>
             
@@ -659,6 +703,17 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
                     value={arlaCapacidade}
                     onChange={(e) => setArlaCapacidade(Number(e.target.value))}
                     min={100}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="arlaValorLitro">Valor por Litro (R$)</Label>
+                  <Input
+                    id="arlaValorLitro"
+                    type="number"
+                    step="0.01"
+                    value={arlaValorLitro}
+                    onChange={(e) => setArlaValorLitro(Number(e.target.value))}
+                    min={0}
                   />
                 </div>
               </div>
