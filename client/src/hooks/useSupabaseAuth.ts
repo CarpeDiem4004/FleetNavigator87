@@ -23,6 +23,7 @@ export interface UseSupabaseAuthReturn {
   signUp: (email: string, password: string, name: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   syncLoginWithAPI: (email: string, password: string) => Promise<boolean>;
+  resyncSession: () => Promise<boolean>;
 }
 
 export function useSupabaseAuth(): UseSupabaseAuthReturn {
@@ -217,6 +218,45 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
       return false;
     }
   };
+  
+  // Função para ressincronizar a sessão usando o token JWT do Supabase
+  const resyncSession = async () => {
+    try {
+      if (!supabaseUser || !session) {
+        console.log('Não é possível ressincronizar: nenhum usuário Supabase autenticado');
+        return false;
+      }
+      
+      console.log('[ResyncSession] Tentando ressincronizar sessão...');
+      
+      // Obter o token de acesso atual
+      const jwt = session.access_token;
+      
+      // Chamar a API para ressincronizar a sessão
+      const response = await fetch('/api/resync-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${jwt}`
+        },
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[ResyncSession] Erro ao ressincronizar sessão:', errorData.message || response.statusText);
+        return false;
+      }
+      
+      const data = await response.json();
+      console.log('[ResyncSession] Sessão ressincronizada com sucesso:', data);
+      
+      return true;
+    } catch (err) {
+      console.error('[ResyncSession] Erro ao ressincronizar sessão:', err);
+      return false;
+    }
+  };
 
   return {
     session,
@@ -228,5 +268,6 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
     signUp,
     signOut,
     syncLoginWithAPI,
+    resyncSession,
   };
 }

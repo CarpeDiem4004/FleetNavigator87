@@ -26,6 +26,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<User>;
   register: (email: string, password: string, name: string) => Promise<User>;
   logout: () => Promise<void>;
+  resyncSession: () => Promise<boolean>;
 }
 
 // Cria o contexto de autenticação
@@ -52,6 +53,7 @@ export const SupabaseAuthProvider = ({ children }: SupabaseAuthProviderProps) =>
     signUp,
     signOut,
     syncLoginWithAPI,
+    resyncSession,
   } = useSupabaseAuth();
   
   const [user, setUser] = useState<User | null>(null);
@@ -71,16 +73,22 @@ export const SupabaseAuthProvider = ({ children }: SupabaseAuthProviderProps) =>
           console.log('Status de autenticação:', authStatus);
           
           if (!authStatus.isAuthenticated) {
-            console.log('Usuário autenticado no Supabase mas não na API. Tentando sincronizar...');
-            // Obter o email do usuário Supabase para sincronização
-            const email = supabaseUser.email;
-            if (email) {
-              // Informar que a sessão está dessincronizada - o usuário precisará fazer login novamente
-              console.log('Sessão dessincronizada entre Supabase e API. Usuário deverá fazer login novamente.');
-              // Não tentamos mais fazer login com senha fixa por razões de segurança
+            console.log('Usuário autenticado no Supabase mas não na API. Tentando ressincronizar...');
+            
+            // Tentar ressincronizar a sessão usando o token JWT do Supabase
+            const resyncResult = await resyncSession();
+            
+            if (resyncResult) {
+              console.log('Ressincronização de sessão bem-sucedida!');
+              // Se a ressincronização for bem-sucedida, não é necessário mostrar mensagem ao usuário
+              // Podemos continuar normalmente obtendo os dados do usuário
+            } else {
+              // Se a ressincronização falhar, informar ao usuário que precisa fazer login novamente
+              console.log('Ressincronização de sessão falhou. Usuário precisará fazer login novamente.');
+              
               toast({
                 title: "Sessão expirada",
-                description: "Por favor, faça login novamente para continuar.",
+                description: "Sua sessão expirou. Por favor, faça login novamente para continuar.",
                 variant: "destructive",
               });
             }
@@ -260,7 +268,8 @@ export const SupabaseAuthProvider = ({ children }: SupabaseAuthProviderProps) =>
     isLoading,
     login,
     register,
-    logout
+    logout,
+    resyncSession // Adicionar a função de ressincronização ao contexto
   };
 
   return (
