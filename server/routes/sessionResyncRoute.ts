@@ -30,7 +30,7 @@ export async function resyncSession(req: Request, res: Response) {
     
     // Buscar o usuário no banco de dados
     const userResult = await pool.query(
-      'SELECT * FROM usuarios WHERE email = $1',
+      'SELECT * FROM users WHERE email = $1',
       [user.email]
     );
     
