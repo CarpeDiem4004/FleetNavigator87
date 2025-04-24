@@ -75,13 +75,14 @@ export const SupabaseAuthProvider = ({ children }: SupabaseAuthProviderProps) =>
             // Obter o email do usuário Supabase para sincronização
             const email = supabaseUser.email;
             if (email) {
-              // Tentar login simples na API - isso ajuda quando a sessão é perdida
-              try {
-                await syncLoginWithAPI(email, 'Murici@rogerio25');
-                console.log('Tentativa de sincronização por senha alternativa realizada');
-              } catch (syncError) {
-                console.warn('Erro na sincronização:', syncError);
-              }
+              // Informar que a sessão está dessincronizada - o usuário precisará fazer login novamente
+              console.log('Sessão dessincronizada entre Supabase e API. Usuário deverá fazer login novamente.');
+              // Não tentamos mais fazer login com senha fixa por razões de segurança
+              toast({
+                title: "Sessão expirada",
+                description: "Por favor, faça login novamente para continuar.",
+                variant: "destructive",
+              });
             }
           }
           

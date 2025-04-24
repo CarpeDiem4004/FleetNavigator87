@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { ADMIN_EMAILS, FLEET_MANAGEMENT_BASE_ID, isUserAdmin, isUserInFleetManagement, canUserAccessBase } from './constants';
 
 /**
  * Middleware para verificar se o usuário está autenticado
@@ -23,25 +24,13 @@ export const isAuthenticated = (req: Request, res: Response, next: NextFunction)
  * Permite acesso para usuários com role='admin' ou emails específicos
  */
 export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
-  // Lista de emails de administradores específicos
-  const adminEmails = [
-    'joao.paulo@muricionfleet.com',
-    'regio@muricionfleet.com',
-    'andre.rosa@muricionfleet.com'
-  ];
-  
   // Verificar autenticação primeiro
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Usuário não autenticado" });
   }
   
-  // Permitir acesso para:
-  // 1. Qualquer role que contenha a palavra 'admin' independente de maiúsculas/minúsculas
-  // 2. Emails específicos de administradores
-  if (req.user && (
-      (req.user.role && req.user.role.toLowerCase().includes('admin')) ||
-      (req.user.email && adminEmails.includes(req.user.email.toLowerCase()))
-    )) {
+  // Verificar se o usuário é administrador
+  if (req.user && isUserAdmin(req.user)) {
     return next();
   }
   
@@ -60,13 +49,6 @@ export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
  * Permite acesso para admin, gestor, oficina ou baseId=12 (Gestão de Frotas)
  */
 export const hasMaintenanceAccess = (req: Request, res: Response, next: NextFunction) => {
-  // Lista de emails de administradores específicos
-  const adminEmails = [
-    'joao.paulo@muricionfleet.com',
-    'regio@muricionfleet.com',
-    'andre.rosa@muricionfleet.com'
-  ];
-  
   // Verificar autenticação primeiro
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Usuário não autenticado" });
@@ -74,10 +56,9 @@ export const hasMaintenanceAccess = (req: Request, res: Response, next: NextFunc
   
   // Verifica se o usuário está autenticado e tem permissão de acesso a manutenção
   if (req.user && (
-      (req.user.role && req.user.role.toLowerCase().includes('admin')) || 
-      (req.user.email && adminEmails.includes(req.user.email.toLowerCase())) ||
+      isUserAdmin(req.user) ||
       req.user.role === 'gestor' || 
-      req.user.baseId === 12 || 
+      req.user.baseId === FLEET_MANAGEMENT_BASE_ID || 
       req.user.role === 'oficina'
     )) {
     return next();
@@ -99,22 +80,14 @@ export const hasMaintenanceAccess = (req: Request, res: Response, next: NextFunc
  * Permite acesso para admin, baseId=12 (Gestão de Frotas) ou role='pneus'
  */
 export const hasTiresAccess = (req: Request, res: Response, next: NextFunction) => {
-  // Lista de emails de administradores específicos
-  const adminEmails = [
-    'joao.paulo@muricionfleet.com',
-    'regio@muricionfleet.com',
-    'andre.rosa@muricionfleet.com'
-  ];
-  
   // Verificar autenticação primeiro
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Usuário não autenticado" });
   }
   
   if (req.user && (
-    (req.user.role && req.user.role.toLowerCase().includes('admin')) || 
-    (req.user.email && adminEmails.includes(req.user.email.toLowerCase())) ||
-    req.user.baseId === 12 || 
+    isUserAdmin(req.user) ||
+    req.user.baseId === FLEET_MANAGEMENT_BASE_ID || 
     req.user.role === 'pneus'
   )) {
     return next();
@@ -136,13 +109,6 @@ export const hasTiresAccess = (req: Request, res: Response, next: NextFunction) 
  * Permite acesso para oficina ou admin
  */
 export const isWorkshop = (req: Request, res: Response, next: NextFunction) => {
-  // Lista de emails de administradores específicos
-  const adminEmails = [
-    'joao.paulo@muricionfleet.com',
-    'regio@muricionfleet.com',
-    'andre.rosa@muricionfleet.com'
-  ];
-  
   // Verificar autenticação primeiro
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Usuário não autenticado" });
@@ -150,8 +116,7 @@ export const isWorkshop = (req: Request, res: Response, next: NextFunction) => {
   
   if (req.user && (
     req.user.role === 'oficina' || 
-    (req.user.role && req.user.role.toLowerCase().includes('admin')) ||
-    (req.user.email && adminEmails.includes(req.user.email.toLowerCase()))
+    isUserAdmin(req.user)
   )) {
     return next();
   }
@@ -171,23 +136,13 @@ export const isWorkshop = (req: Request, res: Response, next: NextFunction) => {
  * Permite acesso para admin ou se a baseId do usuário corresponde à solicitada
  */
 export const hasBaseAccess = (req: Request, res: Response, next: NextFunction) => {
-  // Lista de emails de administradores específicos
-  const adminEmails = [
-    'joao.paulo@muricionfleet.com',
-    'regio@muricionfleet.com',
-    'andre.rosa@muricionfleet.com'
-  ];
-  
   // Verificar autenticação primeiro
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Usuário não autenticado" });
   }
   
-  // Se o usuário for admin ou tiver email específico, permite acesso a todas as bases
-  if (req.user && (
-      (req.user.role && req.user.role.toLowerCase().includes('admin')) ||
-      (req.user.email && adminEmails.includes(req.user.email.toLowerCase()))
-    )) {
+  // Se o usuário for admin, permite acesso a todas as bases
+  if (req.user && isUserAdmin(req.user)) {
     return next();
   }
   

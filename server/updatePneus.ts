@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 
 /**
  * Atualiza a tabela de pneus para incluir todos os campos necessários
+ * Verifica primeiro se pneus é uma tabela real ou uma view
  */
 export async function atualizarTabelaPneus() {
   try {
@@ -14,6 +15,15 @@ export async function atualizarTabelaPneus() {
     
     if (!tableExistsResult.rows[0].exists) {
       console.log("Tabela pneus não existe. Ela deve ser criada pelas migrações automáticas.");
+      return;
+    }
+
+    // Verificar se pneus é uma tabela real ou uma view
+    const checkTableTypeQuery = "SELECT table_type FROM information_schema.tables WHERE table_name = 'pneus'";
+    const tableTypeResult = await pool.query(checkTableTypeQuery);
+    
+    if (tableTypeResult.rows.length > 0 && tableTypeResult.rows[0].table_type !== 'BASE TABLE') {
+      console.log("Atenção: 'pneus' é uma view, não uma tabela física. Alterações de esquema não são permitidas.");
       return;
     }
 
@@ -36,5 +46,6 @@ export async function atualizarTabelaPneus() {
     console.log("Tabela pneus atualizada com sucesso!");
   } catch (error) {
     console.error("Erro ao atualizar tabela pneus:", error);
+    // Não relançamos o erro para não interromper a inicialização da aplicação
   }
 }
