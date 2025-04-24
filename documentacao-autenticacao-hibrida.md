@@ -1,149 +1,100 @@
-# Documentação de Autenticação Híbrida
-
-**Atualizado: 24/04/2025** - Adicionadas funções utilitárias para melhorar a manutenibilidade do código
+# Documentação: Sistema de Autenticação Híbrida
 
 ## Visão Geral
 
-O sistema implementa uma estratégia de autenticação híbrida que suporta dois métodos de autenticação:
+O sistema de autenticação híbrida permite que a aplicação valide usuários utilizando dois métodos em paralelo:
 
-1. **Autenticação por Sessão (Express Session)**: Usada principalmente dentro do ambiente Replit, onde o mesmo servidor gerencia tanto o frontend quanto o backend.
-2. **Autenticação por Token JWT (Supabase)**: Usada principalmente para acesso à API de fora do ambiente Replit, como em aplicativos móveis ou quando o frontend é hospedado em outro servidor.
+1. **Autenticação por Sessão** - Utilizando express-session + Passport (abordagem tradicional)
+2. **Autenticação por Token JWT** - Utilizando Supabase Auth (abordagem moderna para APIs)
 
-Esta abordagem híbrida resolve problemas de autenticação em diferentes ambientes e proporciona maior flexibilidade.
+Esta abordagem híbrida resolve os seguintes problemas:
 
-## Funções Utilitárias de Autenticação
+- Permite que o frontend funcione tanto no ambiente do Replit quanto fora dele
+- Mantém compatibilidade com código legado que utiliza autenticação por sessão
+- Adiciona suporte para clientes externos que precisam acessar as APIs usando tokens
 
-Em `server/utils/auth.ts` foram implementadas funções utilitárias para simplificar a validação de tokens:
+## Arquivos Principais
 
-```typescript
-// Classe de erro personalizada para autenticação
-export class AuthError extends Error {
-  constructor(message: string = "Não autenticado") {
-    super(message);
-    this.name = "AuthError";
-  }
-}
+### Middlewares de Autenticação
 
-// Função para validar token JWT do Supabase
-export async function validateSupabaseToken(token: string) {
-  // Verificação de token via Supabase
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  
-  if (error || !user) {
-    throw new AuthError();
-  }
-  
-  return user;
-}
+- `server/middleware/hybridAuth.ts` - Contém os middlewares principais que verificam tanto sessão quanto token JWT
+- `server/middleware/auth/index.ts` - Exporta os aliases de middleware para evitar circular references
+- `server/middleware/mapSupabaseUser.ts` - Middleware para mapear usuários Supabase para sessão
+- `server/middleware/simpleAuth.ts` - Versão simplificada do middleware para casos menos críticos
 
-// Função para extrair token JWT do cabeçalho Authorization
-export function extractJwtToken(authHeader: string | undefined): string {
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw new AuthError("Token ausente ou inválido");
-  }
-  
-  return authHeader.split(' ')[1];
-}
+### Clients Supabase
+
+- `client/src/lib/supabaseClient.ts` - Configuração do cliente Supabase para o frontend
+- `server/utils/supabaseClient.ts` - Configuração do cliente Supabase para o backend
+
+### Contexto de Autenticação
+
+- `client/src/context/SupabaseAuthContext.tsx` - Provê contexto de autenticação Supabase para o frontend
+- `client/src/context/AuthContext.tsx` - Contexto de autenticação original (mantido por compatibilidade)
+
+## Fluxo de Autenticação
+
+### Autenticação Híbrida (hybridAuth)
+
+```mermaid
+graph TD
+    A[Requisição] --> B{Tem sessão?}
+    B -->|Sim| C[Autorizado via Sessão]
+    B -->|Não| D{Tem token JWT?}
+    D -->|Sim| E[Autorizado via JWT]
+    D -->|Não| F[Não Autorizado - 401]
 ```
 
-## Estrutura de Middleware
+### Autenticação com Mapeamento (mapSupabaseUser)
 
-### Middleware Principal de Autenticação
-
-O middleware `isAuthenticated` em `server/middleware/auth.ts` foi refatorado para usar as funções utilitárias:
-
-```typescript
-export const isAuthenticated = async (req, res, next) => {
-  // Verifica sessão Express
-  if (req.isAuthenticated()) {
-    return next();
-  }
-  
-  // Verifica token JWT
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: "Não autenticado" });
-  }
-  
-  try {
-    // Usando as funções utilitárias para validar o token
-    const token = extractJwtToken(authHeader);
-    const user = await validateSupabaseToken(token);
-    
-    // Anexa o usuário validado à requisição
-    (req as any).supabaseUser = user;
-    return next();
-  } catch (error) {
-    if (error instanceof AuthError) {
-      return res.status(401).json({ message: "Não autenticado" });
-    }
-    return res.status(500).json({ message: "Erro interno do servidor" });
-  }
-};
+```mermaid
+graph TD
+    A[Requisição] --> B{Tem token JWT?}
+    B -->|Sim| C[Verificar token JWT]
+    C --> D{Token válido?}
+    D -->|Sim| E[Buscar usuário na base]
+    E --> F{Usuário existe?}
+    F -->|Sim| G[Criar sessão para o usuário]
+    F -->|Não| H[Erro 401 - Usuário não encontrado]
+    D -->|Não| I[Erro 401 - Token inválido]
+    B -->|Não| J[Continuar sem mapear]
 ```
 
-### Middlewares de Autorização
+## Tipos de Middleware
 
-Todos os middlewares de autorização (isAdmin, hasMaintenanceAccess, etc.) foram atualizados para verificar tanto `req.user` (sessão) quanto `req.supabaseUser` (JWT):
+1. **isAuthenticated** - Verifica se o usuário está autenticado por sessão OU token JWT
+2. **isAuthenticatedWithMapping** - Verifica token JWT e mapeia para sessão automaticamente
+3. **isSessionAuthenticated** - Verifica apenas autenticação por sessão
+4. **isJwtAuthenticated** - Verifica apenas autenticação por token JWT
 
-```typescript
-export const isAdmin = (req, res, next) => {
-  // Verificar autenticação primeiro
-  if (!req.isAuthenticated() && !(req as any).supabaseUser) {
-    return res.status(401).json({ message: "Usuário não autenticado" });
-  }
-  
-  const user = req.user || (req as any).supabaseUser;
-  if (user && isUserAdmin(user)) {
-    return next();
-  }
-  
-  // Acesso negado...
-};
-```
+## Rotas de Teste
 
-## Como Funciona
+Para verificar o funcionamento da autenticação híbrida, use as seguintes rotas:
 
-1. **Usuário acessa via navegador no Replit**: Usa autenticação por sessão naturalmente
-2. **Usuário acessa via aplicativo externo**: Envia token JWT no cabeçalho Authorization
-3. **Middleware verifica ambos**: Tenta sessão primeiro, depois JWT se necessário
-4. **Autorização uniforme**: Todos os middlewares usam o objeto `user` de qualquer origem
+- `/api/auth-test/hybrid` - Verifica autenticação híbrida (sessão OU JWT)
+- `/api/auth-test/mapping` - Verifica mapeamento de token JWT para sessão
+- `/api/auth-test/session` - Verifica apenas autenticação por sessão
+- `/api/auth-test/jwt` - Verifica apenas autenticação por token JWT
+- `/api/auth-test-direct/hybrid` - Rota direta para teste de autenticação híbrida
 
-## Vantagens
+## Configuração da Sessão
 
-### Autenticação Híbrida
-1. **Compatibilidade**: Mantém compatibilidade com código existente que usa `req.user`
-2. **Flexibilidade**: Suporta vários cenários de autenticação
-3. **Segurança**: Verifica corretamente credenciais em ambos os métodos
-4. **Experiência do usuário**: Permite acesso fluido ao sistema, independentemente da origem
+A sessão é configurada no arquivo `server/app.ts` com as seguintes características:
 
-### Refatoração com Funções Utilitárias
-1. **Manutenibilidade**: Código mais limpo e mais fácil de manter
-2. **Reusabilidade**: Funções podem ser usadas em diferentes partes do código
-3. **Consistência**: Tratamento unificado de erros com a classe `AuthError`
-4. **Testabilidade**: Funções isoladas são mais fáceis de testar
-5. **Legibilidade**: Middleware mais claro e direto ao usar funções auxiliares
+- Store: PostgreSQL (tabela `session`)
+- MaxAge: 7 dias (604800000ms)
+- Secure: Baseado no ambiente (true em produção, false em desenvolvimento)
 
-## Logs e Monitoramento
+## Notas Importantes
 
-O sistema registra tentativas de acesso não autenticadas com detalhes úteis para debugging:
+1. A autenticação híbrida foi implementada de forma não intrusiva, mantendo compatibilidade com o código existente.
+2. Os aliases `isAuthenticated`, `isAdmin`, etc. foram mantidos para garantir compatibilidade com código antigo.
+3. O Supabase Auth está configurado para utilizar tokens JWT como método primário de autenticação.
+4. O mapeamento entre usuários Supabase e usuários do banco local é feito pelo email, garantindo consistência.
 
-```
-Tentativa de acesso não autenticado a /api/user {
-  hasSession: true,
-  sessionID: '9zEeoiuuGIJPYfKwxNIkxsS2Zbt1y55A',
-  cookies: undefined,
-  origin: undefined,
-  referer: undefined,
-  userAgent: 'node-fetch'
-}
-```
+## Próximos Passos
 
-## Alterações em Tipo de Veículo
-
-Além da autenticação híbrida, também foram realizadas mudanças para refinar a terminologia dos tipos de veículo:
-
-- "Frota Própria" agora é chamado simplesmente de "Frota"
-- "Terceirizado" agora é chamado de "Agregado"
-
-Estas alterações foram implementadas tanto no frontend quanto no backend para consistência.
+- [ ] Adicionar testes de integração completos para os diferentes fluxos de autenticação
+- [ ] Implementar refresh token para renovação automática de tokens JWT
+- [ ] Criar interface administrativa para gestão de tokens e sessões
+- [ ] Melhorar a documentação do client Supabase para o frontend
