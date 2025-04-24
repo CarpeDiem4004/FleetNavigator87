@@ -438,7 +438,7 @@ export default function BasesPage() {
                         <FormItem>
                           <FormLabel>Localização</FormLabel>
                           <FormControl>
-                            <Input placeholder="Ex: São Paulo, SP" {...field} />
+                            <Input placeholder="Ex: São Paulo, SP" value={field.value ?? ''} onChange={field.onChange} name={field.name} ref={field.ref} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -541,7 +541,7 @@ export default function BasesPage() {
                           </div>
                           <FormControl>
                             <Switch
-                              checked={field.value}
+                              checked={field.value === true}
                               onCheckedChange={field.onChange}
                             />
                           </FormControl>
