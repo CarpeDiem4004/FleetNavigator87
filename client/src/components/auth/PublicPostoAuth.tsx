@@ -48,6 +48,9 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
   // Verificar sessão ao carregar
   useEffect(() => {
     const checkSession = async () => {
+      // Verificamos se o componente ainda está montado antes de fazer qualquer mudança
+      if (!isMountedRef.current) return;
+      
       setIsLoading(true);
       
       try {
@@ -55,60 +58,92 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
         const token = localStorage.getItem('access_token');
         
         if (token) {
-          // Verificar se o token ainda é válido no Supabase
-          const { data: { session }, error } = await supabase.auth.getSession();
-          
-          if (session) {
-            console.log('Sessão existente encontrada', session);
+          try {
+            // Verificar se o token ainda é válido no Supabase
+            const { data: { session }, error } = await supabase.auth.getSession();
             
-            // Recuperar dados do usuário armazenados no localStorage
-            const userId = localStorage.getItem('user_id') || '';
-            const email = localStorage.getItem('user_email') || '';
-            const name = localStorage.getItem('user_name') || '';
-            const role = localStorage.getItem('user_role') || '';
+            // Verificamos novamente após a operação assíncrona
+            if (!isMountedRef.current) return;
             
-            if (isMountedRef.current) {
+            if (session) {
+              console.log('Sessão existente encontrada', session);
+              
+              // Recuperar dados do usuário armazenados no localStorage
+              const userId = localStorage.getItem('user_id') || '';
+              const email = localStorage.getItem('user_email') || '';
+              const name = localStorage.getItem('user_name') || '';
+              const role = localStorage.getItem('user_role') || '';
+              
               setUser({
                 id: userId,
                 email,
                 name,
                 role
               });
+            } else {
+              console.log('Token expirado ou inválido, redirecionando para login');
+              // Limpar dados locais expirados
+              localStorage.removeItem('access_token');
+              localStorage.removeItem('user_id');
+              localStorage.removeItem('user_email');
+              localStorage.removeItem('user_name');
+              localStorage.removeItem('user_role');
+              
+              // Usar setTimeout para que o DOM termine as atualizações pendentes
+              setTimeout(() => {
+                if (isMountedRef.current) {
+                  dialogState.open();
+                }
+              }, 0);
             }
-          } else {
-            console.log('Token expirado ou inválido, redirecionando para login');
-            // Limpar dados locais expirados
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('user_id');
-            localStorage.removeItem('user_email');
-            localStorage.removeItem('user_name');
-            localStorage.removeItem('user_role');
+          } catch (authError) {
+            // Verificamos novamente após a operação assíncrona
+            if (!isMountedRef.current) return;
             
-            if (isMountedRef.current) {
-              dialogState.open();
-            }
+            console.warn('Erro ao verificar autenticação:', authError);
+            // Usamos o mesmo padrão assíncrono para abrir o diálogo com segurança
+            setTimeout(() => {
+              if (isMountedRef.current) {
+                dialogState.open();
+              }
+            }, 0);
           }
         } else {
           console.log('Nenhum token encontrado, exibindo modal de login');
+          // Usar setTimeout para que o DOM termine as atualizações pendentes
+          setTimeout(() => {
+            if (isMountedRef.current) {
+              dialogState.open();
+            }
+          }, 0);
+        }
+      } catch (error) {
+        // Verificamos novamente após a operação assíncrona
+        if (!isMountedRef.current) return;
+        
+        console.error('Erro ao verificar sessão:', error);
+        // Usar setTimeout para que o DOM termine as atualizações pendentes
+        setTimeout(() => {
           if (isMountedRef.current) {
             dialogState.open();
           }
-        }
-      } catch (error) {
-        console.error('Erro ao verificar sessão:', error);
-        if (isMountedRef.current) {
-          dialogState.open();
-        }
+        }, 0);
       } finally {
+        // Verificamos novamente antes de atualizar o estado
         if (isMountedRef.current) {
           setIsLoading(false);
         }
       }
     };
     
-    checkSession();
+    // Configurar a flag de montagem
+    isMountedRef.current = true;
+    
+    // Executa a verificação de forma assíncrona para evitar problemas de renderização
+    setTimeout(checkSession, 0);
     
     return () => {
+      // Marcamos que o componente foi desmontado
       isMountedRef.current = false;
     };
   }, []);
@@ -116,140 +151,195 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
   // Função de login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Verificar se o componente ainda está montado
+    if (!isMountedRef.current) return;
+    
     setIsSubmitting(true);
     setError(null);
     
     try {
       console.log('Tentando login com:', { email: loginData.email });
       
+      // Primeiro armazenamos as informações de login
+      const email = loginData.email;
+      const password = loginData.password;
+      
       // Abordagem 1: Login via Supabase diretamente
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: loginData.email,
-        password: loginData.password
-      });
-      
-      if (error) {
-        console.warn('Erro na autenticação Supabase:', error.message);
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: password
+        });
         
-        // Antes de desistir, vamos tentar um login alternativo via API do servidor
-        try {
-          console.log('Tentando autenticação via API do servidor...');
-          const apiResponse = await fetch('/api/auth/login-hybrid', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              email: loginData.email,
-              password: loginData.password
-            }),
-            credentials: 'include' // Importante para sessões
-          });
+        // Verificar se o componente ainda está montado após operação assíncrona
+        if (!isMountedRef.current) return;
+        
+        if (error) {
+          console.warn('Erro na autenticação Supabase:', error.message);
           
-          if (apiResponse.ok) {
-            const userData = await apiResponse.json();
-            console.log('Login via servidor bem-sucedido:', userData);
-            
-            // Definir usuário no estado usando os dados do servidor
-            setUser({
-              id: userData.id.toString(),
-              email: userData.email,
-              name: userData.name,
-              role: userData.role
+          // Antes de desistir, vamos tentar um login alternativo via API do servidor
+          try {
+            console.log('Tentando autenticação via API do servidor...');
+            const apiResponse = await fetch('/api/auth/login-hybrid', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                email: email,
+                password: password
+              }),
+              credentials: 'include' // Importante para sessões
             });
             
-            // Armazenar dados no localStorage
-            localStorage.setItem('user_id', userData.id.toString());
-            localStorage.setItem('user_email', userData.email);
-            localStorage.setItem('user_name', userData.name || '');
-            localStorage.setItem('user_role', userData.role || 'operador');
+            // Verificar se o componente ainda está montado
+            if (!isMountedRef.current) return;
             
-            if (userData.base_id) {
-              localStorage.setItem('user_base_id', userData.base_id.toString());
-              localStorage.setItem('user_basename', userData.basename || '');
+            if (apiResponse.ok) {
+              const userData = await apiResponse.json();
+              console.log('Login via servidor bem-sucedido:', userData);
+              
+              // Armazenar dados no localStorage (sem depender do estado do componente)
+              localStorage.setItem('user_id', userData.id.toString());
+              localStorage.setItem('user_email', userData.email);
+              localStorage.setItem('user_name', userData.name || '');
+              localStorage.setItem('user_role', userData.role || 'operador');
+              localStorage.setItem('auth_token', userData.token || '');
+              
+              if (userData.base_id) {
+                localStorage.setItem('user_base_id', userData.base_id.toString());
+                localStorage.setItem('user_basename', userData.basename || '');
+              }
+              
+              // Fechar modal e atualizar estado de forma segura usando setTimeout
+              setTimeout(() => {
+                if (isMountedRef.current) {
+                  // Definir usuário no estado
+                  setUser({
+                    id: userData.id.toString(),
+                    email: userData.email,
+                    name: userData.name,
+                    role: userData.role
+                  });
+                  
+                  // Fechar diálogo de forma segura
+                  dialogState.close();
+                  
+                  // Notificar sucesso
+                  toast({
+                    title: "Login realizado com sucesso",
+                    description: `Bem-vindo ao Posto ${postoName}`,
+                  });
+                }
+              }, 0);
+              
+              return; // Sai da função se o login via API foi bem-sucedido
+            } else {
+              console.error('Login via API também falhou');
+              throw new Error('Credenciais inválidas ou usuário não encontrado');
             }
+          } catch (apiError: any) {
+            // Verificar se o componente ainda está montado
+            if (!isMountedRef.current) return;
             
-            // Fechar modal e notificar sucesso
-            dialogState.close();
-            toast({
-              title: "Login realizado com sucesso",
-              description: `Bem-vindo ao Posto ${postoName}`,
-            });
-            
-            return; // Sai da função se o login via API foi bem-sucedido
-          } else {
-            console.error('Login via API também falhou');
-            throw new Error('Credenciais inválidas ou usuário não encontrado');
+            console.error('Erro na autenticação alternativa:', apiError);
+            throw new Error(apiError.message || 'Falha na autenticação');
           }
-        } catch (apiError: any) {
-          console.error('Erro na autenticação alternativa:', apiError);
-          throw new Error(apiError.message || 'Falha na autenticação');
-        }
-      }
-      
-      // Se chegou aqui, o login Supabase foi bem-sucedido
-      if (data.session && data.user) {
-        console.log('Login Supabase bem-sucedido:', data.user.email);
-        
-        // Armazenar token e informações básicas
-        localStorage.setItem('access_token', data.session.access_token);
-        localStorage.setItem('user_id', data.user.id);
-        localStorage.setItem('user_email', loginData.email);
-        
-        if (data.user.user_metadata) {
-          localStorage.setItem('user_name', data.user.user_metadata.name || '');
-          localStorage.setItem('user_role', data.user.user_metadata.role || 'operador');
         }
         
-        // Tenta sincronizar com o sistema interno
-        try {
-          await fetch('/api/auth/sync-supabase-user', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              supabaseId: data.user.id,
-              email: data.user.email,
-              name: data.user.user_metadata?.name || '',
-              role: data.user.user_metadata?.role || 'operador'
-            }),
-            credentials: 'include'
-          });
-        } catch (syncError) {
-          console.warn('Não foi possível sincronizar com o sistema interno:', syncError);
-          // Continuamos mesmo sem sincronização
+        // Se chegou aqui, o login Supabase foi bem-sucedido
+        if (data.session && data.user) {
+          console.log('Login Supabase bem-sucedido:', data.user.email);
+          
+          // Armazenar token e informações básicas
+          localStorage.setItem('access_token', data.session.access_token);
+          localStorage.setItem('user_id', data.user.id);
+          localStorage.setItem('user_email', email);
+          
+          if (data.user.user_metadata) {
+            localStorage.setItem('user_name', data.user.user_metadata.name || '');
+            localStorage.setItem('user_role', data.user.user_metadata.role || 'operador');
+          }
+          
+          // Tenta sincronizar com o sistema interno
+          try {
+            await fetch('/api/auth/sync-supabase-user', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                supabaseId: data.user.id,
+                email: data.user.email,
+                name: data.user.user_metadata?.name || '',
+                role: data.user.user_metadata?.role || 'operador'
+              }),
+              credentials: 'include'
+            });
+          } catch (syncError) {
+            console.warn('Não foi possível sincronizar com o sistema interno:', syncError);
+            // Continuamos mesmo sem sincronização
+          }
+          
+          // Atualizar estados de forma segura usando setTimeout
+          setTimeout(() => {
+            if (isMountedRef.current) {
+              // Definir usuário no estado
+              setUser({
+                id: data.user.id,
+                email: email,
+                name: data.user.user_metadata?.name,
+                role: data.user.user_metadata?.role
+              });
+              
+              // Fechar modal com segurança
+              dialogState.close();
+              
+              // Notificar sucesso
+              toast({
+                title: "Login realizado com sucesso",
+                description: `Bem-vindo ao Posto ${postoName}`,
+              });
+            }
+          }, 0);
+          
+          // Registrar no console quem fez login (útil para diagnóstico)
+          console.log(`Usuário autenticado: ${email} (${data.user.user_metadata?.name || 'Sem nome'})`);
         }
+      } catch (supabaseError: any) {
+        console.error('Erro ao interagir com Supabase:', supabaseError);
         
-        // Definir usuário no estado
-        setUser({
-          id: data.user.id,
-          email: loginData.email,
-          name: data.user.user_metadata?.name,
-          role: data.user.user_metadata?.role
-        });
+        // Verificar se componente ainda está montado
+        if (!isMountedRef.current) return;
         
-        // Fechar modal
-        dialogState.close();
-        
-        // Notificar sucesso
-        toast({
-          title: "Login realizado com sucesso",
-          description: `Bem-vindo ao Posto ${postoName}`,
-        });
-        
-        // Registrar no console quem fez login (útil para diagnóstico)
-        console.log(`Usuário autenticado: ${loginData.email} (${data.user.user_metadata?.name || 'Sem nome'})`);
+        throw new Error(supabaseError.message || 'Falha ao conectar com serviço de autenticação');
       }
     } catch (error: any) {
-      console.error('Erro no login:', error);
-      setError(error.message || 'Falha na autenticação. Verifique suas credenciais.');
+      // Verificar novamente se o componente está montado
+      if (!isMountedRef.current) return;
       
-      toast({
-        title: "Falha no login",
-        description: error.message || "Credenciais inválidas",
-        variant: "destructive",
-      });
+      console.error('Erro no login:', error);
+      
+      // Atualizar estados com segurança
+      setTimeout(() => {
+        if (isMountedRef.current) {
+          setError(error.message || 'Falha na autenticação. Verifique suas credenciais.');
+          
+          toast({
+            title: "Falha no login",
+            description: error.message || "Credenciais inválidas",
+            variant: "destructive",
+          });
+        }
+      }, 0);
     } finally {
-      setIsSubmitting(false);
+      // Verificar se o componente ainda está montado antes de atualizar estados
+      if (isMountedRef.current) {
+        setTimeout(() => {
+          if (isMountedRef.current) {
+            setIsSubmitting(false);
+          }
+        }, 0);
+      }
     }
   };
 
