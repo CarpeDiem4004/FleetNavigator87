@@ -180,11 +180,11 @@ export default function PrecosCombustivelCard({ dialogControl }: PrecosCombustiv
         )}
       </Card>
       
-      {/* Renderizar o diálogo apenas se estiver usando controle interno */}
+      {/* Sempre renderizar o diálogo, mas controlar sua visibilidade via props */}
       {!useExternalControl && (
         <PrecosCombustivelDialog 
-          isOpen={isDialogOpen} 
-          onClose={closeDialog} 
+          isOpen={isDialogOpen}
+          onClose={closeDialog}
           onSave={fetchPrecos}
         />
       )}

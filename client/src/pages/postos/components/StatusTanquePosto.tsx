@@ -8,8 +8,8 @@ import { Fuel, Droplet, Settings, Edit, Save, RefreshCw, DollarSign } from 'luci
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import TanqueConfigDialog from '@/components/posto-dialogs/TanqueConfigDialog';
-import PrecosCombustivelCard from '@/components/posto-cards/PrecosCombustivelCard';
 import PrecosCombustivelDialog from '@/components/posto-dialogs/PrecosCombustivelDialog';
+import PrecosCombustivelCard from '@/components/posto-cards/PrecosCombustivelCard';
 
 interface StatusTanqueProps {
   postId: string;

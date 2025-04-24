@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,16 @@ export default function PrecosCombustivelDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  
+  // Referência para verificar se o componente está montado
+  const isMountedRef = useRef(true);
+  
+  // Limpar a referência quando o componente é desmontado
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Quando o diálogo abre, busca os preços atuais
   useEffect(() => {
@@ -37,13 +47,22 @@ export default function PrecosCombustivelDialog({
 
   // Buscar preços atuais dos combustíveis
   const fetchPrecos = async () => {
+    // Verificar se o componente ainda está montado antes de atualizar o estado
+    if (!isMountedRef.current) return;
+    
     setIsLoading(true);
     try {
       const dieselResponse = await apiRequest('GET', '/api/precos-combustivel/Diesel');
       const arlaResponse = await apiRequest('GET', '/api/precos-combustivel/ARLA');
       
+      // Verificar se o componente ainda está montado antes de processar os dados
+      if (!isMountedRef.current) return;
+      
       const dieselData = await dieselResponse.json();
       const arlaData = await arlaResponse.json();
+      
+      // Verificar novamente se o componente ainda está montado
+      if (!isMountedRef.current) return;
       
       if (dieselData.success && arlaData.success) {
         setPrecos({
@@ -60,6 +79,9 @@ export default function PrecosCombustivelDialog({
         throw new Error('Falha ao buscar preços de combustível');
       }
     } catch (error) {
+      // Verificar se o componente ainda está montado antes de mostrar o erro
+      if (!isMountedRef.current) return;
+      
       console.error('Erro ao buscar preços de combustível:', error);
       toast({
         title: 'Erro',
@@ -67,12 +89,18 @@ export default function PrecosCombustivelDialog({
         variant: 'destructive'
       });
     } finally {
-      setIsLoading(false);
+      // Verificar se o componente ainda está montado antes de atualizar o estado
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
   // Atualizar preços de combustível
   const handleSave = async () => {
+    // Verificar se o componente ainda está montado
+    if (!isMountedRef.current) return;
+    
     setIsSaving(true);
     
     try {
@@ -92,8 +120,14 @@ export default function PrecosCombustivelDialog({
         valor_litro: arlaValue
       });
       
+      // Verificar se o componente ainda está montado
+      if (!isMountedRef.current) return;
+      
       const dieselData = await dieselResponse.json();
       const arlaData = await arlaResponse.json();
+      
+      // Verificar novamente se o componente ainda está montado
+      if (!isMountedRef.current) return;
       
       if (dieselData.success && arlaData.success) {
         toast({
@@ -108,6 +142,9 @@ export default function PrecosCombustivelDialog({
         throw new Error('Falha ao atualizar preços');
       }
     } catch (error) {
+      // Verificar se o componente ainda está montado
+      if (!isMountedRef.current) return;
+      
       console.error('Erro ao atualizar preços:', error);
       toast({
         title: 'Erro',
@@ -115,7 +152,10 @@ export default function PrecosCombustivelDialog({
         variant: 'destructive'
       });
     } finally {
-      setIsSaving(false);
+      // Verificar se o componente ainda está montado antes de atualizar o estado
+      if (isMountedRef.current) {
+        setIsSaving(false);
+      }
     }
   };
 
