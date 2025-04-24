@@ -659,10 +659,10 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       // Dados formatados para inserção - adaptados para o esquema do Supabase
       const abastecimentoData = {
         placa: data.placa.toUpperCase(),
-        km_atual: Number(data.km), // Usando km_atual conforme o esquema correto do Supabase
-        tipo_produto: data.tipo, // Mudado de tipo_combustivel para tipo_produto
+        km_atual: Number(data.km), // Usando km_atual conforme o esquema do Supabase
+        tipo_combustivel: data.tipo, // Usando tipo_combustivel conforme o esquema do Supabase
         litros: Number(data.quantidade),
-        valor_litro: valorPorLitro,
+        preco_litro: valorPorLitro, // Usando preco_litro conforme o esquema do Supabase
         valor_total: Number(data.valor_total),
         project: data.projeto,
         nome_motorista: data.motorista,
@@ -670,7 +670,6 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         nome_operador: data.operador,
         posto: formatPosto(postId),
         tipo_veiculo: data.tipo_veiculo,
-        data_abastecimento: dataRegistro, // Mudado de data_registro para data_abastecimento
         created_at: dataRegistro
       };
       
@@ -752,18 +751,17 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
             // Dados formatados para o Supabase - ajustado ao esquema real
             const dadosAbastecimento = {
               litros: Number(data.quantidade), // Mudado de quantidade_litros para litros
-              valor_litro: userRole === 'admin' ? Number(data.valor_litro) : undefined,
+              preco_litro: userRole === 'admin' ? Number(data.valor_litro) : undefined, // Usando preco_litro conforme esquema do Supabase
               valor_total: Number(data.valor_total),
               placa: data.placa.toUpperCase(),
-              km_atual: Number(data.km), // Usando km_atual conforme esquema correto do Supabase
+              km_atual: Number(data.km), // Usando km_atual conforme esquema do Supabase
               posto: formatPosto(postId),
               nome_motorista: data.motorista,
               motorista_rg: data.motorista_rg, 
               nome_operador: data.operador,
               project: data.projeto,
-              tipo_produto: data.tipo, // Mudado de tipo_combustivel para tipo_produto
+              tipo_combustivel: data.tipo, // Usando tipo_combustivel conforme esquema do Supabase
               tipo_veiculo: data.tipo_veiculo,
-              data_abastecimento: dataRegistro, // Mudado de data_registro para data_abastecimento
               created_at: dataRegistro 
             };
             
@@ -793,7 +791,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
             },
             body: JSON.stringify({
               litros: Number(data.quantidade), // Mudado para campos compatíveis com o Supabase
-              valor_litro: userRole === 'admin' ? Number(data.valor_litro) : undefined,
+              preco_litro: userRole === 'admin' ? Number(data.valor_litro) : undefined, // Usando preco_litro conforme esquema do Supabase
               valor_total: Number(data.valor_total),
               placa: data.placa.toUpperCase(),
               km_atual: Number(data.km), // Usando km_atual conforme o esquema correto do Supabase
@@ -802,7 +800,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               motorista_rg: data.motorista_rg,
               nome_operador: data.operador,
               project: data.projeto,
-              tipo_produto: data.tipo, // Mudado de tipo_combustivel para tipo_produto
+              tipo_combustivel: data.tipo, // Usando tipo_combustivel conforme esquema do Supabase
               tipo_veiculo: data.tipo_veiculo,
               data_abastecimento: dataRegistro, // Mudado para data_abastecimento
               created_at: dataRegistro
@@ -838,9 +836,9 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               body: JSON.stringify({
                 placa: abastecimentoData.placa,
                 km: abastecimentoData.km_atual, // Usando km_atual conforme o esquema correto do Supabase
-                tipo: abastecimentoData.tipo_produto,
+                tipo: abastecimentoData.tipo_combustivel, // Usando tipo_combustivel conforme esquema do Supabase
                 quantidade: abastecimentoData.litros,
-                valor_litro: abastecimentoData.valor_litro,
+                valor_litro: abastecimentoData.preco_litro, // Usando preco_litro conforme esquema do Supabase
                 valor_total: abastecimentoData.valor_total,
                 projeto: data.projeto,
                 motorista: data.motorista,
@@ -871,13 +869,13 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
                 placa: data.placa.toUpperCase(),
                 litros: Number(data.quantidade), // Usando litros em vez de quantidade
                 km_atual: Number(data.km), // Adicionando km_atual conforme o esquema correto
-                valor_litro: data.valor_litro,
+                preco_litro: Number(data.valor_litro), // Usando preco_litro conforme esquema do Supabase
                 valor_total: data.valor_total,
                 posto: formatPosto(postId), // Use "posto" em vez de "posto_id"
-                data_abastecimento: new Date().toISOString(), // Usando data_abastecimento em vez de data_hora
+                created_at: new Date().toISOString(), // Usando created_at diretamente
                 nome_motorista: data.motorista, // Usando nome_motorista em vez de motorista
                 motorista_rg: data.motorista_rg,
-                tipo_produto: data.tipo, // Adicionando tipo_produto
+                tipo_combustivel: data.tipo, // Usando tipo_combustivel conforme esquema do Supabase
                 tipo_veiculo: data.tipo_veiculo
               };
               
