@@ -170,7 +170,7 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
             }
             
             // Fechar modal e notificar sucesso
-            setLoginModalOpen(false);
+            dialogState.close();
             toast({
               title: "Login realizado com sucesso",
               description: `Bem-vindo ao Posto ${postoName}`,
@@ -228,7 +228,7 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
         });
         
         // Fechar modal
-        setLoginModalOpen(false);
+        dialogState.close();
         
         // Notificar sucesso
         toast({
@@ -273,7 +273,7 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
   // Modal de login
   return (
     <>
-      <Dialog open={loginModalOpen} onOpenChange={setLoginModalOpen}>
+      <Dialog open={dialogState.isOpen} onOpenChange={dialogState.setIsOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Login para Acesso ao Posto {postoName}</DialogTitle>
