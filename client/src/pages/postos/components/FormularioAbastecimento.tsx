@@ -38,6 +38,7 @@ const abastecimentoSchema = z.object({
   projeto: z.string().min(2, 'O projeto é obrigatório'),
   motorista: z.string().min(3, 'O nome do motorista deve ter no mínimo 3 caracteres'),
   operador: z.string().min(3, 'O nome do operador deve ter no mínimo 3 caracteres'),
+  tipo_veiculo: z.string().default('frota'),
 });
 
 type AbastecimentoValues = z.infer<typeof abastecimentoSchema>;
@@ -68,6 +69,7 @@ const FormularioForm = ({
       projeto: '',
       motorista: '',
       operador: '',
+      tipo_veiculo: 'frota',
     },
   });
 
@@ -114,6 +116,28 @@ const FormularioForm = ({
                         className="text-lg font-medium"
                         style={{height: '48px'}} 
                       />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="tipo_veiculo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo de Veículo</FormLabel>
+                    <FormControl>
+                      <select
+                        className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-background px-4 py-2 text-lg font-medium ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                      >
+                        <option value="frota">Frota Própria</option>
+                        <option value="terceiro">Terceirizado</option>
+                      </select>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -380,7 +404,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         project: data.projeto,
         nome_motorista: data.motorista,
         nome_operador: data.operador,
-        posto: formatPosto(postId) // Use o campo 'posto' em vez de 'posto_id'
+        posto: formatPosto(postId), // Use o campo 'posto' em vez de 'posto_id'
+        tipo_veiculo: data.tipo_veiculo // Inclui o tipo de veículo (frota ou terceirizado)
         // Removido o data_registro - será gerado automaticamente no banco de dados com NOW()
       };
       
