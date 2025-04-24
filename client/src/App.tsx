@@ -84,6 +84,7 @@ import CampinasPublic from "@/pages/postos/public/CampinasPublic";
 import ABCPublic from "@/pages/postos/public/ABCPublic";
 import SocorroPublic from "@/pages/postos/public/SocorroPublic";
 import SorocabaPublic from "@/pages/postos/public/SorocabaPublic";
+import RegisterPostoUser from "@/pages/postos/RegisterPostoUser";
 
 function App() {
   return (
@@ -186,6 +187,11 @@ function App() {
           {/* Rota para o perfil do usuário Supabase */}
           <Route path="/profile-supabase">
             <ProfileWithSupabase />
+          </Route>
+          
+          {/* Rota para registro de usuários de postos */}
+          <Route path="/register-supabase">
+            <RegisterPostoUser />
           </Route>
           
           {/* Rota para acesso de motoristas do Line Hall */}
