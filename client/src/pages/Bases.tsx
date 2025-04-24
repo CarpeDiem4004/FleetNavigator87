@@ -459,6 +459,7 @@ export default function BasesPage() {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="nenhum">Nenhum tipo</SelectItem>
+                                <SelectItem value="posto">Posto de Abastecimento</SelectItem>
                                 <SelectItem value="filial">Filial</SelectItem>
                                 <SelectItem value="sc">Centro de Serviço (SC)</SelectItem>
                                 <SelectItem value="operacao">Operação</SelectItem>
