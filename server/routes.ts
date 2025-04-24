@@ -5315,6 +5315,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Rota para ressincronização de sessão (resolver problema de 401 após reinicialização do servidor)
+  app.post("/api/resync-session", resyncSession);
+
   const httpServer = createServer(app);
   return httpServer;
 }
