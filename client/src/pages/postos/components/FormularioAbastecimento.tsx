@@ -650,6 +650,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
                 km: abastecimentoData.km_atual,
                 tipo: abastecimentoData.tipo_combustivel,
                 quantidade: abastecimentoData.litros,
+                valor_litro: abastecimentoData.valor_litro,
+                valor_total: abastecimentoData.valor_total,
                 projeto: data.projeto,
                 motorista: data.motorista,
                 operador: data.operador,
@@ -677,6 +679,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               const dadosSimples = {
                 placa: data.placa.toUpperCase(),
                 quantidade: data.quantidade,
+                valor_litro: data.valor_litro,
+                valor_total: data.valor_total,
                 posto: formatPosto(postId), // Use "posto" em vez de "posto_id"
                 data_hora: new Date().toISOString(),
                 motorista: data.motorista,
