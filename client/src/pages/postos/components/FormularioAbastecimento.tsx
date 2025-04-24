@@ -627,13 +627,16 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       // Conforme o padrão solicitado, não enviamos o valor_litro para não-admins
       const userRole = localStorage.getItem('user_role');
       
+      // Definimos valor fixo para o diesel conforme solicitado (R$6.39)
+      const valorPorLitro = data.tipo === 'Diesel' ? 6.39 : Number(data.valor_litro);
+      
       // Dados formatados para inserção
       const abastecimentoData = {
         placa: data.placa.toUpperCase(),
         km_atual: Number(data.km),
         tipo_combustivel: data.tipo,
         litros: Number(data.quantidade),
-        valor_litro: userRole === 'admin' ? Number(data.valor_litro) : undefined,
+        valor_litro: valorPorLitro,
         valor_total: Number(data.valor_total),
         project: data.projeto,
         nome_motorista: data.motorista,
@@ -642,6 +645,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         tipo_veiculo: data.tipo_veiculo // Inclui o tipo de veículo (frota ou terceirizado)
         // Removido o data_registro - será gerado automaticamente no banco de dados com NOW()
       };
+      
+      console.log('Dados de abastecimento a serem enviados:', abastecimentoData);
       
       // Verificação de conexão
       if (!navigator.onLine) {
@@ -665,12 +670,18 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         console.log('Tentativa 1: Inserindo via cliente admin');
         const { supabaseAdmin } = await import('@/lib/supabase-client');
         
-        const { error } = await supabaseAdmin
+        // Exibe informações do cliente para depuração
+        console.log('Supabase Admin Config:', {
+          url: supabaseAdmin.supabaseUrl,
+          hasKey: !!supabaseAdmin.supabaseKey
+        });
+        
+        const { data: result, error } = await supabaseAdmin
           .from('abastecimentos_postos')
           .insert([abastecimentoData]);
           
         if (!error) {
-          console.log('Registro via cliente admin bem-sucedido');
+          console.log('Registro via cliente admin bem-sucedido', result);
           registroSalvo = true;
         } else {
           console.warn('Erro na tentativa 1:', error.message);

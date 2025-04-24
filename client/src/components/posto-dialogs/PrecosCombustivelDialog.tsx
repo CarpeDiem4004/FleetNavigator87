@@ -50,6 +50,12 @@ export default function PrecosCombustivelDialog({
           diesel: dieselData.data.valor_litro,
           arla: arlaData.data.valor_litro
         });
+        
+        // Debug - verificar valores carregados
+        console.log('Preços carregados:', {
+          diesel: dieselData.data.valor_litro,
+          arla: arlaData.data.valor_litro
+        });
       } else {
         throw new Error('Falha ao buscar preços de combustível');
       }
