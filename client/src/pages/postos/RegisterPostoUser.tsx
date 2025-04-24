@@ -291,7 +291,7 @@ export default function RegisterPostoUser() {
                     <SelectItem value="loading" disabled>Carregando postos...</SelectItem>
                   ) : (
                     bases
-                      .filter(base => ['posto', 'Posto'].includes(base.type))
+                      .filter(base => base.type === 'posto')
                       .map(base => (
                         <SelectItem key={base.id} value={base.id.toString()}>
                           Posto {base.name}
