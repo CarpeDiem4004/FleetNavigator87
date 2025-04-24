@@ -20,6 +20,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
@@ -54,14 +55,24 @@ interface FormularioAbastecimentoProps {
 const FormularioForm = ({ 
   onSubmit, 
   isSubmitting, 
-  postId 
+  postId,
+  isAdmin = false,
+  dieselValorLitro = "0",
+  arlaValorLitro = "0"
 }: { 
   onSubmit: (data: AbastecimentoValues) => void; 
   isSubmitting: boolean; 
-  postId: string 
+  postId: string;
+  isAdmin?: boolean;
+  dieselValorLitro?: string;
+  arlaValorLitro?: string;
 }) => {
   // Obter nome do operador logado do localStorage (adicionado pelo sistema de autenticação)
   const operadorNome = localStorage.getItem('user_name') || '';
+  const [quantidade, setQuantidade] = useState('');
+  const [tipoCombustivel, setTipoCombustivel] = useState('');
+  const [valorLitro, setValorLitro] = useState('');
+  const [valorTotal, setValorTotal] = useState('0');
   
   // Formulário sempre instanciado uma única vez
   const form = useForm<AbastecimentoValues>({
@@ -79,6 +90,29 @@ const FormularioForm = ({
       tipo_veiculo: 'frota',
     },
   });
+  
+  // Quando o tipo de combustível muda, atualize o valor por litro
+  useEffect(() => {
+    if (tipoCombustivel === 'Diesel') {
+      setValorLitro(dieselValorLitro);
+      form.setValue('valor_litro', dieselValorLitro);
+    } else if (tipoCombustivel === 'ARLA') {
+      setValorLitro(arlaValorLitro);
+      form.setValue('valor_litro', arlaValorLitro);
+    }
+  }, [tipoCombustivel, dieselValorLitro, arlaValorLitro, form]);
+  
+  // Calcular valor total quando a quantidade ou valor por litro muda
+  useEffect(() => {
+    if (quantidade && valorLitro) {
+      const total = (parseFloat(quantidade) * parseFloat(valorLitro)).toFixed(2);
+      setValorTotal(total);
+      form.setValue('valor_total', total);
+    } else {
+      setValorTotal('0');
+      form.setValue('valor_total', '0');
+    }
+  }, [quantidade, valorLitro, form]);
 
   return (
     <Form {...form}>
@@ -167,7 +201,10 @@ const FormularioForm = ({
                       <select
                         className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-background px-4 py-2 text-lg font-medium ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         value={field.value}
-                        onChange={field.onChange}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          setTipoCombustivel(e.target.value);
+                        }}
                         onBlur={field.onBlur}
                       >
                         <option value="" disabled>Selecione</option>
@@ -191,11 +228,76 @@ const FormularioForm = ({
                         type="tel" 
                         inputMode="decimal" 
                         placeholder="100" 
-                        {...field} 
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          setQuantidade(e.target.value);
+                        }}
                         className="text-lg font-medium"
                         style={{height: '48px'}} 
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {/* Campos de valor */}
+              <FormField
+                control={form.control}
+                name="valor_litro"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Valor por Litro (R$)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="tel" 
+                        inputMode="decimal" 
+                        placeholder="5.79" 
+                        {...field}
+                        onChange={(e) => {
+                          if (isAdmin) {
+                            field.onChange(e);
+                            setValorLitro(e.target.value);
+                          }
+                        }}
+                        value={valorLitro}
+                        disabled={!isAdmin}
+                        className={`text-lg font-medium ${isAdmin ? "" : "bg-gray-100"}`}
+                        style={{height: '48px'}} 
+                      />
+                    </FormControl>
+                    {!isAdmin && (
+                      <FormDescription className="text-xs text-muted-foreground">
+                        Somente administradores podem alterar o valor por litro
+                      </FormDescription>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="valor_total"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Valor Total (R$)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="tel" 
+                        inputMode="decimal" 
+                        placeholder="0.00" 
+                        {...field}
+                        value={valorTotal}
+                        disabled={true}
+                        className="text-lg font-medium bg-gray-100"
+                        style={{height: '48px'}} 
+                      />
+                    </FormControl>
+                    <FormDescription className="text-xs text-muted-foreground">
+                      Calculado automaticamente (quantidade × valor por litro)
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -369,12 +471,45 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     return posto.charAt(0).toUpperCase() + posto.slice(1);
   };
   
-  // Limpeza das refs quando o componente é desmontado
+  // Verificar se o usuário é admin
   useEffect(() => {
+    const userRole = localStorage.getItem('user_role');
+    setIsUserAdmin(userRole === 'admin');
+    
+    // Carregar valores de preço por litro da configuração do tanque
+    const carregarPrecos = async () => {
+      try {
+        // Formatar o nome do posto
+        const formattedPosto = formatPosto(postId);
+        
+        // Tentar buscar configuração de tanques
+        const response = await fetch(`/api/configuracao-tanques/${formattedPosto}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.success && data.data) {
+            // Atualizar preços por litro
+            if (data.data.diesel_valor_litro) {
+              setDieselValorLitro(data.data.diesel_valor_litro.toString());
+            }
+            
+            if (data.data.arla_valor_litro) {
+              setArlaValorLitro(data.data.arla_valor_litro.toString());
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar preços:', error);
+      }
+    };
+    
+    carregarPrecos();
+    
     return () => {
       processingRef.current = false;
     };
-  }, []);
+  }, [postId]);
   
   // Manipulador de histórico com tratamento de erro para evitar DOM exceptions
   const handleVerHistorico = useCallback(() => {
@@ -434,6 +569,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         km_atual: Number(data.km),
         tipo_combustivel: data.tipo,
         litros: Number(data.quantidade),
+        valor_litro: Number(data.valor_litro),
+        valor_total: Number(data.valor_total),
         project: data.projeto,
         nome_motorista: data.motorista,
         nome_operador: data.operador,
@@ -664,7 +801,10 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
             <FormularioForm 
               onSubmit={processarSubmissao} 
               isSubmitting={isSubmitting}
-              postId={postId} 
+              postId={postId}
+              isAdmin={isUserAdmin}
+              dieselValorLitro={dieselValorLitro}
+              arlaValorLitro={arlaValorLitro}
             />
           }
         </CardContent>
