@@ -560,14 +560,24 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
     <div className="space-y-6 mt-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold">Status dos Tanques</h2>
-        <Button 
-          variant="outline" 
-          className="flex items-center gap-2"
-          onClick={abrirDialogEdicao}
-        >
-          <Settings className="h-4 w-4" />
-          Atualizar Configurações
-        </Button>
+        <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => fetchDados()}
+          >
+            <RefreshCw className="h-4 w-4" />
+            Atualizar
+          </Button>
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={abrirDialogEdicao}
+          >
+            <Settings className="h-4 w-4" />
+            Configurações
+          </Button>
+        </div>
       </div>
 
       {/* Novo card de preços dos combustíveis com novas funcionalidades */}
