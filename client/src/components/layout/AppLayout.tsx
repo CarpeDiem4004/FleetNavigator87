@@ -40,6 +40,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const { toast } = useToast();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [postosExpanded, setPostosExpanded] = React.useState(false);
+  const [cartaoExpanded, setCartaoExpanded] = React.useState(false);
   
   const handleLogout = async () => {
     try {
@@ -65,8 +66,19 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     { href: '/vehicles', label: 'Veículos', icon: Car },
     // { href: '/maintenance', label: 'Manutenções', icon: Wrench },
     { href: '/tires', label: 'Pneus', icon: CircleDollarSign },
-    // Cartão de Abastecimento adicionado como item independente
-    { href: '/fuel-card', label: 'Cartão', icon: CreditCard },
+    // Cartão de Abastecimento com Posto Remédios como submenu
+    { 
+      href: '#', 
+      label: 'Cartão',
+      icon: CreditCard,
+      hasSubmenu: true,
+      expanded: cartaoExpanded,
+      toggle: () => setCartaoExpanded(!cartaoExpanded),
+      submenu: [
+        { href: '/fuel-card', label: 'Solicitações de Cartão' },
+        { href: '/posto-remedios', label: 'Posto Remédios' },
+      ]
+    },
     { 
       href: '#', 
       label: 'Abastecimento',
@@ -105,6 +117,13 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       setPostosExpanded(true);
     }
   }, [location, postosExpanded]);
+  
+  // Expandir automaticamente Cartão se estivermos em uma página relacionada
+  React.useEffect(() => {
+    if ((location.startsWith('/fuel-card') || location.startsWith('/posto-remedios')) && !cartaoExpanded) {
+      setCartaoExpanded(true);
+    }
+  }, [location, cartaoExpanded]);
 
   // Verificar se o link está ativo
   const isActive = (href: string) => {
