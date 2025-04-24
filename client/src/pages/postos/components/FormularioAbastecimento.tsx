@@ -641,9 +641,45 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       // Implementação da abordagem solicitada para envio de abastecimentos
       if (!registroSalvo) {
         try {
-          console.log('Fazendo requisição usando a nova implementação de API');
+          console.log('Tentativa 0: Usando Supabase diretamente (método simplificado)');
           
-          // Enviamos para a rota de API de abastecimentos de postos conforme solicitado
+          // Tenta usar Supabase diretamente como mostrado no exemplo
+          try {
+            const { supabase } = await import('@/lib/supabase-client');
+            
+            // Dados formatados para o Supabase
+            const dadosAbastecimento = {
+              quantidade_litros: Number(data.quantidade),
+              valor_litro: userRole === 'admin' ? Number(data.valor_litro) : undefined,
+              valor_total: Number(data.valor_total),
+              placa: data.placa.toUpperCase(),
+              km_atual: Number(data.km),
+              posto: formatPosto(postId),
+              nome_motorista: data.motorista,
+              nome_operador: data.operador,
+              project: data.projeto,
+              tipo_combustivel: data.tipo,
+              tipo_veiculo: data.tipo_veiculo
+            };
+            
+            const { data: resultadoInsercao, error } = await supabase
+              .from('abastecimentos_postos')
+              .insert([dadosAbastecimento]);
+              
+            if (!error) {
+              console.log('Registro via Supabase direto bem-sucedido:', resultadoInsercao);
+              registroSalvo = true;
+              return; // Encerra o processamento se for bem-sucedido
+            } else {
+              console.warn('Erro ao usar Supabase direto:', error.message);
+            }
+          } catch (supabaseError) {
+            console.error('Exceção ao usar Supabase direto:', supabaseError);
+          }
+          
+          console.log('Tentativa 1: Usando API REST (conforme solicitado)');
+          
+          // Se o método direto falhar, tenta pelo endpoint de API
           const apiResponse = await fetch('/api/abastecimentos_postos', {
             method: 'POST',
             headers: { 
@@ -666,14 +702,14 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
           });
           
           if (apiResponse.ok) {
-            console.log('Registro via nova API bem-sucedido');
+            console.log('Registro via API REST bem-sucedido');
             registroSalvo = true;
             return; // Encerra o processamento se for bem-sucedido
           } else {
-            console.warn('Erro na nova API:', await apiResponse.text());
+            console.warn('Erro na API REST:', await apiResponse.text());
           }
         } catch (apiError) {
-          console.error('Falha ao usar a nova API:', apiError);
+          console.error('Falha nas tentativas iniciais:', apiError);
         }
       }
           
