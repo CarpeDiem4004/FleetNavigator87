@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
 import { createClient } from '@supabase/supabase-js';
 import {
@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Fuel } from 'lucide-react';
+import { Loader2, Fuel, AlertTriangle } from 'lucide-react';
 import { useSafeDialog } from '@/hooks/use-safe-dialog';
 
 // Importação central do Supabase para garantir consistência
@@ -360,10 +360,13 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
     );
   }
 
-  // Modal de login
-  return (
-    <>
-      <Dialog open={dialogState.isOpen} onOpenChange={dialogState.setIsOpen}>
+  // Componente de Login separado para evitar problemas de renderização
+  const LoginDialog = useCallback(() => {
+    // Só renderiza se o diálogo estiver aberto - crucial para evitar erro de DOM
+    if (!dialogState.isOpen) return null;
+    
+    return (
+      <Dialog open={true} onOpenChange={dialogState.setIsOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Login para Acesso ao Posto {postoName}</DialogTitle>
@@ -373,8 +376,9 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
           </DialogHeader>
           
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
-              {error}
+            <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <span>{error}</span>
             </div>
           )}
           
@@ -385,7 +389,11 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
                 id="email"
                 placeholder="seu.email@exemplo.com"
                 value={loginData.email}
-                onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                onChange={(e) => {
+                  if (isMountedRef.current) {
+                    setLoginData({ ...loginData, email: e.target.value });
+                  }
+                }}
                 disabled={isSubmitting}
                 required
               />
@@ -397,7 +405,11 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
                 id="password"
                 type="password"
                 value={loginData.password}
-                onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                onChange={(e) => {
+                  if (isMountedRef.current) {
+                    setLoginData({ ...loginData, password: e.target.value });
+                  }
+                }}
                 disabled={isSubmitting}
                 required
               />
@@ -426,6 +438,14 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
           </form>
         </DialogContent>
       </Dialog>
+    );
+  }, [dialogState.isOpen, dialogState.setIsOpen, error, isSubmitting, loginData, handleLogin, goToRegister, postoName, isMountedRef]);
+  
+  // Modal de login
+  return (
+    <>
+      {/* Renderiza o diálogo apenas quando necessário */}
+      <LoginDialog />
       
       {/* Renderiza o conteúdo apenas se o usuário estiver autenticado */}
       {user ? (
