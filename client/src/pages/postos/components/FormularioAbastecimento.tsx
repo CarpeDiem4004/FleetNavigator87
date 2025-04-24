@@ -486,8 +486,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
           const dieselData = await dieselResponse.json();
           
           if (dieselData.success && dieselData.data) {
-            // Atualizar preço do diesel
-            setDieselValorLitro(dieselData.data.valor_litro.toString());
+            // Definir valor fixo do diesel em R$6.39 conforme solicitado
+            setDieselValorLitro("6.39");
           }
         }
         
@@ -517,7 +517,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
             if (data.success && data.data) {
               // Atualizar preços por litro apenas se não tiver conseguido da API
               if (!dieselResponse.ok && data.data.diesel_valor_litro) {
-                setDieselValorLitro(data.data.diesel_valor_litro.toString());
+                // Mesmo no fallback, usar o valor fixo de R$6.39 para diesel
+                setDieselValorLitro("6.39");
               }
               
               if (!arlaResponse.ok && data.data.arla_valor_litro) {
@@ -895,8 +896,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       
       // Notifica sucesso
       toast({
-        title: 'Abastecimento realizado com sucesso!',
-        description: `Veículo ${data.placa} abastecido com ${data.quantidade} litros de ${data.tipo}.`,
+        title: 'Abastecimento Registrado',
+        description: 'Abastecimento realizado com sucesso!',
       });
       
       // Atualiza interface com requestAnimationFrame para garantir execução segura
