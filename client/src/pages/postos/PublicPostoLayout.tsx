@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Fuel, TruckIcon, Truck, History } from 'lucide-react';
@@ -7,6 +7,7 @@ import FormularioRecebimento from './components/FormularioRecebimento';
 import FormularioControlePatio from './components/FormularioControlePatio';
 import HistoricoMovimentacoes from './components/HistoricoMovimentacoes';
 import HistoricoAbastecimentos from './components/HistoricoAbastecimentos';
+import { useSafeDialog } from '@/hooks/use-safe-dialog';
 
 interface PublicPostoLayoutProps {
   id: string;
@@ -14,15 +15,39 @@ interface PublicPostoLayoutProps {
 }
 
 export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePosto }) => {
-  // Estado para controlar atualizações de históricos
+  // Use o hook useSafeDialog para evitar manipulações de DOM após desmontagem
+  const dialogState = useSafeDialog(false);
+  
+  // Indicador de montagem do componente
+  const isMountedRef = useRef(true);
   
   // Estado para controlar atualizações
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   
-  // Função para atualizar o histórico de abastecimentos
+  // Efeito para controlar ciclo de vida do componente
+  useEffect(() => {
+    // Marcar componente como montado
+    isMountedRef.current = true;
+    
+    return () => {
+      // Marcar componente como desmontado na limpeza
+      isMountedRef.current = false;
+    };
+  }, []);
+  
+  // Função para atualizar o histórico de abastecimentos com segurança
   const atualizarHistoricos = () => {
     console.log("[HISTORICO] Atualizando dados automaticamente");
-    setRefreshTrigger(prev => prev + 1);
+    
+    // Verificar se o componente ainda está montado antes de atualizar estado
+    if (isMountedRef.current) {
+      // Usar setTimeout para garantir que atualizações de DOM sejam seguras
+      setTimeout(() => {
+        if (isMountedRef.current) {
+          setRefreshTrigger(prev => prev + 1);
+        }
+      }, 0);
+    }
   };
   
   return (
