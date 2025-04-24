@@ -360,9 +360,8 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
     );
   }
 
-  // Componente de Login separado para evitar problemas de renderização
-  const LoginDialog = useCallback(() => {
-    // Só renderiza se o diálogo estiver aberto - crucial para evitar erro de DOM
+  // Define o componente de login fora do componente principal para evitar inconsistência de hooks
+  const renderLoginDialog = () => {
     if (!dialogState.isOpen) return null;
     
     return (
@@ -439,13 +438,13 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
         </DialogContent>
       </Dialog>
     );
-  }, [dialogState.isOpen, dialogState.setIsOpen, error, isSubmitting, loginData, handleLogin, goToRegister, postoName, isMountedRef]);
+  };
   
   // Modal de login
   return (
     <>
       {/* Renderiza o diálogo apenas quando necessário */}
-      <LoginDialog />
+      {renderLoginDialog()}
       
       {/* Renderiza o conteúdo apenas se o usuário estiver autenticado */}
       {user ? (
