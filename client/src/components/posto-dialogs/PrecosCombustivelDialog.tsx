@@ -146,10 +146,8 @@ export default function PrecosCombustivelDialog({
     }));
   };
 
-  if (!isOpen) return null;
-  
   return (
-    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-lg flex items-center">
