@@ -541,37 +541,63 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
   // Manipulador de histórico com tratamento de erro para evitar DOM exceptions
   const handleVerHistorico = useCallback(() => {
     try {
-      // Usar requestAnimationFrame para garantir que o DOM está pronto
+      // Primeiro definimos o estado como false usando requestAnimationFrame para garantir execução segura
       window.requestAnimationFrame(() => {
-        const historicosSection = document.getElementById("historicos-section");
-        if (historicosSection) {
-          historicosSection.scrollIntoView({ behavior: "smooth" });
+        try {
+          setRegistroSucesso(false);
+        } catch (e) {
+          console.error("Erro ao alterar estado:", e);
         }
+        
+        // Após 50ms, tentar scrollar para a seção de históricos
+        setTimeout(() => {
+          try {
+            const historicosSection = document.getElementById("historicos-section");
+            if (historicosSection) {
+              historicosSection.scrollIntoView({ behavior: "smooth" });
+            }
+          } catch (error) {
+            console.error('Erro ao tentar rolar para a seção de históricos:', error);
+          }
+        }, 50);
       });
     } catch (error) {
-      console.error('Erro ao tentar rolar para a seção de históricos:', error);
+      console.error('Erro na função de ver histórico:', error);
+      
+      // Último recurso - timeout como fallback
+      setTimeout(() => {
+        try {
+          setRegistroSucesso(false);
+        } catch (e) {
+          // Ignora erro
+        }
+      }, 100);
     }
-    
-    // Usar setTimeout para evitar problemas de timing no DOM
-    setTimeout(() => {
-      setRegistroSucesso(false);
-    }, 100);
   }, []);
   
   // Manipulador de novo registro com proteção contra erros de DOM
   const handleNovoRegistro = useCallback(() => {
     try {
-      // Usar setTimeout para evitar problemas de timing no DOM
-      setTimeout(() => {
-        setRegistroSucesso(false);
-      }, 50);
+      // Usar requestAnimationFrame para garantir que a atualização ocorre em uma animação segura
+      window.requestAnimationFrame(() => {
+        // Wrap em try-catch para segurança adicional
+        try {
+          setRegistroSucesso(false);
+        } catch (e) {
+          console.error("Erro ao alterar estado:", e);
+        }
+      });
     } catch (error) {
       console.error('Erro ao reiniciar formulário:', error);
       
-      // Tenta forçar uma nova renderização em caso de erro
-      window.requestAnimationFrame(() => {
-        setRegistroSucesso(false);
-      });
+      // Último recurso - tenta com setTimeout como fallback
+      setTimeout(() => {
+        try {
+          setRegistroSucesso(false);
+        } catch (e) {
+          // Ignora erro
+        }
+      }, 100);
     }
   }, []);
   
@@ -581,6 +607,13 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     if (processingRef.current) {
       console.log('Já existe um processamento em andamento');
       return;
+    }
+    
+    // Desmonta qualquer componente existente para evitar conflitos de DOM
+    try {
+      setRegistroSucesso(false);
+    } catch (e) {
+      // Ignora qualquer erro aqui
     }
     
     // Marca como em processamento
@@ -855,14 +888,16 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         description: `Veículo ${data.placa} abastecido com ${data.quantidade} litros de ${data.tipo}.`,
       });
       
-      // Atualiza interface
-      setRegistroSucesso(true);
-      
-      // Notifica o componente pai para atualizar o histórico
-      if (onRegistroSucesso) {
-        console.log("[REGISTRO] Notificando componente pai para atualizar histórico");
-        onRegistroSucesso();
-      }
+      // Atualiza interface com requestAnimationFrame para garantir execução segura
+      window.requestAnimationFrame(() => {
+        setRegistroSucesso(true);
+        
+        // Notifica o componente pai para atualizar o histórico
+        if (onRegistroSucesso) {
+          console.log("[REGISTRO] Notificando componente pai para atualizar histórico");
+          onRegistroSucesso();
+        }
+      });
       
     } catch (error: any) {
       // Tratamento de erro
