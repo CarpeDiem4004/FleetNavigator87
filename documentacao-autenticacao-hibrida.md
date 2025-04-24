@@ -11,15 +11,46 @@ O sistema implementa uma estratégia de autenticação híbrida que suporta dois
 
 Esta abordagem híbrida resolve problemas de autenticação em diferentes ambientes e proporciona maior flexibilidade.
 
+## Funções Utilitárias de Autenticação
+
+Em `server/utils/auth.ts` foram implementadas funções utilitárias para simplificar a validação de tokens:
+
+```typescript
+// Classe de erro personalizada para autenticação
+export class AuthError extends Error {
+  constructor(message: string = "Não autenticado") {
+    super(message);
+    this.name = "AuthError";
+  }
+}
+
+// Função para validar token JWT do Supabase
+export async function validateSupabaseToken(token: string) {
+  // Verificação de token via Supabase
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  
+  if (error || !user) {
+    throw new AuthError();
+  }
+  
+  return user;
+}
+
+// Função para extrair token JWT do cabeçalho Authorization
+export function extractJwtToken(authHeader: string | undefined): string {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    throw new AuthError("Token ausente ou inválido");
+  }
+  
+  return authHeader.split(' ')[1];
+}
+```
+
 ## Estrutura de Middleware
 
 ### Middleware Principal de Autenticação
 
-O middleware `isAuthenticated` em `server/middleware/auth.ts` verifica:
-
-1. Primeiro se o usuário está autenticado via sessão Express (`req.isAuthenticated()`)
-2. Se não estiver, verifica se há um token JWT válido no cabeçalho `Authorization`
-3. Se algum dos métodos for válido, permite acesso; caso contrário, retorna erro 401
+O middleware `isAuthenticated` em `server/middleware/auth.ts` foi refatorado para usar as funções utilitárias:
 
 ```typescript
 export const isAuthenticated = async (req, res, next) => {
@@ -34,13 +65,18 @@ export const isAuthenticated = async (req, res, next) => {
     return res.status(401).json({ message: "Não autenticado" });
   }
   
-  // Validação de token via Supabase
   try {
-    // Código de validação de token JWT...
-    // Se válido, anexa usuário a req.supabaseUser
+    // Usando as funções utilitárias para validar o token
+    const token = extractJwtToken(authHeader);
+    const user = await validateSupabaseToken(token);
+    
+    // Anexa o usuário validado à requisição
     (req as any).supabaseUser = user;
     return next();
   } catch (error) {
+    if (error instanceof AuthError) {
+      return res.status(401).json({ message: "Não autenticado" });
+    }
     return res.status(500).json({ message: "Erro interno do servidor" });
   }
 };
@@ -75,10 +111,18 @@ export const isAdmin = (req, res, next) => {
 
 ## Vantagens
 
+### Autenticação Híbrida
 1. **Compatibilidade**: Mantém compatibilidade com código existente que usa `req.user`
 2. **Flexibilidade**: Suporta vários cenários de autenticação
 3. **Segurança**: Verifica corretamente credenciais em ambos os métodos
 4. **Experiência do usuário**: Permite acesso fluido ao sistema, independentemente da origem
+
+### Refatoração com Funções Utilitárias
+1. **Manutenibilidade**: Código mais limpo e mais fácil de manter
+2. **Reusabilidade**: Funções podem ser usadas em diferentes partes do código
+3. **Consistência**: Tratamento unificado de erros com a classe `AuthError`
+4. **Testabilidade**: Funções isoladas são mais fáceis de testar
+5. **Legibilidade**: Middleware mais claro e direto ao usar funções auxiliares
 
 ## Logs e Monitoramento
 
