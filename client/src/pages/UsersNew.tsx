@@ -248,6 +248,31 @@ const UsersNew: React.FC = () => {
     }
   };
   
+  // Função para alternar o status do usuário (ativo/inativo)
+  const handleToggleUserStatus = async (userId: number, currentStatus: boolean) => {
+    try {
+      // Chamar API para atualizar o status do usuário
+      await apiRequest('PATCH', `/api/users/${userId}/status`, { 
+        isActive: !currentStatus 
+      });
+      
+      // Atualizar a lista de usuários
+      handleUserDataChanged();
+      
+      toast({
+        title: `Usuário ${!currentStatus ? 'ativado' : 'desativado'}`,
+        description: `Status do usuário alterado com sucesso.`,
+      });
+    } catch (error: any) {
+      console.error('Erro ao alterar status do usuário:', error);
+      toast({
+        title: "Erro ao alterar status",
+        description: error.message || "Ocorreu um erro ao tentar alterar o status do usuário.",
+        variant: "destructive"
+      });
+    }
+  };
+  
   // Função para resetar a senha de um usuário
   const handleResetPassword = async () => {
     if (!selectedUserId) return;
@@ -647,6 +672,19 @@ const UsersNew: React.FC = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="icon"
+                            className={user.isActive ? "bg-green-50 hover:bg-red-50" : "bg-red-50 hover:bg-green-50"}
+                            onClick={() => handleToggleUserStatus(user.id, user.isActive)}
+                            title={user.isActive ? "Desativar usuário" : "Ativar usuário"}
+                          >
+                            {user.isActive ? (
+                              <UserX className="h-4 w-4 text-red-600" />
+                            ) : (
+                              <UserCircle2 className="h-4 w-4 text-green-600" />
+                            )}
+                          </Button>
                           <Button 
                             variant="outline" 
                             size="icon"
