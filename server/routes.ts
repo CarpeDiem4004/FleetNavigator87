@@ -36,6 +36,8 @@ import { setupTireActivityRoutes, setupTireActivityTable } from "./tireActivityA
 import { consultarUsuarios, consultarUsuarioPorId } from "./handlers/userHandler";
 // Importação das rotas de teste de autenticação híbrida
 import authTestRoutes from './routes/authTest';
+// Importação da rota de ressincronização de sessão
+import { resyncSession } from './routes/sessionResyncRoute';
 // Importação dos middlewares antigos para compatibilidade com código existente
 import { 
   isAuthenticated as authMiddleware, 
