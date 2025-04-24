@@ -35,6 +35,8 @@ const abastecimentoSchema = z.object({
   quantidade: z.string().min(1, {
     message: 'Quantidade deve ser um número válido',
   }),
+  valor_litro: z.string().min(1, 'O valor por litro é obrigatório'),
+  valor_total: z.string().optional(),
   projeto: z.string().min(2, 'O projeto é obrigatório'),
   motorista: z.string().min(3, 'O nome do motorista deve ter no mínimo 3 caracteres'),
   operador: z.string().min(3, 'O nome do operador deve ter no mínimo 3 caracteres'),
@@ -69,6 +71,8 @@ const FormularioForm = ({
       km: '',
       tipo: undefined,
       quantidade: '',
+      valor_litro: '',
+      valor_total: '0',
       projeto: '',
       motorista: '',
       operador: operadorNome, // Preenche automaticamente com o nome do operador logado
@@ -355,6 +359,9 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
   const { toast } = useToast();
   const [registroSucesso, setRegistroSucesso] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUserAdmin, setIsUserAdmin] = useState(false);
+  const [dieselValorLitro, setDieselValorLitro] = useState('5.79');
+  const [arlaValorLitro, setArlaValorLitro] = useState('4.25');
   const processingRef = useRef(false);
   
   // Função auxiliar para formatar o nome do posto
