@@ -568,7 +568,7 @@ export default function BasesPage() {
                               </div>
                               <FormControl>
                                 <Switch
-                                  checked={field.value}
+                                  checked={field.value === true}
                                   onCheckedChange={field.onChange}
                                 />
                               </FormControl>
@@ -592,7 +592,7 @@ export default function BasesPage() {
                               </div>
                               <FormControl>
                                 <Switch
-                                  checked={field.value}
+                                  checked={field.value === true}
                                   onCheckedChange={field.onChange}
                                 />
                               </FormControl>
