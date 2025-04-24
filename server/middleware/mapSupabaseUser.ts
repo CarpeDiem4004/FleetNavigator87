@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { pool } from '../db';
-import '../types/express';
 
 /**
  * Middleware para mapear um usuário autenticado do Supabase

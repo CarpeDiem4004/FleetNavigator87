@@ -1,23 +1,29 @@
-import { User as SupabaseUser } from '@supabase/supabase-js';
+// tipos/express.d.ts
+import { User } from '../../shared/schema';
 
 declare global {
   namespace Express {
-    // Estender a interface User (para autenticação por sessão)
-    interface User {
+    export interface Request {
+      supabaseUser?: {
+        id: string;
+        email: string;
+        role?: string;
+        [key: string]: any;
+      };
+    }
+    
+    // Expandir a interface User para incluir os campos relevantes do nosso sistema
+    export interface User {
       id: number;
       email: string;
-      name?: string;
-      role?: string;
-      password?: string;
+      role: 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus';
       baseId?: number | null;
       basename?: string | null;
       oficina_id?: number | null;
-      is_active?: boolean;
-    }
-
-    // Estender a interface Request
-    interface Request {
-      supabaseUser?: SupabaseUser;
+      [key: string]: any;
     }
   }
 }
+
+// Esta exportação vazia é necessária para o TypeScript considerar este arquivo como um módulo
+export {};

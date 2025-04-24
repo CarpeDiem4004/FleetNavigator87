@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import { validateSupabaseToken } from '../utils/auth';
-import '../types/express'; // Importar as definições de tipo
 
 // Variáveis de ambiente Supabase (com fallbacks para desenvolvimento)
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
