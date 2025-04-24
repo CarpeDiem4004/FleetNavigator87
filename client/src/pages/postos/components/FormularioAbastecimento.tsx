@@ -563,13 +563,17 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     try {
       console.log('Iniciando registro de abastecimento');
       
+      // Apenas adiciona o valor_litro se o usuário for admin
+      // Conforme o padrão solicitado, não enviamos o valor_litro para não-admins
+      const userRole = localStorage.getItem('user_role');
+      
       // Dados formatados para inserção
       const abastecimentoData = {
         placa: data.placa.toUpperCase(),
         km_atual: Number(data.km),
         tipo_combustivel: data.tipo,
         litros: Number(data.quantidade),
-        valor_litro: Number(data.valor_litro),
+        valor_litro: userRole === 'admin' ? Number(data.valor_litro) : undefined,
         valor_total: Number(data.valor_total),
         project: data.projeto,
         nome_motorista: data.motorista,
@@ -583,6 +587,9 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       if (!navigator.onLine) {
         throw new Error('Sem conexão com a internet. Verifique sua rede e tente novamente.');
       }
+      
+      // Obtém o token de autenticação
+      const userToken = localStorage.getItem('auth_token') || '';
       
       // Notifica usuário sobre o início do processamento
       toast({
@@ -631,10 +638,49 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         }
       }
       
-      // Tentativa 3: Via fetch direto
+      // Implementação da abordagem solicitada para envio de abastecimentos
       if (!registroSalvo) {
         try {
-          console.log('Tentativa 3: Usando abordagens adicionais');
+          console.log('Fazendo requisição usando a nova implementação de API');
+          
+          // Enviamos para a rota de API de abastecimentos de postos conforme solicitado
+          const apiResponse = await fetch('/api/abastecimentos_postos', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${userToken}` 
+            },
+            body: JSON.stringify({
+              quantidade_litros: Number(data.quantidade),
+              valor_litro: userRole === 'admin' ? Number(data.valor_litro) : undefined,
+              valor_total: Number(data.valor_total),
+              placa: data.placa,
+              km: Number(data.km),
+              posto: formatPosto(postId),
+              motorista: data.motorista,
+              operador: data.operador,
+              projeto: data.projeto,
+              tipo_combustivel: data.tipo,
+              tipo_veiculo: data.tipo_veiculo
+            })
+          });
+          
+          if (apiResponse.ok) {
+            console.log('Registro via nova API bem-sucedido');
+            registroSalvo = true;
+            return; // Encerra o processamento se for bem-sucedido
+          } else {
+            console.warn('Erro na nova API:', await apiResponse.text());
+          }
+        } catch (apiError) {
+          console.error('Falha ao usar a nova API:', apiError);
+        }
+      }
+          
+      // Se a nova abordagem falhar, continua com as abordagens existentes como fallback
+      if (!registroSalvo) {
+        try {
+          console.log('Tentativa 3: Usando abordagens adicionais (fallback)');
           
           // Tentativa 3.1: POST para a API do servidor Express
           try {
