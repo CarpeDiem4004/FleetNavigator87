@@ -3167,6 +3167,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rota para atualizar o status de um usuário (ativo/inativo)
+  app.patch("/api/users/:id/status", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { isActive } = req.body;
+      
+      if (isActive === undefined) {
+        return res.status(400).json({ message: "Status do usuário (isActive) é obrigatório" });
+      }
+      
+      console.log(`Atualizando status do usuário ID ${userId} para: ${isActive ? 'Ativo' : 'Inativo'}`);
+      
+      // Atualizar o status do usuário
+      const updatedUser = await storage.updateUser(userId, { 
+        isActive: isActive 
+      });
+      
+      if (!updatedUser) {
+        console.log(`Usuário ID ${userId} não encontrado para atualizar status.`);
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+      
+      console.log(`Status do usuário ID ${userId} (${updatedUser.email}) atualizado com sucesso para: ${isActive ? 'Ativo' : 'Inativo'}`);
+      
+      // Retornar o usuário atualizado
+      res.json({ 
+        message: `Usuário ${isActive ? 'ativado' : 'desativado'} com sucesso`,
+        user: { 
+          id: updatedUser.id, 
+          name: updatedUser.name, 
+          email: updatedUser.email,
+          isActive: updatedUser.isActive
+        }
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar status do usuário:", error);
+      res.status(500).json({ message: "Erro ao atualizar status do usuário" });
+    }
+  });
+
   // Novas rotas de consulta de usuários (API alternativa)
   
   // Rota para listar todos os usuários com filtros opcionais (role, baseId, active)

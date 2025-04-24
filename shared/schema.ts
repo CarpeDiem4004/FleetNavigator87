@@ -472,6 +472,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   baseId: true,
   basename: true,
   oficina_id: true,
+  isActive: true,
 });
 
 // Types
