@@ -25,12 +25,13 @@ export const isAuthenticated = (req: Request, res: Response, next: NextFunction)
  */
 export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
   // Verificar autenticação primeiro
-  if (!req.isAuthenticated()) {
+  if (!req.isAuthenticated() && !(req as any).supabaseUser) {
     return res.status(401).json({ message: "Usuário não autenticado" });
   }
   
   // Verificar se o usuário é administrador
-  if (req.user && isUserAdmin(req.user)) {
+  const user = req.user || (req as any).supabaseUser;
+  if (user && isUserAdmin(user)) {
     return next();
   }
   
@@ -50,16 +51,17 @@ export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
  */
 export const hasMaintenanceAccess = (req: Request, res: Response, next: NextFunction) => {
   // Verificar autenticação primeiro
-  if (!req.isAuthenticated()) {
+  if (!req.isAuthenticated() && !(req as any).supabaseUser) {
     return res.status(401).json({ message: "Usuário não autenticado" });
   }
   
   // Verifica se o usuário está autenticado e tem permissão de acesso a manutenção
-  if (req.user && (
-      isUserAdmin(req.user) ||
-      req.user.role === 'gestor' || 
-      req.user.baseId === FLEET_MANAGEMENT_BASE_ID || 
-      req.user.role === 'oficina'
+  const user = req.user || (req as any).supabaseUser;
+  if (user && (
+      isUserAdmin(user) ||
+      user.role === 'gestor' || 
+      user.baseId === FLEET_MANAGEMENT_BASE_ID || 
+      user.role === 'oficina'
     )) {
     return next();
   }

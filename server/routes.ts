@@ -79,7 +79,9 @@ function generateRandomPassword(length: number): string {
 // Middlewares de autenticação e autorização movidos para o arquivo de middleware
 // Agora importados de server/middleware/auth.ts
 // Definimos constantes com os nomes originais para compatibilidade com código existente
-const authMiddleware = isAuthenticated;
+// Middleware de autenticação que suporta tanto sessão quanto token JWT
+import { isAuthenticatedBySessionOrJwt } from './middleware/isAuthenticated';
+const authMiddleware = isAuthenticatedBySessionOrJwt;
 const adminMiddleware = isAdmin;
 const maintenanceAccessMiddleware = hasMaintenanceAccess;
 const tiresAccessMiddleware = hasTiresAccess;
