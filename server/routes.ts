@@ -34,14 +34,23 @@ import { randomBytes, scrypt } from "crypto";
 import { promisify } from "util";
 import { setupTireActivityRoutes, setupTireActivityTable } from "./tireActivityApi";
 import { consultarUsuarios, consultarUsuarioPorId } from "./handlers/userHandler";
+// Importação dos middlewares antigos para compatibilidade com código existente
 import { 
-  isAuthenticated, 
+  isAuthenticated as isAuthenticatedOld, 
   isAdmin, 
   hasMaintenanceAccess, 
   hasTiresAccess, 
   isWorkshop, 
   hasBaseAccess 
 } from "./middleware/auth";
+
+// Importação dos novos middlewares de autenticação híbrida
+import {
+  isAuthenticated as isAuthenticatedHybrid,
+  isAuthenticatedWithMapping,
+  isSessionAuthenticated,
+  isJwtAuthenticated
+} from "./middleware/auth/index";
 
 // Função auxiliar para hash de senha (usada na criação de usuários de oficinas)
 const scryptAsync = promisify(scrypt);
