@@ -4,17 +4,9 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from "@/components/ui/dialog";
 import { Fuel, Droplet, Settings, Edit, Save, RefreshCw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import TanqueConfigDialog from './TanqueConfigDialog';
 
 interface StatusTanqueProps {
   postId: string;
@@ -666,127 +658,28 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
       </div>
       
       {/* Diálogo para editar configurações */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[520px]">
-          <DialogHeader>
-            <DialogTitle>Configurar Tanques de Combustível</DialogTitle>
-            <DialogDescription>
-              Ajuste os níveis, capacidades e valores por litro dos tanques de Diesel e ARLA.
-            </DialogDescription>
-          </DialogHeader>
+      <TanqueConfigDialog 
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        dieselNivel={dieselNivel}
+        dieselCapacidade={dieselCapacidade}
+        dieselValorLitro={dieselValorLitro}
+        arlaNivel={arlaNivel}
+        arlaCapacidade={arlaCapacidade}
+        arlaValorLitro={arlaValorLitro}
+        onSave={async (config) => {
+          // Atualizar os valores do estado com os valores do formulário
+          setDieselNivel(config.dieselNivel);
+          setDieselCapacidade(config.dieselCapacidade);
+          setDieselValorLitro(config.dieselValorLitro);
+          setArlaNivel(config.arlaNivel);
+          setArlaCapacidade(config.arlaCapacidade);
+          setArlaValorLitro(config.arlaValorLitro);
           
-          <div className="grid gap-4 py-4">
-            {/* VALORES DO DIESEL */}
-            <div className="space-y-3 bg-amber-50 p-4 rounded-lg border border-amber-100">
-              <h3 className="font-medium text-amber-600 flex items-center gap-2">
-                <Fuel className="h-4 w-4" /> Tanque de Diesel
-              </h3>
-              
-              {/* Container para nível e capacidade */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Label htmlFor="dieselNivel">Nível Atual (L)</Label>
-                  <Input
-                    id="dieselNivel"
-                    type="number"
-                    value={dieselNivel}
-                    onChange={(e) => setDieselNivel(Number(e.target.value))}
-                    min={0}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="dieselCapacidade">Capacidade Total (L)</Label>
-                  <Input
-                    id="dieselCapacidade"
-                    type="number"
-                    value={dieselCapacidade}
-                    onChange={(e) => setDieselCapacidade(Number(e.target.value))}
-                    min={1000}
-                  />
-                </div>
-              </div>
-              
-              {/* Container para o preço - linha separada */}
-              <div className="space-y-1 mt-3 bg-green-50 p-3 rounded-md border border-green-100">
-                <Label htmlFor="dieselValorLitro" className="flex items-center gap-1 font-medium text-green-600">
-                  Valor por Litro (R$)
-                </Label>
-                <Input
-                  id="dieselValorLitro"
-                  type="number"
-                  step="0.01"
-                  value={dieselValorLitro}
-                  onChange={(e) => setDieselValorLitro(Number(e.target.value))}
-                  min={0}
-                  className="border-green-200 focus:border-green-400"
-                />
-              </div>
-            </div>
-            
-            {/* VALORES DO ARLA */}
-            <div className="space-y-3 bg-blue-50 p-4 rounded-lg border border-blue-100">
-              <h3 className="font-medium text-blue-600 flex items-center gap-2">
-                <Droplet className="h-4 w-4" /> Tanque de ARLA
-              </h3>
-              
-              {/* Container para nível e capacidade */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Label htmlFor="arlaNivel">Nível Atual (L)</Label>
-                  <Input
-                    id="arlaNivel"
-                    type="number"
-                    value={arlaNivel}
-                    onChange={(e) => setArlaNivel(Number(e.target.value))}
-                    min={0}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="arlaCapacidade">Capacidade Total (L)</Label>
-                  <Input
-                    id="arlaCapacidade"
-                    type="number"
-                    value={arlaCapacidade}
-                    onChange={(e) => setArlaCapacidade(Number(e.target.value))}
-                    min={100}
-                  />
-                </div>
-              </div>
-              
-              {/* Container para o preço - linha separada */}
-              <div className="space-y-1 mt-3 bg-green-50 p-3 rounded-md border border-green-100">
-                <Label htmlFor="arlaValorLitro" className="flex items-center gap-1 font-medium text-green-600">
-                  Valor por Litro (R$)
-                </Label>
-                <Input
-                  id="arlaValorLitro"
-                  type="number"
-                  step="0.01"
-                  value={arlaValorLitro}
-                  onChange={(e) => setArlaValorLitro(Number(e.target.value))}
-                  min={0}
-                  className="border-green-200 focus:border-green-400"
-                />
-              </div>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              onClick={salvarConfigTanques} 
-              disabled={isSalvando}
-              className="flex items-center gap-2"
-            >
-              {isSalvando && <span className="animate-spin">⏳</span>}
-              <Save className="h-4 w-4" />
-              {isSalvando ? 'Salvando...' : 'Salvar Configurações'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          // Chamar a função de salvamento original
+          await salvarConfigTanques();
+        }}
+      />
     </div>
   );
 };
