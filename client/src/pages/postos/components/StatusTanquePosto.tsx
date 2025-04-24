@@ -577,6 +577,21 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
             <Settings className="h-4 w-4" />
             Configurações
           </Button>
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => {
+              // Verificamos se o componente PrecosCombustivelCard tem um método para abrir o diálogo
+              // Como isso não é possível diretamente, vamos esconder o componente e mostrar outro no lugar
+              const precosCombustivelDialogBtn = document.querySelector('[data-precos-combustivel-btn]');
+              if (precosCombustivelDialogBtn) {
+                (precosCombustivelDialogBtn as HTMLButtonElement).click();
+              }
+            }}
+          >
+            <Fuel className="h-4 w-4" />
+            Preços
+          </Button>
         </div>
       </div>
 

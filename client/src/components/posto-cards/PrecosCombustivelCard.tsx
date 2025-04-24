@@ -137,6 +137,7 @@ export default function PrecosCombustivelCard() {
               variant="outline" 
               className="w-full flex items-center justify-center" 
               onClick={() => setIsDialogOpen(true)}
+              data-precos-combustivel-btn
             >
               <Settings className="mr-2 h-4 w-4" />
               Configurar Preços
