@@ -245,6 +245,12 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   
   // Filtrando itens de navegação com base nas permissões do usuário
   const navItems = navItemsBase.filter(item => {
+    // Sempre incluir menu Cartão para todos os usuários
+    if (item.name === 'Cartão') {
+      console.log(`Menu Cartão incluído independente de permissões`);
+      return true;
+    }
+    
     // Sempre incluir menus com submenus (href='#')
     if (item.href === '#') {
       // Verificar se pelo menos um submenu é permitido
