@@ -79,6 +79,7 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
   
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isPrecosDialogOpen, setIsPrecosDialogOpen] = useState(false);
   const [configId, setConfigId] = useState<number | undefined>(undefined);
   
   // Estados para os campos do formulário
@@ -588,17 +589,8 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
               variant="outline" 
               className="flex items-center gap-2"
               onClick={() => {
-                // Encontra o botão no cartão de preços e o clica
-                const precosBtn = document.querySelector('[data-precos-combustivel-btn]') as HTMLButtonElement;
-                if (precosBtn) {
-                  precosBtn.click();
-                } else {
-                  toast({
-                    title: "Atenção",
-                    description: "Não foi possível abrir o configurador de preços.",
-                    variant: "destructive"
-                  });
-                }
+                // Usar o estado local para controlar o diálogo de preços
+                setIsPrecosDialogOpen(true);
               }}
             >
               <DollarSign className="h-4 w-4" />
@@ -609,7 +601,13 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
       </div>
 
       {/* Novo card de preços dos combustíveis com novas funcionalidades */}
-      <PrecosCombustivelCard />
+      <PrecosCombustivelCard 
+        dialogControl={{
+          isOpen: isPrecosDialogOpen,
+          onOpen: () => setIsPrecosDialogOpen(true),
+          onClose: () => setIsPrecosDialogOpen(false)
+        }}
+      />
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
