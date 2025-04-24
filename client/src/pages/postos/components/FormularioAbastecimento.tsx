@@ -483,7 +483,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
                 projeto: data.projeto,
                 motorista: data.motorista,
                 operador: data.operador,
-                posto: abastecimentoData.posto // Use "posto" em vez de "posto_id"
+                posto: abastecimentoData.posto, // Use "posto" em vez de "posto_id"
+                tipo_veiculo: abastecimentoData.tipo_veiculo // Incluindo o tipo de veículo
               })
             });
             
@@ -508,7 +509,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
                 quantidade: data.quantidade,
                 posto: formatPosto(postId), // Use "posto" em vez de "posto_id"
                 data_hora: new Date().toISOString(),
-                motorista: data.motorista
+                motorista: data.motorista,
+                tipo_veiculo: data.tipo_veiculo // Incluindo o tipo de veículo
               };
               
               const response = await fetch('https://hvsmxxqkuyjhpsiojupb.supabase.co/rest/v1/abastecimentos_postos', {

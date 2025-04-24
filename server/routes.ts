@@ -963,7 +963,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Recebendo requisição para registro de abastecimento:', req.body);
       
       // Validando dados básicos
-      const { placa, km, tipo, quantidade, motorista, operador, posto } = req.body;
+      const { placa, km, tipo, quantidade, motorista, operador, posto, tipo_veiculo } = req.body;
       
       if (!placa || !km || !tipo || !quantidade || !motorista || !operador || !posto) {
         return res.status(400).json({ 
@@ -976,11 +976,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const formattedPosto = posto.charAt(0).toUpperCase() + posto.slice(1);
       const qtdCombustivel = parseFloat(quantidade);
       
+      // Tipo de veículo (frota ou terceiro)
+      const tipoVeiculo = tipo_veiculo || 'frota';
+      
       // Criar registro no banco de dados
       const query = `
         INSERT INTO abastecimentos_postos 
-        (placa, km_atual, tipo_combustivel, litros, nome_motorista, nome_operador, posto, created_at, project)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), $8)
+        (placa, km_atual, tipo_combustivel, litros, nome_motorista, nome_operador, posto, created_at, project, tipo_veiculo)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), $8, $9)
         RETURNING id
       `;
       
@@ -992,7 +995,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         motorista,
         operador,
         formattedPosto, // Usando o campo 'posto' corretamente
-        req.body.projeto || 'N/A'
+        req.body.projeto || 'N/A',
+        tipoVeiculo // Adicionando o tipo de veículo
       ];
       
       const result = await pool.query(query, values);
