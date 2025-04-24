@@ -134,7 +134,7 @@ export default function PrecosCombustivelCard({ dialogControl }: PrecosCombustiv
                 </div>
                 <div className="mt-3">
                   <span className="text-2xl font-bold text-amber-800">
-                    R$ {precos.diesel.valor_litro.toFixed(2)}
+                    R$ {typeof precos.diesel.valor_litro === 'number' ? precos.diesel.valor_litro.toFixed(2) : '0.00'}
                   </span>
                   <p className="text-xs text-amber-700 mt-1">
                     Atualizado em: {formatDate(precos.diesel.updated_at)}
@@ -152,7 +152,7 @@ export default function PrecosCombustivelCard({ dialogControl }: PrecosCombustiv
                 </div>
                 <div className="mt-3">
                   <span className="text-2xl font-bold text-blue-800">
-                    R$ {precos.arla.valor_litro.toFixed(2)}
+                    R$ {typeof precos.arla.valor_litro === 'number' ? precos.arla.valor_litro.toFixed(2) : '0.00'}
                   </span>
                   <p className="text-xs text-blue-700 mt-1">
                     Atualizado em: {formatDate(precos.arla.updated_at)}
