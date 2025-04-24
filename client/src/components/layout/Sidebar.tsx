@@ -197,10 +197,10 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Histórico Abastecimento', href: '/refueling', icon: ClipboardList },
     // Alterado para usar o ícone de posto de gasolina (Droplets) em vez de Warehouse para Postos Externos
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
-      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
-      { name: 'Cartão de Abastecimento', href: '/cartao-abastecimento', icon: CreditCard }
+      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
     ]},
-    { name: 'Cartão de Abastecimento', href: '#', icon: CreditCard, subItems: [
+    // Item de menu separado para Cartão de Abastecimento
+    { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
       { name: 'Operações', href: '/fuel-card', icon: CreditCard },
       { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList }
     ]},
@@ -223,10 +223,10 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Histórico Abastecimento', href: '/refueling', icon: ClipboardList },
     // Corrigido para usar o mesmo ícone e estrutura em ambas as listas de navegação
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
-      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
-      { name: 'Cartão de Abastecimento', href: '/cartao-abastecimento', icon: CreditCard }
+      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
     ]},
-    { name: 'Cartão de Abastecimento', href: '#', icon: CreditCard, subItems: [
+    // Item de menu separado para Cartão de Abastecimento
+    { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
       { name: 'Operações', href: '/fuel-card', icon: CreditCard },
       { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList }
     ]},
