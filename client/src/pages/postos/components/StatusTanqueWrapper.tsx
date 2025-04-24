@@ -1,5 +1,5 @@
 import React from 'react';
-import { StatusTanquePostoNew } from './StatusTanquePostoNew';
+import { StatusTanquePosto } from './StatusTanquePosto';
 
 interface StatusTanqueWrapperProps {
   postId: string;
@@ -11,5 +11,5 @@ interface StatusTanqueWrapperProps {
  * sem precisar alterar todos os lugares onde ele é usado.
  */
 export const StatusTanqueWrapper: React.FC<StatusTanqueWrapperProps> = ({ postId }) => {
-  return <StatusTanquePostoNew postId={postId} />;
+  return <StatusTanquePosto postId={postId} />;
 };
