@@ -119,6 +119,8 @@ const TiresPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("inventory");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
+  const [tireModels, setTireModels] = useState<TireModel[]>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [newTire, setNewTire] = useState<Partial<Tire>>({
     codigo: '',
     marca: '',
@@ -139,8 +141,6 @@ const TiresPage: React.FC = () => {
     quantidade: 1,
     valor_unitario: 0
   });
-  const [tireModels, setTireModels] = useState<TireModel[]>([]);
-  const [isLoadingModels, setIsLoadingModels] = useState(false);
 
   // Buscar pneus da API
   useEffect(() => {
@@ -546,6 +546,41 @@ const TiresPage: React.FC = () => {
                     </div>
                   </div>
                   
+                  {/* Modelo de pneu pré-cadastrado */}
+                  <div className="space-y-2 mb-4">
+                    <Label htmlFor="modelo_pneu">Modelo pré-cadastrado</Label>
+                    <Select 
+                      onValueChange={(value) => {
+                        if (value) {
+                          const selectedModel = tireModels.find(model => model.id?.toString() === value);
+                          if (selectedModel) {
+                            setNewTire({
+                              ...newTire,
+                              marca: selectedModel.marca,
+                              modelo: selectedModel.modelo,
+                              medida: selectedModel.medida || '',
+                              valor_unitario: selectedModel.valor_unitario || 0
+                            });
+                          }
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um modelo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tireModels.map((model) => (
+                          <SelectItem key={model.id} value={model.id?.toString() || ''}>
+                            {model.marca} {model.modelo} - {model.medida} (R$ {model.valor_unitario.toFixed(2)})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Selecione um modelo pré-cadastrado para auto-preencher os campos
+                    </p>
+                  </div>
+                  
                   {/* Marca e Modelo */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -594,44 +629,7 @@ const TiresPage: React.FC = () => {
                     </div>
                   </div>
                   
-                  {/* Modelo de Pneu Pré-cadastrado */}
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="tireModel">Modelo de Pneu (Opcional)</Label>
-                      <Select 
-                        onValueChange={(value) => {
-                          const selectedModel = tireModels.find(model => model.id === parseInt(value));
-                          if (selectedModel) {
-                            setNewTire({
-                              ...newTire,
-                              marca: selectedModel.marca,
-                              modelo: selectedModel.modelo,
-                              medida: selectedModel.medida || '',
-                              valor_unitario: selectedModel.valor_unitario
-                            });
-                          }
-                        }}
-                      >
-                        <SelectTrigger id="tireModel">
-                          <SelectValue placeholder="Selecione um modelo de pneu" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {isLoadingModels ? (
-                            <div className="p-2 text-center">Carregando modelos...</div>
-                          ) : (
-                            tireModels.map(model => (
-                              <SelectItem key={model.id} value={model.id?.toString() || ''}>
-                                {model.marca} {model.modelo} - {model.medida} - R$ {model.valor_unitario.toFixed(2)}
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-muted-foreground">
-                        Selecionar um modelo preencherá automaticamente os campos marca, modelo, medida e valor unitário
-                      </p>
-                    </div>
-                  </div>
+
                   
                   {/* Tipo e Origem */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
