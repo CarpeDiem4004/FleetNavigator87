@@ -628,7 +628,7 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
               </div>
               <div className="flex justify-between text-sm mb-1">
                 <span>Valor por litro:</span>
-                <span className="font-medium text-green-600">R$ {dieselStatusValorLitro?.toFixed(2).replace('.', ',')}</span>
+                <span className="font-medium text-green-600">R$ {typeof dieselStatusValorLitro === 'number' ? dieselStatusValorLitro.toFixed(2).replace('.', ',') : '0,00'}</span>
               </div>
               <Progress 
                 value={statusTanque.diesel.porcentagem} 
@@ -671,7 +671,7 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
               </div>
               <div className="flex justify-between text-sm mb-1">
                 <span>Valor por litro:</span>
-                <span className="font-medium text-green-600">R$ {arlaStatusValorLitro?.toFixed(2).replace('.', ',')}</span>
+                <span className="font-medium text-green-600">R$ {typeof arlaStatusValorLitro === 'number' ? arlaStatusValorLitro.toFixed(2).replace('.', ',') : '0,00'}</span>
               </div>
               <Progress 
                 value={statusTanque.arla.porcentagem} 
