@@ -12,15 +12,49 @@ interface PrecosCombustivel {
   arla: { id: number; valor_litro: number; updated_at: string };
 }
 
-export default function PrecosCombustivelCard() {
+interface PrecosCombustivelCardProps {
+  // Se dialogControl for fornecido, usaremos controle externo para o diálogo
+  dialogControl?: {
+    isOpen: boolean;
+    onOpen: () => void;
+    onClose: () => void;
+  };
+}
+
+export default function PrecosCombustivelCard({ dialogControl }: PrecosCombustivelCardProps) {
   const [precos, setPrecos] = useState<PrecosCombustivel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // Estado interno do diálogo (usado apenas se dialogControl não for fornecido)
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   
   // Verificar se o usuário é administrador
   const isAdmin = user?.role === 'admin';
+
+  // Detectar se estamos usando controle interno ou externo para o diálogo
+  const useExternalControl = !!dialogControl;
+  
+  // Funções para controlar o diálogo
+  const openDialog = () => {
+    if (useExternalControl) {
+      dialogControl.onOpen();
+    } else {
+      setIsDialogOpen(true);
+    }
+  };
+  
+  const closeDialog = () => {
+    if (useExternalControl) {
+      dialogControl.onClose();
+    } else {
+      setIsDialogOpen(false);
+    }
+  };
+  
+  const isDialogCurrentlyOpen = useExternalControl 
+    ? dialogControl.isOpen 
+    : isDialogOpen;
 
   // Função para buscar preços atuais
   const fetchPrecos = async () => {
@@ -136,7 +170,7 @@ export default function PrecosCombustivelCard() {
             <Button 
               variant="outline" 
               className="w-full flex items-center justify-center" 
-              onClick={() => setIsDialogOpen(true)}
+              onClick={openDialog}
               data-precos-combustivel-btn
             >
               <Settings className="mr-2 h-4 w-4" />
@@ -146,11 +180,14 @@ export default function PrecosCombustivelCard() {
         )}
       </Card>
       
-      <PrecosCombustivelDialog 
-        isOpen={isDialogOpen} 
-        onClose={() => setIsDialogOpen(false)} 
-        onSave={fetchPrecos}
-      />
+      {/* Renderizar o diálogo apenas se estiver usando controle interno */}
+      {!useExternalControl && (
+        <PrecosCombustivelDialog 
+          isOpen={isDialogOpen} 
+          onClose={closeDialog} 
+          onSave={fetchPrecos}
+        />
+      )}
     </>
   );
 }
