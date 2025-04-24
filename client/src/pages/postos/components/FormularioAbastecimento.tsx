@@ -58,6 +58,9 @@ const FormularioForm = ({
   isSubmitting: boolean; 
   postId: string 
 }) => {
+  // Obter nome do operador logado do localStorage (adicionado pelo sistema de autenticação)
+  const operadorNome = localStorage.getItem('user_name') || '';
+  
   // Formulário sempre instanciado uma única vez
   const form = useForm<AbastecimentoValues>({
     resolver: zodResolver(abastecimentoSchema),
@@ -68,7 +71,7 @@ const FormularioForm = ({
       quantidade: '',
       projeto: '',
       motorista: '',
-      operador: '',
+      operador: operadorNome, // Preenche automaticamente com o nome do operador logado
       tipo_veiculo: 'frota',
     },
   });
