@@ -2,8 +2,65 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { PostgrestResponse } from '@supabase/supabase-js';
 import { supabase } from "./supabase";
 
+// Estado para controlar tentativas de ressincronização
+let isAttemptingResync = false;
+let lastResyncAttempt = 0;
+const RESYNC_COOLDOWN = 10000; // 10 segundos entre tentativas
+
+// Função para tentar ressincronizar a sessão
+async function trySessionResync(): Promise<boolean> {
+  // Evitar chamadas múltiplas simultaneamente
+  if (isAttemptingResync) {
+    return false;
+  }
+  
+  // Evitar chamadas frequentes demais
+  const now = Date.now();
+  if (now - lastResyncAttempt < RESYNC_COOLDOWN) {
+    return false;
+  }
+  
+  console.log('[QueryClient] Tentando ressincronizar a sessão após erro 401...');
+  isAttemptingResync = true;
+  lastResyncAttempt = now;
+  
+  try {
+    // Tentar importar o contexto de autenticação do Supabase
+    // Precisamos usar dynamic import para evitar dependência circular
+    const authModule = await import('../context/SupabaseAuthContext');
+    
+    if (typeof window !== 'undefined') {
+      // @ts-ignore - Acessando uma variável global definida pelo hook de autenticação
+      const authContext = window.__SUPABASE_AUTH_CONTEXT__;
+      
+      if (authContext && authContext.resyncSession) {
+        const success = await authContext.resyncSession();
+        console.log(`[QueryClient] Ressincronização ${success ? 'bem-sucedida' : 'falhou'}`);
+        return success;
+      }
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('[QueryClient] Erro ao tentar ressincronizar sessão:', error);
+    return false;
+  } finally {
+    isAttemptingResync = false;
+  }
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
+    // Tentar ressincronizar sessão em caso de erro 401
+    if (res.status === 401) {
+      const resyncSuccessful = await trySessionResync();
+      if (resyncSuccessful) {
+        // Optamos por não repetir automaticamente a requisição aqui
+        // Em vez disso, o usuário ou o código que chamou a API pode decidir tentar novamente
+        throw new Error(`401: Sessão ressincronizada, tente novamente`);
+      }
+    }
+    
     const text = (await res.text()) || res.statusText;
     throw new Error(`${res.status}: ${text}`);
   }
@@ -117,12 +174,27 @@ export const getQueryFn: <T>(options: {
     }
     
     // Otherwise use regular fetch for backend API
-    const res = await fetch(urlOrTable, {
+    let res = await fetch(urlOrTable, {
       credentials: "include",
     });
 
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
+    // Se receber 401, tenta ressincronizar a sessão e repetir a requisição
+    if (res.status === 401) {
+      // Para o modo returnNull, retornar null sem tentar ressincronizar
+      if (unauthorizedBehavior === "returnNull") {
+        return null;
+      }
+      
+      // Tenta ressincronizar a sessão
+      const resyncSuccessful = await trySessionResync();
+      
+      // Se a ressincronização for bem-sucedida, tenta a requisição novamente
+      if (resyncSuccessful) {
+        console.log('[QueryClient] Sessão ressincronizada com sucesso, repetindo requisição:', urlOrTable);
+        res = await fetch(urlOrTable, {
+          credentials: "include",
+        });
+      }
     }
 
     await throwIfResNotOk(res);

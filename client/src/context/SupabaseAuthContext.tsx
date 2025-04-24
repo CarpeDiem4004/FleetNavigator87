@@ -59,6 +59,23 @@ export const SupabaseAuthProvider = ({ children }: SupabaseAuthProviderProps) =>
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  
+  // Expor o contexto de autenticação globalmente para o mecanismo de ressincronização automática
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // @ts-ignore - Definindo uma variável global para acessar o contexto
+      window.__SUPABASE_AUTH_CONTEXT__ = {
+        resyncSession,
+      };
+    }
+    
+    return () => {
+      if (typeof window !== 'undefined') {
+        // @ts-ignore - Limpando a variável global
+        window.__SUPABASE_AUTH_CONTEXT__ = null;
+      }
+    };
+  }, [resyncSession]);
 
   // Obtém informações do usuário da API após autenticação no Supabase
   useEffect(() => {
