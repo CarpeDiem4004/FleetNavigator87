@@ -40,7 +40,7 @@ import { Search, Plus, FileEdit, Trash2, ArrowUpCircle, ShoppingBag, CheckCircle
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
-import { Tire, getAllTires, createTire, updateTire, deleteTire } from '@/services/tiresService';
+import { Tire, TireModel, getAllTires, createTire, updateTire, deleteTire, getTireModels } from '@/services/tiresService';
 import { TireRequest, getAllTireRequests, updateTireRequestStatus } from '@/services/tireRequestsService';
 import TireRequestForm from '@/components/tire/TireRequestForm';
 import TireMountingHistory from '@/components/tires/TireMountingHistory';
@@ -135,9 +135,12 @@ const TiresPage: React.FC = () => {
     profundidade_sulco: 12.0,
     localizacao: 'almoxarifado',
     status: 'estoque',
-    // tem_estepe removido - não existe na tabela
-    observacao: ''
+    observacao: '',
+    quantidade: 1,
+    valor_unitario: 0
   });
+  const [tireModels, setTireModels] = useState<TireModel[]>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
 
   // Buscar pneus da API
   useEffect(() => {
@@ -169,6 +172,29 @@ const TiresPage: React.FC = () => {
 
     loadTires();
   }, [toast]);
+  
+  // Carregar modelos de pneus quando o diálogo é aberto
+  useEffect(() => {
+    if (isAddDialogOpen) {
+      const loadTireModels = async () => {
+        setIsLoadingModels(true);
+        try {
+          const response = await getTireModels();
+          if (response.success) {
+            setTireModels(response.data);
+          } else {
+            console.error("Falha ao carregar modelos de pneus:", response.error);
+          }
+        } catch (error) {
+          console.error("Erro ao buscar modelos de pneus:", error);
+        } finally {
+          setIsLoadingModels(false);
+        }
+      };
+      
+      loadTireModels();
+    }
+  }, [isAddDialogOpen]);
 
   // Carregar solicitações de pneus usando a nova API
   useEffect(() => {
@@ -222,44 +248,80 @@ const TiresPage: React.FC = () => {
     }
 
     try {
-      // Usar a nova API para adicionar pneus
-      const response = await createTire({
-        ...newTire,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+      const quantidade = newTire.quantidade || 1;
+      let addedPneus = [];
+      
+      // Se a quantidade for 1, adiciona normalmente
+      if (quantidade === 1) {
+        const response = await createTire({
+          ...newTire,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+        
+        if (response.success && response.data) {
+          addedPneus.push(response.data);
+        } else {
+          throw new Error(response.error || "Erro ao adicionar pneu");
+        }
+      } else {
+        // Se a quantidade for maior que 1, cria múltiplos pneus
+        for (let i = 0; i < quantidade; i++) {
+          // Gera um código único para cada pneu se estiver criando múltiplos
+          const novoCodigo = i === 0 
+            ? newTire.codigo 
+            : `${newTire.codigo}-${(i + 1).toString().padStart(2, '0')}`;
+          
+          const response = await createTire({
+            ...newTire,
+            codigo: novoCodigo,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            // Define quantidade como 1 para cada pneu individual
+            quantidade: 1
+          });
+          
+          if (response.success && response.data) {
+            addedPneus.push(response.data);
+          } else {
+            throw new Error(response.error || `Erro ao adicionar pneu ${novoCodigo}`);
+          }
+        }
+      }
+      
+      // Atualiza a lista de pneus
+      setTires([...tires, ...addedPneus]);
+      setIsAddDialogOpen(false);
+      
+      toast({
+        title: quantidade > 1 ? "Pneus adicionados" : "Pneu adicionado",
+        description: quantidade > 1 
+          ? `${quantidade} pneus adicionados com sucesso.` 
+          : `Pneu ${addedPneus[0].codigo} adicionado com sucesso.`,
+        variant: "default"
       });
       
-      if (response.success && response.data) {
-        setTires([...tires, response.data]);
-        setIsAddDialogOpen(false);
-        
-        toast({
-          title: "Pneu adicionado",
-          description: `Pneu ${response.data.codigo} adicionado com sucesso.`,
-          variant: "default"
-        });
-        
-        // Resetar formulário
-        setNewTire({
-          codigo: '',
-          marca: '',
-          modelo: '',
-          medida: '',
-          aro: '',
-          tipo: '',
-          origem: 'novo',
-          data_aquisicao: new Date().toISOString().split('T')[0],
-          veiculo_placa: null,
-          posicao: null,
-          km_inicial: 0,
-          km_atual: 0,
-          profundidade_sulco: 12.0,
-          localizacao: 'almoxarifado',
-          status: 'estoque',
-          // tem_estepe removido - não existe na tabela
-          observacao: ''
-        });
-      }
+      // Resetar formulário
+      setNewTire({
+        codigo: '',
+        marca: '',
+        modelo: '',
+        medida: '',
+        aro: '',
+        tipo: '',
+        origem: 'novo',
+        data_aquisicao: new Date().toISOString().split('T')[0],
+        veiculo_placa: null,
+        posicao: null,
+        km_inicial: 0,
+        km_atual: 0,
+        profundidade_sulco: 12.0,
+        localizacao: 'almoxarifado',
+        status: 'estoque',
+        observacao: '',
+        quantidade: 1,
+        valor_unitario: 0
+      });
     } catch (error) {
       console.error("Erro ao adicionar pneu:", error);
       toast({
@@ -532,6 +594,45 @@ const TiresPage: React.FC = () => {
                     </div>
                   </div>
                   
+                  {/* Modelo de Pneu Pré-cadastrado */}
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="tireModel">Modelo de Pneu (Opcional)</Label>
+                      <Select 
+                        onValueChange={(value) => {
+                          const selectedModel = tireModels.find(model => model.id === parseInt(value));
+                          if (selectedModel) {
+                            setNewTire({
+                              ...newTire,
+                              marca: selectedModel.marca,
+                              modelo: selectedModel.modelo,
+                              medida: selectedModel.medida || '',
+                              valor_unitario: selectedModel.valor_unitario
+                            });
+                          }
+                        }}
+                      >
+                        <SelectTrigger id="tireModel">
+                          <SelectValue placeholder="Selecione um modelo de pneu" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {isLoadingModels ? (
+                            <div className="p-2 text-center">Carregando modelos...</div>
+                          ) : (
+                            tireModels.map(model => (
+                              <SelectItem key={model.id} value={model.id?.toString() || ''}>
+                                {model.marca} {model.modelo} - {model.medida} - R$ {model.valor_unitario.toFixed(2)}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Selecionar um modelo preencherá automaticamente os campos marca, modelo, medida e valor unitário
+                      </p>
+                    </div>
+                  </div>
+                  
                   {/* Tipo e Origem */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -638,6 +739,45 @@ const TiresPage: React.FC = () => {
                     </div>
                   </div>
                   
+                  {/* Quantidade e Valor Unitário */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="quantidade">Quantidade</Label>
+                      <Input
+                        id="quantidade"
+                        type="number"
+                        min="1"
+                        value={newTire.quantidade?.toString() || '1'}
+                        onChange={(e) => setNewTire({...newTire, quantidade: parseInt(e.target.value) || 1})}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Para múltiplos pneus idênticos
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="valor_unitario">Valor Unitário (R$)</Label>
+                      <Input
+                        id="valor_unitario"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={newTire.valor_unitario?.toString() || '0'}
+                        onChange={(e) => setNewTire({...newTire, valor_unitario: parseFloat(e.target.value) || 0})}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Valor Total - Calculado automaticamente */}
+                  <div className="p-4 bg-muted rounded-md">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">Valor Total:</span>
+                      <span className="text-lg font-bold">
+                        R$ {((newTire.quantidade || 1) * (newTire.valor_unitario || 0)).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                  
                   {/* Observações */}
                   <div className="space-y-2">
                     <Label htmlFor="observacao">Observações</Label>
@@ -648,8 +788,6 @@ const TiresPage: React.FC = () => {
                       placeholder="Observações adicionais"
                     />
                   </div>
-                  
-                  {/* Opção "Veículo possui estepe" removida porque a coluna não existe na tabela pneus_completo */}
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancelar</Button>
