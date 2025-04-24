@@ -22,35 +22,65 @@ async function main() {
     // Inicializar o cliente Supabase
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Verificar a conexão com o Supabase usando uma tabela de sistema
-    const { data: health, error: healthError } = await supabase
-      .from('pg_stat_database')
-      .select('*')
+    // Verificar a conexão com o Supabase usando uma tabela pública conhecida
+    const { data: healthCheck, error: healthError } = await supabase
+      .from('users')
+      .select('id')
       .limit(1);
     
     if (healthError) {
-      console.error('❌ Erro ao verificar a conexão com o Supabase:', healthError.message);
-      // Tentar outra abordagem com uma simples consulta
-      const { error: simpleError } = await supabase.from('information_schema.tables').select('table_name').limit(1);
+      console.error('❌ Erro ao verificar a conexão com o Supabase (tabela users):', healthError.message);
       
-      if (simpleError) {
-        console.error('❌ Também não foi possível realizar uma consulta simples:', simpleError.message);
-        return;
+      // Tentar com outra tabela
+      const { data: baseCheck, error: baseError } = await supabase
+        .from('bases')
+        .select('id')
+        .limit(1);
+      
+      if (baseError) {
+        console.error('❌ Erro ao verificar a conexão com o Supabase (tabela bases):', baseError.message);
+        
+        // Fazer uma consulta de autenticação básica
+        const { data: authData, error: authError } = await supabase.auth.getSession();
+        
+        if (authError) {
+          console.error('❌ Erro ao acessar API de autenticação do Supabase:', authError.message);
+          console.error('⚠️ Possível problema com as credenciais do Supabase ou com a conexão.');
+          return;
+        } else {
+          console.log('✅ API de autenticação do Supabase está acessível.');
+          console.log('⚠️ Você está conectado ao Supabase, mas pode não ter permissões para acessar tabelas.');
+        }
       } else {
-        console.log('✅ Conexão com o Supabase estabelecida com sucesso (via consulta alternativa).');
+        console.log('✅ Conexão com o Supabase estabelecida com sucesso (via tabela bases).');
       }
     } else {
-      console.log('✅ Conexão com o Supabase estabelecida com sucesso.');
+      console.log('✅ Conexão com o Supabase estabelecida com sucesso (via tabela users).');
     }
     
-    // Listar tabelas no Supabase
+    // Listar tabelas no Supabase usando método alternativo
     console.log('\n📋 Buscando lista de tabelas no Supabase...');
-    const { data: tables, error: tablesError } = await supabase
-      .from('information_schema.tables')
-      .select('table_name')
-      .eq('table_schema', 'public')
-      .neq('table_name', 'pg_stat_statements')
-      .order('table_name');
+    
+    // Criar função alternativa para listar tabelas sem usar information_schema
+    // (que pode não estar acessível para o usuário anônimo)
+    const testTables = [
+      'users', 'bases', 'veiculos', 'pneus', 'oficinas', 
+      'abastecimentos', 'abastecimentos_postos', 'sessions',
+      'posto_remedios_abastecimentos', 'workshops', 'maintenance',
+      'refueling', 'tires', 'vehicles', 'vehicle_checklist'
+    ];
+    
+    // Verificar cada tabela individualmente
+    const tableResults = await Promise.all(testTables.map(async (tableName) => {
+      const { error } = await supabase.from(tableName).select('count').limit(1);
+      return { tableName, exists: !error };
+    }));
+    
+    // Filtrar apenas tabelas que existem
+    const existingTables = tableResults.filter(t => t.exists).map(t => ({ table_name: t.tableName }));
+    
+    const tables = existingTables;
+    const tablesError = null;
     
     if (tablesError) {
       console.error('❌ Erro ao listar tabelas do Supabase:', tablesError.message);
@@ -83,24 +113,9 @@ async function main() {
       if (tableNames.includes(tableName)) {
         console.log(`\n✅ Tabela ${tableName} encontrada no Supabase.`);
         
-        // Verificar a estrutura da tabela (colunas)
-        const { data: columns, error: columnsError } = await supabase
-          .from('information_schema.columns')
-          .select('column_name, data_type, is_nullable')
-          .eq('table_schema', 'public')
-          .eq('table_name', tableName)
-          .order('ordinal_position');
-        
-        if (columnsError) {
-          console.error(`❌ Erro ao verificar estrutura da tabela ${tableName}:`, columnsError.message);
-          continue;
-        }
-        
-        console.log(`📑 Estrutura da tabela ${tableName}:`);
-        console.log('------------------------');
-        columns.forEach(column => {
-          console.log(`${column.column_name} (${column.data_type}) ${column.is_nullable === 'YES' ? 'NULL' : 'NOT NULL'}`);
-        });
+        // A consulta à information_schema requer privilégios elevados, 
+        // então vamos pular a verificação de estrutura e buscar diretamente os dados
+        console.log(`📑 Verificando dados da tabela ${tableName}...`);
         
         // Contar registros na tabela
         const { count, error: countError } = await supabase
