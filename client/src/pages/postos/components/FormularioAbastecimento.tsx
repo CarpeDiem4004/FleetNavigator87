@@ -692,12 +692,13 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       try {
         console.log('Tentativa 1: Inserindo via cliente admin');
         // Importa o cliente admin diretamente
-        const { supabaseAdmin } = await import('@/lib/supabase-client');
+        const { supabaseAdmin, supabaseUrl, supabaseServiceKey } = await import('@/lib/supabase-client');
         
         // Exibe informações do cliente para depuração
         console.log('Supabase Admin Config:', {
-          url: 'https://hvsmxxqkuyjhpsiojupb.supabase.co', // URL fixa para evitar problemas de escopo
-          hasServiceKey: true
+          url: supabaseUrl,
+          hasServiceKey: !!supabaseServiceKey,
+          keyStart: supabaseServiceKey.substring(0, 10) + '...'
         });
         
         // Usando o cliente supabase admin diretamente

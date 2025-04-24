@@ -14,7 +14,9 @@ console.log('- VITE_SUPABASE_SERVICE_KEY disponível:', !!import.meta.env.VITE_S
 
 export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || SUPABASE_URL;
 export const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+// Garantir que estamos usando a chave de serviço correta, priorizando a variável de ambiente
 export const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY || SUPABASE_SERVICE_KEY;
+console.log('Supabase Service Key (primeiros 10 caracteres):', supabaseServiceKey.substring(0, 10) + '...');
 
 let supabaseInstance: SupabaseClient | null = null;
 let supabaseAdminInstance: SupabaseClient | null = null;
