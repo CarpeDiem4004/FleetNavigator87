@@ -32,6 +32,35 @@ export const mapSupabaseUserToSession = async (req: Request, res: Response, next
 
       const user = userResult.rows[0];
       
+      // Atualizar o supabase_uid do usuário se necessário
+      try {
+        // Verificar se a coluna supabase_uid já existe
+        const columnCheck = await pool.query(`
+          SELECT column_name FROM information_schema.columns 
+          WHERE table_name = 'users' AND column_name = 'supabase_uid'
+        `);
+        
+        // Se a coluna não existe, adicione-a
+        if (columnCheck.rowCount === 0) {
+          console.log('[MapSupabaseUser] Adicionando coluna supabase_uid à tabela users');
+          await pool.query(`
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS supabase_uid VARCHAR(255)
+          `);
+        }
+        
+        // Se o usuário não tem supabase_uid ou está diferente, atualize
+        if (!user.supabase_uid || user.supabase_uid !== req.supabaseUser.id) {
+          console.log(`[MapSupabaseUser] Vinculando usuário PostgreSQL ${user.id} ao Supabase ${req.supabaseUser.id}`);
+          await pool.query(
+            'UPDATE users SET supabase_uid = $1 WHERE id = $2',
+            [req.supabaseUser.id, user.id]
+          );
+        }
+      } catch (error) {
+        console.error('[MapSupabaseUser] Erro ao atualizar supabase_uid:', error);
+        // Não interrompe o fluxo em caso de erro
+      }
+      
       // Fazer login do usuário na sessão
       req.login(user, (err) => {
         if (err) {
