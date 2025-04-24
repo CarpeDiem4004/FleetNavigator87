@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
 import { createClient } from '@supabase/supabase-js';
 import {
@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Fuel } from 'lucide-react';
+import { useSafeDialog } from '@/hooks/use-safe-dialog';
 
 // Importação central do Supabase para garantir consistência
 import { supabase } from '@/lib/supabase-client';
@@ -38,10 +39,11 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const dialogState = useSafeDialog(false);
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isMountedRef = useRef(true);
 
   // Verificar sessão ao carregar
   useEffect(() => {
@@ -65,12 +67,14 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
             const name = localStorage.getItem('user_name') || '';
             const role = localStorage.getItem('user_role') || '';
             
-            setUser({
-              id: userId,
-              email,
-              name,
-              role
-            });
+            if (isMountedRef.current) {
+              setUser({
+                id: userId,
+                email,
+                name,
+                role
+              });
+            }
           } else {
             console.log('Token expirado ou inválido, redirecionando para login');
             // Limpar dados locais expirados
@@ -79,21 +83,34 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
             localStorage.removeItem('user_email');
             localStorage.removeItem('user_name');
             localStorage.removeItem('user_role');
-            setLoginModalOpen(true);
+            
+            if (isMountedRef.current) {
+              dialogState.open();
+            }
           }
         } else {
           console.log('Nenhum token encontrado, exibindo modal de login');
-          setLoginModalOpen(true);
+          if (isMountedRef.current) {
+            dialogState.open();
+          }
         }
       } catch (error) {
         console.error('Erro ao verificar sessão:', error);
-        setLoginModalOpen(true);
+        if (isMountedRef.current) {
+          dialogState.open();
+        }
       } finally {
-        setIsLoading(false);
+        if (isMountedRef.current) {
+          setIsLoading(false);
+        }
       }
     };
     
     checkSession();
+    
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
   // Função de login
