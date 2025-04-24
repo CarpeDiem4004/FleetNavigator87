@@ -1,10 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { ADMIN_EMAILS, FLEET_MANAGEMENT_BASE_ID, isUserAdmin, isUserInFleetManagement, canUserAccessBase } from './constants';
+import { validateSupabaseToken, extractJwtToken, AuthError } from '../utils/auth';
 
 /**
  * Middleware para verificar se o usuário está autenticado
  * Retorna 401 se o usuário não estiver autenticado
  */
+
 export const isAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
   // Se o usuário está autenticado via sessão, continuar
   if (req.isAuthenticated()) {
@@ -26,28 +28,9 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
   }
   
   try {
-    // Verificar configurações do Supabase
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.error('ERRO: Variáveis de ambiente SUPABASE_URL e SUPABASE_ANON_KEY não definidas');
-      return res.status(401).json({ message: "Não autenticado" });
-    }
-    
-    // Verificar token JWT via Supabase
-    const token = authHeader.split(' ')[1];
-    
-    // Importação dinâmica do cliente Supabase
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    
-    if (error || !user) {
-      console.error('Erro na verificação do token JWT:', error);
-      return res.status(401).json({ message: "Não autenticado" });
-    }
+    // Extrair e validar token JWT
+    const token = extractJwtToken(authHeader);
+    const user = await validateSupabaseToken(token);
     
     // Usuário autenticado via JWT, anexá-lo à requisição
     (req as any).supabaseUser = user;
@@ -55,6 +38,9 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
     // Continuar
     return next();
   } catch (error) {
+    if (error instanceof AuthError) {
+      return res.status(401).json({ message: "Não autenticado" });
+    }
     console.error('Erro ao processar autenticação:', error);
     return res.status(500).json({ message: "Erro interno do servidor" });
   }

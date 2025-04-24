@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { validateSupabaseToken, extractJwtToken, AuthError } from '../utils/auth';
 
 // Re-exportar o middleware de autenticação da auth.ts para compatibilidade com código existente
 export { isAuthenticated } from '../middleware/auth';
@@ -13,35 +14,15 @@ export { isAuthenticated as isAuthenticatedBySessionOrJwt } from '../middleware/
  */
 export const isJwtAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Obter o token do cabeçalho Authorization
+    // Obter e validar o token do cabeçalho Authorization
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ message: "Token de autenticação ausente ou inválido" });
     }
     
-    // Verificar configurações do Supabase
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.error('ERRO: Variáveis de ambiente SUPABASE_URL e SUPABASE_ANON_KEY não definidas');
-      return res.status(500).json({ message: "Erro de configuração do servidor" });
-    }
-    
-    const token = authHeader.split(' ')[1];
-    
-    // Importação dinâmica do cliente Supabase
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    
-    // Verificar o token
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    
-    if (error || !user) {
-      console.error('Erro ao validar token JWT:', error);
-      return res.status(401).json({ message: "Token de autenticação inválido" });
-    }
+    const token = extractJwtToken(authHeader);
+    const user = await validateSupabaseToken(token);
     
     // Anexar o usuário à requisição
     (req as any).supabaseUser = user;
@@ -49,6 +30,9 @@ export const isJwtAuthenticated = async (req: Request, res: Response, next: Next
     // Continuar
     next();
   } catch (error) {
+    if (error instanceof AuthError) {
+      return res.status(401).json({ message: "Token de autenticação inválido" });
+    }
     console.error('Erro ao processar token JWT:', error);
     return res.status(500).json({ message: "Erro no servidor" });
   }
