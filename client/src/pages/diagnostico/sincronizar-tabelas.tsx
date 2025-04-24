@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import SincronizarTabelas from './SincronizarTabelas';
 import { Button } from '@/components/ui/button';

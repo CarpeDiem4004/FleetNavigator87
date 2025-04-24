@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Settings, Droplet, Fuel } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from '@/lib/queryClient';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/context/AuthContext';
 import PrecosCombustivelDialog from '../posto-dialogs/PrecosCombustivelDialog';
 
 interface PrecosCombustivel {

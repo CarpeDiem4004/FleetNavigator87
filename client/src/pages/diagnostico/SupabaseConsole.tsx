@@ -6,7 +6,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { PlayIcon, XCircleIcon, CheckCircleIcon, RotateCw } from 'lucide-react';
 import { supabase } from '@/lib/supabase-client';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/context/AuthContext';
 
 interface QueryResult {
   data: any;

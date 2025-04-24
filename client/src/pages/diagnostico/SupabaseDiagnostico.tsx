@@ -5,7 +5,7 @@ import { Alert, AlertTitle } from "@/components/ui/alert";
 import { RefreshCw, Server, Globe } from 'lucide-react';
 import { checkAllConnections } from '@/lib/supabase-client';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/context/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
