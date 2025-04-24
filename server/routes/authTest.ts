@@ -10,7 +10,7 @@ import {
 const router = Router();
 
 // Rota para testar a autenticação híbrida
-router.get('/test/hybrid', isAuthenticated, (req: Request, res: Response) => {
+router.get('/hybrid', isAuthenticated, (req: Request, res: Response) => {
   // Esta rota aceita tanto sessão quanto token JWT
   const authMethod = req.isAuthenticated() ? 'sessão' : 'token JWT';
   
@@ -37,7 +37,7 @@ router.get('/test/hybrid', isAuthenticated, (req: Request, res: Response) => {
 });
 
 // Rota para testar a autenticação com mapeamento
-router.get('/test/mapping', isAuthenticatedWithMapping, (req: Request, res: Response) => {
+router.get('/mapping', isAuthenticatedWithMapping, (req: Request, res: Response) => {
   // Esta rota aceita token JWT e mapeia para sessão
   if (!req.isAuthenticated() && !req.user) {
     return res.status(500).json({
@@ -57,7 +57,7 @@ router.get('/test/mapping', isAuthenticatedWithMapping, (req: Request, res: Resp
 });
 
 // Rota para testar apenas autenticação por sessão
-router.get('/test/session', isSessionAuthenticated, (req: Request, res: Response) => {
+router.get('/session', isSessionAuthenticated, (req: Request, res: Response) => {
   // Esta rota aceita apenas sessão
   // Sabemos que o usuário está autenticado pelo middleware, mas vamos verificar por segurança
   if (!req.user) {
@@ -77,7 +77,7 @@ router.get('/test/session', isSessionAuthenticated, (req: Request, res: Response
 });
 
 // Rota para testar apenas autenticação por token JWT
-router.get('/test/jwt', isJwtAuthenticated, (req: Request, res: Response) => {
+router.get('/jwt', isJwtAuthenticated, (req: Request, res: Response) => {
   // Esta rota aceita apenas token JWT
   if (!req.supabaseUser) {
     return res.status(500).json({

@@ -5273,6 +5273,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rotas de teste de autenticação híbrida
   app.use('/api/auth-test', authTestRoutes);
   
+  // Rota direta para teste de autenticação híbrida
+  app.get('/api/auth-test-direct/hybrid', isAuthenticated, (req, res) => {
+    res.json({
+      success: true,
+      authenticated: true,
+      method: req.isAuthenticated() ? 'session' : 'jwt',
+      user: req.isAuthenticated() 
+        ? { id: req.user.id, email: req.user.email, role: req.user.role } 
+        : req.supabaseUser,
+      hasSession: req.isAuthenticated(),
+      hasJwtToken: !!req.supabaseUser
+    });
+  });
+  
   // Rota de diagnóstico para exibir configuração de autenticação
   app.get("/api/auth-config", (req, res) => {
     res.json({
