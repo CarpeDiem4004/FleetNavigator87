@@ -476,26 +476,53 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     const userRole = localStorage.getItem('user_role');
     setIsUserAdmin(userRole === 'admin');
     
-    // Carregar valores de preço por litro da configuração do tanque
+    // Carregar valores de preço por litro da nova API de preços de combustível
     const carregarPrecos = async () => {
       try {
-        // Formatar o nome do posto
-        const formattedPosto = formatPosto(postId);
+        // Buscar preço do diesel da API
+        const dieselResponse = await fetch('/api/precos-combustivel/Diesel');
         
-        // Tentar buscar configuração de tanques
-        const response = await fetch(`/api/configuracao-tanques/${formattedPosto}`);
-        
-        if (response.ok) {
-          const data = await response.json();
+        if (dieselResponse.ok) {
+          const dieselData = await dieselResponse.json();
           
-          if (data.success && data.data) {
-            // Atualizar preços por litro
-            if (data.data.diesel_valor_litro) {
-              setDieselValorLitro(data.data.diesel_valor_litro.toString());
-            }
+          if (dieselData.success && dieselData.data) {
+            // Atualizar preço do diesel
+            setDieselValorLitro(dieselData.data.valor_litro.toString());
+          }
+        }
+        
+        // Buscar preço do ARLA da API
+        const arlaResponse = await fetch('/api/precos-combustivel/ARLA');
+        
+        if (arlaResponse.ok) {
+          const arlaData = await arlaResponse.json();
+          
+          if (arlaData.success && arlaData.data) {
+            // Atualizar preço do ARLA
+            setArlaValorLitro(arlaData.data.valor_litro.toString());
+          }
+        }
+        
+        // Como fallback, se a API de preços falhar, tenta buscar da configuração dos tanques
+        if (!dieselResponse.ok || !arlaResponse.ok) {
+          // Formatar o nome do posto
+          const formattedPosto = formatPosto(postId);
+          
+          // Tentar buscar configuração de tanques
+          const response = await fetch(`/api/configuracao-tanques/${formattedPosto}`);
+          
+          if (response.ok) {
+            const data = await response.json();
             
-            if (data.data.arla_valor_litro) {
-              setArlaValorLitro(data.data.arla_valor_litro.toString());
+            if (data.success && data.data) {
+              // Atualizar preços por litro apenas se não tiver conseguido da API
+              if (!dieselResponse.ok && data.data.diesel_valor_litro) {
+                setDieselValorLitro(data.data.diesel_valor_litro.toString());
+              }
+              
+              if (!arlaResponse.ok && data.data.arla_valor_litro) {
+                setArlaValorLitro(data.data.arla_valor_litro.toString());
+              }
             }
           }
         }

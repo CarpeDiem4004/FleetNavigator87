@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Fuel, Droplet, Settings, Edit, Save, RefreshCw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import TanqueConfigDialog from '@/components/posto-dialogs/TanqueConfigDialog';
+import PrecosCombustivelCard from '@/components/posto-cards/PrecosCombustivelCard';
 
 interface StatusTanqueProps {
   postId: string;
