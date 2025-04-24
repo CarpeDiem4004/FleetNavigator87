@@ -151,6 +151,15 @@ const UsersNew: React.FC = () => {
       usersError,
       filteredUsersLength: users?.length || 0
     });
+    
+    // Log detalhado para status de usuários
+    if (users && users.length > 0) {
+      console.log('Status de usuários:', users.map(user => ({
+        id: user.id,
+        name: user.name,
+        isActive: user.isActive
+      })));
+    }
   }, [users, usersLoading, usersError]);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
