@@ -343,20 +343,35 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
   
   // Função para abrir o diálogo de edição
   const abrirDialogEdicao = () => {
+    console.log("Abrindo diálogo de edição com valores:", {
+      diesel_nivel: statusTanque.diesel.nivel,
+      diesel_capacidade: statusTanque.diesel.capacidade,
+      diesel_valor_litro: dieselStatusValorLitro,
+      arla_nivel: statusTanque.arla.nivel,
+      arla_capacidade: statusTanque.arla.capacidade,
+      arla_valor_litro: arlaStatusValorLitro
+    });
+    
     // Preencher o formulário com os valores atuais
     setDieselNivel(statusTanque.diesel.nivel);
     setDieselCapacidade(statusTanque.diesel.capacidade);
     setArlaNivel(statusTanque.arla.nivel);
     setArlaCapacidade(statusTanque.arla.capacidade);
     
+    // Definir os valores por litro dos estados (mesmo que o usuário não clique no localStorage)
+    setDieselValorLitro(dieselStatusValorLitro);
+    setArlaValorLitro(arlaStatusValorLitro);
+    
     // Verificar se existe configuração local para pegar os valores de preço
     const configLocal = getStoredConfig(postId);
     if (configLocal) {
       if (configLocal.diesel_valor_litro) {
         setDieselValorLitro(configLocal.diesel_valor_litro);
+        console.log("Definindo valor do diesel do localStorage:", configLocal.diesel_valor_litro);
       }
       if (configLocal.arla_valor_litro) {
         setArlaValorLitro(configLocal.arla_valor_litro);
+        console.log("Definindo valor do ARLA do localStorage:", configLocal.arla_valor_litro);
       }
     }
     
@@ -661,7 +676,8 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
           </DialogHeader>
           
           <div className="grid gap-4 py-4">
-            <div className="space-y-4">
+            {/* VALORES DO DIESEL */}
+            <div className="space-y-3 bg-amber-50 p-4 rounded-lg border border-amber-100">
               <h3 className="font-medium text-amber-600 flex items-center gap-2">
                 <Fuel className="h-4 w-4" /> Tanque de Diesel
               </h3>
@@ -691,7 +707,7 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
               </div>
               
               {/* Container para o preço - linha separada */}
-              <div className="space-y-1">
+              <div className="space-y-1 mt-3 bg-green-50 p-3 rounded-md border border-green-100">
                 <Label htmlFor="dieselValorLitro" className="flex items-center gap-1 font-medium text-green-600">
                   Valor por Litro (R$)
                 </Label>
@@ -707,7 +723,8 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
               </div>
             </div>
             
-            <div className="space-y-4 mt-2">
+            {/* VALORES DO ARLA */}
+            <div className="space-y-3 bg-blue-50 p-4 rounded-lg border border-blue-100">
               <h3 className="font-medium text-blue-600 flex items-center gap-2">
                 <Droplet className="h-4 w-4" /> Tanque de ARLA
               </h3>
@@ -737,7 +754,7 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
               </div>
               
               {/* Container para o preço - linha separada */}
-              <div className="space-y-1">
+              <div className="space-y-1 mt-3 bg-green-50 p-3 rounded-md border border-green-100">
                 <Label htmlFor="arlaValorLitro" className="flex items-center gap-1 font-medium text-green-600">
                   Valor por Litro (R$)
                 </Label>
