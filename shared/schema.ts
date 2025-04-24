@@ -120,6 +120,8 @@ export const vehicles = pgTable("veiculos", {
   baseId: integer("base_id").notNull().references(() => bases.id),
   ownership: vehicleOwnershipEnum("ownership").notNull().default('murici'),
   rentalCompany: text("rental_company"), // Empresa de locação, quando aplicável
+  crlvUrl: text("crlv_url"), // URL para o documento CRLV (Certificado de Registro e Licenciamento de Veículo)
+  anttUrl: text("antt_url"), // URL para o documento ANTT (Agência Nacional de Transportes Terrestres)
 });
 
 // Create the workshops table (oficinas)

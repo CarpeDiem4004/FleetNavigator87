@@ -13,6 +13,7 @@ import {
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useToast } from '@/hooks/use-toast'
+import { Upload, FileText } from 'lucide-react'
 
 interface Props {
   onVehicleAdded?: () => void;
@@ -28,6 +29,18 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
   const [leasingCompany, setLeasingCompany] = useState('')
   const [bases, setBases] = useState<{id: number, nome: string}[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  
+  // Novos estados para os arquivos
+  const [crlvFile, setCrlvFile] = useState<File | null>(null)
+  const [anttFile, setAnttFile] = useState<File | null>(null)
+  
+  // Estados para armazenar as URLs dos documentos no Supabase
+  const [crlvUrl, setCrlvUrl] = useState<string | null>(null)
+  const [anttUrl, setAnttUrl] = useState<string | null>(null)
+  
+  // Estados para controlar o carregamento dos arquivos
+  const [isUploadingCrlv, setIsUploadingCrlv] = useState(false)
+  const [isUploadingAntt, setIsUploadingAntt] = useState(false)
 
   // Opções de modelo seguindo os valores válidos do enum vehicleType
   const modelos = [
@@ -40,6 +53,106 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
     { id: 'carreta', nome: 'Carreta' }
   ]
 
+  // Função para fazer upload de arquivos para o Supabase
+  const uploadFileToSupabase = async (file: File, folder: string, vehiclePlate: string): Promise<string | null> => {
+    if (!file) return null;
+    
+    try {
+      // Nome único para o arquivo: placa_tipo_timestamp.extensão
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${vehiclePlate}_${folder}_${Date.now()}.${fileExt}`;
+      const filePath = `${folder}/${fileName}`;
+      
+      const { data, error } = await supabase
+        .storage
+        .from('vehicle-documents')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+      
+      if (error) throw error;
+      
+      // Retornar o URL público do arquivo
+      const { data: publicUrlData } = supabase
+        .storage
+        .from('vehicle-documents')
+        .getPublicUrl(filePath);
+      
+      return publicUrlData.publicUrl;
+    } catch (error) {
+      console.error(`Erro ao fazer upload do arquivo ${folder}:`, error);
+      toast({
+        title: `Erro ao enviar ${folder === 'crlv' ? 'CRLV' : 'ANTT'}`,
+        description: error instanceof Error ? error.message : 'Ocorreu um erro ao enviar o arquivo.',
+        variant: 'destructive'
+      });
+      return null;
+    }
+  };
+  
+  // Handler para upload de CRLV
+  const handleCrlvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setCrlvFile(file);
+    
+    if (placa) {
+      setIsUploadingCrlv(true);
+      try {
+        const url = await uploadFileToSupabase(file, 'crlv', placa);
+        if (url) {
+          setCrlvUrl(url);
+          toast({
+            title: 'CRLV enviado',
+            description: 'Documento CRLV enviado com sucesso.',
+            variant: 'default'
+          });
+        }
+      } finally {
+        setIsUploadingCrlv(false);
+      }
+    } else {
+      toast({
+        title: 'Placa não informada',
+        description: 'Informe a placa do veículo antes de enviar o CRLV.',
+        variant: 'destructive'
+      });
+    }
+  };
+  
+  // Handler para upload de ANTT
+  const handleAnttUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setAnttFile(file);
+    
+    if (placa) {
+      setIsUploadingAntt(true);
+      try {
+        const url = await uploadFileToSupabase(file, 'antt', placa);
+        if (url) {
+          setAnttUrl(url);
+          toast({
+            title: 'ANTT enviado',
+            description: 'Documento ANTT enviado com sucesso.',
+            variant: 'default'
+          });
+        }
+      } finally {
+        setIsUploadingAntt(false);
+      }
+    } else {
+      toast({
+        title: 'Placa não informada',
+        description: 'Informe a placa do veículo antes de enviar o ANTT.',
+        variant: 'destructive'
+      });
+    }
+  };
+  
   useEffect(() => {
     async function fetchBases() {
       try {
@@ -97,6 +210,17 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
     setIsSubmitting(true)
     
     try {
+      // Realizar upload dos documentos se ainda não foram carregados
+      if (crlvFile && !crlvUrl) {
+        const url = await uploadFileToSupabase(crlvFile, 'crlv', placa);
+        if (url) setCrlvUrl(url);
+      }
+      
+      if (anttFile && !anttUrl) {
+        const url = await uploadFileToSupabase(anttFile, 'antt', placa);
+        if (url) setAnttUrl(url);
+      }
+      
       // Usar a API REST em vez do cliente Supabase
       const response = await fetch('/api/vehicles', {
         method: 'POST',
@@ -110,7 +234,9 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
           status: 'em_operacao',
           baseId: parseInt(baseId),
           ownership: ownership,
-          rentalCompany: ownership === 'locado' ? leasingCompany : null
+          rentalCompany: ownership === 'locado' ? leasingCompany : null,
+          crlvUrl: crlvUrl, // Adicionar URL do CRLV
+          anttUrl: anttUrl, // Adicionar URL do ANTT
         })
       });
       
