@@ -697,29 +697,7 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
         </Card>
       </div>
       
-      {/* Diálogo para editar configurações */}
-      <TanqueConfigDialog 
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        dieselNivel={dieselNivel}
-        dieselCapacidade={dieselCapacidade}
-        dieselValorLitro={dieselValorLitro}
-        arlaNivel={arlaNivel}
-        arlaCapacidade={arlaCapacidade}
-        arlaValorLitro={arlaValorLitro}
-        onSave={async (config) => {
-          // Atualizar os valores do estado com os valores do formulário
-          setDieselNivel(config.dieselNivel);
-          setDieselCapacidade(config.dieselCapacidade);
-          setDieselValorLitro(config.dieselValorLitro);
-          setArlaNivel(config.arlaNivel);
-          setArlaCapacidade(config.arlaCapacidade);
-          setArlaValorLitro(config.arlaValorLitro);
-          
-          // Chamar a função de salvamento original
-          await salvarConfigTanques();
-        }}
-      />
+      {/* O diálogo de configuração foi movido para o final do componente */}
       
       {/* Diálogo de configuração do tanque */}
       <TanqueConfigDialog 
