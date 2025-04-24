@@ -691,8 +691,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       // Tentativa 1: Via cliente admin
       try {
         console.log('Tentativa 1: Inserindo via cliente admin');
-        // Importa o cliente e as informações de configuração
-        const supabaseClient = await import('@/lib/supabase-client');
+        // Importa o cliente admin diretamente
+        const { supabaseAdmin } = await import('@/lib/supabase-client');
         
         // Exibe informações do cliente para depuração
         console.log('Supabase Admin Config:', {
@@ -700,7 +700,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
           hasServiceKey: true
         });
         
-        const { data: result, error } = await supabaseClient.supabaseAdmin
+        // Usando o cliente supabase admin diretamente
+        const { data: result, error } = await supabaseAdmin
           .from('abastecimentos_postos')
           .insert([abastecimentoData]);
           
@@ -868,12 +869,15 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
                 tipo_veiculo: data.tipo_veiculo // Incluindo o tipo de veículo
               };
               
-              const response = await fetch('https://hvsmxxqkuyjhpsiojupb.supabase.co/rest/v1/abastecimentos_postos', {
+              // Importa a key de serviço do Supabase
+              const { supabaseUrl, supabaseServiceKey } = await import('@/lib/supabase-client');
+              
+              const response = await fetch(`${supabaseUrl}/rest/v1/abastecimentos_postos`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
-                  'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDkwMzQ2MiwiZXhwIjoyMDYwMjc5NDYyfQ.M5Yf9Y-YRsF1hRfpZcnJHWdDR3x8T0yzIKbXZTXZQOY',
-                  'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDkwMzQ2MiwiZXhwIjoyMDYwMjc5NDYyfQ.M5Yf9Y-YRsF1hRfpZcnJHWdDR3x8T0yzIKbXZTXZQOY',
+                  'apikey': supabaseServiceKey,
+                  'Authorization': `Bearer ${supabaseServiceKey}`,
                   'Prefer': 'return=minimal'
                 },
                 body: JSON.stringify(dadosSimples)
