@@ -207,7 +207,7 @@ const FormularioForm = ({
                         }}
                         onBlur={field.onBlur}
                       >
-                        <option value="" disabled>Selecione</option>
+                        <option value="" disabled>Selecione o combustível</option>
                         <option value="Diesel">Diesel</option>
                         <option value="ARLA">ARLA</option>
                       </select>
@@ -428,10 +428,10 @@ const TelaSucesso = ({
         <CheckCircle2 className="h-20 w-20 text-green-500" />
       </div>
       <h2 className="text-2xl font-bold mb-4 text-center" style={{color: '#10b981'}}>
-        Abastecimento Registrado com Sucesso!
+        Abastecimento realizado com sucesso!
       </h2>
       <p className="text-muted-foreground mb-8 text-center max-w-md text-lg">
-        O abastecimento foi registrado corretamente no sistema.
+        O abastecimento foi registrado corretamente no sistema e está disponível no histórico.
       </p>
       <div className="flex flex-col w-full gap-4 mt-2">
         <Button 
@@ -851,8 +851,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       
       // Notifica sucesso
       toast({
-        title: 'Abastecimento registrado!',
-        description: `Veículo ${data.placa} abastecido com sucesso.`,
+        title: 'Abastecimento realizado com sucesso!',
+        description: `Veículo ${data.placa} abastecido com ${data.quantidade} litros de ${data.tipo}.`,
       });
       
       // Atualiza interface
