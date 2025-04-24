@@ -91,6 +91,10 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
   const [arlaNivel, setArlaNivel] = useState<number>(statusTanque.arla.nivel);
   const [arlaCapacidade, setArlaCapacidade] = useState<number>(statusTanque.arla.capacidade);
   const [arlaValorLitro, setArlaValorLitro] = useState<number>(3.00);
+  
+  // Estados para armazenar os valores do litro no objeto de status
+  const [dieselStatusValorLitro, setDieselStatusValorLitro] = useState<number>(5.00);
+  const [arlaStatusValorLitro, setArlaStatusValorLitro] = useState<number>(3.00);
   const [isSalvando, setIsSalvando] = useState(false);
   
   // Mapa de configurações em memória (sem necessidade de API)
@@ -141,9 +145,11 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
         // Atualizar os valores de litro se existirem
         if (configLocal.diesel_valor_litro) {
           setDieselValorLitro(configLocal.diesel_valor_litro);
+          setDieselStatusValorLitro(configLocal.diesel_valor_litro);
         }
         if (configLocal.arla_valor_litro) {
           setArlaValorLitro(configLocal.arla_valor_litro);
+          setArlaStatusValorLitro(configLocal.arla_valor_litro);
         }
       }
       
@@ -177,9 +183,11 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
           // Atualizar os valores de preço por litro se existirem
           if (config.diesel_valor_litro) {
             setDieselValorLitro(config.diesel_valor_litro);
+            setDieselStatusValorLitro(config.diesel_valor_litro);
           }
           if (config.arla_valor_litro) {
             setArlaValorLitro(config.arla_valor_litro);
+            setArlaStatusValorLitro(config.arla_valor_litro);
           }
           
           // Salvar também no localStorage como backup
@@ -295,6 +303,10 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
             ? "Os níveis e capacidades dos tanques foram salvos localmente."
             : "Os níveis e capacidades dos tanques foram atualizados com sucesso.",
         });
+        
+        // Atualizar os valores do status
+        setDieselStatusValorLitro(Number(dieselValorLitro));
+        setArlaStatusValorLitro(Number(arlaValorLitro));
         
         // Atualizar o estado principal com os novos valores
         setStatusTanque({
@@ -567,6 +579,10 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
                 <span>Nível atual:</span>
                 <span className="font-medium">{formatarNumero(statusTanque.diesel.nivel)} / {formatarNumero(statusTanque.diesel.capacidade)} L</span>
               </div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>Valor por litro:</span>
+                <span className="font-medium text-green-600">R$ {dieselStatusValorLitro?.toFixed(2).replace('.', ',')}</span>
+              </div>
               <Progress 
                 value={statusTanque.diesel.porcentagem} 
                 className={`h-3 ${statusTanque.diesel.porcentagem < 20 ? "bg-red-500/30" : "bg-amber-500/30"}`}
@@ -605,6 +621,10 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
               <div className="flex justify-between mb-1 text-sm">
                 <span>Nível atual:</span>
                 <span className="font-medium">{formatarNumero(statusTanque.arla.nivel)} / {formatarNumero(statusTanque.arla.capacidade)} L</span>
+              </div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>Valor por litro:</span>
+                <span className="font-medium text-green-600">R$ {arlaStatusValorLitro?.toFixed(2).replace('.', ',')}</span>
               </div>
               <Progress 
                 value={statusTanque.arla.porcentagem} 
