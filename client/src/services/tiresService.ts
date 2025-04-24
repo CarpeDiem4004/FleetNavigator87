@@ -21,6 +21,20 @@ export interface Tire {
   observacao?: string;
   created_at?: string;
   updated_at?: string;
+  quantidade?: number;
+  valor_unitario?: number;
+}
+
+// Interface para modelos de pneus pré-cadastrados
+export interface TireModel {
+  id?: number;
+  marca: string;
+  modelo: string;
+  medida?: string;
+  valor_unitario: number;
+  active?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Obter todos os pneus
@@ -107,4 +121,30 @@ export async function deleteTire(id: number) {
 export async function createTiresBatch(tires: Tire[]) {
   const promises = tires.map(tire => createTire(tire));
   return Promise.all(promises);
+}
+
+// Obter todos os modelos de pneus pré-cadastrados
+export async function getTireModels() {
+  const response = await apiRequest('GET', '/api/modelos-pneu');
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Erro ao buscar modelos de pneus');
+  }
+  
+  const data = await response.json();
+  return data;
+}
+
+// Obter um modelo de pneu pelo ID
+export async function getTireModelById(id: number) {
+  const response = await apiRequest('GET', `/api/modelos-pneu/${id}`);
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || `Erro ao buscar modelo de pneu com ID ${id}`);
+  }
+  
+  const data = await response.json();
+  return data;
 }
