@@ -976,7 +976,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const formattedPosto = posto.charAt(0).toUpperCase() + posto.slice(1);
       const qtdCombustivel = parseFloat(quantidade);
       
-      // Tipo de veículo (frota ou terceiro)
+      // Tipo de veículo (frota ou agregado)
       const tipoVeiculo = tipo_veiculo || 'frota';
       
       // Criar registro no banco de dados

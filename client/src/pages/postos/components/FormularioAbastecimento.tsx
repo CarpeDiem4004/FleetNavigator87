@@ -135,8 +135,8 @@ const FormularioForm = ({
                         onChange={field.onChange}
                         onBlur={field.onBlur}
                       >
-                        <option value="frota">Frota Própria</option>
-                        <option value="terceiro">Terceirizado</option>
+                        <option value="frota">Frota</option>
+                        <option value="agregado">Agregado</option>
                       </select>
                     </FormControl>
                     <FormMessage />
