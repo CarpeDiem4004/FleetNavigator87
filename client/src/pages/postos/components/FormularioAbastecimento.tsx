@@ -43,6 +43,7 @@ const abastecimentoSchema = z.object({
   motorista_rg: z.string().min(5, 'O RG do motorista é obrigatório'),
   operador: z.string().min(3, 'O nome do operador deve ter no mínimo 3 caracteres'),
   tipo_veiculo: z.string().default('frota'),
+  data_registro: z.date().optional(),
 });
 
 type AbastecimentoValues = z.infer<typeof abastecimentoSchema>;
@@ -652,6 +653,9 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       // Definimos valor fixo para o diesel conforme solicitado (R$6.39)
       const valorPorLitro = data.tipo === 'Diesel' ? 6.39 : Number(data.valor_litro);
       
+      // Obter data e hora atual
+      const dataRegistro = new Date();
+      
       // Dados formatados para inserção
       const abastecimentoData = {
         placa: data.placa.toUpperCase(),
@@ -665,8 +669,9 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         motorista_rg: data.motorista_rg, // Adicionado campo RG do motorista
         nome_operador: data.operador,
         posto: formatPosto(postId), // Use o campo 'posto' em vez de 'posto_id'
-        tipo_veiculo: data.tipo_veiculo // Inclui o tipo de veículo (frota ou terceirizado)
-        // Removido o data_registro - será gerado automaticamente no banco de dados com NOW()
+        tipo_veiculo: data.tipo_veiculo, // Inclui o tipo de veículo (frota ou terceirizado)
+        data_registro: dataRegistro, // Adicionamos a data e hora atual
+        created_at: dataRegistro // Adicionamos também em created_at para compatibilidade
       };
       
       console.log('Dados de abastecimento a serem enviados:', abastecimentoData);
@@ -757,7 +762,9 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               nome_operador: data.operador,
               project: data.projeto,
               tipo_combustivel: data.tipo,
-              tipo_veiculo: data.tipo_veiculo
+              tipo_veiculo: data.tipo_veiculo,
+              data_registro: dataRegistro, // Adicionamos a data e hora atual
+              created_at: dataRegistro // Compatibilidade com created_at
             };
             
             const { data: resultadoInsercao, error } = await supabase
@@ -796,7 +803,9 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               operador: data.operador,
               projeto: data.projeto,
               tipo_combustivel: data.tipo,
-              tipo_veiculo: data.tipo_veiculo
+              tipo_veiculo: data.tipo_veiculo,
+              data_registro: dataRegistro, // Adicionamos a data atual
+              created_at: dataRegistro // Para compatibilidade
             })
           });
           
