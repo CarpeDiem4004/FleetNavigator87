@@ -2,17 +2,32 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { createClient } from '@supabase/supabase-js';
 import { apiRequest } from '@/lib/queryClient';
+import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Loader2 } from 'lucide-react';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue, 
+} from "@/components/ui/select";
 
 // Configuração do Supabase
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+interface Base {
+  id: number;
+  name: string;
+  location: string;
+  type: string;
+}
 
 export default function RegisterPostoUser() {
   const [, navigate] = useLocation();
@@ -23,7 +38,14 @@ export default function RegisterPostoUser() {
     nome: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    baseId: ''
+  });
+
+  // Buscar bases para o dropdown
+  const { data: bases = [], isLoading: basesLoading } = useQuery<Base[]>({
+    queryKey: ['/api/bases'],
+    staleTime: 1000 * 60 * 5, // 5 minutos
   });
 
   // Efeito para verificar redirecionamento após registro
@@ -61,6 +83,13 @@ export default function RegisterPostoUser() {
     }
 
     try {
+      // Verificar se um posto foi selecionado
+      if (!formData.baseId) {
+        setError('Selecione o posto onde você trabalha');
+        setIsSubmitting(false);
+        return;
+      }
+
       // 1. Registrar no Supabase
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
@@ -68,7 +97,8 @@ export default function RegisterPostoUser() {
         options: {
           data: {
             name: formData.nome,
-            role: 'operador'
+            role: 'operador',
+            base_id: parseInt(formData.baseId)
           }
         }
       });
@@ -91,6 +121,7 @@ export default function RegisterPostoUser() {
           password: formData.password,
           name: formData.nome,
           role: 'operador',
+          base_id: parseInt(formData.baseId),
           supabase_uid: authData.user.id // Vincula com o ID do Supabase
         });
 
@@ -122,6 +153,13 @@ export default function RegisterPostoUser() {
         localStorage.setItem('user_email', formData.email);
         localStorage.setItem('user_name', formData.nome);
         localStorage.setItem('user_role', 'operador');
+        localStorage.setItem('user_base_id', formData.baseId);
+        
+        // Obter nome da base selecionada para armazenar também
+        const baseSelected = bases.find(b => b.id.toString() === formData.baseId);
+        if (baseSelected) {
+          localStorage.setItem('user_basename', baseSelected.name);
+        }
 
         // Notificar sucesso
         toast({
@@ -235,6 +273,35 @@ export default function RegisterPostoUser() {
                 disabled={isSubmitting}
                 required
               />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="baseId">Posto de Trabalho</Label>
+              <Select
+                disabled={isSubmitting || basesLoading}
+                value={formData.baseId}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, baseId: value }))}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione o posto" />
+                </SelectTrigger>
+                <SelectContent>
+                  {basesLoading ? (
+                    <SelectItem value="loading" disabled>Carregando postos...</SelectItem>
+                  ) : (
+                    bases
+                      .filter(base => ['posto', 'Posto'].includes(base.type))
+                      .map(base => (
+                        <SelectItem key={base.id} value={base.id.toString()}>
+                          {base.name}
+                        </SelectItem>
+                      ))
+                  )}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">
+                Selecione o posto onde você trabalha
+              </p>
             </div>
           </form>
         </CardContent>
