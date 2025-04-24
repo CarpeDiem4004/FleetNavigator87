@@ -3179,7 +3179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Atualizando status do usuário ID ${userId} para: ${isActive ? 'Ativo' : 'Inativo'}`);
       
-      // Atualizar o status do usuário
+      // Atualizar o status do usuário - Importante: isso atualizará is_active no banco de dados
       const updatedUser = await storage.updateUser(userId, { 
         isActive: isActive 
       });

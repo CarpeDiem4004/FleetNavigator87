@@ -51,6 +51,10 @@ interface User {
   baseName: string | null;
   lastLogin: string | null;
   isActive: boolean;
+  // Campos do banco, utilizados para compatibilidade
+  base_id?: number | null;
+  basename?: string | null;
+  is_active?: boolean;
 }
 
 // Dados mockados para a tabela de usuários
@@ -137,11 +141,27 @@ const UsersNew: React.FC = () => {
   });
   
   // Buscar usuários da API
-  const { data: users = [], isLoading: usersLoading, error: usersError } = useQuery<User[]>({
+  const { data: usersRaw = [], isLoading: usersLoading, error: usersError } = useQuery<any[]>({
     queryKey: ['/api/users'],
     staleTime: 10000, // Considerar stale após 10 segundos para permitir atualizações frequentes
     queryFn: getQueryFn({ on401: "returnNull" }), // Adicionado para lidar com erros 401
   });
+  
+  // Mapear campos do backend para o formato esperado pelo frontend
+  const users: User[] = usersRaw.map(user => ({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    baseId: user.base_id,
+    baseName: user.basename,
+    lastLogin: user.last_login,
+    isActive: user.is_active !== undefined ? user.is_active : true,
+    // Manter os campos originais também para compatibilidade
+    base_id: user.base_id,
+    basename: user.basename,
+    is_active: user.is_active
+  }));
   
   // Log para debug
   useEffect(() => {

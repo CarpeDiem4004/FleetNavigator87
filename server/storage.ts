@@ -278,14 +278,16 @@ export class DatabaseStorage implements IStorage {
         params.push(userData.basename);
       }
       
-      if (userData.oficina_id !== undefined) {
-        updates.push(` oficina_id = $${paramIndex++}`);
-        params.push(userData.oficina_id);
-      }
-      
+      // Tratar o campo isActive para is_active no banco de dados
       if (userData.isActive !== undefined) {
         updates.push(` is_active = $${paramIndex++}`);
         params.push(userData.isActive);
+        console.log(`Campo is_active será atualizado para: ${userData.isActive}`);
+      }
+      
+      if (userData.oficina_id !== undefined) {
+        updates.push(` oficina_id = $${paramIndex++}`);
+        params.push(userData.oficina_id);
       }
       
       // Se não há campos para atualizar, retornar o usuário existente
