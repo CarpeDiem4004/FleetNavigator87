@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Settings, Droplet, Fuel } from "lucide-react";
@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from '@/lib/queryClient';
 import { useAuth } from '@/context/AuthContext';
 import PrecosCombustivelDialog from '../posto-dialogs/PrecosCombustivelDialog';
+import useSafeDialog from '@/hooks/use-safe-dialog';
 
 interface PrecosCombustivel {
   diesel: { id: number; valor_litro: number; updated_at: string };
@@ -24,10 +25,12 @@ interface PrecosCombustivelCardProps {
 export default function PrecosCombustivelCard({ dialogControl }: PrecosCombustivelCardProps) {
   const [precos, setPrecos] = useState<PrecosCombustivel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  // Estado interno do diálogo (usado apenas se dialogControl não for fornecido)
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const isMountedRef = useRef(true);
+  
+  // Usar nosso hook personalizado de dialog seguro
+  const dialogState = useSafeDialog(false);
   
   // Verificar se o usuário é administrador
   const isAdmin = user?.role === 'admin';
@@ -35,12 +38,19 @@ export default function PrecosCombustivelCard({ dialogControl }: PrecosCombustiv
   // Detectar se estamos usando controle interno ou externo para o diálogo
   const useExternalControl = !!dialogControl;
   
+  // Função que garante que não atualizamos estado após desmontagem
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+  
   // Funções para controlar o diálogo
   const openDialog = () => {
     if (useExternalControl) {
       dialogControl.onOpen();
     } else {
-      setIsDialogOpen(true);
+      dialogState.open();
     }
   };
   
@@ -48,13 +58,13 @@ export default function PrecosCombustivelCard({ dialogControl }: PrecosCombustiv
     if (useExternalControl) {
       dialogControl.onClose();
     } else {
-      setIsDialogOpen(false);
+      dialogState.close();
     }
   };
   
   const isDialogCurrentlyOpen = useExternalControl 
     ? dialogControl.isOpen 
-    : isDialogOpen;
+    : dialogState.isOpen;
 
   // Função para buscar preços atuais
   const fetchPrecos = async () => {
@@ -183,7 +193,7 @@ export default function PrecosCombustivelCard({ dialogControl }: PrecosCombustiv
       {/* Sempre renderizar o diálogo, mas controlar sua visibilidade via props */}
       {!useExternalControl && (
         <PrecosCombustivelDialog 
-          isOpen={isDialogOpen}
+          isOpen={dialogState.isOpen}
           onClose={closeDialog}
           onSave={fetchPrecos}
         />
