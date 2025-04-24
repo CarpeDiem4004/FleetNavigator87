@@ -203,6 +203,16 @@ const HistoricoGeralPage: React.FC = () => {
       return '-';
     }
   };
+  
+  const formatarDataHora = (dataString: string) => {
+    try {
+      const data = new Date(dataString);
+      return format(data, 'dd/MM/yyyy HH:mm:ss');
+    } catch (error) {
+      console.error('Erro ao formatar data e hora:', error);
+      return '-';
+    }
+  };
 
   const formatarNumero = (valor: number) => {
     try {
@@ -233,7 +243,7 @@ const HistoricoGeralPage: React.FC = () => {
       
       // Preparar os dados para Excel
       const excelData = dadosFiltrados.map(item => ({
-        'Data': formatarData(item.created_at),
+        'Data/Hora': formatarDataHora(item.created_at),
         'Placa': item.placa,
         'KM': item.km_atual,
         'Combustível': item.tipo_combustivel,
@@ -251,7 +261,7 @@ const HistoricoGeralPage: React.FC = () => {
       
       // Definir larguras de colunas para melhor visualização
       const wscols = [
-        { wch: 10 }, // Data
+        { wch: 20 }, // Data/Hora
         { wch: 10 }, // Placa
         { wch: 8 },  // KM
         { wch: 12 }, // Combustível

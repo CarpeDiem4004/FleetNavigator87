@@ -185,6 +185,16 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
     }
   };
   
+  const formatarDataHora = (dataString: string) => {
+    try {
+      const data = new Date(dataString);
+      return data.toLocaleString('pt-BR');
+    } catch (error) {
+      console.error('Erro ao formatar data e hora:', error);
+      return '-';
+    }
+  };
+  
   const formatarNumero = (valor: number) => {
     try {
       return new Intl.NumberFormat('pt-BR').format(Math.round(valor));
@@ -245,7 +255,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
       
       // Preparar os dados para Excel
       const excelData = dadosFiltrados.map(item => ({
-        'Data': formatarData(item.created_at),
+        'Data/Hora': formatarDataHora(item.created_at),
         'Placa': item.placa,
         'KM': item.km_atual,
         'Combustível': item.tipo_combustivel,

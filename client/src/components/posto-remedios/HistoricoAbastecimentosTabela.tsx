@@ -122,7 +122,7 @@ export default function HistoricoAbastecimentosTabela({
         'Lavagem': reg.lavagem ? 'Sim' : 'Não',
         'Tipo Lavagem': reg.tipo_lavagem || 'N/A',
         'Observações': reg.observacoes || '',
-        'Data': new Date(reg.created_at).toLocaleString('pt-BR')
+        'Data/Hora': new Date(reg.created_at).toLocaleString('pt-BR')
       }));
 
       // Criar uma planilha
@@ -143,7 +143,7 @@ export default function HistoricoAbastecimentosTabela({
         { wch: 8 },   // Lavagem
         { wch: 15 },  // Tipo Lavagem
         { wch: 30 },  // Observações
-        { wch: 20 }   // Data
+        { wch: 20 }   // Data/Hora
       ];
       ws['!cols'] = wscols;
       
