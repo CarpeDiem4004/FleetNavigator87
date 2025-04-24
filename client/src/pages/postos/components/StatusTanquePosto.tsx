@@ -4,8 +4,9 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Fuel, Droplet, Settings, Edit, Save, RefreshCw } from 'lucide-react';
+import { Fuel, Droplet, Settings, Edit, Save, RefreshCw, DollarSign } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 import TanqueConfigDialog from '@/components/posto-dialogs/TanqueConfigDialog';
 import PrecosCombustivelCard from '@/components/posto-cards/PrecosCombustivelCard';
 import PrecosCombustivelDialog from '@/components/posto-dialogs/PrecosCombustivelDialog';
@@ -56,6 +57,8 @@ interface ConfiguracaoTanques {
 
 export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   
   const [statusTanque, setStatusTanque] = useState<StatusTanque>({
     diesel: {
@@ -76,6 +79,7 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
   
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isPrecosDialogOpen, setIsPrecosDialogOpen] = useState(false);
   const [configId, setConfigId] = useState<number | undefined>(undefined);
   
   // Estados para os campos do formulário
@@ -580,14 +584,16 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
             <Settings className="h-4 w-4" />
             Configurações
           </Button>
-          <Button 
-            variant="outline" 
-            className="flex items-center gap-2"
-            onClick={() => setIsPrecoDialogOpen(true)}
-          >
-            <Fuel className="h-4 w-4" />
-            Preços
-          </Button>
+          {isAdmin && (
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => setIsPrecosDialogOpen(true)}
+            >
+              <DollarSign className="h-4 w-4" />
+              Preços
+            </Button>
+          )}
         </div>
       </div>
 
@@ -708,12 +714,12 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
       
       {/* Diálogo para configurar preços */}
       <PrecosCombustivelDialog 
-        isOpen={isPrecoDialogOpen} 
-        onClose={() => setIsPrecoDialogOpen(false)}
+        isOpen={isPrecosDialogOpen} 
+        onClose={() => setIsPrecosDialogOpen(false)}
         onSave={() => {
           // Atualizar os valores dos preços na interface
           fetchDados();
-          setIsPrecoDialogOpen(false);
+          setIsPrecosDialogOpen(false);
         }}
       />
     </div>
