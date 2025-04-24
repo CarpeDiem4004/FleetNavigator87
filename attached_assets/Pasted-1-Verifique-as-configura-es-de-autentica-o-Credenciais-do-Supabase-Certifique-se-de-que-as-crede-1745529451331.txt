@@ -1,0 +1,29 @@
+1. Verifique as configurações de autenticação
+Credenciais do Supabase: Certifique-se de que as credenciais de autenticação no Supabase estão configuradas corretamente. Verifique se a tabela de usuários está correta e se a autenticação via e-mail/senha ou outro método (se estiver usando) está funcionando corretamente.
+
+Configuração do Login no Replit: Confirme se as rotas de login no seu backend do Replit estão corretamente configuradas para integrar com o Supabase.
+
+2. Tokens de Sessão ou Cookies
+Expiração de sessão: Verifique se a sessão do usuário ou os tokens de autenticação estão expirando ou não sendo salvos corretamente. Se necessário, revalide a lógica de gerenciamento de sessão.
+
+Cookies ou Armazenamento Local: Certifique-se de que os cookies ou o armazenamento local (localStorage/sessionStorage) estão sendo usados corretamente para manter o estado de autenticação.
+
+3. Erro de Comunicação com o Supabase
+Conexão com o Supabase: Verifique se há erros ao tentar comunicar-se com o Supabase, como falhas de rede ou problemas com as credenciais da API.
+
+Configurações de CORS: Verifique se as configurações de CORS no Supabase estão permitindo o acesso do seu frontend (Replit) à API.
+
+4. Mensagens de erro ou Logs
+Mensagens de erro no frontend: Verifique o console do navegador ou os logs do frontend para ver se há mensagens de erro que possam indicar onde o problema está ocorrendo.
+
+Logs de backend: Se você estiver usando o backend no Replit, verifique os logs para qualquer erro relacionado ao processo de login.
+
+5. Verificação de Permissões e Funções
+Permissões de usuário: Verifique se as permissões de usuário no Supabase estão configuradas corretamente, especialmente se você estiver utilizando funções de controle de acesso baseadas em papéis.
+
+Funções de autenticação: Verifique se as funções e roles associadas ao login estão sendo aplicadas corretamente (por exemplo, se os usuários estão sendo autenticados no Supabase com o papel certo).
+
+6. Testes no Backend e Frontend
+Testar login diretamente no Supabase: Tente fazer login diretamente no Supabase (via a interface de administração ou usando a API) para verificar se o problema está no Supabase ou na integração com o seu aplicativo.
+
+Testar login no frontend isolado: Tente fazer login em um formulário de login simples, isolado do restante do sistema, para ver se o problema está no fluxo de autenticação.
