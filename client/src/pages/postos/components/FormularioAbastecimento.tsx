@@ -40,6 +40,7 @@ const abastecimentoSchema = z.object({
   valor_total: z.string().optional(),
   projeto: z.string().min(2, 'O projeto é obrigatório'),
   motorista: z.string().min(3, 'O nome do motorista deve ter no mínimo 3 caracteres'),
+  motorista_rg: z.string().min(5, 'O RG do motorista é obrigatório'),
   operador: z.string().min(3, 'O nome do operador deve ter no mínimo 3 caracteres'),
   tipo_veiculo: z.string().default('frota'),
 });
@@ -86,6 +87,7 @@ const FormularioForm = ({
       valor_total: '0',
       projeto: '',
       motorista: '',
+      motorista_rg: '',
       operador: operadorNome, // Preenche automaticamente com o nome do operador logado
       tipo_veiculo: 'frota',
     },
@@ -351,6 +353,25 @@ const FormularioForm = ({
                     <FormControl>
                       <Input 
                         placeholder="João Silva" 
+                        {...field} 
+                        className="text-lg"
+                        style={{height: '48px'}}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="motorista_rg"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>RG do Motorista</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="00.000.000-0" 
                         {...field} 
                         className="text-lg"
                         style={{height: '48px'}}
