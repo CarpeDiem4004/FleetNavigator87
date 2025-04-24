@@ -244,7 +244,44 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
       </Dialog>
       
       {/* Renderiza o conteúdo apenas se o usuário estiver autenticado */}
-      {user ? children : null}
+      {user ? (
+        <>
+          {/* Badge identificadora do posto e operador */}
+          <div className="bg-green-50 border border-green-200 p-2 rounded-md mb-4 flex items-center justify-between">
+            <div>
+              <span className="text-sm font-medium text-green-800">
+                {localStorage.getItem('user_basename') || `Posto ${postoName}`}
+              </span>
+              <span className="mx-2 text-green-500">•</span>
+              <span className="text-sm text-green-700">
+                Operador: {user.name || user.email}
+              </span>
+            </div>
+            <button 
+              onClick={() => {
+                // Limpar dados de autenticação
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('user_id');
+                localStorage.removeItem('user_email');
+                localStorage.removeItem('user_name');
+                localStorage.removeItem('user_role');
+                localStorage.removeItem('user_base_id');
+                localStorage.removeItem('user_basename');
+                
+                // Forçar logout no Supabase
+                supabase.auth.signOut();
+                
+                // Recarregar a página para reiniciar o fluxo de autenticação
+                window.location.reload();
+              }}
+              className="text-xs text-green-700 hover:text-green-900 underline"
+            >
+              Sair
+            </button>
+          </div>
+          {children}
+        </>
+      ) : null}
     </>
   );
 };

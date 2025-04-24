@@ -158,7 +158,8 @@ export default function RegisterPostoUser() {
         // Obter nome da base selecionada para armazenar também
         const baseSelected = bases.find(b => b.id.toString() === formData.baseId);
         if (baseSelected) {
-          localStorage.setItem('user_basename', baseSelected.name);
+          // Armazena com o prefixo "Posto" para identificação clara
+          localStorage.setItem('user_basename', `Posto ${baseSelected.name}`);
         }
 
         // Notificar sucesso
@@ -293,7 +294,7 @@ export default function RegisterPostoUser() {
                       .filter(base => ['posto', 'Posto'].includes(base.type))
                       .map(base => (
                         <SelectItem key={base.id} value={base.id.toString()}>
-                          {base.name}
+                          Posto {base.name}
                         </SelectItem>
                       ))
                   )}
