@@ -68,7 +68,9 @@ import {
   Award, 
   FileUp,
   Wrench,
-  Database as DatabaseIcon
+  Database as DatabaseIcon,
+  Fuel,
+  Home
 } from 'lucide-react';
 
 // Schema para o formulário, estendendo o schema existente
@@ -677,8 +679,21 @@ export default function BasesPage() {
                           <TableCell>
                             {base.type ? (
                               <div className="flex items-center gap-2">
-                                <Building2 className="h-4 w-4 text-blue-500" />
-                                {base.type === 'sc' ? 'Centro de Serviço' :
+                                {base.type === 'posto' ? (
+                                  <Fuel className="h-4 w-4 text-green-600" />
+                                ) : base.type === 'sc' ? (
+                                  <Wrench className="h-4 w-4 text-blue-600" />
+                                ) : base.type === 'filial' ? (
+                                  <Building className="h-4 w-4 text-blue-500" />
+                                ) : base.type === 'operacao' ? (
+                                  <Award className="h-4 w-4 text-indigo-500" />
+                                ) : base.type === 'base_avançada' ? (
+                                  <Home className="h-4 w-4 text-orange-500" />
+                                ) : (
+                                  <Building2 className="h-4 w-4 text-blue-500" />
+                                )}
+                                {base.type === 'posto' ? 'Posto de Abastecimento' :
+                                 base.type === 'sc' ? 'Centro de Serviço' :
                                  base.type === 'filial' ? 'Filial' :
                                  base.type === 'operacao' ? 'Operação' :
                                  base.type === 'base_avançada' ? 'Base Avançada' :
