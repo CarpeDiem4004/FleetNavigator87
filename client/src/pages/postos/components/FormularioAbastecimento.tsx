@@ -789,6 +789,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               km: Number(data.km),
               posto: formatPosto(postId),
               motorista: data.motorista,
+              motorista_rg: data.motorista_rg, // Adicionado campo RG do motorista
               operador: data.operador,
               projeto: data.projeto,
               tipo_combustivel: data.tipo,
@@ -831,6 +832,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
                 valor_total: abastecimentoData.valor_total,
                 projeto: data.projeto,
                 motorista: data.motorista,
+                motorista_rg: data.motorista_rg, // Adicionado campo RG do motorista
                 operador: data.operador,
                 posto: abastecimentoData.posto, // Use "posto" em vez de "posto_id"
                 tipo_veiculo: abastecimentoData.tipo_veiculo // Incluindo o tipo de veículo
@@ -861,6 +863,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
                 posto: formatPosto(postId), // Use "posto" em vez de "posto_id"
                 data_hora: new Date().toISOString(),
                 motorista: data.motorista,
+                motorista_rg: data.motorista_rg, // Adicionado campo RG do motorista
                 tipo_veiculo: data.tipo_veiculo // Incluindo o tipo de veículo
               };
               
