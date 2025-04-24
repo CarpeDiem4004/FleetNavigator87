@@ -440,4 +440,282 @@ export function registerPneusRoutes(app: Express) {
       });
     }
   });
+  
+  // ========= API de Modelos de Pneus Pré-Cadastrados =========
+  
+  // Listar modelos de pneus
+  app.get('/api/modelos-pneu', async (req, res) => {
+    try {
+      // Verificar se a tabela existe
+      const checkTableQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'modelos_pneu'
+        )
+      `;
+      
+      const tableExists = await pool.query(checkTableQuery);
+      
+      // Se a tabela não existir, criar
+      if (!tableExists.rows[0].exists) {
+        const createTableQuery = `
+          CREATE TABLE modelos_pneu (
+            id SERIAL PRIMARY KEY,
+            marca VARCHAR(100) NOT NULL,
+            modelo VARCHAR(100) NOT NULL,
+            medida VARCHAR(50),
+            valor_unitario DECIMAL(10, 2) NOT NULL DEFAULT 0,
+            is_active BOOLEAN DEFAULT TRUE,
+            data_cadastro TIMESTAMP DEFAULT NOW(),
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
+          );
+          
+          -- Inserir alguns modelos iniciais de exemplo
+          INSERT INTO modelos_pneu (marca, modelo, medida, valor_unitario) VALUES
+          ('Pirelli', 'Scorpion ATR', '265/70 R16', 950.00),
+          ('Michelin', 'Energy XM2+', '195/55 R16', 750.00),
+          ('Goodyear', 'Efficient Grip', '205/55 R16', 680.00),
+          ('Bridgestone', 'Ecopia EP150', '185/65 R15', 620.00),
+          ('Continental', 'PowerContact 2', '175/70 R14', 520.00);
+        `;
+        
+        await pool.query(createTableQuery);
+        console.log('Tabela de modelos de pneus criada com dados iniciais');
+      }
+      
+      // Consultar modelos de pneus
+      const query = `
+        SELECT id, marca, modelo, medida, valor_unitario, data_cadastro,
+               created_at, updated_at, is_active
+        FROM modelos_pneu
+        WHERE is_active = true
+        ORDER BY marca, modelo
+      `;
+      
+      const result = await pool.query(query);
+      
+      return res.status(200).json({
+        success: true,
+        count: result.rowCount || 0,
+        data: result.rows
+      });
+    } catch (error) {
+      console.error('Erro ao listar modelos de pneus:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao listar modelos de pneus',
+        error: String(error)
+      });
+    }
+  });
+  
+  // Obter um modelo de pneu específico
+  app.get('/api/modelos-pneu/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const query = `
+        SELECT id, marca, modelo, medida, valor_unitario, data_cadastro,
+               created_at, updated_at, is_active
+        FROM modelos_pneu
+        WHERE id = $1 AND is_active = true
+      `;
+      
+      const result = await pool.query(query, [id]);
+      
+      if (result.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Modelo de pneu não encontrado'
+        });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows[0]
+      });
+    } catch (error) {
+      console.error('Erro ao buscar modelo de pneu:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar modelo de pneu',
+        error: String(error)
+      });
+    }
+  });
+  
+  // Adicionar um novo modelo de pneu
+  app.post('/api/modelos-pneu', async (req, res) => {
+    try {
+      const { marca, modelo, medida, valor_unitario } = req.body;
+      
+      // Validação básica
+      if (!marca || !modelo || !valor_unitario) {
+        return res.status(400).json({
+          success: false,
+          message: 'Dados incompletos. Marca, modelo e valor unitário são obrigatórios.'
+        });
+      }
+      
+      // Verificar se já existe um modelo igual
+      const checkQuery = `
+        SELECT COUNT(*) FROM modelos_pneu 
+        WHERE marca = $1 AND modelo = $2 AND medida = $3
+      `;
+      
+      const checkResult = await pool.query(checkQuery, [marca, modelo, medida]);
+      
+      if (parseInt(checkResult.rows[0].count) > 0) {
+        return res.status(409).json({
+          success: false,
+          message: 'Já existe um modelo de pneu com estas especificações.'
+        });
+      }
+      
+      // Inserir novo modelo
+      const query = `
+        INSERT INTO modelos_pneu (marca, modelo, medida, valor_unitario, data_cadastro, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, NOW(), NOW(), NOW())
+        RETURNING *
+      `;
+      
+      const result = await pool.query(query, [marca, modelo, medida, valor_unitario]);
+      
+      return res.status(201).json({
+        success: true,
+        message: 'Modelo de pneu cadastrado com sucesso',
+        data: result.rows[0]
+      });
+    } catch (error) {
+      console.error('Erro ao cadastrar modelo de pneu:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao cadastrar modelo de pneu',
+        error: String(error)
+      });
+    }
+  });
+  
+  // Atualizar um modelo de pneu
+  app.put('/api/modelos-pneu/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { marca, modelo, medida, valor_unitario, is_active } = req.body;
+      
+      // Verificar se o modelo existe
+      const checkQuery = 'SELECT * FROM modelos_pneu WHERE id = $1';
+      const checkResult = await pool.query(checkQuery, [id]);
+      
+      if (checkResult.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Modelo de pneu não encontrado'
+        });
+      }
+      
+      // Construir query de atualização
+      const updateFields = [];
+      const values = [id];
+      let paramIndex = 2;
+      
+      if (marca !== undefined) {
+        updateFields.push(`marca = $${paramIndex++}`);
+        values.push(marca);
+      }
+      
+      if (modelo !== undefined) {
+        updateFields.push(`modelo = $${paramIndex++}`);
+        values.push(modelo);
+      }
+      
+      if (medida !== undefined) {
+        updateFields.push(`medida = $${paramIndex++}`);
+        values.push(medida);
+      }
+      
+      if (valor_unitario !== undefined) {
+        updateFields.push(`valor_unitario = $${paramIndex++}`);
+        values.push(valor_unitario);
+      }
+      
+      if (is_active !== undefined) {
+        updateFields.push(`is_active = $${paramIndex++}`);
+        values.push(is_active);
+      }
+      
+      updateFields.push(`updated_at = NOW()`);
+      
+      if (updateFields.length === 1) {
+        return res.status(400).json({
+          success: false,
+          message: 'Nenhum campo para atualizar foi fornecido'
+        });
+      }
+      
+      const query = `
+        UPDATE modelos_pneu
+        SET ${updateFields.join(', ')}
+        WHERE id = $1
+        RETURNING *
+      `;
+      
+      const result = await pool.query(query, values);
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Modelo de pneu atualizado com sucesso',
+        data: result.rows[0]
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar modelo de pneu:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao atualizar modelo de pneu',
+        error: String(error)
+      });
+    }
+  });
+  
+  // Excluir um modelo de pneu (soft delete)
+  app.delete('/api/modelos-pneu/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Verificar se o modelo existe
+      const checkQuery = 'SELECT * FROM modelos_pneu WHERE id = $1';
+      const checkResult = await pool.query(checkQuery, [id]);
+      
+      if (checkResult.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Modelo de pneu não encontrado'
+        });
+      }
+      
+      // Fazer soft delete (marcar como inativo)
+      const query = `
+        UPDATE modelos_pneu
+        SET is_active = false, updated_at = NOW()
+        WHERE id = $1
+        RETURNING *
+      `;
+      
+      const result = await pool.query(query, [id]);
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Modelo de pneu excluído com sucesso',
+        data: result.rows[0]
+      });
+    } catch (error) {
+      console.error('Erro ao excluir modelo de pneu:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao excluir modelo de pneu',
+        error: String(error)
+      });
+    }
+  });
 }
