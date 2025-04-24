@@ -105,16 +105,77 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
     setError(null);
     
     try {
+      console.log('Tentando login com:', { email: loginData.email });
+      
+      // Abordagem 1: Login via Supabase diretamente
       const { data, error } = await supabase.auth.signInWithPassword({
         email: loginData.email,
         password: loginData.password
       });
       
       if (error) {
-        throw error;
+        console.warn('Erro na autenticação Supabase:', error.message);
+        
+        // Antes de desistir, vamos tentar um login alternativo via API do servidor
+        try {
+          console.log('Tentando autenticação via API do servidor...');
+          const apiResponse = await fetch('/api/auth/login-hybrid', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              email: loginData.email,
+              password: loginData.password
+            }),
+            credentials: 'include' // Importante para sessões
+          });
+          
+          if (apiResponse.ok) {
+            const userData = await apiResponse.json();
+            console.log('Login via servidor bem-sucedido:', userData);
+            
+            // Definir usuário no estado usando os dados do servidor
+            setUser({
+              id: userData.id.toString(),
+              email: userData.email,
+              name: userData.name,
+              role: userData.role
+            });
+            
+            // Armazenar dados no localStorage
+            localStorage.setItem('user_id', userData.id.toString());
+            localStorage.setItem('user_email', userData.email);
+            localStorage.setItem('user_name', userData.name || '');
+            localStorage.setItem('user_role', userData.role || 'operador');
+            
+            if (userData.base_id) {
+              localStorage.setItem('user_base_id', userData.base_id.toString());
+              localStorage.setItem('user_basename', userData.basename || '');
+            }
+            
+            // Fechar modal e notificar sucesso
+            setLoginModalOpen(false);
+            toast({
+              title: "Login realizado com sucesso",
+              description: `Bem-vindo ao Posto ${postoName}`,
+            });
+            
+            return; // Sai da função se o login via API foi bem-sucedido
+          } else {
+            console.error('Login via API também falhou');
+            throw new Error('Credenciais inválidas ou usuário não encontrado');
+          }
+        } catch (apiError: any) {
+          console.error('Erro na autenticação alternativa:', apiError);
+          throw new Error(apiError.message || 'Falha na autenticação');
+        }
       }
       
+      // Se chegou aqui, o login Supabase foi bem-sucedido
       if (data.session && data.user) {
+        console.log('Login Supabase bem-sucedido:', data.user.email);
+        
         // Armazenar token e informações básicas
         localStorage.setItem('access_token', data.session.access_token);
         localStorage.setItem('user_id', data.user.id);
@@ -123,6 +184,24 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
         if (data.user.user_metadata) {
           localStorage.setItem('user_name', data.user.user_metadata.name || '');
           localStorage.setItem('user_role', data.user.user_metadata.role || 'operador');
+        }
+        
+        // Tenta sincronizar com o sistema interno
+        try {
+          await fetch('/api/auth/sync-supabase-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              supabaseId: data.user.id,
+              email: data.user.email,
+              name: data.user.user_metadata?.name || '',
+              role: data.user.user_metadata?.role || 'operador'
+            }),
+            credentials: 'include'
+          });
+        } catch (syncError) {
+          console.warn('Não foi possível sincronizar com o sistema interno:', syncError);
+          // Continuamos mesmo sem sincronização
         }
         
         // Definir usuário no estado

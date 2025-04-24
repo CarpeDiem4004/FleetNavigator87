@@ -28,6 +28,7 @@ import { registerTireMoveRoutes } from "./tireMoveApi";
 import { compareSchemas } from "./compareSchemas";
 import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
 import { db, pool } from "./db";
+import authHybridRoutes from "./routes/authHybridRoutes";
 import * as userHandler from "./handlers/userHandler";
 import { atualizarTabelaPneus } from "./updatePneus";
 import { randomBytes, scrypt } from "crypto";
@@ -5357,6 +5358,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Rota para ressincronização de sessão (resolver problema de 401 após reinicialização do servidor)
   app.post("/api/resync-session", resyncSession);
+
+  // Registrar rotas de autenticação híbrida
+  app.use('/api/auth', authHybridRoutes);
 
   const httpServer = createServer(app);
   return httpServer;

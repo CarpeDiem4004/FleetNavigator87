@@ -1,0 +1,127 @@
+import { Router } from 'express';
+import { storage } from '../storage';
+import { scrypt, timingSafeEqual } from 'crypto';
+import { promisify } from 'util';
+import { createClient } from '@supabase/supabase-js';
+
+const scryptAsync = promisify(scrypt);
+const router = Router();
+
+// Configuração do Supabase
+const supabaseUrl = process.env.SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDkwMzQ2MiwiZXhwIjoyMDYwMjc5NDYyfQ.M5Yf9Y-YRsF1hRfpZcnJHWdDR3x8T0yzIKbXZTXZQOY';
+const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+
+// Helper para comparar senhas
+async function comparePasswords(supplied: string, stored: string) {
+  try {
+    const [hashed, salt] = stored.split(".");
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    console.error("Erro na comparação de senhas:", error);
+    return false;
+  }
+}
+
+// Rota de login híbrido - tenta autenticar no banco Postgres local
+router.post('/login-hybrid', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    console.log('Tentativa de login híbrido para:', email);
+
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email e senha são obrigatórios' });
+    }
+
+    // Tenta encontrar o usuário no banco local
+    const user = await storage.getUserByEmail(email);
+    
+    if (!user) {
+      console.log('Usuário não encontrado no banco local:', email);
+      return res.status(401).json({ message: 'Usuário não encontrado' });
+    }
+
+    // Verifica se a senha está correta
+    const isPasswordValid = await comparePasswords(password, user.password);
+    
+    if (!isPasswordValid) {
+      console.log('Senha inválida para usuário:', email);
+      return res.status(401).json({ message: 'Credenciais inválidas' });
+    }
+
+    // Formata o usuário para a sessão (remove dados sensíveis como a senha)
+    const userSession = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      base_id: user.baseId,
+      basename: user.basename,
+      isActive: user.isActive
+    };
+
+    // Salva o usuário na sessão
+    req.login(userSession, (loginErr) => {
+      if (loginErr) {
+        console.error('Erro ao salvar sessão:', loginErr);
+        return res.status(500).json({ message: 'Erro ao criar sessão' });
+      }
+
+      console.log('Login híbrido bem-sucedido para:', email);
+      return res.status(200).json(userSession);
+    });
+  } catch (error) {
+    console.error('Erro no processamento de login híbrido:', error);
+    return res.status(500).json({ message: 'Erro no servidor ao processar login' });
+  }
+});
+
+// Rota para sincronizar usuários do Supabase com o sistema local
+router.post('/sync-supabase-user', async (req, res) => {
+  try {
+    const { supabaseId, email, name, role } = req.body;
+
+    // Verifica se já existe um usuário com este email
+    const existingUser = await storage.getUserByEmail(email);
+
+    if (existingUser) {
+      // Atualiza o registro existente
+      console.log(`Atualizando usuário existente com id ${existingUser.id} para supabaseId: ${supabaseId}`);
+      
+      // A lógica de atualização seria implementada aqui
+      // Podemos adicionar isso mais tarde se necessário
+
+      // Define a sessão com os dados do usuário existente
+      const userSession = {
+        id: existingUser.id,
+        name: existingUser.name,
+        email: existingUser.email,
+        role: existingUser.role,
+        base_id: existingUser.baseId,
+        basename: existingUser.basename,
+        isActive: existingUser.isActive
+      };
+
+      req.login(userSession, (loginErr) => {
+        if (loginErr) {
+          console.error('Erro ao salvar sessão após sincronização:', loginErr);
+          return res.status(500).json({ message: 'Erro ao criar sessão' });
+        }
+
+        return res.status(200).json({ message: 'Usuário sincronizado com sucesso', user: userSession });
+      });
+    } else {
+      // Não implementado: Criação de usuário no sistema local
+      // Isso exigiria uma senha para o usuário local
+      console.log('Usuário não encontrado no sistema local. Sincronização parcial.');
+      return res.status(200).json({ message: 'Usuário não encontrado no sistema local' });
+    }
+  } catch (error) {
+    console.error('Erro na sincronização de usuário Supabase:', error);
+    return res.status(500).json({ message: 'Erro ao sincronizar usuário' });
+  }
+});
+
+export default router;
