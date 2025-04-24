@@ -216,7 +216,46 @@ async function criarTabelaConfiguracaoTanques() {
     const tabelaExiste = checkResult.rows[0].exists;
     
     if (tabelaExiste) {
-      console.log("Tabela configuracao_tanques já existe, pulando criação.");
+      console.log("Tabela configuracao_tanques já existe, verificando colunas...");
+      
+      // Verificar se as colunas de valor do litro existem
+      const checkDieselValorQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.columns 
+          WHERE table_name = 'configuracao_tanques' AND column_name = 'diesel_valor_litro'
+        );
+      `;
+      
+      const checkArlaValorQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.columns 
+          WHERE table_name = 'configuracao_tanques' AND column_name = 'arla_valor_litro'
+        );
+      `;
+      
+      const dieselValorResult = await pool.query(checkDieselValorQuery);
+      const arlaValorResult = await pool.query(checkArlaValorQuery);
+      
+      const dieselValorExists = dieselValorResult.rows[0].exists;
+      const arlaValorExists = arlaValorResult.rows[0].exists;
+      
+      // Adicionar colunas se não existirem
+      if (!dieselValorExists) {
+        console.log("Adicionando coluna diesel_valor_litro à tabela configuracao_tanques...");
+        await pool.query(`
+          ALTER TABLE configuracao_tanques
+          ADD COLUMN diesel_valor_litro DECIMAL(10, 2) DEFAULT 5.00
+        `);
+      }
+      
+      if (!arlaValorExists) {
+        console.log("Adicionando coluna arla_valor_litro à tabela configuracao_tanques...");
+        await pool.query(`
+          ALTER TABLE configuracao_tanques
+          ADD COLUMN arla_valor_litro DECIMAL(10, 2) DEFAULT 3.00
+        `);
+      }
+      
       return;
     }
     
@@ -231,6 +270,8 @@ async function criarTabelaConfiguracaoTanques() {
         diesel_nivel NUMERIC NOT NULL DEFAULT 15000,
         arla_capacidade NUMERIC NOT NULL DEFAULT 1000,
         arla_nivel NUMERIC NOT NULL DEFAULT 750,
+        diesel_valor_litro DECIMAL(10, 2) DEFAULT 5.00,
+        arla_valor_litro DECIMAL(10, 2) DEFAULT 3.00,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
@@ -921,7 +962,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/configuracao-tanques/:posto', async (req, res) => {
     try {
       const { posto } = req.params;
-      const { diesel_capacidade, diesel_nivel, arla_capacidade, arla_nivel } = req.body;
+      const { 
+        diesel_capacidade, 
+        diesel_nivel, 
+        arla_capacidade, 
+        arla_nivel,
+        diesel_valor_litro,
+        arla_valor_litro
+      } = req.body;
       
       // Formatar nome do posto (primeira letra maiúscula)
       const formattedPosto = posto.charAt(0).toUpperCase() + posto.slice(1);
@@ -933,18 +981,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const dieselNivel = typeof diesel_nivel === 'string' ? parseFloat(diesel_nivel) : diesel_nivel;
       const arlaCapacidade = typeof arla_capacidade === 'string' ? parseFloat(arla_capacidade) : arla_capacidade;
       const arlaNivel = typeof arla_nivel === 'string' ? parseFloat(arla_nivel) : arla_nivel;
+      const dieselValorLitro = typeof diesel_valor_litro === 'string' ? parseFloat(diesel_valor_litro) : (diesel_valor_litro || 5.00);
+      const arlaValorLitro = typeof arla_valor_litro === 'string' ? parseFloat(arla_valor_litro) : (arla_valor_litro || 3.00);
       
       // Consulta SQL para atualizar a configuração
       const query = `
         INSERT INTO configuracao_tanques 
-        (posto, diesel_capacidade, diesel_nivel, arla_capacidade, arla_nivel, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+        (posto, diesel_capacidade, diesel_nivel, arla_capacidade, arla_nivel, diesel_valor_litro, arla_valor_litro, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
         ON CONFLICT (posto) 
         DO UPDATE SET 
           diesel_capacidade = $2,
           diesel_nivel = $3,
           arla_capacidade = $4,
           arla_nivel = $5,
+          diesel_valor_litro = $6,
+          arla_valor_litro = $7,
           updated_at = NOW()
         RETURNING *;
       `;
@@ -954,7 +1006,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dieselCapacidade,
         dieselNivel,
         arlaCapacidade,
-        arlaNivel
+        arlaNivel,
+        dieselValorLitro,
+        arlaValorLitro
       ]);
       
       console.log(`Configuração de tanques atualizada para posto: ${formattedPosto}`);
