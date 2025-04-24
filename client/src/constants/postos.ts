@@ -8,13 +8,13 @@ export const POSTO_SOCORRO = "socorro";
 export const POSTO_SOROCABA = "sorocaba";
 
 // Nomes de exibição dos postos
-export const NOME_POSTO_OSASCO = "Osasco";
-export const NOME_POSTO_GUARULHOS = "Alair";
+export const NOME_POSTO_OSASCO = "Posto Osasco";
+export const NOME_POSTO_GUARULHOS = "Posto Alair";
 // São Paulo removido - Abril/2025
-export const NOME_POSTO_CAMPINAS = "Campinas";
-export const NOME_POSTO_ABC = "ABC";
-export const NOME_POSTO_SOCORRO = "Socorro";
-export const NOME_POSTO_SOROCABA = "Sorocaba";
+export const NOME_POSTO_CAMPINAS = "Posto Campinas";
+export const NOME_POSTO_ABC = "Posto ABC";
+export const NOME_POSTO_SOCORRO = "Posto Socorro";
+export const NOME_POSTO_SOROCABA = "Posto Sorocaba";
 
 // Informações detalhadas dos postos
 export const POSTOS_INFO = [
