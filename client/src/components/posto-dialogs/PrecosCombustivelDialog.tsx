@@ -70,16 +70,20 @@ export default function PrecosCombustivelDialog({
     setIsSaving(true);
     
     try {
+      // Converter os preços para números com verificação de valores válidos
+      const dieselValue = Number(precos.diesel) || 0;
+      const arlaValue = Number(precos.arla) || 0;
+      
       // Atualizar diesel
       const dieselResponse = await apiRequest('POST', '/api/precos-combustivel', {
         tipo: 'Diesel',
-        valor_litro: Number(precos.diesel)
+        valor_litro: dieselValue
       });
       
       // Atualizar ARLA
       const arlaResponse = await apiRequest('POST', '/api/precos-combustivel', {
         tipo: 'ARLA',
-        valor_litro: Number(precos.arla)
+        valor_litro: arlaValue
       });
       
       const dieselData = await dieselResponse.json();
@@ -112,7 +116,23 @@ export default function PrecosCombustivelDialog({
   // Handler para mudança nos campos de preço
   const handleChange = (tipo: 'diesel' | 'arla', value: string) => {
     // Garantir que apenas números e decimais sejam aceitos
-    const cleanValue = value.replace(/[^0-9.]/g, '');
+    let cleanValue = value.replace(/[^0-9.]/g, '');
+    
+    // Evitar múltiplos pontos decimais
+    const decimalCount = (cleanValue.match(/\./g) || []).length;
+    if (decimalCount > 1) {
+      const parts = cleanValue.split('.');
+      cleanValue = parts[0] + '.' + parts.slice(1).join('');
+    }
+    
+    // Evitar mais de 2 casas decimais
+    if (cleanValue.includes('.')) {
+      const parts = cleanValue.split('.');
+      if (parts[1] && parts[1].length > 2) {
+        parts[1] = parts[1].substring(0, 2);
+        cleanValue = parts.join('.');
+      }
+    }
     
     setPrecos(prev => ({
       ...prev,
@@ -120,8 +140,10 @@ export default function PrecosCombustivelDialog({
     }));
   };
 
+  if (!isOpen) return null;
+  
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-lg flex items-center">
