@@ -34,6 +34,14 @@ import { randomBytes, scrypt } from "crypto";
 import { promisify } from "util";
 import { setupTireActivityRoutes, setupTireActivityTable } from "./tireActivityApi";
 import { consultarUsuarios, consultarUsuarioPorId } from "./handlers/userHandler";
+import { 
+  isAuthenticated, 
+  isAdmin, 
+  hasMaintenanceAccess, 
+  hasTiresAccess, 
+  isWorkshop, 
+  hasBaseAccess 
+} from "./middleware/auth";
 
 // Função auxiliar para hash de senha (usada na criação de usuários de oficinas)
 const scryptAsync = promisify(scrypt);
@@ -68,156 +76,15 @@ function generateRandomPassword(length: number): string {
   return password.split('').sort(() => 0.5 - Math.random()).join('');
 }
 
-// Middleware para verificar autenticação em rotas protegidas
-const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-  if (req.isAuthenticated()) {
-    return next();
-  }
-  res.status(401).json({ message: "Não autenticado" });
-};
-
-// Middleware para verificar se o usuário é admin
-const isAdmin = (req: Request, res: Response, next: NextFunction) => {
-  console.log("Verificando permissão de administrador:", {
-    autenticado: req.isAuthenticated(),
-    temUsuario: !!req.user,
-    userRole: req.user?.role,
-    userId: req.user?.id,
-    userEmail: req.user?.email
-  });
-  
-  // Lista de emails de administradores específicos
-  const adminEmails = [
-    'joao.paulo@muricionfleet.com',
-    'regio@muricionfleet.com',
-    'andre.rosa@muricionfleet.com'
-  ];
-  
-  // Permitir acesso para:
-  // 1. Qualquer role que contenha a palavra 'admin' independente de maiúsculas/minúsculas
-  // 2. Emails específicos de administradores
-  if (req.isAuthenticated() && req.user && (
-      (req.user.role && req.user.role.toLowerCase().includes('admin')) ||
-      (req.user.email && adminEmails.includes(req.user.email.toLowerCase()))
-    )) {
-    console.log("Permissão de administrador concedida para: " + req.user.email);
-    return next();
-  }
-  
-  console.log("Acesso negado - Permissão de administrador necessária");
-  res.status(403).json({ message: "Acesso negado. Permissão de administrador necessária." });
-};
-
-// Middleware para verificar se o usuário tem permissão para acessar funcionalidades de manutenção
-// Permite acesso para usuários com role='admin' ou baseId=12 (Gestão de Frotas)
-const hasMaintenanceAccess = (req: Request, res: Response, next: NextFunction) => {
-  // Lista de emails de administradores específicos
-  const adminEmails = [
-    'joao.paulo@muricionfleet.com',
-    'regio@muricionfleet.com',
-    'andre.rosa@muricionfleet.com'
-  ];
-  
-  // Verifica se o usuário está autenticado e tem permissão de acesso a manutenção
-  if (req.isAuthenticated() && req.user && (
-      (req.user.role && req.user.role.toLowerCase().includes('admin')) || 
-      (req.user.email && adminEmails.includes(req.user.email.toLowerCase())) ||
-      req.user.role === 'gestor' || 
-      req.user.baseId === 12 || 
-      req.user.role === 'oficina'
-    )) {
-    return next();
-  }
-  
-  console.log("Acesso negado a recurso de manutenção:", {
-    autenticado: req.isAuthenticated(),
-    role: req.user?.role,
-    baseId: req.user?.baseId,
-    email: req.user?.email,
-    url: req.originalUrl
-  });
-  
-  res.status(403).json({ message: "Acesso negado. Permissão de gestão de frotas, admin, gestor ou oficina necessária." });
-};
-
-// Middleware para verificar se o usuário tem permissão para acessar funcionalidades de pneus
-const hasTiresAccess = (req: Request, res: Response, next: NextFunction) => {
-  // Lista de emails de administradores específicos
-  const adminEmails = [
-    'joao.paulo@muricionfleet.com',
-    'regio@muricionfleet.com',
-    'andre.rosa@muricionfleet.com'
-  ];
-  
-  if (req.isAuthenticated() && req.user && (
-    (req.user.role && req.user.role.toLowerCase().includes('admin')) || 
-    (req.user.email && adminEmails.includes(req.user.email.toLowerCase())) ||
-    req.user.baseId === 12 || 
-    req.user.role === 'pneus'
-  )) {
-    return next();
-  }
-  res.status(403).json({ message: "Acesso negado. Permissão de gestão de frotas, admin ou especialista de pneus necessária." });
-};
-
-// Middleware para verificar se o usuário tem perfil de oficina
-const isWorkshop = (req: Request, res: Response, next: NextFunction) => {
-  // Lista de emails de administradores específicos
-  const adminEmails = [
-    'joao.paulo@muricionfleet.com',
-    'regio@muricionfleet.com',
-    'andre.rosa@muricionfleet.com'
-  ];
-  
-  if (req.isAuthenticated() && req.user && (
-    req.user.role === 'oficina' || 
-    (req.user.role && req.user.role.toLowerCase().includes('admin')) ||
-    (req.user.email && adminEmails.includes(req.user.email.toLowerCase()))
-  )) {
-    return next();
-  }
-  res.status(403).json({ message: "Acesso negado. Apenas oficinas podem acessar este recurso." });
-};
-
-// Middleware para verificar se o usuário tem acesso à base especificada
-const hasBaseAccess = (req: Request, res: Response, next: NextFunction) => {
-  // Lista de emails de administradores específicos
-  const adminEmails = [
-    'joao.paulo@muricionfleet.com',
-    'regio@muricionfleet.com',
-    'andre.rosa@muricionfleet.com'
-  ];
-  
-  // Se o usuário for admin ou tiver email específico, permite acesso a todas as bases
-  if (req.user && (
-      (req.user.role && req.user.role.toLowerCase().includes('admin')) ||
-      (req.user.email && adminEmails.includes(req.user.email.toLowerCase()))
-    )) {
-    return next();
-  }
-  
-  // Verificar se o usuário tem uma base associada e se corresponde à base solicitada
-  const requestedBaseId = req.params.baseId || req.query.baseId;
-  
-  if (requestedBaseId && req.user && req.user.baseId !== undefined) {
-    // Se estiver solicitando uma base específica, verificar se corresponde à do usuário
-    if (parseInt(requestedBaseId as string) === req.user.baseId) {
-      return next();
-    }
-  } else if (req.user && req.user.baseId !== undefined) {
-    // Se não estiver solicitando uma base específica, continuar mas será filtrado depois
-    return next();
-  }
-  
-  console.log("Acesso negado à base:", {
-    userEmail: req.user?.email,
-    userRole: req.user?.role,
-    userBaseId: req.user?.baseId,
-    requestedBaseId
-  });
-  
-  res.status(403).json({ message: "Acesso negado. Você só pode acessar dados da sua própria base." });
-};
+// Middlewares de autenticação e autorização movidos para o arquivo de middleware
+// Agora importados de server/middleware/auth.ts
+// Definimos constantes com os nomes originais para compatibilidade com código existente
+const authMiddleware = isAuthenticated;
+const adminMiddleware = isAdmin;
+const maintenanceAccessMiddleware = hasMaintenanceAccess;
+const tiresAccessMiddleware = hasTiresAccess;
+const workshopMiddleware = isWorkshop;
+const baseAccessMiddleware = hasBaseAccess;
 
 // Função para criar tabela de abastecimentos se não existir
 async function criarTabelaAbastecimentos() {
@@ -1219,7 +1086,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
   
   // Rotas para Line Hall Shopee
-  app.get('/api/line-hall-shopee', isAuthenticated, async (req, res) => {
+  app.get('/api/line-hall-shopee', authMiddleware, async (req, res) => {
     try {
       // Consultar todas as viagens
       const query = `
@@ -1244,7 +1111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get('/api/line-hall-shopee/:id', isAuthenticated, async (req, res) => {
+  app.get('/api/line-hall-shopee/:id', authMiddleware, async (req, res) => {
     try {
       const { id } = req.params;
       
@@ -1277,7 +1144,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/line-hall-shopee', isAuthenticated, async (req, res) => {
+  app.post('/api/line-hall-shopee', authMiddleware, async (req, res) => {
     try {
       const {
         placa_cavalo,
@@ -1364,7 +1231,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.put('/api/line-hall-shopee/:id', isAuthenticated, async (req, res) => {
+  app.put('/api/line-hall-shopee/:id', authMiddleware, async (req, res) => {
     try {
       const { id } = req.params;
       const {
@@ -1451,7 +1318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.delete('/api/line-hall-shopee/:id', isAuthenticated, async (req, res) => {
+  app.delete('/api/line-hall-shopee/:id', authMiddleware, async (req, res) => {
     try {
       const { id } = req.params;
       
@@ -1494,7 +1361,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rotas para Fuel Card (Cartão de Combustível)
   // GET - Obter todas as solicitações de cartão de combustível (com filtragem opcional por status/base)
-  app.get('/api/fuel-card', isAuthenticated, async (req, res) => {
+  app.get('/api/fuel-card', authMiddleware, async (req, res) => {
     try {
       const { status } = req.query;
       const user = req.user as any;
@@ -1542,7 +1409,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // GET - Obter solicitações pendentes (para aprovação/rejeição)
-  app.get('/api/fuel-card/pending', isAuthenticated, async (req, res) => {
+  app.get('/api/fuel-card/pending', authMiddleware, async (req, res) => {
     try {
       const user = req.user as any;
       
@@ -1580,7 +1447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // POST - Criar nova solicitação de recarga
-  app.post('/api/fuel-card', isAuthenticated, async (req, res) => {
+  app.post('/api/fuel-card', authMiddleware, async (req, res) => {
     try {
       const { plate, cardNumber, amount, reason, requestedBy } = req.body;
       const user = req.user as any;
@@ -1630,7 +1497,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // POST - Aprovar solicitação de recarga
-  app.post('/api/fuel-card/:id/approve', isAuthenticated, async (req, res) => {
+  app.post('/api/fuel-card/:id/approve', authMiddleware, async (req, res) => {
     try {
       const { id } = req.params;
       const user = req.user as any;
@@ -1698,7 +1565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // POST - Rejeitar solicitação de recarga
-  app.post('/api/fuel-card/:id/reject', isAuthenticated, async (req, res) => {
+  app.post('/api/fuel-card/:id/reject', authMiddleware, async (req, res) => {
     try {
       const { id } = req.params;
       const { rejectionReason } = req.body;
@@ -1777,7 +1644,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Estatísticas de checklists de motoristas do Line Hall
-  app.get('/api/line-hall/checklist-stats', isAuthenticated, async (req, res) => {
+  app.get('/api/line-hall/checklist-stats', authMiddleware, async (req, res) => {
     try {
       // Consultar estatísticas de checklists
       const query = `
@@ -1815,7 +1682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Estatísticas de manutenções solicitadas por motoristas do Line Hall
-  app.get('/api/line-hall/maintenance-stats', isAuthenticated, async (req, res) => {
+  app.get('/api/line-hall/maintenance-stats', authMiddleware, async (req, res) => {
     try {
       // Consultar estatísticas de manutenções
       const query = `
@@ -1911,7 +1778,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // GET - Obter detalhes de uma solicitação específica
-  app.get('/api/fuel-card/:id', isAuthenticated, async (req, res) => {
+  app.get('/api/fuel-card/:id', authMiddleware, async (req, res) => {
     try {
       const { id } = req.params;
       const user = req.user as any;
@@ -1957,7 +1824,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // GET - Obter solicitações aprovadas para processamento
-  app.get('/api/fuel-card/approved', isAuthenticated, async (req, res) => {
+  app.get('/api/fuel-card/approved', authMiddleware, async (req, res) => {
     try {
       const user = req.user as any;
       
@@ -1996,7 +1863,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // POST - Processar uma operação de adição de saldo
-  app.post('/api/fuel-card/process', isAuthenticated, async (req, res) => {
+  app.post('/api/fuel-card/process', authMiddleware, async (req, res) => {
     try {
       const user = req.user as any;
       const { requestId, operationDate, confirmationCode, operationNotes } = req.body;
@@ -2121,7 +1988,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Endpoint para diagnóstico do Supabase
-  app.get("/api/diagnostico/supabase", isAdmin, async (req, res) => {
+  app.get("/api/diagnostico/supabase", adminMiddleware, async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     
     try {
@@ -2157,7 +2024,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const hasSession = !!req.session;
     const sessionID = req.sessionID;
     const sessionInfo = {
-      isAuthenticated: req.isAuthenticated(),
+      authMiddleware: req.authMiddleware(),
       hasSession,
       sessionID,
       cookies: req.headers.cookie,
@@ -2173,7 +2040,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Endpoint para comparação de esquemas entre Replit e Supabase
-  app.get("/api/diagnostico/compare-schemas", isAdmin, async (req, res) => {
+  app.get("/api/diagnostico/compare-schemas", adminMiddleware, async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     
     try {
@@ -2205,7 +2072,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Endpoint para sincronizar tabelas entre Replit e Supabase
-  app.post("/api/diagnostico/sync-schema", isAdmin, async (req, res) => {
+  app.post("/api/diagnostico/sync-schema", adminMiddleware, async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     
     try {
@@ -2236,8 +2103,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Rotas para gestão de usuários
-  app.get("/api/usuarios", isAuthenticated, consultarUsuarios);
-  app.get("/api/usuarios/:id", isAuthenticated, consultarUsuarioPorId);
+  app.get("/api/usuarios", authMiddleware, consultarUsuarios);
+  app.get("/api/usuarios/:id", authMiddleware, consultarUsuarioPorId);
   
   // Rota pública para testes - remover em produção
   app.get("/api/teste/usuarios", consultarUsuarios);
@@ -2254,7 +2121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/bases/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/bases/:id", authMiddleware, async (req, res) => {
     try {
       const base = await storage.getBase(parseInt(req.params.id));
       if (!base) {
@@ -2267,7 +2134,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post("/api/bases", isAdmin, async (req, res) => {
+  app.post("/api/bases", adminMiddleware, async (req, res) => {
     try {
       console.log("POST /api/bases - Dados recebidos:", req.body);
       
@@ -2287,7 +2154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.put("/api/bases/:id", isAdmin, async (req, res) => {
+  app.put("/api/bases/:id", adminMiddleware, async (req, res) => {
     try {
       const result = insertBaseSchema.partial().safeParse(req.body);
       if (!result.success) {
@@ -2306,7 +2173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.delete("/api/bases/:id", isAdmin, async (req, res) => {
+  app.delete("/api/bases/:id", adminMiddleware, async (req, res) => {
     try {
       const success = await storage.deleteBase(parseInt(req.params.id));
       if (!success) {
@@ -2337,7 +2204,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/vehicles/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/vehicles/:id", authMiddleware, async (req, res) => {
     try {
       const vehicle = await storage.getVehicle(parseInt(req.params.id));
       
@@ -2419,7 +2286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.put("/api/vehicles/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/vehicles/:id", authMiddleware, async (req, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -2492,7 +2359,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/workshops/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/workshops/:id", authMiddleware, async (req, res) => {
     try {
       const workshop = await storage.getWorkshop(parseInt(req.params.id));
       
@@ -2678,7 +2545,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.put("/api/workshops/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/workshops/:id", authMiddleware, async (req, res) => {
     try {
       const workshopId = parseInt(req.params.id);
       const workshop = await storage.getWorkshop(workshopId);
@@ -2700,7 +2567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.delete("/api/workshops/:id", isAdmin, async (req, res) => {
+  app.delete("/api/workshops/:id", adminMiddleware, async (req, res) => {
     try {
       const workshopId = parseInt(req.params.id);
       const success = await storage.deleteWorkshop(workshopId);
@@ -2717,7 +2584,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Maintenance routes
-  app.get("/api/maintenance", hasMaintenanceAccess, async (req, res) => {
+  app.get("/api/maintenance", maintenanceAccessMiddleware, async (req, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -2787,7 +2654,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Rota para oficinas buscarem manutenções associadas a elas
-  app.get("/api/workshop/maintenance", isWorkshop, async (req, res) => {
+  app.get("/api/workshop/maintenance", workshopMiddleware, async (req, res) => {
     try {
       if (!req.user || !req.user.oficina_id) {
         return res.status(400).json({ 
@@ -2855,7 +2722,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/maintenance/vehicle/:plate", hasMaintenanceAccess, async (req, res) => {
+  app.get("/api/maintenance/vehicle/:plate", maintenanceAccessMiddleware, async (req, res) => {
     try {
       const vehiclePlate = req.params.plate;
       
@@ -2874,7 +2741,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/maintenance/:id", hasMaintenanceAccess, async (req, res) => {
+  app.get("/api/maintenance/:id", maintenanceAccessMiddleware, async (req, res) => {
     try {
       const maintenanceId = parseInt(req.params.id);
       const maintenanceRecord = await storage.getMaintenance(maintenanceId);
@@ -2890,7 +2757,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post("/api/maintenance", hasMaintenanceAccess, async (req, res) => {
+  app.post("/api/maintenance", maintenanceAccessMiddleware, async (req, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -2953,7 +2820,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Rota para oficinas atualizarem o status de manutenções
-  app.patch("/api/workshop/maintenance/:id/status", isWorkshop, async (req, res) => {
+  app.patch("/api/workshop/maintenance/:id/status", workshopMiddleware, async (req, res) => {
     try {
       if (!req.user || !req.user.oficina_id) {
         return res.status(400).json({ 
@@ -3003,7 +2870,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/maintenance/:id/status", hasMaintenanceAccess, async (req, res) => {
+  app.patch("/api/maintenance/:id/status", maintenanceAccessMiddleware, async (req, res) => {
     try {
       const maintenanceId = parseInt(req.params.id);
       const { status } = req.body;
@@ -3035,7 +2902,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.put("/api/maintenance/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/maintenance/:id", authMiddleware, async (req, res) => {
     try {
       const maintenanceId = parseInt(req.params.id);
       
@@ -3059,7 +2926,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.delete("/api/maintenance/:id", isAdmin, async (req, res) => {
+  app.delete("/api/maintenance/:id", adminMiddleware, async (req, res) => {
     try {
       const maintenanceId = parseInt(req.params.id);
       const success = await storage.deleteMaintenance(maintenanceId);
@@ -3076,7 +2943,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Tires routes - now with dedicated access control
-  app.get("/api/tires", hasTiresAccess, async (req, res) => {
+  app.get("/api/tires", tiresAccessMiddleware, async (req, res) => {
     try {
       const tires = await storage.getAllTires();
       return res.status(200).json(tires);
@@ -3087,7 +2954,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Refueling routes
-  app.get("/api/refueling", isAuthenticated, async (req, res) => {
+  app.get("/api/refueling", authMiddleware, async (req, res) => {
     try {
       const refueling = await storage.getAllRefueling();
       return res.status(200).json(refueling);
@@ -3098,7 +2965,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Fines routes
-  app.get("/api/fines", isAuthenticated, async (req, res) => {
+  app.get("/api/fines", authMiddleware, async (req, res) => {
     try {
       const fines = await storage.getAllFines();
       return res.status(200).json(fines);
@@ -3111,8 +2978,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // LineHall routes removidas conforme solicitação
   
   // Users routes (admin only)
-  // Rota original com middleware isAuthenticated (mais permissivo) para compatibilidade
-  app.get("/api/users", isAuthenticated, async (req, res) => {
+  // Rota original com middleware authMiddleware (mais permissivo) para compatibilidade
+  app.get("/api/users", authMiddleware, async (req, res) => {
     try {
       // Usar a mesma função das novas rotas para manter a consistência
       // Mas formatar a resposta no padrão original para compatibilidade com frontend
@@ -3159,7 +3026,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Rota para criar um novo usuário
-  app.post("/api/users", isAdmin, async (req, res) => {
+  app.post("/api/users", adminMiddleware, async (req, res) => {
     try {
       const { name, email, role, baseId, isActive } = req.body;
       
@@ -3201,7 +3068,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Rota para excluir um usuário
-  app.delete("/api/users/:id", isAdmin, async (req, res) => {
+  app.delete("/api/users/:id", adminMiddleware, async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
       
@@ -3241,7 +3108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Rota para redefinir a senha de um usuário
-  app.post("/api/users/:id/reset-password", isAdmin, async (req, res) => {
+  app.post("/api/users/:id/reset-password", adminMiddleware, async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
       const { password } = req.body;
@@ -3284,10 +3151,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rota para listar todos os usuários com filtros opcionais (role, baseId, active)
   // ex: /api/usuarios?role=admin&active=true
-  app.get("/api/usuarios", isAuthenticated, consultarUsuarios);
+  app.get("/api/usuarios", authMiddleware, consultarUsuarios);
   
   // Rota para obter um usuário específico pelo ID
-  app.get("/api/usuarios/:id", isAuthenticated, consultarUsuarioPorId);
+  app.get("/api/usuarios/:id", authMiddleware, consultarUsuarioPorId);
   
   // Rota de teste para consulta de usuários (sem autenticação - apenas para desenvolvimento)
   app.get("/api/teste/usuarios", consultarUsuarios);
@@ -3295,7 +3162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rota para users (tem problema no fechamento do endpoint anterior)
 
   // Dashboard API
-  app.get("/api/dashboard/kpis", isAuthenticated, getDashboardKPIs);
+  app.get("/api/dashboard/kpis", authMiddleware, getDashboardKPIs);
 
   // Admin utility routes
   // Rota específica para limpar os dados do Supabase
@@ -3316,7 +3183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Rota específica para limpar apenas a tabela de pneus
-  app.post('/api/admin/clear-tires-data', isAdmin, async (req, res) => {
+  app.post('/api/admin/clear-tires-data', adminMiddleware, async (req, res) => {
     try {
       console.log("Iniciando limpeza de dados da tabela de pneus...");
       
@@ -3561,7 +3428,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // POST para executar a limpeza
-  app.post('/api/admin/clear-supabase-data', isAdmin, async (req, res) => {
+  app.post('/api/admin/clear-supabase-data', adminMiddleware, async (req, res) => {
     try {
       const { confirm, tables } = req.body;
       
@@ -3705,7 +3572,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Rota principal para limpar todos os dados (somente admin)
-  app.post("/api/admin/clear-all-data", isAdmin, async (req, res) => {
+  app.post("/api/admin/clear-all-data", adminMiddleware, async (req, res) => {
     try {
       console.log("Iniciando limpeza completa dos dados do sistema");
       
@@ -3941,20 +3808,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/painel-principal", getPainelPrincipal);
   
   // Endpoint legado para KPIs do dashboard - manter por compatibilidade
-  app.get("/api/dashboard/kpis", isAuthenticated, getDashboardKPIs);
+  app.get("/api/dashboard/kpis", authMiddleware, getDashboardKPIs);
   
   // Novo endpoint para o dashboard executivo
-  app.get("/api/dashboard", isAuthenticated, getExecutiveDashboard);
+  app.get("/api/dashboard", authMiddleware, getExecutiveDashboard);
   
   // Rotas para solicitações de cartão de combustível
-  app.get('/api/fuel-card-solicitations', isAuthenticated, getFuelCardSolicitations);
-  app.get('/api/fuel-card-solicitations/:id', isAuthenticated, getFuelCardSolicitation);
-  app.post('/api/fuel-card-solicitations', isAuthenticated, createFuelCardSolicitation);
-  app.patch('/api/fuel-card-solicitations/:id', isAuthenticated, updateFuelCardSolicitation);
-  app.delete('/api/fuel-card-solicitations/:id', isAuthenticated, deleteFuelCardSolicitation);
+  app.get('/api/fuel-card-solicitations', authMiddleware, getFuelCardSolicitations);
+  app.get('/api/fuel-card-solicitations/:id', authMiddleware, getFuelCardSolicitation);
+  app.post('/api/fuel-card-solicitations', authMiddleware, createFuelCardSolicitation);
+  app.patch('/api/fuel-card-solicitations/:id', authMiddleware, updateFuelCardSolicitation);
+  app.delete('/api/fuel-card-solicitations/:id', authMiddleware, deleteFuelCardSolicitation);
   
   // Solicitações de manutenção - API para página de solicitação de manutenção
-  app.get("/api/solicitacoes-manutencao", hasMaintenanceAccess, async (req, res) => {
+  app.get("/api/solicitacoes-manutencao", maintenanceAccessMiddleware, async (req, res) => {
     try {
       // Buscar todas as solicitações de manutenção
       // Como está usando Supabase diretamente, vamos retornar uma mensagem explicativa por enquanto
@@ -3968,7 +3835,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Tratativas de manutenção - API para página de tratativas de manutenção
-  app.get("/api/tratativas-manutencao", hasMaintenanceAccess, async (req, res) => {
+  app.get("/api/tratativas-manutencao", maintenanceAccessMiddleware, async (req, res) => {
     try {
       // Buscar todas as tratativas de manutenção
       // Como está usando Supabase diretamente, vamos retornar uma mensagem explicativa por enquanto
@@ -3982,7 +3849,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // API para iniciar uma tratativa de manutenção (mudar status para em_andamento)
-  app.post("/api/tratativas-manutencao/:id/iniciar", hasMaintenanceAccess, async (req, res) => {
+  app.post("/api/tratativas-manutencao/:id/iniciar", maintenanceAccessMiddleware, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { responsavel } = req.body;
@@ -4006,7 +3873,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // API para concluir uma tratativa de manutenção (mudar status para concluida)
-  app.post("/api/tratativas-manutencao/:id/concluir", hasMaintenanceAccess, async (req, res) => {
+  app.post("/api/tratativas-manutencao/:id/concluir", maintenanceAccessMiddleware, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       
@@ -4221,7 +4088,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ======= ROTAS PARA POSTO REMÉDIOS =======
   
   // Listar registros de abastecimento e lavagem do posto Remédios (versão autenticada)
-  app.get("/api/posto-remedios/abastecimentos", isAuthenticated, async (req, res) => {
+  app.get("/api/posto-remedios/abastecimentos", authMiddleware, async (req, res) => {
     try {
       const { startDate, endDate, placa } = req.query;
       
@@ -4303,7 +4170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Adicionar novo registro de abastecimento/lavagem (versão autenticada)
-  app.post("/api/posto-remedios/abastecimentos", isAuthenticated, async (req, res) => {
+  app.post("/api/posto-remedios/abastecimentos", authMiddleware, async (req, res) => {
     try {
       const {
         placa,
@@ -4451,7 +4318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Obter um registro específico
-  app.get("/api/posto-remedios/abastecimentos/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/posto-remedios/abastecimentos/:id", authMiddleware, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       
@@ -4487,7 +4354,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ======= ROTAS PARA CHAT DE NEGOCIAÇÃO DE ORÇAMENTO =======
   
   // Obter chat por ID da manutenção
-  app.get("/api/workshop/maintenance-chat/:maintenanceId", hasMaintenanceAccess, async (req, res) => {
+  app.get("/api/workshop/maintenance-chat/:maintenanceId", maintenanceAccessMiddleware, async (req, res) => {
     try {
       const maintenanceId = parseInt(req.params.maintenanceId);
       
@@ -4524,7 +4391,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Obter todos os chats de manutenção
   // Obter manutenções com chats para a página de tratativas de orçamentos
-  app.get("/api/fleet/maintenance-with-chats", hasMaintenanceAccess, async (req, res) => {
+  app.get("/api/fleet/maintenance-with-chats", maintenanceAccessMiddleware, async (req, res) => {
     try {
       const maintenanceWithChats = await storage.getMaintenanceEntriesWithChats();
       return res.status(200).json(maintenanceWithChats);
@@ -4538,7 +4405,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // API para a página de orçamentos (BudgetsPage)
-  app.get("/api/fleet/budget-chats", hasMaintenanceAccess, async (req, res) => {
+  app.get("/api/fleet/budget-chats", maintenanceAccessMiddleware, async (req, res) => {
     try {
       const status = req.query.status as string;
       
@@ -4597,7 +4464,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/workshop/maintenance-chats", hasMaintenanceAccess, async (req, res) => {
+  app.get("/api/workshop/maintenance-chats", maintenanceAccessMiddleware, async (req, res) => {
     try {
       // Buscar todos os chats de manutenção
       const chats = await storage.getAllMaintenanceChats();
@@ -4663,7 +4530,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Criar um novo chat de manutenção
-  app.post("/api/workshop/maintenance-chat", hasMaintenanceAccess, async (req, res) => {
+  app.post("/api/workshop/maintenance-chat", maintenanceAccessMiddleware, async (req, res) => {
     try {
       console.log("Payload recebido:", req.body);
       console.log("Usuário:", req.user);
@@ -4807,7 +4674,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Adicionar mensagem ao chat
-  app.post("/api/workshop/chat-message", hasMaintenanceAccess, async (req, res) => {
+  app.post("/api/workshop/chat-message", maintenanceAccessMiddleware, async (req, res) => {
     try {
       // Verificar se o usuário está autenticado
       if (!req.user) {
@@ -4848,7 +4715,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Finalizar negociação de orçamento
-  app.post("/api/workshop/maintenance-chat/:chatId/finalize", hasMaintenanceAccess, async (req, res) => {
+  app.post("/api/workshop/maintenance-chat/:chatId/finalize", maintenanceAccessMiddleware, async (req, res) => {
     try {
       // Verificar se o usuário está autenticado
       if (!req.user) {
@@ -4906,7 +4773,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ======= ROTAS PARA CONTROLE DE CICLO DE VIDA DE MANUTENÇÃO =======
   
   // API para registrar ou atualizar o ciclo de vida de uma manutenção
-  app.post("/api/workshop/maintenance-lifecycle", hasMaintenanceAccess, async (req, res) => {
+  app.post("/api/workshop/maintenance-lifecycle", maintenanceAccessMiddleware, async (req, res) => {
     try {
       const { 
         maintenanceId, 
@@ -5049,7 +4916,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // API para obter informações do ciclo de vida de uma manutenção
-  app.get("/api/workshop/maintenance-lifecycle/:maintenanceId", hasMaintenanceAccess, async (req, res) => {
+  app.get("/api/workshop/maintenance-lifecycle/:maintenanceId", maintenanceAccessMiddleware, async (req, res) => {
     try {
       const maintenanceId = parseInt(req.params.maintenanceId);
       
@@ -5116,7 +4983,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Rotas para solicitações das bases (base_requests)
   // Criar uma nova solicitação
-  app.post("/api/base-requests", isAuthenticated, async (req, res) => {
+  app.post("/api/base-requests", authMiddleware, async (req, res) => {
     try {
       console.log("POST /api/base-requests - Dados recebidos:", req.body);
       
@@ -5165,7 +5032,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Listar solicitações de uma base específica
-  app.get("/api/bases/:baseId/requests", isAuthenticated, hasBaseAccess, async (req, res) => {
+  app.get("/api/bases/:baseId/requests", authMiddleware, baseAccessMiddleware, async (req, res) => {
     try {
       const baseId = parseInt(req.params.baseId);
       const requests = await storage.getBaseRequestsByBase(baseId);
@@ -5180,7 +5047,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Listar solicitações por tipo
-  app.get("/api/base-requests/by-type/:requestType", isAuthenticated, async (req, res) => {
+  app.get("/api/base-requests/by-type/:requestType", authMiddleware, async (req, res) => {
     try {
       // Verificar se o usuário tem permissão para ver este tipo de solicitação
       // Por exemplo, apenas usuários de pneus podem ver solicitações do tipo 'pneus'
@@ -5206,7 +5073,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Obter uma solicitação específica por ID
-  app.get("/api/base-requests/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/base-requests/:id", authMiddleware, async (req, res) => {
     try {
       const requestId = parseInt(req.params.id);
       const request = await storage.getBaseRequest(requestId);
@@ -5241,7 +5108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Atualizar status de uma solicitação
-  app.patch("/api/base-requests/:id/status", isAuthenticated, async (req, res) => {
+  app.patch("/api/base-requests/:id/status", authMiddleware, async (req, res) => {
     try {
       const requestId = parseInt(req.params.id);
       const { status, assignedUserId } = req.body;
@@ -5295,7 +5162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Adicionar uma nova atualização/tratativa a uma solicitação
-  app.post("/api/base-requests/:id/updates", isAuthenticated, async (req, res) => {
+  app.post("/api/base-requests/:id/updates", authMiddleware, async (req, res) => {
     try {
       const requestId = parseInt(req.params.id);
       const { message, newStatus, attachmentUrl } = req.body;
@@ -5345,7 +5212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Deletar uma solicitação (apenas para admin)
-  app.delete("/api/base-requests/:id", isAdmin, async (req, res) => {
+  app.delete("/api/base-requests/:id", adminMiddleware, async (req, res) => {
     try {
       const requestId = parseInt(req.params.id);
       
@@ -5380,10 +5247,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rotas para postos de abastecimento - acessíveis para usuários autenticados
   // Não é necessário middleware adicional pois a verificação de admin já está implementada no hook useBasePermission
-  app.get("/api/postos", isAuthenticated, getPostosResumo);
-  app.get("/api/postos/:id", isAuthenticated, getPostoDetalhes);
-  app.post("/api/postos/:id/entrada-combustivel", isAuthenticated, registrarEntradaCombustivel);
-  app.post("/api/postos/excluir-saopaulo", isAuthenticated, excluirPostoSaoPaulo);
+  app.get("/api/postos", authMiddleware, getPostosResumo);
+  app.get("/api/postos/:id", authMiddleware, getPostoDetalhes);
+  app.post("/api/postos/:id/entrada-combustivel", authMiddleware, registrarEntradaCombustivel);
+  app.post("/api/postos/excluir-saopaulo", authMiddleware, excluirPostoSaoPaulo);
 
   const httpServer = createServer(app);
   return httpServer;
