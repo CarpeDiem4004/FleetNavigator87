@@ -652,20 +652,22 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
       
       {/* Diálogo para editar configurações */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[520px]">
           <DialogHeader>
             <DialogTitle>Configurar Tanques de Combustível</DialogTitle>
             <DialogDescription>
-              Ajuste os níveis e capacidades dos tanques de Diesel e ARLA.
+              Ajuste os níveis, capacidades e valores por litro dos tanques de Diesel e ARLA.
             </DialogDescription>
           </DialogHeader>
           
           <div className="grid gap-4 py-4">
-            <div className="space-y-2">
+            <div className="space-y-4">
               <h3 className="font-medium text-amber-600 flex items-center gap-2">
                 <Fuel className="h-4 w-4" /> Tanque de Diesel
               </h3>
-              <div className="grid grid-cols-2 gap-3">
+              
+              {/* Container para nível e capacidade */}
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label htmlFor="dieselNivel">Nível Atual (L)</Label>
                   <Input
@@ -686,25 +688,32 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
                     min={1000}
                   />
                 </div>
-                <div className="space-y-1">
-                  <Label htmlFor="dieselValorLitro">Valor por Litro (R$)</Label>
-                  <Input
-                    id="dieselValorLitro"
-                    type="number"
-                    step="0.01"
-                    value={dieselValorLitro}
-                    onChange={(e) => setDieselValorLitro(Number(e.target.value))}
-                    min={0}
-                  />
-                </div>
+              </div>
+              
+              {/* Container para o preço - linha separada */}
+              <div className="space-y-1">
+                <Label htmlFor="dieselValorLitro" className="flex items-center gap-1 font-medium text-green-600">
+                  Valor por Litro (R$)
+                </Label>
+                <Input
+                  id="dieselValorLitro"
+                  type="number"
+                  step="0.01"
+                  value={dieselValorLitro}
+                  onChange={(e) => setDieselValorLitro(Number(e.target.value))}
+                  min={0}
+                  className="border-green-200 focus:border-green-400"
+                />
               </div>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-4 mt-2">
               <h3 className="font-medium text-blue-600 flex items-center gap-2">
                 <Droplet className="h-4 w-4" /> Tanque de ARLA
               </h3>
-              <div className="grid grid-cols-2 gap-3">
+              
+              {/* Container para nível e capacidade */}
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label htmlFor="arlaNivel">Nível Atual (L)</Label>
                   <Input
@@ -725,17 +734,22 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
                     min={100}
                   />
                 </div>
-                <div className="space-y-1">
-                  <Label htmlFor="arlaValorLitro">Valor por Litro (R$)</Label>
-                  <Input
-                    id="arlaValorLitro"
-                    type="number"
-                    step="0.01"
-                    value={arlaValorLitro}
-                    onChange={(e) => setArlaValorLitro(Number(e.target.value))}
-                    min={0}
-                  />
-                </div>
+              </div>
+              
+              {/* Container para o preço - linha separada */}
+              <div className="space-y-1">
+                <Label htmlFor="arlaValorLitro" className="flex items-center gap-1 font-medium text-green-600">
+                  Valor por Litro (R$)
+                </Label>
+                <Input
+                  id="arlaValorLitro"
+                  type="number"
+                  step="0.01"
+                  value={arlaValorLitro}
+                  onChange={(e) => setArlaValorLitro(Number(e.target.value))}
+                  min={0}
+                  className="border-green-200 focus:border-green-400"
+                />
               </div>
             </div>
           </div>
