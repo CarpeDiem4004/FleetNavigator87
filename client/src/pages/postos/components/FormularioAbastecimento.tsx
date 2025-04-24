@@ -369,18 +369,41 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     };
   }, []);
   
-  // Manipulador de histórico
+  // Manipulador de histórico com tratamento de erro para evitar DOM exceptions
   const handleVerHistorico = useCallback(() => {
-    const historicosSection = document.getElementById("historicos-section");
-    if (historicosSection) {
-      historicosSection.scrollIntoView({ behavior: "smooth" });
+    try {
+      // Usar requestAnimationFrame para garantir que o DOM está pronto
+      window.requestAnimationFrame(() => {
+        const historicosSection = document.getElementById("historicos-section");
+        if (historicosSection) {
+          historicosSection.scrollIntoView({ behavior: "smooth" });
+        }
+      });
+    } catch (error) {
+      console.error('Erro ao tentar rolar para a seção de históricos:', error);
     }
-    setRegistroSucesso(false);
+    
+    // Usar setTimeout para evitar problemas de timing no DOM
+    setTimeout(() => {
+      setRegistroSucesso(false);
+    }, 100);
   }, []);
   
-  // Manipulador de novo registro
+  // Manipulador de novo registro com proteção contra erros de DOM
   const handleNovoRegistro = useCallback(() => {
-    setRegistroSucesso(false);
+    try {
+      // Usar setTimeout para evitar problemas de timing no DOM
+      setTimeout(() => {
+        setRegistroSucesso(false);
+      }, 50);
+    } catch (error) {
+      console.error('Erro ao reiniciar formulário:', error);
+      
+      // Tenta forçar uma nova renderização em caso de erro
+      window.requestAnimationFrame(() => {
+        setRegistroSucesso(false);
+      });
+    }
   }, []);
   
   // Função para processamento do formulário
