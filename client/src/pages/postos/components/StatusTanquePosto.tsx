@@ -8,6 +8,7 @@ import { Fuel, Droplet, Settings, Edit, Save, RefreshCw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import TanqueConfigDialog from '@/components/posto-dialogs/TanqueConfigDialog';
 import PrecosCombustivelCard from '@/components/posto-cards/PrecosCombustivelCard';
+import PrecosCombustivelDialog from '@/components/posto-dialogs/PrecosCombustivelDialog';
 
 interface StatusTanqueProps {
   postId: string;
@@ -556,6 +557,8 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
     return new Intl.NumberFormat('pt-BR').format(Math.round(valor));
   };
   
+  const [isPrecoDialogOpen, setIsPrecoDialogOpen] = useState(false);
+  
   return (
     <div className="space-y-6 mt-6">
       <div className="flex justify-between items-center">
@@ -580,14 +583,7 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
           <Button 
             variant="outline" 
             className="flex items-center gap-2"
-            onClick={() => {
-              // Verificamos se o componente PrecosCombustivelCard tem um método para abrir o diálogo
-              // Como isso não é possível diretamente, vamos esconder o componente e mostrar outro no lugar
-              const precosCombustivelDialogBtn = document.querySelector('[data-precos-combustivel-btn]');
-              if (precosCombustivelDialogBtn) {
-                (precosCombustivelDialogBtn as HTMLButtonElement).click();
-              }
-            }}
+            onClick={() => setIsPrecoDialogOpen(true)}
           >
             <Fuel className="h-4 w-4" />
             Preços
@@ -707,6 +703,17 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
           
           // Chamar a função de salvamento original
           await salvarConfigTanques();
+        }}
+      />
+      
+      {/* Diálogo para configurar preços */}
+      <PrecosCombustivelDialog 
+        isOpen={isPrecoDialogOpen} 
+        onClose={() => setIsPrecoDialogOpen(false)}
+        onSave={() => {
+          // Atualizar os valores dos preços na interface
+          fetchDados();
+          setIsPrecoDialogOpen(false);
         }}
       />
     </div>
