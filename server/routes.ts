@@ -27,6 +27,7 @@ import { registerPneusRoutes } from "./pneusApi";
 import { registerTireMoveRoutes } from "./tireMoveApi";
 import { compareSchemas } from "./compareSchemas";
 import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
+import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoutes";
 import { db, pool } from "./db";
 import authHybridRoutes from "./routes/authHybridRoutes";
 import * as userHandler from "./handlers/userHandler";
@@ -5415,6 +5416,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Registrar rotas de autenticação híbrida
   app.use('/api/auth', authHybridRoutes);
+  
+  // Registrar rotas para gerenciar preços de combustível
+  registerPrecosCombustivelRoutes(app);
 
   const httpServer = createServer(app);
   return httpServer;
