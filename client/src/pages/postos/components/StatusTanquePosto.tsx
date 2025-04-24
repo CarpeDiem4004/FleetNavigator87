@@ -570,38 +570,8 @@ export const StatusTanquePosto: React.FC<StatusTanqueProps> = ({ postId }) => {
         </Button>
       </div>
 
-      {/* Card de preços dos combustíveis */}
-      <Card className="mb-4 bg-gradient-to-r from-green-50 to-teal-50 border-green-100">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg text-green-700">
-            Valores Atuais dos Combustíveis
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-6">
-            <div className="flex items-center justify-between p-3 bg-white/80 rounded-lg border border-amber-100">
-              <div className="flex items-center gap-2">
-                <Fuel className="h-5 w-5 text-amber-600" />
-                <span className="font-medium">Diesel</span>
-              </div>
-              <div className="text-lg font-semibold text-green-600">
-                R$ {dieselStatusValorLitro?.toFixed(2).replace('.', ',')}
-                <span className="text-xs text-gray-500 ml-1">/litro</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-white/80 rounded-lg border border-blue-100">
-              <div className="flex items-center gap-2">
-                <Droplet className="h-5 w-5 text-blue-600" />
-                <span className="font-medium">ARLA</span>
-              </div>
-              <div className="text-lg font-semibold text-green-600">
-                R$ {arlaStatusValorLitro?.toFixed(2).replace('.', ',')}
-                <span className="text-xs text-gray-500 ml-1">/litro</span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Novo card de preços dos combustíveis com novas funcionalidades */}
+      <PrecosCombustivelCard />
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>

@@ -71,12 +71,14 @@ export default function PrecosCombustivelDialog({
     
     try {
       // Atualizar diesel
-      const dieselResponse = await apiRequest('PUT', '/api/precos-combustivel/Diesel', {
+      const dieselResponse = await apiRequest('POST', '/api/precos-combustivel', {
+        tipo: 'Diesel',
         valor_litro: Number(precos.diesel)
       });
       
       // Atualizar ARLA
-      const arlaResponse = await apiRequest('PUT', '/api/precos-combustivel/ARLA', {
+      const arlaResponse = await apiRequest('POST', '/api/precos-combustivel', {
+        tipo: 'ARLA',
         valor_litro: Number(precos.arla)
       });
       
