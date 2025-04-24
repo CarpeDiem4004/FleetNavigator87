@@ -265,6 +265,135 @@ export function setupAuth(app: Express) {
     res.json(userWithoutPassword);
   });
   
+  // Rota para ressincronizar sessão a partir de token JWT (Supabase)
+  app.post("/api/resync-session", async (req, res) => {
+    try {
+      // Verificar se há um token JWT no cabeçalho de autorização
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ 
+          success: false, 
+          message: "Token não fornecido" 
+        });
+      }
+      
+      // Extrair e validar o token JWT
+      const token = authHeader.split(' ')[1];
+      
+      // Verificar configurações do Supabase
+      const supabaseUrl = process.env.SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseKey) {
+        return res.status(500).json({ 
+          success: false, 
+          message: "Configuração do Supabase não disponível" 
+        });
+      }
+      
+      // Criar cliente Supabase
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      
+      // Verificar token
+      const { data: { user: supabaseUser }, error } = await supabase.auth.getUser(token);
+      
+      if (error || !supabaseUser) {
+        console.error('[ResyncSession] Erro ao validar token:', error);
+        return res.status(401).json({ 
+          success: false, 
+          message: "Token inválido" 
+        });
+      }
+      
+      if (!supabaseUser.email) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Usuário Supabase sem email" 
+        });
+      }
+      
+      // Buscar o usuário no banco de dados pelo email
+      console.log(`[ResyncSession] Buscando usuário com email: ${supabaseUser.email}`);
+      const userResult = await pool.query(
+        'SELECT * FROM usuarios WHERE email = $1',
+        [supabaseUser.email]
+      );
+      
+      if (!userResult.rowCount || userResult.rowCount === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "Usuário não encontrado no banco de dados" 
+        });
+      }
+      
+      const user = userResult.rows[0];
+      
+      // Atualizar o supabase_uid se necessário
+      try {
+        // Verificar se a coluna supabase_uid existe
+        const columnCheck = await pool.query(`
+          SELECT column_name FROM information_schema.columns 
+          WHERE table_name = 'usuarios' AND column_name = 'supabase_uid'
+        `);
+        
+        // Se a coluna não existe, adicionar
+        if (columnCheck.rowCount === 0) {
+          console.log('[ResyncSession] Adicionando coluna supabase_uid à tabela usuarios');
+          await pool.query(`
+            ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS supabase_uid VARCHAR(255)
+          `);
+        }
+        
+        // Atualizar o supabase_uid
+        if (!user.supabase_uid || user.supabase_uid !== supabaseUser.id) {
+          console.log(`[ResyncSession] Vinculando usuário ${user.id} ao Supabase ${supabaseUser.id}`);
+          await pool.query(
+            'UPDATE usuarios SET supabase_uid = $1 WHERE id = $2',
+            [supabaseUser.id, user.id]
+          );
+        }
+      } catch (error) {
+        console.error('[ResyncSession] Erro ao atualizar supabase_uid:', error);
+        // Não interrompe o fluxo
+      }
+      
+      // Fazer login na sessão
+      req.login(user, (err) => {
+        if (err) {
+          console.error('[ResyncSession] Erro ao fazer login na sessão:', err);
+          return res.status(500).json({ 
+            success: false, 
+            message: "Erro ao sincronizar sessão" 
+          });
+        }
+        
+        console.log(`[ResyncSession] Sessão resincronizada para usuário ${user.id} (${user.email})`);
+        
+        // Retornar dados do usuário para o cliente
+        return res.json({ 
+          success: true, 
+          message: "Sessão resincronizada com sucesso",
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            baseId: user.base_id,
+            basename: user.basename,
+            oficina_id: user.oficina_id,
+            isActive: user.is_active
+          }
+        });
+      });
+    } catch (error) {
+      console.error('[ResyncSession] Erro:', error);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Erro interno ao resincronizar sessão" 
+      });
+    }
+  });
+  
   // Rota adicional para diagnóstico
   app.get("/api/auth-status", (req, res) => {
     // Para compatibilidade com tipos, não podemos acessar diretamente req.session.cookie
