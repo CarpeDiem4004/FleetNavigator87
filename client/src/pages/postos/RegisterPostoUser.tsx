@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Home, Fuel } from 'lucide-react';
 import { 
   Select,
   SelectContent,
@@ -290,18 +290,46 @@ export default function RegisterPostoUser() {
                   {basesLoading ? (
                     <SelectItem value="loading" disabled>Carregando postos...</SelectItem>
                   ) : (
-                    bases
-                      .filter(base => base.type === 'posto')
-                      .map(base => (
-                        <SelectItem key={base.id} value={base.id.toString()}>
-                          Posto {base.name}
-                        </SelectItem>
-                      ))
+                    <>
+                      {/* Postos de abastecimento (com ícone de bomba) */}
+                      <SelectItem value="header-postos" disabled className="font-semibold text-primary">
+                        POSTOS DE ABASTECIMENTO
+                      </SelectItem>
+                      
+                      {bases
+                        .filter(base => base.type === 'posto')
+                        .map(base => (
+                          <SelectItem key={base.id} value={base.id.toString()}>
+                            <div className="flex items-center">
+                              <Fuel className="mr-2 h-4 w-4 text-green-600" />
+                              <span>Posto {base.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      }
+                      
+                      {/* Outras bases (com ícone de casa) */}
+                      <SelectItem value="header-bases" disabled className="font-semibold text-primary mt-2">
+                        OUTRAS BASES
+                      </SelectItem>
+                      
+                      {bases
+                        .filter(base => base.type !== 'posto')
+                        .map(base => (
+                          <SelectItem key={base.id} value={base.id.toString()}>
+                            <div className="flex items-center">
+                              <Home className="mr-2 h-4 w-4 text-blue-600" /> 
+                              <span>{base.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      }
+                    </>
                   )}
                 </SelectContent>
               </Select>
               <p className="text-xs text-gray-500">
-                Selecione o posto onde você trabalha
+                Selecione onde você trabalha. <span className="text-green-600 font-medium">Dê preferência aos postos</span> se for operador de abastecimento.
               </p>
             </div>
           </form>

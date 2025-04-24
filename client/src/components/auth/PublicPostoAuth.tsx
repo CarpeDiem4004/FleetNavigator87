@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from 'lucide-react';
+import { Loader2, Fuel } from 'lucide-react';
 
 // Configuração do Supabase
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
@@ -248,14 +248,17 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
         <>
           {/* Badge identificadora do posto e operador */}
           <div className="bg-green-50 border border-green-200 p-2 rounded-md mb-4 flex items-center justify-between">
-            <div>
-              <span className="text-sm font-medium text-green-800">
-                {localStorage.getItem('user_basename') || `Posto ${postoName}`}
-              </span>
-              <span className="mx-2 text-green-500">•</span>
-              <span className="text-sm text-green-700">
-                Operador: {user.name || user.email}
-              </span>
+            <div className="flex items-center">
+              <Fuel className="h-5 w-5 text-green-600 mr-2" />
+              <div>
+                <span className="text-sm font-medium text-green-800">
+                  {localStorage.getItem('user_basename') || `Posto ${postoName}`}
+                </span>
+                <span className="mx-2 text-green-500">•</span>
+                <span className="text-sm text-green-700">
+                  Operador: {user.name || user.email}
+                </span>
+              </div>
             </div>
             <button 
               onClick={() => {
