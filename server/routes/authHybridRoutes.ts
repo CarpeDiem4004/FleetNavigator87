@@ -7,23 +7,27 @@ import { createClient } from '@supabase/supabase-js';
 const scryptAsync = promisify(scrypt);
 const router = Router();
 
-// Configuração do Supabase
-const supabaseUrl = process.env.SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDkwMzQ2MiwiZXhwIjoyMDYwMjc5NDYyfQ.M5Yf9Y-YRsF1hRfpZcnJHWdDR3x8T0yzIKbXZTXZQOY';
-const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
-
-// Helper para comparar senhas
+// Funções auxiliares de senha
 async function comparePasswords(supplied: string, stored: string) {
   try {
     const [hashed, salt] = stored.split(".");
+    if (!hashed || !salt) {
+      console.error('Formato de senha inválido no banco de dados');
+      return false;
+    }
     const hashedBuf = Buffer.from(hashed, "hex");
     const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
     return timingSafeEqual(hashedBuf, suppliedBuf);
   } catch (error) {
-    console.error("Erro na comparação de senhas:", error);
+    console.error('Erro ao comparar senhas:', error);
     return false;
   }
 }
+
+// Configuração do Supabase
+const supabaseUrl = process.env.SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDkwMzQ2MiwiZXhwIjoyMDYwMjc5NDYyfQ.M5Yf9Y-YRsF1hRfpZcnJHWdDR3x8T0yzIKbXZTXZQOY';
+const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
 
 // Rota de login híbrido - tenta autenticar no banco Postgres local
 router.post('/login-hybrid', async (req, res) => {
