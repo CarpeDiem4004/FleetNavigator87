@@ -5,18 +5,59 @@ import { ADMIN_EMAILS, FLEET_MANAGEMENT_BASE_ID, isUserAdmin, isUserInFleetManag
  * Middleware para verificar se o usuário está autenticado
  * Retorna 401 se o usuário não estiver autenticado
  */
-export const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.isAuthenticated()) {
-    console.log('Acesso não autenticado:', {
-      url: req.originalUrl,
-      method: req.method,
-      ip: req.ip,
-      hasSession: !!req.session,
-      sessionID: req.sessionID
-    });
-    return res.status(401).json({ message: "Usuário não autenticado" });
+export const isAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
+  // Se o usuário está autenticado via sessão, continuar
+  if (req.isAuthenticated()) {
+    return next();
   }
-  return next();
+  
+  // Verificar se existe header de autorização com token JWT
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log('Tentativa de acesso não autenticado a', req.originalUrl, {
+      hasSession: !!req.session,
+      sessionID: req.sessionID,
+      cookies: req.headers.cookie,
+      origin: req.headers.origin,
+      referer: req.headers.referer,
+      userAgent: req.headers['user-agent']
+    });
+    return res.status(401).json({ message: "Não autenticado" });
+  }
+  
+  try {
+    // Verificar configurações do Supabase
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('ERRO: Variáveis de ambiente SUPABASE_URL e SUPABASE_ANON_KEY não definidas');
+      return res.status(401).json({ message: "Não autenticado" });
+    }
+    
+    // Verificar token JWT via Supabase
+    const token = authHeader.split(' ')[1];
+    
+    // Importação dinâmica do cliente Supabase
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      console.error('Erro na verificação do token JWT:', error);
+      return res.status(401).json({ message: "Não autenticado" });
+    }
+    
+    // Usuário autenticado via JWT, anexá-lo à requisição
+    (req as any).supabaseUser = user;
+    
+    // Continuar
+    return next();
+  } catch (error) {
+    console.error('Erro ao processar autenticação:', error);
+    return res.status(500).json({ message: "Erro interno do servidor" });
+  }
 };
 
 /**
@@ -83,14 +124,15 @@ export const hasMaintenanceAccess = (req: Request, res: Response, next: NextFunc
  */
 export const hasTiresAccess = (req: Request, res: Response, next: NextFunction) => {
   // Verificar autenticação primeiro
-  if (!req.isAuthenticated()) {
+  if (!req.isAuthenticated() && !(req as any).supabaseUser) {
     return res.status(401).json({ message: "Usuário não autenticado" });
   }
   
-  if (req.user && (
-    isUserAdmin(req.user) ||
-    req.user.baseId === FLEET_MANAGEMENT_BASE_ID || 
-    req.user.role === 'pneus'
+  const user = req.user || (req as any).supabaseUser;
+  if (user && (
+    isUserAdmin(user) ||
+    user.baseId === FLEET_MANAGEMENT_BASE_ID || 
+    user.role === 'pneus'
   )) {
     return next();
   }
@@ -112,13 +154,14 @@ export const hasTiresAccess = (req: Request, res: Response, next: NextFunction) 
  */
 export const isWorkshop = (req: Request, res: Response, next: NextFunction) => {
   // Verificar autenticação primeiro
-  if (!req.isAuthenticated()) {
+  if (!req.isAuthenticated() && !(req as any).supabaseUser) {
     return res.status(401).json({ message: "Usuário não autenticado" });
   }
   
-  if (req.user && (
-    req.user.role === 'oficina' || 
-    isUserAdmin(req.user)
+  const user = req.user || (req as any).supabaseUser;
+  if (user && (
+    user.role === 'oficina' || 
+    isUserAdmin(user)
   )) {
     return next();
   }
@@ -139,24 +182,26 @@ export const isWorkshop = (req: Request, res: Response, next: NextFunction) => {
  */
 export const hasBaseAccess = (req: Request, res: Response, next: NextFunction) => {
   // Verificar autenticação primeiro
-  if (!req.isAuthenticated()) {
+  if (!req.isAuthenticated() && !(req as any).supabaseUser) {
     return res.status(401).json({ message: "Usuário não autenticado" });
   }
   
+  const user = req.user || (req as any).supabaseUser;
+  
   // Se o usuário for admin, permite acesso a todas as bases
-  if (req.user && isUserAdmin(req.user)) {
+  if (user && isUserAdmin(user)) {
     return next();
   }
   
   // Verificar se o usuário tem uma base associada e se corresponde à base solicitada
   const requestedBaseId = req.params.baseId || req.query.baseId;
   
-  if (requestedBaseId && req.user && req.user.baseId !== undefined) {
+  if (requestedBaseId && user && user.baseId !== undefined) {
     // Se estiver solicitando uma base específica, verificar se corresponde à do usuário
-    if (parseInt(requestedBaseId as string) === req.user.baseId) {
+    if (parseInt(requestedBaseId as string) === user.baseId) {
       return next();
     }
-  } else if (req.user && req.user.baseId !== undefined) {
+  } else if (user && user.baseId !== undefined) {
     // Se não estiver solicitando uma base específica, continuar mas será filtrado depois
     return next();
   }
