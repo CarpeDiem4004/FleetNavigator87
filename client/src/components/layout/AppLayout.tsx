@@ -19,7 +19,8 @@ import {
   FileText,
   MessageSquare,
   Package,
-  Boxes
+  Boxes,
+  CreditCard
 } from 'lucide-react';
 import backgroundImage from '../../assets/background.jpeg';
 import { Button } from '@/components/ui/button';
@@ -64,6 +65,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     { href: '/vehicles', label: 'Veículos', icon: Car },
     // { href: '/maintenance', label: 'Manutenções', icon: Wrench },
     { href: '/tires', label: 'Pneus', icon: CircleDollarSign },
+    // Cartão de Abastecimento adicionado como item independente
+    { href: '/fuel-card', label: 'Cartão', icon: CreditCard },
     { 
       href: '#', 
       label: 'Abastecimento',
