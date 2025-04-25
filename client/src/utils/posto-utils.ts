@@ -19,7 +19,8 @@ export const POSTOS_CONHECIDOS: string[] = [
   'sp',
   'barueri',
   'blumenau',
-  'alair'
+  'alair',
+  'osasco'
 ];
 
 // Alias para compatibilidade
@@ -88,7 +89,10 @@ export const MAPEAMENTO_POSTOS: Record<string, string> = {
   'posto blumenau': 'blumenau',
   
   'alair': 'alair',
-  'posto alair': 'alair'
+  'posto alair': 'alair',
+  
+  'osasco': 'osasco',
+  'posto osasco': 'osasco'
 };
 
 /**
@@ -180,7 +184,8 @@ export function getPostoDisplayName(nomePosto: string | number): string {
     'sp': 'Posto São Paulo',
     'barueri': 'Posto Barueri',
     'blumenau': 'Posto Blumenau',
-    'alair': 'Posto Alair'
+    'alair': 'Posto Alair',
+    'osasco': 'Posto Osasco'
   };
   
   return displayNames[nomeFormatado] || `Posto ${nomeFormatado.charAt(0).toUpperCase() + nomeFormatado.slice(1)}`;
