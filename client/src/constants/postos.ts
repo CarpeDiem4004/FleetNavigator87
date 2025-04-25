@@ -3,6 +3,7 @@ export const POSTO_OSASCO = "osasco";
 export const POSTO_GUARULHOS = "guarulhos";
 // São Paulo removido - Abril/2025
 export const POSTO_CAMPINAS = "campinas";
+export const POSTO_CAMPINAS_V2 = "campinas_v2";
 export const POSTO_ABC = "abc";
 export const POSTO_SOCORRO = "socorro";
 export const POSTO_SOROCABA = "sorocaba";
@@ -12,6 +13,7 @@ export const NOME_POSTO_OSASCO = "Posto Osasco";
 export const NOME_POSTO_GUARULHOS = "Posto Alair";
 // São Paulo removido - Abril/2025
 export const NOME_POSTO_CAMPINAS = "Posto Campinas";
+export const NOME_POSTO_CAMPINAS_V2 = "Posto Campinas V2";
 export const NOME_POSTO_ABC = "Posto ABC";
 export const NOME_POSTO_SOCORRO = "Posto Socorro";
 export const NOME_POSTO_SOROCABA = "Posto Sorocaba";
@@ -33,6 +35,11 @@ export const POSTOS_INFO = [
     id: POSTO_CAMPINAS, 
     nome: NOME_POSTO_CAMPINAS, 
     descricao: 'Posto de abastecimento da região de Campinas' 
+  },
+  { 
+    id: POSTO_CAMPINAS_V2, 
+    nome: NOME_POSTO_CAMPINAS_V2, 
+    descricao: 'Nova versão do posto de abastecimento de Campinas (V2)' 
   },
   { 
     id: POSTO_ABC, 
