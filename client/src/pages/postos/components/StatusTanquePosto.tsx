@@ -539,6 +539,15 @@ export const StatusTanquePosto = forwardRef<StatusTanqueRef, StatusTanqueProps>(
   // Efeito para atualizar os dados quando o componente montar
   useEffect(() => {
     fetchDados();
+
+    // Configurar atualização automática a cada 30 segundos
+    const intervalId = setInterval(() => {
+      console.log("Atualizando dados automaticamente...");
+      fetchDados();
+    }, 30000); // 30 segundos
+
+    // Limpar o intervalo quando o componente for desmontado
+    return () => clearInterval(intervalId);
   }, [postId]);
   
   return (

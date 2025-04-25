@@ -113,6 +113,15 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
   useEffect(() => {
     console.log(`Carregando histórico do posto ${posto}, refreshTrigger: ${refreshTrigger}`);
     loadHistorico();
+
+    // Configurar atualização automática a cada 45 segundos
+    const intervalId = setInterval(() => {
+      console.log(`Atualizando histórico automaticamente para ${posto}`);
+      loadHistorico();
+    }, 45000); // 45 segundos
+
+    // Limpar o intervalo quando o componente for desmontado
+    return () => clearInterval(intervalId);
   }, [posto, refreshTrigger]);
 
   // Função para formatar o valor do combustível
