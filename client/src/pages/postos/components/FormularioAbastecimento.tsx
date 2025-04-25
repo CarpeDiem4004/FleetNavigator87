@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { CheckCircle2, Fuel } from "lucide-react";
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useSafeState } from "@/hooks/useSafeState"; // 👈 Importando o novo hook
 
 import { Button } from "@/components/ui/button";
 import {
@@ -480,19 +481,20 @@ const TelaSucesso = ({
   );
 };
 
-// Componente principal - versão totalmente refatorada para evitar erros de DOM
+// Componente principal - versão com useSafeState para evitar erros de DOM
 export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = ({ postId, onRegistroSucesso }) => {
   const { toast } = useToast();
-  const [registroSucesso, setRegistroSucesso] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isUserAdmin, setIsUserAdmin] = useState(false);
-  const [dieselValorLitro, setDieselValorLitro] = useState('5.79');
-  const [arlaValorLitro, setArlaValorLitro] = useState('4.25');
+  // Usamos useSafeState para evitar erros de "removeChild" no DOM
+  const [registroSucesso, setRegistroSucesso] = useSafeState(false);
+  const [isSubmitting, setIsSubmitting] = useSafeState(false);
+  const [isUserAdmin, setIsUserAdmin] = useSafeState(false);
+  const [dieselValorLitro, setDieselValorLitro] = useSafeState('5.79');
+  const [arlaValorLitro, setArlaValorLitro] = useSafeState('4.25');
   const processingRef = useRef(false);
   
   // Estado para armazenar o mapeamento de postos
-  const [postos, setPostos] = useState<{ id: string; nome: string }[]>([]);
-  const [postoUUID, setPostoUUID] = useState<string | null>(null);
+  const [postos, setPostos] = useSafeState<{ id: string; nome: string }[]>([]);
+  const [postoUUID, setPostoUUID] = useSafeState<string | null>(null);
   
   // Função auxiliar para obter o UUID do posto a partir do nome
   const formatPosto = (postoNome: string) => {
