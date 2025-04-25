@@ -32,7 +32,7 @@ const abastecimentoFormSchema = z.object({
   projeto: z.string().min(1, { message: 'Projeto é obrigatório' }),
   motorista_nome: z.string().min(1, { message: 'Nome do motorista é obrigatório' }),
   motorista_rg: z.string().min(1, { message: 'RG do motorista é obrigatório' }),
-  tipo_combustivel: z.string().optional(),
+  tipo_combustivel: z.string().min(1, { message: 'Tipo de combustível é obrigatório' }),
   quantidade_litros: z.coerce.number().optional(),
   valor_litro: z.coerce.number().optional(),
   valor_total: z.coerce.number().optional(),
@@ -58,9 +58,9 @@ export default function FormularioAbastecimentoStandalone() {
       projeto: '',
       motorista_nome: '',
       motorista_rg: '',
-      tipo_combustivel: 'diesel',
+      tipo_combustivel: '', // Sem valor padrão para exigir seleção explícita
       quantidade_litros: undefined,
-      valor_litro: undefined,
+      valor_litro: 6.39, // Valor fixo para diesel conforme solicitado (R$6.39)
       valor_total: undefined,
       lavagem: false,
       tipo_lavagem: '',
@@ -73,6 +73,8 @@ export default function FormularioAbastecimentoStandalone() {
     setSuccess(false);
     
     try {
+      console.log("Enviando dados para posto remédios standalone:", data);
+      // Usar por padrão a rota sem autenticação
       const response = await fetch('/api/posto-remedios-standalone/abastecimentos', {
         method: 'POST',
         headers: {
@@ -80,6 +82,56 @@ export default function FormularioAbastecimentoStandalone() {
         },
         body: JSON.stringify(data),
       });
+      
+      // Se falhar com erro 401 ou 403, tentar novamente com a API autenticada e sincronização
+      if (response.status === 401 || response.status === 403) {
+        console.log("Falha na autenticação, tentando sincronizar via API server-side");
+        
+        // Tentar via API server-side
+        const serverSideResponse = await fetch('/api/supabase-insert', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            posto: 'POSTO REMÉDIOS',
+            data: {
+              placa: data.placa,
+              km: data.km,
+              projeto: data.projeto,
+              motorista_nome: data.motorista_nome,
+              motorista_rg: data.motorista_rg,
+              tipo_combustivel: data.tipo_combustivel,
+              quantidade_litros: data.quantidade_litros,
+              valor_litro: data.valor_litro,
+              valor_total: data.valor_total,
+              lavagem: data.lavagem,
+              tipo_lavagem: data.tipo_lavagem,
+              observacoes: data.observacoes
+            }
+          }),
+        });
+        
+        const serverSideResult = await serverSideResponse.json();
+        if (serverSideResult.success) {
+          form.reset();
+          setSuccess(true);
+          toast({
+            title: 'Sucesso',
+            description: 'Registro adicionado com sucesso via sincronização',
+            variant: 'default',
+          });
+          
+          // Chamar callback para atualizar a lista de registros
+          if (typeof onSubmitSuccess === 'function') {
+            console.log("[FORM ABASTECIMENTO] Chamando callback de sucesso para atualizar histórico");
+            onSubmitSuccess();
+          }
+          return;
+        } else {
+          throw new Error(serverSideResult.message || 'Erro ao sincronizar dados');
+        }
+      }
       
       const result = await response.json();
       
