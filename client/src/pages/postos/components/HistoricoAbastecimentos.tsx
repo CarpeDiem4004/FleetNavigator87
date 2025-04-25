@@ -258,10 +258,11 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
   
   // Efeito para reagir a mudanças no refreshTrigger (atualizações forçadas)
   useEffect(() => {
-    if (refreshTrigger > 0) {
-      console.log("[HISTORICO] Atualizando dados por causa do refreshTrigger:", refreshTrigger);
-      fetchAbastecimentos();
-    }
+    console.log("[HISTORICO] Atualizando dados por causa do refreshTrigger:", refreshTrigger);
+    fetchAbastecimentos();
+    
+    // Adiciona um registro de console para confirmar que o refreshTrigger está disparando corretamente
+    console.log("[HISTORICO] Dados atualizados após refreshTrigger:", refreshTrigger);
   }, [refreshTrigger]);
   
   // Força a atualização ao clicar no botão "Ver Histórico" através da detecção de rota

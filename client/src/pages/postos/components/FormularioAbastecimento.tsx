@@ -885,13 +885,30 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
             console.log("[REGISTRO] Notificando componente pai para atualizar histórico");
             onRegistroSucesso();
             
-            // Adiciona um hash na URL para forçar atualização do histórico
+            // IMPORTANTE: Em vez de usar o hash para atualização (que já não é mais
+            // necessário devido ao onRegistroSucesso), vamos apenas limpar o
+            // hash anterior e navegar suavemente para a seção de histórico
+            
+            // Remover hash anterior (se existir) para evitar confusão
+            if (window.location.hash) {
+              history.pushState("", document.title, window.location.pathname + window.location.search);
+            }
+            
+            // Adiciona um novo hash na URL para forçar atualização do histórico
             window.location.hash = 'historicos-section';
+            
+            console.log("[HISTORICO] Forçando navegação para a seção de histórico");
             
             // Em vez de recarregar a página (o que causa o logout),
             // apenas aguardamos um pouco para a mensagem de sucesso ser exibida
             // O componente pai já foi notificado via onRegistroSucesso()
             setTimeout(() => {
+              // Forçar a atualização do histórico novamente
+              if (onRegistroSucesso) {
+                console.log("[HISTORICO] Chamando onRegistroSucesso novamente após timeout");
+                onRegistroSucesso();
+              }
+              
               // Navegar para a seção de histórico sem recarregar a página
               const historicoSection = document.getElementById('historicos-section');
               if (historicoSection) {
