@@ -564,11 +564,30 @@ const FormularioAbastecimento: React.FC<
           console.error("Erro no Supabase:", supabaseError);
         }
 
-        // 3. Atualiza a UI e histórico
+        // 3. Atualiza a UI e histórico com mensagem de sucesso mais visível
         toast({
-          title: "Sucesso!",
-          description: "Abastecimento registrado com sucesso",
+          title: "Abastecimento Registrado!",
+          description: "Os dados foram salvos com sucesso.",
+          variant: "default", // Variante padrão com estilo personalizado
+          duration: 5000, // Mostra por 5 segundos
+          className: "bg-green-100 border-green-200", // Estilo verde personalizado
+          action: (
+            <div className="flex items-center">
+              <CheckCircle2 className="h-5 w-5 text-green-500 mr-2" />
+              <span className="text-green-700 font-medium">Concluído</span>
+            </div>
+          ),
         });
+
+        // Exibe mensagem de confirmação mais ampla que será fechada depois
+        setTimeout(() => {
+          toast({
+            title: "Histórico Atualizado",
+            description: "O histórico de abastecimentos foi atualizado com o novo registro.",
+            variant: "default",
+            duration: 4000,
+          });
+        }, 1500);
 
         // Garante que está montado antes de atualizar estados
         if (mountedRef.current) {
@@ -579,13 +598,21 @@ const FormularioAbastecimento: React.FC<
             console.log("Chamando onRegistroSucesso para atualizar histórico");
             onRegistroSucesso();
 
-            // Força uma segunda atualização após breve delay
+            // Força uma segunda atualização após breve delay para garantir que os dados estejam atualizados
             setTimeout(() => {
-              if (onRegistroSucesso) {
+              if (onRegistroSucesso && mountedRef.current) {
                 onRegistroSucesso();
-                console.log("Histórico atualizado novamente para garantir");
+                console.log("Histórico atualizado novamente após 500ms para garantir");
               }
             }, 500);
+            
+            // E uma terceira atualização após tempo maior para dados mais lentos
+            setTimeout(() => {
+              if (onRegistroSucesso && mountedRef.current) {
+                onRegistroSucesso();
+                console.log("Histórico atualizado pela terceira vez após 2000ms");
+              }
+            }, 2000);
           }
 
           // Scroll para o histórico após 1s
@@ -669,10 +696,25 @@ const FormularioAbastecimento: React.FC<
         </CardHeader>
         <CardContent>
           {registroSucesso ? (
-            <TelaSucesso
-              onHistorico={handleVerHistorico}
-              onNovoRegistro={handleNovoRegistro}
-            />
+            <>
+              {/* Mensagem de sucesso grande e visível */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-start">
+                <div className="bg-green-100 p-2 rounded-full mr-4 mt-1">
+                  <CheckCircle2 className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-green-800 font-medium text-lg">Abastecimento registrado com sucesso!</h3>
+                  <p className="text-green-700 mt-1">
+                    Os dados foram salvos e o histórico foi atualizado. Também atualizamos o nível do tanque automaticamente.
+                  </p>
+                </div>
+              </div>
+              
+              <TelaSucesso
+                onHistorico={handleVerHistorico}
+                onNovoRegistro={handleNovoRegistro}
+              />
+            </>
           ) : (
             <FormularioForm
               onSubmit={processarSubmissao}

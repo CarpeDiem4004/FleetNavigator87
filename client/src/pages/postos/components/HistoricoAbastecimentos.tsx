@@ -57,10 +57,12 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
   // Função para carregar os dados
   const fetchAbastecimentos = useCallback(async () => {
     try {
-      console.log(`Buscando abastecimentos para posto: ${postId}`);
+      console.log(`Buscando abastecimentos para posto: ${postId}, timestamp: ${new Date().toISOString()}`);
       setIsLoading(true);
       
-      const response = await fetch(`/api/abastecimentos/${postId}`);
+      // Adicionar timestamp para evitar cache
+      const timestamp = new Date().getTime();
+      const response = await fetch(`/api/abastecimentos/${postId}?t=${timestamp}`);
       
       // Verificar o tipo de resposta
       const contentType = response.headers.get("content-type");
@@ -68,6 +70,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
         const responseData = await response.json();
         
         if (responseData.success) {
+          console.log(`[DEBUG] Abastecimentos obtidos: ${responseData.data?.length || 0}`);
           setData(responseData.data || []);
           setFilteredData(responseData.data || []);
         } else {
@@ -91,18 +94,29 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
     }
   }, [postId]);
 
-  // Carregar dados
+  // Carregar dados com múltiplas verificações para garantir que os dados estejam atualizados
   useEffect(() => {
     console.log(`[HISTÓRICO] Atualizando histórico de abastecimentos, refreshTrigger = ${refreshTrigger}`);
+    // Primeira busca imediata
     fetchAbastecimentos();
     
-    // Adicionar um delay e buscar novamente para garantir que todos os dados sejam obtidos
-    const timer = setTimeout(() => {
-      console.log(`[HISTÓRICO] Verificação adicional após 2 segundos`);
+    // Segunda busca após 1 segundo para garantir que os dados mais recentes sejam obtidos
+    const timer1 = setTimeout(() => {
+      console.log(`[HISTÓRICO] Primeira verificação adicional após 1 segundo`);
       fetchAbastecimentos();
-    }, 2000);
+    }, 1000);
     
-    return () => clearTimeout(timer);
+    // Terceira busca após 3 segundos para garantir que operações de banco de dados mais lentas terminem
+    const timer2 = setTimeout(() => {
+      console.log(`[HISTÓRICO] Segunda verificação adicional após 3 segundos`);
+      fetchAbastecimentos();
+    }, 3000);
+    
+    // Limpar os timers quando o componente for desmontado ou quando o refreshTrigger mudar
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
   }, [fetchAbastecimentos, refreshTrigger]);
 
   // Efeito para filtrar os dados
@@ -150,14 +164,33 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
   const handleAtualizar = useCallback(() => {
     console.log('[HISTÓRICO] Atualizando manualmente histórico de abastecimentos');
     setIsLoading(true);
+    
+    // Primeira busca imediata
     fetchAbastecimentos();
     
-    // Após um tempo, tentar atualizar novamente para garantir 
-    // que os últimos registros sejam capturados
-    setTimeout(() => {
-      console.log('[HISTÓRICO] Segunda atualização após solicitação manual');
+    // Série de verificações para garantir que tenhamos os dados mais recentes
+    const timer1 = setTimeout(() => {
+      console.log('[HISTÓRICO] Primeira verificação adicional após atualização manual');
       fetchAbastecimentos();
-    }, 1500);
+    }, 1000);
+    
+    const timer2 = setTimeout(() => {
+      console.log('[HISTÓRICO] Segunda verificação adicional após atualização manual');
+      fetchAbastecimentos();
+    }, 2500);
+    
+    const timer3 = setTimeout(() => {
+      console.log('[HISTÓRICO] Última verificação adicional após atualização manual');
+      fetchAbastecimentos();
+      setIsLoading(false); // Garantir que o loading será removido
+    }, 4000);
+    
+    // Limpar os timers para evitar vazamento de memória
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+    };
   }, [fetchAbastecimentos]);
 
   const handleExportarExcel = useCallback(() => {
