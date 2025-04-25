@@ -43,6 +43,13 @@ export async function getHistoricoPosto(req, res) {
       postoName = 'abc_v2';
       console.log("getHistoricoPosto - Identificado como ABC V2");
     }
+    // Caso especial para Alair V2
+    else if (postoName.toLowerCase() === 'alair_v2' || 
+        postoName.toLowerCase().includes('alair_v2') || 
+        postoName.toLowerCase().includes('alair v2')) {
+      postoName = 'alair_v2';
+      console.log("getHistoricoPosto - Identificado como Alair V2");
+    }
     // Caso especial para Osasco
     else if (postoName.toLowerCase() === 'osasco' || 
         postoName.toLowerCase().includes('osasco')) {
@@ -54,11 +61,11 @@ export async function getHistoricoPosto(req, res) {
       console.log("getHistoricoPosto - Formatado para:", postoName);
     }
     
-    // Caso especial para Campinas V2, Osasco, Osasco V2 e ABC V2: usar tabela diretamente em vez de view
+    // Caso especial para Campinas V2, Osasco, Osasco V2, ABC V2 e Alair V2: usar tabela diretamente em vez de view
     let querySource;
     let dataQuery;
     
-    if (postoName.toLowerCase() === 'campinas_v2' || postoName.toLowerCase() === 'osasco' || postoName.toLowerCase() === 'osasco_v2' || postoName.toLowerCase() === 'abc_v2') {
+    if (postoName.toLowerCase() === 'campinas_v2' || postoName.toLowerCase() === 'osasco' || postoName.toLowerCase() === 'osasco_v2' || postoName.toLowerCase() === 'abc_v2' || postoName.toLowerCase() === 'alair_v2') {
       console.log(`getHistoricoPosto - Usando tabela direta para ${postoName} em vez de view`);
       
       // Definir o nome da tabela com base no posto
@@ -179,6 +186,13 @@ export async function getEstatisticasMensaisPosto(req, res) {
       postoName = 'abc_v2';
       console.log("getEstatisticasMensaisPosto - Identificado como ABC V2");
     }
+    // Caso especial para Alair V2
+    else if (postoName.toLowerCase() === 'alair_v2' || 
+        postoName.toLowerCase().includes('alair_v2') || 
+        postoName.toLowerCase().includes('alair v2')) {
+      postoName = 'alair_v2';
+      console.log("getEstatisticasMensaisPosto - Identificado como Alair V2");
+    }
     // Caso especial para Osasco
     else if (postoName.toLowerCase() === 'osasco' || 
         postoName.toLowerCase().includes('osasco')) {
@@ -260,6 +274,13 @@ export async function getConsumoPorVeiculoPosto(req, res) {
         postoName.toLowerCase().includes('abc v2')) {
       postoName = 'abc_v2';
       console.log("getConsumoPorVeiculoPosto - Identificado como ABC V2");
+    }
+    // Caso especial para Alair V2
+    else if (postoName.toLowerCase() === 'alair_v2' || 
+        postoName.toLowerCase().includes('alair_v2') || 
+        postoName.toLowerCase().includes('alair v2')) {
+      postoName = 'alair_v2';
+      console.log("getConsumoPorVeiculoPosto - Identificado como Alair V2");
     }
     // Caso especial para Osasco
     else if (postoName.toLowerCase() === 'osasco' || 
@@ -343,6 +364,13 @@ export async function getComparativoCombustiveisPosto(req, res) {
       postoName = 'abc_v2';
       console.log("getComparativoCombustiveisPosto - Identificado como ABC V2");
     }
+    // Caso especial para Alair V2
+    else if (postoName.toLowerCase() === 'alair_v2' || 
+        postoName.toLowerCase().includes('alair_v2') || 
+        postoName.toLowerCase().includes('alair v2')) {
+      postoName = 'alair_v2';
+      console.log("getComparativoCombustiveisPosto - Identificado como Alair V2");
+    }
     // Caso especial para Osasco
     else if (postoName.toLowerCase() === 'osasco' || 
         postoName.toLowerCase().includes('osasco')) {
@@ -424,6 +452,13 @@ export async function checkTabelaPosto(req, res) {
         postoName.toLowerCase().includes('abc v2')) {
       postoName = 'abc_v2';
       console.log("checkTabelaPosto - Identificado como ABC V2");
+    }
+    // Caso especial para Alair V2
+    else if (postoName.toLowerCase() === 'alair_v2' || 
+        postoName.toLowerCase().includes('alair_v2') || 
+        postoName.toLowerCase().includes('alair v2')) {
+      postoName = 'alair_v2';
+      console.log("checkTabelaPosto - Identificado como Alair V2");
     }
     // Caso especial para Osasco
     else if (postoName.toLowerCase() === 'osasco' || 
@@ -511,6 +546,13 @@ export async function registrarAbastecimentoPosto(req, res) {
         postoName.toLowerCase().includes('abc v2')) {
       postoName = 'abc_v2';
       console.log("Posto identificado como ABC V2");
+    }
+    // Verificação explícita para Alair V2
+    else if (postoName.toLowerCase() === 'alair_v2' || 
+        postoName.toLowerCase().includes('alair_v2') || 
+        postoName.toLowerCase().includes('alair v2')) {
+      postoName = 'alair_v2';
+      console.log("Posto identificado como Alair V2");
     }
     // Verificação explícita para Osasco
     else if (postoName.toLowerCase() === 'osasco' || 

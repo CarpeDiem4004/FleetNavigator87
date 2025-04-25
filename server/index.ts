@@ -109,6 +109,40 @@ app.use((req, res, next) => {
     getHistoricoPosto(req, res);
   });
 
+  // Rotas especiais para ABC V2
+  // Rota de abastecimento
+  app.post('/api/abastecimento-direto-abc-v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ABC V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como abc_v2
+    req.params = { ...req.params, posto: 'abc_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Rota de histórico para ABC V2
+  app.get('/api/historico-direto-abc-v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE ABC V2 ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'abc_v2' };
+    getHistoricoPosto(req, res);
+  });
+
+  // Rotas especiais para Alair V2
+  // Rota de abastecimento
+  app.post('/api/abastecimento-direto-alair-v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ALAIR V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como alair_v2
+    req.params = { ...req.params, posto: 'alair_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Rota de histórico para Alair V2
+  app.get('/api/historico-direto-alair-v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE ALAIR V2 ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'alair_v2' };
+    getHistoricoPosto(req, res);
+  });
+
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
