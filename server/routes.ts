@@ -5851,10 +5851,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verifica se é uma solicitação de abastecimento de posto
       // Se for uma inserção na tabela de abastecimentos (qualquer versão), permitimos sem autenticação
       if (table === 'abastecimentos_postos' || table === 'abastecimentos_supabase') {
-        console.log(`Permitindo inserção de abastecimento na tabela ${table} sem autenticação`);
+        console.log(`Permitindo inserção de abastecimento na tabela ${table} sem verificação de autenticação`);
+        // Continua o processamento mesmo sem autenticação para tabelas de abastecimento
       } else {
         // Para outras tabelas, ainda exigimos autenticação
         if (!req.isAuthenticated()) {
+          console.log(`Requisição não autenticada rejeitada para tabela ${table}`);
           return res.status(401).json({
             success: false,
             message: "Não autenticado"
