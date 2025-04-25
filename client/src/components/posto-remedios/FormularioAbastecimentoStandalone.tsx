@@ -100,7 +100,27 @@ function SimpleFormularioAbastecimento() {
       });
       
       if (response.ok) {
-        alert('Registro salvo com sucesso!');
+        // Mostrar mensagem de confirmação mais visível
+        const mensagemDiv = document.createElement('div');
+        mensagemDiv.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white rounded-lg shadow-lg p-4 z-50 text-center font-bold';
+        mensagemDiv.style.minWidth = '300px';
+        mensagemDiv.innerHTML = `
+          <div class="flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>Abastecimento registrado com sucesso!</span>
+          </div>
+        `;
+        document.body.appendChild(mensagemDiv);
+        
+        // Remover a mensagem após alguns segundos
+        setTimeout(() => {
+          if (document.body.contains(mensagemDiv)) {
+            document.body.removeChild(mensagemDiv);
+          }
+        }, 5000);
+        
         e.currentTarget.reset();
         
         // Tentar executar callback
@@ -479,12 +499,41 @@ export default function FormularioAbastecimentoStandalone() {
     
     setSuccess(true);
     
-    // Notificar usuário
+    // Notificar usuário usando toast
     toast({
       title: 'Sucesso',
       description: 'Registro adicionado com sucesso',
       variant: 'default',
     });
+    
+    // Mostrar mensagem de confirmação mais visível na tela
+    try {
+      const mensagemDiv = document.createElement('div');
+      mensagemDiv.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white rounded-lg shadow-lg p-4 z-50 text-center font-bold';
+      mensagemDiv.style.minWidth = '300px';
+      mensagemDiv.innerHTML = `
+        <div class="flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          <span>Abastecimento registrado com sucesso!</span>
+        </div>
+      `;
+      document.body.appendChild(mensagemDiv);
+      
+      // Remover a mensagem após alguns segundos
+      setTimeout(() => {
+        try {
+          if (document.body.contains(mensagemDiv)) {
+            document.body.removeChild(mensagemDiv);
+          }
+        } catch (err) {
+          console.error("Erro ao remover mensagem:", err);
+        }
+      }, 5000);
+    } catch (err) {
+      console.error("Erro ao mostrar mensagem de sucesso:", err);
+    }
     
     // Chamar callback para atualizar a lista de registros com um pequeno atraso
     // para permitir que a lista seja atualizada depois que o banco de dados for atualizado
