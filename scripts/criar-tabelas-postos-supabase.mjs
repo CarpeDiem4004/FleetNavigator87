@@ -3,8 +3,10 @@
  * Esta solução organiza os dados por posto, facilitando consultas e evitando problemas de compatibilidade de campos
  */
 
-const { Pool } = require('pg');
-require('dotenv').config();
+import pg from 'pg';
+const { Pool } = pg;
+import dotenv from 'dotenv';
+dotenv.config();
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL

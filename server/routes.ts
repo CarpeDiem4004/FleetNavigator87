@@ -6066,6 +6066,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Registrar as rotas do Supabase específicas para postos
+  app.use(postoSupabaseRoutes);
+
+  // Para debugging, adicionar rota para listar todas as tabelas relacionadas a postos
+  app.get("/api/debug/list-posto-tables", async (req, res) => {
+    try {
+      const query = `
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+          AND table_name LIKE 'abastecimentos_posto_%'
+        ORDER BY table_name;
+      `;
+      
+      const result = await pool.query(query);
+      
+      res.json({
+        success: true,
+        count: result.rows.length,
+        tables: result.rows.map(row => row.table_name)
+      });
+    } catch (error) {
+      console.error("Erro ao listar tabelas de postos:", error);
+      res.status(500).json({
+        success: false,
+        message: "Erro ao listar tabelas de postos",
+        error: String(error)
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

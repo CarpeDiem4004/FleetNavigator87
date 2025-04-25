@@ -3,8 +3,10 @@
  * Este script cria visualizações avançadas para análise e relatórios
  */
 
-const { Pool } = require('pg');
-require('dotenv').config();
+import pg from 'pg';
+const { Pool } = pg;
+import dotenv from 'dotenv';
+dotenv.config();
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL
