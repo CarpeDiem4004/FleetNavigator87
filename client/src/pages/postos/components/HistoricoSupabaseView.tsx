@@ -37,12 +37,12 @@ interface HistoricoAbastecimento {
   placa: string;
   km: number;
   tipo_combustivel: string;
-  quantidade_litros: number;
+  quantidade_litros: number | string;  // Pode vir como string do banco
   nome_motorista: string;
   rg_motorista?: string;
   nome_operador: string;
-  valor_litro: number;
-  valor_total: number;
+  valor_litro: number | string;  // Pode vir como string do banco
+  valor_total: number | string;  // Pode vir como string do banco
   tipo_veiculo?: string;
   observacoes?: string;
   lavagem: boolean;
@@ -116,11 +116,12 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
   }, [posto, refreshTrigger]);
 
   // Função para formatar o valor do combustível
-  const formatCurrency = (value: number): string => {
+  const formatCurrency = (value: number | string): string => {
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
-    }).format(value);
+    }).format(numValue);
   };
 
   // Função para exportar histórico para Excel
@@ -269,10 +270,14 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        {item.quantidade_litros.toFixed(2)}
+                        {typeof item.quantidade_litros === 'number' 
+                          ? item.quantidade_litros.toFixed(2) 
+                          : parseFloat(item.quantidade_litros).toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right font-semibold">
-                        {formatCurrency(item.valor_total)}
+                        {formatCurrency(typeof item.valor_total === 'number' 
+                          ? item.valor_total 
+                          : parseFloat(item.valor_total))}
                       </TableCell>
                     </TableRow>
                   ))
