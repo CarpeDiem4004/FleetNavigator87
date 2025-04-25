@@ -177,11 +177,13 @@ export default function FormularioAbastecimentoStandalone() {
       }
     } catch (error) {
       console.error('Erro ao enviar dados:', error);
-      toast({
-        title: 'Erro',
-        description: 'Ocorreu um erro ao processar a solicitação',
-        variant: 'destructive',
-      });
+      if (isMounted.current) {
+        toast({
+          title: 'Erro',
+          description: 'Ocorreu um erro ao processar a solicitação',
+          variant: 'destructive',
+        });
+      }
     } finally {
       // Atualizar estados apenas se o componente estiver montado
       if (isMounted.current) {
