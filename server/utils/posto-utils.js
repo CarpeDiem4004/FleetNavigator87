@@ -8,6 +8,7 @@
  */
 export const POSTOS_CONHECIDOS = [
   'campinas',
+  'campinas_v2',
   'ribeirao',
   'maceio',
   'caxias',
@@ -29,6 +30,11 @@ export const MAPEAMENTO_POSTOS = {
   'campinas': 'campinas',
   'posto campinas': 'campinas',
   'cps': 'campinas',
+  
+  'campinas v2': 'campinas_v2',
+  'campinasv2': 'campinas_v2',
+  'posto campinas v2': 'campinas_v2',
+  'posto_campinas_v2': 'campinas_v2',
   
   'ribeirao': 'ribeirao',
   'ribeirao preto': 'ribeirao',
@@ -148,6 +154,7 @@ export function getPostoDisplayName(nomePosto) {
   // Mapeia nomes formatados para nomes de exibição
   const displayNames = {
     'campinas': 'Posto Campinas',
+    'campinas_v2': 'Posto Campinas V2',
     'ribeirao': 'Posto Ribeirão Preto',
     'maceio': 'Posto Maceió',
     'caxias': 'Posto Caxias do Sul',
