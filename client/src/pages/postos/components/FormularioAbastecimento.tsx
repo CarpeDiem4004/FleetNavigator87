@@ -536,7 +536,6 @@ const FormularioAbastecimento: React.FC<
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
           body: JSON.stringify(dadosAbastecimento),
         });
@@ -638,8 +637,7 @@ const FormularioAbastecimento: React.FC<
                   "Content-Type": "application/json",
                   "Cache-Control": "no-cache, no-store, must-revalidate",
                   "Pragma": "no-cache",
-                  "Expires": "0",
-                  Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+                  "Expires": "0"
                 },
                 body: JSON.stringify({
                   tipo_combustivel: data.tipo,
