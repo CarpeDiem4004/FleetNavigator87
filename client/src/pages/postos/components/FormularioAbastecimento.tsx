@@ -699,7 +699,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     }
   }, []);
   
-  // Função para processamento do formulário
+  // Função para processamento do formulário - versão simplificada
   const processarSubmissao = useCallback(async (data: AbastecimentoValues) => {
     // Verificação adicional para prevenir envios duplicados
     if (processingRef.current) {
@@ -707,59 +707,32 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       return;
     }
     
-    // Desmonta qualquer componente existente para evitar conflitos de DOM
-    try {
-      setRegistroSucesso(false);
-    } catch (e) {
-      // Ignora qualquer erro aqui
-    }
-    
     // Marca como em processamento
     processingRef.current = true;
     setIsSubmitting(true);
     
     try {
-      console.log('Iniciando registro de abastecimento');
-      
-      // Apenas adiciona o valor_litro se o usuário for admin
-      // Conforme o padrão solicitado, não enviamos o valor_litro para não-admins
-      const userRole = localStorage.getItem('user_role');
+      console.log('Iniciando registro de abastecimento simplificado');
       
       // Definimos valor fixo para o diesel conforme solicitado (R$6.39)
       const valorPorLitro = data.tipo === 'Diesel' ? 6.39 : Number(data.valor_litro);
       
-      // Obter data e hora atual
-      const dataRegistro = new Date();
-      
-      // Dados formatados para inserção - adaptados para o esquema do Supabase
-      const abastecimentoData = {
+      // Preparar dados para a API no formato que comprovadamente funciona
+      const dadosAbastecimento = {
+        quantidade_litros: Number(data.quantidade),
         placa: data.placa.toUpperCase(),
-        km_atual: Number(data.km), // Usando km_atual conforme o esquema do Supabase
-        tipo_combustivel: data.tipo, // Usando tipo_combustivel conforme o esquema do Supabase
-        litros: Number(data.quantidade),
-        preco_litro: valorPorLitro, // Usando preco_litro conforme o esquema do Supabase
+        km_atual: Number(data.km),
+        posto_id: postId, // Usar o nome do posto, o backend converte para UUID
+        preco_litro: valorPorLitro,
         valor_total: Number(data.valor_total),
-        project: data.projeto,
+        tipo_combustivel: data.tipo,
         nome_motorista: data.motorista,
-        motorista_rg: data.motorista_rg,
+        rg_motorista: data.motorista_rg,
         nome_operador: data.operador,
-        posto: formatPosto(postId), // Agora retorna UUID válido para o posto
-        tipo_veiculo: data.tipo_veiculo,
-        created_at: dataRegistro
+        project: data.projeto
       };
       
-      // Adicionando logs para diagnóstico
-      console.log(`Posto original: ${postId}, UUID convertido: ${abastecimentoData.posto}`);
-      
-      console.log('Dados de abastecimento a serem enviados:', abastecimentoData);
-      
-      // Verificação de conexão
-      if (!navigator.onLine) {
-        throw new Error('Sem conexão com a internet. Verifique sua rede e tente novamente.');
-      }
-      
-      // Obtém o token de autenticação
-      const userToken = localStorage.getItem('auth_token') || '';
+      console.log('Enviando dados para /api/abastecimentos:', dadosAbastecimento);
       
       // Notifica usuário sobre o início do processamento
       toast({
@@ -767,314 +740,38 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         description: 'Enviando informações para o servidor...',
       });
       
-      // Tenta três abordagens diferentes para garantir inserção
-      let registroSalvo = false;
+      // Usa o endpoint de API que sabemos que funciona
+      const response = await fetch('/api/abastecimentos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dadosAbastecimento)
+      });
       
-      // Tentativa 1: Via cliente admin
-      try {
-        console.log('Tentativa 1: Inserindo via cliente admin');
-        // Importa o cliente admin diretamente
-        const { supabaseAdmin, supabaseUrl, supabaseServiceKey } = await import('@/lib/supabase-client');
+      // Processa a resposta
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        console.log('Registro bem-sucedido:', result);
         
-        // Exibe informações do cliente para depuração
-        console.log('Supabase Admin Config:', {
-          url: supabaseUrl,
-          hasServiceKey: !!supabaseServiceKey,
-          keyStart: supabaseServiceKey.substring(0, 10) + '...'
+        // Notifica sucesso
+        toast({
+          title: 'Abastecimento Registrado',
+          description: 'Abastecimento realizado com sucesso!',
         });
         
-        // Usando o cliente supabase admin diretamente
-        const { data: result, error } = await supabaseAdmin
-          .from('abastecimentos_postos')
-          .insert([abastecimentoData]);
-          
-        if (!error) {
-          console.log('Registro via cliente admin bem-sucedido', result);
-          registroSalvo = true;
-        } else {
-          console.warn('Erro na tentativa 1:', error.message);
-        }
-      } catch (e) {
-        console.error('Exceção na tentativa 1:', e);
+        // Usa setTimeout para evitar erros de DOM
+        setTimeout(() => {
+          setRegistroSucesso(true);
+          if (onRegistroSucesso) {
+            console.log("[REGISTRO] Notificando componente pai para atualizar histórico");
+            onRegistroSucesso();
+          }
+        }, 100);
+      } else {
+        throw new Error(result.message || 'Erro ao registrar abastecimento');
       }
-      
-      // Tentativa 2: Via insertData
-      if (!registroSalvo) {
-        try {
-          console.log('Tentativa 2: Inserindo via insertData');
-          const { insertData } = await import('@/lib/supabase-client');
-          
-          const resultado = await insertData('abastecimentos_postos', abastecimentoData);
-          
-          if (resultado.success) {
-            console.log('Registro via insertData bem-sucedido');
-            registroSalvo = true;
-          } else {
-            console.warn('Erro na tentativa 2:', resultado.error);
-          }
-        } catch (e) {
-          console.error('Exceção na tentativa 2:', e);
-        }
-      }
-      
-      // Implementação de abordagem com o modelo de duas tabelas do Supabase
-      if (!registroSalvo) {
-        try {
-          console.log('Tentativa 0: Usando modelo de duas tabelas (Supabase)');
-          
-          // 1. Tenta usar a rota nova que implementa o modelo de duas tabelas
-          try {
-            const valorTotal = Number(data.valor_total);
-            
-            // Dados formatados para o novo modelo de duas tabelas
-            const dadosAbastecimento = {
-              quantidade_litros: Number(data.quantidade),
-              placa: data.placa.toUpperCase(),
-              km_atual: Number(data.km),
-              posto_id: formatPosto(postId),
-              preco_litro: valorPorLitro,
-              valor_total: valorTotal,
-              tipo_combustivel: data.tipo,
-              nome_motorista: data.motorista,
-              rg_motorista: data.motorista_rg,
-              nome_operador: data.operador,
-              project: data.projeto
-            };
-            
-            console.log('Enviando para novo endpoint /api/abastecimentos:', dadosAbastecimento);
-            
-            const apiResponse = await fetch('/api/abastecimentos', {
-              method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${userToken}` 
-              },
-              body: JSON.stringify(dadosAbastecimento)
-            });
-            
-            if (apiResponse.ok) {
-              const result = await apiResponse.json();
-              console.log('Registro usando modelo de duas tabelas bem-sucedido:', result);
-              registroSalvo = true;
-              return; // Encerra o processamento se for bem-sucedido
-            } else {
-              console.warn('Erro ao usar modelo de duas tabelas:', await apiResponse.text());
-            }
-          } catch (dualTableError) {
-            console.error('Exceção ao usar modelo de duas tabelas:', dualTableError);
-          }
-          
-          console.log('Tentativa 1: Usando Supabase diretamente (método tradicional)');
-          
-          // 2. Tenta usar Supabase diretamente como fallback
-          try {
-            const { supabase } = await import('@/lib/supabase-client');
-            
-            // Dados formatados para o Supabase - ajustado ao esquema tradicional
-            const dadosAbastecimento = {
-              quantity_litros: Number(data.quantidade),
-              litros: Number(data.quantidade), // Mantendo litros para compatibilidade
-              preco_litro: userRole === 'admin' ? Number(data.valor_litro) : undefined,
-              valor_total: Number(data.valor_total),
-              placa: data.placa.toUpperCase(),
-              km_atual: Number(data.km),
-              posto: formatPosto(postId),
-              nome_motorista: data.motorista,
-              motorista_rg: data.motorista_rg, 
-              nome_operador: data.operador,
-              project: data.projeto,
-              tipo_combustivel: data.tipo,
-              tipo_veiculo: data.tipo_veiculo,
-              created_at: dataRegistro 
-            };
-            
-            const { data: resultadoInsercao, error } = await supabase
-              .from('abastecimentos_postos')
-              .insert([dadosAbastecimento]);
-              
-            if (!error) {
-              console.log('Registro via Supabase direto bem-sucedido:', resultadoInsercao);
-              registroSalvo = true;
-              return; // Encerra o processamento se for bem-sucedido
-            } else {
-              console.warn('Erro ao usar Supabase direto:', error.message);
-            }
-          } catch (supabaseError) {
-            console.error('Exceção ao usar Supabase direto:', supabaseError);
-          }
-          
-          console.log('Tentativa 2: Usando API REST tradicional');
-          
-          // 3. Se os métodos anteriores falharem, tenta pelo endpoint tradicional
-          const apiResponse = await fetch('/api/registro/abastecimento', {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${userToken}` 
-            },
-            body: JSON.stringify({
-              quantity_litros: Number(data.quantidade),
-              litros: Number(data.quantidade),
-              preco_litro: userRole === 'admin' ? Number(data.valor_litro) : undefined,
-              valor_total: Number(data.valor_total),
-              placa: data.placa.toUpperCase(),
-              km_atual: Number(data.km),
-              posto: formatPosto(postId),
-              nome_motorista: data.motorista,
-              motorista_rg: data.motorista_rg,
-              nome_operador: data.operador,
-              project: data.projeto,
-              tipo_combustivel: data.tipo,
-              tipo_veiculo: data.tipo_veiculo,
-              created_at: dataRegistro
-            })
-          });
-          
-          if (apiResponse.ok) {
-            console.log('Registro via API REST tradicional bem-sucedido');
-            registroSalvo = true;
-            return; // Encerra o processamento se for bem-sucedido
-          } else {
-            console.warn('Erro na API REST tradicional:', await apiResponse.text());
-          }
-        } catch (apiError) {
-          console.error('Falha nas tentativas iniciais:', apiError);
-        }
-      }
-          
-      // Se a nova abordagem falhar, continua com as abordagens existentes como fallback
-      if (!registroSalvo) {
-        try {
-          console.log('Tentativa 3: Usando abordagens adicionais (fallback)');
-          
-          // Tentativa 3.1: POST para a API do servidor Express
-          try {
-            console.log('Tentativa 3.1: Via API local');
-            
-            // Enviamos para a rota de API local que fará o trabalho
-            const localResponse = await fetch('/api/registro/abastecimento', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include', // Envia os cookies de autenticação
-              body: JSON.stringify({
-                placa: abastecimentoData.placa,
-                km: abastecimentoData.km_atual, // Usando km_atual conforme o esquema correto do Supabase
-                tipo: abastecimentoData.tipo_combustivel, // Usando tipo_combustivel conforme esquema do Supabase
-                quantidade: abastecimentoData.litros,
-                valor_litro: abastecimentoData.preco_litro, // Usando preco_litro conforme esquema do Supabase
-                valor_total: abastecimentoData.valor_total,
-                projeto: data.projeto,
-                motorista: data.motorista,
-                motorista_rg: data.motorista_rg, // Adicionado campo RG do motorista
-                operador: data.operador,
-                posto: abastecimentoData.posto, // Use "posto" em vez de "posto_id"
-                tipo_veiculo: abastecimentoData.tipo_veiculo // Incluindo o tipo de veículo
-              })
-            });
-            
-            if (localResponse.ok) {
-              console.log('Registro via API local bem-sucedido');
-              registroSalvo = true;
-            } else {
-              console.warn('API local respondeu com:', localResponse.status);
-            }
-          } catch (localApiError) {
-            console.error('Falha na tentativa 3.1:', localApiError);
-          }
-          
-          // Tentativa 3.2: Enviar com formato alternativo
-          if (!registroSalvo) {
-            try {
-              console.log('Tentativa 3.2: Via Supabase com formato simplificado');
-              
-              // Dados super simplificados para aumentar chance de sucesso
-              const dadosSimples = {
-                placa: data.placa.toUpperCase(),
-                quantity_litros: Number(data.quantidade), // Adicionando campo quantity_litros
-                litros: Number(data.quantidade), // Mantendo litros para compatibilidade
-                km_atual: Number(data.km), // Adicionando km_atual conforme o esquema correto
-                preco_litro: Number(data.valor_litro), // Usando preco_litro conforme esquema do Supabase
-                valor_total: data.valor_total,
-                posto: formatPosto(postId), // Use "posto" em vez de "posto_id"
-                created_at: new Date().toISOString(), // Usando created_at diretamente
-                nome_motorista: data.motorista, // Usando nome_motorista em vez de motorista
-                motorista_rg: data.motorista_rg,
-                tipo_combustivel: data.tipo, // Usando tipo_combustivel conforme esquema do Supabase
-                tipo_veiculo: data.tipo_veiculo
-              };
-              
-              // Importa a key de serviço do Supabase
-              const { supabaseUrl, supabaseServiceKey } = await import('@/lib/supabase-client');
-              
-              const response = await fetch(`${supabaseUrl}/rest/v1/abastecimentos_postos`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'apikey': supabaseServiceKey,
-                  'Authorization': `Bearer ${supabaseServiceKey}`,
-                  'Prefer': 'return=minimal'
-                },
-                body: JSON.stringify(dadosSimples)
-              });
-              
-              if (response.ok) {
-                console.log('Registro via formato simplificado bem-sucedido');
-                registroSalvo = true;
-              } else {
-                console.warn('Formato simplificado falhou com status:', response.status);
-              }
-            } catch (simplifiedError) {
-              console.error('Falha na tentativa 3.2:', simplifiedError);
-            }
-          }
-          
-          // Tentativa 3.3: Último recurso - armazenar localmente e tentar batch
-          if (!registroSalvo) {
-            try {
-              console.log('Tentativa 3.3: Salvando localmente para tentativa futura');
-              
-              // Salva os dados do abastecimento para tentar enviar depois
-              const pendingUploads = JSON.parse(localStorage.getItem('pendingAbastecimentos') || '[]');
-              pendingUploads.push({
-                ...abastecimentoData,
-                timestamp: Date.now(),
-                attempts: 0,
-              });
-              localStorage.setItem('pendingAbastecimentos', JSON.stringify(pendingUploads));
-              
-              console.log('Dados salvos localmente para sincronização futura');
-              // Consideramos parcialmente bem-sucedido se salvo localmente
-              registroSalvo = true;
-            } catch (localStorageError) {
-              console.error('Erro ao salvar no localStorage:', localStorageError);
-            }
-          }
-        } catch (e) {
-          console.error('Exceção geral na tentativa 3:', e);
-        }
-      }
-      
-      // Verifica resultado final
-      if (!registroSalvo) {
-        throw new Error('Não foi possível salvar o registro após múltiplas tentativas');
-      }
-      
-      // Notifica sucesso
-      toast({
-        title: 'Abastecimento Registrado',
-        description: 'Abastecimento realizado com sucesso!',
-      });
-      
-      // Atualiza interface com requestAnimationFrame para garantir execução segura
-      window.requestAnimationFrame(() => {
-        setRegistroSucesso(true);
-        
-        // Notifica o componente pai para atualizar o histórico
-        if (onRegistroSucesso) {
-          console.log("[REGISTRO] Notificando componente pai para atualizar histórico");
-          onRegistroSucesso();
-        }
-      });
       
     } catch (error: any) {
       // Tratamento de erro
