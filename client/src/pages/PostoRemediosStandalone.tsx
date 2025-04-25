@@ -34,11 +34,19 @@ export default function PostoRemediosStandalone() {
     // Definir a função de callback para atualizar os registros após o cadastro
     (window as any).onSubmitSuccessPostoRemedios = () => {
       console.log("[PostoRemediosStandalone] Callback de atualização chamado");
-      carregarRegistros();
+      
+      // Adicionar um atraso para garantir que os dados foram persistidos
+      // completamente no banco de dados antes de buscar
+      console.log("[PostoRemediosStandalone] Aguardando 1 segundo antes de atualizar...");
+      setTimeout(() => {
+        console.log("[PostoRemediosStandalone] Atualizando registros após timeout");
+        carregarRegistros();
+      }, 1000); // Esperar 1 segundo
     };
     
     // Limpar a função quando o componente for desmontado
     return () => {
+      console.log("[PostoRemediosStandalone] Limpando callback global");
       delete (window as any).onSubmitSuccessPostoRemedios;
     };
   }, []);

@@ -72,123 +72,191 @@ export default function FormularioAbastecimentoStandalone() {
   });
 
   const onSubmit = async (data: AbastecimentoFormValues) => {
+    // Verificar se o componente já foi desmontado
+    if (!isMounted.current) {
+      console.log("Formulário foi desmontado, cancelando submissão");
+      return;
+    }
+
+    console.log("Iniciando envio do formulário...");
     setLoading(true);
     setSuccess(false);
     
     try {
-      console.log("Enviando dados para posto remédios standalone (usando inserção server-side):", data);
+      console.log("Preparando dados para envio:", data);
       
-      // Usar diretamente a API server-side de inserção para contornar problemas de autenticação
-      const serverSideResponse = await fetch('/api/supabase-insert', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          posto: 'POSTO REMÉDIOS',
-          // Não é necessário enviar a tabela explicitamente, a API vai detectar pelo campo 'posto'
-          data: {
-            placa: data.placa.toUpperCase(), // Garantir letras maiúsculas
-            km: data.km,
-            projeto: data.projeto,
-            motorista_nome: data.motorista_nome,
-            motorista_rg: data.motorista_rg || 'Não informado',
-            tipo_combustivel: data.tipo_combustivel,
-            quantidade_litros: data.quantidade_litros,
-            valor_litro: data.valor_litro || 6.39, // Valor padrão se não for informado
-            valor_total: data.valor_total,
-            lavagem: data.lavagem,
-            tipo_lavagem: data.tipo_lavagem,
-            observacoes: data.observacoes,
-            tipo_veiculo: 'frota' // Valor padrão
-          }
-        }),
-      });
-      
-      if (serverSideResponse.ok) {
-        const serverSideResult = await serverSideResponse.json();
-        
-        if (serverSideResult.success) {
-          // Só atualizar o estado se o componente ainda estiver montado
-          if (isMounted.current) {
-            form.reset();
-            setSuccess(true);
-            toast({
-              title: 'Sucesso',
-              description: 'Registro adicionado com sucesso',
-              variant: 'default',
-            });
-            
-            // Chamar callback para atualizar a lista de registros
-            if (typeof onSubmitSuccess === 'function') {
-              console.log("[FORM ABASTECIMENTO] Chamando callback de sucesso para atualizar histórico");
-              onSubmitSuccess();
-            }
-          }
-        } else {
-          throw new Error(serverSideResult.message || 'Erro ao processar o registro');
+      // Dados formatados para envio
+      const formattedData = {
+        posto: 'POSTO REMÉDIOS',
+        data: {
+          placa: data.placa.toUpperCase(),
+          km: data.km,
+          projeto: data.projeto,
+          motorista_nome: data.motorista_nome,
+          motorista_rg: data.motorista_rg || 'Não informado',
+          tipo_combustivel: data.tipo_combustivel,
+          quantidade_litros: data.quantidade_litros,
+          valor_litro: data.valor_litro || 6.39,
+          valor_total: data.valor_total,
+          lavagem: data.lavagem,
+          tipo_lavagem: data.tipo_lavagem,
+          observacoes: data.observacoes,
+          tipo_veiculo: 'frota'
         }
-      } else {
-        // Se falhar, tentar como fallback a API do posto remédios standalone
-        console.log("Falha na API server-side, tentando API standalone como fallback");
-        
-        const response = await fetch('/api/posto-remedios-standalone/abastecimentos', {
+      };
+      
+      console.log("Enviando para API server-side:", formattedData);
+      
+      // Usar um timeout para evitar que a requisição fique presa indefinidamente
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos de timeout
+      
+      try {
+        const serverSideResponse = await fetch('/api/supabase-insert', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(data),
+          body: JSON.stringify(formattedData),
+          signal: controller.signal
         });
         
-        const result = await response.json();
+        clearTimeout(timeoutId);
         
-        if (result.success) {
-          // Só atualizar o estado se o componente ainda estiver montado
-          if (isMounted.current) {
-            form.reset();
-            setSuccess(true);
-            toast({
-              title: 'Sucesso',
-              description: 'Registro adicionado com sucesso',
-              variant: 'default',
-            });
-            
-            // Chamar callback para atualizar a lista de registros
-            if (typeof onSubmitSuccess === 'function') {
-              console.log("[FORM ABASTECIMENTO] Chamando callback de sucesso para atualizar histórico");
-              onSubmitSuccess();
-            }
+        console.log("Resposta da API:", serverSideResponse.status);
+        
+        if (serverSideResponse.ok) {
+          const serverSideResult = await serverSideResponse.json();
+          console.log("Resultado do processamento:", serverSideResult);
+          
+          if (serverSideResult.success) {
+            handleSuccess("API principal");
+          } else {
+            console.error("Erro retornado pela API:", serverSideResult.message);
+            throw new Error(serverSideResult.message || 'Erro ao processar o registro');
           }
         } else {
-          if (isMounted.current) {
-            toast({
-              title: 'Erro',
-              description: result.message || 'Erro ao adicionar registro',
-              variant: 'destructive',
-            });
+          console.log("Resposta da API não foi OK, tentando fallback");
+          throw new Error("API principal falhou com status " + serverSideResponse.status);
+        }
+      } catch (primaryError) {
+        console.error("Erro na API principal:", primaryError);
+        
+        // Tentar API de fallback
+        console.log("Tentando API de fallback...");
+        try {
+          const fallbackResponse = await fetch('/api/posto-remedios-standalone/abastecimentos', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+          });
+          
+          if (fallbackResponse.ok) {
+            const fallbackResult = await fallbackResponse.json();
+            
+            if (fallbackResult.success) {
+              handleSuccess("API fallback");
+            } else {
+              handleError("Erro API fallback: " + (fallbackResult.message || "Falha no processamento"));
+            }
+          } else {
+            handleError("API fallback falhou com status " + fallbackResponse.status);
           }
+        } catch (fallbackError) {
+          console.error("Erro completo na API fallback:", fallbackError);
+          handleError("Falha em ambas as APIs. Por favor, tente novamente mais tarde.");
         }
       }
-    } catch (error) {
-      console.error('Erro ao enviar dados:', error);
-      if (isMounted.current) {
-        toast({
-          title: 'Erro',
-          description: 'Ocorreu um erro ao processar a solicitação',
-          variant: 'destructive',
-        });
-      }
+    } catch (outerError) {
+      console.error('Erro geral na submissão:', outerError);
+      handleError("Erro no processamento do formulário");
     } finally {
-      // Atualizar estados apenas se o componente estiver montado
+      // Só atualizar estados se o componente ainda estiver montado
       if (isMounted.current) {
         setLoading(false);
-        setTimeout(() => {
-          if (isMounted.current) {
-            setSuccess(false);
-          }
-        }, 3000);
+        
+        // Remover status de sucesso após 3 segundos
+        if (success) {
+          setTimeout(() => {
+            if (isMounted.current) {
+              setSuccess(false);
+            }
+          }, 3000);
+        }
       }
     }
+  };
+  
+  // Função para lidar com sucesso do envio
+  const handleSuccess = (source: string) => {
+    if (!isMounted.current) return;
+    
+    console.log(`Sucesso (via ${source}): registro adicionado com sucesso`);
+    
+    // Reiniciar o formulário com os valores padrão - mas manter o valor do litro
+    const valorLitroAtual = form.getValues("valor_litro");
+    form.reset();
+    
+    // Restaurar o valor por litro após resetar o formulário
+    if (valorLitroAtual) {
+      setTimeout(() => {
+        if (isMounted.current) {
+          form.setValue("valor_litro", valorLitroAtual);
+        }
+      }, 100);
+    }
+    
+    setSuccess(true);
+    
+    // Notificar usuário
+    toast({
+      title: 'Sucesso',
+      description: 'Registro adicionado com sucesso',
+      variant: 'default',
+    });
+    
+    // Chamar callback para atualizar a lista de registros com um pequeno atraso
+    // para permitir que a lista seja atualizada depois que o banco de dados for atualizado
+    setTimeout(() => {
+      if (!isMounted.current) return;
+      
+      if (typeof onSubmitSuccess === 'function') {
+        console.log("[FORM ABASTECIMENTO] Chamando callback de sucesso para atualizar histórico");
+        try {
+          onSubmitSuccess();
+          console.log("[FORM ABASTECIMENTO] Callback executado com sucesso");
+        } catch (callbackError) {
+          console.error("Erro ao chamar callback de sucesso:", callbackError);
+        }
+      } else {
+        console.log("[FORM ABASTECIMENTO] Callback não disponível ou não é uma função");
+      }
+    }, 500);
+    
+    // Garantir que a página não recarrega
+    setTimeout(() => {
+      if (isMounted.current) {
+        // Foco no primeiro campo para facilitar a próxima entrada
+        const firstInput = document.querySelector('input[name="placa"]') as HTMLInputElement;
+        if (firstInput) {
+          firstInput.focus();
+        }
+      }
+    }, 500);
+  };
+  
+  // Função para lidar com erros
+  const handleError = (message: string) => {
+    if (!isMounted.current) return;
+    
+    console.error("Erro no processamento:", message);
+    toast({
+      title: 'Erro',
+      description: message,
+      variant: 'destructive',
+    });
   };
 
   // Opções de projetos
