@@ -159,12 +159,12 @@ export const StatusTanquePosto = forwardRef<StatusTanqueRef, StatusTanqueProps>(
         
         // Atualizar os valores de litro se existirem
         if (configLocal.diesel_valor_litro) {
-          setDieselValorLitro(configLocal.diesel_valor_litro);
-          setDieselStatusValorLitro(configLocal.diesel_valor_litro);
+          setDieselValorLitro(Number(configLocal.diesel_valor_litro));
+          setDieselStatusValorLitro(Number(configLocal.diesel_valor_litro));
         }
         if (configLocal.arla_valor_litro) {
-          setArlaValorLitro(configLocal.arla_valor_litro);
-          setArlaStatusValorLitro(configLocal.arla_valor_litro);
+          setArlaValorLitro(Number(configLocal.arla_valor_litro));
+          setArlaStatusValorLitro(Number(configLocal.arla_valor_litro));
         }
       }
       
@@ -190,19 +190,19 @@ export const StatusTanquePosto = forwardRef<StatusTanqueRef, StatusTanqueProps>(
           setConfigId(config.id);
           
           // Atualizar os estados do formulário
-          setDieselNivel(config.diesel_nivel);
-          setDieselCapacidade(config.diesel_capacidade);
-          setArlaNivel(config.arla_nivel);
-          setArlaCapacidade(config.arla_capacidade);
+          setDieselNivel(Number(config.diesel_nivel));
+          setDieselCapacidade(Number(config.diesel_capacidade));
+          setArlaNivel(Number(config.arla_nivel));
+          setArlaCapacidade(Number(config.arla_capacidade));
           
           // Atualizar os valores de preço por litro se existirem
           if (config.diesel_valor_litro) {
-            setDieselValorLitro(config.diesel_valor_litro);
-            setDieselStatusValorLitro(config.diesel_valor_litro);
+            setDieselValorLitro(Number(config.diesel_valor_litro));
+            setDieselStatusValorLitro(Number(config.diesel_valor_litro));
           }
           if (config.arla_valor_litro) {
-            setArlaValorLitro(config.arla_valor_litro);
-            setArlaStatusValorLitro(config.arla_valor_litro);
+            setArlaValorLitro(Number(config.arla_valor_litro));
+            setArlaStatusValorLitro(Number(config.arla_valor_litro));
           }
           
           // Salvar também no localStorage como backup
@@ -210,10 +210,10 @@ export const StatusTanquePosto = forwardRef<StatusTanqueRef, StatusTanqueProps>(
           
           // Retornar as configurações
           return {
-            dieselNivel: config.diesel_nivel,
-            dieselCapacidade: config.diesel_capacidade,
-            arlaNivel: config.arla_nivel,
-            arlaCapacidade: config.arla_capacidade
+            dieselNivel: Number(config.diesel_nivel),
+            dieselCapacidade: Number(config.diesel_capacidade),
+            arlaNivel: Number(config.arla_nivel),
+            arlaCapacidade: Number(config.arla_capacidade)
           };
         }
       } catch (apiError) {
@@ -222,10 +222,10 @@ export const StatusTanquePosto = forwardRef<StatusTanqueRef, StatusTanqueProps>(
         // Se temos configuração local, retornamos ela
         if (configLocal) {
           return {
-            dieselNivel: configLocal.diesel_nivel,
-            dieselCapacidade: configLocal.diesel_capacidade,
-            arlaNivel: configLocal.arla_nivel,
-            arlaCapacidade: configLocal.arla_capacidade
+            dieselNivel: Number(configLocal.diesel_nivel),
+            dieselCapacidade: Number(configLocal.diesel_capacidade),
+            arlaNivel: Number(configLocal.arla_nivel),
+            arlaCapacidade: Number(configLocal.arla_capacidade)
           };
         }
       }
@@ -381,11 +381,11 @@ export const StatusTanquePosto = forwardRef<StatusTanqueRef, StatusTanqueProps>(
     const configLocal = getStoredConfig(postId);
     if (configLocal) {
       if (configLocal.diesel_valor_litro) {
-        setDieselValorLitro(configLocal.diesel_valor_litro);
+        setDieselValorLitro(Number(configLocal.diesel_valor_litro));
         console.log("Definindo valor do diesel do localStorage:", configLocal.diesel_valor_litro);
       }
       if (configLocal.arla_valor_litro) {
-        setArlaValorLitro(configLocal.arla_valor_litro);
+        setArlaValorLitro(Number(configLocal.arla_valor_litro));
         console.log("Definindo valor do ARLA do localStorage:", configLocal.arla_valor_litro);
       }
     }
@@ -485,25 +485,29 @@ export const StatusTanquePosto = forwardRef<StatusTanqueRef, StatusTanqueProps>(
         
       // Determinar capacidade e nível base com base nas configurações ou valores padrão
       // Prioridade: 1) Configuração da API, 2) Configuração local, 3) Valores padrão
-      const dieselCapacidade = 
+      const dieselCapacidade = Number(
         (config && config.dieselCapacidade) || 
         (configLocal && configLocal.diesel_capacidade) || 
-        statusTanque.diesel.capacidade;
+        statusTanque.diesel.capacidade
+      );
         
-      const nivelDieselBase = 
+      const nivelDieselBase = Number(
         (config && config.dieselNivel) || 
         (configLocal && configLocal.diesel_nivel) || 
-        5000;
+        5000
+      );
         
-      const arlaCapacidade = 
+      const arlaCapacidade = Number(
         (config && config.arlaCapacidade) || 
         (configLocal && configLocal.arla_capacidade) || 
-        statusTanque.arla.capacidade;
+        statusTanque.arla.capacidade
+      );
         
-      const nivelArlaBase = 
+      const nivelArlaBase = Number(
         (config && config.arlaNivel) || 
         (configLocal && configLocal.arla_nivel) || 
-        1000;
+        1000
+      );
       
       // Calcular níveis atuais e porcentagens
       const nivelDiesel = Math.min(dieselCapacidade, nivelDieselBase - totalDieselAbastecido + totalDieselRecebido);
