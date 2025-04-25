@@ -789,7 +789,19 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         project: data.projeto
       };
       
-      console.log('Enviando dados para /api/abastecimentos:', dadosAbastecimento);
+      // Detecção se é o posto Remédios para usar endpoint específico
+      const isPostoRemedios = 
+        postId.toLowerCase() === 'remédios' || 
+        postId.toLowerCase() === 'remedios' ||
+        postId.toLowerCase() === 'posto remédios' ||
+        postId.toLowerCase() === 'posto remedios';
+      
+      // Endpoint correto baseado no tipo de posto
+      const endpoint = isPostoRemedios 
+        ? '/api/posto-remedios-standalone/abastecimentos' 
+        : '/api/abastecimentos';
+      
+      console.log(`Enviando dados para ${endpoint}:`, dadosAbastecimento);
       
       // Notifica usuário sobre o início do processamento
       toast({
@@ -797,7 +809,6 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         description: 'Enviando informações para o servidor...',
       });
       
-      // Usa o endpoint de API que sabemos que funciona
       // Adiciona token de autenticação, se disponível
       const accessToken = localStorage.getItem('access_token');
       const headers: Record<string, string> = {
@@ -809,10 +820,27 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         headers['Authorization'] = `Bearer ${accessToken}`;
       }
       
-      const response = await fetch('/api/abastecimentos', {
+      // Se for Posto Remédios, adapta o formato dos dados para corresponder à API específica
+      const dadosFormatados = isPostoRemedios 
+        ? {
+            placa: dadosAbastecimento.placa,
+            km: dadosAbastecimento.km_atual,
+            projeto: dadosAbastecimento.project,
+            motorista_nome: dadosAbastecimento.nome_motorista,
+            motorista_rg: dadosAbastecimento.rg_motorista,
+            tipo_combustivel: dadosAbastecimento.tipo_combustivel.toLowerCase(),
+            quantidade_litros: dadosAbastecimento.quantidade_litros,
+            valor_litro: dadosAbastecimento.preco_litro,
+            valor_total: dadosAbastecimento.valor_total,
+            lavagem: false,
+            tipo_veiculo: 'frota'
+          }
+        : dadosAbastecimento;
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers,
-        body: JSON.stringify(dadosAbastecimento)
+        body: JSON.stringify(dadosFormatados)
       });
       
       // Processa a resposta

@@ -41,7 +41,58 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
       setIsLoading(true);
       console.log("[FETCH] Buscando abastecimentos para o posto:", postId);
       
-      // Usar o novo endpoint específico para abastecimentos
+      // Verificar se é o posto Remédios para usar o endpoint específico
+      const isPostoRemedios = 
+        postId.toLowerCase() === 'remédios' || 
+        postId.toLowerCase() === 'remedios' ||
+        postId.toLowerCase() === 'posto remédios' ||
+        postId.toLowerCase() === 'posto remedios';
+      
+      // Se for o posto Remédios, usar o endpoint específico para ele
+      if (isPostoRemedios) {
+        try {
+          console.log("[FETCH] Usando endpoint específico para Posto Remédios");
+          const response = await fetch('/api/posto-remedios-standalone/abastecimentos');
+          const data = await response.json();
+          
+          console.log("[FETCH] Resposta do endpoint do Posto Remédios:", data);
+          
+          if (data.success && data.data && Array.isArray(data.data)) {
+            // Ordenar por data (mais recentes primeiro)
+            const resultados = data.data.sort((a: any, b: any) => {
+              return new Date(b.created_at || b.data_registro).getTime() - 
+                     new Date(a.created_at || a.data_registro).getTime();
+            });
+            
+            console.log("[FETCH] Dados recuperados via endpoint do Posto Remédios:", resultados.length);
+            
+            // Adaptar o formato dos dados para corresponder ao modelo esperado
+            const abastecimentosFormatados = resultados.map((item: any) => ({
+              id: item.id,
+              placa: item.placa,
+              km_atual: item.km,
+              tipo_combustivel: item.tipo_combustivel || 'N/A',
+              litros: item.quantidade_litros,
+              preco_litro: item.valor_litro,
+              valor_total: item.valor_total,
+              nome_motorista: item.motorista_nome,
+              nome_operador: 'Sistema', // Não tem esse campo no modelo específico
+              project: item.projeto,
+              posto: 'Remédios',
+              created_at: item.created_at || item.data_registro
+            }));
+            
+            // Atualizar o estado com os dados
+            setAbastecimentos(abastecimentosFormatados as Abastecimento[]);
+            setIsLoading(false);
+            return;
+          }
+        } catch (error) {
+          console.error("[FETCH] Erro ao buscar pelo endpoint do Posto Remédios:", error);
+        }
+      }
+      
+      // Usar o endpoint genérico para abastecimentos (para outros postos)
       try {
         const response = await fetch(`/api/abastecimentos/${postId}`);
         const data = await response.json();
