@@ -7,22 +7,27 @@ export async function enviarAbastecimentoSupabase(dadosAbastecimento: any) {
   try {
     console.log('Enviando abastecimento para o Supabase:', dadosAbastecimento);
     
-    // Formatação de dados para o Supabase
+    // Formatação de dados para a nova tabela abastecimentos_supabase
     const dadosFormatados = {
+      codigo_posto: dadosAbastecimento.posto_id || dadosAbastecimento.posto || 'desconhecido',
+      nome_posto: dadosAbastecimento.posto_id 
+        ? dadosAbastecimento.posto_id.charAt(0).toUpperCase() + dadosAbastecimento.posto_id.slice(1).toLowerCase()
+        : dadosAbastecimento.posto || 'Desconhecido',
       placa: dadosAbastecimento.placa ? dadosAbastecimento.placa.toUpperCase() : 'DESCONHECIDO',
+      motorista: dadosAbastecimento.nome_motorista || 'Não informado',
+      rg_motorista: dadosAbastecimento.rg_motorista || 'Não informado',
       km_atual: Number(dadosAbastecimento.km_atual) || 0,
+      km_anterior: Number(dadosAbastecimento.km_anterior) || 0,
       tipo_combustivel: dadosAbastecimento.tipo_combustivel || 'Diesel',
-      litros: Number(dadosAbastecimento.quantidade_litros || dadosAbastecimento.litros) || 0,
-      quantity_litros: Number(dadosAbastecimento.quantidade_litros || dadosAbastecimento.litros) || 0,
-      nome_motorista: dadosAbastecimento.nome_motorista || 'Não informado',
-      nome_operador: dadosAbastecimento.nome_operador || 'Não informado',
-      posto: dadosAbastecimento.posto_id || dadosAbastecimento.posto || 'Não informado',
-      project: dadosAbastecimento.project || 'Não informado',
+      quantidade_litros: Number(dadosAbastecimento.quantidade_litros || dadosAbastecimento.litros) || 0,
       preco_litro: Number(dadosAbastecimento.preco_litro) || 0,
       valor_total: Number(dadosAbastecimento.valor_total) || 0,
-      rg_motorista: dadosAbastecimento.rg_motorista || 'Não informado',
+      projeto: dadosAbastecimento.project || 'Não informado',
+      observacoes: dadosAbastecimento.observacoes || '',
+      operador: dadosAbastecimento.nome_operador || 'Não informado',
+      origem: 'replit',
       created_at: dadosAbastecimento.created_at || new Date().toISOString(),
-      sincronizado_supabase: true
+      updated_at: new Date().toISOString()
     };
 
     // Log para debug
@@ -47,7 +52,7 @@ export async function enviarAbastecimentoSupabase(dadosAbastecimento: any) {
         method: 'POST',
         headers,
         body: JSON.stringify({
-          table: 'abastecimentos_postos',
+          table: 'abastecimentos_supabase',
           data: dadosFormatados
         })
       });
@@ -67,7 +72,7 @@ export async function enviarAbastecimentoSupabase(dadosAbastecimento: any) {
     try {
       console.log('Tentando inserir com cliente Supabase normal...');
       const { data, error } = await supabase
-        .from('abastecimentos_postos')
+        .from('abastecimentos_supabase')
         .insert([dadosFormatados])
         .select();
 
@@ -85,7 +90,7 @@ export async function enviarAbastecimentoSupabase(dadosAbastecimento: any) {
     try {
       console.log('Tentando inserir com cliente admin...');
       const { data: adminData, error: adminError } = await supabaseAdmin
-        .from('abastecimentos_postos')
+        .from('abastecimentos_supabase')
         .insert([dadosFormatados])
         .select();
 
