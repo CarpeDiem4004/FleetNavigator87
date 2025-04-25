@@ -53,8 +53,16 @@ export default function PostoRemediosStandalone() {
       const response = await fetch(url);
       const data = await response.json();
       
-      console.log("[POSTO REMEDIOS] Resposta da API:", data);
-      console.log("[POSTO REMEDIOS] Total de registros:", data.data?.length || 0);
+      // Log detalhado da resposta da API
+      console.log("[POSTO REMEDIOS] Resposta da API completa:", data);
+      console.log("[POSTO REMEDIOS] Status da API:", data.success);
+      console.log("[POSTO REMEDIOS] Total de registros retornados:", data.data?.length || 0);
+      
+      // Se existirem registros, vamos imprimir o primeiro para depuração
+      if (data.data && data.data.length > 0) {
+        console.log("[POSTO REMEDIOS] Primeiro registro:", data.data[0]);
+        console.log("[POSTO REMEDIOS] Campos do primeiro registro:", Object.keys(data.data[0]).join(", "));
+      }
       
       if (data.success) {
         // Garantir que os campos necessários estão presentes

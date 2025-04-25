@@ -50,6 +50,11 @@ export default function HistoricoAbastecimentosTabela({
   // Usar registros externos se fornecidos, caso contrário, usar internos
   const registros = externalRegistros || internalRegistros;
   const loading = externalLoading !== undefined ? externalLoading : internalLoading;
+  
+  // Log para depuração
+  console.log("[HISTÓRICO TABELA] Modo:", externalRegistros ? "Externo" : "Interno");
+  console.log("[HISTÓRICO TABELA] Total de registros:", registros?.length || 0);
+  console.log("[HISTÓRICO TABELA] Estado de carregamento:", loading);
 
   // Carregar registros - dependendo do modo (interno ou externo)
   const carregarRegistros = async () => {
