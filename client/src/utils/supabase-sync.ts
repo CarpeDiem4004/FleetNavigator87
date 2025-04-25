@@ -1,4 +1,5 @@
-import { supabase, supabaseAdmin } from '@/lib/supabase-client';
+// Já não precisamos mais importar clientes Supabase pois usamos apenas a API do servidor
+// import { supabase, supabaseAdmin } from '@/lib/supabase-client';
 
 /**
  * Envia um registro de abastecimento para o Supabase
@@ -33,79 +34,38 @@ export async function enviarAbastecimentoSupabase(dadosAbastecimento: any) {
     // Log para debug
     console.log('Dados formatados para envio:', dadosFormatados);
 
-    // Estratégia 1: Primeiro tenta diretamente via API para garantir autenticação via servidor
-    try {
-      console.log('Tentando inserir via API do servidor...');
-      
-      // Adiciona token de autenticação, se disponível
-      const accessToken = localStorage.getItem('access_token');
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
-      };
-      
-      // Se tiver token, adiciona ao cabeçalho
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      
-      const apiResponse = await fetch('/api/supabase-insert', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          table: 'abastecimentos_supabase',
-          data: dadosFormatados
-        })
-      });
-      
-      if (apiResponse.ok) {
-        const result = await apiResponse.json();
-        console.log('Inserção via API do servidor bem-sucedida:', result);
-        return { success: true, data: result.data };
-      }
-      
-      console.warn('Inserção via API do servidor falhou, tentando método alternativo');
-    } catch (apiError) {
-      console.error('Erro ao tentar inserção via API:', apiError);
+    // Usando apenas a estratégia via API do servidor que não requer autenticação direta com Supabase
+    console.log('Realizando inserção usando a API do servidor...');
+    
+    // Adiciona token de autenticação, se disponível
+    const accessToken = localStorage.getItem('access_token');
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    
+    // Se tiver token, adiciona ao cabeçalho
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
     }
-
-    // Estratégia 2: Tenta com cliente normal
-    try {
-      console.log('Tentando inserir com cliente Supabase normal...');
-      const { data, error } = await supabase
-        .from('abastecimentos_supabase')
-        .insert([dadosFormatados])
-        .select();
-
-      if (!error) {
-        console.log('Inserção com cliente normal bem-sucedida:', data);
-        return { success: true, data };
-      }
-      
-      console.warn('Erro ao inserir com cliente normal:', error);
-    } catch (clientError) {
-      console.error('Exceção ao inserir com cliente normal:', clientError);
+    
+    const apiResponse = await fetch('/api/supabase-insert', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        table: 'abastecimentos_supabase',
+        data: dadosFormatados
+      })
+    });
+    
+    if (apiResponse.ok) {
+      const result = await apiResponse.json();
+      console.log('Inserção via API do servidor bem-sucedida:', result);
+      return { success: true, data: result.data };
+    } else {
+      const errorText = await apiResponse.text();
+      console.error('Erro na resposta da API:', errorText);
+      throw new Error(`Erro na API: ${apiResponse.status} - ${errorText}`);
     }
-
-    // Estratégia 3: Tenta com cliente admin
-    try {
-      console.log('Tentando inserir com cliente admin...');
-      const { data: adminData, error: adminError } = await supabaseAdmin
-        .from('abastecimentos_supabase')
-        .insert([dadosFormatados])
-        .select();
-
-      if (!adminError) {
-        console.log('Inserção com cliente admin bem-sucedida:', adminData);
-        return { success: true, data: adminData };
-      }
-      
-      console.error('Erro ao inserir com cliente admin:', adminError);
-    } catch (adminClientError) {
-      console.error('Exceção ao inserir com cliente admin:', adminClientError);
-    }
-
-    // Se chegou aqui, todas as tentativas falharam
-    throw new Error('Todas as tentativas de inserção no Supabase falharam');
   } catch (error) {
     console.error('Erro ao enviar abastecimento para o Supabase:', error);
     return { success: false, error: error instanceof Error ? error.message : String(error) };
