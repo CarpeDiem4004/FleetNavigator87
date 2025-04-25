@@ -582,21 +582,47 @@ const FormularioAbastecimento: React.FC<
           throw new Error(result.message || "Erro na API principal");
         }
 
-        // 2. Depois tenta o Supabase (opcional)
+        // 2. Depois tenta o Supabase com tabela específica para este posto (opcional)
         try {
-          const supabaseResult =
-            await enviarAbastecimentoSupabase(dadosAbastecimento);
-          if (!supabaseResult.success) {
-            console.error("Erro no Supabase:", supabaseResult.error);
-            toast({
-              title: "Aviso",
-              description:
-                "Registro salvo, mas houve erro ao enviar para o backup",
-              variant: "default",
-            });
+          // Importação dinâmica para não quebrar o build se o serviço não estiver disponível
+          const { postoSupabaseService } = await import("@/services/PostoSupabaseService");
+          
+          // Verifica primeiro se a tabela deste posto existe
+          const tabelaExiste = await postoSupabaseService.verificarTabelaPosto(postId);
+          
+          if (tabelaExiste) {
+            // Registra o abastecimento na tabela específica deste posto
+            const supabaseResult = await postoSupabaseService.registrarAbastecimento(
+              postId, 
+              dadosAbastecimento
+            );
+            
+            if (supabaseResult.success) {
+              console.log(`Abastecimento registrado com sucesso no Supabase para o posto ${postId}:`, supabaseResult.data);
+            } else {
+              console.error(`Erro ao registrar abastecimento no Supabase para o posto ${postId}:`, supabaseResult.error);
+              toast({
+                title: "Aviso",
+                description: "Registro salvo, mas houve erro ao enviar para o backup no Supabase",
+                variant: "default",
+              });
+            }
+          } else {
+            console.warn(`A tabela para o posto ${postId} não existe no Supabase ainda. Tentando método antigo.`);
+            
+            // Tenta o método antigo como fallback
+            const supabaseResult = await enviarAbastecimentoSupabase(dadosAbastecimento);
+            if (!supabaseResult.success) {
+              console.error("Erro no Supabase (método antigo):", supabaseResult.error);
+              toast({
+                title: "Aviso",
+                description: "Registro salvo, mas houve erro ao enviar para o backup",
+                variant: "default",
+              });
+            }
           }
         } catch (supabaseError) {
-          console.error("Erro no Supabase:", supabaseError);
+          console.error("Erro ao tentar usar o Supabase:", supabaseError);
         }
 
         // 3. Atualiza a UI e histórico com mensagem de sucesso mais visível

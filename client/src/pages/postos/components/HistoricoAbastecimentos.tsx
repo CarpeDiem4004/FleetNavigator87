@@ -62,9 +62,42 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
       console.log(`[HISTÓRICO] Buscando abastecimentos para posto: ${postId}, timestamp único: ${uniqueTimestamp}`);
       setIsLoading(true);
       
+      // NOVO: Primeiro tenta buscar da tabela específica do posto no Supabase (se disponível)
+      let dadosSupabase = null;
+      
+      try {
+        // Importação dinâmica para não quebrar o build se o serviço não estiver disponível
+        const { postoSupabaseService } = await import("@/services/PostoSupabaseService");
+        
+        // Verifica primeiro se a tabela deste posto existe
+        const tabelaExiste = await postoSupabaseService.verificarTabelaPosto(postId);
+        
+        if (tabelaExiste) {
+          console.log(`[HISTÓRICO] Buscando histórico do Supabase para o posto ${postId}`);
+          
+          // Busca os dados diretamente do Supabase
+          const resultado = await postoSupabaseService.obterHistorico(postId);
+          
+          if (resultado.success && resultado.data && resultado.data.length > 0) {
+            console.log(`[HISTÓRICO] Dados obtidos diretamente do Supabase: ${resultado.data.length} registros`);
+            setData(resultado.data);
+            setFilteredData(resultado.data);
+            setIsLoading(false);
+            return; // Encerra a função aqui se conseguiu os dados do Supabase
+          } else {
+            console.log(`[HISTÓRICO] Nenhum dado encontrado no Supabase ou erro. Continuando com API.`);
+          }
+        } else {
+          console.log(`[HISTÓRICO] Tabela para posto ${postId} não existe no Supabase. Continuando com API.`);
+        }
+      } catch (supabaseError) {
+        console.error("[HISTÓRICO] Erro ao tentar acessar dados do Supabase:", supabaseError);
+      }
+      
+      // EXISTENTE: Continua com a API normal se não conseguiu dados do Supabase
       // Usar o timestamp único na requisição
       const url = `/api/abastecimentos/${postId}?t=${uniqueTimestamp}`;
-      console.log(`[HISTÓRICO] Fazendo requisição para: ${url}`);
+      console.log(`[HISTÓRICO] Fazendo requisição para API: ${url}`);
       
       const response = await fetch(url, {
         // Adicionar cabeçalhos para evitar cache
