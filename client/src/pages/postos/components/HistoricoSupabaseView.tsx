@@ -1,9 +1,30 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import SincronizarSupabaseButton from '@/components/posto-remedios/SincronizarSupabaseButton';
-import { format, parseISO } from 'date-fns';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import { 
+  Table, 
+  TableBody, 
+  TableCaption, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Loader2, RefreshCw, Download, Info } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
-import { postoSupabaseService } from '@/services/PostoSupabaseService';
 
 interface HistoricoSupabaseViewProps {
   posto: string;
@@ -11,309 +32,243 @@ interface HistoricoSupabaseViewProps {
   refreshTrigger?: number;
 }
 
+interface HistoricoAbastecimento {
+  id: number;
+  placa: string;
+  km: number;
+  tipo_combustivel: string;
+  quantidade_litros: number;
+  nome_motorista: string;
+  rg_motorista?: string;
+  nome_operador: string;
+  valor_litro: number;
+  valor_total: number;
+  tipo_veiculo?: string;
+  observacoes?: string;
+  lavagem: boolean;
+  tipo_lavagem?: string;
+  data_hora: string;
+  created_at: string;
+}
+
 const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({ 
-  posto,
+  posto, 
   showLimparButton = false,
-  refreshTrigger = 0,
+  refreshTrigger = 0
 }) => {
-  const [data, setData] = useState<any[]>([]);
-  const [filteredData, setFilteredData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [dateStart, setDateStart] = useState('');
-  const [dateEnd, setDateEnd] = useState('');
+  const [historico, setHistorico] = useState<HistoricoAbastecimento[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastRefreshTime, setLastRefreshTime] = useState<Date>(new Date());
 
-  // Funções de formatação
-  const formatarData = (dateString: string) => {
-    if (!dateString) return '-';
-    try {
-      return format(parseISO(dateString), 'dd/MM/yyyy', { locale: ptBR });
-    } catch (error) {
-      console.error("Erro ao formatar data:", error);
-      return dateString || '-';
-    }
-  };
-
-  const formatarDataHora = (dateString: string) => {
-    if (!dateString) return '-';
-    try {
-      return format(parseISO(dateString), 'dd/MM/yyyy HH:mm', { locale: ptBR });
-    } catch (error) {
-      console.error("Erro ao formatar data e hora:", error);
-      return dateString || '-';
-    }
-  };
-
-  const formatarNumero = (numero: number) => {
-    if (numero === undefined || numero === null) return '-';
-    return numero.toLocaleString('pt-BR');
-  };
-
-  const formatarValor = (valor: number) => {
-    if (valor === undefined || valor === null) return '-';
-    return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  };
-
-  // Carregar dados da view consolidada específica do posto
-  const fetchHistorico = useCallback(async () => {
+  const loadHistorico = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      console.log(`[HISTÓRICO SUPABASE] Buscando histórico para posto: ${posto}`);
+      // Prevenção de cache adicionando timestamp na URL
+      const timestamp = new Date().getTime();
+      const response = await axios.get(`/api/posto-supabase/historico/${posto.toLowerCase()}?t=${timestamp}`);
       
-      const result = await postoSupabaseService.obterHistorico(posto);
+      console.log('Resposta do histórico:', response);
       
-      if (result.success) {
-        console.log(`[HISTÓRICO SUPABASE] Dados obtidos com sucesso: ${result.data.length} registros`);
-        if (result.data.length > 0) {
-          console.log(`[HISTÓRICO SUPABASE] Primeiro registro: Placa=${result.data[0].placa}, Data=${result.data[0].data_registro || result.data[0].created_at}`);
-        }
-        setData(result.data);
-        setFilteredData(result.data);
+      if (response.data && response.data.success) {
+        setHistorico(response.data.data || []);
+        setLastRefreshTime(new Date());
       } else {
-        console.error('[HISTÓRICO SUPABASE] Erro ao buscar histórico:', result.message);
-        setError(result.message || 'Erro ao buscar dados do histórico');
-        setData([]);
-        setFilteredData([]);
+        setError(response.data?.error || 'Erro ao carregar o histórico');
+        console.error('Erro na resposta:', response.data);
       }
-    } catch (error) {
-      console.error('[HISTÓRICO SUPABASE] Erro ao carregar histórico:', error);
-      setError('Falha ao carregar os dados. Verifique sua conexão.');
-      setData([]);
-      setFilteredData([]);
+    } catch (err: any) {
+      console.error('Erro ao carregar histórico:', err);
+      setError(`Erro ao carregar histórico: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
-  }, [posto]);
+  };
 
-  // Carregar dados com múltiplas verificações para garantir que os dados estejam atualizados
+  // Carregar dados quando o componente montar ou quando o refreshTrigger mudar
   useEffect(() => {
-    console.log(`[HISTÓRICO SUPABASE] Atualizando histórico, refreshTrigger = ${refreshTrigger}`);
-    // Primeira busca imediata
-    fetchHistorico();
-    
-    // Segunda busca após 1 segundo para garantir que os dados mais recentes sejam obtidos
-    const timer = setTimeout(() => {
-      console.log('[HISTÓRICO SUPABASE] Executando busca de verificação após delay');
-      fetchHistorico();
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, [fetchHistorico, refreshTrigger]);
+    console.log(`Carregando histórico do posto ${posto}, refreshTrigger: ${refreshTrigger}`);
+    loadHistorico();
+  }, [posto, refreshTrigger]);
 
-  // Filtro combinado (termo de busca e datas)
-  useEffect(() => {
-    if (!data.length) {
-      setFilteredData([]);
-      return;
-    }
+  // Função para formatar o valor do combustível
+  const formatCurrency = (value: number): string => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
 
-    let result = [...data];
-
-    // Aplicar filtro de busca
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter(item => {
-        return (
-          (item.placa && item.placa.toLowerCase().includes(term)) ||
-          (item.motorista && item.motorista.toLowerCase().includes(term)) ||
-          (item.motorista_nome && item.motorista_nome.toLowerCase().includes(term)) ||
-          (item.motorista_rg && item.motorista_rg.toLowerCase().includes(term)) ||
-          (item.operador && item.operador.toLowerCase().includes(term)) ||
-          (item.nome_operador && item.nome_operador.toLowerCase().includes(term)) ||
-          (item.tipo_combustivel && item.tipo_combustivel.toLowerCase().includes(term))
-        );
-      });
-    }
-
-    // Aplicar filtro de data inicial
-    if (dateStart) {
-      const startDate = new Date(dateStart);
-      startDate.setHours(0, 0, 0, 0);
-      
-      result = result.filter(item => {
-        const itemDate = item.data_registro || item.created_at;
-        if (!itemDate) return true;
-        
-        const date = new Date(itemDate);
-        return date >= startDate;
-      });
-    }
-
-    // Aplicar filtro de data final
-    if (dateEnd) {
-      const endDate = new Date(dateEnd);
-      endDate.setHours(23, 59, 59, 999);
-      
-      result = result.filter(item => {
-        const itemDate = item.data_registro || item.created_at;
-        if (!itemDate) return true;
-        
-        const date = new Date(itemDate);
-        return date <= endDate;
-      });
-    }
-
-    setFilteredData(result);
-  }, [data, searchTerm, dateStart, dateEnd]);
-
-  // Exportar para Excel
+  // Função para exportar histórico para Excel
   const exportToExcel = () => {
-    const exportData = filteredData.map(item => ({
-      'Placa': item.placa || '',
-      'Data': formatarDataHora(item.data_registro || item.created_at || ''),
-      'Hodômetro': item.hodometro_atual || item.km_atual || 0,
-      'Combustível': item.tipo_combustivel || '',
-      'Litros': item.litros || item.quantidade_litros || item.quantity_litros || 0,
-      'Valor Litro': item.valor_litro || item.preco_litro || 0,
-      'Valor Total': item.valor_total || 0,
-      'Motorista': item.motorista || item.motorista_nome || item.nome_motorista || '',
-      'RG Motorista': item.motorista_rg || item.rg_motorista || '',
-      'Operador': item.operador || item.nome_operador || ''
+    if (historico.length === 0) return;
+
+    // Formatar os dados para o Excel
+    const workbookData = historico.map(item => ({
+      'ID': item.id,
+      'Data/Hora': item.data_hora,
+      'Placa': item.placa,
+      'KM': item.km,
+      'Tipo de Combustível': item.tipo_combustivel,
+      'Quantidade (L)': item.quantidade_litros,
+      'Motorista': item.nome_motorista,
+      'RG Motorista': item.rg_motorista || '-',
+      'Operador': item.nome_operador,
+      'Valor por Litro': item.valor_litro,
+      'Valor Total': item.valor_total,
+      'Tipo de Veículo': item.tipo_veiculo || '-',
+      'Lavagem': item.lavagem ? 'Sim' : 'Não',
+      'Tipo de Lavagem': item.tipo_lavagem || '-',
+      'Observações': item.observacoes || '-'
     }));
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    // Criar planilha
+    const worksheet = XLSX.utils.json_to_sheet(workbookData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Abastecimentos");
-    
-    // Ajustar largura das colunas
-    const maxWidth = exportData.reduce((width, item) => {
-      return Math.max(width, item['Motorista']?.length || 0, item['Placa']?.length || 0);
-    }, 10);
-    
-    worksheet["!cols"] = [
-      { width: 10 }, // Placa
-      { width: 20 }, // Data
-      { width: 10 }, // Hodômetro
-      { width: 15 }, // Combustível
-      { width: 8 }, // Litros
-      { width: 10 }, // Valor Litro
-      { width: 10 }, // Valor Total
-      { width: maxWidth }, // Motorista
-      { width: 15 }, // RG Motorista
-      { width: maxWidth } // Operador
-    ];
-    
-    XLSX.writeFile(workbook, `Abastecimentos_${posto}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Histórico");
+
+    // Exportar para Excel
+    const date = new Date();
+    const formattedDate = format(date, 'dd-MM-yyyy_HH-mm', {locale: ptBR});
+    const fileName = `historico_posto_${posto}_${formattedDate}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
   };
 
   return (
-    <div className="mt-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Histórico de Abastecimentos</h2>
-        <div className="flex space-x-2">
-          <button
-            onClick={exportToExcel}
-            disabled={filteredData.length === 0}
-            className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Exportar Excel
-          </button>
-          
-          <SincronizarSupabaseButton posto={posto} onSyncComplete={fetchHistorico} />
-        </div>
-      </div>
-      
-      <div className="flex flex-col md:flex-row gap-2 mb-4">
-        <div className="flex-1">
-          <input
-            type="text"
-            placeholder="Buscar por placa, motorista, RG..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-3 py-2 border rounded"
-          />
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2">
+    <Card className="h-full">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-center">
           <div>
-            <label className="block text-sm">Data Inicial:</label>
-            <input
-              type="date"
-              value={dateStart}
-              onChange={(e) => setDateStart(e.target.value)}
-              className="px-3 py-2 border rounded"
-            />
+            <CardTitle className="text-lg">Histórico de Abastecimentos</CardTitle>
+            <CardDescription>
+              {isLoading ? 'Carregando dados...' : 
+                `Últimos registros do posto ${posto.toUpperCase()}`}
+            </CardDescription>
           </div>
-          <div>
-            <label className="block text-sm">Data Final:</label>
-            <input
-              type="date"
-              value={dateEnd}
-              onChange={(e) => setDateEnd(e.target.value)}
-              className="px-3 py-2 border rounded"
-            />
+          <div className="flex gap-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={loadHistorico} 
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Atualizar histórico</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={exportToExcel}
+                    disabled={historico.length === 0 || isLoading}
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Exportar para Excel</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
-      </div>
-
-      {error && (
-        <div className="p-4 mb-4 bg-red-100 border border-red-200 text-red-700 rounded">
-          <strong>Erro:</strong> {error}
-        </div>
-      )}
-
-      {isLoading ? (
-        <div className="flex justify-center items-center h-40">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
-      ) : filteredData.length > 0 ? (
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border">
-            <thead className="sticky top-0 bg-gray-100">
-              <tr>
-                <th className="px-4 py-2 border">Placa</th>
-                <th className="px-4 py-2 border">Data</th>
-                <th className="px-4 py-2 border">Hodômetro</th>
-                <th className="px-4 py-2 border">Combustível</th>
-                <th className="px-4 py-2 border">Litros</th>
-                <th className="px-4 py-2 border">Valor/Litro</th>
-                <th className="px-4 py-2 border">Valor Total</th>
-                <th className="px-4 py-2 border">Motorista</th>
-                <th className="px-4 py-2 border">RG</th>
-                <th className="px-4 py-2 border">Operador</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredData.map((item, index) => (
-                <tr key={item.id || index} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
-                  <td className="px-4 py-2 border">{item.placa || '-'}</td>
-                  <td className="px-4 py-2 border">{formatarDataHora(item.data_registro || item.created_at || '')}</td>
-                  <td className="px-4 py-2 border text-right">{formatarNumero(item.hodometro_atual || item.km_atual || 0)}</td>
-                  <td className="px-4 py-2 border">
-                    <span 
-                      className={`px-2 py-1 rounded ${
-                        item.tipo_combustivel?.toLowerCase().includes('diesel') 
-                          ? 'bg-yellow-100 text-yellow-800' 
-                          : item.tipo_combustivel?.toLowerCase().includes('arla') 
-                          ? 'bg-blue-100 text-blue-800'
-                          : item.tipo_combustivel?.toLowerCase().includes('gasolina')
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {item.tipo_combustivel || '-'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2 border text-right">{formatarNumero(item.litros || item.quantidade_litros || item.quantity_litros || 0)}</td>
-                  <td className="px-4 py-2 border text-right">{formatarValor(item.valor_litro || item.preco_litro || 0)}</td>
-                  <td className="px-4 py-2 border text-right">{formatarValor(item.valor_total || 0)}</td>
-                  <td className="px-4 py-2 border">{item.motorista || item.motorista_nome || item.nome_motorista || '-'}</td>
-                  <td className="px-4 py-2 border">{item.motorista_rg || item.rg_motorista || '-'}</td>
-                  <td className="px-4 py-2 border">{item.operador || item.nome_operador || '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="p-4 bg-gray-50 rounded text-center">
-          Nenhum abastecimento encontrado.
-        </div>
-      )}
-    </div>
+      </CardHeader>
+      <CardContent>
+        {error ? (
+          <div className="flex items-center gap-2 text-destructive p-4 border border-destructive/20 rounded-md bg-destructive/10">
+            <Info className="h-5 w-5" />
+            <span>{error}</span>
+          </div>
+        ) : (
+          <ScrollArea className="h-[400px] pr-4">
+            <Table>
+              <TableHeader className="sticky top-0 bg-background z-10">
+                <TableRow>
+                  <TableHead className="w-[140px]">Data/Hora</TableHead>
+                  <TableHead>Placa</TableHead>
+                  <TableHead>Combustível</TableHead>
+                  <TableHead className="text-right">Litros</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {historico.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center h-24">
+                      {isLoading ? (
+                        <div className="flex justify-center items-center">
+                          <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                          <span>Carregando histórico...</span>
+                        </div>
+                      ) : (
+                        "Nenhum registro de abastecimento encontrado"
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  historico.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-mono text-xs">
+                        {item.data_hora}
+                      </TableCell>
+                      <TableCell className="font-semibold">{item.placa}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={item.tipo_combustivel === 'ARLA' ? "outline" : "default"}
+                          className={
+                            item.tipo_combustivel === 'DIESEL' ? "bg-amber-500 hover:bg-amber-600" :
+                            item.tipo_combustivel === 'ARLA' ? "border-blue-500 text-blue-500" :
+                            undefined
+                          }
+                        >
+                          {item.tipo_combustivel}
+                        </Badge>
+                        {item.lavagem && (
+                          <Badge variant="outline" className="ml-1 border-green-500 text-green-500">
+                            Lavagem
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {item.quantidade_litros.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {formatCurrency(item.valor_total)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        )}
+      </CardContent>
+      <CardFooter className="flex justify-between pt-0 text-xs text-muted-foreground">
+        <span>
+          Mostrando {historico.length} registros
+        </span>
+        <span>
+          Última atualização: {format(lastRefreshTime, 'dd/MM/yyyy HH:mm:ss')}
+        </span>
+      </CardFooter>
+    </Card>
   );
 };
 

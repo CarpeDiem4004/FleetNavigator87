@@ -93,10 +93,16 @@ export const PostoLayout: React.FC<PostoLayoutProps> = ({ id, nomePosto }) => {
             Históricos
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <HistoricoAbastecimentos 
-              postId={id} 
+            {/* Componente que usa as views consolidadas específicas para cada posto */}
+            <HistoricoSupabaseView 
+              posto={nomePosto.toLowerCase()} 
               refreshTrigger={refreshHistorico} 
             />
+            {/* Componente antigo (mantido para referência se necessário) */}
+            {/* <HistoricoAbastecimentos 
+              postId={id} 
+              refreshTrigger={refreshHistorico} 
+            /> */}
             <HistoricoMovimentacoes postId={id} />
           </div>
         </div>

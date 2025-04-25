@@ -1,180 +1,165 @@
 /**
- * Utilitários para manipulação e formatação de dados de postos no servidor
+ * Utilitários para padronização de operações relacionadas a postos
  */
 
 /**
- * Formata o nome do posto para um formato padronizado
- * Usado para normalizar os nomes de postos entre diferentes partes do sistema
- * 
- * @param {string} nome Nome do posto para formatar
- * @returns {string} Nome formatado
+ * Lista de postos conhecidos no sistema
+ * Esta é a versão padronizada para correspondência com tabelas/views no banco de dados
  */
-function formatarNomePosto(nome) {
-  if (!nome) return '';
-  return nome.toLowerCase().replace(/[^a-z0-9]/g, '');
-}
-
-/**
- * Lista de todos os postos conhecidos no sistema
- */
-const POSTOS_CONHECIDOS = [
-  'Campinas',
-  'Osasco',
-  'ABC',
-  'Socorro',
-  'Sorocaba',
-  'SaoPaulo',
-  'Ipatinga',
-  'BotaFogo',
-  'Remedios',
-  'VargemGrande',
-  'Guarulhos'
+export const POSTOS_CONHECIDOS = [
+  'campinas',
+  'ribeirao',
+  'maceio',
+  'caxias',
+  'contagem',
+  'embu',
+  'limeira',
+  'remedios',
+  'sp',
+  'barueri',
+  'blumenau',
+  'alair'
 ];
 
 /**
- * Verifica se um nome de posto é válido comparando com a lista de postos conhecidos
- * 
- * @param {string} nome Nome do posto para validar
- * @returns {boolean} Indicando se o posto é válido
+ * Mapeamento de variações de nome para nome padronizado
  */
-function isPostoValido(nome) {
-  if (!nome) return false;
-  const nomeFormatado = formatarNomePosto(nome);
-  return POSTOS_CONHECIDOS.some(posto => formatarNomePosto(posto) === nomeFormatado);
-}
-
-/**
- * Obtém o nome de exibição formatado para um posto específico
- * 
- * @param {string} nome Nome interno do posto
- * @returns {string} Nome formatado para exibição
- */
-function obterNomeExibicaoPosto(nome) {
-  if (!nome) return '';
+export const MAPEAMENTO_POSTOS = {
+  // Postos internos
+  'campinas': 'campinas',
+  'posto campinas': 'campinas',
+  'cps': 'campinas',
   
-  // Encontrar o nome padrão correspondente na lista
-  const postoEncontrado = POSTOS_CONHECIDOS.find(
-    posto => formatarNomePosto(posto) === formatarNomePosto(nome)
-  );
+  'ribeirao': 'ribeirao',
+  'ribeirao preto': 'ribeirao',
+  'posto ribeirao': 'ribeirao',
+  'posto ribeirao preto': 'ribeirao',
+  'ribeirão': 'ribeirao',
+  'ribeirão preto': 'ribeirao',
+  'posto ribeirão': 'ribeirao',
+  'posto ribeirão preto': 'ribeirao',
   
-  if (!postoEncontrado) return nome;
+  'maceio': 'maceio',
+  'posto maceio': 'maceio',
+  'maceió': 'maceio',
+  'posto maceió': 'maceio',
   
-  // Formatar para exibição com o prefixo "Posto"
-  return `Posto ${postoEncontrado}`;
-}
-
-/**
- * Formata o nome da tabela para um posto específico
- * 
- * @param {string} posto Nome do posto
- * @returns {string} Nome da tabela formatado
- */
-function formatarNomeTabela(posto) {
-  if (!posto) return '';
-  return `abastecimentos_posto_${formatarNomePosto(posto)}`;
-}
-
-/**
- * Lista todos os postos conhecidos no sistema
- * 
- * @returns {Array<string>} Array com os nomes internos de todos os postos
- */
-function listarTodosPosto() {
-  return [...POSTOS_CONHECIDOS];
-}
-
-/**
- * Obtém o nome da visualização de consumo por veículo para um posto específico
- * 
- * @param {string} posto Nome do posto
- * @returns {string} Nome da visualização
- */
-function obterNomeViewConsumoPorVeiculo(posto) {
-  return `${formatarNomeTabela(posto)}_consumo_por_veiculo`;
-}
-
-/**
- * Obtém o nome da visualização de consumo mensal para um posto específico
- * 
- * @param {string} posto Nome do posto
- * @returns {string} Nome da visualização
- */
-function obterNomeViewConsumoMensal(posto) {
-  return `${formatarNomeTabela(posto)}_consumo_mensal`;
-}
-
-/**
- * Obtém o nome da visualização de comparativo de combustíveis para um posto específico
- * 
- * @param {string} posto Nome do posto
- * @returns {string} Nome da visualização
- */
-function obterNomeViewComparativoCombustiveis(posto) {
-  return `${formatarNomeTabela(posto)}_comparativo_combustiveis`;
-}
-
-/**
- * Obtém o nome da visualização consolidada para um posto específico
- * 
- * @param {string} posto Nome do posto
- * @returns {string} Nome da visualização
- */
-function obterNomeViewConsolidada(posto) {
-  return `${formatarNomeTabela(posto)}_consolidado`;
-}
-
-/**
- * Obtém o nome da visualização agregada para relatórios para um posto específico
- * 
- * @param {string} posto Nome do posto
- * @returns {string} Nome da visualização
- */
-function obterNomeViewAgregadaRelatorios(posto) {
-  return `${formatarNomeTabela(posto)}_agregado_relatorios`;
-}
-
-/**
- * Obtém o nome da visualização de últimos abastecimentos para um posto específico
- * 
- * @param {string} posto Nome do posto
- * @returns {string} Nome da visualização
- */
-function obterNomeViewUltimosAbastecimentos(posto) {
-  return `${formatarNomeTabela(posto)}_ultimos_abastecimentos`;
-}
-
-/**
- * Obtém o nome da tabela de histórico para um posto específico
- * 
- * @param {string} posto Nome do posto
- * @returns {string} Nome da tabela de histórico
- */
-function obterNomeTabelaHistorico(posto) {
-  return `${formatarNomeTabela(posto)}_historico`;
-}
-
-/**
- * Obtém o nome da estatísticas mensais para um posto específico
- * 
- * @param {string} posto Nome do posto
- * @returns {string} Nome da visualização de estatísticas
- */
-function obterNomeViewEstatisticasMensais(posto) {
-  return `${formatarNomeTabela(posto)}_estatisticas_mensais`;
-}
-
-module.exports = {
-  formatarNomePosto,
-  isPostoValido,
-  obterNomeExibicaoPosto,
-  formatarNomeTabela,
-  listarTodosPosto,
-  obterNomeViewConsumoPorVeiculo,
-  obterNomeViewConsumoMensal,
-  obterNomeViewComparativoCombustiveis,
-  obterNomeViewConsolidada,
-  obterNomeViewAgregadaRelatorios,
-  obterNomeViewUltimosAbastecimentos,
-  obterNomeTabelaHistorico,
-  obterNomeViewEstatisticasMensais
+  'caxias': 'caxias',
+  'posto caxias': 'caxias',
+  'caxias do sul': 'caxias',
+  'posto caxias do sul': 'caxias',
+  
+  'contagem': 'contagem',
+  'posto contagem': 'contagem',
+  
+  'embu': 'embu',
+  'posto embu': 'embu',
+  'embu das artes': 'embu',
+  'posto embu das artes': 'embu',
+  
+  'limeira': 'limeira',
+  'posto limeira': 'limeira',
+  
+  'remedios': 'remedios',
+  'remédios': 'remedios',
+  'posto remedios': 'remedios',
+  'posto remédios': 'remedios',
+  
+  'sp': 'sp',
+  'são paulo': 'sp',
+  'sao paulo': 'sp',
+  'posto sp': 'sp',
+  'posto são paulo': 'sp',
+  'posto sao paulo': 'sp',
+  
+  'barueri': 'barueri',
+  'posto barueri': 'barueri',
+  
+  'blumenau': 'blumenau',
+  'posto blumenau': 'blumenau',
+  
+  'alair': 'alair',
+  'posto alair': 'alair'
 };
+
+/**
+ * Formata o nome do posto para o padrão utilizado nas tabelas/views do banco de dados
+ * 
+ * @param {string} nomePosto - Nome do posto a ser formatado
+ * @returns {string} - Nome do posto formatado para uso no banco de dados
+ */
+export function formatPostoName(nomePosto) {
+  if (!nomePosto) {
+    console.warn('Nome do posto não fornecido para formatPostoName');
+    return 'indefinido';
+  }
+  
+  // Converte para minúsculas e remove espaços extras
+  const nomeNormalizado = nomePosto.toString().toLowerCase().trim();
+  
+  // Tenta usar o mapeamento direto
+  if (MAPEAMENTO_POSTOS[nomeNormalizado]) {
+    return MAPEAMENTO_POSTOS[nomeNormalizado];
+  }
+  
+  // Se não encontrar no mapeamento exato, tenta uma correspondência parcial
+  for (const [chave, valor] of Object.entries(MAPEAMENTO_POSTOS)) {
+    if (nomeNormalizado.includes(chave)) {
+      return valor;
+    }
+    
+    if (chave.includes(nomeNormalizado) && nomeNormalizado.length > 3) {
+      return valor;
+    }
+  }
+  
+  // Se ainda não encontrou, verifica se está na lista de postos conhecidos
+  if (POSTOS_CONHECIDOS.includes(nomeNormalizado)) {
+    return nomeNormalizado;
+  }
+  
+  // Retorna o nome normalizado se todas as tentativas falharem
+  console.warn(`Nome do posto não encontrado no mapeamento: ${nomePosto}`);
+  return nomeNormalizado;
+}
+
+/**
+ * Verifica se o nome do posto fornecido corresponde a um posto conhecido
+ * 
+ * @param {string} nomePosto - Nome do posto a ser verificado
+ * @returns {boolean} - True se o posto for conhecido, false caso contrário
+ */
+export function isKnownPosto(nomePosto) {
+  if (!nomePosto) return false;
+  
+  const nomeFormatado = formatPostoName(nomePosto);
+  return POSTOS_CONHECIDOS.includes(nomeFormatado);
+}
+
+/**
+ * Retorna o nome do posto formatado para exibição
+ * 
+ * @param {string} nomePosto - Nome do posto a ser formatado
+ * @returns {string} - Nome do posto formatado para exibição
+ */
+export function getPostoDisplayName(nomePosto) {
+  const nomeFormatado = formatPostoName(nomePosto);
+  
+  // Mapeia nomes formatados para nomes de exibição
+  const displayNames = {
+    'campinas': 'Posto Campinas',
+    'ribeirao': 'Posto Ribeirão Preto',
+    'maceio': 'Posto Maceió',
+    'caxias': 'Posto Caxias do Sul',
+    'contagem': 'Posto Contagem',
+    'embu': 'Posto Embu das Artes',
+    'limeira': 'Posto Limeira',
+    'remedios': 'Posto Remédios',
+    'sp': 'Posto São Paulo',
+    'barueri': 'Posto Barueri',
+    'blumenau': 'Posto Blumenau',
+    'alair': 'Posto Alair'
+  };
+  
+  return displayNames[nomeFormatado] || `Posto ${nomeFormatado.charAt(0).toUpperCase() + nomeFormatado.slice(1)}`;
+}
