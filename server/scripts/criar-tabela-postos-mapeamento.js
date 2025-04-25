@@ -2,8 +2,14 @@
  * Script para criar a tabela de mapeamento de postos no Supabase
  */
 
-const { Pool } = require('pg');
-const dotenv = require('dotenv');
+import { Pool } from 'pg';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+// Necessário para módulos ES
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Carrega variáveis de ambiente
 dotenv.config();
