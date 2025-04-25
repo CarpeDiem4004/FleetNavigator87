@@ -1,15 +1,15 @@
 /**
- * Utilitários para manipulação e formatação de dados de postos
+ * Utilitários para manipulação e formatação de dados de postos no servidor
  */
 
 /**
  * Formata o nome do posto para um formato padronizado
  * Usado para normalizar os nomes de postos entre diferentes partes do sistema
  * 
- * @param nome Nome do posto para formatar
- * @returns Nome formatado
+ * @param {string} nome Nome do posto para formatar
+ * @returns {string} Nome formatado
  */
-export function formatarNomePosto(nome: string): string {
+function formatarNomePosto(nome) {
   if (!nome) return '';
   return nome.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
@@ -34,10 +34,10 @@ const POSTOS_CONHECIDOS = [
 /**
  * Verifica se um nome de posto é válido comparando com a lista de postos conhecidos
  * 
- * @param nome Nome do posto para validar
- * @returns boolean indicando se o posto é válido
+ * @param {string} nome Nome do posto para validar
+ * @returns {boolean} Indicando se o posto é válido
  */
-export function isPostoValido(nome: string): boolean {
+function isPostoValido(nome) {
   if (!nome) return false;
   const nomeFormatado = formatarNomePosto(nome);
   return POSTOS_CONHECIDOS.some(posto => formatarNomePosto(posto) === nomeFormatado);
@@ -46,10 +46,10 @@ export function isPostoValido(nome: string): boolean {
 /**
  * Obtém o nome de exibição formatado para um posto específico
  * 
- * @param nome Nome interno do posto
- * @returns Nome formatado para exibição
+ * @param {string} nome Nome interno do posto
+ * @returns {string} Nome formatado para exibição
  */
-export function obterNomeExibicaoPosto(nome: string): string {
+function obterNomeExibicaoPosto(nome) {
   if (!nome) return '';
   
   // Encontrar o nome padrão correspondente na lista
@@ -66,10 +66,10 @@ export function obterNomeExibicaoPosto(nome: string): string {
 /**
  * Formata o nome da tabela para um posto específico
  * 
- * @param posto Nome do posto
- * @returns Nome da tabela formatado
+ * @param {string} posto Nome do posto
+ * @returns {string} Nome da tabela formatado
  */
-export function formatarNomeTabela(posto: string): string {
+function formatarNomeTabela(posto) {
   if (!posto) return '';
   return `abastecimentos_posto_${formatarNomePosto(posto)}`;
 }
@@ -77,88 +77,104 @@ export function formatarNomeTabela(posto: string): string {
 /**
  * Lista todos os postos conhecidos no sistema
  * 
- * @returns Array com os nomes internos de todos os postos
+ * @returns {Array<string>} Array com os nomes internos de todos os postos
  */
-export function listarTodosPosto(): string[] {
+function listarTodosPosto() {
   return [...POSTOS_CONHECIDOS];
 }
 
 /**
  * Obtém o nome da visualização de consumo por veículo para um posto específico
  * 
- * @param posto Nome do posto
- * @returns Nome da visualização
+ * @param {string} posto Nome do posto
+ * @returns {string} Nome da visualização
  */
-export function obterNomeViewConsumoPorVeiculo(posto: string): string {
+function obterNomeViewConsumoPorVeiculo(posto) {
   return `${formatarNomeTabela(posto)}_consumo_por_veiculo`;
 }
 
 /**
  * Obtém o nome da visualização de consumo mensal para um posto específico
  * 
- * @param posto Nome do posto
- * @returns Nome da visualização
+ * @param {string} posto Nome do posto
+ * @returns {string} Nome da visualização
  */
-export function obterNomeViewConsumoMensal(posto: string): string {
+function obterNomeViewConsumoMensal(posto) {
   return `${formatarNomeTabela(posto)}_consumo_mensal`;
 }
 
 /**
  * Obtém o nome da visualização de comparativo de combustíveis para um posto específico
  * 
- * @param posto Nome do posto
- * @returns Nome da visualização
+ * @param {string} posto Nome do posto
+ * @returns {string} Nome da visualização
  */
-export function obterNomeViewComparativoCombustiveis(posto: string): string {
+function obterNomeViewComparativoCombustiveis(posto) {
   return `${formatarNomeTabela(posto)}_comparativo_combustiveis`;
 }
 
 /**
  * Obtém o nome da visualização consolidada para um posto específico
  * 
- * @param posto Nome do posto
- * @returns Nome da visualização
+ * @param {string} posto Nome do posto
+ * @returns {string} Nome da visualização
  */
-export function obterNomeViewConsolidada(posto: string): string {
+function obterNomeViewConsolidada(posto) {
   return `${formatarNomeTabela(posto)}_consolidado`;
 }
 
 /**
  * Obtém o nome da visualização agregada para relatórios para um posto específico
  * 
- * @param posto Nome do posto
- * @returns Nome da visualização
+ * @param {string} posto Nome do posto
+ * @returns {string} Nome da visualização
  */
-export function obterNomeViewAgregadaRelatorios(posto: string): string {
+function obterNomeViewAgregadaRelatorios(posto) {
   return `${formatarNomeTabela(posto)}_agregado_relatorios`;
 }
 
 /**
  * Obtém o nome da visualização de últimos abastecimentos para um posto específico
  * 
- * @param posto Nome do posto
- * @returns Nome da visualização
+ * @param {string} posto Nome do posto
+ * @returns {string} Nome da visualização
  */
-export function obterNomeViewUltimosAbastecimentos(posto: string): string {
+function obterNomeViewUltimosAbastecimentos(posto) {
   return `${formatarNomeTabela(posto)}_ultimos_abastecimentos`;
 }
 
 /**
  * Obtém o nome da tabela de histórico para um posto específico
  * 
- * @param posto Nome do posto
- * @returns Nome da tabela de histórico
+ * @param {string} posto Nome do posto
+ * @returns {string} Nome da tabela de histórico
  */
-export function obterNomeTabelaHistorico(posto: string): string {
+function obterNomeTabelaHistorico(posto) {
   return `${formatarNomeTabela(posto)}_historico`;
 }
 
 /**
  * Obtém o nome da estatísticas mensais para um posto específico
  * 
- * @param posto Nome do posto
- * @returns Nome da visualização de estatísticas
+ * @param {string} posto Nome do posto
+ * @returns {string} Nome da visualização de estatísticas
  */
-export function obterNomeViewEstatisticasMensais(posto: string): string {
+function obterNomeViewEstatisticasMensais(posto) {
   return `${formatarNomeTabela(posto)}_estatisticas_mensais`;
 }
+
+module.exports = {
+  formatarNomePosto,
+  isPostoValido,
+  obterNomeExibicaoPosto,
+  formatarNomeTabela,
+  listarTodosPosto,
+  obterNomeViewConsumoPorVeiculo,
+  obterNomeViewConsumoMensal,
+  obterNomeViewComparativoCombustiveis,
+  obterNomeViewConsolidada,
+  obterNomeViewAgregadaRelatorios,
+  obterNomeViewUltimosAbastecimentos,
+  obterNomeTabelaHistorico,
+  obterNomeViewEstatisticasMensais
+};
