@@ -1,5 +1,6 @@
 // Constantes para identificar os postos
 export const POSTO_OSASCO = "osasco";
+export const POSTO_OSASCO_V2 = "osasco_v2";
 export const POSTO_GUARULHOS = "guarulhos";
 // São Paulo removido - Abril/2025
 export const POSTO_CAMPINAS = "campinas";
@@ -10,6 +11,7 @@ export const POSTO_SOROCABA = "sorocaba";
 
 // Nomes de exibição dos postos
 export const NOME_POSTO_OSASCO = "Posto Osasco";
+export const NOME_POSTO_OSASCO_V2 = "Posto Osasco V2";
 export const NOME_POSTO_GUARULHOS = "Posto Alair";
 // São Paulo removido - Abril/2025
 export const NOME_POSTO_CAMPINAS = "Posto Campinas";
@@ -24,6 +26,11 @@ export const POSTOS_INFO = [
     id: POSTO_OSASCO, 
     nome: NOME_POSTO_OSASCO, 
     descricao: 'Posto de abastecimento da região de Osasco' 
+  },
+  { 
+    id: POSTO_OSASCO_V2, 
+    nome: NOME_POSTO_OSASCO_V2, 
+    descricao: 'Nova versão do posto de abastecimento de Osasco (V2)' 
   },
   { 
     id: POSTO_GUARULHOS, 
