@@ -5555,6 +5555,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Endpoint para buscar abastecimentos que precisam ser sincronizados com o Supabase
+  app.get('/api/sincronizar-supabase/:posto', async (req, res) => {
+    try {
+      const { posto } = req.params;
+      console.log(`Buscando abastecimentos não sincronizados para o posto ${posto}`);
+      
+      // Obter registros que ainda não foram sincronizados com o Supabase
+      // Adicionamos uma coluna "sincronizado_supabase" para controlar isso
+      const query = `
+        SELECT * FROM abastecimentos_postos
+        WHERE posto ILIKE $1
+        AND (sincronizado_supabase IS NULL OR sincronizado_supabase = false)
+        ORDER BY created_at
+      `;
+      
+      // Primeiro verificamos se a coluna existe
+      try {
+        const checkColumn = `
+          SELECT column_name 
+          FROM information_schema.columns 
+          WHERE table_name = 'abastecimentos_postos' 
+          AND column_name = 'sincronizado_supabase'
+        `;
+        
+        const columnCheck = await pool.query(checkColumn);
+        
+        // Se a coluna não existir, criamos ela
+        if (!columnCheck.rows.length) {
+          console.log('Adicionando coluna sincronizado_supabase à tabela abastecimentos_postos');
+          
+          await pool.query(`
+            ALTER TABLE abastecimentos_postos
+            ADD COLUMN sincronizado_supabase BOOLEAN DEFAULT FALSE
+          `);
+        }
+      } catch (checkError) {
+        console.error('Erro ao verificar/criar coluna sincronizado_supabase:', checkError);
+      }
+      
+      const result = await pool.query(query, [posto]);
+      console.log(`Encontrados ${result.rows.length} abastecimentos para sincronização`);
+      
+      return res.status(200).json({
+        success: true,
+        count: result.rows.length,
+        data: result.rows
+      });
+    } catch (error: any) {
+      console.error("Erro ao buscar abastecimentos para sincronização:", error);
+      return res.status(500).json({
+        success: false, 
+        message: "Erro ao buscar abastecimentos para sincronização", 
+        error: error.message
+      });
+    }
+  });
+  
+  // Endpoint para marcar abastecimentos como sincronizados
+  app.post('/api/marcar-sincronizados', async (req, res) => {
+    try {
+      const { ids } = req.body;
+      
+      if (!ids || !Array.isArray(ids) || !ids.length) {
+        return res.status(400).json({
+          success: false,
+          message: 'Nenhum ID válido fornecido'
+        });
+      }
+      
+      console.log(`Marcando ${ids.length} abastecimentos como sincronizados`);
+      
+      // Marcar registros como sincronizados
+      const updateQuery = `
+        UPDATE abastecimentos_postos
+        SET sincronizado_supabase = TRUE
+        WHERE id = ANY($1::int[])
+        RETURNING id
+      `;
+      
+      const result = await pool.query(updateQuery, [ids]);
+      
+      return res.status(200).json({
+        success: true,
+        count: result.rowCount,
+        message: `${result.rowCount} abastecimentos marcados como sincronizados`
+      });
+    } catch (error: any) {
+      console.error("Erro ao marcar abastecimentos como sincronizados:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Erro ao marcar abastecimentos como sincronizados",
+        error: error.message
+      });
+    }
+  });
 
   // Rota para registrar abastecimento usando o modelo de duas tabelas do Supabase
   app.post('/api/abastecimentos', async (req, res) => {

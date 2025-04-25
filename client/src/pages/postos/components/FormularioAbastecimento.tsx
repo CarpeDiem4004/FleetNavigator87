@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card";
 // Importando o cliente Supabase para buscar os postos
 import { supabase } from "@/lib/supabase-client";
+import { enviarAbastecimentoSupabase } from "@/utils/supabase-sync";
 import {
   Form,
   FormControl,
@@ -727,6 +728,22 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       
       // Processa a resposta
       const result = await response.json();
+      
+      // Também envia diretamente para o Supabase
+      console.log('Enviando também para o Supabase...');
+      const supabaseResult = await enviarAbastecimentoSupabase(dadosAbastecimento);
+      
+      if (supabaseResult.success) {
+        console.log('Registrado com sucesso no Supabase:', supabaseResult.data);
+      } else {
+        console.error('Erro ao registrar no Supabase:', supabaseResult.error);
+        // Mostra toast de erro para Supabase, mas não interrompe o fluxo
+        toast({
+          title: 'Aviso',
+          description: 'Registro salvo localmente, mas houve erro ao enviar para o Supabase.',
+          variant: 'default',
+        });
+      }
       
       if (response.ok && result.success) {
         console.log('Registro bem-sucedido:', result);
