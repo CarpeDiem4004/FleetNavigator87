@@ -639,9 +639,12 @@ export const StatusTanquePosto = forwardRef<StatusTanqueRef, StatusTanqueProps>(
           </div>
         </CardHeader>
         <CardContent>
-          <PrecosCombustivelCard
-            dieselValor={dieselStatusValorLitro}
-            arlaValor={arlaStatusValorLitro}
+          <PrecosCombustivelCard 
+            dialogControl={{
+              isOpen: false,
+              onOpen: () => {},
+              onClose: () => {}
+            }}
           />
         </CardContent>
       </Card>
