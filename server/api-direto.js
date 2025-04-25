@@ -47,11 +47,11 @@ export async function getHistoricoPosto(req, res) {
       console.log("getHistoricoPosto - Formatado para:", postoName);
     }
     
-    // Caso especial para Campinas V2 e Osasco: usar tabela diretamente em vez de view
+    // Caso especial para Campinas V2, Osasco e Osasco V2: usar tabela diretamente em vez de view
     let querySource;
     let dataQuery;
     
-    if (postoName.toLowerCase() === 'campinas_v2' || postoName.toLowerCase() === 'osasco') {
+    if (postoName.toLowerCase() === 'campinas_v2' || postoName.toLowerCase() === 'osasco' || postoName.toLowerCase() === 'osasco_v2') {
       console.log(`getHistoricoPosto - Usando tabela direta para ${postoName} em vez de view`);
       
       // Definir o nome da tabela com base no posto
