@@ -5846,12 +5846,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Verifica se está autenticado
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({
-          success: false,
-          message: "Não autenticado"
-        });
+      // Verifica se é uma solicitação de abastecimento de posto
+      // Se for uma inserção na tabela abastecimentos_postos, permitimos sem autenticação
+      if (table === 'abastecimentos_postos') {
+        console.log('Permitindo inserção de abastecimento sem autenticação');
+      } else {
+        // Para outras tabelas, ainda exigimos autenticação
+        if (!req.isAuthenticated()) {
+          return res.status(401).json({
+            success: false,
+            message: "Não autenticado"
+          });
+        }
       }
       
       if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {

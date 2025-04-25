@@ -115,7 +115,16 @@ export async function sincronizarAbastecimentosSupabase(posto: string) {
     console.log(`Iniciando sincronização para o posto ${posto}`);
 
     // Busca abastecimentos locais não sincronizados
-    const response = await fetch(`/api/sincronizar-supabase/${posto}`);
+    // Adiciona token de autenticação, se disponível
+    const accessToken = localStorage.getItem('access_token');
+    const headers: Record<string, string> = {};
+    
+    // Se tiver token, adiciona ao cabeçalho
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+    
+    const response = await fetch(`/api/sincronizar-supabase/${posto}`, { headers });
     if (!response.ok) {
       throw new Error(`Erro ao buscar abastecimentos: ${response.statusText}`);
     }
@@ -161,9 +170,20 @@ export async function sincronizarAbastecimentosSupabase(posto: string) {
       if (idsParaMarcar.length > 0) {
         console.log(`Marcando ${idsParaMarcar.length} registros como sincronizados`);
         try {
+          // Adiciona token de autenticação, se disponível
+          const accessToken = localStorage.getItem('access_token');
+          const headers: Record<string, string> = {
+            'Content-Type': 'application/json'
+          };
+          
+          // Se tiver token, adiciona ao cabeçalho
+          if (accessToken) {
+            headers['Authorization'] = `Bearer ${accessToken}`;
+          }
+          
           const markResponse = await fetch('/api/marcar-sincronizados', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({ ids: idsParaMarcar })
           });
           
