@@ -41,6 +41,7 @@ async function criarTabelaPosto(posto) {
   
   // Query SQL para criar a tabela com a estrutura expandida para todas as colunas possíveis
   const query = `
+    -- Tabela principal de abastecimentos do posto
     CREATE TABLE IF NOT EXISTS "${nomeTabela}" (
       id SERIAL PRIMARY KEY,
       placa TEXT NOT NULL,
@@ -74,6 +75,60 @@ async function criarTabelaPosto(posto) {
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       data_registro TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
+    
+    -- Tabela de histórico para armazenar todas as alterações nos abastecimentos
+    CREATE TABLE IF NOT EXISTS "${nomeTabela}_historico" (
+      id SERIAL PRIMARY KEY,
+      abastecimento_id INTEGER NOT NULL,
+      acao TEXT NOT NULL,
+      dados JSONB NOT NULL,
+      usuario TEXT,
+      ip_address TEXT,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+    
+    -- View para facilitar a consulta de histórico recente por posto
+    CREATE OR REPLACE VIEW "${nomeTabela}_recentes" AS
+    SELECT * FROM "${nomeTabela}"
+    ORDER BY created_at DESC
+    LIMIT 100;
+    
+    -- View para estatísticas de consumo mensal
+    CREATE OR REPLACE VIEW "${nomeTabela}_estatisticas_mensais" AS
+    SELECT 
+      date_trunc('month', created_at) AS mes,
+      tipo_combustivel,
+      COUNT(*) AS total_abastecimentos,
+      SUM(COALESCE(litros, quantidade_litros, quantity_litros)) AS total_litros,
+      SUM(valor_total) AS valor_total,
+      AVG(COALESCE(preco_litro, valor_litro)) AS preco_medio_litro
+    FROM "${nomeTabela}"
+    GROUP BY date_trunc('month', created_at), tipo_combustivel
+    ORDER BY mes DESC, tipo_combustivel;
+    
+    -- Função para atualizar o histórico automaticamente
+    CREATE OR REPLACE FUNCTION log_${nomeTabela}_changes()
+    RETURNS TRIGGER AS $$
+    BEGIN
+      IF (TG_OP = 'INSERT') THEN
+        INSERT INTO "${nomeTabela}_historico" (abastecimento_id, acao, dados)
+        VALUES (NEW.id, 'INSERT', row_to_json(NEW));
+      ELSIF (TG_OP = 'UPDATE') THEN
+        INSERT INTO "${nomeTabela}_historico" (abastecimento_id, acao, dados)
+        VALUES (NEW.id, 'UPDATE', row_to_json(NEW));
+      ELSIF (TG_OP = 'DELETE') THEN
+        INSERT INTO "${nomeTabela}_historico" (abastecimento_id, acao, dados)
+        VALUES (OLD.id, 'DELETE', row_to_json(OLD));
+      END IF;
+      RETURN NULL;
+    END;
+    $$ LANGUAGE plpgsql;
+    
+    -- Trigger para registrar alterações no histórico
+    DROP TRIGGER IF EXISTS log_${nomeTabela}_changes_trigger ON "${nomeTabela}";
+    CREATE TRIGGER log_${nomeTabela}_changes_trigger
+    AFTER INSERT OR UPDATE OR DELETE ON "${nomeTabela}"
+    FOR EACH ROW EXECUTE FUNCTION log_${nomeTabela}_changes();
     
     -- Índices para melhorar performance
     CREATE INDEX IF NOT EXISTS idx_${nomeTabela}_placa ON "${nomeTabela}" (placa);

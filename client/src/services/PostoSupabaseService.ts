@@ -1,179 +1,319 @@
+import { Session } from '@supabase/supabase-js'
+import { formatarNomePosto } from '@/utils/posto-utils'
+
 /**
- * Serviço para gerenciar o acesso a tabelas específicas de cada posto no Supabase
+ * Serviço para gerenciar dados de postos no Supabase
+ * Usa tabelas específicas para cada posto para maior organização e compatibilidade
  */
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+export class PostoSupabaseService {
+  private static instance: PostoSupabaseService
+  private apiUrl: string
 
-// Verifica se as variáveis de ambiente estão definidas
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY;
+  private constructor() {
+    this.apiUrl = '/api'
+  }
 
-// Verifica se as variáveis estão definidas
-if (!supabaseUrl || (!supabaseAnonKey && !supabaseServiceKey)) {
-  console.error('Variáveis de ambiente do Supabase não estão configuradas corretamente');
-}
+  /**
+   * Obtém a instância única do serviço (padrão Singleton)
+   */
+  public static getInstance(): PostoSupabaseService {
+    if (!PostoSupabaseService.instance) {
+      PostoSupabaseService.instance = new PostoSupabaseService()
+    }
+    return PostoSupabaseService.instance
+  }
 
-// Interface para definir o formato dos dados de abastecimento
-export interface AbastecimentoPosto {
-  id?: number;
-  placa: string;
-  km_atual?: number;
-  tipo_combustivel?: string;
-  litros: number;
-  quantidade_litros?: number; // Alias para compatibilidade
-  nome_motorista?: string;
-  nome_operador?: string;
-  posto?: string;
-  project?: string;
-  preco_litro?: number;
-  valor_total?: number;
-  rg_motorista?: string;
-  tipo_veiculo?: string;
-  created_at?: string;
-  updated_at?: string;
-}
+  /**
+   * Normaliza o nome do posto para o formato usado nas tabelas
+   * @param posto Nome do posto
+   * @returns Nome normalizado para uso em nome de tabela
+   */
+  private normalizarNomePosto(posto: string): string {
+    return formatarNomePosto(posto).toLowerCase().replace(/[^a-z0-9]/g, '')
+  }
 
-class PostoSupabaseService {
-  private client: SupabaseClient;
-  private serviceModeEnabled: boolean;
+  /**
+   * Formata o nome da tabela para um posto específico
+   * @param posto Nome do posto
+   * @returns Nome da tabela formatado
+   */
+  private formatarNomeTabela(posto: string): string {
+    return `abastecimentos_posto_${this.normalizarNomePosto(posto)}`
+  }
 
-  constructor() {
-    // Inicializa o cliente Supabase, preferindo a service key se disponível
-    if (supabaseServiceKey) {
-      this.client = createClient(supabaseUrl, supabaseServiceKey);
-      this.serviceModeEnabled = true;
-      console.log('PostoSupabaseService: Modo de serviço ativado com service key');
-    } else {
-      this.client = createClient(supabaseUrl, supabaseAnonKey);
-      this.serviceModeEnabled = false;
-      console.log('PostoSupabaseService: Modo anônimo ativado');
+  /**
+   * Busca o histórico de abastecimentos de um posto específico
+   * @param posto Nome do posto
+   * @param limit Limite de registros (opcional)
+   * @param session Sessão do usuário para autenticação (opcional)
+   * @returns Promise com os dados de abastecimentos
+   */
+  async buscarHistoricoAbastecimentos(
+    posto: string,
+    limit?: number,
+    session?: Session | null
+  ): Promise<any[]> {
+    try {
+      const timestamp = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}`
+      const url = `${this.apiUrl}/historico-abastecimentos-supabase/${this.normalizarNomePosto(posto)}?timestamp=${timestamp}`
+      
+      // Configuração da requisição
+      const requestOptions: RequestInit = {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+
+      // Adicionar token de autenticação se disponível
+      if (session?.access_token) {
+        requestOptions.headers = {
+          ...requestOptions.headers,
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      }
+
+      const response = await fetch(url, requestOptions)
+      
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar histórico: ${response.status}`)
+      }
+
+      const data = await response.json()
+      return data.data || []
+    } catch (error) {
+      console.error('Erro ao buscar histórico de abastecimentos:', error)
+      return []
     }
   }
 
   /**
-   * Obtém o nome da tabela específica para um posto
-   */
-  private getTableName(posto: string): string {
-    // Sanitiza o nome do posto para usar como nome de tabela
-    const postoSanitizado = posto.toLowerCase().replace(/[^a-z0-9]/g, '');
-    return `abastecimentos_posto_${postoSanitizado}`;
-  }
-
-  /**
-   * Registra um abastecimento na tabela específica do posto
+   * Registra um novo abastecimento na tabela específica do posto
+   * @param posto Nome do posto
+   * @param dadosAbastecimento Dados do abastecimento a registrar
+   * @param session Sessão do usuário para autenticação (opcional)
+   * @returns Promise com o resultado da operação
    */
   async registrarAbastecimento(
     posto: string,
-    dados: AbastecimentoPosto
-  ): Promise<{ success: boolean; data?: any; error?: any }> {
+    dadosAbastecimento: any,
+    session?: Session | null
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
-      const tableName = this.getTableName(posto);
-      console.log(`Registrando abastecimento em ${tableName}`, dados);
-
-      // Adiciona o campo posto se não estiver presente
-      const dadosCompletos = {
-        ...dados,
-        posto: dados.posto || posto,
-        created_at: new Date().toISOString(),
-      };
-
-      // Insere na tabela específica do posto
-      const { data, error } = await this.client
-        .from(tableName)
-        .insert([dadosCompletos])
-        .select();
-
-      if (error) {
-        console.error(`Erro ao registrar abastecimento em ${tableName}:`, error);
-        return { success: false, error };
+      // Preparar dados do abastecimento com normalização de campos
+      const dadosNormalizados = this.normalizarCamposAbastecimento(dadosAbastecimento, posto)
+      
+      const url = `${this.apiUrl}/registrar-abastecimento-supabase/${this.normalizarNomePosto(posto)}`
+      
+      // Configuração da requisição
+      const requestOptions: RequestInit = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dadosNormalizados)
       }
 
-      console.log(`Abastecimento registrado com sucesso em ${tableName}:`, data);
-      return { success: true, data };
+      // Adicionar token de autenticação se disponível
+      if (session?.access_token) {
+        requestOptions.headers = {
+          ...requestOptions.headers,
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      }
+
+      const response = await fetch(url, requestOptions)
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || `Erro ao registrar abastecimento: ${response.status}`)
+      }
+
+      const data = await response.json()
+      return { success: true, data: data.data }
     } catch (error) {
-      console.error(`Exceção ao registrar abastecimento para ${posto}:`, error);
-      return { success: false, error };
+      console.error('Erro ao registrar abastecimento:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' }
     }
   }
 
   /**
-   * Obtém o histórico de abastecimentos de um posto específico
+   * Normaliza os campos do abastecimento para compatibilidade com diferentes formatos
+   * @param dados Dados originais do abastecimento
+   * @param posto Nome do posto para contextualização
+   * @returns Dados normalizados
    */
-  async obterHistorico(
+  private normalizarCamposAbastecimento(dados: any, posto: string): any {
+    // Clonar o objeto para não modificar o original
+    const normalizado: any = { ...dados }
+    
+    // Garantir que o campo posto esteja preenchido
+    normalizado.posto = normalizado.posto || posto
+    
+    // Normalização de campos de quantidade
+    if (normalizado.quantidade && !normalizado.litros && !normalizado.quantidade_litros && !normalizado.quantity_litros) {
+      normalizado.quantidade_litros = normalizado.quantidade
+    }
+    
+    // Normalização de campos de hodômetro
+    if (normalizado.km && !normalizado.km_atual && !normalizado.hodometro_atual) {
+      normalizado.km_atual = normalizado.km
+    }
+    
+    // Normalização de campos de motorista
+    if (normalizado.motorista && !normalizado.nome_motorista && !normalizado.motorista_nome) {
+      normalizado.motorista_nome = normalizado.motorista
+    }
+    
+    // Normalização de RG
+    if (normalizado.rg && !normalizado.rg_motorista && !normalizado.motorista_rg) {
+      normalizado.rg_motorista = normalizado.rg
+    }
+    
+    // Normalização de campos de preço
+    if (normalizado.preco && !normalizado.preco_litro && !normalizado.valor_litro) {
+      normalizado.valor_litro = normalizado.preco
+    }
+    
+    // Data de registro padrão
+    if (!normalizado.data_registro) {
+      normalizado.data_registro = new Date()
+    }
+    
+    return normalizado
+  }
+
+  /**
+   * Busca estatísticas de consumo mensal para um posto
+   * @param posto Nome do posto
+   * @param session Sessão do usuário para autenticação (opcional)
+   * @returns Promise com os dados de estatísticas
+   */
+  async buscarEstatisticasMensais(
     posto: string,
-    limite?: number
-  ): Promise<{ success: boolean; data?: AbastecimentoPosto[]; error?: any }> {
+    session?: Session | null
+  ): Promise<any[]> {
     try {
-      const tableName = this.getTableName(posto);
-      console.log(`Obtendo histórico de ${tableName}${limite ? ` (limite: ${limite})` : ''}`);
-
-      // Monta a query base
-      let query = this.client
-        .from(tableName)
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      // Adiciona limite se especificado
-      if (limite) {
-        query = query.limit(limite);
+      const url = `${this.apiUrl}/estatisticas-mensais-supabase/${this.normalizarNomePosto(posto)}`
+      
+      // Configuração da requisição
+      const requestOptions: RequestInit = {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       }
 
-      // Executa a query
-      const { data, error } = await query;
-
-      if (error) {
-        console.error(`Erro ao obter histórico de ${tableName}:`, error);
-        return { success: false, error };
+      // Adicionar token de autenticação se disponível
+      if (session?.access_token) {
+        requestOptions.headers = {
+          ...requestOptions.headers,
+          'Authorization': `Bearer ${session.access_token}`
+        }
       }
 
-      console.log(`Histórico obtido com sucesso de ${tableName}: ${data?.length} registros`);
-      return { success: true, data: data as AbastecimentoPosto[] };
+      const response = await fetch(url, requestOptions)
+      
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar estatísticas: ${response.status}`)
+      }
+
+      const data = await response.json()
+      return data.data || []
     } catch (error) {
-      console.error(`Exceção ao obter histórico para ${posto}:`, error);
-      return { success: false, error };
+      console.error('Erro ao buscar estatísticas mensais:', error)
+      return []
     }
   }
 
   /**
-   * Verifica se a tabela de um posto específico existe
+   * Busca o histórico de alterações de um abastecimento específico
+   * @param posto Nome do posto
+   * @param abastecimentoId ID do abastecimento
+   * @param session Sessão do usuário para autenticação (opcional)
+   * @returns Promise com o histórico de alterações
    */
-  async verificarTabelaPosto(posto: string): Promise<boolean> {
+  async buscarHistoricoAlteracoes(
+    posto: string,
+    abastecimentoId: number,
+    session?: Session | null
+  ): Promise<any[]> {
     try {
-      const tableName = this.getTableName(posto);
+      const url = `${this.apiUrl}/historico-alteracoes-supabase/${this.normalizarNomePosto(posto)}/${abastecimentoId}`
       
-      // Tenta fazer uma consulta simples para verificar se a tabela existe
-      const { data, error } = await this.client
-        .from(tableName)
-        .select('id')
-        .limit(1);
-      
-      if (error && error.code === '42P01') {
-        // Código de erro "undefined_table" no PostgreSQL
-        console.log(`Tabela ${tableName} não existe`);
-        return false;
+      // Configuração da requisição
+      const requestOptions: RequestInit = {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       }
+
+      // Adicionar token de autenticação se disponível
+      if (session?.access_token) {
+        requestOptions.headers = {
+          ...requestOptions.headers,
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      }
+
+      const response = await fetch(url, requestOptions)
       
-      return true;
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar histórico de alterações: ${response.status}`)
+      }
+
+      const data = await response.json()
+      return data.data || []
     } catch (error) {
-      console.error(`Erro ao verificar tabela para ${posto}:`, error);
-      return false;
+      console.error('Erro ao buscar histórico de alterações:', error)
+      return []
     }
   }
 
   /**
-   * Verifica se o serviço está no modo de serviço (com service key)
+   * Busca resumo de abastecimentos de todos os postos
+   * @param dias Número de dias para o resumo (padrão: 30)
+   * @param session Sessão do usuário para autenticação (opcional)
+   * @returns Promise com os dados de resumo de todos os postos
    */
-  isInServiceMode(): boolean {
-    return this.serviceModeEnabled;
-  }
+  async buscarResumoTodosPosto(
+    dias: number = 30,
+    session?: Session | null
+  ): Promise<any[]> {
+    try {
+      const url = `${this.apiUrl}/resumo-todos-postos-supabase?dias=${dias}`
+      
+      // Configuração da requisição
+      const requestOptions: RequestInit = {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
 
-  /**
-   * Obtém o cliente Supabase para operações personalizadas
-   */
-  getClient(): SupabaseClient {
-    return this.client;
+      // Adicionar token de autenticação se disponível
+      if (session?.access_token) {
+        requestOptions.headers = {
+          ...requestOptions.headers,
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      }
+
+      const response = await fetch(url, requestOptions)
+      
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar resumo de postos: ${response.status}`)
+      }
+
+      const data = await response.json()
+      return data.data || []
+    } catch (error) {
+      console.error('Erro ao buscar resumo de todos os postos:', error)
+      return []
+    }
   }
 }
 
 // Exporta uma instância única do serviço
-export const postoSupabaseService = new PostoSupabaseService();
+export default PostoSupabaseService.getInstance()
