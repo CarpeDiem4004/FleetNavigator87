@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { deleteRecord, deleteRecords, fetchRecords } from '@/lib/supabase-client';
 import SincronizarSupabaseButton from '@/components/posto-remedios/SincronizarSupabaseButton';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import * as XLSX from 'xlsx';
 
 interface HistoricoAbastecimentosProps {
   postId: string;
@@ -8,480 +10,234 @@ interface HistoricoAbastecimentosProps {
   refreshTrigger?: number;
 }
 
-interface Abastecimento {
-  id: number;
-  placa: string;
-  km_atual: number;
-  tipo_combustivel: string;
-  litros: number;
-  preco_litro?: number;
-  valor_total?: number;
-  nome_motorista: string;
-  nome_operador: string;
-  project?: string;
-  posto: string;
-  created_at: string;
-}
-
-const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postId, showLimparButton = true, refreshTrigger = 0 }) => {
-  const [abastecimentos, setAbastecimentos] = useState<Abastecimento[]>([]);
+const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ 
+  postId,
+  showLimparButton = false,
+  refreshTrigger = 0,
+}) => {
+  const [data, setData] = useState<any[]>([]);
+  const [filteredData, setFilteredData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [dateStart, setDateStart] = useState<string>('');
-  const [dateEnd, setDateEnd] = useState<string>('');
   const [isDeleting, setIsDeleting] = useState(false);
-  
-  // Função para capitalizar a primeira letra
-  const formatPosto = (posto: string) => {
-    return posto.charAt(0).toUpperCase() + posto.slice(1);
-  };
-  
-  const fetchAbastecimentos = async () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateStart, setDateStart] = useState('');
+  const [dateEnd, setDateEnd] = useState('');
+
+  // Funções de formatação
+  const formatarData = (dateString: string) => {
+    if (!dateString) return '-';
     try {
+      return format(parseISO(dateString), 'dd/MM/yyyy', { locale: ptBR });
+    } catch (error) {
+      console.error("Erro ao formatar data:", error);
+      return dateString || '-';
+    }
+  };
+
+  const formatarDataHora = (dateString: string) => {
+    if (!dateString) return '-';
+    try {
+      return format(parseISO(dateString), 'dd/MM/yyyy HH:mm', { locale: ptBR });
+    } catch (error) {
+      console.error("Erro ao formatar data e hora:", error);
+      return dateString || '-';
+    }
+  };
+
+  const formatarNumero = (numero: number) => {
+    if (numero === undefined || numero === null) return '-';
+    return numero.toLocaleString('pt-BR');
+  };
+
+  const formatarPreco = (preco: number) => {
+    if (preco === undefined || preco === null) return '-';
+    return `R$ ${preco.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  // Função para carregar os dados
+  const fetchAbastecimentos = useCallback(async () => {
+    try {
+      console.log(`Buscando abastecimentos para posto: ${postId}`);
       setIsLoading(true);
-      console.log("[FETCH] Buscando abastecimentos para o posto:", postId);
       
-      // Verificar se é o posto Remédios para usar o endpoint específico
-      const isPostoRemedios = 
-        postId.toLowerCase() === 'remédios' || 
-        postId.toLowerCase() === 'remedios' ||
-        postId.toLowerCase() === 'posto remédios' ||
-        postId.toLowerCase() === 'posto remedios';
+      const response = await fetch(`/api/abastecimentos/${postId}`);
       
-      // Se for o posto Remédios, usar o endpoint específico para ele
-      if (isPostoRemedios) {
-        try {
-          console.log("[FETCH] Usando endpoint específico para Posto Remédios");
-          const response = await fetch('/api/posto-remedios-standalone/abastecimentos');
-          const data = await response.json();
-          
-          console.log("[FETCH] Resposta do endpoint do Posto Remédios:", data);
-          
-          if (data.success && data.data && Array.isArray(data.data)) {
-            // Ordenar por data (mais recentes primeiro)
-            const resultados = data.data.sort((a: any, b: any) => {
-              return new Date(b.created_at || b.data_registro).getTime() - 
-                     new Date(a.created_at || a.data_registro).getTime();
-            });
-            
-            console.log("[FETCH] Dados recuperados via endpoint do Posto Remédios:", resultados.length);
-            
-            // Adaptar o formato dos dados para corresponder ao modelo esperado
-            const abastecimentosFormatados = resultados.map((item: any) => ({
-              id: item.id,
-              placa: item.placa,
-              km_atual: item.km,
-              tipo_combustivel: item.tipo_combustivel || 'N/A',
-              litros: item.quantidade_litros,
-              preco_litro: item.valor_litro,
-              valor_total: item.valor_total,
-              nome_motorista: item.motorista_nome,
-              nome_operador: 'Sistema', // Não tem esse campo no modelo específico
-              project: item.projeto,
-              posto: 'Remédios',
-              created_at: item.created_at || item.data_registro
-            }));
-            
-            // Atualizar o estado com os dados
-            setAbastecimentos(abastecimentosFormatados as Abastecimento[]);
-            setIsLoading(false);
-            return;
-          }
-        } catch (error) {
-          console.error("[FETCH] Erro ao buscar pelo endpoint do Posto Remédios:", error);
-        }
-      }
-      
-      // Usar o endpoint genérico para abastecimentos (para outros postos)
-      try {
-        console.log("[FETCH] Tentando endpoint genérico para o posto:", postId);
+      // Verificar o tipo de resposta
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        const responseData = await response.json();
         
-        // Verificar se a resposta é um JSON válido
-        const response = await fetch(`/api/abastecimentos/${postId}`);
-        
-        // Verificar o tipo de conteúdo
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.indexOf("application/json") === -1) {
-          console.error("[FETCH] Resposta não é JSON, tipo:", contentType);
-          throw new Error("Resposta não é JSON válido");
-        }
-        
-        // Tentar fazer o parse do JSON com tratamento especial
-        let data;
-        try {
-          const text = await response.text();
-          // Verificar se há DOCTYPE no texto (indicando HTML em vez de JSON)
-          if (text.includes("<!DOCTYPE") || text.includes("<html")) {
-            console.error("[FETCH] Recebeu HTML em vez de JSON");
-            throw new Error("Recebeu HTML em vez de JSON");
-          }
-          data = JSON.parse(text);
-        } catch (parseError) {
-          console.error("[FETCH] Erro ao fazer parse do JSON:", parseError);
-          throw parseError;
-        }
-        
-        console.log("[FETCH] Resposta do endpoint de abastecimentos:", data);
-        
-        if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
-          // Ordenar por data (mais recentes primeiro)
-          const resultados = data.data.sort((a: any, b: any) => {
-            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-          });
-          
-          console.log("[FETCH] Dados recuperados via endpoint de abastecimentos:", resultados.length);
-          
-          // Atualizar o estado com os dados
-          setAbastecimentos(resultados as Abastecimento[]);
-          setIsLoading(false);
-          return;
+        if (responseData.success) {
+          setData(responseData.data || []);
+          setFilteredData(responseData.data || []);
         } else {
-          console.log("[FETCH] Endpoint de abastecimentos não retornou dados, tentando métodos alternativos");
+          console.error("Erro ao buscar abastecimentos:", responseData.message);
+          setData([]);
+          setFilteredData([]);
         }
-      } catch (error) {
-        console.error("[FETCH] Erro ao buscar pelo endpoint de abastecimentos, tentando métodos alternativos:", error);
-      }
-      
-      // Método alternativo 1: Usar API de diagnóstico
-      try {
-        console.log("[FETCH] Tentando API de diagnóstico para o posto:", postId);
-        const response = await fetch(`/api/diagnostico/abastecimentos/${postId}`);
-        
-        // Verificar o tipo de conteúdo
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.indexOf("application/json") === -1) {
-          console.error("[FETCH] Resposta da API de diagnóstico não é JSON, tipo:", contentType);
-          throw new Error("Resposta da API de diagnóstico não é JSON válido");
-        }
-        
-        // Tentar fazer o parse do JSON
-        let data;
-        try {
-          const text = await response.text();
-          // Verificar se há DOCTYPE no texto (indicando HTML em vez de JSON)
-          if (text.includes("<!DOCTYPE") || text.includes("<html")) {
-            console.error("[FETCH] API de diagnóstico retornou HTML em vez de JSON");
-            throw new Error("API de diagnóstico retornou HTML em vez de JSON");
-          }
-          data = JSON.parse(text);
-        } catch (parseError) {
-          console.error("[FETCH] Erro ao fazer parse do JSON da API de diagnóstico:", parseError);
-          throw parseError;
-        }
-        
-        console.log("[FETCH] Resposta da API de diagnóstico:", data);
-        
-        if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
-          // Ordenar por data (mais recentes primeiro)
-          const resultados = data.data.sort((a: any, b: any) => {
-            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-          });
-          
-          console.log("[FETCH] Dados recuperados via API de diagnóstico:", resultados.length);
-          
-          // Atualizar o estado com os dados
-          setAbastecimentos(resultados as Abastecimento[]);
-          setIsLoading(false);
-          return;
-        } else {
-          console.log("[FETCH] API de diagnóstico não retornou dados, tentando próximo método");
-        }
-      } catch (error) {
-        console.error("[FETCH] Erro ao buscar pela API de diagnóstico, tentando próximo método:", error);
-      }
-      
-      // Método alternativo 2: Buscar pelo Supabase (método anterior)
-      const formattedPostName = formatPosto(postId);
-      console.log("[FETCH] Tentando via Supabase com nome formatado:", formattedPostName);
-      
-      const response = await fetchRecords('abastecimentos_postos', {
-        filter: { posto: formattedPostName },
-        limit: 100
-      });
-      
-      console.log("[FETCH] Resposta da busca via Supabase:", response);
-      
-      // Processar resultados
-      let dadosCombinados: Abastecimento[] = [];
-      
-      if (response.success && response.data && Array.isArray(response.data)) {
-        console.log("[FETCH] Dados recuperados via Supabase:", response.data.length);
-        dadosCombinados = response.data;
-      }
-      
-      // Ordenar por data (mais recentes primeiro)
-      dadosCombinados.sort((a, b) => {
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      });
-      
-      console.log("[FETCH] Total de dados combinados:", dadosCombinados.length);
-      
-      // Atualizar o estado com os dados combinados
-      setAbastecimentos(dadosCombinados as Abastecimento[]);
-      
-      // Verificar se não encontrou nada
-      if (dadosCombinados.length === 0) {
-        console.log("[FETCH] Nenhum dado recuperado em nenhum método");
+      } else {
+        // Não é JSON, provavelmente HTML de erro
+        const text = await response.text();
+        console.error("Resposta não-JSON recebida:", text.substring(0, 200) + "...");
+        setData([]);
+        setFilteredData([]);
       }
     } catch (error) {
-      console.error('Erro ao buscar histórico de abastecimentos:', error);
-      setAbastecimentos([]);
+      console.error("Erro ao carregar abastecimentos:", error);
+      setData([]);
+      setFilteredData([]);
     } finally {
       setIsLoading(false);
     }
-  };
-  
-  // Adicionar botão de atualização manual
-  const handleAtualizar = useCallback(() => {
-    // Exibe um indicador de carregamento
-    setIsLoading(true);
-    
-    // Aguarda um momento para garantir que o estado seja atualizado
-    setTimeout(() => {
-      fetchAbastecimentos();
-    }, 300);
-  }, []);
-  
-  // Efeito para carregar dados iniciais e configurar atualização automática
-  useEffect(() => {
-    console.log("[HISTORICO] Montando componente - buscando dados");
-    fetchAbastecimentos();
-    
-    // Atualiza os dados a cada 1 minuto
-    const interval = setInterval(() => {
-      console.log("[HISTORICO] Atualizando dados automaticamente");
-      fetchAbastecimentos();
-    }, 60000);
-    
-    return () => clearInterval(interval);
   }, [postId]);
-  
-  // Efeito para reagir a mudanças no refreshTrigger (atualizações forçadas)
+
+  // Carregar dados
   useEffect(() => {
-    console.log("[HISTORICO] Atualizando dados por causa do refreshTrigger:", refreshTrigger);
     fetchAbastecimentos();
-    
-    // Adiciona um registro de console para confirmar que o refreshTrigger está disparando corretamente
-    console.log("[HISTORICO] Dados atualizados após refreshTrigger:", refreshTrigger);
-  }, [refreshTrigger]);
-  
-  // Força a atualização ao clicar no botão "Ver Histórico" através da detecção de rota
+  }, [fetchAbastecimentos, refreshTrigger]);
+
+  // Efeito para filtrar os dados
   useEffect(() => {
-    // Verifica se o URL contém um marcador para atualizar o histórico 
-    if (window.location.hash === '#historicos-section') {
-      console.log("[HISTORICO] Hash detectado - atualizando dados");
-      fetchAbastecimentos();
-    }
+    let results = [...data];
     
-    // Observer para detecção de scrolling para a seção de históricos
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            console.log("[HISTORICO] Seção visível - atualizando dados");
-            fetchAbastecimentos();
-          }
-        });
-      },
-      { threshold: 0.1 } // 10% visível é suficiente para disparar
-    );
-    
-    // Observe a seção de históricos
-    const historicosSection = document.getElementById('historicos-section');
-    if (historicosSection) {
-      observer.observe(historicosSection);
-    }
-    
-    return () => {
-      if (historicosSection) {
-        observer.unobserve(historicosSection);
-      }
-    };
-  }, []);
-  
-  const formatarData = (dataString: string) => {
-    try {
-      const data = new Date(dataString);
-      return data.toLocaleDateString('pt-BR');
-    } catch (error) {
-      console.error('Erro ao formatar data:', error);
-      return '-';
-    }
-  };
-  
-  const formatarDataHora = (dataString: string) => {
-    try {
-      const data = new Date(dataString);
-      return data.toLocaleString('pt-BR');
-    } catch (error) {
-      console.error('Erro ao formatar data e hora:', error);
-      return '-';
-    }
-  };
-  
-  const formatarNumero = (valor: number) => {
-    try {
-      return new Intl.NumberFormat('pt-BR').format(Math.round(valor));
-    } catch (error) {
-      console.error('Erro ao formatar número:', error);
-      return '0';
-    }
-  };
-  
-  const formatarPreco = (valor?: number) => {
-    if (!valor) return '-';
-    try {
-      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
-    } catch (error) {
-      console.error('Erro ao formatar preço:', error);
-      return '-';
-    }
-  };
-  
-  const handleExcluirAbastecimento = async (id: number) => {
-    console.log("Chamada função de exclusão para ID:", id);
-    
-    if (window.confirm('Tem certeza que deseja excluir este registro?')) {
-      try {
-        setIsDeleting(true);
-        console.log("Iniciando exclusão do registro com ID:", id);
-        
-        // Usando o cliente Supabase para excluir o registro
-        await deleteRecord('abastecimentos_postos', id);
-        
-        console.log("Registro excluído com sucesso");
-        
-        // Atualizar a lista localmente removendo o item excluído
-        setAbastecimentos(prev => {
-          console.log("Atualizando estado: removendo item com ID", id);
-          return prev.filter(item => item.id !== id);
-        });
-        
-        alert('Registro excluído com sucesso!');
-      } catch (error) {
-        console.error('Erro ao excluir abastecimento:', error);
-        alert('Erro ao excluir o registro. Tente novamente.');
-      } finally {
-        setIsDeleting(false);
-      }
-    } else {
-      console.log("Exclusão cancelada pelo usuário");
-    }
-  };
-  
-  const handleExportarExcel = async () => {
-    try {
-      // Importar a biblioteca xlsx dinamicamente
-      const XLSX = await import('xlsx');
-      
-      // Filtrar dados de acordo com a data e busca
-      let dadosFiltrados = [...filteredData];
-      
-      // Preparar os dados para Excel
-      const excelData = dadosFiltrados.map(item => ({
-        'Data/Hora': formatarDataHora(item.created_at),
-        'Placa': item.placa,
-        'KM': item.km_atual,
-        'Combustível': item.tipo_combustivel,
-        'Litros': item.litros,
-        'Preço/L': item.preco_litro ? `R$ ${item.preco_litro.toFixed(2)}` : '-',
-        'Valor Total': item.valor_total ? `R$ ${item.valor_total.toFixed(2)}` : '-',
-        'Motorista': item.nome_motorista,
-        'Operador': item.nome_operador,
-        'Projeto': item.project || '-',
-        'Posto': item.posto
-      }));
-      
-      // Criar uma nova planilha
-      const worksheet = XLSX.utils.json_to_sheet(excelData);
-      
-      // Criar um novo livro
-      const workbook = XLSX.utils.book_new();
-      
-      // Adicionar a planilha ao livro
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Abastecimentos');
-      
-      // Gerar arquivo e fazer download
-      XLSX.writeFile(workbook, `abastecimentos_${formatPosto(postId)}_${new Date().toISOString().slice(0, 10)}.xlsx`);
-      
-      console.log('Exportação concluída com sucesso');
-    } catch (error) {
-      console.error('Erro ao exportar para Excel:', error);
-      alert('Erro ao exportar dados. Por favor, tente novamente.');
-    }
-  };
-  
-  // Filtragem de dados
-  const filteredData = Array.isArray(abastecimentos) ? abastecimentos.filter((item) => {
-    let passesSearch = true;
-    let passesDateFilter = true;
-    
-    // Verificação de busca por texto
+    // Filtrar por termo de busca
     if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      // Uso do optional chaining para evitar erros
-      const placaMatch = item?.placa ? item.placa.toLowerCase().includes(term) : false;
-      const motoristaMatch = item?.nome_motorista ? item.nome_motorista.toLowerCase().includes(term) : false;
-      let projectMatch = false;
-      
-      if (item?.project) {
-        projectMatch = item.project.toLowerCase().includes(term);
-      }
-      
-      passesSearch = placaMatch || motoristaMatch || projectMatch;
+      const terms = searchTerm.toLowerCase().split(' ').filter(t => t);
+      results = results.filter(item => {
+        return terms.every(term => 
+          (item.placa && item.placa.toLowerCase().includes(term)) ||
+          (item.nome_motorista && item.nome_motorista.toLowerCase().includes(term)) ||
+          (item.tipo_combustivel && item.tipo_combustivel.toLowerCase().includes(term)) ||
+          (item.nome_operador && item.nome_operador.toLowerCase().includes(term)) ||
+          (item.project && item.project.toLowerCase().includes(term))
+        );
+      });
     }
     
-    // Filtro por data
+    // Filtrar por data de início
     if (dateStart) {
       const startDate = new Date(dateStart);
-      passesDateFilter = passesDateFilter && new Date(item.created_at) >= startDate;
+      startDate.setHours(0, 0, 0, 0);
+      results = results.filter(item => {
+        const itemDate = new Date(item.created_at);
+        return itemDate >= startDate;
+      });
     }
     
+    // Filtrar por data de fim
     if (dateEnd) {
       const endDate = new Date(dateEnd);
       endDate.setHours(23, 59, 59, 999);
-      passesDateFilter = passesDateFilter && new Date(item.created_at) <= endDate;
+      results = results.filter(item => {
+        const itemDate = new Date(item.created_at);
+        return itemDate <= endDate;
+      });
     }
     
-    return passesSearch && passesDateFilter;
-  }) : [];
-  
-  // Função para limpar todo o histórico de abastecimentos
-  const handleLimparHistorico = async () => {
-    if (window.confirm('Tem certeza que deseja limpar todo o histórico de abastecimentos? Esta ação não pode ser desfeita.')) {
-      try {
-        setIsLoading(true);
-        console.log("[LIMPAR HISTÓRICO] Iniciando limpeza para o posto:", postId);
-        
-        // Busca todos os IDs de abastecimentos para este posto
-        const response = await fetchRecords('abastecimentos_postos', {
-          filter: { posto: formatPosto(postId) }
-        });
-        
-        // Verificar se a resposta foi bem-sucedida e tem dados
-        if (response.success && response.data && Array.isArray(response.data) && response.data.length > 0) {
-          // Extrai os IDs para excluir
-          const ids = response.data.map((reg: any) => reg.id);
-          
-          // Exclui todos os registros de uma vez
-          await deleteRecords('abastecimentos_postos', ids);
-          console.log("[LIMPAR HISTÓRICO] Registros excluídos com sucesso");
-        } else {
-          console.log("[LIMPAR HISTÓRICO] Nenhum registro encontrado para excluir");
-        }
-        
-        // Limpa todos os abastecimentos localmente
-        setAbastecimentos([]);
-        
-        alert('Histórico de abastecimentos limpo com sucesso!');
-      } catch (error) {
-        console.error('Erro ao limpar histórico:', error);
-        alert('Erro ao limpar o histórico. Tente novamente.');
-      } finally {
-        setIsLoading(false);
+    setFilteredData(results);
+  }, [data, searchTerm, dateStart, dateEnd]);
+
+  // Funções de manipulação
+  const handleAtualizar = useCallback(() => {
+    fetchAbastecimentos();
+  }, [fetchAbastecimentos]);
+
+  const handleExportarExcel = useCallback(() => {
+    if (filteredData.length === 0) return;
+    
+    const formattedData = filteredData.map(item => ({
+      Data: formatarData(item.created_at),
+      Hora: format(parseISO(item.created_at), 'HH:mm:ss'),
+      Veículo: item.placa,
+      Quilometragem: item.km_atual,
+      Combustível: item.tipo_combustivel,
+      Litros: item.litros,
+      'Valor Unitário': item.preco_litro,
+      'Valor Total': item.valor_total,
+      Motorista: item.nome_motorista,
+      Operador: item.nome_operador,
+      Projeto: item.project || '',
+      Posto: item.posto,
+      RG: item.rg_motorista || '',
+    }));
+    
+    // Criar uma planilha
+    const ws = XLSX.utils.json_to_sheet(formattedData);
+    
+    // Definir larguras de colunas para melhor visualização
+    const wscols = [
+      { wch: 10 },  // Data
+      { wch: 10 },  // Hora
+      { wch: 10 },  // Placa
+      { wch: 12 },  // KM
+      { wch: 12 },  // Combustível
+      { wch: 8 },   // Litros
+      { wch: 14 },  // Valor Unitário
+      { wch: 14 },  // Valor Total
+      { wch: 20 },  // Motorista
+      { wch: 20 },  // Operador
+      { wch: 15 },  // Projeto
+      { wch: 15 },  // Posto
+      { wch: 15 }   // RG
+    ];
+    ws['!cols'] = wscols;
+    
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Abastecimentos");
+    
+    // Salvar o arquivo com nome descritivo
+    const fileName = `abastecimentos_${postId}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  }, [filteredData, postId]);
+
+  const handleExcluirAbastecimento = async (id: number) => {
+    if (!confirm("Tem certeza que deseja excluir este abastecimento?")) {
+      return;
+    }
+    
+    try {
+      setIsDeleting(true);
+      const response = await fetch(`/api/abastecimentos/${id}`, {
+        method: 'DELETE',
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        fetchAbastecimentos();
+      } else {
+        alert(`Erro ao excluir: ${data.message}`);
       }
-    } else {
-      console.log("[LIMPAR HISTÓRICO] Operação cancelada pelo usuário");
+    } catch (error) {
+      console.error("Erro ao excluir abastecimento:", error);
+      alert("Erro ao excluir abastecimento. Tente novamente.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleLimparHistorico = async () => {
+    if (!confirm(`ATENÇÃO: Tem certeza que deseja EXCLUIR TODOS os registros de abastecimento do posto ${postId}?\n\nEsta ação não pode ser desfeita!`)) {
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/abastecimentos/${postId}/limpar`, {
+        method: 'DELETE',
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        alert("Histórico de abastecimentos limpo com sucesso!");
+        fetchAbastecimentos();
+      } else {
+        alert(`Erro ao limpar histórico: ${data.message}`);
+      }
+    } catch (error) {
+      console.error("Erro ao limpar histórico:", error);
+      alert("Erro ao limpar histórico. Tente novamente.");
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -592,73 +348,167 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
             )}
           </div>
         ) : (
-          <div className="overflow-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="py-3 px-4 text-left font-medium text-gray-700">Data</th>
-                  <th className="py-3 px-4 text-left font-medium text-gray-700">Veículo</th>
-                  <th className="py-3 px-4 text-left font-medium text-gray-700">KM</th>
-                  <th className="py-3 px-4 text-left font-medium text-gray-700">Combustível</th>
-                  <th className="py-3 px-4 text-left font-medium text-gray-700">Litros</th>
-                  <th className="py-3 px-4 text-right font-medium text-gray-700">Valor</th>
-                  <th className="py-3 px-4 text-left font-medium text-gray-700">Motorista</th>
-                  <th className="py-3 px-4 text-left font-medium text-gray-700">Operador</th>
-                  {showLimparButton && <th className="py-3 px-4 text-center font-medium text-gray-700">Ações</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredData.map((abast) => (
-                  <tr key={abast.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="py-3 px-4 text-sm">{formatarDataHora(abast.created_at)}</td>
-                    <td className="py-3 px-4 font-medium">{abast.placa}</td>
-                    <td className="py-3 px-4 text-sm">{formatarNumero(abast.km_atual)}</td>
-                    <td className="py-3 px-4 text-sm">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        abast.tipo_combustivel === 'Diesel' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                      }`}>
-                        {abast.tipo_combustivel}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-sm font-medium">{formatarNumero(abast.litros)}</td>
-                    <td className="py-3 px-4 text-sm text-right font-medium">
-                      {abast.valor_total ? formatarPreco(abast.valor_total) : '-'}
-                    </td>
-                    <td className="py-3 px-4 text-sm">{abast.nome_motorista}</td>
-                    <td className="py-3 px-4 text-sm text-gray-500">{abast.nome_operador}</td>
-                    {showLimparButton && (
-                      <td className="py-3 px-4 text-center">
-                        <div className="flex justify-center space-x-1">
-                          <button 
-                            className="p-1.5 text-blue-600 rounded-full hover:bg-blue-100 transition-colors"
-                            aria-label="Editar abastecimento"
-                            title="Editar registro"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </button>
-                          <button 
-                            className="p-1.5 text-red-600 rounded-full hover:bg-red-100 transition-colors"
-                            onClick={() => {
-                              console.log("Botão Excluir clicado para ID:", abast.id);
-                              handleExcluirAbastecimento(abast.id);
-                            }}
-                            disabled={isDeleting}
-                            aria-label="Excluir abastecimento"
-                            title="Excluir registro"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
-                    )}
+          <div>
+            {/* Header com contagem de registros e opção para ver todos */}
+            <div className="flex justify-between items-center mb-2">
+              <div className="text-sm text-gray-600">
+                {filteredData.length} registros encontrados
+              </div>
+              <div>
+                <button 
+                  className="text-sm text-blue-600 hover:underline focus:outline-none"
+                  onClick={() => document.getElementById('todos-registros')?.scrollIntoView({behavior: 'smooth'})}
+                >
+                  Ver todos
+                </button>
+              </div>
+            </div>
+            
+            {/* Tabela principal - mostra apenas 3 registros recentes */}
+            <div className="border rounded-lg overflow-hidden mb-6">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-gray-50">
+                    <th className="py-3 px-4 text-left font-medium text-gray-700">Data</th>
+                    <th className="py-3 px-4 text-left font-medium text-gray-700">Veículo</th>
+                    <th className="py-3 px-4 text-left font-medium text-gray-700">KM</th>
+                    <th className="py-3 px-4 text-left font-medium text-gray-700">Combustível</th>
+                    <th className="py-3 px-4 text-left font-medium text-gray-700">Litros</th>
+                    <th className="py-3 px-4 text-right font-medium text-gray-700">Valor</th>
+                    <th className="py-3 px-4 text-left font-medium text-gray-700">Motorista</th>
+                    <th className="py-3 px-4 text-left font-medium text-gray-700">Operador</th>
+                    {showLimparButton && <th className="py-3 px-4 text-center font-medium text-gray-700">Ações</th>}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {/* Mostrar apenas os 3 registros mais recentes */}
+                  {filteredData.slice(0, 3).map((abast) => (
+                    <tr key={abast.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="py-3 px-4 text-sm">{formatarDataHora(abast.created_at)}</td>
+                      <td className="py-3 px-4 font-medium">{abast.placa}</td>
+                      <td className="py-3 px-4 text-sm">{formatarNumero(abast.km_atual)}</td>
+                      <td className="py-3 px-4 text-sm">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          abast.tipo_combustivel === 'Diesel' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                        }`}>
+                          {abast.tipo_combustivel}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-sm font-medium">{formatarNumero(abast.litros)}</td>
+                      <td className="py-3 px-4 text-sm text-right font-medium">
+                        {abast.valor_total ? formatarPreco(abast.valor_total) : '-'}
+                      </td>
+                      <td className="py-3 px-4 text-sm">{abast.nome_motorista}</td>
+                      <td className="py-3 px-4 text-sm text-gray-500">{abast.nome_operador}</td>
+                      {showLimparButton && (
+                        <td className="py-3 px-4 text-center">
+                          <div className="flex justify-center space-x-1">
+                            <button 
+                              className="p-1.5 text-blue-600 rounded-full hover:bg-blue-100 transition-colors"
+                              aria-label="Editar abastecimento"
+                              title="Editar registro"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button 
+                              className="p-1.5 text-red-600 rounded-full hover:bg-red-100 transition-colors"
+                              onClick={() => {
+                                console.log("Botão Excluir clicado para ID:", abast.id);
+                                handleExcluirAbastecimento(abast.id);
+                              }}
+                              disabled={isDeleting}
+                              aria-label="Excluir abastecimento"
+                              title="Excluir registro"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            {/* Área de visualização completa com barra de rolagem */}
+            <div id="todos-registros" className="mt-8">
+              <h3 className="text-lg font-bold mb-2">Todos os registros</h3>
+              <div className="border rounded-lg overflow-hidden">
+                <div className="overflow-auto max-h-96"> {/* Altura máxima com rolagem */}
+                  <table className="w-full border-collapse">
+                    <thead className="sticky top-0 bg-gray-50 z-10">
+                      <tr className="border-b border-gray-200">
+                        <th className="py-3 px-4 text-left font-medium text-gray-700">Data</th>
+                        <th className="py-3 px-4 text-left font-medium text-gray-700">Veículo</th>
+                        <th className="py-3 px-4 text-left font-medium text-gray-700">KM</th>
+                        <th className="py-3 px-4 text-left font-medium text-gray-700">Combustível</th>
+                        <th className="py-3 px-4 text-left font-medium text-gray-700">Litros</th>
+                        <th className="py-3 px-4 text-right font-medium text-gray-700">Valor</th>
+                        <th className="py-3 px-4 text-left font-medium text-gray-700">Motorista</th>
+                        <th className="py-3 px-4 text-left font-medium text-gray-700">Operador</th>
+                        {showLimparButton && <th className="py-3 px-4 text-center font-medium text-gray-700">Ações</th>}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {filteredData.map((abast) => (
+                        <tr key={abast.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="py-3 px-4 text-sm">{formatarDataHora(abast.created_at)}</td>
+                          <td className="py-3 px-4 font-medium">{abast.placa}</td>
+                          <td className="py-3 px-4 text-sm">{formatarNumero(abast.km_atual)}</td>
+                          <td className="py-3 px-4 text-sm">
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              abast.tipo_combustivel === 'Diesel' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                            }`}>
+                              {abast.tipo_combustivel}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-sm font-medium">{formatarNumero(abast.litros)}</td>
+                          <td className="py-3 px-4 text-sm text-right font-medium">
+                            {abast.valor_total ? formatarPreco(abast.valor_total) : '-'}
+                          </td>
+                          <td className="py-3 px-4 text-sm">{abast.nome_motorista}</td>
+                          <td className="py-3 px-4 text-sm text-gray-500">{abast.nome_operador}</td>
+                          {showLimparButton && (
+                            <td className="py-3 px-4 text-center">
+                              <div className="flex justify-center space-x-1">
+                                <button 
+                                  className="p-1.5 text-blue-600 rounded-full hover:bg-blue-100 transition-colors"
+                                  aria-label="Editar abastecimento"
+                                  title="Editar registro"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </button>
+                                <button 
+                                  className="p-1.5 text-red-600 rounded-full hover:bg-red-100 transition-colors"
+                                  onClick={() => {
+                                    console.log("Botão Excluir clicado para ID:", abast.id);
+                                    handleExcluirAbastecimento(abast.id);
+                                  }}
+                                  disabled={isDeleting}
+                                  aria-label="Excluir abastecimento"
+                                  title="Excluir registro"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
