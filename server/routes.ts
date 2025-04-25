@@ -5832,6 +5832,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ]
     });
   });
+  
+  // Rota para inserir dados no Supabase usando a chave de serviço do servidor
+  app.post("/api/supabase-insert", async (req, res) => {
+    try {
+      const { table, data } = req.body;
+      
+      if (!table || !data) {
+        return res.status(400).json({
+          success: false,
+          message: "Parâmetros 'table' e 'data' são obrigatórios"
+        });
+      }
+      
+      // Verifica se está autenticado
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({
+          success: false,
+          message: "Não autenticado"
+        });
+      }
+      
+      if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        return res.status(500).json({
+          success: false,
+          message: "Configuração do Supabase não encontrada no servidor"
+        });
+      }
+      
+      // Inicializa o Supabase com a chave de serviço do servidor
+      const { createClient } = require("@supabase/supabase-js");
+      const supabase = createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+        {
+          auth: {
+            persistSession: false
+          }
+        }
+      );
+      
+      console.log(`Inserindo dados na tabela ${table} via servidor...`);
+      
+      // Faz a inserção usando a chave de serviço
+      const { data: insertedData, error } = await supabase
+        .from(table)
+        .insert([data])
+        .select();
+      
+      if (error) {
+        console.error(`Erro ao inserir dados no Supabase (tabela ${table}):`, error);
+        return res.status(500).json({
+          success: false,
+          message: `Erro ao inserir dados: ${error.message}`,
+          error
+        });
+      }
+      
+      console.log(`Dados inseridos com sucesso na tabela ${table}`);
+      return res.status(200).json({
+        success: true,
+        data: insertedData,
+        message: `Dados inseridos com sucesso na tabela ${table}`
+      });
+    } catch (error: any) {
+      console.error("Erro ao processar requisição de inserção no Supabase:", error);
+      return res.status(500).json({
+        success: false,
+        message: `Erro ao processar requisição: ${error.message}`,
+        error: String(error)
+      });
+    }
+  });
 
   // Rota para ressincronização de sessão (resolver problema de 401 após reinicialização do servidor)
   app.post("/api/resync-session", resyncSession);
