@@ -1,5 +1,5 @@
 import { Session } from '@supabase/supabase-js'
-import { formatarNomePosto } from '@/utils/posto-utils'
+import { formatarNomePosto } from '../utils/posto-utils'
 
 /**
  * Serviço para gerenciar dados de postos no Supabase

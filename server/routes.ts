@@ -32,6 +32,7 @@ import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoute
 import { registerPostosMapeamentoRoutes } from "./routes/postosMapeamentoRoutes";
 import { registerUsuariosSupabaseRoutes } from "./routes/usuariosSupabaseRoutes";
 import { supabaseInsertHandler } from "./routes/supabaseInsertRoute";
+import postoSupabaseRoutes from "./routes/postoSupabaseRoutes";
 import { db, pool } from "./db";
 import authHybridRoutes from "./routes/authHybridRoutes";
 import * as userHandler from "./handlers/userHandler";
