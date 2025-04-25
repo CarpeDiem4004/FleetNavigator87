@@ -8,6 +8,7 @@ import FormularioControlePatio from './components/FormularioControlePatio';
 import { StatusTanqueWrapper } from './components/StatusTanqueWrapper';
 import HistoricoMovimentacoes from './components/HistoricoMovimentacoes';
 import HistoricoAbastecimentos from './components/HistoricoAbastecimentos';
+import HistoricoSupabaseView from './components/HistoricoSupabaseView';
 import SupabaseConnectionTest from './components/SupabaseConnectionTest';
 
 interface PostoLayoutProps {
