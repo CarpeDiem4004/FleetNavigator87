@@ -5744,7 +5744,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Não exige autenticação para facilitar o registro de abastecimentos em postos externos
   app.post('/api/abastecimentos', async (req, res) => {
     try {
-      console.log('Recebendo requisição para abastecimento (modelo Supabase):', req.body);
+      console.log('Recebendo requisição para abastecimento (modelo Supabase):', JSON.stringify(req.body));
+      console.log('Headers:', JSON.stringify(req.headers, null, 2));
       
       // Extrair os dados necessários
       const { 
