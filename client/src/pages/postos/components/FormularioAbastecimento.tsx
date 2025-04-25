@@ -505,7 +505,22 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       return posto.id;
     }
     
-    // Se não encontrou, mantém o comportamento anterior para compatibilidade
+    // Se não encontrou, usar mapeamento fixo para os postos conhecidos
+    const mapeamentoFixo: Record<string, string> = {
+      'campinas': '83414281-5dcc-4783-aafd-8b4722fde7c1',
+      'osasco': '5e5a57f2-4609-4d2c-9474-8bb5751de982',
+      'abc': '0b607752-5626-456d-9652-3fd9336c3c0d',
+      'socorro': 'e5a5e846-1931-4673-9efc-df5e7a31d311',
+      'sorocaba': '0a49321b-4f25-4535-b1f7-4d2a5d9b518c'
+    };
+    
+    const postoLower = postoNome.toLowerCase();
+    if (mapeamentoFixo[postoLower]) {
+      console.log(`Usando UUID fixo para ${postoNome}: ${mapeamentoFixo[postoLower]}`);
+      return mapeamentoFixo[postoLower];
+    }
+    
+    // Último recurso, manter comportamento anterior para compatibilidade
     console.log(`Nenhum UUID encontrado para posto ${postoNome}, usando nome formatado`);
     return postoNome.charAt(0).toUpperCase() + postoNome.slice(1);
   };
@@ -515,27 +530,31 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     const fetchPostos = async () => {
       try {
         console.log('Buscando tabela de mapeamento de postos...');
+        
         const { data, error } = await supabase
           .from('postos')
           .select('id, nome');
         
         if (error) {
           console.error('Erro ao buscar postos:', error);
+          
+          // Usar mapeamento manual como fallback
+          const mapeamentoManual = [
+            { id: "83414281-5dcc-4783-aafd-8b4722fde7c1", nome: "Campinas" },
+            { id: "5e5a57f2-4609-4d2c-9474-8bb5751de982", nome: "Osasco" },
+            { id: "0b607752-5626-456d-9652-3fd9336c3c0d", nome: "Abc" },
+            { id: "e5a5e846-1931-4673-9efc-df5e7a31d311", nome: "Socorro" },
+            { id: "0a49321b-4f25-4535-b1f7-4d2a5d9b518c", nome: "Sorocaba" }
+          ];
+          
+          console.log('Usando mapeamento manual de UUIDs:', mapeamentoManual);
+          setPostos(mapeamentoManual);
           return;
         }
         
         if (data && data.length > 0) {
           console.log(`Encontrados ${data.length} postos no mapeamento:`, data);
           setPostos(data);
-          
-          // Procurar e definir o UUID para o posto atual
-          const postoAtual = data.find(p => p.nome.toLowerCase() === postId.toLowerCase());
-          if (postoAtual) {
-            console.log(`UUID para posto ${postId}: ${postoAtual.id}`);
-            setPostoUUID(postoAtual.id);
-          } else {
-            console.warn(`Nenhum UUID encontrado para posto ${postId}`);
-          }
         } else {
           console.warn('Nenhum posto encontrado na tabela de mapeamento');
         }
@@ -545,7 +564,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     };
 
     fetchPostos();
-  }, [postId]);
+  }, []);
   
   // Verificar se o usuário é admin
   useEffect(() => {
@@ -722,10 +741,13 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         nome_motorista: data.motorista,
         motorista_rg: data.motorista_rg,
         nome_operador: data.operador,
-        posto: formatPosto(postId),
+        posto: formatPosto(postId), // Agora retorna UUID válido para o posto
         tipo_veiculo: data.tipo_veiculo,
         created_at: dataRegistro
       };
+      
+      // Adicionando logs para diagnóstico
+      console.log(`Posto original: ${postId}, UUID convertido: ${abastecimentoData.posto}`);
       
       console.log('Dados de abastecimento a serem enviados:', abastecimentoData);
       
