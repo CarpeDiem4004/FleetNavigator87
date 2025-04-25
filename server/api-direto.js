@@ -251,7 +251,23 @@ export async function registrarAbastecimentoPosto(req, res) {
     // Forçar o Content-Type como application/json para evitar interceptação do Vite
     res.setHeader('Content-Type', 'application/json');
     
-    const postoName = formatPostoName(req.params.posto);
+    // Preservar exatamente o nome do posto recebido para garantir que seja processado corretamente
+    // Isso é crítico para distinguir entre campinas e campinas_v2
+    let postoName = req.params.posto;
+    
+    console.log("Posto original recebido:", postoName);
+    
+    // Verificação explícita para Campinas V2
+    if (postoName.toLowerCase() === 'campinas_v2' || 
+        postoName.toLowerCase().includes('campinas_v2') || 
+        postoName.toLowerCase().includes('campinas v2')) {
+      postoName = 'campinas_v2';
+      console.log("Posto identificado como Campinas V2");
+    } else {
+      postoName = formatPostoName(postoName);
+      console.log("Posto formatado para:", postoName);
+    }
+    
     const tableName = `abastecimentos_posto_${postoName.toLowerCase()}`;
     
     console.log(`Tentando registrar abastecimento na tabela ${tableName}`);

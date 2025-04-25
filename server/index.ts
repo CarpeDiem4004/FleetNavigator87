@@ -74,6 +74,14 @@ app.use((req, res, next) => {
   app.get('/api/comparativo-combustiveis-direto/:posto', getComparativoCombustiveisPosto);
   app.get('/api/check-tabela-direto/:posto', checkTabelaPosto);
   app.post('/api/abastecimento-direto/:posto', registrarAbastecimentoPosto);
+  
+  // Rota especial para Campinas V2, para resolver o problema de nomenclatura
+  app.post('/api/abastecimento-direto-campinas-v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA CAMPINAS V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como campinas_v2
+    req.params = { ...req.params, posto: 'campinas_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
