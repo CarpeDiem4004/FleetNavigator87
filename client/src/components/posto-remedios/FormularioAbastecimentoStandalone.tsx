@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Form,
@@ -47,8 +47,17 @@ export default function FormularioAbastecimentoStandalone() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  // Usando useRef para controlar o estado de montagem do componente
+  const isMounted = useRef(true);
   // Propriedade para callback após sucesso no cadastro
   const onSubmitSuccess = (window as any).onSubmitSuccessPostoRemedios;
+  
+  // Atualizar flag de montagem quando o componente for desmontado
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const form = useForm<AbastecimentoFormValues>({
     resolver: zodResolver(abastecimentoFormSchema),
@@ -106,18 +115,21 @@ export default function FormularioAbastecimentoStandalone() {
         const serverSideResult = await serverSideResponse.json();
         
         if (serverSideResult.success) {
-          form.reset();
-          setSuccess(true);
-          toast({
-            title: 'Sucesso',
-            description: 'Registro adicionado com sucesso',
-            variant: 'default',
-          });
-          
-          // Chamar callback para atualizar a lista de registros
-          if (typeof onSubmitSuccess === 'function') {
-            console.log("[FORM ABASTECIMENTO] Chamando callback de sucesso para atualizar histórico");
-            onSubmitSuccess();
+          // Só atualizar o estado se o componente ainda estiver montado
+          if (isMounted.current) {
+            form.reset();
+            setSuccess(true);
+            toast({
+              title: 'Sucesso',
+              description: 'Registro adicionado com sucesso',
+              variant: 'default',
+            });
+            
+            // Chamar callback para atualizar a lista de registros
+            if (typeof onSubmitSuccess === 'function') {
+              console.log("[FORM ABASTECIMENTO] Chamando callback de sucesso para atualizar histórico");
+              onSubmitSuccess();
+            }
           }
         } else {
           throw new Error(serverSideResult.message || 'Erro ao processar o registro');
@@ -137,25 +149,30 @@ export default function FormularioAbastecimentoStandalone() {
         const result = await response.json();
         
         if (result.success) {
-          form.reset();
-          setSuccess(true);
-          toast({
-            title: 'Sucesso',
-            description: 'Registro adicionado com sucesso',
-            variant: 'default',
-          });
-          
-          // Chamar callback para atualizar a lista de registros
-          if (typeof onSubmitSuccess === 'function') {
-            console.log("[FORM ABASTECIMENTO] Chamando callback de sucesso para atualizar histórico");
-            onSubmitSuccess();
+          // Só atualizar o estado se o componente ainda estiver montado
+          if (isMounted.current) {
+            form.reset();
+            setSuccess(true);
+            toast({
+              title: 'Sucesso',
+              description: 'Registro adicionado com sucesso',
+              variant: 'default',
+            });
+            
+            // Chamar callback para atualizar a lista de registros
+            if (typeof onSubmitSuccess === 'function') {
+              console.log("[FORM ABASTECIMENTO] Chamando callback de sucesso para atualizar histórico");
+              onSubmitSuccess();
+            }
           }
         } else {
-          toast({
-            title: 'Erro',
-            description: result.message || 'Erro ao adicionar registro',
-            variant: 'destructive',
-          });
+          if (isMounted.current) {
+            toast({
+              title: 'Erro',
+              description: result.message || 'Erro ao adicionar registro',
+              variant: 'destructive',
+            });
+          }
         }
       }
     } catch (error) {
@@ -166,8 +183,15 @@ export default function FormularioAbastecimentoStandalone() {
         variant: 'destructive',
       });
     } finally {
-      setLoading(false);
-      setTimeout(() => setSuccess(false), 3000);
+      // Atualizar estados apenas se o componente estiver montado
+      if (isMounted.current) {
+        setLoading(false);
+        setTimeout(() => {
+          if (isMounted.current) {
+            setSuccess(false);
+          }
+        }, 3000);
+      }
     }
   };
 
