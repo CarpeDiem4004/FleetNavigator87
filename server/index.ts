@@ -11,7 +11,8 @@ import {
   getEstatisticasMensaisPosto, 
   getConsumoPorVeiculoPosto,
   getComparativoCombustiveisPosto,
-  checkTabelaPosto
+  checkTabelaPosto,
+  registrarAbastecimentoPosto
 } from "./api-direto.js";
 
 // Configuração das variáveis de ambiente do Supabase
@@ -72,6 +73,7 @@ app.use((req, res, next) => {
   app.get('/api/consumo-por-veiculo-direto/:posto', getConsumoPorVeiculoPosto);
   app.get('/api/comparativo-combustiveis-direto/:posto', getComparativoCombustiveisPosto);
   app.get('/api/check-tabela-direto/:posto', checkTabelaPosto);
+  app.post('/api/abastecimento-direto/:posto', registrarAbastecimentoPosto);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

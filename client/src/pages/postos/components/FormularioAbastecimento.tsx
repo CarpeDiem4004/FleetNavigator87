@@ -561,10 +561,18 @@ const FormularioAbastecimento: React.FC<
         
         console.log("Enviando dados de abastecimento:", dadosAbastecimento);
 
-        // 1. Primeiro tenta a API principal
-        const endpoint = postId.toLowerCase().includes("remedios")
-          ? "/api/posto-remedios-standalone/abastecimentos"
-          : "/api/abastecimentos";
+        // 1. Verificar se estamos processando Campinas V2 para usar a rota direta
+        let endpoint = "";
+        let usarRotaDireta = false;
+        
+        if (postId.toLowerCase() === "campinas_v2") {
+          endpoint = `/api/abastecimento-direto/campinas_v2`;
+          usarRotaDireta = true;
+        } else if (postId.toLowerCase().includes("remedios")) {
+          endpoint = "/api/posto-remedios-standalone/abastecimentos";
+        } else {
+          endpoint = "/api/abastecimentos";
+        }
 
         console.log(`Enviando para ${endpoint}`, dadosAbastecimento);
 
