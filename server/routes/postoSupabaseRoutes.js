@@ -448,6 +448,104 @@ router.post('/posto/:posto/abastecimento', async (req, res) => {
 });
 
 /**
+ * Verificar se a tabela para um posto específico existe
+ * @route GET /api/posto/:posto/verificar-tabela
+ */
+router.get('/posto/:posto/verificar-tabela', async (req, res) => {
+  try {
+    const { posto } = req.params;
+    
+    if (!postoUtils.isPostoValido(posto)) {
+      return res.status(400).json({
+        success: false,
+        message: `Posto inválido: ${posto}`,
+        exists: false
+      });
+    }
+    
+    const nomeTabela = postoUtils.formatarNomeTabela(posto);
+    const existeTabela = await verificarTabelaExiste(nomeTabela);
+    
+    // Adicionalmente verificar se existe a view consolidada
+    const nomeView = postoUtils.obterNomeViewConsolidada(posto);
+    const existeView = await verificarTabelaExiste(nomeView);
+    
+    return res.json({
+      success: true,
+      exists: existeTabela && existeView,
+      posto: postoUtils.obterNomeExibicaoPosto(posto),
+      tabela: existeTabela,
+      view: existeView
+    });
+  } catch (error) {
+    console.error(`Erro ao verificar existência de tabela para posto ${req.params.posto}:`, error);
+    return res.status(500).json({
+      success: false,
+      message: `Erro ao verificar existência de tabela para posto ${req.params.posto}`,
+      error: error.message,
+      exists: false
+    });
+  }
+});
+
+/**
+ * Acesso genérico a qualquer visualização para um posto específico
+ * @route GET /api/posto/:posto/view
+ */
+router.get('/posto/:posto/view', async (req, res) => {
+  try {
+    const { posto } = req.params;
+    const { view } = req.query;
+    
+    if (!postoUtils.isPostoValido(posto)) {
+      return res.status(400).json({
+        success: false,
+        message: `Posto inválido: ${posto}`
+      });
+    }
+    
+    if (!view) {
+      return res.status(400).json({
+        success: false,
+        message: 'Parâmetro "view" é obrigatório'
+      });
+    }
+    
+    // Verificar se a view existe
+    const viewExiste = await verificarTabelaExiste(view);
+    if (!viewExiste) {
+      return res.status(404).json({
+        success: false,
+        message: `Visualização ${view} não encontrada para o posto ${posto}`
+      });
+    }
+    
+    // Adicionar cabeçalhos de cache-control para evitar caching
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
+    const query = `SELECT * FROM "${view}" ORDER BY created_at DESC`;
+    const result = await pool.query(query);
+    
+    return res.json({
+      success: true,
+      count: result.rows.length,
+      data: result.rows,
+      posto: postoUtils.obterNomeExibicaoPosto(posto),
+      view
+    });
+  } catch (error) {
+    console.error(`Erro ao acessar visualização para posto ${req.params.posto}:`, error);
+    return res.status(500).json({
+      success: false,
+      message: `Erro ao acessar visualização para posto ${req.params.posto}`,
+      error: error.message
+    });
+  }
+});
+
+/**
  * Verificar se uma tabela existe no banco de dados
  * @param {string} nomeTabela 
  * @returns {Promise<boolean>}

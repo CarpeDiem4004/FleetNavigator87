@@ -83,6 +83,68 @@ export interface ConsumoPorVeiculoData {
  */
 class PostoSupabaseService {
   /**
+   * Verifica se a tabela para um posto específico existe no Supabase
+   * 
+   * @param posto Nome do posto
+   * @returns Boolean indicando se a tabela existe
+   */
+  async verificarTabelaPosto(posto: string): Promise<boolean> {
+    try {
+      if (!isPostoValido(posto)) {
+        console.warn(`Posto inválido: ${posto}`);
+        return false;
+      }
+      
+      const postoFormatado = formatarNomePosto(posto);
+      const response = await axios.get(`/api/posto/${postoFormatado}/verificar-tabela`);
+      
+      return response.data && response.data.success && response.data.exists;
+    } catch (error) {
+      console.error(`Erro ao verificar tabela para posto ${posto}:`, error);
+      return false;
+    }
+  }
+  
+  /**
+   * Obtém histórico de abastecimentos a partir da view consolidada para um posto específico
+   * 
+   * @param posto Nome do posto
+   * @returns Dados de abastecimentos da view consolidada
+   */
+  async obterHistorico(posto: string): Promise<{success: boolean, data: AbastecimentoData[], message?: string}> {
+    try {
+      if (!isPostoValido(posto)) {
+        return { success: false, data: [], message: `Posto inválido: ${posto}` };
+      }
+      
+      const postoFormatado = formatarNomePosto(posto);
+      const viewName = obterNomeViewConsolidada(postoFormatado);
+      const timestamp = Date.now(); // Adicionar timestamp para evitar cache
+      const response = await axios.get(`/api/posto/${postoFormatado}/view?view=${viewName}&t=${timestamp}`);
+      
+      if (response.data && response.data.success) {
+        return { 
+          success: true, 
+          data: response.data.data 
+        };
+      } else {
+        return { 
+          success: false, 
+          data: [], 
+          message: response.data?.message || 'Erro ao obter histórico consolidado' 
+        };
+      }
+    } catch (error) {
+      console.error(`Erro ao obter histórico consolidado para posto ${posto}:`, error);
+      return { 
+        success: false, 
+        data: [], 
+        message: error instanceof Error ? error.message : 'Erro desconhecido' 
+      };
+    }
+  }
+  
+  /**
    * Obtém abastecimentos para um posto específico
    * 
    * @param posto Nome do posto
