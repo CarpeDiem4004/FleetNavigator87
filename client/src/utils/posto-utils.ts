@@ -32,19 +32,6 @@ export const MAPEAMENTO_POSTOS: Record<string, string> = {
   'cps': 'campinas',
   
   'campinas v2': 'campinas_v2',
-
-/**
- * Verifica se o nome do posto é válido
- * @param posto Nome do posto
- * @returns true se o posto for válido, false caso contrário
- */
-export function isPostoValido(posto: string): boolean {
-  if (!posto) return false;
-  
-  // Consider it valid if it has at least 3 characters
-  return posto.trim().length >= 3;
-}
-
   'campinasv2': 'campinas_v2',
   'posto campinas v2': 'campinas_v2',
   'posto_campinas_v2': 'campinas_v2',
@@ -100,6 +87,18 @@ export function isPostoValido(posto: string): boolean {
   'alair': 'alair',
   'posto alair': 'alair'
 };
+
+/**
+ * Verifica se o nome do posto é válido
+ * @param posto Nome do posto
+ * @returns true se o posto for válido, false caso contrário
+ */
+export function isPostoValido(posto: string): boolean {
+  if (!posto) return false;
+  
+  // Consider it valid if it has at least 3 characters
+  return posto.trim().length >= 3;
+}
 
 /**
  * Formata o nome do posto para o padrão utilizado nas tabelas/views do banco de dados
