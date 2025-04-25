@@ -860,11 +860,15 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
             // Adiciona um hash na URL para forçar atualização do histórico
             window.location.hash = 'historicos-section';
             
-            // Atualiza a página para garantir que os dados sejam carregados
-            // Permitimos que este código execute mesmo se o componente for desmontado
-            // pois é uma navegação global
+            // Em vez de recarregar a página (o que causa o logout),
+            // apenas aguardamos um pouco para a mensagem de sucesso ser exibida
+            // O componente pai já foi notificado via onRegistroSucesso()
             setTimeout(() => {
-              window.location.reload();
+              // Navegar para a seção de histórico sem recarregar a página
+              const historicoSection = document.getElementById('historicos-section');
+              if (historicoSection) {
+                historicoSection.scrollIntoView({ behavior: 'smooth' });
+              }
             }, 1500);
           }
         }
