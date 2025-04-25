@@ -29,6 +29,7 @@ import { SupabaseAuthProvider } from "@/context/SupabaseAuthContext";
 // Importação das páginas de postos
 import IndexPostos from "@/pages/postos/IndexPostos";
 import PostoOsasco from "@/pages/postos/Osasco";
+import PostoOsascoV2 from "@/pages/postos/OsascoV2";
 import PostoGuarulhos from "@/pages/postos/Guarulhos";
 import PostoSaoPaulo from "@/pages/postos/SaoPaulo";
 import PostoCampinas from "@/pages/postos/Campinas";
@@ -79,6 +80,7 @@ import AbastecimentosPage from "@/pages/AbastecimentosPage";
 
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
+import OsascoV2Public from "@/pages/postos/public/OsascoV2Public";
 import GuarulhosPublic from "@/pages/postos/public/GuarulhosPublic";
 import SaoPauloPublic from "@/pages/postos/public/SaoPauloPublic";
 import CampinasPublic from "@/pages/postos/public/CampinasPublic";
@@ -147,6 +149,7 @@ function App() {
           {/* Rotas para os postos de abastecimento - protegidas */}
           <ProtectedRoute path="/postos" component={IndexPostos} />
           <ProtectedRoute path="/posto/osasco" component={PostoOsasco} />
+          <ProtectedRoute path="/posto/osasco_v2" component={PostoOsascoV2} />
           <ProtectedRoute path="/posto/guarulhos" component={PostoGuarulhos} />
           <ProtectedRoute path="/posto/saopaulo" component={PostoSaoPaulo} />
           <ProtectedRoute path="/posto/campinas" component={PostoCampinas} />
@@ -222,6 +225,9 @@ function App() {
           {/* Rotas públicas para os postos de abastecimento - sem proteção e sem status de tanques */}
           <Route path="/posto/osasco/public">
             <OsascoPublic />
+          </Route>
+          <Route path="/posto/osasco_v2/public">
+            <OsascoV2Public />
           </Route>
           <Route path="/posto/guarulhos/public">
             <GuarulhosPublic />
