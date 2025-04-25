@@ -27,9 +27,11 @@ import { registerPneusRoutes } from "./pneusApi";
 import { registerTireMoveRoutes } from "./tireMoveApi";
 import { compareSchemas } from "./compareSchemas";
 import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
+// Removida importação redundante, pois está sendo importada via supabaseInsertRoute
 import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoutes";
 import { registerPostosMapeamentoRoutes } from "./routes/postosMapeamentoRoutes";
 import { registerUsuariosSupabaseRoutes } from "./routes/usuariosSupabaseRoutes";
+import { supabaseInsertHandler } from "./routes/supabaseInsertRoute";
 import { db, pool } from "./db";
 import authHybridRoutes from "./routes/authHybridRoutes";
 import * as userHandler from "./handlers/userHandler";
@@ -5837,84 +5839,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Rota para inserir dados no Supabase usando a chave de serviço do servidor
-  app.post("/api/supabase-insert", async (req, res) => {
-    try {
-      const { table, data } = req.body;
-      
-      if (!table || !data) {
-        return res.status(400).json({
-          success: false,
-          message: "Parâmetros 'table' e 'data' são obrigatórios"
-        });
-      }
-      
-      // Verifica se é uma solicitação de abastecimento de posto
-      // Se for uma inserção na tabela de abastecimentos (qualquer versão), permitimos sem autenticação
-      if (table === 'abastecimentos_postos' || table === 'abastecimentos_supabase') {
-        console.log(`Permitindo inserção de abastecimento na tabela ${table} sem verificação de autenticação`);
-        // Continua o processamento mesmo sem autenticação para tabelas de abastecimento
-      } else {
-        // Para outras tabelas, ainda exigimos autenticação
-        if (!req.isAuthenticated()) {
-          console.log(`Requisição não autenticada rejeitada para tabela ${table}`);
-          return res.status(401).json({
-            success: false,
-            message: "Não autenticado"
-          });
-        }
-      }
-      
-      if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        return res.status(500).json({
-          success: false,
-          message: "Configuração do Supabase não encontrada no servidor"
-        });
-      }
-      
-      // Inicializa o Supabase com a chave de serviço do servidor
-      const { createClient } = require("@supabase/supabase-js");
-      const supabase = createClient(
-        process.env.SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
-        {
-          auth: {
-            persistSession: false
-          }
-        }
-      );
-      
-      console.log(`Inserindo dados na tabela ${table} via servidor...`);
-      
-      // Faz a inserção usando a chave de serviço
-      const { data: insertedData, error } = await supabase
-        .from(table)
-        .insert([data])
-        .select();
-      
-      if (error) {
-        console.error(`Erro ao inserir dados no Supabase (tabela ${table}):`, error);
-        return res.status(500).json({
-          success: false,
-          message: `Erro ao inserir dados: ${error.message}`,
-          error
-        });
-      }
-      
-      console.log(`Dados inseridos com sucesso na tabela ${table}`);
-      return res.status(200).json({
-        success: true,
-        data: insertedData,
-        message: `Dados inseridos com sucesso na tabela ${table}`
-      });
-    } catch (error: any) {
-      console.error("Erro ao processar requisição de inserção no Supabase:", error);
-      return res.status(500).json({
-        success: false,
-        message: `Erro ao processar requisição: ${error.message}`,
-        error: String(error)
-      });
-    }
-  });
+  app.post("/api/supabase-insert", supabaseInsertHandler);
 
   // Rota para ressincronização de sessão (resolver problema de 401 após reinicialização do servidor)
   app.post("/api/resync-session", resyncSession);
