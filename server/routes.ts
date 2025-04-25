@@ -109,18 +109,27 @@ async function criarTabelaAbastecimentosSupabase() {
   try {
     console.log("Verificando se a tabela abastecimentos (modelo Supabase) existe...");
     
-    // Verificar se a tabela já existe
-    const checkQuery = `
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_name = 'abastecimentos'
-      );
+    // Verificar o tipo de objeto chamado 'abastecimentos'
+    const checkTypeQuery = `
+      SELECT table_type 
+      FROM information_schema.tables 
+      WHERE table_name = 'abastecimentos'
     `;
     
-    const checkResult = await pool.query(checkQuery);
-    const tabelaExiste = checkResult.rows[0].exists;
+    const typeResult = await pool.query(checkTypeQuery);
     
-    if (tabelaExiste) {
+    // Se o objeto existir mas não for uma tabela, removê-lo para recriar como tabela
+    if (typeResult.rows.length > 0 && typeResult.rows[0].table_type !== 'BASE TABLE') {
+      console.log(`Objeto 'abastecimentos' encontrado mas é um ${typeResult.rows[0].table_type}, tentando remover...`);
+      try {
+        // Remover o objeto existente (pode ser uma view ou outro tipo)
+        await pool.query(`DROP ${typeResult.rows[0].table_type} IF EXISTS abastecimentos CASCADE`);
+        console.log("Objeto removido com sucesso.");
+      } catch (dropError) {
+        console.error("Erro ao remover objeto existente:", dropError);
+        throw new Error("Não foi possível remover objeto existente para criar tabela.");
+      }
+    } else if (typeResult.rows.length > 0) {
       console.log("Tabela abastecimentos já existe, pulando criação.");
       return;
     }
@@ -166,21 +175,52 @@ async function criarTabelaAbastecimentosPostosSupabase() {
       return;
     }
     
+    // Verificar se a tabela abastecimentos existe e é uma tabela base
+    const checkAbastecimentosQuery = `
+      SELECT table_type 
+      FROM information_schema.tables 
+      WHERE table_name = 'abastecimentos'
+      AND table_type = 'BASE TABLE'
+    `;
+    
+    const abastecimentosResult = await pool.query(checkAbastecimentosQuery);
+    
+    if (abastecimentosResult.rows.length === 0) {
+      // Se a tabela abastecimentos não existir ou não for uma tabela base, criar primeiro
+      console.log("Tabela abastecimentos não encontrada como tabela base. Criando primeiro...");
+      await criarTabelaAbastecimentosSupabase();
+    }
+    
     console.log("Criando tabela abastecimentos_postos_supabase...");
     
-    // Criar tabela
+    // Criar tabela sem a restrição de chave estrangeira para evitar problemas
     const createTableQuery = `
       CREATE TABLE abastecimentos_postos_supabase (
         id SERIAL PRIMARY KEY,
         abastecimento_id INTEGER NOT NULL,
         posto_id TEXT NOT NULL,
         quantidade_litros NUMERIC(10,2) NOT NULL,
-        created_at TIMESTAMP DEFAULT NOW(),
-        FOREIGN KEY (abastecimento_id) REFERENCES abastecimentos(id)
+        created_at TIMESTAMP DEFAULT NOW()
       );
     `;
     
     await pool.query(createTableQuery);
+    
+    // Adicionar a restrição de chave estrangeira separadamente
+    try {
+      const addForeignKeyQuery = `
+        ALTER TABLE abastecimentos_postos_supabase
+        ADD CONSTRAINT fk_abastecimento
+        FOREIGN KEY (abastecimento_id) REFERENCES abastecimentos(id);
+      `;
+      
+      await pool.query(addForeignKeyQuery);
+      console.log("Restrição de chave estrangeira adicionada com sucesso!");
+    } catch (fkError) {
+      console.warn("Aviso: Não foi possível adicionar a restrição de chave estrangeira:", fkError);
+      console.log("A tabela foi criada sem a restrição de chave estrangeira.");
+    }
+    
     console.log("Tabela abastecimentos_postos_supabase criada com sucesso!");
     
   } catch (error) {
@@ -5483,6 +5523,135 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/postos/:id", isAuthenticated, getPostoDetalhes);
   app.post("/api/postos/:id/entrada-combustivel", isAuthenticated, registrarEntradaCombustivel);
   app.post("/api/postos/excluir-saopaulo", isAuthenticated, excluirPostoSaoPaulo);
+  
+  // Rota para registrar abastecimento usando o modelo de duas tabelas do Supabase
+  app.post('/api/abastecimentos', async (req, res) => {
+    try {
+      console.log('Recebendo requisição para abastecimento (modelo Supabase):', req.body);
+      
+      // Extrair os dados necessários
+      const { 
+        quantidade_litros,
+        placa, 
+        km_atual, 
+        posto_id, 
+        preco_litro,
+        valor_total,
+        tipo_combustivel,
+        nome_motorista,
+        nome_operador,
+        rg_motorista,
+        project
+      } = req.body;
+      
+      // Validar os campos obrigatórios
+      if (!quantidade_litros || !placa || !posto_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Dados incompletos para registro de abastecimento (modelo Supabase)'
+        });
+      }
+      
+      // 1. Criar registro na tabela abastecimentos
+      const insertAbastecimentoQuery = `
+        INSERT INTO abastecimentos (
+          data, 
+          valor
+        ) VALUES (
+          NOW(), 
+          $1
+        ) RETURNING id, data, valor
+      `;
+      
+      const calculatedValor = valor_total || (quantidade_litros * (preco_litro || 0));
+      
+      const abastecimentoResult = await pool.query(insertAbastecimentoQuery, [
+        calculatedValor
+      ]);
+      
+      if (!abastecimentoResult.rows || !abastecimentoResult.rows.length) {
+        throw new Error('Falha ao criar registro de abastecimento');
+      }
+      
+      const abastecimentoId = abastecimentoResult.rows[0].id;
+      
+      // 2. Criar registro na tabela abastecimentos_postos_supabase
+      const insertAbastecimentoPostoQuery = `
+        INSERT INTO abastecimentos_postos_supabase (
+          abastecimento_id,
+          posto_id,
+          quantidade_litros
+        ) VALUES (
+          $1, 
+          $2, 
+          $3
+        ) RETURNING id
+      `;
+      
+      const abastecimentoPostoResult = await pool.query(insertAbastecimentoPostoQuery, [
+        abastecimentoId,
+        posto_id,
+        quantidade_litros
+      ]);
+      
+      // 3. Também inserir no formato antigo para manter a compatibilidade
+      try {
+        const insertLegacyQuery = `
+          INSERT INTO abastecimentos_postos (
+            placa, 
+            km_atual, 
+            tipo_combustivel, 
+            litros, 
+            quantity_litros,
+            nome_motorista, 
+            nome_operador, 
+            posto, 
+            project,
+            preco_litro,
+            valor_total,
+            created_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW()
+          )
+        `;
+        
+        await pool.query(insertLegacyQuery, [
+          placa.toUpperCase(),
+          km_atual || 0,
+          tipo_combustivel || 'Diesel',
+          quantidade_litros,
+          quantidade_litros,
+          nome_motorista || 'Não informado',
+          nome_operador || 'Não informado',
+          posto_id,
+          project || 'Não informado',
+          preco_litro || 0,
+          calculatedValor || 0
+        ]);
+      } catch (legacyError) {
+        console.warn('Aviso: Falha ao inserir registro no formato legado:', legacyError);
+      }
+      
+      return res.status(200).json({
+        success: true,
+        data: {
+          abastecimento: abastecimentoResult.rows[0],
+          abastecimento_posto_id: abastecimentoPostoResult.rows[0].id,
+          placa,
+          posto_id,
+          quantidade_litros
+        },
+        message: 'Abastecimento registrado com sucesso (modelo Supabase)'
+      });
+    } catch (error) {
+      console.error('Erro ao registrar abastecimento (modelo Supabase):', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao registrar abastecimento (modelo Supabase)',
+        error: String(error)
+      });
+    }
+  });
 
   // Registrar rotas de teste de autenticação híbrida
   app.use('/api/auth-test', authTestRoutes);
