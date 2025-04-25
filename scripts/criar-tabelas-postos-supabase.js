@@ -17,15 +17,19 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Lista de postos para criar tabelas
+// Lista de postos para criar tabelas (conforme tabela postos_mapeamento)
 const postos = [
-  'Guarulhos',
   'Campinas',
-  'Barueri',
-  'Jundiai',
-  'Santos',
+  'Osasco',
+  'ABC',
+  'Socorro',
+  'Sorocaba',
+  'SaoPaulo',
+  'Ipatinga',
+  'BotaFogo',
   'Remedios',
-  'SaoPaulo'
+  'VargemGrande',
+  'Guarulhos' // Adicionado manualmente pois existe nos dados
 ];
 
 // Função para criar a tabela de um posto específico
@@ -35,26 +39,40 @@ async function criarTabelaPosto(posto) {
   
   console.log(`Criando tabela ${nomeTabela} para o posto ${posto}...`);
   
-  // Query SQL para criar a tabela
+  // Query SQL para criar a tabela com a estrutura expandida para todas as colunas possíveis
   const query = `
     CREATE TABLE IF NOT EXISTS "${nomeTabela}" (
       id SERIAL PRIMARY KEY,
       placa TEXT NOT NULL,
       km_atual NUMERIC,
+      hodometro_atual NUMERIC,
+      hodometro_anterior NUMERIC,
       tipo_combustivel TEXT,
       litros NUMERIC,
       quantity_litros NUMERIC,
+      quantidade_litros NUMERIC,
       nome_motorista TEXT,
+      motorista TEXT,
+      motorista_nome TEXT,
+      operador TEXT,
       nome_operador TEXT,
       posto TEXT,
       project TEXT,
+      projeto TEXT,
       preco_litro NUMERIC,
+      valor_litro NUMERIC,
       valor_total NUMERIC,
       rg_motorista TEXT,
+      motorista_rg TEXT,
       tipo_veiculo TEXT,
+      observacoes TEXT,
+      lavagem BOOLEAN DEFAULT false,
+      tipo_lavagem TEXT,
       sincronizado BOOLEAN DEFAULT true,
+      sincronizado_supabase BOOLEAN DEFAULT true,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      data_registro TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );
     
     -- Índices para melhorar performance
