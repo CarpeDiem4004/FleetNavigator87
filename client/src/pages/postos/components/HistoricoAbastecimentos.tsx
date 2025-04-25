@@ -93,7 +93,16 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
 
   // Carregar dados
   useEffect(() => {
+    console.log(`[HISTÓRICO] Atualizando histórico de abastecimentos, refreshTrigger = ${refreshTrigger}`);
     fetchAbastecimentos();
+    
+    // Adicionar um delay e buscar novamente para garantir que todos os dados sejam obtidos
+    const timer = setTimeout(() => {
+      console.log(`[HISTÓRICO] Verificação adicional após 2 segundos`);
+      fetchAbastecimentos();
+    }, 2000);
+    
+    return () => clearTimeout(timer);
   }, [fetchAbastecimentos, refreshTrigger]);
 
   // Efeito para filtrar os dados
@@ -139,7 +148,16 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
 
   // Funções de manipulação
   const handleAtualizar = useCallback(() => {
+    console.log('[HISTÓRICO] Atualizando manualmente histórico de abastecimentos');
+    setIsLoading(true);
     fetchAbastecimentos();
+    
+    // Após um tempo, tentar atualizar novamente para garantir 
+    // que os últimos registros sejam capturados
+    setTimeout(() => {
+      console.log('[HISTÓRICO] Segunda atualização após solicitação manual');
+      fetchAbastecimentos();
+    }, 1500);
   }, [fetchAbastecimentos]);
 
   const handleExportarExcel = useCallback(() => {
@@ -339,7 +357,10 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
         </div>
         
         {isLoading ? (
-          <div className="text-center py-8">Carregando...</div>
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mr-2"></div>
+            <span>Atualizando histórico de abastecimentos...</span>
+          </div>
         ) : filteredData.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <p>Nenhum abastecimento encontrado.</p>

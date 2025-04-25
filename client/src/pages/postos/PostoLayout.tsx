@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Fuel, TruckIcon, Truck, History } from 'lucide-react';
@@ -16,6 +16,14 @@ interface PostoLayoutProps {
 }
 
 export const PostoLayout: React.FC<PostoLayoutProps> = ({ id, nomePosto }) => {
+  // Estado para controlar atualizações do histórico
+  const [refreshHistorico, setRefreshHistorico] = useState(0);
+  
+  // Função para atualizar o histórico quando um novo abastecimento for registrado
+  const handleNovoAbastecimento = useCallback(() => {
+    console.log('Novo abastecimento registrado - atualizando histórico...');
+    setRefreshHistorico(prev => prev + 1);
+  }, []);
   return (
     <div className="w-full p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
@@ -67,7 +75,7 @@ export const PostoLayout: React.FC<PostoLayoutProps> = ({ id, nomePosto }) => {
                   </TabsTrigger>
                 </TabsList>
                 
-                <FormularioAbastecimento postId={id} />
+                <FormularioAbastecimento postId={id} onRegistroSucesso={handleNovoAbastecimento} />
                 {/* Temporariamente desativado 
                 <FormularioRecebimento postId={id} />
                 */}
@@ -84,7 +92,10 @@ export const PostoLayout: React.FC<PostoLayoutProps> = ({ id, nomePosto }) => {
             Históricos
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <HistoricoAbastecimentos postId={id} />
+            <HistoricoAbastecimentos 
+              postId={id} 
+              refreshTrigger={refreshHistorico} 
+            />
             <HistoricoMovimentacoes postId={id} />
           </div>
         </div>
