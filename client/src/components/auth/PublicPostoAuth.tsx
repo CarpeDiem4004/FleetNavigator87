@@ -400,8 +400,11 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
                 localStorage.removeItem('user_base_id');
                 localStorage.removeItem('user_basename');
                 
-                // Forçar logout no Supabase
-                supabase.auth.signOut();
+                // Chamar API de logout em vez de usar Supabase diretamente
+                fetch('/api/auth/logout', {
+                  method: 'POST',
+                  credentials: 'include'
+                });
                 
                 // Recarregar a página para reiniciar o fluxo de autenticação
                 window.location.reload();
