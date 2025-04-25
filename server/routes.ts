@@ -1036,12 +1036,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Verificando abastecimentos para posto: ${formattedPosto}`);
       
-      // Consulta SQL direta para verificar os registros existentes
+      // Consulta SQL direta para verificar os registros existentes (sem limite)
       const query = `
         SELECT * FROM abastecimentos_postos 
         WHERE posto = $1
         ORDER BY created_at DESC
-        LIMIT 100
       `;
       
       const result = await pool.query(query, [formattedPosto]);
@@ -5612,12 +5611,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Expires', '0');
       
       // Consulta diretamente na tabela abastecimentos_postos que tem todos os campos necessários
-      // Modificado para sempre trazer os registros mais recentes
+      // Sem limite de registros para mostrar todo o histórico
       const query = `
         SELECT * FROM abastecimentos_postos
         WHERE posto ILIKE $1
         ORDER BY created_at DESC
-        LIMIT 100
       `;
       
       // Executar a consulta
