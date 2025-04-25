@@ -826,7 +826,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
             
             // Dados formatados para o Supabase - ajustado ao esquema real
             const dadosAbastecimento = {
-              litros: Number(data.quantidade), // Mudado de quantidade_litros para litros
+              quantity_litros: Number(data.quantidade), // Usando quantity_litros conforme definido na tabela
+              litros: Number(data.quantidade), // Mantendo litros para compatibilidade
               preco_litro: userRole === 'admin' ? Number(data.valor_litro) : undefined, // Usando preco_litro conforme esquema do Supabase
               valor_total: Number(data.valor_total),
               placa: data.placa.toUpperCase(),
@@ -866,7 +867,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               'Authorization': `Bearer ${userToken}` 
             },
             body: JSON.stringify({
-              litros: Number(data.quantidade), // Mudado para campos compatíveis com o Supabase
+              quantity_litros: Number(data.quantidade), // Adicionando campo quantity_litros
+              litros: Number(data.quantidade), // Mantendo litros para compatibilidade
               preco_litro: userRole === 'admin' ? Number(data.valor_litro) : undefined, // Usando preco_litro conforme esquema do Supabase
               valor_total: Number(data.valor_total),
               placa: data.placa.toUpperCase(),
@@ -943,7 +945,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               // Dados super simplificados para aumentar chance de sucesso
               const dadosSimples = {
                 placa: data.placa.toUpperCase(),
-                litros: Number(data.quantidade), // Usando litros em vez de quantidade
+                quantity_litros: Number(data.quantidade), // Adicionando campo quantity_litros
+                litros: Number(data.quantidade), // Mantendo litros para compatibilidade
                 km_atual: Number(data.km), // Adicionando km_atual conforme o esquema correto
                 preco_litro: Number(data.valor_litro), // Usando preco_litro conforme esquema do Supabase
                 valor_total: data.valor_total,
