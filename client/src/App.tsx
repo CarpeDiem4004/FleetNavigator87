@@ -35,6 +35,7 @@ import PostoSaoPaulo from "@/pages/postos/SaoPaulo";
 import PostoCampinas from "@/pages/postos/Campinas";
 import PostoCampinasV2 from "@/pages/postos/CampinasV2";
 import PostoABC from "@/pages/postos/ABC";
+import PostoABCV2 from "@/pages/postos/ABCV2";
 import PostoSocorro from "@/pages/postos/Socorro";
 import PostoSorocaba from "@/pages/postos/Sorocaba";
 import HistoricoGeralPage from "@/pages/postos/HistoricoGeralPage";
@@ -86,6 +87,7 @@ import SaoPauloPublic from "@/pages/postos/public/SaoPauloPublic";
 import CampinasPublic from "@/pages/postos/public/CampinasPublic";
 import CampinasV2Public from "@/pages/postos/public/CampinasV2Public";
 import ABCPublic from "@/pages/postos/public/ABCPublic";
+import ABCV2Public from "@/pages/postos/public/ABCV2Public";
 import SocorroPublic from "@/pages/postos/public/SocorroPublic";
 import SorocabaPublic from "@/pages/postos/public/SorocabaPublic";
 import RegisterPostoUser from "@/pages/postos/RegisterPostoUser";
@@ -155,6 +157,7 @@ function App() {
           <ProtectedRoute path="/posto/campinas" component={PostoCampinas} />
           <ProtectedRoute path="/posto/campinas_v2" component={PostoCampinasV2} />
           <ProtectedRoute path="/posto/abc" component={PostoABC} />
+          <ProtectedRoute path="/posto/abc_v2" component={PostoABCV2} />
           <ProtectedRoute path="/posto/socorro" component={PostoSocorro} />
           <ProtectedRoute path="/posto/sorocaba" component={PostoSorocaba} />
           <ProtectedRoute path="/postos/historico-geral" component={HistoricoGeralPage} />
@@ -243,6 +246,9 @@ function App() {
           </Route>
           <Route path="/posto/abc/public">
             <ABCPublic />
+          </Route>
+          <Route path="/posto/abc_v2/public">
+            <ABCV2Public />
           </Route>
           <Route path="/posto/socorro/public">
             <SocorroPublic />
