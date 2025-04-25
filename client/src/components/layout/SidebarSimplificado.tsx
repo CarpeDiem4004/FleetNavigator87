@@ -86,7 +86,9 @@ const NavItemWithSubmenu: React.FC<{
   onClose: () => void;
   currentLocation: string;
 }> = ({ item, isActive, isSubItemActive, onClose, currentLocation }) => {
-  const [expanded, setExpanded] = useState(isActive || isSubItemActive);
+  // Expandir "Postos Externos" por padrão
+  const initialExpanded = item.name === 'Postos Externos' ? true : (isActive || isSubItemActive);
+  const [expanded, setExpanded] = useState(initialExpanded);
   
   // Garantir que o submenu seja expandido quando um subitem estiver ativo
   useEffect(() => {
@@ -251,12 +253,12 @@ const SidebarSimplificado: React.FC<SidebarProps> = ({ open, setOpen }) => {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="h-9 w-9 rounded-full bg-primary-700 flex items-center justify-center text-sm font-medium">
-                {user.name?.charAt(0) || user.email?.charAt(0) || 'U'}
+                {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
               </div>
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-white">{user.name || user.email}</p>
-              <p className="text-xs text-primary-300">{user.email}</p>
+              <p className="text-sm font-medium text-white">{user?.name || user?.email || 'Usuário'}</p>
+              <p className="text-xs text-primary-300">{user?.email || ''}</p>
             </div>
             <button
               onClick={logout}
