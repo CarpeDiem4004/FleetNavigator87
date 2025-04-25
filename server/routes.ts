@@ -5524,6 +5524,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/postos/:id/entrada-combustivel", isAuthenticated, registrarEntradaCombustivel);
   app.post("/api/postos/excluir-saopaulo", isAuthenticated, excluirPostoSaoPaulo);
   
+  // Endpoint para buscar abastecimentos por posto usando o modelo de duas tabelas
+  app.get('/api/abastecimentos/:posto', async (req, res) => {
+    try {
+      const { posto } = req.params;
+      console.log("Buscando abastecimentos para o posto:", posto);
+      
+      // Consulta na tabela compatível com o Supabase
+      const query = `
+        SELECT * FROM abastecimentos_postos_supabase
+        WHERE posto ILIKE $1
+        ORDER BY created_at DESC
+        LIMIT 100
+      `;
+      
+      const result = await pool.query(query, [posto]);
+      console.log(`Abastecimentos encontrados: ${result.rows.length}`);
+      
+      return res.status(200).json({
+        success: true,
+        count: result.rows.length,
+        data: result.rows
+      });
+    } catch (error: any) {
+      console.error("Erro ao buscar abastecimentos:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Erro ao buscar abastecimentos",
+        error: error.message
+      });
+    }
+  });
+
   // Rota para registrar abastecimento usando o modelo de duas tabelas do Supabase
   app.post('/api/abastecimentos', async (req, res) => {
     try {

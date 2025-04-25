@@ -40,16 +40,12 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
       setIsLoading(true);
       console.log("[FETCH] Buscando abastecimentos para o posto:", postId);
       
-      // Formatar nome do posto com primeira letra maiúscula
-      const formattedPostName = formatPosto(postId);
-      console.log("[FETCH] Usando nome de posto formatado:", formattedPostName);
-      
-      // Método alternativo 1: Usar API local diretamente
+      // Usar o novo endpoint específico para abastecimentos
       try {
-        const response = await fetch(`/api/diagnostico/abastecimentos/${postId}`);
+        const response = await fetch(`/api/abastecimentos/${postId}`);
         const data = await response.json();
         
-        console.log("[FETCH] Resposta da API local:", data);
+        console.log("[FETCH] Resposta do endpoint de abastecimentos:", data);
         
         if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
           // Ordenar por data (mais recentes primeiro)
@@ -57,20 +53,49 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
             return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
           });
           
-          console.log("[FETCH] Dados recuperados via API local:", resultados.length);
+          console.log("[FETCH] Dados recuperados via endpoint de abastecimentos:", resultados.length);
           
           // Atualizar o estado com os dados
           setAbastecimentos(resultados as Abastecimento[]);
           setIsLoading(false);
           return;
         } else {
-          console.log("[FETCH] API local não retornou dados, tentando método alternativo");
+          console.log("[FETCH] Endpoint de abastecimentos não retornou dados, tentando métodos alternativos");
         }
       } catch (error) {
-        console.error("[FETCH] Erro ao buscar pela API local, tentando método alternativo:", error);
+        console.error("[FETCH] Erro ao buscar pelo endpoint de abastecimentos, tentando métodos alternativos:", error);
+      }
+      
+      // Método alternativo 1: Usar API de diagnóstico
+      try {
+        const response = await fetch(`/api/diagnostico/abastecimentos/${postId}`);
+        const data = await response.json();
+        
+        console.log("[FETCH] Resposta da API de diagnóstico:", data);
+        
+        if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
+          // Ordenar por data (mais recentes primeiro)
+          const resultados = data.data.sort((a: any, b: any) => {
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          });
+          
+          console.log("[FETCH] Dados recuperados via API de diagnóstico:", resultados.length);
+          
+          // Atualizar o estado com os dados
+          setAbastecimentos(resultados as Abastecimento[]);
+          setIsLoading(false);
+          return;
+        } else {
+          console.log("[FETCH] API de diagnóstico não retornou dados, tentando próximo método");
+        }
+      } catch (error) {
+        console.error("[FETCH] Erro ao buscar pela API de diagnóstico, tentando próximo método:", error);
       }
       
       // Método alternativo 2: Buscar pelo Supabase (método anterior)
+      const formattedPostName = formatPosto(postId);
+      console.log("[FETCH] Tentando via Supabase com nome formatado:", formattedPostName);
+      
       const response = await fetchRecords('abastecimentos_postos', {
         filter: { posto: formattedPostName },
         limit: 100

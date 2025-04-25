@@ -767,6 +767,14 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
           if (onRegistroSucesso) {
             console.log("[REGISTRO] Notificando componente pai para atualizar histórico");
             onRegistroSucesso();
+            
+            // Adiciona um hash na URL para forçar atualização do histórico
+            window.location.hash = 'historicos-section';
+            
+            // Atualiza a página para garantir que os dados sejam carregados
+            setTimeout(() => {
+              window.location.reload();
+            }, 1500);
           }
         }, 100);
       } else {
