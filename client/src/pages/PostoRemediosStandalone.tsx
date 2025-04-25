@@ -35,13 +35,29 @@ export default function PostoRemediosStandalone() {
     (window as any).onSubmitSuccessPostoRemedios = () => {
       console.log("[PostoRemediosStandalone] Callback de atualização chamado");
       
-      // Adicionar um atraso para garantir que os dados foram persistidos
-      // completamente no banco de dados antes de buscar
-      console.log("[PostoRemediosStandalone] Aguardando 1 segundo antes de atualizar...");
-      setTimeout(() => {
-        console.log("[PostoRemediosStandalone] Atualizando registros após timeout");
-        carregarRegistros();
-      }, 1000); // Esperar 1 segundo
+      try {
+        // Mostrar feedback ao usuário
+        toast({
+          title: "Atualizando histórico",
+          description: "Buscando os registros mais recentes...",
+        });
+        
+        // Adicionar um atraso para garantir que os dados foram persistidos
+        // completamente no banco de dados antes de buscar
+        console.log("[PostoRemediosStandalone] Aguardando 1 segundo antes de atualizar...");
+        setTimeout(() => {
+          console.log("[PostoRemediosStandalone] Atualizando registros após timeout");
+          carregarRegistros();
+          
+          // Segunda tentativa após mais 1.5 segundos (total 2.5s)
+          setTimeout(() => {
+            console.log("[PostoRemediosStandalone] Segunda tentativa de atualização");
+            carregarRegistros();
+          }, 1500);
+        }, 1000); // Esperar 1 segundo
+      } catch (error) {
+        console.error("[PostoRemediosStandalone] Erro ao processar callback:", error);
+      }
     };
     
     // Limpar a função quando o componente for desmontado

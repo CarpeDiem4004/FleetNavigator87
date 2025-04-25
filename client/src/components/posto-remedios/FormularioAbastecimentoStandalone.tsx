@@ -121,7 +121,16 @@ function SimpleFormularioAbastecimento() {
           }
         }, 5000);
         
+        // Limpar formulário sem recarregar a página
         e.currentTarget.reset();
+        
+        // Colocar foco de volta no primeiro campo para facilitar novo registro
+        const placaInput = e.currentTarget.querySelector('input[name="placa"]') as HTMLInputElement;
+        if (placaInput) {
+          setTimeout(() => {
+            placaInput.focus();
+          }, 300);
+        }
         
         // Tentar executar callback
         if (typeof (window as any).onSubmitSuccessPostoRemedios === 'function') {
@@ -534,6 +543,8 @@ export default function FormularioAbastecimentoStandalone() {
     } catch (err) {
       console.error("Erro ao mostrar mensagem de sucesso:", err);
     }
+    
+    // Nunca recarregar a página após o envio - isso causa a tela branca no Posto Remédios Standalone
     
     // Chamar callback para atualizar a lista de registros com um pequeno atraso
     // para permitir que a lista seja atualizada depois que o banco de dados for atualizado
