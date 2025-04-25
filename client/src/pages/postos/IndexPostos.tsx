@@ -10,6 +10,7 @@ const IndexPostos: React.FC = () => {
     { id: 'guarulhos', nome: 'Alair', descricao: 'Posto de abastecimento Alair' },
     { id: 'saopaulo', nome: 'São Paulo', descricao: 'Posto de abastecimento da região de São Paulo' },
     { id: 'campinas', nome: 'Campinas', descricao: 'Posto de abastecimento da região de Campinas' },
+    { id: 'campinas_v2', nome: 'Campinas V2', descricao: 'Posto de abastecimento da região de Campinas (Nova Versão)' },
     { id: 'abc', nome: 'ABC', descricao: 'Posto de abastecimento da região do ABC Paulista' },
     { id: 'socorro', nome: 'Socorro', descricao: 'Posto de abastecimento da região de Socorro' },
     { id: 'sorocaba', nome: 'Sorocaba', descricao: 'Posto de abastecimento da região de Sorocaba' },
