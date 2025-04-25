@@ -812,18 +812,23 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       
       // Também envia diretamente para o Supabase
       console.log('Enviando também para o Supabase...');
-      const supabaseResult = await enviarAbastecimentoSupabase(dadosAbastecimento);
-      
-      if (supabaseResult.success) {
-        console.log('Registrado com sucesso no Supabase:', supabaseResult.data);
-      } else {
-        console.error('Erro ao registrar no Supabase:', supabaseResult.error);
-        // Mostra toast de erro para Supabase, mas não interrompe o fluxo
-        toast({
-          title: 'Aviso',
-          description: 'Registro salvo localmente, mas houve erro ao enviar para o Supabase.',
-          variant: 'default',
-        });
+      try {
+        const supabaseResult = await enviarAbastecimentoSupabase(dadosAbastecimento);
+        
+        if (supabaseResult.success) {
+          console.log('Registrado com sucesso no Supabase:', supabaseResult.data);
+        } else {
+          console.error('Erro ao registrar no Supabase:', supabaseResult.error);
+          // Mostra toast de erro para Supabase, mas não interrompe o fluxo
+          toast({
+            title: 'Aviso',
+            description: 'Registro salvo localmente, mas houve erro ao enviar para o Supabase.',
+            variant: 'default',
+          });
+        }
+      } catch (supabaseError) {
+        console.error('Exceção ao registrar no Supabase:', supabaseError);
+        // Não interrompe o fluxo em caso de erro no Supabase
       }
       
       if (response.ok && result.success) {
@@ -835,9 +840,11 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
           description: 'Abastecimento realizado com sucesso!',
         });
         
-        // Usa setTimeout para evitar erros de DOM
-        setTimeout(() => {
+        // Verifica se o componente ainda está montado
+        if (mountedRef.current) {
+          // Usa o hook seguro para evitar erros de DOM
           setRegistroSucesso(true);
+          
           if (onRegistroSucesso) {
             console.log("[REGISTRO] Notificando componente pai para atualizar histórico");
             onRegistroSucesso();
@@ -846,11 +853,13 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
             window.location.hash = 'historicos-section';
             
             // Atualiza a página para garantir que os dados sejam carregados
+            // Permitimos que este código execute mesmo se o componente for desmontado
+            // pois é uma navegação global
             setTimeout(() => {
               window.location.reload();
             }, 1500);
           }
-        }, 100);
+        }
       } else {
         throw new Error(result.message || 'Erro ao registrar abastecimento');
       }
