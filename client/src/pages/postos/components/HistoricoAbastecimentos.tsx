@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { deleteRecord, deleteRecords, fetchRecords } from '@/lib/supabase-client';
+import SincronizarSupabaseButton from '@/components/posto-remedios/SincronizarSupabaseButton';
 
 interface HistoricoAbastecimentosProps {
   postId: string;
@@ -416,6 +417,14 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
               </svg>
               Exportar Excel
             </button>
+            
+            {/* Botão de sincronização com Supabase */}
+            <div className="inline-block">
+              <SincronizarSupabaseButton 
+                posto={postId} 
+                onSyncComplete={handleAtualizar} 
+              />
+            </div>
             
             {showLimparButton && (
               <button 
