@@ -21,7 +21,9 @@ export const POSTOS_CONHECIDOS: string[] = [
   'blumenau',
   'alair',
   'osasco',
-  'osasco_v2'
+  'osasco_v2',
+  'abc',
+  'abc_v2'
 ];
 
 // Alias para compatibilidade

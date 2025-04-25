@@ -254,6 +254,13 @@ export async function getConsumoPorVeiculoPosto(req, res) {
       postoName = 'osasco_v2';
       console.log("getConsumoPorVeiculoPosto - Identificado como Osasco V2");
     }
+    // Caso especial para ABC V2
+    else if (postoName.toLowerCase() === 'abc_v2' || 
+        postoName.toLowerCase().includes('abc_v2') || 
+        postoName.toLowerCase().includes('abc v2')) {
+      postoName = 'abc_v2';
+      console.log("getConsumoPorVeiculoPosto - Identificado como ABC V2");
+    }
     // Caso especial para Osasco
     else if (postoName.toLowerCase() === 'osasco' || 
         postoName.toLowerCase().includes('osasco')) {
@@ -329,6 +336,13 @@ export async function getComparativoCombustiveisPosto(req, res) {
       postoName = 'osasco_v2';
       console.log("getComparativoCombustiveisPosto - Identificado como Osasco V2");
     }
+    // Caso especial para ABC V2
+    else if (postoName.toLowerCase() === 'abc_v2' || 
+        postoName.toLowerCase().includes('abc_v2') || 
+        postoName.toLowerCase().includes('abc v2')) {
+      postoName = 'abc_v2';
+      console.log("getComparativoCombustiveisPosto - Identificado como ABC V2");
+    }
     // Caso especial para Osasco
     else if (postoName.toLowerCase() === 'osasco' || 
         postoName.toLowerCase().includes('osasco')) {
@@ -403,7 +417,14 @@ export async function checkTabelaPosto(req, res) {
         postoName.toLowerCase().includes('osasco v2')) {
       postoName = 'osasco_v2';
       console.log("checkTabelaPosto - Identificado como Osasco V2");
-    } 
+    }
+    // Caso especial para ABC V2
+    else if (postoName.toLowerCase() === 'abc_v2' || 
+        postoName.toLowerCase().includes('abc_v2') || 
+        postoName.toLowerCase().includes('abc v2')) {
+      postoName = 'abc_v2';
+      console.log("checkTabelaPosto - Identificado como ABC V2");
+    }
     // Caso especial para Osasco
     else if (postoName.toLowerCase() === 'osasco' || 
         postoName.toLowerCase().includes('osasco')) {
@@ -483,6 +504,13 @@ export async function registrarAbastecimentoPosto(req, res) {
         postoName.toLowerCase().includes('osasco v2')) {
       postoName = 'osasco_v2';
       console.log("Posto identificado como Osasco V2");
+    }
+    // Verificação explícita para ABC V2
+    else if (postoName.toLowerCase() === 'abc_v2' || 
+        postoName.toLowerCase().includes('abc_v2') || 
+        postoName.toLowerCase().includes('abc v2')) {
+      postoName = 'abc_v2';
+      console.log("Posto identificado como ABC V2");
     }
     // Verificação explícita para Osasco
     else if (postoName.toLowerCase() === 'osasco' || 

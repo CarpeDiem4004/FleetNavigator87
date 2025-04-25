@@ -6,6 +6,7 @@ export const POSTO_GUARULHOS = "guarulhos";
 export const POSTO_CAMPINAS = "campinas";
 export const POSTO_CAMPINAS_V2 = "campinas_v2";
 export const POSTO_ABC = "abc";
+export const POSTO_ABC_V2 = "abc_v2";
 export const POSTO_SOCORRO = "socorro";
 export const POSTO_SOROCABA = "sorocaba";
 
@@ -17,6 +18,7 @@ export const NOME_POSTO_GUARULHOS = "Posto Alair";
 export const NOME_POSTO_CAMPINAS = "Posto Campinas";
 export const NOME_POSTO_CAMPINAS_V2 = "Posto Campinas V2";
 export const NOME_POSTO_ABC = "Posto ABC";
+export const NOME_POSTO_ABC_V2 = "Posto ABC V2";
 export const NOME_POSTO_SOCORRO = "Posto Socorro";
 export const NOME_POSTO_SOROCABA = "Posto Sorocaba";
 
@@ -52,6 +54,11 @@ export const POSTOS_INFO = [
     id: POSTO_ABC, 
     nome: NOME_POSTO_ABC, 
     descricao: 'Posto de abastecimento da região do ABC Paulista' 
+  },
+  { 
+    id: POSTO_ABC_V2, 
+    nome: NOME_POSTO_ABC_V2, 
+    descricao: 'Nova versão do posto de abastecimento do ABC Paulista (V2)' 
   },
   { 
     id: POSTO_SOCORRO, 
