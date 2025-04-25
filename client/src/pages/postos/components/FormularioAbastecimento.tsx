@@ -510,20 +510,56 @@ const FormularioAbastecimento: React.FC<
           data.tipo === "Diesel" ? 6.39 : Number(data.valor_litro);
         const valorTotal = Number(data.quantidade) * valorPorLitro;
 
+        // Prepara os dados com múltiplos nomes de campos para compatibilidade
         const dadosAbastecimento = {
+          // Campos de quantidade com múltiplos nomes para garantir compatibilidade
           quantidade_litros: Number(data.quantidade),
+          quantidade: Number(data.quantidade),
+          litros: Number(data.quantidade),
+          
+          // Campos de identificação do veículo
           placa: data.placa.toUpperCase(),
+          
+          // Campos de quilometragem com múltiplos nomes
           km_atual: Number(data.km),
+          km: Number(data.km),
+          
+          // Campos de posto com múltiplos nomes
           posto_id: postId,
+          posto: postId,
+          
+          // Campos de preço com múltiplos nomes
           preco_litro: valorPorLitro,
+          valor_litro: valorPorLitro,
+          
+          // Valor total do abastecimento
           valor_total: valorTotal,
+          
+          // Campos de tipo de combustível com múltiplos nomes
           tipo_combustivel: data.tipo,
+          tipo: data.tipo,
+          
+          // Campos de motorista com múltiplos nomes
           nome_motorista: data.motorista,
+          motorista: data.motorista,
+          
+          // Campos de RG do motorista com múltiplos nomes
           rg_motorista: data.motorista_rg,
+          motorista_rg: data.motorista_rg,
+          
+          // Campos de operador com múltiplos nomes
           nome_operador: data.operador,
+          operador: data.operador,
+          
+          // Campos de projeto com múltiplos nomes
           project: data.projeto,
+          projeto: data.projeto,
+          
+          // Tipo de veículo
           tipo_veiculo: data.tipo_veiculo || "frota",
         };
+        
+        console.log("Enviando dados de abastecimento:", dadosAbastecimento);
 
         // 1. Primeiro tenta a API principal
         const endpoint = postId.toLowerCase().includes("remedios")

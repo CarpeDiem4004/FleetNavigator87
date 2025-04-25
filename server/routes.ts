@@ -5612,11 +5612,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Consulta diretamente na tabela abastecimentos_postos que tem todos os campos necessários
       // Sem limite de registros para mostrar todo o histórico
+      // Melhorar a correspondência com flexibilidade de capitalização
       const query = `
         SELECT * FROM abastecimentos_postos
-        WHERE posto ILIKE $1
+        WHERE 
+          posto ILIKE $1 OR 
+          LOWER(posto) = LOWER($1) OR
+          REPLACE(LOWER(posto), ' ', '') = REPLACE(LOWER($1), ' ', '')
         ORDER BY created_at DESC
       `;
+      
+      console.log(`Executando consulta SQL: ${query.replace(/\s+/g, ' ')} com parâmetro: ${posto}`);
       
       // Executar a consulta
       const result = await pool.query(query, [posto]);
