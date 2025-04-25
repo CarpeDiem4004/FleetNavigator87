@@ -487,33 +487,38 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
   
   return (
     <div className="w-full">
-      <div>
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
-            <h2 className="text-2xl font-bold">Histórico de Abastecimentos</h2>
-            
+      <div className="rounded-lg shadow bg-white p-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-gray-800 mb-1">Histórico de Abastecimentos</h2>
+            <p className="text-sm text-gray-500">Registros de abastecimentos do Posto {postId}</p>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-2">
             {/* Botão de atualização manual */}
             <button 
-              className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-1"
+              className="px-3 py-1.5 text-sm bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 flex items-center gap-1 transition-colors shadow-sm"
               onClick={handleAtualizar}
               disabled={isLoading}
+              title="Atualizar dados"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
-              Atualizar
+              <span>Atualizar</span>
             </button>
             
             {/* Botão de exportação para Excel */}
             <button 
-              className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600 flex items-center gap-1"
+              className="px-3 py-1.5 text-sm bg-emerald-500 text-white rounded-md hover:bg-emerald-600 flex items-center gap-1 transition-colors shadow-sm"
               onClick={handleExportarExcel}
               disabled={isLoading || filteredData.length === 0}
+              title="Exportar para planilha Excel"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              Exportar Excel
+              <span>Excel</span>
             </button>
             
             {/* Botão de sincronização com Supabase */}
@@ -526,31 +531,54 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
             
             {showLimparButton && (
               <button 
-                className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 flex items-center gap-1"
+                className="px-3 py-1.5 text-sm bg-white border border-red-300 text-red-600 rounded-md hover:bg-red-50 flex items-center gap-1 transition-colors shadow-sm"
                 onClick={handleLimparHistorico}
                 disabled={isLoading}
+                title="Limpar todo o histórico"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
-                Limpar Histórico
+                <span>Limpar</span>
               </button>
             )}
-          </div>
-          
-          <div className="relative w-64">
-            <input
-              type="text"
-              placeholder="Buscar abastecimentos..."
-              className="w-full px-4 py-2 border rounded-lg"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+            
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                placeholder="Buscar..."
+                className="pl-10 pr-4 py-1.5 w-40 md:w-56 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
+          </div>
+        </div>
+        
+        {/* Filtros adicionais - datas */}
+        <div className="flex flex-wrap gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600">Data inicial:</label>
+            <input
+              type="date"
+              className="px-3 py-1 text-sm border border-gray-300 rounded-md"
+              value={dateStart}
+              onChange={(e) => setDateStart(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600">Data final:</label>
+            <input
+              type="date"
+              className="px-3 py-1 text-sm border border-gray-300 rounded-md"
+              value={dateEnd}
+              onChange={(e) => setDateEnd(e.target.value)}
+            />
           </div>
         </div>
         
@@ -567,48 +595,62 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
           <div className="overflow-auto">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="py-3 px-4 text-left font-medium text-gray-600">Data</th>
-                  <th className="py-3 px-4 text-left font-medium text-gray-600">Veículo</th>
-                  <th className="py-3 px-4 text-left font-medium text-gray-600">KM</th>
-                  <th className="py-3 px-4 text-left font-medium text-gray-600">Combustível</th>
-                  <th className="py-3 px-4 text-left font-medium text-gray-600">Litros</th>
-                  <th className="py-3 px-4 text-left font-medium text-gray-600">Projeto</th>
-                  <th className="py-3 px-4 text-left font-medium text-gray-600">Posto</th>
-                  <th className="py-3 px-4 text-left font-medium text-gray-600">Motorista</th>
-                  {showLimparButton && <th className="py-3 px-4 text-left font-medium text-gray-600">Ações</th>}
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  <th className="py-3 px-4 text-left font-medium text-gray-700">Data</th>
+                  <th className="py-3 px-4 text-left font-medium text-gray-700">Veículo</th>
+                  <th className="py-3 px-4 text-left font-medium text-gray-700">KM</th>
+                  <th className="py-3 px-4 text-left font-medium text-gray-700">Combustível</th>
+                  <th className="py-3 px-4 text-left font-medium text-gray-700">Litros</th>
+                  <th className="py-3 px-4 text-right font-medium text-gray-700">Valor</th>
+                  <th className="py-3 px-4 text-left font-medium text-gray-700">Motorista</th>
+                  <th className="py-3 px-4 text-left font-medium text-gray-700">Operador</th>
+                  {showLimparButton && <th className="py-3 px-4 text-center font-medium text-gray-700">Ações</th>}
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-200">
                 {filteredData.map((abast) => (
-                  <tr key={abast.id} className="border-b border-gray-200 hover:bg-gray-50">
-                    <td className="py-3 px-4">{formatarData(abast.created_at)}</td>
+                  <tr key={abast.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="py-3 px-4 text-sm">{formatarDataHora(abast.created_at)}</td>
                     <td className="py-3 px-4 font-medium">{abast.placa}</td>
-                    <td className="py-3 px-4">{formatarNumero(abast.km_atual)}</td>
-                    <td className="py-3 px-4">{abast.tipo_combustivel}</td>
-                    <td className="py-3 px-4">{formatarNumero(abast.litros)}</td>
-                    <td className="py-3 px-4">{abast.project || '-'}</td>
-                    <td className="py-3 px-4">{abast.posto}</td>
-                    <td className="py-3 px-4">{abast.nome_motorista}</td>
+                    <td className="py-3 px-4 text-sm">{formatarNumero(abast.km_atual)}</td>
+                    <td className="py-3 px-4 text-sm">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        abast.tipo_combustivel === 'Diesel' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                      }`}>
+                        {abast.tipo_combustivel}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-sm font-medium">{formatarNumero(abast.litros)}</td>
+                    <td className="py-3 px-4 text-sm text-right font-medium">
+                      {abast.valor_total ? formatarPreco(abast.valor_total) : '-'}
+                    </td>
+                    <td className="py-3 px-4 text-sm">{abast.nome_motorista}</td>
+                    <td className="py-3 px-4 text-sm text-gray-500">{abast.nome_operador}</td>
                     {showLimparButton && (
-                      <td className="py-3 px-4">
-                        <div className="flex space-x-1">
+                      <td className="py-3 px-4 text-center">
+                        <div className="flex justify-center space-x-1">
                           <button 
-                            className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                            className="p-1.5 text-blue-600 rounded-full hover:bg-blue-100 transition-colors"
                             aria-label="Editar abastecimento"
+                            title="Editar registro"
                           >
-                            Editar
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
                           </button>
                           <button 
-                            className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+                            className="p-1.5 text-red-600 rounded-full hover:bg-red-100 transition-colors"
                             onClick={() => {
                               console.log("Botão Excluir clicado para ID:", abast.id);
                               handleExcluirAbastecimento(abast.id);
                             }}
                             disabled={isDeleting}
                             aria-label="Excluir abastecimento"
+                            title="Excluir registro"
                           >
-                            Excluir
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
                           </button>
                         </div>
                       </td>
