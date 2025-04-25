@@ -38,7 +38,7 @@ export const PostoLayout: React.FC<PostoLayoutProps> = ({ id, nomePosto }) => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="col-span-1 md:col-span-3">
             <h2 className="text-xl font-semibold mb-3">Status dos Tanques</h2>
-            <StatusTanqueWrapper postId={id} />
+            <StatusTanqueWrapper postId={id} refreshTrigger={refreshHistorico} />
           </div>
           <div className="col-span-1">
             <h2 className="text-xl font-semibold mb-3">Diagnóstico</h2>
