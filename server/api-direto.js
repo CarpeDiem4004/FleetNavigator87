@@ -17,7 +17,7 @@ export async function getHistoricoPosto(req, res) {
     // Forçar o Content-Type como application/json para evitar interceptação do Vite
     res.setHeader('Content-Type', 'application/json');
     
-    // Verificação especial para Campinas V2
+    // Verificação especial para Campinas V2 e Osasco
     let postoName = req.params.posto;
     
     console.log("getHistoricoPosto - Posto solicitado:", postoName);
@@ -28,28 +28,38 @@ export async function getHistoricoPosto(req, res) {
         postoName.toLowerCase().includes('campinas v2')) {
       postoName = 'campinas_v2';
       console.log("getHistoricoPosto - Identificado como Campinas V2");
-    } else {
+    } 
+    // Caso especial para Osasco
+    else if (postoName.toLowerCase() === 'osasco' || 
+        postoName.toLowerCase().includes('osasco')) {
+      postoName = 'osasco';
+      console.log("getHistoricoPosto - Identificado como Osasco");
+    } 
+    else {
       postoName = formatPostoName(postoName);
       console.log("getHistoricoPosto - Formatado para:", postoName);
     }
     
-    // Caso especial para Campinas V2: usar tabela diretamente em vez de view
+    // Caso especial para Campinas V2 e Osasco: usar tabela diretamente em vez de view
     let querySource;
     let dataQuery;
     
-    if (postoName.toLowerCase() === 'campinas_v2') {
-      console.log("getHistoricoPosto - Usando tabela direta para Campinas V2 em vez de view");
+    if (postoName.toLowerCase() === 'campinas_v2' || postoName.toLowerCase() === 'osasco') {
+      console.log(`getHistoricoPosto - Usando tabela direta para ${postoName} em vez de view`);
+      
+      // Definir o nome da tabela com base no posto
+      const tableName = `abastecimentos_posto_${postoName.toLowerCase()}`;
       
       // Verificar se a tabela existe
       const tableCheckQuery = `
         SELECT EXISTS (
           SELECT FROM information_schema.tables 
           WHERE table_schema = 'public' 
-          AND table_name = 'abastecimentos_posto_campinas_v2'
+          AND table_name = $1
         ) as "exists";
       `;
       
-      const tableCheckResult = await pool.query(tableCheckQuery);
+      const tableCheckResult = await pool.query(tableCheckQuery, [tableName]);
       
       if (!tableCheckResult.rows[0].exists) {
         return res.status(404).json({ 
@@ -58,7 +68,7 @@ export async function getHistoricoPosto(req, res) {
         });
       }
       
-      querySource = 'abastecimentos_posto_campinas_v2';
+      querySource = tableName;
       dataQuery = `
         SELECT 
           id,
@@ -77,7 +87,7 @@ export async function getHistoricoPosto(req, res) {
           tipo_lavagem,
           to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora,
           created_at
-        FROM abastecimentos_posto_campinas_v2
+        FROM ${tableName}
         ORDER BY created_at DESC
         LIMIT ${req.query.limit || 50}
       `;

@@ -91,6 +91,23 @@ app.use((req, res, next) => {
     req.params = { posto: 'campinas_v2' };
     getHistoricoPosto(req, res);
   });
+  
+  // Rotas especiais para Osasco, seguindo mesmo padrão de Campinas V2
+  // Rota de abastecimento
+  app.post('/api/abastecimento-direto-osasco', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE OSASCO ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como osasco
+    req.params = { ...req.params, posto: 'osasco' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Rota de histórico para Osasco
+  app.get('/api/historico-direto-osasco', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE OSASCO ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'osasco' };
+    getHistoricoPosto(req, res);
+  });
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
