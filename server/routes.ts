@@ -121,7 +121,35 @@ async function criarTabelaAbastecimentos() {
     const tabelaExiste = checkResult.rows[0].exists;
     
     if (tabelaExiste) {
-      console.log("Tabela abastecimentos_postos já existe, pulando criação.");
+      console.log("Tabela abastecimentos_postos já existe, verificando campo quantity_litros...");
+      
+      // Verificar se a coluna quantity_litros existe
+      const checkColumnQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.columns 
+          WHERE table_name = 'abastecimentos_postos' AND column_name = 'quantity_litros'
+        );
+      `;
+      
+      const columnCheckResult = await pool.query(checkColumnQuery);
+      
+      if (!columnCheckResult.rows[0].exists) {
+        console.log("Adicionando coluna quantity_litros à tabela abastecimentos_postos...");
+        
+        // Adicionar a coluna quantity_litros com o mesmo valor de litros
+        await pool.query(`
+          ALTER TABLE abastecimentos_postos
+          ADD COLUMN quantity_litros NUMERIC(10,2);
+          
+          UPDATE abastecimentos_postos
+          SET quantity_litros = litros;
+        `);
+        
+        console.log("Coluna quantity_litros adicionada com sucesso!");
+      } else {
+        console.log("Coluna quantity_litros já existe, não é necessário adicionar.");
+      }
+      
       return;
     }
     
@@ -135,6 +163,7 @@ async function criarTabelaAbastecimentos() {
         km_atual INTEGER NOT NULL,
         tipo_combustivel TEXT NOT NULL,
         litros NUMERIC(10,2) NOT NULL,
+        quantity_litros NUMERIC(10,2),
         nome_motorista TEXT NOT NULL,
         nome_operador TEXT NOT NULL,
         posto TEXT NOT NULL,
@@ -1054,8 +1083,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Criar registro no banco de dados
       const query = `
         INSERT INTO abastecimentos_postos 
-        (placa, km_atual, tipo_combustivel, litros, nome_motorista, nome_operador, posto, created_at, project, tipo_veiculo)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), $8, $9)
+        (placa, km_atual, tipo_combustivel, litros, quantity_litros, nome_motorista, nome_operador, posto, created_at, project, tipo_veiculo)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9, $10)
         RETURNING id
       `;
       
@@ -1064,6 +1093,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         parseInt(km, 10),
         tipo,
         qtdCombustivel,
+        qtdCombustivel, // Adicionando quantity_litros com o mesmo valor de litros
         motorista,
         operador,
         formattedPosto, // Usando o campo 'posto' corretamente
