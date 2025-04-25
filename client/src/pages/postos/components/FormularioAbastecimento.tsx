@@ -718,11 +718,20 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       });
       
       // Usa o endpoint de API que sabemos que funciona
+      // Adiciona token de autenticação, se disponível
+      const accessToken = localStorage.getItem('access_token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      
+      // Se tiver token, adiciona ao cabeçalho
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+      
       const response = await fetch('/api/abastecimentos', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify(dadosAbastecimento)
       });
       

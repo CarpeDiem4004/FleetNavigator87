@@ -5653,6 +5653,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Rota para registrar abastecimento usando o modelo de duas tabelas do Supabase
+  // Não exige autenticação para facilitar o registro de abastecimentos em postos externos
   app.post('/api/abastecimentos', async (req, res) => {
     try {
       console.log('Recebendo requisição para abastecimento (modelo Supabase):', req.body);

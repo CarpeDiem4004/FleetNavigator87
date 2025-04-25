@@ -32,11 +32,20 @@ export async function enviarAbastecimentoSupabase(dadosAbastecimento: any) {
     try {
       console.log('Tentando inserir via API do servidor...');
       
+      // Adiciona token de autenticação, se disponível
+      const accessToken = localStorage.getItem('access_token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      
+      // Se tiver token, adiciona ao cabeçalho
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+      
       const apiResponse = await fetch('/api/supabase-insert', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify({
           table: 'abastecimentos_postos',
           data: dadosFormatados
