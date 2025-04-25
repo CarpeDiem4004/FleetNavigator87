@@ -28,7 +28,8 @@ const POSTOS_CONHECIDOS = [
   'BotaFogo',
   'Remedios',
   'VargemGrande',
-  'Guarulhos'
+  'Guarulhos',
+  'Alair'
 ];
 
 /**
