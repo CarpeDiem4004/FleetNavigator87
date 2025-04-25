@@ -73,52 +73,44 @@ export default function FormularioAbastecimentoStandalone() {
     setSuccess(false);
     
     try {
-      console.log("Enviando dados para posto remédios standalone:", data);
-      // Usar por padrão a rota sem autenticação
-      const response = await fetch('/api/posto-remedios-standalone/abastecimentos', {
+      console.log("Enviando dados para posto remédios standalone (usando inserção server-side):", data);
+      
+      // Usar diretamente a API server-side de inserção para contornar problemas de autenticação
+      const serverSideResponse = await fetch('/api/supabase-insert', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          posto: 'POSTO REMÉDIOS',
+          // Não é necessário enviar a tabela explicitamente, a API vai detectar pelo campo 'posto'
+          data: {
+            placa: data.placa.toUpperCase(), // Garantir letras maiúsculas
+            km: data.km,
+            projeto: data.projeto,
+            motorista_nome: data.motorista_nome,
+            motorista_rg: data.motorista_rg || 'Não informado',
+            tipo_combustivel: data.tipo_combustivel,
+            quantidade_litros: data.quantidade_litros,
+            valor_litro: data.valor_litro || 6.39, // Valor padrão se não for informado
+            valor_total: data.valor_total,
+            lavagem: data.lavagem,
+            tipo_lavagem: data.tipo_lavagem,
+            observacoes: data.observacoes,
+            tipo_veiculo: 'frota' // Valor padrão
+          }
+        }),
       });
       
-      // Se falhar com erro 401 ou 403, tentar novamente com a API autenticada e sincronização
-      if (response.status === 401 || response.status === 403) {
-        console.log("Falha na autenticação, tentando sincronizar via API server-side");
-        
-        // Tentar via API server-side
-        const serverSideResponse = await fetch('/api/supabase-insert', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            posto: 'POSTO REMÉDIOS',
-            data: {
-              placa: data.placa,
-              km: data.km,
-              projeto: data.projeto,
-              motorista_nome: data.motorista_nome,
-              motorista_rg: data.motorista_rg,
-              tipo_combustivel: data.tipo_combustivel,
-              quantidade_litros: data.quantidade_litros,
-              valor_litro: data.valor_litro,
-              valor_total: data.valor_total,
-              lavagem: data.lavagem,
-              tipo_lavagem: data.tipo_lavagem,
-              observacoes: data.observacoes
-            }
-          }),
-        });
-        
+      if (serverSideResponse.ok) {
         const serverSideResult = await serverSideResponse.json();
+        
         if (serverSideResult.success) {
           form.reset();
           setSuccess(true);
           toast({
             title: 'Sucesso',
-            description: 'Registro adicionado com sucesso via sincronização',
+            description: 'Registro adicionado com sucesso',
             variant: 'default',
           });
           
@@ -127,34 +119,44 @@ export default function FormularioAbastecimentoStandalone() {
             console.log("[FORM ABASTECIMENTO] Chamando callback de sucesso para atualizar histórico");
             onSubmitSuccess();
           }
-          return;
         } else {
-          throw new Error(serverSideResult.message || 'Erro ao sincronizar dados');
-        }
-      }
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        form.reset();
-        setSuccess(true);
-        toast({
-          title: 'Sucesso',
-          description: 'Registro adicionado com sucesso',
-          variant: 'default',
-        });
-        
-        // Chamar callback para atualizar a lista de registros
-        if (typeof onSubmitSuccess === 'function') {
-          console.log("[FORM ABASTECIMENTO] Chamando callback de sucesso para atualizar histórico");
-          onSubmitSuccess();
+          throw new Error(serverSideResult.message || 'Erro ao processar o registro');
         }
       } else {
-        toast({
-          title: 'Erro',
-          description: result.message || 'Erro ao adicionar registro',
-          variant: 'destructive',
+        // Se falhar, tentar como fallback a API do posto remédios standalone
+        console.log("Falha na API server-side, tentando API standalone como fallback");
+        
+        const response = await fetch('/api/posto-remedios-standalone/abastecimentos', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
         });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          form.reset();
+          setSuccess(true);
+          toast({
+            title: 'Sucesso',
+            description: 'Registro adicionado com sucesso',
+            variant: 'default',
+          });
+          
+          // Chamar callback para atualizar a lista de registros
+          if (typeof onSubmitSuccess === 'function') {
+            console.log("[FORM ABASTECIMENTO] Chamando callback de sucesso para atualizar histórico");
+            onSubmitSuccess();
+          }
+        } else {
+          toast({
+            title: 'Erro',
+            description: result.message || 'Erro ao adicionar registro',
+            variant: 'destructive',
+          });
+        }
       }
     } catch (error) {
       console.error('Erro ao enviar dados:', error);
