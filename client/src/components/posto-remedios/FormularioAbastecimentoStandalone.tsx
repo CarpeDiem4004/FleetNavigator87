@@ -43,13 +43,28 @@ export default function FormularioAbastecimentoStandalone() {
   const [success, setSuccess] = useState(false);
   // Usando useRef para controlar o estado de montagem do componente
   const isMounted = useRef(true);
+  // Referência para elementos do formulário
+  const formRef = useRef<HTMLFormElement>(null);
   // Propriedade para callback após sucesso no cadastro
   const onSubmitSuccess = (window as any).onSubmitSuccessPostoRemedios;
   
+  // Sistema de prevenção contra múltiplas submissões
+  const [submitting, setSubmitting] = useState(false);
+  const submitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   // Atualizar flag de montagem quando o componente for desmontado
+  // e fazer limpeza de outros recursos
   useEffect(() => {
+    console.log("[FORM ABASTECIMENTO] Componente montado");
+    
     return () => {
+      console.log("[FORM ABASTECIMENTO] Componente desmontado");
       isMounted.current = false;
+      
+      // Limpar timeout para evitar vazamento de memória
+      if (submitTimeoutRef.current) {
+        clearTimeout(submitTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -77,9 +92,17 @@ export default function FormularioAbastecimentoStandalone() {
       console.log("Formulário foi desmontado, cancelando submissão");
       return;
     }
+    
+    // Verificar se já está em processo de submissão
+    if (loading || submitting) {
+      console.log("Já existe uma submissão em andamento, ignorando");
+      return;
+    }
 
     console.log("Iniciando envio do formulário...");
+    // Definir ambos os estados de carregamento
     setLoading(true);
+    setSubmitting(true);
     setSuccess(false);
     
     try {
@@ -176,8 +199,15 @@ export default function FormularioAbastecimentoStandalone() {
       // Só atualizar estados se o componente ainda estiver montado
       if (isMounted.current) {
         setLoading(false);
+        setSubmitting(false);
         
-        // Remover status de sucesso após 3 segundos
+        // Limpar qualquer timeout pendente
+        if (submitTimeoutRef.current) {
+          clearTimeout(submitTimeoutRef.current);
+          submitTimeoutRef.current = null;
+        }
+        
+        // Remover status de sucesso após alguns segundos
         if (success) {
           setTimeout(() => {
             if (isMounted.current) {
@@ -252,6 +282,26 @@ export default function FormularioAbastecimentoStandalone() {
     if (!isMounted.current) return;
     
     console.error("Erro no processamento:", message);
+    
+    // Adicionar lógica específica para erros de DOM
+    if (message.includes('insertBefore') || message.includes('removeChild')) {
+      console.log("[FORM ABASTECIMENTO] Detectado erro de manipulação DOM, tentando recuperar");
+      
+      // Limpar todos os estados
+      setLoading(false);
+      setSubmitting(false);
+      
+      // Limpar qualquer timeout pendente
+      if (submitTimeoutRef.current) {
+        clearTimeout(submitTimeoutRef.current);
+        submitTimeoutRef.current = null;
+      }
+      
+      // Não exibir toast para evitar mais manipulações DOM
+      return;
+    }
+    
+    // Para outros erros, exibir toast normalmente
     toast({
       title: 'Erro',
       description: message,
@@ -276,9 +326,33 @@ export default function FormularioAbastecimentoStandalone() {
     'Outro'
   ];
 
+  // Função segura para submissão do formulário
+  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    // Verificar se já está em processo de submissão para evitar cliques duplos
+    if (submitting || loading) {
+      console.log("[FORM ABASTECIMENTO] Ignorando submissão duplicada");
+      return;
+    }
+    
+    // Marcar como em processo de submissão
+    setSubmitting(true);
+    
+    // Usar timeout para prevenir submissões múltiplas rápidas
+    submitTimeoutRef.current = setTimeout(() => {
+      if (isMounted.current) {
+        setSubmitting(false);
+      }
+    }, 3000);
+    
+    // Executar validação e submissão do form manualmente
+    form.handleSubmit(onSubmit)(e);
+  };
+  
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form ref={formRef} onSubmit={handleFormSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -575,9 +649,16 @@ export default function FormularioAbastecimentoStandalone() {
           </Button>
           <Button 
             type="submit" 
-            disabled={loading || success}
+            disabled={loading || submitting || success}
+            onClick={(e) => {
+              if (loading || submitting || success) {
+                e.preventDefault();
+                console.log("[FORM ABASTECIMENTO] Botão clicado enquanto desabilitado");
+                return;
+              }
+            }}
           >
-            {loading ? (
+            {loading || submitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Processando
