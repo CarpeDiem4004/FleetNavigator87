@@ -48,11 +48,35 @@ export default function PostoRemediosStandalone() {
         url += '?' + params.toString();
       }
       
+      console.log("[POSTO REMEDIOS] Buscando registros em:", url);
+      
       const response = await fetch(url);
       const data = await response.json();
       
+      console.log("[POSTO REMEDIOS] Resposta da API:", data);
+      console.log("[POSTO REMEDIOS] Total de registros:", data.data?.length || 0);
+      
       if (data.success) {
-        setRegistros(data.data);
+        // Garantir que os campos necessários estão presentes
+        const registrosFormatados = data.data.map((item: any) => ({
+          id: item.id,
+          placa: item.placa,
+          km: item.km,
+          projeto: item.projeto,
+          motorista_nome: item.motorista_nome,
+          motorista_rg: item.motorista_rg,
+          tipo_combustivel: item.tipo_combustivel || 'N/A',
+          quantidade_litros: parseFloat(item.quantidade_litros) || 0,
+          valor_litro: parseFloat(item.valor_litro) || 0,
+          valor_total: parseFloat(item.valor_total) || 0,
+          lavagem: item.lavagem || false,
+          tipo_lavagem: item.tipo_lavagem || '',
+          observacoes: item.observacoes || '',
+          created_at: item.created_at || item.data_registro
+        }));
+        
+        console.log("[POSTO REMEDIOS] Registros formatados:", registrosFormatados);
+        setRegistros(registrosFormatados);
       } else {
         toast({
           title: 'Erro',
