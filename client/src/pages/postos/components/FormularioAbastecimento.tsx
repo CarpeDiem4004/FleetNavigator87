@@ -815,29 +815,73 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         }
       }
       
-      // Implementação da abordagem solicitada para envio de abastecimentos
+      // Implementação de abordagem com o modelo de duas tabelas do Supabase
       if (!registroSalvo) {
         try {
-          console.log('Tentativa 0: Usando Supabase diretamente (método simplificado)');
+          console.log('Tentativa 0: Usando modelo de duas tabelas (Supabase)');
           
-          // Tenta usar Supabase diretamente como mostrado no exemplo
+          // 1. Tenta usar a rota nova que implementa o modelo de duas tabelas
+          try {
+            const valorTotal = Number(data.valor_total);
+            
+            // Dados formatados para o novo modelo de duas tabelas
+            const dadosAbastecimento = {
+              quantidade_litros: Number(data.quantidade),
+              placa: data.placa.toUpperCase(),
+              km_atual: Number(data.km),
+              posto_id: formatPosto(postId),
+              preco_litro: valorPorLitro,
+              valor_total: valorTotal,
+              tipo_combustivel: data.tipo,
+              nome_motorista: data.motorista,
+              rg_motorista: data.motorista_rg,
+              nome_operador: data.operador,
+              project: data.projeto
+            };
+            
+            console.log('Enviando para novo endpoint /api/abastecimentos:', dadosAbastecimento);
+            
+            const apiResponse = await fetch('/api/abastecimentos', {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${userToken}` 
+              },
+              body: JSON.stringify(dadosAbastecimento)
+            });
+            
+            if (apiResponse.ok) {
+              const result = await apiResponse.json();
+              console.log('Registro usando modelo de duas tabelas bem-sucedido:', result);
+              registroSalvo = true;
+              return; // Encerra o processamento se for bem-sucedido
+            } else {
+              console.warn('Erro ao usar modelo de duas tabelas:', await apiResponse.text());
+            }
+          } catch (dualTableError) {
+            console.error('Exceção ao usar modelo de duas tabelas:', dualTableError);
+          }
+          
+          console.log('Tentativa 1: Usando Supabase diretamente (método tradicional)');
+          
+          // 2. Tenta usar Supabase diretamente como fallback
           try {
             const { supabase } = await import('@/lib/supabase-client');
             
-            // Dados formatados para o Supabase - ajustado ao esquema real
+            // Dados formatados para o Supabase - ajustado ao esquema tradicional
             const dadosAbastecimento = {
-              quantity_litros: Number(data.quantidade), // Usando quantity_litros conforme definido na tabela
+              quantity_litros: Number(data.quantidade),
               litros: Number(data.quantidade), // Mantendo litros para compatibilidade
-              preco_litro: userRole === 'admin' ? Number(data.valor_litro) : undefined, // Usando preco_litro conforme esquema do Supabase
+              preco_litro: userRole === 'admin' ? Number(data.valor_litro) : undefined,
               valor_total: Number(data.valor_total),
               placa: data.placa.toUpperCase(),
-              km_atual: Number(data.km), // Usando km_atual conforme esquema do Supabase
+              km_atual: Number(data.km),
               posto: formatPosto(postId),
               nome_motorista: data.motorista,
               motorista_rg: data.motorista_rg, 
               nome_operador: data.operador,
               project: data.projeto,
-              tipo_combustivel: data.tipo, // Usando tipo_combustivel conforme esquema do Supabase
+              tipo_combustivel: data.tipo,
               tipo_veiculo: data.tipo_veiculo,
               created_at: dataRegistro 
             };
@@ -857,40 +901,39 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
             console.error('Exceção ao usar Supabase direto:', supabaseError);
           }
           
-          console.log('Tentativa 1: Usando API REST (conforme solicitado)');
+          console.log('Tentativa 2: Usando API REST tradicional');
           
-          // Se o método direto falhar, tenta pelo endpoint de API
-          const apiResponse = await fetch('/api/abastecimentos_postos', {
+          // 3. Se os métodos anteriores falharem, tenta pelo endpoint tradicional
+          const apiResponse = await fetch('/api/registro/abastecimento', {
             method: 'POST',
             headers: { 
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${userToken}` 
             },
             body: JSON.stringify({
-              quantity_litros: Number(data.quantidade), // Adicionando campo quantity_litros
-              litros: Number(data.quantidade), // Mantendo litros para compatibilidade
-              preco_litro: userRole === 'admin' ? Number(data.valor_litro) : undefined, // Usando preco_litro conforme esquema do Supabase
+              quantity_litros: Number(data.quantidade),
+              litros: Number(data.quantidade),
+              preco_litro: userRole === 'admin' ? Number(data.valor_litro) : undefined,
               valor_total: Number(data.valor_total),
               placa: data.placa.toUpperCase(),
-              km_atual: Number(data.km), // Usando km_atual conforme o esquema correto do Supabase
+              km_atual: Number(data.km),
               posto: formatPosto(postId),
               nome_motorista: data.motorista,
               motorista_rg: data.motorista_rg,
               nome_operador: data.operador,
               project: data.projeto,
-              tipo_combustivel: data.tipo, // Usando tipo_combustivel conforme esquema do Supabase
+              tipo_combustivel: data.tipo,
               tipo_veiculo: data.tipo_veiculo,
-              data_abastecimento: dataRegistro, // Mudado para data_abastecimento
               created_at: dataRegistro
             })
           });
           
           if (apiResponse.ok) {
-            console.log('Registro via API REST bem-sucedido');
+            console.log('Registro via API REST tradicional bem-sucedido');
             registroSalvo = true;
             return; // Encerra o processamento se for bem-sucedido
           } else {
-            console.warn('Erro na API REST:', await apiResponse.text());
+            console.warn('Erro na API REST tradicional:', await apiResponse.text());
           }
         } catch (apiError) {
           console.error('Falha nas tentativas iniciais:', apiError);
