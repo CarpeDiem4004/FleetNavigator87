@@ -9,13 +9,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+// Removido importações de Select em favor de select HTML nativo
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -252,27 +246,24 @@ export default function FormularioAbastecimentoStandalone() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Projeto</FormLabel>
-                <Select
-                  onValueChange={(value) => {
-                    if (isMounted.current) {
-                      field.onChange(value);
-                    }
-                  }}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o projeto" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
+                <FormControl>
+                  <select
+                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={field.value || ""}
+                    onChange={(e) => {
+                      if (isMounted.current) {
+                        field.onChange(e.target.value);
+                      }
+                    }}
+                  >
+                    <option value="" disabled>Selecione o projeto</option>
                     {projetosOptions.map((projeto) => (
-                      <SelectItem key={projeto} value={projeto}>
+                      <option key={projeto} value={projeto}>
                         {projeto}
-                      </SelectItem>
+                      </option>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </select>
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -316,25 +307,22 @@ export default function FormularioAbastecimentoStandalone() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tipo de Combustível</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      if (isMounted.current) {
-                        field.onChange(value);
-                      }
-                    }}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o combustível" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="diesel">Diesel</SelectItem>
-                      <SelectItem value="gasolina">Gasolina</SelectItem>
-                      <SelectItem value="alcool">Álcool</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <select
+                      className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={field.value || ""}
+                      onChange={(e) => {
+                        if (isMounted.current) {
+                          field.onChange(e.target.value);
+                        }
+                      }}
+                    >
+                      <option value="" disabled>Selecione o combustível</option>
+                      <option value="diesel">Diesel</option>
+                      <option value="gasolina">Gasolina</option>
+                      <option value="alcool">Álcool</option>
+                    </select>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -461,26 +449,23 @@ export default function FormularioAbastecimentoStandalone() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Tipo de Lavagem</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        if (isMounted.current) {
-                          field.onChange(value);
-                        }
-                      }}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o tipo de lavagem" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="simples">Simples</SelectItem>
-                        <SelectItem value="completa">Completa</SelectItem>
-                        <SelectItem value="motor">Motor</SelectItem>
-                        <SelectItem value="chassi">Chassi</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <select
+                        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          if (isMounted.current) {
+                            field.onChange(e.target.value);
+                          }
+                        }}
+                      >
+                        <option value="" disabled>Selecione o tipo de lavagem</option>
+                        <option value="simples">Simples</option>
+                        <option value="completa">Completa</option>
+                        <option value="motor">Motor</option>
+                        <option value="chassi">Chassi</option>
+                      </select>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
