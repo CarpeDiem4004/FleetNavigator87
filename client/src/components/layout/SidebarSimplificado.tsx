@@ -188,7 +188,9 @@ const SidebarSimplificado: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
       { name: 'Posto Osasco', href: '/posto/osasco', icon: Fuel },
       { name: 'Posto Osasco V2', href: '/posto/osasco_v2', icon: Fuel },
-      { name: 'Posto Campinas V2', href: '/posto/campinas_v2', icon: Fuel }
+      { name: 'Posto Campinas V2', href: '/posto/campinas_v2', icon: Fuel },
+      { name: 'Posto ABC', href: '/posto/abc', icon: Fuel },
+      { name: 'Posto ABC V2', href: '/posto/abc_v2', icon: Fuel }
     ]},
     // Item de menu para Cartão de Abastecimento - sempre visível
     { name: 'Cartão', href: '/fuel-card', icon: CreditCard },

@@ -101,7 +101,16 @@ export const MAPEAMENTO_POSTOS: Record<string, string> = {
   'osasco v2': 'osasco_v2',
   'osascov2': 'osasco_v2',
   'posto osasco v2': 'osasco_v2',
-  'posto_osasco_v2': 'osasco_v2'
+  'posto_osasco_v2': 'osasco_v2',
+  
+  'abc': 'abc',
+  'posto abc': 'abc',
+  
+  'abc_v2': 'abc_v2',
+  'abc v2': 'abc_v2',
+  'abcv2': 'abc_v2',
+  'posto abc v2': 'abc_v2',
+  'posto_abc_v2': 'abc_v2'
 };
 
 /**
@@ -195,7 +204,9 @@ export function getPostoDisplayName(nomePosto: string | number): string {
     'blumenau': 'Posto Blumenau',
     'alair': 'Posto Alair',
     'osasco': 'Posto Osasco',
-    'osasco_v2': 'Posto Osasco V2'
+    'osasco_v2': 'Posto Osasco V2',
+    'abc': 'Posto ABC',
+    'abc_v2': 'Posto ABC V2'
   };
   
   return displayNames[nomeFormatado] || `Posto ${nomeFormatado.charAt(0).toUpperCase() + nomeFormatado.slice(1)}`;
