@@ -88,6 +88,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       toggle: () => setPostosExpanded(!postosExpanded),
       submenu: [
         { href: '/posto/osasco', label: 'Posto Osasco' },
+        { href: '/posto/osasco_v2', label: 'Posto Osasco V2' },
         { href: '/posto/guarulhos', label: 'Posto Alair' },
         { href: '/posto/saopaulo', label: 'Posto São Paulo' },
         { href: '/posto/campinas', label: 'Posto Campinas' },
