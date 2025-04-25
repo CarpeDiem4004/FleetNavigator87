@@ -84,6 +84,7 @@ import AbastecimentosPage from "@/pages/AbastecimentosPage";
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
 import OsascoV2Public from "@/pages/postos/public/OsascoV2Public";
 import GuarulhosPublic from "@/pages/postos/public/GuarulhosPublic";
+import AlairV2Public from "@/pages/postos/public/AlairV2Public";
 import SaoPauloPublic from "@/pages/postos/public/SaoPauloPublic";
 import CampinasPublic from "@/pages/postos/public/CampinasPublic";
 import CampinasV2Public from "@/pages/postos/public/CampinasV2Public";
@@ -154,6 +155,7 @@ function App() {
           <ProtectedRoute path="/posto/osasco" component={PostoOsasco} />
           <ProtectedRoute path="/posto/osasco_v2" component={PostoOsascoV2} />
           <ProtectedRoute path="/posto/guarulhos" component={PostoGuarulhos} />
+          <ProtectedRoute path="/posto/alair_v2" component={PostoAlairV2} />
           <ProtectedRoute path="/posto/saopaulo" component={PostoSaoPaulo} />
           <ProtectedRoute path="/posto/campinas" component={PostoCampinas} />
           <ProtectedRoute path="/posto/campinas_v2" component={PostoCampinasV2} />
@@ -235,6 +237,9 @@ function App() {
           </Route>
           <Route path="/posto/guarulhos/public">
             <GuarulhosPublic />
+          </Route>
+          <Route path="/posto/alair_v2/public">
+            <AlairV2Public />
           </Route>
           <Route path="/posto/saopaulo/public">
             <SaoPauloPublic />
