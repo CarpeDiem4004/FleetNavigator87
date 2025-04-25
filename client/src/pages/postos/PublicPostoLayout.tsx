@@ -116,7 +116,7 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
             {/* Usar HistoricoSupabaseView para Campinas V2, HistoricoAbastecimentos para outros postos */}
             {id === 'campinas_v2' ? (
               <HistoricoSupabaseView 
-                posto="posto campinas v2" 
+                posto="campinas_v2" 
                 refreshTrigger={refreshTrigger}
               />
             ) : (
