@@ -48,7 +48,7 @@ export default function FormularioAbastecimentoStandalone() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   // Propriedade para callback após sucesso no cadastro
-  const onSubmitSuccess = window.onSubmitSuccessPostoRemedios;
+  const onSubmitSuccess = (window as any).onSubmitSuccessPostoRemedios;
 
   const form = useForm<AbastecimentoFormValues>({
     resolver: zodResolver(abastecimentoFormSchema),

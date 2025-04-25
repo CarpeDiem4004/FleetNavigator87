@@ -28,6 +28,20 @@ export default function PostoRemediosStandalone() {
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   const [filtroPlaca, setFiltroPlaca] = useState('');
+  
+  // Definir callback global para ser usado pelo formulário
+  useEffect(() => {
+    // Definir a função de callback para atualizar os registros após o cadastro
+    (window as any).onSubmitSuccessPostoRemedios = () => {
+      console.log("[PostoRemediosStandalone] Callback de atualização chamado");
+      carregarRegistros();
+    };
+    
+    // Limpar a função quando o componente for desmontado
+    return () => {
+      delete (window as any).onSubmitSuccessPostoRemedios;
+    };
+  }, []);
 
   const carregarRegistros = async () => {
     setLoadingRegistros(true);
