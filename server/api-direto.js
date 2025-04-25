@@ -150,7 +150,14 @@ export async function getEstatisticasMensaisPosto(req, res) {
         postoName.toLowerCase().includes('campinas v2')) {
       postoName = 'campinas_v2';
       console.log("getEstatisticasMensaisPosto - Identificado como Campinas V2");
-    } else {
+    } 
+    // Caso especial para Osasco
+    else if (postoName.toLowerCase() === 'osasco' || 
+        postoName.toLowerCase().includes('osasco')) {
+      postoName = 'osasco';
+      console.log("getEstatisticasMensaisPosto - Identificado como Osasco");
+    } 
+    else {
       postoName = formatPostoName(postoName);
       console.log("getEstatisticasMensaisPosto - Formatado para:", postoName);
     }
@@ -211,7 +218,14 @@ export async function getConsumoPorVeiculoPosto(req, res) {
         postoName.toLowerCase().includes('campinas v2')) {
       postoName = 'campinas_v2';
       console.log("getConsumoPorVeiculoPosto - Identificado como Campinas V2");
-    } else {
+    } 
+    // Caso especial para Osasco
+    else if (postoName.toLowerCase() === 'osasco' || 
+        postoName.toLowerCase().includes('osasco')) {
+      postoName = 'osasco';
+      console.log("getConsumoPorVeiculoPosto - Identificado como Osasco");
+    } 
+    else {
       postoName = formatPostoName(postoName);
       console.log("getConsumoPorVeiculoPosto - Formatado para:", postoName);
     }
@@ -272,7 +286,14 @@ export async function getComparativoCombustiveisPosto(req, res) {
         postoName.toLowerCase().includes('campinas v2')) {
       postoName = 'campinas_v2';
       console.log("getComparativoCombustiveisPosto - Identificado como Campinas V2");
-    } else {
+    } 
+    // Caso especial para Osasco
+    else if (postoName.toLowerCase() === 'osasco' || 
+        postoName.toLowerCase().includes('osasco')) {
+      postoName = 'osasco';
+      console.log("getComparativoCombustiveisPosto - Identificado como Osasco");
+    } 
+    else {
       postoName = formatPostoName(postoName);
       console.log("getComparativoCombustiveisPosto - Formatado para:", postoName);
     }
@@ -333,7 +354,14 @@ export async function checkTabelaPosto(req, res) {
         postoName.toLowerCase().includes('campinas v2')) {
       postoName = 'campinas_v2';
       console.log("checkTabelaPosto - Identificado como Campinas V2");
-    } else {
+    } 
+    // Caso especial para Osasco
+    else if (postoName.toLowerCase() === 'osasco' || 
+        postoName.toLowerCase().includes('osasco')) {
+      postoName = 'osasco';
+      console.log("checkTabelaPosto - Identificado como Osasco");
+    } 
+    else {
       postoName = formatPostoName(postoName);
       console.log("checkTabelaPosto - Formatado para:", postoName);
     }
@@ -399,7 +427,14 @@ export async function registrarAbastecimentoPosto(req, res) {
         postoName.toLowerCase().includes('campinas v2')) {
       postoName = 'campinas_v2';
       console.log("Posto identificado como Campinas V2");
-    } else {
+    } 
+    // Verificação explícita para Osasco
+    else if (postoName.toLowerCase() === 'osasco' || 
+        postoName.toLowerCase().includes('osasco')) {
+      postoName = 'osasco';
+      console.log("Posto identificado como Osasco");
+    } 
+    else {
       postoName = formatPostoName(postoName);
       console.log("Posto formatado para:", postoName);
     }
