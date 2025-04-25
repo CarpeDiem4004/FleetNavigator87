@@ -107,6 +107,9 @@ const NavItemWithSubmenu: React.FC<{
 
   // Renderização dos subitens
   const renderSubItems = () => {
+    // Log para debug - identificar problemas de menu
+    console.log("Renderizando subitens para", item.name, "- Expandido:", expanded, "- Subitens:", item.subItems);
+    
     if (!expanded || !item.subItems) return null;
     
     return (
@@ -114,6 +117,9 @@ const NavItemWithSubmenu: React.FC<{
         {item.subItems.map(subItem => {
           const SubIcon = subItem.icon;
           const isSubActive = currentLocation === subItem.href;
+          
+          // Log de debug individual para cada subitem
+          console.log("  Subitem:", subItem.name, "- Href:", subItem.href);
           
           return (
             <div key={subItem.name}>
