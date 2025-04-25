@@ -565,9 +565,13 @@ const FormularioAbastecimento: React.FC<
         let endpoint = "";
         let usarRotaDireta = false;
         
-        if (postId.toLowerCase() === "campinas_v2") {
-          endpoint = `/api/abastecimento-direto/campinas_v2`;
+        if (postId.toLowerCase() === "campinas_v2" || 
+            postId.toLowerCase().includes("campinas_v2") || 
+            postId.toLowerCase().includes("campinas v2")) {
+          // Usar a rota específica que foi criada para resolver o problema com Campinas V2
+          endpoint = `/api/abastecimento-direto-campinas-v2`;
           usarRotaDireta = true;
+          console.log(">>> Usando rota específica para Campinas V2");
         } else if (postId.toLowerCase().includes("remedios")) {
           endpoint = "/api/posto-remedios-standalone/abastecimentos";
         } else {
@@ -701,7 +705,15 @@ const FormularioAbastecimento: React.FC<
           // Primeira tentativa imediata
           const atualizarTanque = async () => {
             try {
-              const tanqueUpdateResponse = await fetch(`/api/configuracao-tanques/${postId}/consume`, {
+              // Se for Campinas V2, forçar o nome correto para atualização do tanque
+              const tanquePostoId = postId.toLowerCase().includes("campinas_v2") || 
+                                   postId.toLowerCase().includes("campinas v2") 
+                                    ? "Campinas_v2" 
+                                    : postId;
+              
+              console.log(`Atualizando tanque para o posto: ${tanquePostoId}`);
+              
+              const tanqueUpdateResponse = await fetch(`/api/configuracao-tanques/${tanquePostoId}/consume`, {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
