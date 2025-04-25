@@ -411,14 +411,9 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
             </div>
             
             <DialogFooter className="pt-4">
-              <Button
-                variant="outline"
-                type="button"
-                onClick={goToRegister}
-                disabled={isSubmitting}
-              >
-                Criar Conta
-              </Button>
+              <p className="text-sm text-gray-500 mr-auto">
+                Contate o administrador para obter acesso ao sistema
+              </p>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
