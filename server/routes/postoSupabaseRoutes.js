@@ -7,6 +7,12 @@ const router = express.Router();
 const postoUtils = require('../utils/posto-utils');
 const { pool } = require('../db');
 
+// Configurando router para responder apenas como API JSON
+router.use((req, res, next) => {
+  res.setHeader('Content-Type', 'application/json');
+  next();
+});
+
 /**
  * Rota de diagnóstico para listar todas as tabelas relacionadas a postos
  * @route GET /api/debug/list-posto-tables
