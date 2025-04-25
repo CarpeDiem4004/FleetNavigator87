@@ -508,37 +508,86 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
   useEffect(() => {
     const fetchPostos = async () => {
       try {
-        console.log('Buscando tabela de mapeamento de postos...');
+        console.log('Buscando tabela de mapeamento de postos para:', postId);
         
+        // Mapeamento manual expandido para incluir mais postos
+        const mapeamentoManual = [
+          { id: "83414281-5dcc-4783-aafd-8b4722fde7c1", nome: "Campinas" },
+          { id: "5e5a57f2-4609-4d2c-9474-8bb5751de982", nome: "Osasco" },
+          { id: "0b607752-5626-456d-9652-3fd9336c3c0d", nome: "Abc" },
+          { id: "e5a5e846-1931-4673-9efc-df5e7a31d311", nome: "Socorro" },
+          { id: "0a49321b-4f25-4535-b1f7-4d2a5d9b518c", nome: "Sorocaba" },
+          { id: "d8f731c5-c8e6-4a3f-8cb1-96aca7c62afb", nome: "SaoPaulo" },
+          { id: "2d2b720a-6518-4d5b-a413-bf5b49253b1d", nome: "Ipatinga" },
+          { id: "a1c87a6e-6b22-4c6e-9b15-cc782f39e964", nome: "BotaFogo" },
+          { id: "f4e0e08e-e7c3-4c7a-8d1a-fbe8939d7e5e", nome: "Remedios" },
+          { id: "77a5fb38-3ab7-4cfa-b857-a27ed701afdd", nome: "VargemGrande" }
+        ];
+        
+        // Verificar se o postId recebido corresponde a algum dos postos no mapeamento manual
+        const postoManual = mapeamentoManual.find(
+          p => p.nome.toLowerCase() === postId.toLowerCase() || 
+               p.id.toLowerCase() === postId.toLowerCase()
+        );
+        
+        if (postoManual) {
+          console.log('Posto encontrado no mapeamento manual:', postoManual);
+          setPostos([postoManual]);
+          return;
+        }
+        
+        // Se não encontrou no mapeamento manual, tenta buscar do Supabase
         const { data, error } = await supabase
           .from('postos')
           .select('id, nome');
         
         if (error) {
-          console.error('Erro ao buscar postos:', error);
+          console.error('Erro ao buscar postos do Supabase:', error);
           
-          // Usar mapeamento manual como fallback
-          const mapeamentoManual = [
-            { id: "83414281-5dcc-4783-aafd-8b4722fde7c1", nome: "Campinas" },
-            { id: "5e5a57f2-4609-4d2c-9474-8bb5751de982", nome: "Osasco" },
-            { id: "0b607752-5626-456d-9652-3fd9336c3c0d", nome: "Abc" },
-            { id: "e5a5e846-1931-4673-9efc-df5e7a31d311", nome: "Socorro" },
-            { id: "0a49321b-4f25-4535-b1f7-4d2a5d9b518c", nome: "Sorocaba" }
-          ];
-          
-          console.log('Usando mapeamento manual de UUIDs:', mapeamentoManual);
-          setPostos(mapeamentoManual);
+          // Se não encontrou no mapeamento manual e deu erro no Supabase,
+          // cria uma entrada temporária com o próprio postId
+          console.log('Usando o próprio nome do posto como ID:', postId);
+          setPostos([{
+            id: postId, 
+            nome: postId.charAt(0).toUpperCase() + postId.slice(1).toLowerCase()
+          }]);
           return;
         }
         
         if (data && data.length > 0) {
-          console.log(`Encontrados ${data.length} postos no mapeamento:`, data);
-          setPostos(data);
+          console.log(`Encontrados ${data.length} postos no mapeamento Supabase:`, data);
+          
+          // Verificar se o postId corresponde a algum dos postos no Supabase
+          const postoSupabase = data.find(
+            p => p.nome.toLowerCase() === postId.toLowerCase() || 
+                 p.id.toLowerCase() === postId.toLowerCase()
+          );
+          
+          if (postoSupabase) {
+            console.log('Posto encontrado no Supabase:', postoSupabase);
+            setPostos([postoSupabase]);
+          } else {
+            // Se não encontrou no Supabase também, usa o próprio postId
+            console.log('Posto não encontrado no Supabase, usando nome:', postId);
+            setPostos([{
+              id: postId, 
+              nome: postId.charAt(0).toUpperCase() + postId.slice(1).toLowerCase()
+            }]);
+          }
         } else {
-          console.warn('Nenhum posto encontrado na tabela de mapeamento');
+          console.warn('Nenhum posto encontrado na tabela de mapeamento do Supabase');
+          setPostos([{
+            id: postId, 
+            nome: postId.charAt(0).toUpperCase() + postId.slice(1).toLowerCase()
+          }]);
         }
       } catch (error) {
         console.error('Exceção ao buscar postos:', error);
+        // Em caso de exceção, usa o próprio postId como fallback
+        setPostos([{
+          id: postId, 
+          nome: postId.charAt(0).toUpperCase() + postId.slice(1).toLowerCase()
+        }]);
       }
     };
 
