@@ -13,6 +13,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+// Importando o cliente Supabase para buscar os postos
+import { supabase } from "@/lib/supabase-client";
 import {
   Form,
   FormControl,
@@ -488,10 +490,62 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
   const [arlaValorLitro, setArlaValorLitro] = useState('4.25');
   const processingRef = useRef(false);
   
-  // Função auxiliar para formatar o nome do posto
-  const formatPosto = (posto: string) => {
-    return posto.charAt(0).toUpperCase() + posto.slice(1);
+  // Estado para armazenar o mapeamento de postos
+  const [postos, setPostos] = useState<{ id: string; nome: string }[]>([]);
+  const [postoUUID, setPostoUUID] = useState<string | null>(null);
+  
+  // Função auxiliar para obter o UUID do posto a partir do nome
+  const formatPosto = (postoNome: string) => {
+    // Encontrar o UUID correspondente ao nome do posto
+    const posto = postos.find(p => p.nome.toLowerCase() === postoNome.toLowerCase());
+    
+    // Se encontrou o UUID na tabela de mapeamento, retorna o UUID
+    if (posto && posto.id) {
+      console.log(`Mapeamento encontrado para posto ${postoNome}: ${posto.id}`);
+      return posto.id;
+    }
+    
+    // Se não encontrou, mantém o comportamento anterior para compatibilidade
+    console.log(`Nenhum UUID encontrado para posto ${postoNome}, usando nome formatado`);
+    return postoNome.charAt(0).toUpperCase() + postoNome.slice(1);
   };
+  
+  // Carregar a tabela de mapeamento de postos
+  useEffect(() => {
+    const fetchPostos = async () => {
+      try {
+        console.log('Buscando tabela de mapeamento de postos...');
+        const { data, error } = await supabase
+          .from('postos')
+          .select('id, nome');
+        
+        if (error) {
+          console.error('Erro ao buscar postos:', error);
+          return;
+        }
+        
+        if (data && data.length > 0) {
+          console.log(`Encontrados ${data.length} postos no mapeamento:`, data);
+          setPostos(data);
+          
+          // Procurar e definir o UUID para o posto atual
+          const postoAtual = data.find(p => p.nome.toLowerCase() === postId.toLowerCase());
+          if (postoAtual) {
+            console.log(`UUID para posto ${postId}: ${postoAtual.id}`);
+            setPostoUUID(postoAtual.id);
+          } else {
+            console.warn(`Nenhum UUID encontrado para posto ${postId}`);
+          }
+        } else {
+          console.warn('Nenhum posto encontrado na tabela de mapeamento');
+        }
+      } catch (error) {
+        console.error('Exceção ao buscar postos:', error);
+      }
+    };
+
+    fetchPostos();
+  }, [postId]);
   
   // Verificar se o usuário é admin
   useEffect(() => {
