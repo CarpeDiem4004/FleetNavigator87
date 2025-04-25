@@ -113,8 +113,8 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
             Históricos
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Usar HistoricoSupabaseView para Campinas V2 e Osasco, HistoricoAbastecimentos para outros postos */}
-            {id === 'campinas_v2' || id === 'osasco' ? (
+            {/* Usar HistoricoSupabaseView para Campinas V2, Osasco e Osasco V2, HistoricoAbastecimentos para outros postos */}
+            {id === 'campinas_v2' || id === 'osasco' || id === 'osasco_v2' ? (
               <HistoricoSupabaseView 
                 posto={id} 
                 refreshTrigger={refreshTrigger}
