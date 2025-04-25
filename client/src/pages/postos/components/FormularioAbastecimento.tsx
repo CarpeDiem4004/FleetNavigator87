@@ -504,39 +504,37 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     return postoNome.charAt(0).toUpperCase() + postoNome.slice(1).toLowerCase();
   };
   
-  // Carregar a tabela de mapeamento de postos
+  // Carregar a tabela de mapeamento de postos usando a nova API
   useEffect(() => {
     const fetchPostos = async () => {
       try {
-        console.log('Buscando tabela de mapeamento de postos para:', postId);
+        console.log('Buscando mapeamento de postos para:', postId);
         
-        // Mapeamento manual expandido para incluir mais postos
-        const mapeamentoManual = [
-          { id: "83414281-5dcc-4783-aafd-8b4722fde7c1", nome: "Campinas" },
-          { id: "5e5a57f2-4609-4d2c-9474-8bb5751de982", nome: "Osasco" },
-          { id: "0b607752-5626-456d-9652-3fd9336c3c0d", nome: "Abc" },
-          { id: "e5a5e846-1931-4673-9efc-df5e7a31d311", nome: "Socorro" },
-          { id: "0a49321b-4f25-4535-b1f7-4d2a5d9b518c", nome: "Sorocaba" },
-          { id: "d8f731c5-c8e6-4a3f-8cb1-96aca7c62afb", nome: "SaoPaulo" },
-          { id: "2d2b720a-6518-4d5b-a413-bf5b49253b1d", nome: "Ipatinga" },
-          { id: "a1c87a6e-6b22-4c6e-9b15-cc782f39e964", nome: "BotaFogo" },
-          { id: "f4e0e08e-e7c3-4c7a-8d1a-fbe8939d7e5e", nome: "Remedios" },
-          { id: "77a5fb38-3ab7-4cfa-b857-a27ed701afdd", nome: "VargemGrande" }
-        ];
+        // Usar a nova API de mapeamento de postos
+        const response = await fetch(`/api/postos-mapeamento/${postId}`);
         
-        // Verificar se o postId recebido corresponde a algum dos postos no mapeamento manual
-        const postoManual = mapeamentoManual.find(
-          p => p.nome.toLowerCase() === postId.toLowerCase() || 
-               p.id.toLowerCase() === postId.toLowerCase()
-        );
-        
-        if (postoManual) {
-          console.log('Posto encontrado no mapeamento manual:', postoManual);
-          setPostos([postoManual]);
-          return;
+        if (response.ok) {
+          const result = await response.json();
+          
+          if (result.success && result.data) {
+            console.log('Posto encontrado no mapeamento da API:', result.data);
+            
+            // Ajustar formato para compatibilidade
+            const postoMapeado = {
+              id: result.data.id,
+              nome: result.data.nome_para_exibicao || result.data.nome,
+              // Guardar os campos do questionário para uso posterior
+              campos_questionario: result.data.campos_questionario
+            };
+            
+            setPostos([postoMapeado]);
+            return;
+          }
         }
         
-        // Se não encontrou no mapeamento manual, tenta buscar do Supabase
+        // Se a API falhou ou não encontrou o posto, tenta buscar do Supabase
+        console.log('API de mapeamento falhou ou não encontrou o posto, tentando Supabase...');
+        
         const { data, error } = await supabase
           .from('postos')
           .select('id, nome');
@@ -544,9 +542,34 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         if (error) {
           console.error('Erro ao buscar postos do Supabase:', error);
           
-          // Se não encontrou no mapeamento manual e deu erro no Supabase,
-          // cria uma entrada temporária com o próprio postId
-          console.log('Usando o próprio nome do posto como ID:', postId);
+          // Mapeamento manual como último recurso
+          const mapeamentoManual = [
+            { id: "83414281-5dcc-4783-aafd-8b4722fde7c1", nome: "Campinas" },
+            { id: "5e5a57f2-4609-4d2c-9474-8bb5751de982", nome: "Osasco" },
+            { id: "0b607752-5626-456d-9652-3fd9336c3c0d", nome: "Abc" },
+            { id: "e5a5e846-1931-4673-9efc-df5e7a31d311", nome: "Socorro" },
+            { id: "0a49321b-4f25-4535-b1f7-4d2a5d9b518c", nome: "Sorocaba" },
+            { id: "d8f731c5-c8e6-4a3f-8cb1-96aca7c62afb", nome: "SaoPaulo" },
+            { id: "2d2b720a-6518-4d5b-a413-bf5b49253b1d", nome: "Ipatinga" },
+            { id: "a1c87a6e-6b22-4c6e-9b15-cc782f39e964", nome: "BotaFogo" },
+            { id: "f4e0e08e-e7c3-4c7a-8d1a-fbe8939d7e5e", nome: "Remedios" },
+            { id: "77a5fb38-3ab7-4cfa-b857-a27ed701afdd", nome: "VargemGrande" }
+          ];
+          
+          // Verificar se o postId recebido corresponde a algum dos postos no mapeamento manual
+          const postoManual = mapeamentoManual.find(
+            p => p.nome.toLowerCase() === postId.toLowerCase() || 
+                 p.id.toLowerCase() === postId.toLowerCase()
+          );
+          
+          if (postoManual) {
+            console.log('Posto encontrado no mapeamento manual:', postoManual);
+            setPostos([postoManual]);
+            return;
+          }
+          
+          // Último recurso: usar o próprio nome do posto
+          console.log('Usando o próprio nome do posto como ID (último recurso):', postId);
           setPostos([{
             id: postId, 
             nome: postId.charAt(0).toUpperCase() + postId.slice(1).toLowerCase()
@@ -555,7 +578,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         }
         
         if (data && data.length > 0) {
-          console.log(`Encontrados ${data.length} postos no mapeamento Supabase:`, data);
+          console.log(`Encontrados ${data.length} postos no Supabase:`, data);
           
           // Verificar se o postId corresponde a algum dos postos no Supabase
           const postoSupabase = data.find(
@@ -567,15 +590,15 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
             console.log('Posto encontrado no Supabase:', postoSupabase);
             setPostos([postoSupabase]);
           } else {
-            // Se não encontrou no Supabase também, usa o próprio postId
-            console.log('Posto não encontrado no Supabase, usando nome:', postId);
+            // Último recurso: usar o próprio nome do posto
+            console.log('Posto não encontrado em nenhum mapeamento, usando o próprio nome:', postId);
             setPostos([{
               id: postId, 
               nome: postId.charAt(0).toUpperCase() + postId.slice(1).toLowerCase()
             }]);
           }
         } else {
-          console.warn('Nenhum posto encontrado na tabela de mapeamento do Supabase');
+          console.warn('Nenhum posto encontrado em nenhum mapeamento');
           setPostos([{
             id: postId, 
             nome: postId.charAt(0).toUpperCase() + postId.slice(1).toLowerCase()
