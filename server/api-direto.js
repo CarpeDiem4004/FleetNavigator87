@@ -33,28 +33,79 @@ export async function getHistoricoPosto(req, res) {
       console.log("getHistoricoPosto - Formatado para:", postoName);
     }
     
-    const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_consolidado`;
+    // Caso especial para Campinas V2: usar tabela diretamente em vez de view
+    let querySource;
+    let dataQuery;
     
-    // Verificar se a view existe
-    const checkQuery = `
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = $1
-      ) as "exists";
-    `;
-    
-    const checkResult = await pool.query(checkQuery, [viewName]);
-    
-    if (!checkResult.rows[0].exists) {
-      return res.status(404).json({ 
-        success: false, 
-        error: `View consolidada para posto ${postoName} não encontrada.` 
-      });
+    if (postoName.toLowerCase() === 'campinas_v2') {
+      console.log("getHistoricoPosto - Usando tabela direta para Campinas V2 em vez de view");
+      
+      // Verificar se a tabela existe
+      const tableCheckQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'abastecimentos_posto_campinas_v2'
+        ) as "exists";
+      `;
+      
+      const tableCheckResult = await pool.query(tableCheckQuery);
+      
+      if (!tableCheckResult.rows[0].exists) {
+        return res.status(404).json({ 
+          success: false, 
+          error: `Tabela para posto ${postoName} não encontrada.` 
+        });
+      }
+      
+      querySource = 'abastecimentos_posto_campinas_v2';
+      dataQuery = `
+        SELECT 
+          id,
+          placa,
+          km_atual as km,
+          tipo_combustivel,
+          litros as quantidade_litros,
+          motorista as nome_motorista,
+          motorista_rg as rg_motorista,
+          operador as nome_operador,
+          valor_litro,
+          valor_total,
+          tipo_veiculo,
+          observacoes,
+          lavagem,
+          tipo_lavagem,
+          to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora,
+          created_at
+        FROM abastecimentos_posto_campinas_v2
+        ORDER BY created_at DESC
+        LIMIT ${req.query.limit || 50}
+      `;
+    } else {
+      // Fluxo normal usando view consolidada
+      const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_consolidado`;
+      
+      // Verificar se a view existe
+      const checkQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = $1
+        ) as "exists";
+      `;
+      
+      const checkResult = await pool.query(checkQuery, [viewName]);
+      
+      if (!checkResult.rows[0].exists) {
+        return res.status(404).json({ 
+          success: false, 
+          error: `View consolidada para posto ${postoName} não encontrada.` 
+        });
+      }
+      
+      querySource = viewName;
+      dataQuery = `SELECT * FROM "${viewName}" ORDER BY data_hora DESC LIMIT ${req.query.limit || 50}`;
     }
-    
-    // Obter dados da view
-    const dataQuery = `SELECT * FROM "${viewName}" ORDER BY data_hora DESC LIMIT 50`;
     const result = await pool.query(dataQuery);
     
     res.json({

@@ -84,54 +84,12 @@ app.use((req, res, next) => {
     registrarAbastecimentoPosto(req, res);
   });
   
-  // Rota de histórico
+  // Rota de histórico para Campinas V2
   app.get('/api/historico-direto-campinas-v2', (req, res) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE CAMPINAS V2 ====");
-    req.params = { ...req.params, posto: 'campinas_v2' };
-    
-    // Verificar se existe a tabela específica para Campinas V2
-    // Exibir dados diretamente da tabela, em vez de usar a view consolidada
-    const pool = new (require('pg').Pool)({
-      connectionString: process.env.DATABASE_URL,
-    });
-    
-    pool.query(`
-      SELECT 
-        id,
-        placa,
-        km_atual as km,
-        tipo_combustivel,
-        litros as quantidade_litros,
-        motorista as nome_motorista,
-        motorista_rg as rg_motorista,
-        operador as nome_operador,
-        valor_litro,
-        valor_total,
-        tipo_veiculo,
-        observacoes,
-        lavagem,
-        tipo_lavagem,
-        to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora,
-        created_at
-      FROM abastecimentos_posto_campinas_v2
-      ORDER BY created_at DESC
-      LIMIT ${req.query.limit || 50}
-    `, (err, result) => {
-      if (err) {
-        console.error("Erro ao consultar tabela campinas_v2:", err);
-        return res.status(500).json({
-          success: false,
-          error: `Erro ao consultar histórico campinas_v2: ${err.message}`
-        });
-      }
-      
-      res.json({
-        success: true,
-        data: result.rows,
-        count: result.rowCount,
-        posto: "campinas_v2"
-      });
-    });
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'campinas_v2' };
+    getHistoricoPosto(req, res);
   });
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
