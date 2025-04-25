@@ -104,6 +104,90 @@ const hasTiresAccess = tiresAccessMiddleware;
 const isWorkshop = workshopMiddleware;
 const hasBaseAccess = baseAccessMiddleware;
 
+// Função para criar tabela de abastecimentos do modelo Supabase
+async function criarTabelaAbastecimentosSupabase() {
+  try {
+    console.log("Verificando se a tabela abastecimentos (modelo Supabase) existe...");
+    
+    // Verificar se a tabela já existe
+    const checkQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'abastecimentos'
+      );
+    `;
+    
+    const checkResult = await pool.query(checkQuery);
+    const tabelaExiste = checkResult.rows[0].exists;
+    
+    if (tabelaExiste) {
+      console.log("Tabela abastecimentos já existe, pulando criação.");
+      return;
+    }
+    
+    console.log("Criando tabela abastecimentos (modelo Supabase)...");
+    
+    // Criar tabela
+    const createTableQuery = `
+      CREATE TABLE abastecimentos (
+        id SERIAL PRIMARY KEY,
+        data TIMESTAMP DEFAULT NOW(),
+        valor NUMERIC(10,2),
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+    
+    await pool.query(createTableQuery);
+    console.log("Tabela abastecimentos criada com sucesso!");
+    
+  } catch (error) {
+    console.error("Erro ao criar tabela abastecimentos (modelo Supabase):", error);
+  }
+}
+
+// Função para criar tabela de abastecimentos_postos_supabase
+async function criarTabelaAbastecimentosPostosSupabase() {
+  try {
+    console.log("Verificando se a tabela abastecimentos_postos_supabase existe...");
+    
+    // Verificar se a tabela já existe
+    const checkQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'abastecimentos_postos_supabase'
+      );
+    `;
+    
+    const checkResult = await pool.query(checkQuery);
+    const tabelaExiste = checkResult.rows[0].exists;
+    
+    if (tabelaExiste) {
+      console.log("Tabela abastecimentos_postos_supabase já existe, pulando criação.");
+      return;
+    }
+    
+    console.log("Criando tabela abastecimentos_postos_supabase...");
+    
+    // Criar tabela
+    const createTableQuery = `
+      CREATE TABLE abastecimentos_postos_supabase (
+        id SERIAL PRIMARY KEY,
+        abastecimento_id INTEGER NOT NULL,
+        posto_id TEXT NOT NULL,
+        quantidade_litros NUMERIC(10,2) NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        FOREIGN KEY (abastecimento_id) REFERENCES abastecimentos(id)
+      );
+    `;
+    
+    await pool.query(createTableQuery);
+    console.log("Tabela abastecimentos_postos_supabase criada com sucesso!");
+    
+  } catch (error) {
+    console.error("Erro ao criar tabela abastecimentos_postos_supabase:", error);
+  }
+}
+
 // Função para criar tabela de abastecimentos se não existir
 async function criarTabelaAbastecimentos() {
   try {
@@ -704,6 +788,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await criarTabelaFuelCardRequests();
   await criarTabelaDriverChecklists();
   await criarTabelaConfiguracaoTanques();
+  await criarTabelaAbastecimentosSupabase();
+  await criarTabelaAbastecimentosPostosSupabase();
   await criarTabelaSolicitacoesFuelCard();
   await criarTabelaPostoRemediosAbastecimentos();
   await criarTabelaMovimentacaoPneu();
