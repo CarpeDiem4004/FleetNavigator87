@@ -68,7 +68,14 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
     try {
       // Prevenção de cache adicionando timestamp na URL
       const timestamp = new Date().getTime();
-      const response = await axios.get(`/api/posto-supabase/historico/${posto.toLowerCase()}?t=${timestamp}`);
+      
+      // Usar a nova rota direta para evitar problemas com interceptação do Vite
+      const response = await axios.get(`/api/historico-direto/${encodeURIComponent(posto)}?t=${timestamp}`, {
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest' // Indicar que é uma solicitação AJAX
+        }
+      });
       
       console.log('Resposta do histórico:', response);
       
@@ -81,7 +88,22 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
       }
     } catch (err: any) {
       console.error('Erro ao carregar histórico:', err);
-      setError(`Erro ao carregar histórico: ${err.message}`);
+      
+      // Tentar a rota original como fallback
+      try {
+        console.log('Tentando rota alternativa...');
+        const timestamp = new Date().getTime();
+        const fallbackResponse = await axios.get(`/api/posto-supabase/historico/${posto.toLowerCase()}?t=${timestamp}`);
+        
+        if (fallbackResponse.data && fallbackResponse.data.success) {
+          setHistorico(fallbackResponse.data.data || []);
+          setLastRefreshTime(new Date());
+        } else {
+          setError(fallbackResponse.data?.error || 'Erro ao carregar o histórico');
+        }
+      } catch (fallbackErr: any) {
+        setError(`Erro ao carregar histórico: ${err.message}. Fallback também falhou.`);
+      }
     } finally {
       setIsLoading(false);
     }

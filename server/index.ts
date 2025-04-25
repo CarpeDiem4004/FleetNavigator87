@@ -5,6 +5,14 @@ import { setupVite, serveStatic, log } from "./vite";
 import { initCronJobs } from "./cronJobs";
 // Importar migrações
 import { runMigrations } from "./migration";
+// Importar APIs diretas para postos
+import { 
+  getHistoricoPosto, 
+  getEstatisticasMensaisPosto, 
+  getConsumoPorVeiculoPosto,
+  getComparativoCombustiveisPosto,
+  checkTabelaPosto
+} from "./api-direto.js";
 
 // Configuração das variáveis de ambiente do Supabase
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
@@ -56,6 +64,14 @@ app.use((req, res, next) => {
   }
   
   const server = await registerRoutes(app);
+  
+  // Registrar as rotas de API diretas para evitar interceptação do Vite
+  // Estas rotas serão processadas antes do middleware do Vite e terão os headers adequados
+  app.get('/api/historico-direto/:posto', getHistoricoPosto);
+  app.get('/api/estatisticas-mensais-direto/:posto', getEstatisticasMensaisPosto);
+  app.get('/api/consumo-por-veiculo-direto/:posto', getConsumoPorVeiculoPosto);
+  app.get('/api/comparativo-combustiveis-direto/:posto', getComparativoCombustiveisPosto);
+  app.get('/api/check-tabela-direto/:posto', checkTabelaPosto);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
