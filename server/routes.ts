@@ -5747,20 +5747,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Recebendo requisição para abastecimento (modelo Supabase):', JSON.stringify(req.body));
       console.log('Headers:', JSON.stringify(req.headers, null, 2));
       
+      // Adicionar um log para verificar o objeto req e detectar inconsistências
+      console.log('Método da requisição:', req.method);
+      console.log('URL da requisição:', req.url);
+      console.log('Query params:', req.query);
+      console.log('Tipo de combustível:', req.body.tipo_combustivel);
+      
       // Extrair os dados necessários
-      const { 
-        quantidade_litros,
-        placa, 
-        km_atual, 
-        posto_id, 
-        preco_litro,
-        valor_total,
-        tipo_combustivel,
-        nome_motorista,
-        nome_operador,
-        rg_motorista,
-        project
-      } = req.body;
+      // Mapeamento para permitir flexibilidade nos nomes dos campos
+      const quantidade_litros = req.body.quantidade_litros || req.body.quantidade || req.body.litros;
+      const placa = req.body.placa;
+      const km_atual = req.body.km_atual || req.body.km;
+      const posto_id = req.body.posto_id || req.body.posto;
+      const preco_litro = req.body.preco_litro || req.body.valor_litro;
+      const valor_total = req.body.valor_total;
+      const tipo_combustivel = req.body.tipo_combustivel || req.body.tipo;
+      const nome_motorista = req.body.nome_motorista || req.body.motorista;
+      const nome_operador = req.body.nome_operador || req.body.operador;
+      const rg_motorista = req.body.rg_motorista || req.body.motorista_rg;
+      const project = req.body.project || req.body.projeto;
+      
+      console.log('Dados mapeados:',
+        {quantidade_litros, placa, km_atual, posto_id, tipo_combustivel, nome_motorista, rg_motorista});
       
       // Validar os campos obrigatórios
       if (!quantidade_litros || !placa || !posto_id) {
