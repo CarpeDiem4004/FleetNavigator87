@@ -1,0 +1,233 @@
+-- ETAPA 1: Criar tabela de configuração de tanques
+CREATE TABLE IF NOT EXISTS configuracao_tanques (
+    id SERIAL PRIMARY KEY,
+    posto VARCHAR(100) UNIQUE NOT NULL,
+    diesel_capacidade VARCHAR(20) NOT NULL,
+    diesel_nivel VARCHAR(20) NOT NULL,
+    arla_capacidade VARCHAR(20) NOT NULL,
+    arla_nivel VARCHAR(20) NOT NULL,
+    diesel_valor_litro VARCHAR(20) DEFAULT '0.00',
+    arla_valor_litro VARCHAR(20) DEFAULT '0.00',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ETAPA 2: Criar tabela principal de abastecimentos
+CREATE TABLE IF NOT EXISTS abastecimentos_posto_campinas_v2 (
+    id SERIAL PRIMARY KEY,
+    placa VARCHAR(10) NOT NULL,
+    km NUMERIC(10, 2) NOT NULL,
+    tipo_combustivel VARCHAR(20) NOT NULL,
+    quantidade_litros NUMERIC(10, 2) NOT NULL,
+    nome_motorista VARCHAR(100) NOT NULL,
+    rg_motorista VARCHAR(20),
+    nome_operador VARCHAR(100) NOT NULL,
+    valor_litro NUMERIC(10, 2) NOT NULL,
+    valor_total NUMERIC(10, 2) NOT NULL,
+    tipo_veiculo VARCHAR(50),
+    observacoes TEXT,
+    lavagem BOOLEAN DEFAULT FALSE,
+    tipo_lavagem VARCHAR(50),
+    data_hora TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ETAPA 3: Criar índices para melhorar performance
+CREATE INDEX IF NOT EXISTS idx_posto_campinas_v2_placa ON abastecimentos_posto_campinas_v2(placa);
+CREATE INDEX IF NOT EXISTS idx_posto_campinas_v2_data_hora ON abastecimentos_posto_campinas_v2(data_hora);
+CREATE INDEX IF NOT EXISTS idx_posto_campinas_v2_tipo_combustivel ON abastecimentos_posto_campinas_v2(tipo_combustivel);
+
+-- ETAPA 4: Criar tabela de histórico
+CREATE TABLE IF NOT EXISTS abastecimentos_posto_campinas_v2_historico (
+    id SERIAL PRIMARY KEY,
+    abastecimento_id INTEGER NOT NULL,
+    placa VARCHAR(10) NOT NULL,
+    km NUMERIC(10, 2) NOT NULL,
+    tipo_combustivel VARCHAR(20) NOT NULL,
+    quantidade_litros NUMERIC(10, 2) NOT NULL,
+    nome_motorista VARCHAR(100) NOT NULL,
+    rg_motorista VARCHAR(20),
+    nome_operador VARCHAR(100) NOT NULL,
+    valor_litro NUMERIC(10, 2) NOT NULL,
+    valor_total NUMERIC(10, 2) NOT NULL,
+    tipo_veiculo VARCHAR(50),
+    observacoes TEXT,
+    lavagem BOOLEAN DEFAULT FALSE,
+    tipo_lavagem VARCHAR(50),
+    data_hora TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    acao_historico VARCHAR(20) NOT NULL
+);
+
+-- ETAPA 5: Criar triggers para histórico
+CREATE OR REPLACE FUNCTION abastecimentos_posto_campinas_v2_insert_trigger()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO abastecimentos_posto_campinas_v2_historico (
+        abastecimento_id, placa, km, tipo_combustivel, quantidade_litros,
+        nome_motorista, rg_motorista, nome_operador, valor_litro, valor_total,
+        tipo_veiculo, observacoes, lavagem, tipo_lavagem, data_hora, acao_historico
+    )
+    VALUES (
+        NEW.id, NEW.placa, NEW.km, NEW.tipo_combustivel, NEW.quantidade_litros,
+        NEW.nome_motorista, NEW.rg_motorista, NEW.nome_operador, NEW.valor_litro, NEW.valor_total,
+        NEW.tipo_veiculo, NEW.observacoes, NEW.lavagem, NEW.tipo_lavagem, NEW.data_hora, 'INSERT'
+    );
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS abastecimentos_posto_campinas_v2_after_insert ON abastecimentos_posto_campinas_v2;
+CREATE TRIGGER abastecimentos_posto_campinas_v2_after_insert
+AFTER INSERT ON abastecimentos_posto_campinas_v2
+FOR EACH ROW
+EXECUTE FUNCTION abastecimentos_posto_campinas_v2_insert_trigger();
+
+CREATE OR REPLACE FUNCTION abastecimentos_posto_campinas_v2_update_trigger()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO abastecimentos_posto_campinas_v2_historico (
+        abastecimento_id, placa, km, tipo_combustivel, quantidade_litros,
+        nome_motorista, rg_motorista, nome_operador, valor_litro, valor_total,
+        tipo_veiculo, observacoes, lavagem, tipo_lavagem, data_hora, acao_historico
+    )
+    VALUES (
+        NEW.id, NEW.placa, NEW.km, NEW.tipo_combustivel, NEW.quantidade_litros,
+        NEW.nome_motorista, NEW.rg_motorista, NEW.nome_operador, NEW.valor_litro, NEW.valor_total,
+        NEW.tipo_veiculo, NEW.observacoes, NEW.lavagem, NEW.tipo_lavagem, NEW.data_hora, 'UPDATE'
+    );
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS abastecimentos_posto_campinas_v2_after_update ON abastecimentos_posto_campinas_v2;
+CREATE TRIGGER abastecimentos_posto_campinas_v2_after_update
+AFTER UPDATE ON abastecimentos_posto_campinas_v2
+FOR EACH ROW
+EXECUTE FUNCTION abastecimentos_posto_campinas_v2_update_trigger();
+
+-- ETAPA 6: Criar views para análise e relatórios
+CREATE OR REPLACE VIEW abastecimentos_posto_campinas_v2_consolidado AS
+SELECT 
+    id,
+    placa,
+    km,
+    tipo_combustivel,
+    quantidade_litros,
+    nome_motorista,
+    rg_motorista,
+    nome_operador,
+    valor_litro,
+    valor_total,
+    tipo_veiculo,
+    observacoes,
+    lavagem,
+    tipo_lavagem,
+    data_hora,
+    created_at
+FROM abastecimentos_posto_campinas_v2
+ORDER BY data_hora DESC;
+
+CREATE OR REPLACE VIEW abastecimentos_posto_campinas_v2_estatisticas_mensais AS
+SELECT 
+    EXTRACT(YEAR FROM data_hora) as ano,
+    EXTRACT(MONTH FROM data_hora) as mes,
+    tipo_combustivel,
+    COUNT(*) as total_abastecimentos,
+    SUM(quantidade_litros) as total_litros,
+    AVG(quantidade_litros) as media_litros_por_abastecimento,
+    SUM(valor_total) as valor_total,
+    COUNT(DISTINCT placa) as total_veiculos_distintos
+FROM abastecimentos_posto_campinas_v2
+GROUP BY ano, mes, tipo_combustivel
+ORDER BY ano DESC, mes DESC;
+
+CREATE OR REPLACE VIEW abastecimentos_posto_campinas_v2_consumo_por_veiculo AS
+SELECT 
+    placa,
+    tipo_veiculo,
+    COUNT(*) as total_abastecimentos,
+    SUM(quantidade_litros) as total_litros,
+    AVG(quantidade_litros) as media_litros_por_abastecimento,
+    SUM(valor_total) as valor_total,
+    MAX(km) as ultima_km,
+    MIN(km) as primeira_km,
+    (MAX(km) - MIN(km)) as km_percorridos,
+    CASE 
+        WHEN (MAX(km) - MIN(km)) > 0 AND SUM(quantidade_litros) > 0 
+        THEN (MAX(km) - MIN(km)) / SUM(quantidade_litros) 
+        ELSE 0 
+    END as km_por_litro
+FROM abastecimentos_posto_campinas_v2
+GROUP BY placa, tipo_veiculo
+ORDER BY total_litros DESC;
+
+CREATE OR REPLACE VIEW abastecimentos_posto_campinas_v2_comparativo_combustiveis AS
+SELECT 
+    'DIESEL' as tipo_combustivel,
+    COUNT(*) as total_abastecimentos,
+    SUM(quantidade_litros) as total_litros,
+    SUM(valor_total) as valor_total,
+    AVG(valor_litro) as preco_medio_litro
+FROM abastecimentos_posto_campinas_v2
+WHERE tipo_combustivel = 'DIESEL'
+UNION ALL
+SELECT 
+    'ARLA' as tipo_combustivel,
+    COUNT(*) as total_abastecimentos,
+    SUM(quantidade_litros) as total_litros,
+    SUM(valor_total) as valor_total,
+    AVG(valor_litro) as preco_medio_litro
+FROM abastecimentos_posto_campinas_v2
+WHERE tipo_combustivel = 'ARLA';
+
+-- ETAPA 7: Inserir configuração dos tanques
+INSERT INTO configuracao_tanques (
+    posto, 
+    diesel_capacidade, 
+    diesel_nivel, 
+    arla_capacidade, 
+    arla_nivel, 
+    diesel_valor_litro, 
+    arla_valor_litro
+) VALUES (
+    'Campinas V2', 
+    '15000',
+    '10000',
+    '3000', 
+    '2000',
+    '5.20',
+    '3.50'
+)
+ON CONFLICT (posto) DO UPDATE SET 
+    diesel_capacidade = EXCLUDED.diesel_capacidade,
+    diesel_nivel = EXCLUDED.diesel_nivel,
+    arla_capacidade = EXCLUDED.arla_capacidade,
+    arla_nivel = EXCLUDED.arla_nivel,
+    diesel_valor_litro = EXCLUDED.diesel_valor_litro,
+    arla_valor_litro = EXCLUDED.arla_valor_litro,
+    updated_at = NOW();
+
+-- ETAPA 8: Inserir dados de exemplo
+INSERT INTO abastecimentos_posto_campinas_v2 (
+    placa, 
+    km, 
+    tipo_combustivel, 
+    quantidade_litros, 
+    nome_motorista, 
+    rg_motorista, 
+    nome_operador, 
+    valor_litro, 
+    valor_total, 
+    tipo_veiculo, 
+    observacoes, 
+    lavagem, 
+    tipo_lavagem, 
+    data_hora
+) VALUES 
+('ABC1D234', 45678.5, 'DIESEL', 120.5, 'Carlos Silva', '12345678-9', 'José Operador', 5.20, 626.60, 'CAMINHÃO', 'Abastecimento completo', FALSE, NULL, NOW() - INTERVAL '1 hour'),
+('DEF5G678', 78456.2, 'DIESEL', 90.0, 'André Martins', '87654321-0', 'José Operador', 5.20, 468.00, 'VAN', 'Abastecimento parcial', TRUE, 'COMPLETA', NOW() - INTERVAL '2 hours'),
+('HIJ9K012', 32789.7, 'DIESEL', 150.0, 'Paulo Rodrigues', '23456789-1', 'Gabriel Santos', 5.20, 780.00, 'CARRETA', NULL, FALSE, NULL, NOW() - INTERVAL '1 day'),
+('KLM3N456', 98234.1, 'DIESEL', 180.5, 'Ricardo Gomes', '34567890-2', 'Gabriel Santos', 5.20, 938.60, 'CAMINHÃO', 'Abastecimento antes da viagem', FALSE, NULL, NOW() - INTERVAL '2 days'),
+('ABC1D234', 45678.5, 'ARLA', 20.0, 'Carlos Silva', '12345678-9', 'José Operador', 3.50, 70.00, 'CAMINHÃO', 'ARLA para viagem longa', FALSE, NULL, NOW() - INTERVAL '1 hour'),
+('HIJ9K012', 32789.7, 'ARLA', 25.5, 'Paulo Rodrigues', '23456789-1', 'Gabriel Santos', 3.50, 89.25, 'CARRETA', NULL, FALSE, NULL, NOW() - INTERVAL '1 day');
