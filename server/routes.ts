@@ -6068,7 +6068,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Registrar as rotas do Supabase específicas para postos
-  app.use('/api', postoSupabaseRoutes);
+  // Usamos /api/posto-supabase como caminho para evitar conflitos com o Vite
+  app.use('/api/posto-supabase', postoSupabaseRoutes);
 
   // Para debugging, adicionar rota para listar todas as tabelas relacionadas a postos
   app.get("/api/debug/list-posto-tables", async (req, res) => {
