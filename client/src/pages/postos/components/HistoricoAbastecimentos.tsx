@@ -94,8 +94,32 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
       
       // Usar o endpoint genérico para abastecimentos (para outros postos)
       try {
+        console.log("[FETCH] Tentando endpoint genérico para o posto:", postId);
+        
+        // Verificar se a resposta é um JSON válido
         const response = await fetch(`/api/abastecimentos/${postId}`);
-        const data = await response.json();
+        
+        // Verificar o tipo de conteúdo
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") === -1) {
+          console.error("[FETCH] Resposta não é JSON, tipo:", contentType);
+          throw new Error("Resposta não é JSON válido");
+        }
+        
+        // Tentar fazer o parse do JSON com tratamento especial
+        let data;
+        try {
+          const text = await response.text();
+          // Verificar se há DOCTYPE no texto (indicando HTML em vez de JSON)
+          if (text.includes("<!DOCTYPE") || text.includes("<html")) {
+            console.error("[FETCH] Recebeu HTML em vez de JSON");
+            throw new Error("Recebeu HTML em vez de JSON");
+          }
+          data = JSON.parse(text);
+        } catch (parseError) {
+          console.error("[FETCH] Erro ao fazer parse do JSON:", parseError);
+          throw parseError;
+        }
         
         console.log("[FETCH] Resposta do endpoint de abastecimentos:", data);
         
@@ -120,8 +144,30 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({ postI
       
       // Método alternativo 1: Usar API de diagnóstico
       try {
+        console.log("[FETCH] Tentando API de diagnóstico para o posto:", postId);
         const response = await fetch(`/api/diagnostico/abastecimentos/${postId}`);
-        const data = await response.json();
+        
+        // Verificar o tipo de conteúdo
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") === -1) {
+          console.error("[FETCH] Resposta da API de diagnóstico não é JSON, tipo:", contentType);
+          throw new Error("Resposta da API de diagnóstico não é JSON válido");
+        }
+        
+        // Tentar fazer o parse do JSON
+        let data;
+        try {
+          const text = await response.text();
+          // Verificar se há DOCTYPE no texto (indicando HTML em vez de JSON)
+          if (text.includes("<!DOCTYPE") || text.includes("<html")) {
+            console.error("[FETCH] API de diagnóstico retornou HTML em vez de JSON");
+            throw new Error("API de diagnóstico retornou HTML em vez de JSON");
+          }
+          data = JSON.parse(text);
+        } catch (parseError) {
+          console.error("[FETCH] Erro ao fazer parse do JSON da API de diagnóstico:", parseError);
+          throw parseError;
+        }
         
         console.log("[FETCH] Resposta da API de diagnóstico:", data);
         
