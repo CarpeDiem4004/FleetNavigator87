@@ -20,6 +20,7 @@ export const POSTOS_CONHECIDOS: string[] = [
   'barueri',
   'blumenau',
   'alair',
+  'alair_v2',
   'osasco',
   'osasco_v2',
   'abc',
@@ -93,6 +94,12 @@ export const MAPEAMENTO_POSTOS: Record<string, string> = {
   
   'alair': 'alair',
   'posto alair': 'alair',
+  
+  'alair_v2': 'alair_v2',
+  'alair v2': 'alair_v2',
+  'alairv2': 'alair_v2',
+  'posto alair v2': 'alair_v2',
+  'posto_alair_v2': 'alair_v2',
   
   'osasco': 'osasco',
   'posto osasco': 'osasco',
@@ -203,6 +210,7 @@ export function getPostoDisplayName(nomePosto: string | number): string {
     'barueri': 'Posto Barueri',
     'blumenau': 'Posto Blumenau',
     'alair': 'Posto Alair',
+    'alair_v2': 'Posto Alair V2',
     'osasco': 'Posto Osasco',
     'osasco_v2': 'Posto Osasco V2',
     'abc': 'Posto ABC',

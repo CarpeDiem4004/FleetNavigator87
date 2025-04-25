@@ -31,6 +31,7 @@ import IndexPostos from "@/pages/postos/IndexPostos";
 import PostoOsasco from "@/pages/postos/Osasco";
 import PostoOsascoV2 from "@/pages/postos/OsascoV2";
 import PostoGuarulhos from "@/pages/postos/Guarulhos";
+import PostoAlairV2 from "@/pages/postos/AlairV2";
 import PostoSaoPaulo from "@/pages/postos/SaoPaulo";
 import PostoCampinas from "@/pages/postos/Campinas";
 import PostoCampinasV2 from "@/pages/postos/CampinasV2";
