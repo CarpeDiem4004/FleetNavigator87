@@ -1187,6 +1187,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Rota para consumir combustível do tanque
+  app.post('/api/configuracao-tanques/:posto/consume', async (req, res) => {
+    try {
+      const { posto } = req.params;
+      const { tipo_combustivel, litros } = req.body;
+      
+      // Validação de dados
+      if (!tipo_combustivel || litros === undefined) {
+        return res.status(400).json({
+          success: false,
+          message: 'Dados incompletos para consumo de combustível'
+        });
+      }
+      
+      // Formatar nome do posto (primeira letra maiúscula)
+      const formattedPosto = posto.charAt(0).toUpperCase() + posto.slice(1);
+      
+      console.log(`Consumindo ${litros} litros de ${tipo_combustivel} do posto: ${formattedPosto}`);
+      
+      // Verificar qual campo atualizar
+      const tanqueField = tipo_combustivel.toUpperCase() === 'ARLA' ? 'arla_nivel' : 'diesel_nivel';
+      
+      // Buscar configuração atual do tanque
+      const configQuery = `
+        SELECT * FROM configuracao_tanques 
+        WHERE posto = $1
+      `;
+      
+      const configResult = await pool.query(configQuery, [formattedPosto]);
+      
+      // Se não existir configuração, retornar erro
+      if (configResult.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: `Configuração de tanques não encontrada para posto ${formattedPosto}`
+        });
+      }
+      
+      // Calcular novo nível (nunca permitir que fique negativo)
+      const config = configResult.rows[0];
+      const nivelAtual = tipo_combustivel.toUpperCase() === 'ARLA' ? config.arla_nivel : config.diesel_nivel;
+      const novoNivel = Math.max(nivelAtual - parseFloat(litros), 0);
+      
+      // Atualizar o nível do tanque
+      const updateQuery = `
+        UPDATE configuracao_tanques 
+        SET ${tanqueField} = $1,
+        updated_at = NOW()
+        WHERE posto = $2
+        RETURNING *
+      `;
+      
+      const result = await pool.query(updateQuery, [novoNivel, formattedPosto]);
+      
+      console.log(`Nível do tanque de ${tipo_combustivel} atualizado para posto ${formattedPosto}: ${nivelAtual} -> ${novoNivel}`);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows[0],
+        message: `Consumo de ${litros} litros de ${tipo_combustivel} registrado para o posto ${formattedPosto}`
+      });
+    } catch (error) {
+      console.error('Erro ao consumir combustível:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao consumir combustível',
+        error: String(error)
+      });
+    }
+  });
 
   // Rota para registro de abastecimento - temporariamente sem autenticação para testes
   app.post('/api/registro/abastecimento', async (req, res) => {
