@@ -5913,6 +5913,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registrar rotas para gerenciar preços de combustível
   registerPrecosCombustivelRoutes(app);
+  
+  // Rota para buscar abastecimentos não sincronizados com o Supabase
+  app.get("/api/sincronizar-supabase/:posto", async (req, res) => {
+    const posto = req.params.posto;
+    
+    try {
+      // Verifica se está autenticado
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({
+          success: false,
+          message: "Não autenticado"
+        });
+      }
+      
+      console.log(`Buscando abastecimentos não sincronizados para o posto: ${posto}`);
+      
+      // Primeiro, verificamos se a coluna sincronizado_supabase existe
+      const checkColumnQuery = `
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'abastecimentos' 
+        AND column_name = 'sincronizado_supabase'
+      `;
+      
+      const columnCheck = await pool.query(checkColumnQuery);
+      
+      // Se a coluna não existir, vamos criá-la
+      if (columnCheck.rows.length === 0) {
+        console.log('Coluna sincronizado_supabase não encontrada, criando...');
+        await pool.query(`
+          ALTER TABLE abastecimentos 
+          ADD COLUMN sincronizado_supabase BOOLEAN DEFAULT FALSE
+        `);
+        console.log('Coluna sincronizado_supabase criada com sucesso');
+      }
+      
+      // Busca abastecimentos não sincronizados no banco de dados
+      const query = `
+        SELECT * FROM abastecimentos
+        WHERE LOWER(posto) = LOWER($1)
+        AND (sincronizado_supabase IS NULL OR sincronizado_supabase = false)
+        ORDER BY created_at DESC
+      `;
+      
+      const result = await pool.query(query, [posto]);
+      const abastecimentos = result.rows;
+      
+      console.log(`Encontrados ${abastecimentos.length} abastecimentos não sincronizados para o posto ${posto}`);
+      
+      res.json({ 
+        success: true, 
+        count: abastecimentos.length,
+        data: abastecimentos
+      });
+    } catch (error: any) {
+      console.error(`Erro ao buscar abastecimentos não sincronizados para ${posto}:`, error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Erro ao buscar dados para sincronização",
+        error: String(error)
+      });
+    }
+  });
+  
+  // Rota para marcar abastecimentos como sincronizados
+  app.post("/api/marcar-sincronizados", async (req, res) => {
+    try {
+      // Verifica se está autenticado
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({
+          success: false,
+          message: "Não autenticado"
+        });
+      }
+      
+      const { ids } = req.body;
+      
+      if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Lista de IDs vazia ou inválida"
+        });
+      }
+      
+      console.log(`Marcando ${ids.length} abastecimentos como sincronizados: ${ids.join(', ')}`);
+      
+      // Atualiza os registros no banco de dados
+      const query = `
+        UPDATE abastecimentos
+        SET sincronizado_supabase = true
+        WHERE id = ANY($1)
+      `;
+      
+      const result = await pool.query(query, [ids]);
+      
+      console.log(`${result.rowCount} abastecimentos marcados como sincronizados`);
+      
+      res.json({ 
+        success: true, 
+        count: result.rowCount,
+        message: `${result.rowCount} abastecimentos marcados como sincronizados`
+      });
+    } catch (error: any) {
+      console.error(`Erro ao marcar abastecimentos como sincronizados:`, error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Erro ao atualizar status de sincronização",
+        error: String(error)
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
