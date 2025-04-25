@@ -496,35 +496,11 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
   const [postos, setPostos] = useSafeState<{ id: string; nome: string }[]>([]);
   const [postoUUID, setPostoUUID] = useSafeState<string | null>(null);
   
-  // Função auxiliar para obter o UUID do posto a partir do nome
+  // Função auxiliar para processar o nome do posto para o formato adequado
   const formatPosto = (postoNome: string) => {
-    // Encontrar o UUID correspondente ao nome do posto
-    const posto = postos.find(p => p.nome.toLowerCase() === postoNome.toLowerCase());
-    
-    // Se encontrou o UUID na tabela de mapeamento, retorna o UUID
-    if (posto && posto.id) {
-      console.log(`Mapeamento encontrado para posto ${postoNome}: ${posto.id}`);
-      return posto.id;
-    }
-    
-    // Se não encontrou, usar mapeamento fixo para os postos conhecidos
-    const mapeamentoFixo: Record<string, string> = {
-      'campinas': '83414281-5dcc-4783-aafd-8b4722fde7c1',
-      'osasco': '5e5a57f2-4609-4d2c-9474-8bb5751de982',
-      'abc': '0b607752-5626-456d-9652-3fd9336c3c0d',
-      'socorro': 'e5a5e846-1931-4673-9efc-df5e7a31d311',
-      'sorocaba': '0a49321b-4f25-4535-b1f7-4d2a5d9b518c'
-    };
-    
-    const postoLower = postoNome.toLowerCase();
-    if (mapeamentoFixo[postoLower]) {
-      console.log(`Usando UUID fixo para ${postoNome}: ${mapeamentoFixo[postoLower]}`);
-      return mapeamentoFixo[postoLower];
-    }
-    
-    // Último recurso, manter comportamento anterior para compatibilidade
-    console.log(`Nenhum UUID encontrado para posto ${postoNome}, usando nome formatado`);
-    return postoNome.charAt(0).toUpperCase() + postoNome.slice(1);
+    // A API agora funciona diretamente com nomes, então simplesmente retornamos o nome do posto
+    // Formatado com a primeira letra maiúscula para manter a consistência
+    return postoNome.charAt(0).toUpperCase() + postoNome.slice(1).toLowerCase();
   };
   
   // Carregar a tabela de mapeamento de postos

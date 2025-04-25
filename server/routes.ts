@@ -5584,6 +5584,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Garantir que posto_id seja tratado como string
+      const postoIdFormatado = typeof posto_id === 'string' 
+        ? posto_id.charAt(0).toUpperCase() + posto_id.slice(1).toLowerCase()
+        : String(posto_id);
+      
+      console.log(`Posto formatado para registro: ${postoIdFormatado}`);
+      
       // 1. Criar registro na tabela abastecimentos
       const insertAbastecimentoQuery = `
         INSERT INTO abastecimentos (
@@ -5622,7 +5629,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const abastecimentoPostoResult = await pool.query(insertAbastecimentoPostoQuery, [
         abastecimentoId,
-        posto_id,
+        postoIdFormatado, // Usar posto formatado
         quantidade_litros
       ]);
       
@@ -5641,9 +5648,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             project,
             preco_litro,
             valor_total,
-            created_at
+            created_at,
+            rg_motorista
           ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW()
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), $12
           )
         `;
         
@@ -5655,10 +5663,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           quantidade_litros,
           nome_motorista || 'Não informado',
           nome_operador || 'Não informado',
-          posto_id,
+          postoIdFormatado, // Usar posto formatado
           project || 'Não informado',
           preco_litro || 0,
-          calculatedValor || 0
+          calculatedValor || 0,
+          rg_motorista || 'Não informado'
         ]);
       } catch (legacyError) {
         console.warn('Aviso: Falha ao inserir registro no formato legado:', legacyError);
