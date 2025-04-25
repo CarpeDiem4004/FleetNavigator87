@@ -17,7 +17,22 @@ export async function getHistoricoPosto(req, res) {
     // Forçar o Content-Type como application/json para evitar interceptação do Vite
     res.setHeader('Content-Type', 'application/json');
     
-    const postoName = formatPostoName(req.params.posto);
+    // Verificação especial para Campinas V2
+    let postoName = req.params.posto;
+    
+    console.log("getHistoricoPosto - Posto solicitado:", postoName);
+    
+    // Caso especial para Campinas V2
+    if (postoName.toLowerCase() === 'campinas_v2' || 
+        postoName.toLowerCase().includes('campinas_v2') || 
+        postoName.toLowerCase().includes('campinas v2')) {
+      postoName = 'campinas_v2';
+      console.log("getHistoricoPosto - Identificado como Campinas V2");
+    } else {
+      postoName = formatPostoName(postoName);
+      console.log("getHistoricoPosto - Formatado para:", postoName);
+    }
+    
     const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_consolidado`;
     
     // Verificar se a view existe
@@ -63,7 +78,22 @@ export async function getEstatisticasMensaisPosto(req, res) {
     // Forçar o Content-Type como application/json para evitar interceptação do Vite
     res.setHeader('Content-Type', 'application/json');
     
-    const postoName = formatPostoName(req.params.posto);
+    // Verificação especial para Campinas V2
+    let postoName = req.params.posto;
+    
+    console.log("getEstatisticasMensaisPosto - Posto solicitado:", postoName);
+    
+    // Caso especial para Campinas V2
+    if (postoName.toLowerCase() === 'campinas_v2' || 
+        postoName.toLowerCase().includes('campinas_v2') || 
+        postoName.toLowerCase().includes('campinas v2')) {
+      postoName = 'campinas_v2';
+      console.log("getEstatisticasMensaisPosto - Identificado como Campinas V2");
+    } else {
+      postoName = formatPostoName(postoName);
+      console.log("getEstatisticasMensaisPosto - Formatado para:", postoName);
+    }
+    
     const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_estatisticas_mensais`;
     
     // Verificar se a view existe
@@ -109,7 +139,22 @@ export async function getConsumoPorVeiculoPosto(req, res) {
     // Forçar o Content-Type como application/json para evitar interceptação do Vite
     res.setHeader('Content-Type', 'application/json');
     
-    const postoName = formatPostoName(req.params.posto);
+    // Verificação especial para Campinas V2
+    let postoName = req.params.posto;
+    
+    console.log("getConsumoPorVeiculoPosto - Posto solicitado:", postoName);
+    
+    // Caso especial para Campinas V2
+    if (postoName.toLowerCase() === 'campinas_v2' || 
+        postoName.toLowerCase().includes('campinas_v2') || 
+        postoName.toLowerCase().includes('campinas v2')) {
+      postoName = 'campinas_v2';
+      console.log("getConsumoPorVeiculoPosto - Identificado como Campinas V2");
+    } else {
+      postoName = formatPostoName(postoName);
+      console.log("getConsumoPorVeiculoPosto - Formatado para:", postoName);
+    }
+    
     const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_consumo_por_veiculo`;
     
     // Verificar se a view existe
@@ -155,7 +200,22 @@ export async function getComparativoCombustiveisPosto(req, res) {
     // Forçar o Content-Type como application/json para evitar interceptação do Vite
     res.setHeader('Content-Type', 'application/json');
     
-    const postoName = formatPostoName(req.params.posto);
+    // Verificação especial para Campinas V2
+    let postoName = req.params.posto;
+    
+    console.log("getComparativoCombustiveisPosto - Posto solicitado:", postoName);
+    
+    // Caso especial para Campinas V2
+    if (postoName.toLowerCase() === 'campinas_v2' || 
+        postoName.toLowerCase().includes('campinas_v2') || 
+        postoName.toLowerCase().includes('campinas v2')) {
+      postoName = 'campinas_v2';
+      console.log("getComparativoCombustiveisPosto - Identificado como Campinas V2");
+    } else {
+      postoName = formatPostoName(postoName);
+      console.log("getComparativoCombustiveisPosto - Formatado para:", postoName);
+    }
+    
     const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_comparativo_combustiveis`;
     
     // Verificar se a view existe
@@ -201,7 +261,22 @@ export async function checkTabelaPosto(req, res) {
     // Forçar o Content-Type como application/json para evitar interceptação do Vite
     res.setHeader('Content-Type', 'application/json');
     
-    const postoName = formatPostoName(req.params.posto);
+    // Verificação especial para Campinas V2
+    let postoName = req.params.posto;
+    
+    console.log("checkTabelaPosto - Posto solicitado:", postoName);
+    
+    // Caso especial para Campinas V2
+    if (postoName.toLowerCase() === 'campinas_v2' || 
+        postoName.toLowerCase().includes('campinas_v2') || 
+        postoName.toLowerCase().includes('campinas v2')) {
+      postoName = 'campinas_v2';
+      console.log("checkTabelaPosto - Identificado como Campinas V2");
+    } else {
+      postoName = formatPostoName(postoName);
+      console.log("checkTabelaPosto - Formatado para:", postoName);
+    }
+    
     const tableName = `abastecimentos_posto_${postoName.toLowerCase()}`;
     
     // Verificar se a tabela existe
