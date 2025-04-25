@@ -22,6 +22,9 @@ export const POSTOS_CONHECIDOS: string[] = [
   'alair'
 ];
 
+// Alias para compatibilidade
+export const formatarNomePosto = formatPostoName;
+
 /**
  * Mapeamento de variações de nome para nome padronizado
  */
@@ -181,4 +184,70 @@ export function getPostoDisplayName(nomePosto: string | number): string {
   };
   
   return displayNames[nomeFormatado] || `Posto ${nomeFormatado.charAt(0).toUpperCase() + nomeFormatado.slice(1)}`;
+}
+
+/**
+ * Formata o nome da tabela para o padrão utilizado no banco de dados
+ * 
+ * @param nomePosto - Nome do posto
+ * @returns - Nome da tabela no formato "abastecimentos_posto_[nome]"
+ */
+export function formatarNomeTabela(nomePosto: string): string {
+  const nomeFormatado = formatPostoName(nomePosto);
+  return `abastecimentos_posto_${nomeFormatado}`;
+}
+
+/**
+ * Obtém o nome da view consolidada para um posto
+ * 
+ * @param nomePosto - Nome do posto
+ * @returns - Nome da view consolidada
+ */
+export function obterNomeViewConsolidada(nomePosto: string): string {
+  const nomeFormatado = formatPostoName(nomePosto);
+  return `view_abastecimentos_${nomeFormatado}_consolidado`;
+}
+
+/**
+ * Obtém o nome da view de consumo por veículo para um posto
+ * 
+ * @param nomePosto - Nome do posto
+ * @returns - Nome da view de consumo por veículo
+ */
+export function obterNomeViewConsumoPorVeiculo(nomePosto: string): string {
+  const nomeFormatado = formatPostoName(nomePosto);
+  return `view_${nomeFormatado}_consumo_por_veiculo`;
+}
+
+/**
+ * Obtém o nome da view de consumo mensal para um posto
+ * 
+ * @param nomePosto - Nome do posto
+ * @returns - Nome da view de consumo mensal
+ */
+export function obterNomeViewConsumoMensal(nomePosto: string): string {
+  const nomeFormatado = formatPostoName(nomePosto);
+  return `view_${nomeFormatado}_consumo_mensal`;
+}
+
+/**
+ * Obtém o nome da view de comparativo de combustíveis para um posto
+ * 
+ * @param nomePosto - Nome do posto
+ * @returns - Nome da view de comparativo de combustíveis
+ */
+export function obterNomeViewComparativoCombustiveis(nomePosto: string): string {
+  const nomeFormatado = formatPostoName(nomePosto);
+  return `view_${nomeFormatado}_comparativo_combustiveis`;
+}
+
+/**
+ * Obtém o nome da view de últimos abastecimentos para um posto
+ * 
+ * @param nomePosto - Nome do posto
+ * @returns - Nome da view de últimos abastecimentos
+ */
+export function obterNomeViewUltimosAbastecimentos(nomePosto: string): string {
+  const nomeFormatado = formatPostoName(nomePosto);
+  return `view_${nomeFormatado}_ultimos_abastecimentos`;
 }
