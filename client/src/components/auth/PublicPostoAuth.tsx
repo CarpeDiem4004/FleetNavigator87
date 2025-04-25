@@ -59,20 +59,34 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
         
         if (token) {
           try {
-            // Verificar se o token ainda é válido no Supabase
-            const { data: { session }, error } = await supabase.auth.getSession();
+            // Verificar se o token ainda é válido usando a API do servidor
+            const response = await fetch('/api/auth/user', {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              credentials: 'include'
+            });
             
             // Verificamos novamente após a operação assíncrona
             if (!isMountedRef.current) return;
             
-            if (session) {
-              console.log('Sessão existente encontrada', session);
+            if (response.ok) {
+              const userData = await response.json();
+              console.log('Sessão existente encontrada', userData);
               
-              // Recuperar dados do usuário armazenados no localStorage
-              const userId = localStorage.getItem('user_id') || '';
-              const email = localStorage.getItem('user_email') || '';
-              const name = localStorage.getItem('user_name') || '';
-              const role = localStorage.getItem('user_role') || '';
+              // Atualizar dados do usuário com os obtidos da API
+              const userId = userData.id.toString();
+              const email = userData.email;
+              const name = userData.name || '';
+              const role = userData.role || '';
+              
+              // Armazenar dados atualizados
+              localStorage.setItem('user_id', userId);
+              localStorage.setItem('user_email', email);
+              localStorage.setItem('user_name', name);
+              localStorage.setItem('user_role', role);
               
               setUser({
                 id: userId,
@@ -165,133 +179,52 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
       const email = loginData.email;
       const password = loginData.password;
       
-      // Abordagem 1: Login via Supabase diretamente
+      // Usar apenas a autenticação híbrida via API do servidor
+      console.log('Tentando autenticação via API do servidor...');
       try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: email,
-          password: password
+        const apiResponse = await fetch('/api/auth/login-hybrid', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: email,
+            password: password
+          }),
+          credentials: 'include' // Importante para sessões
         });
         
-        // Verificar se o componente ainda está montado após operação assíncrona
+        // Verificar se o componente ainda está montado
         if (!isMountedRef.current) return;
         
-        if (error) {
-          console.warn('Erro na autenticação Supabase:', error.message);
+        if (apiResponse.ok) {
+          const userData = await apiResponse.json();
+          console.log('Login via servidor bem-sucedido:', userData);
           
-          // Antes de desistir, vamos tentar um login alternativo via API do servidor
-          try {
-            console.log('Tentando autenticação via API do servidor...');
-            const apiResponse = await fetch('/api/auth/login-hybrid', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                email: email,
-                password: password
-              }),
-              credentials: 'include' // Importante para sessões
-            });
-            
-            // Verificar se o componente ainda está montado
-            if (!isMountedRef.current) return;
-            
-            if (apiResponse.ok) {
-              const userData = await apiResponse.json();
-              console.log('Login via servidor bem-sucedido:', userData);
-              
-              // Armazenar dados no localStorage (sem depender do estado do componente)
-              localStorage.setItem('user_id', userData.id.toString());
-              localStorage.setItem('user_email', userData.email);
-              localStorage.setItem('user_name', userData.name || '');
-              localStorage.setItem('user_role', userData.role || 'operador');
-              localStorage.setItem('auth_token', userData.token || '');
-              
-              if (userData.base_id) {
-                localStorage.setItem('user_base_id', userData.base_id.toString());
-                localStorage.setItem('user_basename', userData.basename || '');
-              }
-              
-              // Fechar modal e atualizar estado de forma segura usando setTimeout
-              setTimeout(() => {
-                if (isMountedRef.current) {
-                  // Definir usuário no estado
-                  setUser({
-                    id: userData.id.toString(),
-                    email: userData.email,
-                    name: userData.name,
-                    role: userData.role
-                  });
-                  
-                  // Fechar diálogo de forma segura
-                  dialogState.close();
-                  
-                  // Notificar sucesso
-                  toast({
-                    title: "Login realizado com sucesso",
-                    description: `Bem-vindo ao Posto ${postoName}`,
-                  });
-                }
-              }, 0);
-              
-              return; // Sai da função se o login via API foi bem-sucedido
-            } else {
-              console.error('Login via API também falhou');
-              throw new Error('Credenciais inválidas ou usuário não encontrado');
-            }
-          } catch (apiError: any) {
-            // Verificar se o componente ainda está montado
-            if (!isMountedRef.current) return;
-            
-            console.error('Erro na autenticação alternativa:', apiError);
-            throw new Error(apiError.message || 'Falha na autenticação');
-          }
-        }
-        
-        // Se chegou aqui, o login Supabase foi bem-sucedido
-        if (data.session && data.user) {
-          console.log('Login Supabase bem-sucedido:', data.user.email);
+          // Armazenar dados no localStorage (sem depender do estado do componente)
+          localStorage.setItem('user_id', userData.id.toString());
+          localStorage.setItem('user_email', userData.email);
+          localStorage.setItem('user_name', userData.name || '');
+          localStorage.setItem('user_role', userData.role || 'operador');
+          localStorage.setItem('auth_token', userData.token || '');
           
-          // Armazenar token e informações básicas
-          localStorage.setItem('access_token', data.session.access_token);
-          localStorage.setItem('user_id', data.user.id);
-          localStorage.setItem('user_email', email);
-          
-          if (data.user.user_metadata) {
-            localStorage.setItem('user_name', data.user.user_metadata.name || '');
-            localStorage.setItem('user_role', data.user.user_metadata.role || 'operador');
+          if (userData.base_id) {
+            localStorage.setItem('user_base_id', userData.base_id.toString());
+            localStorage.setItem('user_basename', userData.basename || '');
           }
           
-          // Tenta sincronizar com o sistema interno
-          try {
-            await fetch('/api/auth/sync-supabase-user', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                supabaseId: data.user.id,
-                email: data.user.email,
-                name: data.user.user_metadata?.name || '',
-                role: data.user.user_metadata?.role || 'operador'
-              }),
-              credentials: 'include'
-            });
-          } catch (syncError) {
-            console.warn('Não foi possível sincronizar com o sistema interno:', syncError);
-            // Continuamos mesmo sem sincronização
-          }
-          
-          // Atualizar estados de forma segura usando setTimeout
+          // Fechar modal e atualizar estado de forma segura usando setTimeout
           setTimeout(() => {
             if (isMountedRef.current) {
               // Definir usuário no estado
               setUser({
-                id: data.user.id,
-                email: email,
-                name: data.user.user_metadata?.name,
-                role: data.user.user_metadata?.role
+                id: userData.id.toString(),
+                email: userData.email,
+                name: userData.name,
+                role: userData.role
               });
               
-              // Fechar modal com segurança
+              // Fechar diálogo de forma segura
               dialogState.close();
               
               // Notificar sucesso
@@ -302,16 +235,18 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
             }
           }, 0);
           
-          // Registrar no console quem fez login (útil para diagnóstico)
-          console.log(`Usuário autenticado: ${email} (${data.user.user_metadata?.name || 'Sem nome'})`);
+          return; // Sai da função se o login via API foi bem-sucedido
+        } else {
+          console.error('Login via API falhou');
+          const apiErrorData = await apiResponse.json();
+          throw new Error(apiErrorData.message || 'Credenciais inválidas ou usuário não encontrado');
         }
-      } catch (supabaseError: any) {
-        console.error('Erro ao interagir com Supabase:', supabaseError);
-        
-        // Verificar se componente ainda está montado
+      } catch (apiError: any) {
+        // Verificar se o componente ainda está montado
         if (!isMountedRef.current) return;
         
-        throw new Error(supabaseError.message || 'Falha ao conectar com serviço de autenticação');
+        console.error('Erro na autenticação:', apiError);
+        throw new Error(apiError.message || 'Falha na autenticação');
       }
     } catch (error: any) {
       // Verificar novamente se o componente está montado
