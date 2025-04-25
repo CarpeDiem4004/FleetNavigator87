@@ -253,7 +253,11 @@ export default function FormularioAbastecimentoStandalone() {
               <FormItem>
                 <FormLabel>Projeto</FormLabel>
                 <Select
-                  onValueChange={field.onChange}
+                  onValueChange={(value) => {
+                    if (isMounted.current) {
+                      field.onChange(value);
+                    }
+                  }}
                   defaultValue={field.value}
                 >
                   <FormControl>
@@ -313,7 +317,11 @@ export default function FormularioAbastecimentoStandalone() {
                 <FormItem>
                   <FormLabel>Tipo de Combustível</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
+                    onValueChange={(value) => {
+                      if (isMounted.current) {
+                        field.onChange(value);
+                      }
+                    }}
                     defaultValue={field.value}
                   >
                     <FormControl>
@@ -346,11 +354,13 @@ export default function FormularioAbastecimentoStandalone() {
                       {...field} 
                       onChange={(e) => {
                         field.onChange(e);
-                        // Calcular valor total automaticamente se tiver valor por litro
-                        const qtd = parseFloat(e.target.value);
-                        const valorLitro = form.getValues("valor_litro");
-                        if (!isNaN(qtd) && valorLitro) {
-                          form.setValue("valor_total", parseFloat((qtd * valorLitro).toFixed(2)));
+                        if (isMounted.current) {
+                          // Calcular valor total automaticamente se tiver valor por litro
+                          const qtd = parseFloat(e.target.value);
+                          const valorLitro = form.getValues("valor_litro");
+                          if (!isNaN(qtd) && valorLitro) {
+                            form.setValue("valor_total", parseFloat((qtd * valorLitro).toFixed(2)));
+                          }
                         }
                       }}
                     />
@@ -374,11 +384,13 @@ export default function FormularioAbastecimentoStandalone() {
                       {...field} 
                       onChange={(e) => {
                         field.onChange(e);
-                        // Calcular valor total automaticamente se tiver quantidade
-                        const valorLitro = parseFloat(e.target.value);
-                        const qtd = form.getValues("quantidade_litros");
-                        if (!isNaN(valorLitro) && qtd) {
-                          form.setValue("valor_total", parseFloat((qtd * valorLitro).toFixed(2)));
+                        if (isMounted.current) {
+                          // Calcular valor total automaticamente se tiver quantidade
+                          const valorLitro = parseFloat(e.target.value);
+                          const qtd = form.getValues("quantidade_litros");
+                          if (!isNaN(valorLitro) && qtd) {
+                            form.setValue("valor_total", parseFloat((qtd * valorLitro).toFixed(2)));
+                          }
                         }
                       }}
                     />
@@ -425,7 +437,11 @@ export default function FormularioAbastecimentoStandalone() {
                   <FormControl>
                     <Checkbox
                       checked={field.value}
-                      onCheckedChange={field.onChange}
+                      onCheckedChange={(checked) => {
+                        if (isMounted.current) {
+                          field.onChange(checked);
+                        }
+                      }}
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
@@ -446,7 +462,11 @@ export default function FormularioAbastecimentoStandalone() {
                   <FormItem>
                     <FormLabel>Tipo de Lavagem</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
+                      onValueChange={(value) => {
+                        if (isMounted.current) {
+                          field.onChange(value);
+                        }
+                      }}
                       defaultValue={field.value}
                     >
                       <FormControl>
@@ -491,7 +511,11 @@ export default function FormularioAbastecimentoStandalone() {
           <Button 
             type="button" 
             variant="outline" 
-            onClick={() => form.reset()}
+            onClick={() => {
+              if (isMounted.current) {
+                form.reset();
+              }
+            }}
             disabled={loading}
           >
             Limpar
