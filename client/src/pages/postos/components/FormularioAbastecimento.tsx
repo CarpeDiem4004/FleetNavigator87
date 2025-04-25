@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { CheckCircle2, Fuel } from "lucide-react";
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSafeState } from "@/hooks/useSafeState"; // 👈 Importando o novo hook
 
 import { Button } from "@/components/ui/button";
@@ -32,21 +32,25 @@ import { useToast } from "@/hooks/use-toast";
 
 // Schema de validação
 const abastecimentoSchema = z.object({
-  placa: z.string().min(7, 'A placa deve ter no mínimo 7 caracteres'),
-  km: z.string().min(1, 'O KM é obrigatório'),
+  placa: z.string().min(7, "A placa deve ter no mínimo 7 caracteres"),
+  km: z.string().min(1, "O KM é obrigatório"),
   tipo: z.string({
-    required_error: 'Selecione o tipo de combustível',
+    required_error: "Selecione o tipo de combustível",
   }),
   quantidade: z.string().min(1, {
-    message: 'Quantidade deve ser um número válido',
+    message: "Quantidade deve ser um número válido",
   }),
-  valor_litro: z.string().min(1, 'O valor por litro é obrigatório'),
+  valor_litro: z.string().min(1, "O valor por litro é obrigatório"),
   valor_total: z.string().optional(),
-  projeto: z.string().min(2, 'O projeto é obrigatório'),
-  motorista: z.string().min(3, 'O nome do motorista deve ter no mínimo 3 caracteres'),
-  motorista_rg: z.string().min(5, 'O RG do motorista é obrigatório'),
-  operador: z.string().min(3, 'O nome do operador deve ter no mínimo 3 caracteres'),
-  tipo_veiculo: z.string().default('frota'),
+  projeto: z.string().min(2, "O projeto é obrigatório"),
+  motorista: z
+    .string()
+    .min(3, "O nome do motorista deve ter no mínimo 3 caracteres"),
+  motorista_rg: z.string().min(5, "O RG do motorista é obrigatório"),
+  operador: z
+    .string()
+    .min(3, "O nome do operador deve ter no mínimo 3 caracteres"),
+  tipo_veiculo: z.string().default("frota"),
   data_registro: z.date().optional(),
 });
 
@@ -58,66 +62,68 @@ interface FormularioAbastecimentoProps {
 }
 
 // Componente Form separado para evitar re-renders múltiplos do mesmo form
-const FormularioForm = ({ 
-  onSubmit, 
-  isSubmitting, 
+const FormularioForm = ({
+  onSubmit,
+  isSubmitting,
   postId,
   isAdmin = false,
   dieselValorLitro = "0",
-  arlaValorLitro = "0"
-}: { 
-  onSubmit: (data: AbastecimentoValues) => void; 
-  isSubmitting: boolean; 
+  arlaValorLitro = "0",
+}: {
+  onSubmit: (data: AbastecimentoValues) => void;
+  isSubmitting: boolean;
   postId: string;
   isAdmin?: boolean;
   dieselValorLitro?: string;
   arlaValorLitro?: string;
 }) => {
   // Obter nome do operador logado do localStorage (adicionado pelo sistema de autenticação)
-  const operadorNome = localStorage.getItem('user_name') || '';
-  const [quantidade, setQuantidade] = useState('');
-  const [tipoCombustivel, setTipoCombustivel] = useState('');
-  const [valorLitro, setValorLitro] = useState('');
-  const [valorTotal, setValorTotal] = useState('0');
-  
+  const operadorNome = localStorage.getItem("user_name") || "";
+  const [quantidade, setQuantidade] = useState("");
+  const [tipoCombustivel, setTipoCombustivel] = useState("");
+  const [valorLitro, setValorLitro] = useState("");
+  const [valorTotal, setValorTotal] = useState("0");
+
   // Formulário sempre instanciado uma única vez
   const form = useForm<AbastecimentoValues>({
     resolver: zodResolver(abastecimentoSchema),
     defaultValues: {
-      placa: '',
-      km: '',
-      tipo: '',
-      quantidade: '',
-      valor_litro: '',
-      valor_total: '0',
-      projeto: '',
-      motorista: '',
-      motorista_rg: '',
+      placa: "",
+      km: "",
+      tipo: "",
+      quantidade: "",
+      valor_litro: "",
+      valor_total: "0",
+      projeto: "",
+      motorista: "",
+      motorista_rg: "",
       operador: operadorNome, // Preenche automaticamente com o nome do operador logado
-      tipo_veiculo: 'frota',
+      tipo_veiculo: "frota",
     },
   });
-  
+
   // Quando o tipo de combustível muda, atualize o valor por litro
   useEffect(() => {
-    if (tipoCombustivel === 'Diesel') {
+    if (tipoCombustivel === "Diesel") {
       setValorLitro(dieselValorLitro);
-      form.setValue('valor_litro', dieselValorLitro);
-    } else if (tipoCombustivel === 'ARLA') {
+      form.setValue("valor_litro", dieselValorLitro);
+    } else if (tipoCombustivel === "ARLA") {
       setValorLitro(arlaValorLitro);
-      form.setValue('valor_litro', arlaValorLitro);
+      form.setValue("valor_litro", arlaValorLitro);
     }
   }, [tipoCombustivel, dieselValorLitro, arlaValorLitro, form]);
-  
+
   // Calcular valor total quando a quantidade ou valor por litro muda
   useEffect(() => {
     if (quantidade && valorLitro) {
-      const total = (parseFloat(quantidade) * parseFloat(valorLitro)).toFixed(2);
+      const total = (parseFloat(quantidade) * parseFloat(valorLitro)).toFixed(
+        2,
+      );
       setValorTotal(total);
-      form.setValue('valor_total', total);
+      form.setValue("valor_total", total);
     } else {
-      setValorTotal('0');
-      form.setValue('valor_total', '0');
+      setValorTotal("0");
+      form.setValue("valor_total", "0");
     }
   }, [quantidade, valorLitro, form]);
 
@@ -128,7 +134,9 @@ const FormularioForm = ({
         <div className="grid grid-cols-1 gap-4">
           {/* Seção de identificação do veículo */}
           <div className="bg-gray-50 dark:bg-gray-800/30 p-4 rounded-lg mb-2">
-            <h3 className="text-md font-semibold mb-3">Informações do Veículo</h3>
+            <h3 className="text-md font-semibold mb-3">
+              Informações do Veículo
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -137,18 +145,18 @@ const FormularioForm = ({
                   <FormItem>
                     <FormLabel>Placa do Veículo</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="ABC1234" 
-                        {...field} 
+                      <Input
+                        placeholder="ABC1234"
+                        {...field}
                         className="uppercase text-lg font-medium"
-                        style={{height: '48px'}} 
+                        style={{ height: "48px" }}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="km"
@@ -156,13 +164,13 @@ const FormularioForm = ({
                   <FormItem>
                     <FormLabel>KM Atual</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="tel" 
-                        inputMode="numeric" 
-                        placeholder="123456" 
-                        {...field} 
+                      <Input
+                        type="tel"
+                        inputMode="numeric"
+                        placeholder="123456"
+                        {...field}
                         className="text-lg font-medium"
-                        style={{height: '48px'}} 
+                        style={{ height: "48px" }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -193,10 +201,12 @@ const FormularioForm = ({
               />
             </div>
           </div>
-          
+
           {/* Seção de abastecimento */}
           <div className="bg-gray-50 dark:bg-gray-800/30 p-4 rounded-lg mb-2">
-            <h3 className="text-md font-semibold mb-3">Dados do Abastecimento</h3>
+            <h3 className="text-md font-semibold mb-3">
+              Dados do Abastecimento
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -223,7 +233,7 @@ const FormularioForm = ({
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="quantidade"
@@ -231,24 +241,24 @@ const FormularioForm = ({
                   <FormItem>
                     <FormLabel>Quantidade (Litros)</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="tel" 
-                        inputMode="decimal" 
-                        placeholder="100" 
+                      <Input
+                        type="tel"
+                        inputMode="decimal"
+                        placeholder="100"
                         {...field}
                         onChange={(e) => {
                           field.onChange(e);
                           setQuantidade(e.target.value);
                         }}
                         className="text-lg font-medium"
-                        style={{height: '48px'}} 
+                        style={{ height: "48px" }}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               {/* Campos de valor */}
               <FormField
                 control={form.control}
@@ -257,10 +267,10 @@ const FormularioForm = ({
                   <FormItem>
                     <FormLabel>Valor por Litro (R$)</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="tel" 
-                        inputMode="decimal" 
-                        placeholder="5.79" 
+                      <Input
+                        type="tel"
+                        inputMode="decimal"
+                        placeholder="5.79"
                         {...field}
                         onChange={(e) => {
                           if (isAdmin) {
@@ -271,7 +281,7 @@ const FormularioForm = ({
                         value={valorLitro}
                         disabled={!isAdmin}
                         className={`text-lg font-medium ${isAdmin ? "" : "bg-gray-100"}`}
-                        style={{height: '48px'}} 
+                        style={{ height: "48px" }}
                       />
                     </FormControl>
                     {!isAdmin && (
@@ -283,7 +293,7 @@ const FormularioForm = ({
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="valor_total"
@@ -291,15 +301,15 @@ const FormularioForm = ({
                   <FormItem>
                     <FormLabel>Valor Total (R$)</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="tel" 
-                        inputMode="decimal" 
-                        placeholder="0.00" 
+                      <Input
+                        type="tel"
+                        inputMode="decimal"
+                        placeholder="0.00"
                         {...field}
                         value={valorTotal}
                         disabled={true}
                         className="text-lg font-medium bg-gray-100"
-                        style={{height: '48px'}} 
+                        style={{ height: "48px" }}
                       />
                     </FormControl>
                     <FormDescription className="text-xs text-muted-foreground">
@@ -311,10 +321,12 @@ const FormularioForm = ({
               />
             </div>
           </div>
-          
+
           {/* Seção do projeto e pessoas */}
           <div className="bg-gray-50 dark:bg-gray-800/30 p-4 rounded-lg">
-            <h3 className="text-md font-semibold mb-3">Projeto e Responsáveis</h3>
+            <h3 className="text-md font-semibold mb-3">
+              Projeto e Responsáveis
+            </h3>
             <div className="grid grid-cols-1 gap-4">
               <FormField
                 control={form.control}
@@ -334,13 +346,16 @@ const FormularioForm = ({
                         <option value="COCA COLA">COCA COLA</option>
                         <option value="SHOPEE">SHOPEE</option>
                         <option value="MERCADO LIVRE">MERCADO LIVRE</option>
-                        <option value="LINE HALL SHOPEE">LINE HALL SHOPEE</option>
+                        <option value="LINE HALL SHOPEE">
+                          LINE HALL SHOPEE
+                        </option>
                         <option value="FULL MELI">FULL MELI</option>
                         <option value="MADEIRA MADEIRA">MADEIRA MADEIRA</option>
                         <option value="MAGALU">MAGALU</option>
                         <option value="NATURA">NATURA</option>
                         <option value="OXXO">OXXO</option>
                         <option value="PETLOVE">PETLOVE</option>
+                        <option value="REMÉDIOS">REMÉDIOS</option>
                         <option value="Outro">Outro</option>
                       </select>
                     </FormControl>
@@ -348,7 +363,7 @@ const FormularioForm = ({
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="motorista"
@@ -356,18 +371,18 @@ const FormularioForm = ({
                   <FormItem>
                     <FormLabel>Nome do Motorista</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="João Silva" 
-                        {...field} 
+                      <Input
+                        placeholder="João Silva"
+                        {...field}
                         className="text-lg"
-                        style={{height: '48px'}}
+                        style={{ height: "48px" }}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="motorista_rg"
@@ -375,18 +390,18 @@ const FormularioForm = ({
                   <FormItem>
                     <FormLabel>RG do Motorista</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="00.000.000-0" 
-                        {...field} 
+                      <Input
+                        placeholder="00.000.000-0"
+                        {...field}
                         className="text-lg"
-                        style={{height: '48px'}}
+                        style={{ height: "48px" }}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="operador"
@@ -394,11 +409,11 @@ const FormularioForm = ({
                   <FormItem>
                     <FormLabel>Nome do Operador</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="Carlos Oliveira" 
-                        {...field} 
+                      <Input
+                        placeholder="Carlos Oliveira"
+                        {...field}
                         className="text-lg"
-                        style={{height: '48px'}}
+                        style={{ height: "48px" }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -408,548 +423,237 @@ const FormularioForm = ({
             </div>
           </div>
         </div>
-        
-        {/* Botão de submissão */}
-        <div className="mt-6">
-          <Button 
-            type="submit" 
-            size="lg" 
-            className="w-full py-6 text-lg font-medium"
+
+        <div className="flex gap-4 mt-8">
+          <Button
+            type="submit"
+            size="lg"
+            className="w-full p-6 text-lg font-medium"
             disabled={isSubmitting}
-            style={{
-              background: 'linear-gradient(to right, #10b981, #059669)',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-            }}
           >
-            {isSubmitting ? (
-              <>
-                <span className="mr-3 h-5 w-5 animate-spin rounded-full border-2 border-b-transparent"></span>
-                Registrando...
-              </>
-            ) : (
-              'REGISTRAR ABASTECIMENTO'
-            )}
+            {isSubmitting ? "Processando..." : "Registrar Abastecimento"}
           </Button>
         </div>
-        
-        <p className="text-center text-sm text-muted-foreground mt-2">
-          Toque no botão acima para registrar o abastecimento
-        </p>
       </form>
     </Form>
   );
 };
 
-// Componente de sucesso separado
-const TelaSucesso = ({ 
-  onHistorico, 
-  onNovoRegistro 
-}: { 
-  onHistorico: () => void; 
-  onNovoRegistro: () => void 
+// Componente de sucesso ao registrar
+const TelaSucesso = ({
+  onHistorico,
+  onNovoRegistro,
+}: {
+  onHistorico: () => void;
+  onNovoRegistro: () => void;
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center py-8">
-      <div className="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-full p-8">
-        <CheckCircle2 className="h-20 w-20 text-green-500" />
+    <div className="flex flex-col items-center text-center py-10">
+      <div className="bg-emerald-100 dark:bg-emerald-900/30 rounded-full p-3 mb-6">
+        <CheckCircle2 className="h-16 w-16 text-emerald-600 dark:text-emerald-400" />
       </div>
-      <h2 className="text-2xl font-bold mb-4 text-center" style={{color: '#10b981'}}>
-        Abastecimento realizado com sucesso!
-      </h2>
-      <p className="text-muted-foreground mb-8 text-center max-w-md text-lg">
-        O abastecimento foi registrado corretamente no sistema e está disponível no histórico.
+      <h3 className="text-2xl font-bold mb-2">Registrado com Sucesso!</h3>
+      <p className="text-gray-500 dark:text-gray-400 max-w-md mb-8">
+        O abastecimento foi registrado com sucesso no sistema. Você pode
+        verificar o histórico ou fazer um novo registro.
       </p>
-      <div className="flex flex-col w-full gap-4 mt-2">
-        <Button 
-          onClick={onHistorico} 
-          className="w-full py-5 text-lg font-medium"
-          style={{
-            background: 'linear-gradient(to right, #10b981, #059669)',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-          }}
-        >
-          Ver Histórico de Abastecimentos
-        </Button>
-        <Button 
-          onClick={onNovoRegistro} 
+      <div className="flex gap-4 w-full max-w-md">
+        <Button
           variant="outline"
-          className="w-full py-5 text-lg font-medium"
+          className="flex-1 text-sm"
+          onClick={onHistorico}
         >
-          Registrar Novo Abastecimento
+          Ver Histórico
+        </Button>
+        <Button className="flex-1 text-sm" onClick={onNovoRegistro}>
+          Novo Registro
         </Button>
       </div>
     </div>
   );
 };
 
-// Componente principal - versão com useSafeState para evitar erros de DOM
-export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = ({ postId, onRegistroSucesso }) => {
+// Componente principal
+const FormularioAbastecimento: React.FC<
+  FormularioAbastecimentoProps
+> = ({ postId, onRegistroSucesso }) => {
   const { toast } = useToast();
-  // Usamos useSafeState para evitar erros de "removeChild" no DOM
   const [registroSucesso, setRegistroSucesso] = useSafeState(false);
   const [isSubmitting, setIsSubmitting] = useSafeState(false);
   const [isUserAdmin, setIsUserAdmin] = useSafeState(false);
-  const [dieselValorLitro, setDieselValorLitro] = useSafeState('5.79');
-  const [arlaValorLitro, setArlaValorLitro] = useSafeState('4.25');
+  const [dieselValorLitro, setDieselValorLitro] = useSafeState("6.39"); // Valor fixo conforme solicitado
+  const [arlaValorLitro, setArlaValorLitro] = useSafeState("4.25");
   const processingRef = useRef(false);
-  const mountedRef = useRef(true); // Referência para verificar se o componente está montado
-  
-  // Efeito para atualizar a referência quando o componente desmontar
+  const mountedRef = useRef(true);
+
+  // Efeito para gerenciar ciclo de vida do componente
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };
   }, []);
-  
-  // Estado para armazenar o mapeamento de postos
-  const [postos, setPostos] = useSafeState<{ id: string; nome: string }[]>([]);
-  const [postoUUID, setPostoUUID] = useSafeState<string | null>(null);
-  
-  // Função auxiliar para processar o nome do posto para o formato adequado
-  const formatPosto = (postoNome: string) => {
-    // A API agora funciona diretamente com nomes, então simplesmente retornamos o nome do posto
-    // Formatado com a primeira letra maiúscula para manter a consistência
-    return postoNome.charAt(0).toUpperCase() + postoNome.slice(1).toLowerCase();
-  };
-  
-  // Carregar a tabela de mapeamento de postos usando a nova API
-  useEffect(() => {
-    const fetchPostos = async () => {
-      try {
-        console.log('Buscando mapeamento de postos para:', postId);
-        
-        // Usar a nova API de mapeamento de postos
-        const response = await fetch(`/api/postos-mapeamento/${postId}`);
-        
-        if (response.ok) {
-          const result = await response.json();
-          
-          if (result.success && result.data) {
-            console.log('Posto encontrado no mapeamento da API:', result.data);
-            
-            // Ajustar formato para compatibilidade
-            const postoMapeado = {
-              id: result.data.id,
-              nome: result.data.nome_para_exibicao || result.data.nome,
-              // Guardar os campos do questionário para uso posterior
-              campos_questionario: result.data.campos_questionario
-            };
-            
-            setPostos([postoMapeado]);
-            return;
-          }
-        }
-        
-        // Se a API falhou ou não encontrou o posto, tenta buscar do Supabase
-        console.log('API de mapeamento falhou ou não encontrou o posto, tentando Supabase...');
-        
-        const { data, error } = await supabase
-          .from('postos')
-          .select('id, nome');
-        
-        if (error) {
-          console.error('Erro ao buscar postos do Supabase:', error);
-          
-          // Mapeamento manual como último recurso
-          const mapeamentoManual = [
-            { id: "83414281-5dcc-4783-aafd-8b4722fde7c1", nome: "Campinas" },
-            { id: "5e5a57f2-4609-4d2c-9474-8bb5751de982", nome: "Osasco" },
-            { id: "0b607752-5626-456d-9652-3fd9336c3c0d", nome: "Abc" },
-            { id: "e5a5e846-1931-4673-9efc-df5e7a31d311", nome: "Socorro" },
-            { id: "0a49321b-4f25-4535-b1f7-4d2a5d9b518c", nome: "Sorocaba" },
-            { id: "d8f731c5-c8e6-4a3f-8cb1-96aca7c62afb", nome: "SaoPaulo" },
-            { id: "2d2b720a-6518-4d5b-a413-bf5b49253b1d", nome: "Ipatinga" },
-            { id: "a1c87a6e-6b22-4c6e-9b15-cc782f39e964", nome: "BotaFogo" },
-            { id: "f4e0e08e-e7c3-4c7a-8d1a-fbe8939d7e5e", nome: "Remedios" },
-            { id: "77a5fb38-3ab7-4cfa-b857-a27ed701afdd", nome: "VargemGrande" }
-          ];
-          
-          // Verificar se o postId recebido corresponde a algum dos postos no mapeamento manual
-          const postoManual = mapeamentoManual.find(
-            p => p.nome.toLowerCase() === postId.toLowerCase() || 
-                 p.id.toLowerCase() === postId.toLowerCase()
-          );
-          
-          if (postoManual) {
-            console.log('Posto encontrado no mapeamento manual:', postoManual);
-            setPostos([postoManual]);
-            return;
-          }
-          
-          // Último recurso: usar o próprio nome do posto
-          console.log('Usando o próprio nome do posto como ID (último recurso):', postId);
-          setPostos([{
-            id: postId, 
-            nome: postId.charAt(0).toUpperCase() + postId.slice(1).toLowerCase()
-          }]);
-          return;
-        }
-        
-        if (data && data.length > 0) {
-          console.log(`Encontrados ${data.length} postos no Supabase:`, data);
-          
-          // Verificar se o postId corresponde a algum dos postos no Supabase
-          const postoSupabase = data.find(
-            p => p.nome.toLowerCase() === postId.toLowerCase() || 
-                 p.id.toLowerCase() === postId.toLowerCase()
-          );
-          
-          if (postoSupabase) {
-            console.log('Posto encontrado no Supabase:', postoSupabase);
-            setPostos([postoSupabase]);
-          } else {
-            // Último recurso: usar o próprio nome do posto
-            console.log('Posto não encontrado em nenhum mapeamento, usando o próprio nome:', postId);
-            setPostos([{
-              id: postId, 
-              nome: postId.charAt(0).toUpperCase() + postId.slice(1).toLowerCase()
-            }]);
-          }
-        } else {
-          console.warn('Nenhum posto encontrado em nenhum mapeamento');
-          setPostos([{
-            id: postId, 
-            nome: postId.charAt(0).toUpperCase() + postId.slice(1).toLowerCase()
-          }]);
-        }
-      } catch (error) {
-        console.error('Exceção ao buscar postos:', error);
-        // Em caso de exceção, usa o próprio postId como fallback
-        setPostos([{
-          id: postId, 
-          nome: postId.charAt(0).toUpperCase() + postId.slice(1).toLowerCase()
-        }]);
-      }
-    };
 
-    fetchPostos();
-  }, []);
-  
-  // Verificar se o usuário é admin
-  useEffect(() => {
-    const userRole = localStorage.getItem('user_role');
-    setIsUserAdmin(userRole === 'admin');
-    
-    // Carregar valores de preço por litro da nova API de preços de combustível
-    const carregarPrecos = async () => {
+  // Função atualizada para garantir a atualização do histórico
+  const processarSubmissao = useCallback(
+    async (data: AbastecimentoValues) => {
+      if (processingRef.current) return;
+
+      processingRef.current = true;
+      setIsSubmitting(true);
+
       try {
-        // Buscar preço do diesel da API
-        const dieselResponse = await fetch('/api/precos-combustivel/Diesel');
-        
-        if (dieselResponse.ok) {
-          const dieselData = await dieselResponse.json();
-          
-          if (dieselData.success && dieselData.data) {
-            // Definir valor fixo do diesel em R$6.39 conforme solicitado
-            setDieselValorLitro("6.39");
-          }
-        }
-        
-        // Buscar preço do ARLA da API
-        const arlaResponse = await fetch('/api/precos-combustivel/ARLA');
-        
-        if (arlaResponse.ok) {
-          const arlaData = await arlaResponse.json();
-          
-          if (arlaData.success && arlaData.data) {
-            // Atualizar preço do ARLA
-            setArlaValorLitro(arlaData.data.valor_litro.toString());
-          }
-        }
-        
-        // Como fallback, se a API de preços falhar, tenta buscar da configuração dos tanques
-        if (!dieselResponse.ok || !arlaResponse.ok) {
-          // Formatar o nome do posto
-          const formattedPosto = formatPosto(postId);
-          
-          // Tentar buscar configuração de tanques
-          const response = await fetch(`/api/configuracao-tanques/${formattedPosto}`);
-          
-          if (response.ok) {
-            const data = await response.json();
-            
-            if (data.success && data.data) {
-              // Atualizar preços por litro apenas se não tiver conseguido da API
-              if (!dieselResponse.ok && data.data.diesel_valor_litro) {
-                // Mesmo no fallback, usar o valor fixo de R$6.39 para diesel
-                setDieselValorLitro("6.39");
-              }
-              
-              if (!arlaResponse.ok && data.data.arla_valor_litro) {
-                setArlaValorLitro(data.data.arla_valor_litro.toString());
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Erro ao carregar preços:', error);
-      }
-    };
-    
-    carregarPrecos();
-    
-    return () => {
-      processingRef.current = false;
-    };
-  }, [postId]);
-  
-  // Manipulador de histórico com tratamento de erro para evitar DOM exceptions
-  const handleVerHistorico = useCallback(() => {
-    try {
-      // Primeiro definimos o estado como false usando requestAnimationFrame para garantir execução segura
-      window.requestAnimationFrame(() => {
-        try {
-          setRegistroSucesso(false);
-        } catch (e) {
-          console.error("Erro ao alterar estado:", e);
-        }
-        
-        // Após 50ms, tentar scrollar para a seção de históricos
-        setTimeout(() => {
-          try {
-            const historicosSection = document.getElementById("historicos-section");
-            if (historicosSection) {
-              historicosSection.scrollIntoView({ behavior: "smooth" });
-            }
-          } catch (error) {
-            console.error('Erro ao tentar rolar para a seção de históricos:', error);
-          }
-        }, 50);
-      });
-    } catch (error) {
-      console.error('Erro na função de ver histórico:', error);
-      
-      // Último recurso - timeout como fallback
-      setTimeout(() => {
-        try {
-          setRegistroSucesso(false);
-        } catch (e) {
-          // Ignora erro
-        }
-      }, 100);
-    }
-  }, []);
-  
-  // Manipulador de novo registro com proteção contra erros de DOM
-  const handleNovoRegistro = useCallback(() => {
-    try {
-      // Usar requestAnimationFrame para garantir que a atualização ocorre em uma animação segura
-      window.requestAnimationFrame(() => {
-        // Wrap em try-catch para segurança adicional
-        try {
-          setRegistroSucesso(false);
-        } catch (e) {
-          console.error("Erro ao alterar estado:", e);
-        }
-      });
-    } catch (error) {
-      console.error('Erro ao reiniciar formulário:', error);
-      
-      // Último recurso - tenta com setTimeout como fallback
-      setTimeout(() => {
-        try {
-          setRegistroSucesso(false);
-        } catch (e) {
-          // Ignora erro
-        }
-      }, 100);
-    }
-  }, []);
-  
-  // Função para processamento do formulário - versão simplificada
-  const processarSubmissao = useCallback(async (data: AbastecimentoValues) => {
-    // Verificação adicional para prevenir envios duplicados
-    if (processingRef.current) {
-      console.log('Já existe um processamento em andamento');
-      return;
-    }
-    
-    // Marca como em processamento
-    processingRef.current = true;
-    setIsSubmitting(true);
-    
-    try {
-      console.log('Iniciando registro de abastecimento simplificado');
-      
-      // Definimos valor fixo para o diesel conforme solicitado (R$6.39)
-      const valorPorLitro = data.tipo === 'Diesel' ? 6.39 : Number(data.valor_litro);
-      
-      // Preparar dados para a API no formato que comprovadamente funciona
-      const dadosAbastecimento = {
-        quantidade_litros: Number(data.quantidade),
-        placa: data.placa.toUpperCase(),
-        km_atual: Number(data.km),
-        posto_id: postId, // Usar o nome do posto, o backend converte para UUID
-        preco_litro: valorPorLitro,
-        valor_total: Number(data.valor_total),
-        tipo_combustivel: data.tipo,
-        nome_motorista: data.motorista,
-        rg_motorista: data.motorista_rg,
-        nome_operador: data.operador,
-        project: data.projeto
-      };
-      
-      // Detecção se é o posto Remédios para usar endpoint específico
-      const isPostoRemedios = 
-        postId.toLowerCase() === 'remédios' || 
-        postId.toLowerCase() === 'remedios' ||
-        postId.toLowerCase() === 'posto remédios' ||
-        postId.toLowerCase() === 'posto remedios';
-      
-      // Endpoint correto baseado no tipo de posto
-      const endpoint = isPostoRemedios 
-        ? '/api/posto-remedios-standalone/abastecimentos' 
-        : '/api/abastecimentos';
-      
-      console.log(`Enviando dados para ${endpoint}:`, dadosAbastecimento);
-      
-      // Notifica usuário sobre o início do processamento
-      toast({
-        title: 'Processando registro',
-        description: 'Enviando informações para o servidor...',
-      });
-      
-      // Adiciona token de autenticação, se disponível
-      const accessToken = localStorage.getItem('access_token');
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
-      };
-      
-      // Se tiver token, adiciona ao cabeçalho
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-      
-      // Se for Posto Remédios, adapta o formato dos dados para corresponder à API específica
-      const dadosFormatados = isPostoRemedios 
-        ? {
-            placa: dadosAbastecimento.placa,
-            km: dadosAbastecimento.km_atual,
-            projeto: dadosAbastecimento.project,
-            motorista_nome: dadosAbastecimento.nome_motorista,
-            motorista_rg: dadosAbastecimento.rg_motorista,
-            tipo_combustivel: dadosAbastecimento.tipo_combustivel.toLowerCase(),
-            quantidade_litros: dadosAbastecimento.quantidade_litros,
-            valor_litro: dadosAbastecimento.preco_litro,
-            valor_total: dadosAbastecimento.valor_total,
-            lavagem: false,
-            tipo_veiculo: 'frota'
-          }
-        : dadosAbastecimento;
-      
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(dadosFormatados)
-      });
-      
-      // Processa a resposta
-      const result = await response.json();
-      
-      // Também envia diretamente para o Supabase
-      console.log('Enviando também para o Supabase...');
-      try {
-        const supabaseResult = await enviarAbastecimentoSupabase(dadosAbastecimento);
-        
-        if (supabaseResult.success) {
-          console.log('Registrado com sucesso no Supabase:', supabaseResult.data);
-        } else {
-          console.error('Erro ao registrar no Supabase:', supabaseResult.error);
-          // Mostra toast de erro para Supabase, mas não interrompe o fluxo
-          toast({
-            title: 'Aviso',
-            description: 'Registro salvo localmente, mas houve erro ao enviar para o Supabase.',
-            variant: 'default',
-          });
-        }
-      } catch (supabaseError) {
-        console.error('Exceção ao registrar no Supabase:', supabaseError);
-        // Não interrompe o fluxo em caso de erro no Supabase
-      }
-      
-      if (response.ok && result.success) {
-        console.log('Registro bem-sucedido:', result);
-        
-        // Notifica sucesso
-        toast({
-          title: 'Abastecimento Registrado',
-          description: 'Abastecimento realizado com sucesso!',
+        console.log("Iniciando registro de abastecimento");
+
+        // Dados fixos conforme requisito
+        const valorPorLitro =
+          data.tipo === "Diesel" ? 6.39 : Number(data.valor_litro);
+        const valorTotal = Number(data.quantidade) * valorPorLitro;
+
+        const dadosAbastecimento = {
+          quantidade_litros: Number(data.quantidade),
+          placa: data.placa.toUpperCase(),
+          km_atual: Number(data.km),
+          posto_id: postId,
+          preco_litro: valorPorLitro,
+          valor_total: valorTotal,
+          tipo_combustivel: data.tipo,
+          nome_motorista: data.motorista,
+          rg_motorista: data.motorista_rg,
+          nome_operador: data.operador,
+          project: data.projeto,
+          tipo_veiculo: data.tipo_veiculo || "frota",
+        };
+
+        // 1. Primeiro tenta a API principal
+        const endpoint = postId.toLowerCase().includes("remedios")
+          ? "/api/posto-remedios-standalone/abastecimentos"
+          : "/api/abastecimentos";
+
+        console.log(`Enviando para ${endpoint}`, dadosAbastecimento);
+
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+          body: JSON.stringify(dadosAbastecimento),
         });
-        
-        // Verifica se o componente ainda está montado
-        if (mountedRef.current) {
-          // Usa o hook seguro para evitar erros de DOM
-          setRegistroSucesso(true);
-          
-          if (onRegistroSucesso) {
-            console.log("[REGISTRO] Notificando componente pai para atualizar histórico");
-            onRegistroSucesso();
-            
-            // IMPORTANTE: Em vez de usar o hash para atualização (que já não é mais
-            // necessário devido ao onRegistroSucesso), vamos apenas limpar o
-            // hash anterior e navegar suavemente para a seção de histórico
-            
-            // Remover hash anterior (se existir) para evitar confusão
-            if (window.location.hash) {
-              history.pushState("", document.title, window.location.pathname + window.location.search);
-            }
-            
-            // Adiciona um novo hash na URL para forçar atualização do histórico
-            window.location.hash = 'historicos-section';
-            
-            console.log("[HISTORICO] Forçando navegação para a seção de histórico");
-            
-            // Em vez de recarregar a página (o que causa o logout),
-            // apenas aguardamos um pouco para a mensagem de sucesso ser exibida
-            // O componente pai já foi notificado via onRegistroSucesso()
-            setTimeout(() => {
-              // Forçar a atualização do histórico novamente
-              if (onRegistroSucesso) {
-                console.log("[HISTORICO] Chamando onRegistroSucesso novamente após timeout");
-                onRegistroSucesso();
-              }
-              
-              // Navegar para a seção de histórico sem recarregar a página
-              const historicoSection = document.getElementById('historicos-section');
-              if (historicoSection) {
-                historicoSection.scrollIntoView({ behavior: 'smooth' });
-              }
-            }, 1500);
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.message || "Erro na API principal");
+        }
+
+        // 2. Depois tenta o Supabase (opcional)
+        try {
+          const supabaseResult =
+            await enviarAbastecimentoSupabase(dadosAbastecimento);
+          if (!supabaseResult.success) {
+            console.error("Erro no Supabase:", supabaseResult.error);
+            toast({
+              title: "Aviso",
+              description:
+                "Registro salvo, mas houve erro ao enviar para o backup",
+              variant: "default",
+            });
           }
+        } catch (supabaseError) {
+          console.error("Erro no Supabase:", supabaseError);
         }
-      } else {
-        throw new Error(result.message || 'Erro ao registrar abastecimento');
-      }
-      
-    } catch (error: any) {
-      // Tratamento de erro
-      console.error('Erro no processamento:', error);
-      
-      // Mensagem personalizada
-      let mensagem = 'Erro ao registrar abastecimento. Tente novamente.';
-      
-      if (error.message) {
-        if (error.message.includes('fetch')) {
-          mensagem = 'Falha na conexão com o servidor. Verifique sua internet.';
-        } else {
-          mensagem = error.message;
+
+        // 3. Atualiza a UI e histórico
+        toast({
+          title: "Sucesso!",
+          description: "Abastecimento registrado com sucesso",
+        });
+
+        // Garante que está montado antes de atualizar estados
+        if (mountedRef.current) {
+          setRegistroSucesso(true);
+
+          // Chama a callback para atualizar o histórico no componente pai
+          if (onRegistroSucesso) {
+            console.log("Chamando onRegistroSucesso para atualizar histórico");
+            onRegistroSucesso();
+
+            // Força uma segunda atualização após breve delay
+            setTimeout(() => {
+              if (onRegistroSucesso) {
+                onRegistroSucesso();
+                console.log("Histórico atualizado novamente para garantir");
+              }
+            }, 500);
+          }
+
+          // Scroll para o histórico após 1s
+          setTimeout(() => {
+            const historicoSection =
+              document.getElementById("historicos-section");
+            if (historicoSection) {
+              historicoSection.scrollIntoView({ behavior: "smooth" });
+            }
+          }, 1000);
         }
+
+        // 4. Atualiza o tanque no servidor
+        try {
+          console.log("Atualizando nível do tanque...");
+          const tanqueUpdateResponse = await fetch(`/api/configuracao-tanques/${postId}/consume`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            },
+            body: JSON.stringify({
+              tipo_combustivel: data.tipo,
+              litros: Number(data.quantidade),
+            }),
+          });
+
+          const tanqueResult = await tanqueUpdateResponse.json();
+          if (tanqueUpdateResponse.ok) {
+            console.log("Tanque atualizado com sucesso:", tanqueResult);
+          } else {
+            console.warn("Problema ao atualizar tanque:", tanqueResult.message);
+          }
+        } catch (tanqueError) {
+          console.error("Erro ao atualizar nível do tanque:", tanqueError);
+        }
+      } catch (error: any) {
+        console.error("Erro no processamento:", error);
+        toast({
+          title: "Erro",
+          description: error.message || "Falha ao registrar abastecimento",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSubmitting(false);
+        processingRef.current = false;
       }
-      
-      // Notifica erro
-      toast({
-        title: 'Falha no registro',
-        description: mensagem,
-        variant: 'destructive',
-      });
-    } finally {
-      // Sempre limpa estados
-      setIsSubmitting(false);
-      processingRef.current = false;
+    },
+    [postId, toast, onRegistroSucesso],
+  );
+
+  // Funções de navegação atualizadas
+  const handleVerHistorico = useCallback(() => {
+    setRegistroSucesso(false);
+    if (onRegistroSucesso) {
+      onRegistroSucesso();
+      setTimeout(() => {
+        const section = document.getElementById("historicos-section");
+        if (section) section.scrollIntoView({ behavior: "smooth" });
+      }, 50);
     }
-  }, [postId, toast, onRegistroSucesso]);
-  
-  // Renderização com componentes isolados para evitar problemas de DOM
+  }, [onRegistroSucesso]);
+
+  const handleNovoRegistro = useCallback(() => {
+    setRegistroSucesso(false);
+  }, []);
+
+  // Renderização
   return (
     <TabsContent value="abastecimento" className="mt-4">
       <Card>
@@ -959,24 +663,26 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
             Registro de Abastecimento
           </CardTitle>
           <CardDescription>
-            Preencha todos os campos para registrar um abastecimento no posto {postId}.
+            Preencha todos os campos para registrar um abastecimento no posto{" "}
+            {postId}.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {registroSucesso ? 
-            <TelaSucesso 
-              onHistorico={handleVerHistorico} 
-              onNovoRegistro={handleNovoRegistro} 
-            /> : 
-            <FormularioForm 
-              onSubmit={processarSubmissao} 
+          {registroSucesso ? (
+            <TelaSucesso
+              onHistorico={handleVerHistorico}
+              onNovoRegistro={handleNovoRegistro}
+            />
+          ) : (
+            <FormularioForm
+              onSubmit={processarSubmissao}
               isSubmitting={isSubmitting}
               postId={postId}
               isAdmin={isUserAdmin}
               dieselValorLitro={dieselValorLitro}
               arlaValorLitro={arlaValorLitro}
             />
-          }
+          )}
         </CardContent>
         <CardFooter className="flex justify-between border-t pt-4 text-sm text-muted-foreground">
           <p>Data e hora serão registradas automaticamente.</p>
