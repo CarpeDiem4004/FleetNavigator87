@@ -29,6 +29,7 @@ import { compareSchemas } from "./compareSchemas";
 import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
 import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoutes";
 import { registerPostosMapeamentoRoutes } from "./routes/postosMapeamentoRoutes";
+import { registerUsuariosSupabaseRoutes } from "./routes/usuariosSupabaseRoutes";
 import { db, pool } from "./db";
 import authHybridRoutes from "./routes/authHybridRoutes";
 import * as userHandler from "./handlers/userHandler";
@@ -5924,6 +5925,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registra as rotas para o mapeamento de postos
   registerPostosMapeamentoRoutes(app);
+  
+  // Registra as rotas para gerenciar usuários no Supabase
+  registerUsuariosSupabaseRoutes(app);
   
   // Rota para buscar abastecimentos não sincronizados com o Supabase
   app.get("/api/sincronizar-supabase/:posto", async (req, res) => {
