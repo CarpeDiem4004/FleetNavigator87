@@ -5530,9 +5530,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { posto } = req.params;
       console.log("Buscando abastecimentos para o posto:", posto);
       
-      // Consulta na tabela compatível com o Supabase
+      // Consulta diretamente na tabela abastecimentos_postos que tem todos os campos necessários
       const query = `
-        SELECT * FROM abastecimentos_postos_supabase
+        SELECT * FROM abastecimentos_postos
         WHERE posto ILIKE $1
         ORDER BY created_at DESC
         LIMIT 100
