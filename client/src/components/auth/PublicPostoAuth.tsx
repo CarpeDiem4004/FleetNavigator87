@@ -343,12 +343,8 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
     }
   };
 
-  // Redirecionamento para página de registro
-  const goToRegister = () => {
-    // Guarda URL atual para voltar depois do registro
-    localStorage.setItem('auth_redirect', location);
-    window.location.href = '/register-supabase';
-  };
+  // Função de redirecionamento para registro removida conforme solicitado
+  // Apenas administradores podem criar novas contas
 
   // Se estiver carregando, mostra spinner
   if (isLoading) {
