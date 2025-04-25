@@ -54,15 +54,26 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
     return `R$ ${preco.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
-  // Função para carregar os dados
+  // Função para carregar os dados com verificação extra de cache e timestamp único
   const fetchAbastecimentos = useCallback(async () => {
     try {
-      console.log(`Buscando abastecimentos para posto: ${postId}, timestamp: ${new Date().toISOString()}`);
+      // Criar timestamp único para evitar qualquer tipo de caching
+      const uniqueTimestamp = `${new Date().getTime()}_${Math.random().toString(36).substring(2, 15)}`;
+      console.log(`[HISTÓRICO] Buscando abastecimentos para posto: ${postId}, timestamp único: ${uniqueTimestamp}`);
       setIsLoading(true);
       
-      // Adicionar timestamp para evitar cache
-      const timestamp = new Date().getTime();
-      const response = await fetch(`/api/abastecimentos/${postId}?t=${timestamp}`);
+      // Usar o timestamp único na requisição
+      const url = `/api/abastecimentos/${postId}?t=${uniqueTimestamp}`;
+      console.log(`[HISTÓRICO] Fazendo requisição para: ${url}`);
+      
+      const response = await fetch(url, {
+        // Adicionar cabeçalhos para evitar cache
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
       
       // Verificar o tipo de resposta
       const contentType = response.headers.get("content-type");
@@ -70,23 +81,26 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
         const responseData = await response.json();
         
         if (responseData.success) {
-          console.log(`[DEBUG] Abastecimentos obtidos: ${responseData.data?.length || 0}`);
+          console.log(`[HISTÓRICO] Abastecimentos obtidos com sucesso: ${responseData.data?.length || 0} registros`);
+          if (responseData.data?.length > 0) {
+            console.log(`[HISTÓRICO] Primeiro abastecimento: ID=${responseData.data[0].id}, Placa=${responseData.data[0].placa}, Data=${responseData.data[0].created_at}`);
+          }
           setData(responseData.data || []);
           setFilteredData(responseData.data || []);
         } else {
-          console.error("Erro ao buscar abastecimentos:", responseData.message);
+          console.error("[HISTÓRICO] Erro ao buscar abastecimentos:", responseData.message);
           setData([]);
           setFilteredData([]);
         }
       } else {
         // Não é JSON, provavelmente HTML de erro
         const text = await response.text();
-        console.error("Resposta não-JSON recebida:", text.substring(0, 200) + "...");
+        console.error("[HISTÓRICO] Resposta não-JSON recebida:", text.substring(0, 200) + "...");
         setData([]);
         setFilteredData([]);
       }
     } catch (error) {
-      console.error("Erro ao carregar abastecimentos:", error);
+      console.error("[HISTÓRICO] Erro ao carregar abastecimentos:", error);
       setData([]);
       setFilteredData([]);
     } finally {

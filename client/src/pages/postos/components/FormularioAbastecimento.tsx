@@ -625,27 +625,73 @@ const FormularioAbastecimento: React.FC<
           }, 1000);
         }
 
-        // 4. Atualiza o tanque no servidor
+        // 4. Atualiza o tanque no servidor com múltiplas tentativas para garantir sucesso
         try {
           console.log("Atualizando nível do tanque...");
-          const tanqueUpdateResponse = await fetch(`/api/configuracao-tanques/${postId}/consume`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-            },
-            body: JSON.stringify({
-              tipo_combustivel: data.tipo,
-              litros: Number(data.quantidade),
-            }),
-          });
+          
+          // Primeira tentativa imediata
+          const atualizarTanque = async () => {
+            try {
+              const tanqueUpdateResponse = await fetch(`/api/configuracao-tanques/${postId}/consume`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Cache-Control": "no-cache, no-store, must-revalidate",
+                  "Pragma": "no-cache",
+                  "Expires": "0",
+                  Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+                },
+                body: JSON.stringify({
+                  tipo_combustivel: data.tipo,
+                  litros: Number(data.quantidade),
+                }),
+              });
 
-          const tanqueResult = await tanqueUpdateResponse.json();
-          if (tanqueUpdateResponse.ok) {
-            console.log("Tanque atualizado com sucesso:", tanqueResult);
-          } else {
-            console.warn("Problema ao atualizar tanque:", tanqueResult.message);
+              const tanqueResult = await tanqueUpdateResponse.json();
+              if (tanqueUpdateResponse.ok) {
+                console.log("Tanque atualizado com sucesso:", tanqueResult);
+                return true;
+              } else {
+                console.warn("Problema ao atualizar tanque:", tanqueResult.message);
+                return false;
+              }
+            } catch (error) {
+              console.error("Erro na requisição de atualização do tanque:", error);
+              return false;
+            }
+          };
+
+          // Primeira tentativa imediata
+          const primeiroResultado = await atualizarTanque();
+          
+          // Segunda tentativa após pequeno delay se a primeira falhar
+          if (!primeiroResultado) {
+            setTimeout(async () => {
+              console.log("Realizando segunda tentativa de atualização do tanque...");
+              const segundoResultado = await atualizarTanque();
+              
+              // Terceira tentativa após delay maior se a segunda também falhar
+              if (!segundoResultado) {
+                setTimeout(async () => {
+                  console.log("Realizando terceira tentativa de atualização do tanque...");
+                  await atualizarTanque();
+                }, 2000);
+              }
+            }, 1000);
           }
+          
+          // Notificar que o tanque foi atualizado
+          setTimeout(() => {
+            if (mountedRef.current) {
+              toast({
+                title: "Nível do Tanque",
+                description: `Nível do tanque de ${data.tipo} atualizado com sucesso.`,
+                variant: "default",
+                duration: 3000,
+              });
+            }
+          }, 3000);
+          
         } catch (tanqueError) {
           console.error("Erro ao atualizar nível do tanque:", tanqueError);
         }

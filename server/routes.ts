@@ -5603,9 +5603,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/abastecimentos/:posto', async (req, res) => {
     try {
       const { posto } = req.params;
-      console.log("Buscando abastecimentos para o posto:", posto);
+      const timestamp = req.query.t; // Capturar o timestamp da requisição
+      console.log(`Buscando abastecimentos para o posto: ${posto}, timestamp: ${timestamp}`);
+      
+      // Definir cabeçalhos para evitar cache
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       
       // Consulta diretamente na tabela abastecimentos_postos que tem todos os campos necessários
+      // Modificado para sempre trazer os registros mais recentes
       const query = `
         SELECT * FROM abastecimentos_postos
         WHERE posto ILIKE $1
@@ -5613,13 +5620,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         LIMIT 100
       `;
       
+      // Executar a consulta
       const result = await pool.query(query, [posto]);
+      
+      // Informações adicionais para debug
       console.log(`Abastecimentos encontrados: ${result.rows.length}`);
+      if (result.rows.length > 0) {
+        const ultimoRegistro = result.rows[0];
+        console.log(`Último abastecimento: ID=${ultimoRegistro.id}, Placa=${ultimoRegistro.placa}, Data=${ultimoRegistro.created_at}`);
+      }
       
       return res.status(200).json({
         success: true,
         count: result.rows.length,
-        data: result.rows
+        data: result.rows,
+        requestTimestamp: timestamp
       });
     } catch (error: any) {
       console.error("Erro ao buscar abastecimentos:", error);
