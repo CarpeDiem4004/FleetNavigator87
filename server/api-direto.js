@@ -462,7 +462,14 @@ export async function registrarAbastecimentoPosto(req, res) {
         postoName.toLowerCase().includes('campinas v2')) {
       postoName = 'campinas_v2';
       console.log("Posto identificado como Campinas V2");
-    } 
+    }
+    // Verificação explícita para Osasco V2
+    else if (postoName.toLowerCase() === 'osasco_v2' || 
+        postoName.toLowerCase().includes('osasco_v2') || 
+        postoName.toLowerCase().includes('osasco v2')) {
+      postoName = 'osasco_v2';
+      console.log("Posto identificado como Osasco V2");
+    }
     // Verificação explícita para Osasco
     else if (postoName.toLowerCase() === 'osasco' || 
         postoName.toLowerCase().includes('osasco')) {

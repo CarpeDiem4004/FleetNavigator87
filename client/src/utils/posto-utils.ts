@@ -20,7 +20,8 @@ export const POSTOS_CONHECIDOS: string[] = [
   'barueri',
   'blumenau',
   'alair',
-  'osasco'
+  'osasco',
+  'osasco_v2'
 ];
 
 // Alias para compatibilidade
@@ -92,7 +93,13 @@ export const MAPEAMENTO_POSTOS: Record<string, string> = {
   'posto alair': 'alair',
   
   'osasco': 'osasco',
-  'posto osasco': 'osasco'
+  'posto osasco': 'osasco',
+  
+  'osasco_v2': 'osasco_v2',
+  'osasco v2': 'osasco_v2',
+  'osascov2': 'osasco_v2',
+  'posto osasco v2': 'osasco_v2',
+  'posto_osasco_v2': 'osasco_v2'
 };
 
 /**
@@ -185,7 +192,8 @@ export function getPostoDisplayName(nomePosto: string | number): string {
     'barueri': 'Posto Barueri',
     'blumenau': 'Posto Blumenau',
     'alair': 'Posto Alair',
-    'osasco': 'Posto Osasco'
+    'osasco': 'Posto Osasco',
+    'osasco_v2': 'Posto Osasco V2'
   };
   
   return displayNames[nomeFormatado] || `Posto ${nomeFormatado.charAt(0).toUpperCase() + nomeFormatado.slice(1)}`;
