@@ -7,6 +7,7 @@ import FormularioRecebimento from './components/FormularioRecebimento';
 import FormularioControlePatio from './components/FormularioControlePatio';
 import HistoricoMovimentacoes from './components/HistoricoMovimentacoes';
 import HistoricoAbastecimentos from './components/HistoricoAbastecimentos';
+import HistoricoSupabaseView from './components/HistoricoSupabaseView';
 import { useSafeDialog } from '@/hooks/use-safe-dialog';
 
 interface PublicPostoLayoutProps {
@@ -112,11 +113,19 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
             Históricos
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <HistoricoAbastecimentos 
-              postId={id} 
-              showLimparButton={false} 
-              refreshTrigger={refreshTrigger}
-            />
+            {/* Usar HistoricoSupabaseView para Campinas V2, HistoricoAbastecimentos para outros postos */}
+            {id === 'campinas_v2' ? (
+              <HistoricoSupabaseView 
+                posto="posto campinas v2" 
+                refreshTrigger={refreshTrigger}
+              />
+            ) : (
+              <HistoricoAbastecimentos 
+                postId={id} 
+                showLimparButton={false} 
+                refreshTrigger={refreshTrigger}
+              />
+            )}
             <HistoricoMovimentacoes 
               postId={id} 
               refreshTrigger={refreshTrigger}
