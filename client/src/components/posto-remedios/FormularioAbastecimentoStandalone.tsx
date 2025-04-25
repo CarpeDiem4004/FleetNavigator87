@@ -47,6 +47,8 @@ export default function FormularioAbastecimentoStandalone() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  // Propriedade para callback após sucesso no cadastro
+  const onSubmitSuccess = window.onSubmitSuccessPostoRemedios;
 
   const form = useForm<AbastecimentoFormValues>({
     resolver: zodResolver(abastecimentoFormSchema),
@@ -89,6 +91,12 @@ export default function FormularioAbastecimentoStandalone() {
           description: 'Registro adicionado com sucesso',
           variant: 'default',
         });
+        
+        // Chamar callback para atualizar a lista de registros
+        if (typeof onSubmitSuccess === 'function') {
+          console.log("[FORM ABASTECIMENTO] Chamando callback de sucesso para atualizar histórico");
+          onSubmitSuccess();
+        }
       } else {
         toast({
           title: 'Erro',
