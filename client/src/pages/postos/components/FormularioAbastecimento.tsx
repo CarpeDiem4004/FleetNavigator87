@@ -492,6 +492,14 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
   const [dieselValorLitro, setDieselValorLitro] = useSafeState('5.79');
   const [arlaValorLitro, setArlaValorLitro] = useSafeState('4.25');
   const processingRef = useRef(false);
+  const mountedRef = useRef(true); // Referência para verificar se o componente está montado
+  
+  // Efeito para atualizar a referência quando o componente desmontar
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
   
   // Estado para armazenar o mapeamento de postos
   const [postos, setPostos] = useSafeState<{ id: string; nome: string }[]>([]);
