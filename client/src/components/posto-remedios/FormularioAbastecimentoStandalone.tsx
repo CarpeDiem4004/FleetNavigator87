@@ -19,6 +19,35 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { Loader2, CheckCircle2 } from 'lucide-react';
 
+// Função utilitária para detectar e gerenciar erros DOM
+const useSafeRender = () => {
+  const [hasError, setHasError] = useState(false);
+  
+  useEffect(() => {
+    const handleError = (event: Event) => {
+      // Tratar apenas eventos de erro
+      if (event instanceof ErrorEvent) {
+        const errorMsg = event.error?.message || event.message;
+        if (errorMsg && (
+          errorMsg.includes('insertBefore') || 
+          errorMsg.includes('removeChild') || 
+          errorMsg.includes('Failed to execute')
+        )) {
+          console.log('[SAFE RENDER] Detectado erro DOM crítico, alterando modo de renderização', errorMsg);
+          setHasError(true);
+          // Prevenir que o erro mostre no console do usuário
+          event.preventDefault();
+        }
+      }
+    };
+    
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
+  
+  return hasError;
+};
+
 // Esquema de validação para o formulário de abastecimento
 const abastecimentoFormSchema = z.object({
   placa: z.string().min(1, { message: 'Placa é obrigatória' }),
@@ -37,6 +66,213 @@ const abastecimentoFormSchema = z.object({
 
 type AbastecimentoFormValues = z.infer<typeof abastecimentoFormSchema>;
 
+// Componente simplificado usado como fallback quando erros DOM são detectados
+function SimpleFormularioAbastecimento() {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+    
+    try {
+      const formattedData = {
+        posto: 'POSTO REMÉDIOS',
+        data: {
+          placa: String(data.placa).toUpperCase(),
+          km: Number(data.km),
+          projeto: String(data.projeto),
+          motorista_nome: String(data.motorista_nome),
+          motorista_rg: String(data.motorista_rg) || 'Não informado',
+          tipo_combustivel: String(data.tipo_combustivel),
+          quantidade_litros: Number(data.quantidade_litros),
+          valor_litro: Number(data.valor_litro) || 6.39,
+          valor_total: Number(data.valor_total),
+          lavagem: data.lavagem === 'on',
+          tipo_lavagem: String(data.tipo_lavagem || ''),
+          observacoes: String(data.observacoes || ''),
+          tipo_veiculo: 'frota'
+        }
+      };
+
+      const response = await fetch('/api/supabase-insert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formattedData)
+      });
+      
+      if (response.ok) {
+        alert('Registro salvo com sucesso!');
+        e.currentTarget.reset();
+        
+        // Tentar executar callback
+        if (typeof (window as any).onSubmitSuccessPostoRemedios === 'function') {
+          setTimeout(() => {
+            try {
+              (window as any).onSubmitSuccessPostoRemedios();
+            } catch (err) {
+              console.error('Erro ao atualizar histórico:', err);
+            }
+          }, 1000);
+        }
+      } else {
+        alert('Erro ao salvar registro. Por favor, tente novamente.');
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      alert('Ocorreu um erro ao processar seu pedido. Os dados podem ter sido salvos.');
+    }
+  };
+  
+  // Referência para o formulário
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Função para calcular total
+  const calcularTotal = () => {
+    if (formRef.current) {
+      const form = formRef.current;
+      const quantidade = parseFloat((form.querySelector('[name="quantidade_litros"]') as HTMLInputElement)?.value || '0');
+      const valorLitro = parseFloat((form.querySelector('[name="valor_litro"]') as HTMLInputElement)?.value || '0');
+      
+      if (!isNaN(quantidade) && !isNaN(valorLitro)) {
+        const total = quantidade * valorLitro;
+        (form.querySelector('[name="valor_total"]') as HTMLInputElement).value = total.toFixed(2);
+      }
+    }
+  };
+
+  useEffect(() => {
+    // Adicionar event listeners após a renderização
+    if (formRef.current) {
+      const qtdInput = formRef.current.querySelector('[name="quantidade_litros"]');
+      const valorInput = formRef.current.querySelector('[name="valor_litro"]');
+      
+      qtdInput?.addEventListener('input', calcularTotal);
+      valorInput?.addEventListener('input', calcularTotal);
+      
+      // Inicializar com o valor padrão
+      calcularTotal();
+      
+      return () => {
+        qtdInput?.removeEventListener('input', calcularTotal);
+        valorInput?.removeEventListener('input', calcularTotal);
+      };
+    }
+  }, []);
+
+  return (
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-4 bg-white p-4 border rounded-md">
+      <div className="text-center mb-4">
+        <h3 className="text-lg font-bold">Formulário de Abastecimento Simplificado</h3>
+        <p className="text-sm text-gray-500">Modo de compatibilidade ativado devido a erros anteriores</p>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">Placa do Veículo*</label>
+          <input name="placa" required className="w-full border rounded p-2" />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-1">Quilometragem*</label>
+          <input name="km" type="number" required className="w-full border rounded p-2" />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-1">Projeto*</label>
+          <select name="projeto" required className="w-full border rounded p-2">
+            <option value="">Selecione o projeto</option>
+            <option value="GRUPO PEREIRA">GRUPO PEREIRA</option>
+            <option value="COCA COLA">COCA COLA</option>
+            <option value="SHOPEE">SHOPEE</option>
+            <option value="MERCADO LIVRE">MERCADO LIVRE</option>
+            <option value="LINE HALL SHOPEE">LINE HALL SHOPEE</option>
+            <option value="FULL MELI">FULL MELI</option>
+            <option value="MADEIRA MADEIRA">MADEIRA MADEIRA</option>
+            <option value="MAGALU">MAGALU</option>
+            <option value="NATURA">NATURA</option>
+            <option value="OXXO">OXXO</option>
+            <option value="PETLOVE">PETLOVE</option>
+            <option value="REMÉDIOS">REMÉDIOS</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-1">Nome do Motorista*</label>
+          <input name="motorista_nome" required className="w-full border rounded p-2" />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-1">RG do Motorista*</label>
+          <input name="motorista_rg" required className="w-full border rounded p-2" />
+        </div>
+      </div>
+      
+      <div className="mt-4 pt-4 border-t">
+        <h4 className="font-medium mb-3">Dados do Abastecimento</h4>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Tipo de Combustível*</label>
+            <select name="tipo_combustivel" required className="w-full border rounded p-2">
+              <option value="">Selecione o combustível</option>
+              <option value="diesel">Diesel</option>
+              <option value="gasolina">Gasolina</option>
+              <option value="alcool">Álcool</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-1">Quantidade (L)*</label>
+            <input name="quantidade_litros" type="number" step="0.01" required className="w-full border rounded p-2" />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-1">Valor por Litro (R$)</label>
+            <input name="valor_litro" type="number" step="0.01" defaultValue="6.39" className="w-full border rounded p-2" />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-1">Valor Total (R$)</label>
+            <input name="valor_total" type="number" step="0.01" className="w-full border rounded p-2 bg-gray-50" readOnly />
+          </div>
+        </div>
+      </div>
+      
+      <div className="mt-4 pt-4 border-t">
+        <h4 className="font-medium mb-3">Dados da Lavagem</h4>
+        <div className="flex items-center mb-2">
+          <input type="checkbox" name="lavagem" id="lavagem" className="mr-2" />
+          <label htmlFor="lavagem" className="text-sm">Incluir Serviço de Lavagem</label>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-1">Tipo de Lavagem</label>
+          <select name="tipo_lavagem" className="w-full border rounded p-2">
+            <option value="">Selecione o tipo de lavagem</option>
+            <option value="simples">Simples</option>
+            <option value="completa">Completa</option>
+            <option value="motor">Motor</option>
+            <option value="chassi">Chassi</option>
+          </select>
+        </div>
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium mb-1">Observações</label>
+        <textarea name="observacoes" className="w-full border rounded p-2 min-h-[80px]"></textarea>
+      </div>
+      
+      <div className="flex justify-end space-x-2 pt-2">
+        <button type="reset" className="px-4 py-2 border rounded bg-gray-100">
+          Limpar
+        </button>
+        <button type="submit" className="px-4 py-2 border rounded bg-blue-600 text-white">
+          Registrar
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export default function FormularioAbastecimentoStandalone() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -51,6 +287,9 @@ export default function FormularioAbastecimentoStandalone() {
   // Sistema de prevenção contra múltiplas submissões
   const [submitting, setSubmitting] = useState(false);
   const submitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Usar o hook de renderização segura
+  const useFallbackRenderer = useSafeRender();
   
   // Atualizar flag de montagem quando o componente for desmontado
   // e fazer limpeza de outros recursos
@@ -350,6 +589,14 @@ export default function FormularioAbastecimentoStandalone() {
     form.handleSubmit(onSubmit)(e);
   };
   
+  // Se o modo de fallback estiver ativado, mostrar o formulário simplificado
+  // que evita usar os componentes que podem causar erros de DOM
+  if (useFallbackRenderer) {
+    console.log("[FORM ABASTECIMENTO] Renderizando formulário simplificado devido a erros anteriores");
+    return <SimpleFormularioAbastecimento />;
+  }
+  
+  // Renderizar o formulário normal usando componentes shadcn/ui quando não há problemas
   return (
     <Form {...form}>
       <form ref={formRef} onSubmit={handleFormSubmit} className="space-y-4">
