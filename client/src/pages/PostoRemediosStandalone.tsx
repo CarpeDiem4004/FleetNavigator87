@@ -96,7 +96,17 @@ export default function PostoRemediosStandalone() {
     }
   };
 
+  // Monitorar registros recebidos
   useEffect(() => {
+    console.log("[POSTO REMEDIOS] Total de registros em estado:", registros?.length);
+    if (registros?.length > 0) {
+      console.log("[POSTO REMEDIOS] Primeiro registro:", registros[0]);
+    }
+  }, [registros]);
+
+  // Carregar registros na montagem do componente
+  useEffect(() => {
+    console.log("[POSTO REMEDIOS] Componente montado - carregando registros");
     carregarRegistros();
   }, []);
 

@@ -248,29 +248,32 @@ export default function HistoricoAbastecimentosTabela({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {registros.map((registro) => (
-                <TableRow key={registro.id}>
-                  <TableCell>{registro.id}</TableCell>
-                  <TableCell className="font-medium">{registro.placa}</TableCell>
-                  <TableCell>{registro.km}</TableCell>
-                  <TableCell>{registro.projeto}</TableCell>
-                  <TableCell>{registro.motorista_nome}</TableCell>
-                  <TableCell>{registro.tipo_combustivel || '-'}</TableCell>
-                  <TableCell>{registro.quantidade_litros || '-'}</TableCell>
-                  <TableCell>
-                    {registro.valor_litro 
-                      ? `R$ ${registro.valor_litro.toFixed(2)}`
-                      : '-'}
-                  </TableCell>
-                  <TableCell>
-                    {registro.valor_total 
-                      ? `R$ ${registro.valor_total.toFixed(2)}`
-                      : '-'}
-                  </TableCell>
-                  <TableCell>{registro.lavagem ? 'Sim' : 'Não'}</TableCell>
-                  <TableCell>{formatarData(registro.created_at)}</TableCell>
-                </TableRow>
-              ))}
+              {registros && registros.length > 0 ? registros.map((registro) => {
+                console.log("[HISTÓRICO TABELA] Renderizando registro:", registro);
+                return (
+                  <TableRow key={registro.id}>
+                    <TableCell>{registro.id}</TableCell>
+                    <TableCell className="font-medium">{registro.placa}</TableCell>
+                    <TableCell>{registro.km ? registro.km : '-'}</TableCell>
+                    <TableCell>{registro.projeto ? registro.projeto : '-'}</TableCell>
+                    <TableCell>{registro.motorista_nome ? registro.motorista_nome : '-'}</TableCell>
+                    <TableCell>{registro.tipo_combustivel || '-'}</TableCell>
+                    <TableCell>{typeof registro.quantidade_litros !== 'undefined' ? registro.quantidade_litros : '-'}</TableCell>
+                    <TableCell>
+                      {typeof registro.valor_litro !== 'undefined' && registro.valor_litro !== null
+                        ? `R$ ${Number(registro.valor_litro).toFixed(2)}`
+                        : '-'}
+                    </TableCell>
+                    <TableCell>
+                      {typeof registro.valor_total !== 'undefined' && registro.valor_total !== null
+                        ? `R$ ${Number(registro.valor_total).toFixed(2)}`
+                        : '-'}
+                    </TableCell>
+                    <TableCell>{registro.lavagem ? 'Sim' : 'Não'}</TableCell>
+                    <TableCell>{registro.created_at ? formatarData(registro.created_at) : '-'}</TableCell>
+                  </TableRow>
+                );
+              }) : null}
             </TableBody>
           </Table>
         </div>
