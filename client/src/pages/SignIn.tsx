@@ -153,15 +153,8 @@ export default function SignIn({ oficina = false }: SignInProps) {
               <div className="mb-3 text-sm text-center">
                 <p className="text-primary font-medium mb-1">Oficina cadastrada?</p>
                 <p className="text-muted-foreground mb-2">
-                  Utilize o e-mail e senha fornecidos durante o cadastro
+                  Utilize o e-mail e senha fornecidos pelo administrador do sistema
                 </p>
-                <Button 
-                  variant="link" 
-                  className="p-0 h-auto text-xs"
-                  onClick={() => navigate('/oficinas/cadastro')}
-                >
-                  Ainda não é cadastrado? Clique aqui para se registrar
-                </Button>
               </div>
             )}
             <p className="text-xs text-center text-gray-600">
