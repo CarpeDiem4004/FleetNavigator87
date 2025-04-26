@@ -14,8 +14,13 @@ const scryptAsync = promisify(scrypt);
 
 // Chave secreta para assinatura de tokens JWT
 const JWT_SECRET = process.env.JWT_SECRET || 'murici-hybrid-auth-secret-key-2025';
-// Tempo de expiração do token (24 horas em segundos)
-const JWT_EXPIRES_IN = '24h';
+// Tempo de expiração do token (24 horas)
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+
+console.log('[HybridUserService] Configuração JWT:', {
+  secret: JWT_SECRET ? 'Definido' : 'Não definido',
+  expiresIn: JWT_EXPIRES_IN
+});
 
 /**
  * Classe que gerencia operações de usuário de forma genérica
