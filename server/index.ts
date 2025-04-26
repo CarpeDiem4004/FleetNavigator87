@@ -16,6 +16,8 @@ import {
 } from "./api-direto.js";
 // Importar API para usuários via Supabase
 import userApi from "./api/userApi";
+// Importar API híbrida para usuários (ambiente Replit e externo)
+import hybridUserApi from "../hybrid-user-api.js";
 
 // Configuração das variáveis de ambiente do Supabase
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
@@ -70,6 +72,9 @@ app.use((req, res, next) => {
   
   // Registrar o roteador de API de usuários
   app.use(userApi);
+  
+  // Registrar o roteador de API híbrida de usuários (funciona dentro e fora do Replit)
+  app.use(hybridUserApi);
   
   // Registrar as rotas de API diretas para evitar interceptação do Vite
   // Estas rotas serão processadas antes do middleware do Vite e terão os headers adequados
