@@ -12,6 +12,58 @@ const router = express.Router();
 const userService = getHybridUserService();
 
 /**
+ * Middleware para verificar autenticação JWT
+ * Verifica se o token JWT é válido e adiciona o usuário ao objeto de requisição
+ */
+const verifyJwtAuth = async (req, res, next) => {
+  try {
+    // Extrair token do cabeçalho de autorização
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader) {
+      return res.status(401).json({
+        success: false,
+        message: 'Não autenticado - Token não fornecido'
+      });
+    }
+    
+    // Verificar formato do token (Bearer TOKEN)
+    const parts = authHeader.split(' ');
+    if (parts.length !== 2 || parts[0] !== 'Bearer') {
+      return res.status(401).json({
+        success: false,
+        message: 'Formato de token inválido'
+      });
+    }
+    
+    const token = parts[1];
+    
+    // Verificar token com o serviço de usuário
+    const user = await userService.verifyToken(token);
+    
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Token inválido ou expirado'
+      });
+    }
+    
+    // Adicionar usuário ao objeto de requisição
+    req.user = user;
+    
+    // Continuar para o próximo middleware/rota
+    next();
+  } catch (error) {
+    console.error('[HybridAPI] Erro ao verificar token JWT:', error);
+    return res.status(401).json({
+      success: false,
+      message: 'Erro ao verificar autenticação',
+      error: error.message
+    });
+  }
+};
+
+/**
  * Rota para criar um novo usuário
  * POST /api/hybrid/users
  */
@@ -323,8 +375,7 @@ router.delete('/api/hybrid/users/:id', async (req, res) => {
 });
 
 /**
- * Middleware para autenticação básica
- * Verifica email e senha para login
+ * Rota para autenticação e geração de token JWT
  * POST /api/hybrid/auth/login
  */
 router.post('/api/hybrid/auth/login', async (req, res) => {
@@ -338,32 +389,22 @@ router.post('/api/hybrid/auth/login', async (req, res) => {
       });
     }
     
-    // Buscar usuário pelo email
-    const user = await userService.getUserByEmail(email);
-    if (!user) {
+    // Usar o novo método de autenticação do serviço
+    const authResult = await userService.authenticateUser(email, password);
+    
+    if (!authResult) {
       return res.status(401).json({
         success: false,
         message: 'Credenciais inválidas'
       });
     }
     
-    // Verificar senha
-    const isPasswordValid = await userService.comparePasswords(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: 'Credenciais inválidas'
-      });
-    }
-    
-    // Remover senha do objeto de resposta
-    const { password: _, ...userWithoutPassword } = user;
-    
+    // Retornar token e dados do usuário
     return res.status(200).json({
       success: true,
       message: 'Login realizado com sucesso',
-      user: userWithoutPassword,
-      token: 'Bearer ' + Buffer.from(`${email}:${Date.now()}`).toString('base64') // Token simples
+      user: authResult.user,
+      token: authResult.token
     });
   } catch (error) {
     console.error('[HybridAPI] Erro na autenticação:', error);
@@ -373,6 +414,19 @@ router.post('/api/hybrid/auth/login', async (req, res) => {
       error: error.message
     });
   }
+});
+
+/**
+ * Rota para verificar se um token JWT é válido
+ * GET /api/hybrid/auth/verify
+ */
+router.get('/api/hybrid/auth/verify', verifyJwtAuth, (req, res) => {
+  // Se chegou aqui, o token é válido e o usuário está no req.user
+  return res.status(200).json({
+    success: true,
+    message: 'Token válido',
+    user: req.user
+  });
 });
 
 export default router;

@@ -7,9 +7,15 @@ import { createClient } from '@supabase/supabase-js';
 import { Pool } from 'pg';
 import { scrypt, randomBytes } from 'crypto';
 import { promisify } from 'util';
+import jwt from 'jsonwebtoken';
 
 // Função assíncrona para hash de senha
 const scryptAsync = promisify(scrypt);
+
+// Chave secreta para assinatura de tokens JWT
+const JWT_SECRET = process.env.JWT_SECRET || 'murici-hybrid-auth-secret-key-2025';
+// Tempo de expiração do token (24 horas em segundos)
+const JWT_EXPIRES_IN = '24h';
 
 /**
  * Classe que gerencia operações de usuário de forma genérica
@@ -587,6 +593,105 @@ class HybridUserService {
     }
     
     return result;
+  }
+
+  /**
+   * Realiza a autenticação de um usuário e gera um token JWT
+   * @param {string} email - Email do usuário
+   * @param {string} password - Senha do usuário
+   * @returns {Promise<{token: string, user: Object}|null>} - Token JWT e dados do usuário ou null se falhar
+   */
+  async authenticateUser(email, password) {
+    try {
+      console.log(`[HybridUserService] Tentando autenticar usuário: ${email}`);
+      
+      // Buscar usuário pelo email
+      const user = await this.getUserByEmail(email);
+      if (!user) {
+        console.log(`[HybridUserService] Usuário não encontrado: ${email}`);
+        return null;
+      }
+      
+      // Verificar se usuário está ativo
+      if (!user.isActive) {
+        console.log(`[HybridUserService] Usuário desativado: ${email}`);
+        return null;
+      }
+      
+      // Verificar senha
+      const passwordValid = await this.comparePasswords(password, user.password);
+      if (!passwordValid) {
+        console.log(`[HybridUserService] Senha inválida para usuário: ${email}`);
+        return null;
+      }
+      
+      // Gerar token JWT
+      const token = this.generateToken(user);
+      
+      // Retornar token e dados do usuário (sem a senha)
+      const { password: _, ...userWithoutPassword } = user;
+      
+      return {
+        token,
+        user: userWithoutPassword
+      };
+    } catch (error) {
+      console.error('[HybridUserService] Erro na autenticação:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Gera um token JWT para o usuário
+   * @param {Object} user - Dados do usuário
+   * @returns {string} - Token JWT
+   */
+  generateToken(user) {
+    try {
+      const payload = {
+        sub: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        baseId: user.baseId,
+        oficinaId: user.oficinaId
+      };
+      
+      return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    } catch (error) {
+      console.error('[HybridUserService] Erro ao gerar token:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Verifica e decodifica um token JWT
+   * @param {string} token - Token JWT a ser verificado
+   * @returns {Promise<Object|null>} - Dados do usuário ou null se o token for inválido
+   */
+  async verifyToken(token) {
+    try {
+      if (!token) return null;
+      
+      // Verificar e decodificar o token
+      const decoded = jwt.verify(token, JWT_SECRET);
+      
+      // Buscar usuário no banco de dados para garantir que ainda existe e está ativo
+      const userId = decoded.sub;
+      const user = await this.getUserById(userId);
+      
+      if (!user || !user.isActive) {
+        console.log(`[HybridUserService] Usuário do token não encontrado ou inativo: ${userId}`);
+        return null;
+      }
+      
+      // Retornar dados do usuário (sem a senha)
+      const { password: _, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    } catch (error) {
+      console.error('[HybridUserService] Erro ao verificar token:', error);
+      return null;
+    }
   }
 }
 
