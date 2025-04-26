@@ -127,9 +127,24 @@ export async function apiRequest(
   }
   
   // Otherwise use regular fetch for backend API
+  // Verificar se temos um token JWT armazenado para autenticação
+  const authToken = localStorage.getItem('authToken');
+  
+  // Configurar os cabeçalhos
+  const headers: HeadersInit = {
+    ...(data ? { "Content-Type": "application/json" } : {}),
+  };
+  
+  // Adicionar o token JWT se estiver disponível
+  if (authToken) {
+    headers["Authorization"] = `Bearer ${authToken}`;
+    console.log('Adicionando token JWT ao cabeçalho da requisição');
+  }
+  
+  // Fazer a requisição
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
@@ -174,8 +189,19 @@ export const getQueryFn: <T>(options: {
     }
     
     // Otherwise use regular fetch for backend API
+    // Verificar se temos um token JWT armazenado para autenticação
+    const authToken = localStorage.getItem('authToken');
+    
+    // Configurar os cabeçalhos com token JWT quando disponível
+    const headers: HeadersInit = {};
+    if (authToken) {
+      headers["Authorization"] = `Bearer ${authToken}`;
+      console.log('[QueryClient] Adicionando token JWT à requisição GET:', urlOrTable);
+    }
+    
     let res = await fetch(urlOrTable, {
       credentials: "include",
+      headers
     });
 
     // Se receber 401, tenta ressincronizar a sessão e repetir a requisição
@@ -191,8 +217,10 @@ export const getQueryFn: <T>(options: {
       // Se a ressincronização for bem-sucedida, tenta a requisição novamente
       if (resyncSuccessful) {
         console.log('[QueryClient] Sessão ressincronizada com sucesso, repetindo requisição:', urlOrTable);
+        // Repetir a requisição com o mesmo token JWT se disponível
         res = await fetch(urlOrTable, {
           credentials: "include",
+          headers // Reutilizar o mesmo objeto de cabeçalhos com o token
         });
       }
     }
