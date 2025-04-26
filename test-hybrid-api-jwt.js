@@ -48,11 +48,18 @@ async function runTests() {
   
   // 1. Testar login
   console.log('1. Testando login:');
+  console.log('Tentando autenticar com joao.paulo@muricionfleet.com');
+  
+  // Analisando o formato da senha atual no banco
+  console.log('Formato da senha no banco: 25f1ef8df42bf4e9320e84d036233ace9130864bef4e489fc677ed622ebb06b3c43e456f72861f44dfb2de71c896fecd1b4029e519ccf1d05632027704aec04d.17decf7e374062db5c0354ee2be24169');
+  console.log('O formato parece ser [hash].[salt]');
+  
+  // Testar com a senha padrão para este usuário
   const loginResult = await fetchApi('/api/hybrid/auth/login', {
     method: 'POST',
     body: JSON.stringify({
       email: 'joao.paulo@muricionfleet.com',
-      password: 'admin123'
+      password: 'fleetadmin2025'
     })
   });
   

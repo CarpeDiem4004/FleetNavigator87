@@ -5,7 +5,7 @@
  */
 import { createClient } from '@supabase/supabase-js';
 import { Pool } from 'pg';
-import { scrypt, randomBytes } from 'crypto';
+import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
 import jwt from 'jsonwebtoken';
 
@@ -571,14 +571,24 @@ class HybridUserService {
    */
   async comparePasswords(supplied, stored) {
     try {
-      const { timingSafeEqual } = await import('crypto');
+      console.log(`[HybridUserService] Comparando senha para autenticação`);
+      
+      // Verificar se a senha armazenada está no formato correto
+      if (!stored || !stored.includes('.')) {
+        console.error('[HybridUserService] Formato de senha inválido');
+        return false;
+      }
+      
       const [hashed, salt] = stored.split('.');
       const hashedBuf = Buffer.from(hashed, 'hex');
       const suppliedBuf = await scryptAsync(supplied, salt, 64);
       
       // Usar timingSafeEqual para evitar ataques de timing
-      return hashedBuf.length === suppliedBuf.length && 
+      const result = hashedBuf.length === suppliedBuf.length && 
         timingSafeEqual(hashedBuf, suppliedBuf);
+      
+      console.log(`[HybridUserService] Resultado da comparação de senha: ${result ? 'válida' : 'inválida'}`);
+      return result;
     } catch (error) {
       console.error('[HybridUserService] Erro ao comparar senhas:', error);
       return false;
