@@ -107,7 +107,39 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       console.log("Tentando fazer login com:", email);
       
-      const response = await fetch('/api/login', {
+      // Tenta primeiro a rota de autenticação JWT híbrida
+      let response;
+      let jwtResponse = null;
+      
+      try {
+        console.log("Tentando autenticação JWT híbrida...");
+        jwtResponse = await fetch('/api/hybrid/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+        });
+        
+        if (jwtResponse.ok) {
+          const jwtData = await jwtResponse.json();
+          
+          // Armazenar o token JWT no localStorage para uso futuro
+          if (jwtData.token) {
+            localStorage.setItem('authToken', jwtData.token);
+            console.log("Token JWT armazenado com sucesso");
+          }
+          
+          // Continuar com a autenticação tradicional para manter a sessão
+          console.log("Autenticação JWT bem-sucedida, estabelecendo sessão...");
+        }
+      } catch (jwtError) {
+        console.error("Erro na autenticação JWT:", jwtError);
+      }
+      
+      // Sempre usa a autenticação tradicional para estabelecer a sessão
+      console.log("Estabelecendo sessão via autenticação tradicional...");
+      response = await fetch('/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -165,6 +197,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const logout = async () => {
     try {
+      // Remover token JWT do localStorage
+      localStorage.removeItem('authToken');
+      console.log("Token JWT removido do localStorage");
+      
       const response = await apiRequest('POST', '/api/logout');
       
       if (!response.ok) {
