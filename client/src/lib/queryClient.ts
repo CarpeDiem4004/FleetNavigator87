@@ -130,24 +130,35 @@ export async function apiRequest(
   // Verificar se temos um token JWT armazenado para autenticação
   const authToken = localStorage.getItem('authToken');
   
-  // Configurar os cabeçalhos
+  // Configurar os cabeçalhos - sempre incluir Content-Type para consistência
   const headers: HeadersInit = {
-    ...(data ? { "Content-Type": "application/json" } : {}),
+    "Content-Type": "application/json"
   };
   
   // Adicionar o token JWT se estiver disponível
   if (authToken) {
     headers["Authorization"] = `Bearer ${authToken}`;
-    console.log('Adicionando token JWT ao cabeçalho da requisição');
+    console.log('[apiRequest] Adicionando token JWT ao cabeçalho da requisição:', url);
+  } else {
+    console.log('[apiRequest] Sem token JWT disponível para a requisição:', url);
   }
   
-  // Fazer a requisição
-  const res = await fetch(url, {
+  // Configuração da requisição
+  const requestConfig: RequestInit = {
     method,
     headers,
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
+    credentials: "include", // Importante para manter a sessão
+  };
+  
+  // Adicionar corpo apenas se necessário
+  if (data) {
+    requestConfig.body = JSON.stringify(data);
+  }
+  
+  console.log(`[apiRequest] Enviando requisição ${method} para ${url}`);
+  
+  // Fazer a requisição
+  const res = await fetch(url, requestConfig);
 
   await throwIfResNotOk(res);
   return res;
@@ -193,12 +204,18 @@ export const getQueryFn: <T>(options: {
     const authToken = localStorage.getItem('authToken');
     
     // Configurar os cabeçalhos com token JWT quando disponível
-    const headers: HeadersInit = {};
+    const headers: HeadersInit = {
+      "Content-Type": "application/json" // Adicionar Content-Type para consistência
+    };
+    
     if (authToken) {
       headers["Authorization"] = `Bearer ${authToken}`;
       console.log('[QueryClient] Adicionando token JWT à requisição GET:', urlOrTable);
+    } else {
+      console.log('[QueryClient] Sem token JWT disponível para GET:', urlOrTable);
     }
     
+    console.log(`[QueryClient] Enviando requisição GET para ${urlOrTable}`);
     let res = await fetch(urlOrTable, {
       credentials: "include",
       headers

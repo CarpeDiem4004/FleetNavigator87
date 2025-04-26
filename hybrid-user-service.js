@@ -688,19 +688,41 @@ class HybridUserService {
    */
   async verifyToken(token) {
     try {
-      if (!token) return null;
+      if (!token) {
+        console.log('[HybridUserService] Token não fornecido');
+        return null;
+      }
+      
+      console.log('[HybridUserService] Tentando verificar token JWT');
       
       // Verificar e decodificar o token
-      const decoded = jwt.verify(token, JWT_SECRET);
+      let decoded;
+      try {
+        decoded = jwt.verify(token, JWT_SECRET);
+        console.log('[HybridUserService] Token decodificado com sucesso:', decoded.sub);
+      } catch (jwtError) {
+        console.error('[HybridUserService] Erro na verificação JWT:', jwtError.message);
+        return null;
+      }
       
       // Buscar usuário no banco de dados para garantir que ainda existe e está ativo
       const userId = decoded.sub;
+      console.log('[HybridUserService] Buscando usuário do token:', userId);
       const user = await this.getUserById(userId);
       
-      if (!user || !user.isActive) {
-        console.log(`[HybridUserService] Usuário do token não encontrado ou inativo: ${userId}`);
+      if (!user) {
+        console.log(`[HybridUserService] Usuário do token não encontrado: ${userId}`);
         return null;
       }
+      
+      // Verificar se o usuário está ativo (suporta is_active ou isActive)
+      const isActive = user.isActive === undefined ? user.is_active : user.isActive;
+      if (isActive === false) {
+        console.log(`[HybridUserService] Usuário do token está inativo: ${userId}`);
+        return null;
+      }
+      
+      console.log(`[HybridUserService] Token verificado com sucesso para usuário: ${userId}`);
       
       // Retornar dados do usuário (sem a senha)
       const { password: _, ...userWithoutPassword } = user;

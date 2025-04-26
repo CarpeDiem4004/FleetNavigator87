@@ -17,10 +17,23 @@ const userService = getHybridUserService();
  */
 const verifyJwtAuth = async (req, res, next) => {
   try {
+    // Registrar informações da requisição para debug
+    console.log('[HybridAPI] Requisição recebida:', {
+      method: req.method,
+      url: req.url,
+      headers: {
+        authorization: req.headers.authorization ? 'Presente' : 'Ausente',
+        'content-type': req.headers['content-type'],
+        'user-agent': req.headers['user-agent'],
+      },
+      ip: req.ip,
+    });
+    
     // Extrair token do cabeçalho de autorização
     const authHeader = req.headers.authorization;
     
     if (!authHeader) {
+      console.log('[HybridAPI] Autenticação JWT falhou: Cabeçalho Authorization não fornecido');
       return res.status(401).json({
         success: false,
         message: 'Não autenticado - Token não fornecido'
@@ -30,6 +43,7 @@ const verifyJwtAuth = async (req, res, next) => {
     // Verificar formato do token (Bearer TOKEN)
     const parts = authHeader.split(' ');
     if (parts.length !== 2 || parts[0] !== 'Bearer') {
+      console.log('[HybridAPI] Autenticação JWT falhou: Formato do cabeçalho inválido -', authHeader);
       return res.status(401).json({
         success: false,
         message: 'Formato de token inválido'
@@ -37,11 +51,13 @@ const verifyJwtAuth = async (req, res, next) => {
     }
     
     const token = parts[1];
+    console.log('[HybridAPI] Token JWT extraído com sucesso, verificando...');
     
     // Verificar token com o serviço de usuário
     const user = await userService.verifyToken(token);
     
     if (!user) {
+      console.log('[HybridAPI] Autenticação JWT falhou: Token inválido ou usuário não encontrado/inativo');
       return res.status(401).json({
         success: false,
         message: 'Token inválido ou expirado'
@@ -50,6 +66,7 @@ const verifyJwtAuth = async (req, res, next) => {
     
     // Adicionar usuário ao objeto de requisição
     req.user = user;
+    console.log(`[HybridAPI] Autenticação JWT bem-sucedida para usuário: ${user.id} (${user.email})`);
     
     // Continuar para o próximo middleware/rota
     next();
