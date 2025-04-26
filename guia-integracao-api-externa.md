@@ -1,258 +1,335 @@
-# Guia de Integração com API Externa via JWT
+# Guia de Integração Rápida - API Externa do Sistema de Gestão de Frotas
 
-Este guia descreve como integrar aplicações externas com a API do sistema Murici On Fleet usando autenticação JWT. Siga os passos abaixo para implementar a autenticação e começar a usar as APIs protegidas.
+Este guia fornece as informações essenciais para integrar seu sistema com a API externa do Sistema de Gestão de Frotas Muricion.
 
-## Pré-requisitos
+## 1. Pré-requisitos
 
-- Acesso à URL base do sistema
-- Credenciais válidas (email e senha) com permissões adequadas
-- Capacidade de fazer solicitações HTTP e processar respostas JSON
+- Credenciais de acesso (usuário e senha)
+- URL base da API (fornecida pela equipe de TI)
+- Cliente HTTP para fazer requisições (como Axios, Fetch, etc.)
 
-## Passo 1: Obter um Token JWT
+## 2. Fluxo de Autenticação
 
-O primeiro passo é autenticar-se e obter um token JWT que será usado em todas as requisições subsequentes.
-
-### Requisição
-
-```
-POST /api/hybrid/auth/login
-Content-Type: application/json
-
-{
-  "email": "seu_email@exemplo.com",
-  "password": "sua_senha"
-}
-```
-
-### Resposta (sucesso)
-
-```json
-{
-  "success": true,
-  "message": "Login realizado com sucesso",
-  "user": {
-    "id": 123,
-    "name": "Nome do Usuário",
-    "email": "seu_email@exemplo.com",
-    "role": "admin",
-    "baseId": null,
-    "basename": null,
-    "oficinaId": null,
-    "isActive": true
-  },
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-### Resposta (falha)
-
-```json
-{
-  "success": false,
-  "message": "Credenciais inválidas"
-}
-```
-
-## Passo 2: Usar o Token JWT nas Requisições
-
-Para acessar APIs protegidas, inclua o token JWT no cabeçalho `Authorization` de todas as requisições:
-
-```
-GET /api/hybrid/users
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-
-## Passo 3: Verificar a Validade do Token
-
-Para verificar se um token ainda é válido:
-
-### Requisição
-
-```
-GET /api/hybrid/auth/verify
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-
-### Resposta (token válido)
-
-```json
-{
-  "success": true,
-  "message": "Token válido",
-  "user": {
-    "id": 123,
-    "name": "Nome do Usuário",
-    "email": "seu_email@exemplo.com",
-    "role": "admin",
-    "baseId": null,
-    "basename": null,
-    "oficinaId": null,
-    "isActive": true
-  }
-}
-```
-
-### Resposta (token inválido)
-
-```json
-{
-  "success": false,
-  "message": "Token inválido ou expirado"
-}
-```
-
-## Passo 4: Gerenciamento do Token
-
-- Os tokens têm duração de 24 horas por padrão
-- Armazene o token de forma segura no cliente
-- Implemente lógica para obter um novo token quando o atual expirar
-- Não compartilhe tokens entre usuários ou aplicações
-
-## APIs Disponíveis
-
-Todas as APIs abaixo requerem autenticação JWT:
-
-### Usuários
-
-- `GET /api/hybrid/users` - Listar todos os usuários
-- `GET /api/hybrid/users/:id` - Obter usuário específico
-- `POST /api/hybrid/users` - Criar novo usuário
-- `PUT /api/hybrid/users/:id` - Atualizar usuário
-- `DELETE /api/hybrid/users/:id` - Excluir usuário
-- `POST /api/hybrid/users/:id/reset-password` - Redefinir senha
-
-### Pneus
-
-- `GET /api/hybrid/pneus` - Listar todos os pneus
-- `GET /api/hybrid/pneus/:id` - Obter pneu específico
-- `POST /api/hybrid/pneus` - Criar novo pneu
-- `PUT /api/hybrid/pneus/:id` - Atualizar pneu
-- `POST /api/hybrid/pneus/:id/movimentacao` - Registrar movimentação
-- `GET /api/hybrid/pneus/:id/historico` - Obter histórico de movimentações
-- `POST /api/hybrid/pneus/solicitacoes` - Criar solicitação
-- `GET /api/hybrid/pneus/solicitacoes` - Listar solicitações
-
-## Tratamento de Erros
-
-### Erros comuns
-
-- **401 Unauthorized**: Token ausente, inválido ou expirado
-- **403 Forbidden**: Usuário sem permissão para o recurso
-- **404 Not Found**: Recurso não encontrado
-- **400 Bad Request**: Dados de entrada inválidos
-- **500 Internal Server Error**: Erro interno do servidor
-
-### Exemplo de tratamento
+### 2.1. Obter Token JWT
 
 ```javascript
-async function apiRequest(url, options = {}) {
-  const token = localStorage.getItem('authToken');
-  
-  const requestOptions = {
-    ...options,
-    headers: {
-      ...options.headers,
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
-  };
-  
-  try {
-    const response = await fetch(url, requestOptions);
-    
-    if (response.status === 401) {
-      // Token expirado ou inválido
-      // Redirecionar para login ou obter novo token
-      return handleAuthError();
-    }
-    
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('API request failed:', error);
-    throw error;
-  }
-}
-```
+// Exemplo usando Fetch em JavaScript
+const credentials = {
+  email: 'seu-usuario@exemplo.com',
+  password: 'sua-senha'
+};
 
-## Implementação em Diferentes Linguagens
-
-### JavaScript
-
-```javascript
-async function login(email, password) {
-  const response = await fetch('/api/hybrid/auth/login', {
+async function login() {
+  const response = await fetch('https://api.muricionfleet.com/api/hybrid/auth/login', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(credentials)
   });
   
   const data = await response.json();
   
   if (data.success) {
-    localStorage.setItem('authToken', data.token);
-    return data.user;
+    // Armazenar o token para uso futuro
+    localStorage.setItem('jwt_token', data.token);
+    return data.token;
   } else {
-    throw new Error(data.message);
+    throw new Error('Falha na autenticação: ' + data.message);
   }
 }
+```
 
-async function fetchUsers() {
-  const token = localStorage.getItem('authToken');
+### 2.2. Usar o Token em Requisições
+
+```javascript
+// Exemplo de função para fazer requisições autenticadas
+async function apiRequest(endpoint, method = 'GET', body = null) {
+  const token = localStorage.getItem('jwt_token');
   
-  const response = await fetch('/api/hybrid/users', {
-    headers: { 'Authorization': `Bearer ${token}` }
-  });
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  };
+  
+  const config = {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined
+  };
+  
+  const response = await fetch(`https://api.muricionfleet.com${endpoint}`, config);
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`Erro na API: ${errorData.message}`);
+  }
   
   return await response.json();
 }
 ```
 
-### Python
+## 3. Endpoints Principais
 
-```python
-import requests
+### 3.1. Teste de Conectividade
 
-def login(email, password):
-    response = requests.post(
-        'https://seu-dominio.com/api/hybrid/auth/login',
-        json={'email': email, 'password': password}
-    )
-    
-    data = response.json()
-    
-    if data['success']:
-        return data['token'], data['user']
-    else:
-        raise Exception(data['message'])
-
-def fetch_users(token):
-    response = requests.get(
-        'https://seu-dominio.com/api/hybrid/users',
-        headers={'Authorization': f'Bearer {token}'}
-    )
-    
-    return response.json()
+```javascript
+// Verificar se a API está online
+const ping = await fetch('https://api.muricionfleet.com/api/hybrid/ping');
+const pingData = await ping.json();
+console.log('API status:', pingData.message);
 ```
 
-## Considerações de Segurança
+### 3.2. Verificar Token
 
-1. Sempre use HTTPS para transmitir tokens JWT
-2. Armazene tokens de forma segura no cliente (evite localStorage se possível)
-3. Implemente timeout de sessão e renovação de token
-4. Use cookies HttpOnly e Secure para aplicações web
-5. Não inclua informações sensíveis no payload do JWT
+```javascript
+// Verificar se o token JWT ainda é válido
+try {
+  const verifyResult = await apiRequest('/api/hybrid/auth/verify');
+  console.log('Token válido até:', verifyResult.expiresAt);
+} catch (error) {
+  console.error('Token inválido ou expirado');
+  // Redirecionar para login
+}
+```
 
-## Depuração
+### 3.3. Gerenciamento de Usuários
 
-Para diagnosticar problemas com autenticação:
+```javascript
+// Obter lista de usuários
+const users = await apiRequest('/api/hybrid/users');
+console.log(`Total de usuários: ${users.count}`);
 
-1. Verifique se o token está sendo enviado corretamente no cabeçalho `Authorization`
-2. Confirme que o formato do token é `Bearer [token]` (com espaço após "Bearer")
-3. Verifique se o token não expirou
-4. Use a rota `/api/hybrid/auth/verify` para validar o token
-5. Examine as mensagens de erro retornadas pelo servidor
+// Obter usuário específico
+const user = await apiRequest(`/api/hybrid/users/123`);
+console.log(`Dados do usuário: ${user.user.name}`);
 
-## Suporte
+// Criar novo usuário
+const newUser = await apiRequest('/api/hybrid/users', 'POST', {
+  name: 'Novo Usuário',
+  email: 'novo@exemplo.com',
+  password: 'senha123',
+  role: 'operador',
+  baseId: 5
+});
 
-Para questões sobre a API ou problemas de autenticação, entre em contato com o suporte técnico:
+// Atualizar usuário
+const updatedUser = await apiRequest(`/api/hybrid/users/123`, 'PUT', {
+  name: 'Nome Atualizado',
+  role: 'gestor'
+});
+
+// Redefinir senha
+const resetResult = await apiRequest(`/api/hybrid/users/123/reset-password`, 'POST');
+// Se gerada automaticamente, a senha estará em resetResult.generatedPassword
+```
+
+### 3.4. Gestão de Pneus
+
+```javascript
+// Listar pneus
+const tires = await apiRequest('/api/hybrid/pneus');
+
+// Obter pneu específico
+const tire = await apiRequest(`/api/hybrid/pneus/456`);
+
+// Registrar movimentação
+const movementResult = await apiRequest(`/api/hybrid/pneus/456/movimentacao`, 'POST', {
+  tipo: 'montagem',
+  veiculo: 'ABC1234',
+  posicao: 'dianteira-esquerda',
+  km: 15000,
+  observacao: 'Montagem preventiva'
+});
+```
+
+## 4. Tratamento de Erros
+
+A API retorna sempre um formato padronizado para erros:
+
+```json
+{
+  "success": false,
+  "message": "Descrição do erro",
+  "error": "Detalhes técnicos (quando disponível)"
+}
+```
+
+Exemplo de tratamento de erros:
+
+```javascript
+try {
+  const result = await apiRequest('/api/hybrid/users');
+  // Processar resultado
+} catch (error) {
+  if (error.message.includes('401')) {
+    // Erro de autenticação
+    console.error('Sessão expirada, faça login novamente');
+    // Redirecionar para login
+  } else if (error.message.includes('403')) {
+    // Erro de permissão
+    console.error('Sem permissão para acessar este recurso');
+  } else {
+    // Outros erros
+    console.error('Erro ao acessar API:', error.message);
+  }
+}
+```
+
+## 5. Boas Práticas
+
+1. **Armazenamento seguro do token**: Armazene o token JWT em local seguro, como localStorage em aplicações web ou keychain em aplicações móveis.
+
+2. **Renovação automática**: Implemente uma lógica para renovar o token antes que expire, fazendo uma nova requisição de login.
+
+3. **Timeout e retry**: Configure timeouts adequados para as requisições e implemente retentativas para lidar com problemas temporários de conectividade.
+
+4. **Verificação periódica**: Verifique periodicamente se o token ainda é válido usando o endpoint `/api/hybrid/auth/verify`.
+
+5. **Tratamento de concorrência**: Em aplicações com múltiplos usuários, gerencie os tokens de forma isolada para cada sessão.
+
+## 6. Exemplo Completo
+
+```javascript
+class MuricionFleetAPI {
+  constructor(baseUrl) {
+    this.baseUrl = baseUrl;
+    this.token = localStorage.getItem('jwt_token');
+  }
+  
+  async login(email, password) {
+    const response = await fetch(`${this.baseUrl}/api/hybrid/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      this.token = data.token;
+      localStorage.setItem('jwt_token', this.token);
+      return data.user;
+    } else {
+      throw new Error(`Falha no login: ${data.message}`);
+    }
+  }
+  
+  async request(endpoint, method = 'GET', body = null) {
+    if (!this.token) {
+      throw new Error('Não autenticado');
+    }
+    
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${this.token}`
+    };
+    
+    const config = {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined
+    };
+    
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, config);
+      
+      if (response.status === 401) {
+        // Token expirado ou inválido
+        this.token = null;
+        localStorage.removeItem('jwt_token');
+        throw new Error('Sessão expirada');
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message);
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Erro na requisição API:', error);
+      throw error;
+    }
+  }
+  
+  // Métodos específicos
+  async getUsers() {
+    return this.request('/api/hybrid/users');
+  }
+  
+  async getUserById(id) {
+    return this.request(`/api/hybrid/users/${id}`);
+  }
+  
+  async createUser(userData) {
+    return this.request('/api/hybrid/users', 'POST', userData);
+  }
+  
+  async getPneus(filters = {}) {
+    const queryParams = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      queryParams.append(key, value);
+    });
+    
+    return this.request(`/api/hybrid/pneus?${queryParams.toString()}`);
+  }
+  
+  async isTokenValid() {
+    try {
+      const result = await this.request('/api/hybrid/auth/verify');
+      return {
+        valid: true,
+        expiresAt: result.expiresAt
+      };
+    } catch (error) {
+      return { valid: false };
+    }
+  }
+}
+
+// Uso da classe
+const api = new MuricionFleetAPI('https://api.muricionfleet.com');
+
+async function exemplo() {
+  try {
+    // Login
+    await api.login('usuario@exemplo.com', 'senha123');
+    
+    // Verificar token
+    const tokenStatus = await api.isTokenValid();
+    console.log('Token válido:', tokenStatus.valid);
+    
+    // Obter usuários
+    const users = await api.getUsers();
+    console.log('Usuários:', users.count);
+    
+    // Criar usuário
+    const newUser = await api.createUser({
+      name: 'Novo Usuário',
+      email: 'novo@exemplo.com',
+      password: 'senha123',
+      role: 'operador'
+    });
+    console.log('Usuário criado:', newUser.user.id);
+    
+  } catch (error) {
+    console.error('Erro:', error.message);
+  }
+}
+
+exemplo();
+```
+
+## 7. Suporte
+
+Para obter suporte adicional, entre em contato com nossa equipe técnica:
+
+- E-mail: suporte@muricionfleet.com
+- Documentação completa: [Link para documentação]
+- Repositório de exemplos: [Link para repositório]
+
+---
+
+*Última atualização: 26 de abril de 2025*

@@ -10,7 +10,7 @@ import { promisify } from 'util';
 const scryptAsync = promisify(scrypt);
 
 // Senha conhecida para testes
-const KNOWN_PASSWORD = 'fleetadmin2025';
+const KNOWN_PASSWORD = 'JP@2023';
 
 async function hashPassword(password) {
   try {

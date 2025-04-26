@@ -22,7 +22,7 @@ API_BASE_URL = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE
 // Credenciais de teste
 const TEST_USER = {
   email: 'joao.paulo@muricionfleet.com',
-  password: 'admin'
+  password: 'JP@2023' // Senha atualizada para o teste
 };
 
 // Variáveis globais para armazenar token e usuário
