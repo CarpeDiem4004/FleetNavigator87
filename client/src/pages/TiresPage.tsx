@@ -571,7 +571,7 @@ const TiresPage: React.FC = () => {
                       <SelectContent>
                         {tireModels.map((model) => (
                           <SelectItem key={model.id} value={model.id?.toString() || ''}>
-                            {model.marca} {model.modelo} - {model.medida} (R$ {model.valor_unitario.toFixed(2)})
+                            {model.marca} {model.modelo} - {model.medida} (R$ {typeof model.valor_unitario === 'number' ? model.valor_unitario.toFixed(2) : '0.00'})
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -771,7 +771,7 @@ const TiresPage: React.FC = () => {
                     <div className="flex justify-between items-center">
                       <span className="font-medium">Valor Total:</span>
                       <span className="text-lg font-bold">
-                        R$ {((newTire.quantidade || 1) * (newTire.valor_unitario || 0)).toFixed(2)}
+                        R$ {(((newTire.quantidade || 1) * (typeof newTire.valor_unitario === 'number' ? newTire.valor_unitario : 0)) || 0).toFixed(2)}
                       </span>
                     </div>
                   </div>
