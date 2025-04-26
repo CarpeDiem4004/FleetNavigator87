@@ -684,9 +684,10 @@ class HybridUserService {
   /**
    * Verifica e decodifica um token JWT
    * @param {string} token - Token JWT a ser verificado
+   * @param {boolean} includeTokenInfo - Se deve incluir informações do token na resposta
    * @returns {Promise<Object|null>} - Dados do usuário ou null se o token for inválido
    */
-  async verifyToken(token) {
+  async verifyToken(token, includeTokenInfo = false) {
     try {
       if (!token) {
         console.log('[HybridUserService] Token não fornecido');
@@ -726,6 +727,20 @@ class HybridUserService {
       
       // Retornar dados do usuário (sem a senha)
       const { password: _, ...userWithoutPassword } = user;
+      
+      // Se solicitado, incluir informações do token decodificado
+      if (includeTokenInfo) {
+        return {
+          user: userWithoutPassword,
+          tokenInfo: {
+            sub: decoded.sub,
+            iat: decoded.iat,
+            exp: decoded.exp,
+            // Adicionar mais campos do token conforme necessário
+          }
+        };
+      }
+      
       return userWithoutPassword;
     } catch (error) {
       console.error('[HybridUserService] Erro ao verificar token:', error);

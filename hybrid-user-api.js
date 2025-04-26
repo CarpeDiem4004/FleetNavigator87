@@ -54,9 +54,9 @@ const verifyJwtAuth = async (req, res, next) => {
     console.log('[HybridAPI] Token JWT extraído com sucesso, verificando...');
     
     // Verificar token com o serviço de usuário
-    const user = await userService.verifyToken(token);
+    const verificationResult = await userService.verifyToken(token, true);
     
-    if (!user) {
+    if (!verificationResult || !verificationResult.user) {
       console.log('[HybridAPI] Autenticação JWT falhou: Token inválido ou usuário não encontrado/inativo');
       return res.status(401).json({
         success: false,
@@ -64,9 +64,15 @@ const verifyJwtAuth = async (req, res, next) => {
       });
     }
     
-    // Adicionar usuário ao objeto de requisição
-    req.user = user;
-    console.log(`[HybridAPI] Autenticação JWT bem-sucedida para usuário: ${user.id} (${user.email})`);
+    // Adicionar usuário e informações do token ao objeto de requisição
+    req.user = verificationResult.user;
+    if (verificationResult.tokenInfo && verificationResult.tokenInfo.exp) {
+      // Converter timestamp Unix para data ISO
+      const expirationDate = new Date(verificationResult.tokenInfo.exp * 1000);
+      req.tokenExpiration = expirationDate.toISOString();
+    }
+    
+    console.log(`[HybridAPI] Autenticação JWT bem-sucedida para usuário: ${req.user.id} (${req.user.email})`);
     
     // Continuar para o próximo middleware/rota
     next();
@@ -397,24 +403,43 @@ router.delete('/api/hybrid/users/:id', verifyJwtAuth, async (req, res) => {
  */
 router.post('/api/hybrid/auth/login', async (req, res) => {
   try {
+    console.log('[HybridAPI] Requisição para login/autenticação recebida');
+    
+    // Registrar informações da requisição para debug
+    console.log('[HybridAPI] Detalhes da requisição:', {
+      method: req.method,
+      headers: {
+        'content-type': req.headers['content-type'],
+        'user-agent': req.headers['user-agent'],
+      },
+      hasBody: !!req.body,
+      bodyKeys: req.body ? Object.keys(req.body) : []
+    });
+    
     const { email, password } = req.body;
     
     if (!email || !password) {
+      console.log('[HybridAPI] Erro no login: Email ou senha não fornecidos');
       return res.status(400).json({
         success: false,
         message: 'Email e senha são obrigatórios'
       });
     }
     
+    console.log(`[HybridAPI] Tentando autenticar usuário: ${email}`);
+    
     // Usar o novo método de autenticação do serviço
     const authResult = await userService.authenticateUser(email, password);
     
     if (!authResult) {
+      console.log(`[HybridAPI] Falha na autenticação para: ${email}`);
       return res.status(401).json({
         success: false,
         message: 'Credenciais inválidas'
       });
     }
+    
+    console.log(`[HybridAPI] Autenticação bem-sucedida para: ${email} (ID: ${authResult.user.id})`);
     
     // Retornar token e dados do usuário
     return res.status(200).json({
@@ -439,10 +464,30 @@ router.post('/api/hybrid/auth/login', async (req, res) => {
  */
 router.get('/api/hybrid/auth/verify', verifyJwtAuth, (req, res) => {
   // Se chegou aqui, o token é válido e o usuário está no req.user
+  const user = req.user;
+  console.log(`[HybridAPI] Token verificado com sucesso para usuário: ${user.id} (${user.email})`);
+  
   return res.status(200).json({
     success: true,
     message: 'Token válido',
-    user: req.user
+    user: user,
+    verifiedAt: new Date().toISOString(),
+    expiresAt: req.tokenExpiration || null,
+  });
+});
+
+/**
+ * Rota para testar conectividade com a API híbrida
+ * GET /api/hybrid/ping
+ */
+router.get('/api/hybrid/ping', (req, res) => {
+  console.log('[HybridAPI] Requisição de ping recebida');
+  
+  return res.status(200).json({
+    success: true,
+    message: 'API híbrida está operacional',
+    timestamp: new Date().toISOString(),
+    version: '1.0.1'  // Incrementar conforme mudanças são feitas
   });
 });
 

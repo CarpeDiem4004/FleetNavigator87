@@ -1,261 +1,387 @@
-# Documentação da API Híbrida de Usuários
+# Documentação da API Híbrida do Sistema de Gestão de Frotas
 
-Esta API permite o gerenciamento de usuários e funciona tanto no ambiente Replit quanto em ambientes externos, conectando-se automaticamente ao PostgreSQL ou Supabase conforme necessário.
+Esta documentação descreve a API híbrida do sistema de gestão de frotas, que permite a integração com sistemas externos. A API funciona tanto no ambiente Replit quanto externamente, fornecendo um único ponto de integração para todas as funcionalidades do sistema.
 
-## Arquitetura
+## Visão Geral
 
-A API híbrida foi projetada em três camadas:
+A API híbrida é um conjunto de endpoints RESTful que fornecem acesso às principais funcionalidades do sistema, incluindo:
 
-1. **Camada de API** (`hybrid-user-api.js`): Fornece endpoints RESTful para operações de usuário
-2. **Camada de Serviço** (`hybrid-user-service.js`): Abstrai a lógica de acesso aos dados, detectando automaticamente o ambiente
-3. **Camada de Dados**: Utiliza PostgreSQL direto (no Replit) ou Supabase (em ambientes externos)
+- Autenticação e gerenciamento de usuários
+- Gerenciamento de veículos
+- Gestão de pneus
+- Operações de postos de abastecimento
+- Manutenções e checklists
 
-## Endpoints Disponíveis
+Todos os endpoints da API híbrida utilizam o prefixo `/api/hybrid/` para diferenciar das APIs internas do sistema.
 
-### Criar Usuário
-- **URL**: `/api/hybrid/users`
-- **Método**: `POST`
-- **Corpo da Requisição**:
-  ```json
-  {
+## Autenticação
+
+A API utiliza autenticação baseada em tokens JWT (JSON Web Tokens). Para acessar endpoints protegidos, é necessário:
+
+1. Obter um token de acesso através do endpoint de login
+2. Incluir o token em todas as requisições subsequentes no cabeçalho de autorização
+
+### Obtenção do Token (Login)
+
+**Endpoint**: `POST /api/hybrid/auth/login`
+
+**Corpo da Requisição**:
+```json
+{
+  "email": "usuario@exemplo.com",
+  "password": "senha"
+}
+```
+
+**Resposta de Sucesso** (Status 200):
+```json
+{
+  "success": true,
+  "message": "Login realizado com sucesso",
+  "user": {
+    "id": 123,
     "name": "Nome do Usuário",
     "email": "usuario@exemplo.com",
-    "role": "gestor",
-    "baseId": 1,
-    "isActive": true,
-    "password": "senha123"
-  }
-  ```
-  > Nota: Se `password` não for fornecido, uma senha aleatória será gerada
-  
-- **Resposta de Sucesso**:
-  ```json
-  {
-    "success": true,
-    "message": "Usuário criado com sucesso",
-    "user": {
-      "id": 1,
-      "name": "Nome do Usuário",
-      "email": "usuario@exemplo.com",
-      "role": "gestor",
-      "baseId": 1,
-      "isActive": true
-    },
-    "generatedPassword": "senha-gerada"
-  }
-  ```
+    "role": "admin"
+  },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
 
-### Obter Usuário por ID
-- **URL**: `/api/hybrid/users/:id`
-- **Método**: `GET`
-- **Resposta de Sucesso**:
-  ```json
-  {
-    "success": true,
-    "user": {
-      "id": 1,
-      "name": "Nome do Usuário",
-      "email": "usuario@exemplo.com",
-      "role": "gestor",
-      "baseId": 1,
-      "isActive": true
-    }
-  }
-  ```
+### Verificação do Token
 
-### Obter Usuário por Email
-- **URL**: `/api/hybrid/users/email/:email`
-- **Método**: `GET`
-- **Resposta de Sucesso**:
-  ```json
-  {
-    "success": true,
-    "user": {
-      "id": 1,
-      "name": "Nome do Usuário",
-      "email": "usuario@exemplo.com",
-      "role": "gestor",
-      "baseId": 1,
-      "isActive": true
-    }
-  }
-  ```
+**Endpoint**: `GET /api/hybrid/auth/verify`
+
+**Cabeçalho da Requisição**:
+```
+Authorization: Bearer <token>
+```
+
+**Resposta de Sucesso** (Status 200):
+```json
+{
+  "success": true,
+  "message": "Token válido",
+  "user": {
+    "id": 123,
+    "name": "Nome do Usuário",
+    "email": "usuario@exemplo.com",
+    "role": "admin"
+  },
+  "verifiedAt": "2025-04-26T12:34:56.789Z",
+  "expiresAt": "2025-04-27T12:34:56.789Z"
+}
+```
+
+### Teste de Conectividade
+
+**Endpoint**: `GET /api/hybrid/ping`
+
+Este endpoint não requer autenticação e pode ser usado para verificar se a API está disponível.
+
+**Resposta de Sucesso** (Status 200):
+```json
+{
+  "success": true,
+  "message": "API híbrida está operacional",
+  "timestamp": "2025-04-26T12:34:56.789Z",
+  "version": "1.0.1"
+}
+```
+
+## Gerenciamento de Usuários
 
 ### Listar Usuários
-- **URL**: `/api/hybrid/users`
-- **Método**: `GET`
-- **Parâmetros de Query (opcionais)**:
-  - `role`: Filtrar por papel (admin, gestor, operador, etc.)
-  - `baseId`: Filtrar por ID da base
-  - `active`: Filtrar por status ativo (true/false)
-- **Resposta de Sucesso**:
-  ```json
-  {
-    "success": true,
-    "count": 2,
-    "users": [
-      {
-        "id": 1,
-        "name": "Nome do Usuário 1",
-        "email": "usuario1@exemplo.com",
-        "role": "gestor",
-        "baseId": 1,
-        "isActive": true
-      },
-      {
-        "id": 2,
-        "name": "Nome do Usuário 2",
-        "email": "usuario2@exemplo.com",
-        "role": "operador",
-        "baseId": 1,
-        "isActive": true
-      }
-    ]
-  }
-  ```
 
-### Atualizar Usuário
-- **URL**: `/api/hybrid/users/:id`
-- **Método**: `PUT`
-- **Corpo da Requisição**:
-  ```json
-  {
-    "name": "Nome Atualizado",
-    "email": "novo-email@exemplo.com",
-    "role": "gestor",
-    "baseId": 2,
-    "isActive": true
-  }
-  ```
-- **Resposta de Sucesso**:
-  ```json
-  {
-    "success": true,
-    "message": "Usuário atualizado com sucesso",
-    "user": {
-      "id": 1,
-      "name": "Nome Atualizado",
-      "email": "novo-email@exemplo.com",
-      "role": "gestor",
-      "baseId": 2,
-      "isActive": true
-    }
-  }
-  ```
+**Endpoint**: `GET /api/hybrid/users`
 
-### Redefinir Senha de Usuário
-- **URL**: `/api/hybrid/users/:id/reset-password`
-- **Método**: `POST`
-- **Corpo da Requisição**:
-  ```json
-  {
-    "password": "nova-senha-123"
-  }
-  ```
-  > Nota: Se `password` não for fornecido, uma senha aleatória será gerada
-- **Resposta de Sucesso**:
-  ```json
-  {
-    "success": true,
-    "message": "Senha redefinida com sucesso",
-    "generatedPassword": "senha-aleatoria-gerada"
-  }
-  ```
+**Cabeçalho da Requisição**:
+```
+Authorization: Bearer <token>
+```
 
-### Excluir Usuário
-- **URL**: `/api/hybrid/users/:id`
-- **Método**: `DELETE`
-- **Resposta de Sucesso**:
-  ```json
-  {
-    "success": true,
-    "message": "Usuário excluído com sucesso"
-  }
-  ```
+**Parâmetros de Query Opcionais**:
+- `role`: Filtrar por função (admin, gestor, operador, oficina, pneus, posto)
+- `baseId`: Filtrar por ID da base
+- `active`: Filtrar por status ativo (true/false)
 
-### Autenticação (Login)
-- **URL**: `/api/hybrid/auth/login`
-- **Método**: `POST`
-- **Corpo da Requisição**:
-  ```json
-  {
-    "email": "usuario@exemplo.com",
-    "password": "senha123"
-  }
-  ```
-- **Resposta de Sucesso**:
-  ```json
-  {
-    "success": true,
-    "message": "Login realizado com sucesso",
-    "user": {
-      "id": 1,
+**Resposta de Sucesso** (Status 200):
+```json
+{
+  "success": true,
+  "count": 2,
+  "users": [
+    {
+      "id": 123,
       "name": "Nome do Usuário",
       "email": "usuario@exemplo.com",
-      "role": "gestor",
-      "baseId": 1,
-      "isActive": true
+      "role": "admin"
     },
-    "token": "Bearer eyJhbGciOiJIUzI1..."
-  }
-  ```
-
-## Valores Válidos para o Campo 'role'
-
-O campo `role` aceita apenas os seguintes valores:
-- `admin`: Administrador do sistema
-- `gestor`: Gestor de frota ou setor
-- `operador`: Operador básico do sistema
-- `oficina`: Usuário de oficina parceira
-- `pneus`: Gestor de pneus
-- `posto`: Operador de posto de combustível
-
-## Códigos de Erro
-
-- **400 Bad Request**: Requisição inválida ou campos obrigatórios ausentes
-- **401 Unauthorized**: Credenciais inválidas (autenticação)
-- **404 Not Found**: Recurso não encontrado (usuário não existe)
-- **500 Internal Server Error**: Erro interno do servidor
-
-## Integração em Aplicações
-
-### No ambiente Replit
-
-A API funciona automaticamente com o PostgreSQL local via `DATABASE_URL`.
-
-### Em ambientes externos
-
-Para usar a API em ambientes externos, configure as seguintes variáveis de ambiente:
-
-```
-VITE_SUPABASE_URL=https://seu-projeto.supabase.co
-VITE_SUPABASE_ANON_KEY=sua-chave-anonima
-VITE_SUPABASE_SERVICE_KEY=sua-chave-de-servico
+    {
+      "id": 124,
+      "name": "Outro Usuário",
+      "email": "outro@exemplo.com",
+      "role": "gestor"
+    }
+  ]
+}
 ```
 
-## Exemplo de Uso em JavaScript
+### Obter Usuário por ID
 
-```javascript
-// Exemplo de cadastro de usuário
-async function cadastrarUsuario() {
-  const response = await fetch('http://seuservidor.com/api/hybrid/users', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      name: 'Novo Usuário',
-      email: 'novo@exemplo.com',
-      role: 'operador'
-    })
-  });
-  
-  const resultado = await response.json();
-  console.log('Usuário cadastrado:', resultado);
-  
-  // Guardar a senha gerada para o primeiro acesso
-  if (resultado.generatedPassword) {
-    console.log('Senha inicial:', resultado.generatedPassword);
+**Endpoint**: `GET /api/hybrid/users/:id`
+
+**Cabeçalho da Requisição**:
+```
+Authorization: Bearer <token>
+```
+
+**Resposta de Sucesso** (Status 200):
+```json
+{
+  "success": true,
+  "user": {
+    "id": 123,
+    "name": "Nome do Usuário",
+    "email": "usuario@exemplo.com",
+    "role": "admin"
   }
 }
 ```
+
+### Obter Usuário por Email
+
+**Endpoint**: `GET /api/hybrid/users/email/:email`
+
+**Cabeçalho da Requisição**:
+```
+Authorization: Bearer <token>
+```
+
+**Resposta de Sucesso** (Status 200):
+```json
+{
+  "success": true,
+  "user": {
+    "id": 123,
+    "name": "Nome do Usuário",
+    "email": "usuario@exemplo.com",
+    "role": "admin"
+  }
+}
+```
+
+### Criar Usuário
+
+**Endpoint**: `POST /api/hybrid/users`
+
+**Cabeçalho da Requisição**:
+```
+Authorization: Bearer <token>
+```
+
+**Corpo da Requisição**:
+```json
+{
+  "name": "Novo Usuário",
+  "email": "novo@exemplo.com",
+  "password": "senha123",
+  "role": "operador",
+  "baseId": 5,
+  "isActive": true
+}
+```
+
+**Resposta de Sucesso** (Status 201):
+```json
+{
+  "success": true,
+  "message": "Usuário criado com sucesso",
+  "user": {
+    "id": 125,
+    "name": "Novo Usuário",
+    "email": "novo@exemplo.com",
+    "role": "operador",
+    "baseId": 5,
+    "isActive": true
+  }
+}
+```
+
+### Atualizar Usuário
+
+**Endpoint**: `PUT /api/hybrid/users/:id`
+
+**Cabeçalho da Requisição**:
+```
+Authorization: Bearer <token>
+```
+
+**Corpo da Requisição**:
+```json
+{
+  "name": "Nome Atualizado",
+  "email": "atualizado@exemplo.com",
+  "role": "gestor",
+  "baseId": 7,
+  "isActive": true
+}
+```
+
+**Resposta de Sucesso** (Status 200):
+```json
+{
+  "success": true,
+  "message": "Usuário atualizado com sucesso",
+  "user": {
+    "id": 123,
+    "name": "Nome Atualizado",
+    "email": "atualizado@exemplo.com",
+    "role": "gestor",
+    "baseId": 7,
+    "isActive": true
+  }
+}
+```
+
+### Redefinir Senha de Usuário
+
+**Endpoint**: `POST /api/hybrid/users/:id/reset-password`
+
+**Cabeçalho da Requisição**:
+```
+Authorization: Bearer <token>
+```
+
+**Corpo da Requisição** (opcional - se não fornecido, gera uma senha aleatória):
+```json
+{
+  "password": "novaSenha123"
+}
+```
+
+**Resposta de Sucesso** (Status 200):
+```json
+{
+  "success": true,
+  "message": "Senha redefinida com sucesso",
+  "generatedPassword": "JkL8!pQr2$"  // Apenas se a senha foi gerada automaticamente
+}
+```
+
+### Excluir Usuário
+
+**Endpoint**: `DELETE /api/hybrid/users/:id`
+
+**Cabeçalho da Requisição**:
+```
+Authorization: Bearer <token>
+```
+
+**Resposta de Sucesso** (Status 200):
+```json
+{
+  "success": true,
+  "message": "Usuário excluído com sucesso"
+}
+```
+
+## Gestão de Pneus
+
+### Listar Pneus
+
+**Endpoint**: `GET /api/hybrid/pneus`
+
+**Cabeçalho da Requisição**:
+```
+Authorization: Bearer <token>
+```
+
+**Parâmetros de Query Opcionais**:
+- `status`: Filtrar por status do pneu
+- `marca`: Filtrar por marca
+- `baseId`: Filtrar por ID da base
+
+### Obter Pneu por ID
+
+**Endpoint**: `GET /api/hybrid/pneus/:id`
+
+**Cabeçalho da Requisição**:
+```
+Authorization: Bearer <token>
+```
+
+### Criar Novo Pneu
+
+**Endpoint**: `POST /api/hybrid/pneus`
+
+**Cabeçalho da Requisição**:
+```
+Authorization: Bearer <token>
+```
+
+### Atualizar Pneu
+
+**Endpoint**: `PUT /api/hybrid/pneus/:id`
+
+**Cabeçalho da Requisição**:
+```
+Authorization: Bearer <token>
+```
+
+### Registrar Movimentação de Pneu
+
+**Endpoint**: `POST /api/hybrid/pneus/:id/movimentacao`
+
+**Cabeçalho da Requisição**:
+```
+Authorization: Bearer <token>
+```
+
+### Obter Histórico de Movimentações
+
+**Endpoint**: `GET /api/hybrid/pneus/:id/historico`
+
+**Cabeçalho da Requisição**:
+```
+Authorization: Bearer <token>
+```
+
+## Códigos de Status
+
+A API utiliza os seguintes códigos de status HTTP:
+
+- `200 OK`: Requisição bem-sucedida
+- `201 Created`: Recurso criado com sucesso
+- `400 Bad Request`: Erro na requisição (dados inválidos)
+- `401 Unauthorized`: Autenticação necessária ou token inválido
+- `403 Forbidden`: Permissões insuficientes para acessar o recurso
+- `404 Not Found`: Recurso não encontrado
+- `500 Internal Server Error`: Erro interno do servidor
+
+## Testando a API
+
+Incluímos um script de teste para verificar a conectividade e funcionamento da API híbrida. Para executar o teste:
+
+```bash
+node test-hybrid-auth-api.js [URL_DA_API]
+```
+
+O script realizará os seguintes testes:
+1. Teste de ping para verificar conectividade
+2. Teste de login para obter um token JWT
+3. Teste de verificação do token
+4. Teste de acesso a rotas protegidas usando o token
+
+Se todos os testes passarem, sua conexão com a API está funcionando corretamente.
+
+## Observações Importantes
+
+1. Os tokens JWT expiram após 24 horas. É necessário obter um novo token após esse período.
+2. Todas as requisições para endpoints protegidos devem incluir o token no cabeçalho de autorização.
+3. As respostas da API incluem um campo `success` (boolean) que indica se a operação foi bem-sucedida.
+4. Em caso de erro, o campo `message` contém uma descrição do problema.
+
+---
+
+Para suporte ou dúvidas adicionais, entre em contato com a equipe de desenvolvimento.
