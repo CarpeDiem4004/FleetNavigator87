@@ -30,6 +30,15 @@ router.post('/api/hybrid/users', async (req, res) => {
       });
     }
     
+    // Verificar se o role é válido
+    const validRoles = ['admin', 'gestor', 'operador', 'oficina', 'pneus', 'posto'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: `Role inválido. Valores permitidos: ${validRoles.join(', ')}`
+      });
+    }
+    
     // Verificar se o usuário já existe
     const existingUser = await userService.getUserByEmail(email);
     if (existingUser) {
@@ -200,6 +209,17 @@ router.put('/api/hybrid/users/:id', async (req, res) => {
     
     // Extrair dados do corpo da requisição
     const { name, email, role, baseId, isActive } = req.body;
+    
+    // Verificar se o role é válido (se fornecido)
+    if (role) {
+      const validRoles = ['admin', 'gestor', 'operador', 'oficina', 'pneus', 'posto'];
+      if (!validRoles.includes(role)) {
+        return res.status(400).json({
+          success: false,
+          message: `Role inválido. Valores permitidos: ${validRoles.join(', ')}`
+        });
+      }
+    }
     
     // Atualizar usuário
     const updatedUser = await userService.updateUser(id, {

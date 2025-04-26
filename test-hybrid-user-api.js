@@ -46,7 +46,7 @@ async function testarAPIHibrida() {
     const dadosUsuario = {
       name: 'Usuário Teste Híbrido',
       email,
-      role: 'colaborador'
+      role: 'operador' // Usando um role válido do enum
     };
     
     const resultadoCadastro = await fazerRequisicao('post', '/api/hybrid/users', dadosUsuario);
@@ -76,7 +76,7 @@ async function testarAPIHibrida() {
     console.log('\n4. Atualizando dados do usuário...');
     const dadosAtualizacao = {
       name: 'Usuário Híbrido Atualizado',
-      role: 'gerente'
+      role: 'gestor' // Usando um role válido do enum
     };
     
     const resultadoAtualizacao = await fazerRequisicao('put', `/api/hybrid/users/${idUsuario}`, dadosAtualizacao);
