@@ -566,12 +566,14 @@ class HybridUserService {
    */
   async comparePasswords(supplied, stored) {
     try {
+      const { timingSafeEqual } = await import('crypto');
       const [hashed, salt] = stored.split('.');
       const hashedBuf = Buffer.from(hashed, 'hex');
-      const suppliedBuf = (await scryptAsync(supplied, salt, 64));
+      const suppliedBuf = await scryptAsync(supplied, salt, 64);
       
+      // Usar timingSafeEqual para evitar ataques de timing
       return hashedBuf.length === suppliedBuf.length && 
-        Buffer.compare(hashedBuf, suppliedBuf) === 0;
+        timingSafeEqual(hashedBuf, suppliedBuf);
     } catch (error) {
       console.error('[HybridUserService] Erro ao comparar senhas:', error);
       return false;
