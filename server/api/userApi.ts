@@ -1,6 +1,5 @@
 import express from 'express';
-import { getSupabaseAdapter } from '../services/supabaseAdapter';
-import { generateRandomPassword } from '../services/userService';
+import { userService, generateRandomPassword } from '../services/userService';
 
 // Router específico para API de usuários
 const router = express.Router();
@@ -11,14 +10,7 @@ const router = express.Router();
  */
 router.post('/api/users/register', async (req, res) => {
   try {
-    // Obter o adaptador Supabase
-    const supabaseAdapter = getSupabaseAdapter();
-    if (!supabaseAdapter) {
-      return res.status(500).json({ 
-        success: false, 
-        message: 'Erro ao inicializar o adaptador Supabase' 
-      });
-    }
+    console.log('API - Requisição de cadastro de usuário recebida');
     
     // Extrair dados do corpo da requisição
     const { name, email, role, baseId, isActive } = req.body;
@@ -32,7 +24,7 @@ router.post('/api/users/register', async (req, res) => {
     }
     
     // Verificar se o usuário já existe
-    const existingUser = await supabaseAdapter.getUserByEmail(email);
+    const existingUser = await userService.getUserByEmail(email);
     if (existingUser) {
       return res.status(400).json({ 
         success: false, 
@@ -44,7 +36,7 @@ router.post('/api/users/register', async (req, res) => {
     const password = req.body.password || generateRandomPassword(10);
     
     // Criar o usuário
-    const newUser = await supabaseAdapter.createUser({
+    const newUser = await userService.createUser({
       name,
       email,
       password,
@@ -57,6 +49,7 @@ router.post('/api/users/register', async (req, res) => {
     const userResponse = { ...newUser };
     delete userResponse.password;
     
+    console.log(`API - Usuário cadastrado com sucesso: ${email}`);
     return res.status(201).json({
       success: true,
       message: 'Usuário cadastrado com sucesso',

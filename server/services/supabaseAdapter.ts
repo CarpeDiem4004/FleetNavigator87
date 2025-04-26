@@ -15,10 +15,15 @@ export class SupabaseAdapter {
       throw new Error('Variáveis de ambiente do Supabase não definidas');
     }
     
+    // Cria o cliente Supabase com a service key
     this.supabase = createClient(
       process.env.VITE_SUPABASE_URL,
       process.env.VITE_SUPABASE_SERVICE_KEY
     );
+    
+    // Registra informações para debug
+    console.log(`Adaptador Supabase inicializado para: ${process.env.VITE_SUPABASE_URL.substring(0, 15)}...`);
+    console.log(`Chave de acesso disponível: ${process.env.VITE_SUPABASE_SERVICE_KEY ? 'Sim' : 'Não'}`);
   }
   
   /**
