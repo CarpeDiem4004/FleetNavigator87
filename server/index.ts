@@ -14,6 +14,8 @@ import {
   checkTabelaPosto,
   registrarAbastecimentoPosto
 } from "./api-direto.js";
+// Importar API para usuários via Supabase
+import userApi from "./api/userApi";
 
 // Configuração das variáveis de ambiente do Supabase
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
@@ -65,6 +67,9 @@ app.use((req, res, next) => {
   }
   
   const server = await registerRoutes(app);
+  
+  // Registrar o roteador de API de usuários
+  app.use(userApi);
   
   // Registrar as rotas de API diretas para evitar interceptação do Vite
   // Estas rotas serão processadas antes do middleware do Vite e terão os headers adequados
