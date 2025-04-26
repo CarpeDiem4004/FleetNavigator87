@@ -1,352 +1,321 @@
 /**
- * Script para sincronizar dados de pneus entre o Replit (PostgreSQL local) e o Supabase
- * 
- * Este script utiliza a tabela de controle de sincronização para:
- * 1. Identificar alterações nos dados de pneus
- * 2. Sincronizar essas alterações com o Supabase
- * 3. Registrar o status da sincronização
+ * Módulo para sincronização de pneus entre ambiente Replit e Supabase
+ * Este script funciona em ambos os ambientes
  */
-import { createClient } from '@supabase/supabase-js';
-import { Pool } from 'pg';
-import dotenv from 'dotenv';
+const { Pool } = require('pg');
+const { createClient } = require('@supabase/supabase-js');
+const fetch = require('node-fetch');
 
-// Carregar variáveis de ambiente
-dotenv.config();
+// Determinar ambiente
+const isReplit = process.env.REPLIT_DB_URL || process.env.REPL_ID || false;
+console.log(`Executando em ambiente: ${isReplit ? 'Replit' : 'Externo'}`);
 
-// Verificar se as variáveis necessárias estão definidas
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_KEY;
-const databaseUrl = process.env.DATABASE_URL;
+// Configurações
+const REPLIT_API_BASE = 'https://murici-on-fleet-joaopaulo68.repl.co/api';
+let authToken = null;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('Erro: Variáveis de ambiente do Supabase não definidas.');
-  console.error('Certifique-se de definir VITE_SUPABASE_URL e VITE_SUPABASE_SERVICE_KEY.');
-  process.exit(1);
-}
+// Conexão com banco de dados PostgreSQL
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL
+});
 
-if (!databaseUrl) {
-  console.error('Erro: Variável de ambiente DATABASE_URL não definida.');
-  process.exit(1);
-}
+// Cliente Supabase
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL,
+  process.env.VITE_SUPABASE_SERVICE_KEY
+);
 
-// Criar cliente Supabase com a chave de serviço
-console.log(`Conectando ao Supabase: ${supabaseUrl.substring(0, 20)}...`);
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-// Conectar ao PostgreSQL local
-const pool = new Pool({ connectionString: databaseUrl });
-
-// Tabelas relacionadas a pneus para sincronizar
-const tabelasPneus = [
-  { nome: 'pneus_completo', entity_type: 'pneu' },
-  { nome: 'movimentacao_pneu', entity_type: 'movimentacao' },
-  { nome: 'solicitacoes_pneus', entity_type: 'solicitacao' },
-  { nome: 'montagem_pneus', entity_type: 'montagem' }
-];
-
-// Função para registrar alterações na tabela de controle de sincronização
-async function registrarAlteracaoParaSincronizacao(entityType, entityId, direction, payload = null) {
+/**
+ * Obter token de autenticação para API
+ */
+async function obterTokenAutenticacao() {
+  if (isReplit) {
+    // No ambiente Replit, podemos acessar diretamente o banco de dados
+    return null;
+  }
+  
   try {
-    // Verificar se já existe um registro para esta entidade
-    const { data: existingSync } = await supabase
-      .from('sync_control')
-      .select('id')
-      .eq('entity_type', entityType)
-      .eq('entity_id', entityId)
-      .single();
+    // Em ambiente externo, precisamos autenticar via API
+    const response = await fetch(`${REPLIT_API_BASE}/hybrid/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: process.env.API_AUTH_EMAIL,
+        password: process.env.API_AUTH_PASSWORD
+      })
+    });
     
-    const now = new Date();
-    const syncData = {
-      status: 'pendente',
-      direction,
-      payload,
-      next_sync_attempt: now,
-      retry_count: 0
-    };
-    
-    // Estamos no ambiente Replit, então o update foi no Replit
-    syncData.replit_last_update = now;
-    
-    if (existingSync) {
-      // Atualizar registro existente
-      await supabase
-        .from('sync_control')
-        .update(syncData)
-        .eq('id', existingSync.id);
-      
-      console.log(`Atualizado registro de sincronização para ${entityType} id=${entityId}`);
-    } else {
-      // Criar novo registro
-      await supabase
-        .from('sync_control')
-        .insert([{
-          entity_type: entityType,
-          entity_id: entityId,
-          ...syncData
-        }]);
-      
-      console.log(`Criado novo registro de sincronização para ${entityType} id=${entityId}`);
+    if (!response.ok) {
+      throw new Error(`Erro na autenticação: ${response.status} ${response.statusText}`);
     }
     
-    return true;
+    const data = await response.json();
+    return data.token;
   } catch (error) {
-    console.error(`Erro ao registrar alteração para sincronização (${entityType} id=${entityId}):`, error);
-    return false;
+    console.error('Erro ao obter token de autenticação:', error);
+    throw error;
   }
 }
 
-// Função para sincronizar um registro específico
-async function sincronizarRegistro(syncRecord) {
+/**
+ * Buscar pneus pendentes de sincronização
+ */
+async function buscarPneusPendentes() {
   try {
-    console.log(`Sincronizando ${syncRecord.entity_type} id=${syncRecord.entity_id}...`);
-    
-    // Identificar a tabela correta com base no entity_type
-    let tabela = 'pneus_completo'; // padrão
-    
-    switch(syncRecord.entity_type) {
-      case 'pneu':
-        tabela = 'pneus_completo';
-        break;
-      case 'movimentacao':
-        tabela = 'movimentacao_pneu';
-        break;
-      case 'solicitacao':
-        tabela = 'solicitacoes_pneus';
-        break;
-      case 'montagem':
-        tabela = 'montagem_pneus';
-        break;
-    }
-    
-    // Obter os dados do registro no PostgreSQL local
-    const query = `SELECT * FROM ${tabela} WHERE id = $1`;
-    const result = await pool.query(query, [syncRecord.entity_id]);
-    
-    if (result.rows.length === 0) {
-      console.log(`Registro ${syncRecord.entity_type} id=${syncRecord.entity_id} não encontrado no PostgreSQL local.`);
-      
-      // Verificar se o registro existe no Supabase (pode ter sido excluído localmente)
-      const { data: supabaseRecord } = await supabase
-        .from(tabela)
+    if (isReplit) {
+      // No Replit, consultamos diretamente o banco
+      const { rows } = await pool.query(
+        `SELECT * FROM sync_control 
+        WHERE tipo_item = 'pneu' AND status = 'pendente'
+        ORDER BY created_at ASC LIMIT 50`
+      );
+      return rows;
+    } else {
+      // Em ambiente externo, usamos Supabase
+      const { data, error } = await supabase
+        .from('sync_control')
         .select('*')
-        .eq('id', syncRecord.entity_id)
-        .single();
-      
-      if (supabaseRecord) {
-        // O registro existe no Supabase mas não no PostgreSQL local, então devemos excluí-lo do Supabase
-        if (syncRecord.direction === 'replit_para_externo' || syncRecord.direction === 'bidirecional') {
-          console.log(`Excluindo registro ${syncRecord.entity_type} id=${syncRecord.entity_id} do Supabase...`);
-          
-          const { error: deleteError } = await supabase
-            .from(tabela)
-            .delete()
-            .eq('id', syncRecord.entity_id);
-          
-          if (deleteError) {
-            throw new Error(`Erro ao excluir registro do Supabase: ${deleteError.message}`);
-          }
-          
-          console.log(`Registro excluído com sucesso do Supabase.`);
-        }
-      }
-    } else {
-      // O registro existe no PostgreSQL local, então devemos atualizá-lo no Supabase
-      const localRecord = result.rows[0];
-      
-      // Verificar se o registro já existe no Supabase
-      const { data: existingRecord } = await supabase
-        .from(tabela)
-        .select('id')
-        .eq('id', syncRecord.entity_id)
-        .single();
-      
-      if (existingRecord) {
-        // O registro já existe no Supabase, então devemos atualizá-lo
-        console.log(`Atualizando registro ${syncRecord.entity_type} id=${syncRecord.entity_id} no Supabase...`);
+        .eq('tipo_item', 'pneu')
+        .eq('status', 'pendente')
+        .order('created_at', { ascending: true })
+        .limit(50);
         
-        const { error: updateError } = await supabase
-          .from(tabela)
-          .update(localRecord)
-          .eq('id', syncRecord.entity_id);
-        
-        if (updateError) {
-          throw new Error(`Erro ao atualizar registro no Supabase: ${updateError.message}`);
-        }
-      } else {
-        // O registro não existe no Supabase, então devemos criá-lo
-        console.log(`Criando registro ${syncRecord.entity_type} id=${syncRecord.entity_id} no Supabase...`);
-        
-        const { error: insertError } = await supabase
-          .from(tabela)
-          .insert([localRecord]);
-        
-        if (insertError) {
-          throw new Error(`Erro ao inserir registro no Supabase: ${insertError.message}`);
-        }
-      }
-      
-      console.log(`Sincronização bem-sucedida para ${syncRecord.entity_type} id=${syncRecord.entity_id}`);
+      if (error) throw error;
+      return data;
     }
-    
-    // Atualizar o registro de sincronização para refletir o sucesso
-    await supabase
-      .from('sync_control')
-      .update({
-        status: 'sincronizado',
-        last_sync_attempt: new Date(),
-        error_message: null
-      })
-      .eq('id', syncRecord.id);
-    
-    // Registrar o evento de sincronização no log
-    await supabase.rpc('log_sync_event', {
-      p_sync_id: syncRecord.id,
-      p_entity_type: syncRecord.entity_type,
-      p_entity_id: syncRecord.entity_id,
-      p_status: 'sincronizado',
-      p_direction: syncRecord.direction
-    });
-    
-    return true;
   } catch (error) {
-    console.error(`Erro ao sincronizar ${syncRecord.entity_type} id=${syncRecord.entity_id}:`, error);
-    
-    // Incrementar o contador de tentativas
-    const retryCount = (syncRecord.retry_count || 0) + 1;
-    
-    // Calcular a próxima tentativa (com backoff exponencial)
-    const nextAttemptMinutes = Math.min(60, Math.pow(2, retryCount)) * 5;
-    const nextAttempt = new Date();
-    nextAttempt.setMinutes(nextAttempt.getMinutes() + nextAttemptMinutes);
-    
-    // Atualizar o registro de sincronização para refletir a falha
-    await supabase
-      .from('sync_control')
-      .update({
-        status: retryCount >= 5 ? 'erro' : 'pendente',
-        retry_count: retryCount,
-        next_sync_attempt: nextAttempt,
-        last_sync_attempt: new Date(),
-        error_message: error.message
-      })
-      .eq('id', syncRecord.id);
-    
-    // Registrar o evento de sincronização no log
-    await supabase.rpc('log_sync_event', {
-      p_sync_id: syncRecord.id,
-      p_entity_type: syncRecord.entity_type,
-      p_entity_id: syncRecord.entity_id,
-      p_status: 'erro',
-      p_direction: syncRecord.direction,
-      p_error_message: error.message
-    });
-    
-    return false;
-  }
-}
-
-// Função para processar pendências de sincronização
-async function processarSincronizacaoPendente() {
-  try {
-    console.log('Buscando registros pendentes de sincronização...');
-    
-    const { data: pendingSyncs, error } = await supabase
-      .from('sync_status_view')
-      .select('*')
-      .in('entity_type', ['pneu', 'movimentacao', 'solicitacao', 'montagem'])
-      .eq('ready_for_sync', true)
-      .order('priority', { ascending: false })
-      .order('next_sync_attempt', { ascending: true })
-      .limit(10);
-    
-    if (error) {
-      throw new Error(`Erro ao buscar registros pendentes: ${error.message}`);
-    }
-    
-    if (!pendingSyncs || pendingSyncs.length === 0) {
-      console.log('Não há registros de pneus pendentes de sincronização.');
-      return [];
-    }
-    
-    console.log(`Processando ${pendingSyncs.length} registros de sincronização...`);
-    
-    const resultados = [];
-    
-    for (const sync of pendingSyncs) {
-      const resultado = await sincronizarRegistro(sync);
-      resultados.push({
-        id: sync.id,
-        entity_type: sync.entity_type,
-        entity_id: sync.entity_id,
-        success: resultado
-      });
-    }
-    
-    return resultados;
-  } catch (error) {
-    console.error('Erro ao processar sincronização pendente:', error);
+    console.error('Erro ao buscar pneus pendentes:', error);
     return [];
   }
 }
 
-// Função para verificar alterações locais e registrá-las para sincronização
-async function verificarAlteracoesLocais() {
+/**
+ * Buscar dados de um pneu específico
+ */
+async function buscarDadosPneu(id) {
   try {
-    console.log('Verificando alterações locais nas tabelas de pneus...');
+    if (isReplit) {
+      // No Replit, consultamos diretamente o banco
+      const { rows } = await pool.query(
+        'SELECT * FROM pneus_completo WHERE id = $1',
+        [id]
+      );
+      return rows[0] || null;
+    } else {
+      // Em ambiente externo, usamos Supabase
+      const { data, error } = await supabase
+        .from('pneus_completo')
+        .select('*')
+        .eq('id', id)
+        .single();
+        
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    }
+  } catch (error) {
+    console.error(`Erro ao buscar dados do pneu ${id}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Sincronizar um pneu para o ambiente externo (do Replit para Supabase)
+ */
+async function sincronizarParaExterno(pneuId) {
+  try {
+    console.log(`Sincronizando pneu ${pneuId} para ambiente externo (Supabase)...`);
     
-    for (const tabela of tabelasPneus) {
-      console.log(`Verificando alterações na tabela ${tabela.nome}...`);
+    // Buscar dados do pneu
+    const pneu = await buscarDadosPneu(pneuId);
+    if (!pneu) {
+      console.warn(`Pneu ${pneuId} não encontrado para sincronização.`);
+      return false;
+    }
+    
+    // Enviar para o Supabase
+    const { data, error } = await supabase
+      .from('pneus_completo')
+      .upsert(pneu, { onConflict: 'id' });
       
-      // Buscar registros modificados recentemente (últimos 30 minutos)
-      const query = `
-        SELECT id FROM ${tabela.nome}
-        WHERE updated_at >= NOW() - INTERVAL '30 minutes'
-        ORDER BY updated_at DESC
-      `;
+    if (error) throw error;
+    
+    console.log(`Pneu ${pneuId} sincronizado com sucesso para o ambiente externo.`);
+    return true;
+  } catch (error) {
+    console.error(`Erro ao sincronizar pneu ${pneuId} para ambiente externo:`, error);
+    return false;
+  }
+}
+
+/**
+ * Sincronizar um pneu para o ambiente Replit (do Supabase para Replit)
+ */
+async function sincronizarParaReplit(pneuId) {
+  try {
+    console.log(`Sincronizando pneu ${pneuId} para ambiente Replit...`);
+    
+    // Buscar dados do pneu no Supabase
+    const pneu = await buscarDadosPneu(pneuId);
+    if (!pneu) {
+      console.warn(`Pneu ${pneuId} não encontrado para sincronização.`);
+      return false;
+    }
+    
+    if (isReplit) {
+      // No ambiente Replit, inserimos diretamente no banco
+      const result = await pool.query(
+        `INSERT INTO pneus_completo 
+        (id, tire_number, change_date, change_km, status, codigo, marca, modelo, 
+         medida, aro, tipo, origem, data_aquisicao, veiculo_placa, posicao, 
+         km_inicial, km_atual, profundidade_sulco, localizacao, observacao, 
+         created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 
+                $16, $17, $18, $19, $20, $21, $22)
+        ON CONFLICT (id) DO UPDATE SET
+          tire_number = $2,
+          change_date = $3,
+          change_km = $4,
+          status = $5,
+          codigo = $6,
+          marca = $7,
+          modelo = $8,
+          medida = $9,
+          aro = $10,
+          tipo = $11,
+          origem = $12,
+          data_aquisicao = $13,
+          veiculo_placa = $14,
+          posicao = $15,
+          km_inicial = $16,
+          km_atual = $17,
+          profundidade_sulco = $18,
+          localizacao = $19,
+          observacao = $20,
+          updated_at = NOW()`,
+        [
+          pneu.id, pneu.tire_number, pneu.change_date, pneu.change_km, 
+          pneu.status, pneu.codigo, pneu.marca, pneu.modelo, pneu.medida, 
+          pneu.aro, pneu.tipo, pneu.origem, pneu.data_aquisicao, 
+          pneu.veiculo_placa, pneu.posicao, pneu.km_inicial, pneu.km_atual, 
+          pneu.profundidade_sulco, pneu.localizacao, pneu.observacao, 
+          pneu.created_at, pneu.updated_at
+        ]
+      );
+    } else {
+      // Em ambiente externo, chamamos a API do Replit
+      if (!authToken) {
+        authToken = await obterTokenAutenticacao();
+      }
       
-      const result = await pool.query(query);
-      console.log(`Encontrados ${result.rowCount} registros modificados recentemente em ${tabela.nome}.`);
+      const response = await fetch(`${REPLIT_API_BASE}/hybrid/pneus/${pneuId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify(pneu)
+      });
       
-      // Registrar cada alteração para sincronização
-      for (const row of result.rows) {
-        await registrarAlteracaoParaSincronizacao(
-          tabela.entity_type,
-          row.id.toString(),
-          'replit_para_externo'
-        );
+      if (!response.ok) {
+        throw new Error(`Erro ao sincronizar via API: ${response.status}`);
       }
     }
     
-    console.log('Verificação de alterações locais concluída.');
+    console.log(`Pneu ${pneuId} sincronizado com sucesso para o ambiente Replit.`);
+    return true;
   } catch (error) {
-    console.error('Erro ao verificar alterações locais:', error);
+    console.error(`Erro ao sincronizar pneu ${pneuId} para ambiente Replit:`, error);
+    return false;
   }
 }
 
-// Função principal
-async function main() {
+/**
+ * Atualizar status de sincronização
+ */
+async function atualizarStatusSincronizacao(itemId, sucesso) {
   try {
-    console.log('Iniciando processo de sincronização de pneus...');
+    const novoStatus = sucesso ? 'sincronizado' : 'erro';
     
-    // Verificar alterações locais e registrá-las para sincronização
-    await verificarAlteracoesLocais();
-    
-    // Processar sincronizações pendentes
-    const resultados = await processarSincronizacaoPendente();
-    
-    console.log('\n=== RESUMO DA SINCRONIZAÇÃO ===');
-    console.log(`Total de registros processados: ${resultados.length}`);
-    console.log(`Sucessos: ${resultados.filter(r => r.success).length}`);
-    console.log(`Falhas: ${resultados.filter(r => !r.success).length}`);
-    
-    console.log('\nSincronização concluída com sucesso.');
+    if (isReplit) {
+      // No Replit, atualizamos diretamente no banco
+      await pool.query(
+        `UPDATE sync_control 
+         SET status = $1, updated_at = NOW() 
+         WHERE item_id = $2 AND tipo_item = 'pneu'`,
+        [novoStatus, itemId]
+      );
+    } else {
+      // Em ambiente externo, usamos Supabase
+      const { error } = await supabase
+        .from('sync_control')
+        .update({ 
+          status: novoStatus, 
+          updated_at: new Date()
+        })
+        .eq('item_id', itemId)
+        .eq('tipo_item', 'pneu');
+        
+      if (error) throw error;
+    }
   } catch (error) {
-    console.error('Erro durante o processo de sincronização:', error);
-  } finally {
-    // Fechar a conexão com o PostgreSQL
-    await pool.end();
+    console.error(`Erro ao atualizar status de sincronização do item ${itemId}:`, error);
   }
 }
 
-// Executar o script
-main();
+/**
+ * Função principal para executar a sincronização
+ */
+async function executarSincronizacao() {
+  try {
+    console.log(`Iniciando sincronização de pneus em ${new Date().toISOString()}`);
+    
+    const itensPendentes = await buscarPneusPendentes();
+    console.log(`Encontrados ${itensPendentes.length} pneus pendentes de sincronização.`);
+    
+    if (itensPendentes.length === 0) {
+      console.log('Nenhum item pendente para sincronização.');
+      return;
+    }
+    
+    for (const item of itensPendentes) {
+      console.log(`Processando item ${item.id}, pneu ${item.item_id}, direção: ${item.direcao}`);
+      
+      let sucesso = false;
+      if (item.direcao === 'replit_para_externo') {
+        sucesso = await sincronizarParaExterno(item.item_id);
+      } else if (item.direcao === 'externo_para_replit') {
+        sucesso = await sincronizarParaReplit(item.item_id);
+      }
+      
+      await atualizarStatusSincronizacao(item.item_id, sucesso);
+    }
+    
+    console.log(`Sincronização de pneus concluída em ${new Date().toISOString()}`);
+  } catch (error) {
+    console.error('Erro ao executar sincronização de pneus:', error);
+  }
+}
+
+// Exportar funções para uso em outros módulos
+module.exports = {
+  executarSincronizacao,
+  sincronizarParaExterno,
+  sincronizarParaReplit
+};
+
+// Se executado diretamente via CLI, rodar a sincronização
+if (require.main === module) {
+  executarSincronizacao()
+    .then(() => {
+      console.log('Execução da sincronização concluída.');
+      // Fechar conexões após execução
+      setTimeout(() => {
+        pool.end();
+        process.exit(0);
+      }, 1000);
+    })
+    .catch(err => {
+      console.error('Erro fatal na sincronização:', err);
+      process.exit(1);
+    });
+}
