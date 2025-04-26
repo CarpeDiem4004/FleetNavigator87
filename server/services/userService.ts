@@ -90,7 +90,7 @@ export class PostgresUserService extends UserService {
       
       const result = await pool.query(query, values);
       
-      if (result.rowCount === 0) {
+      if (!result.rowCount || result.rowCount === 0) {
         throw new Error('Falha ao criar usuário');
       }
       
@@ -166,7 +166,7 @@ export class PostgresUserService extends UserService {
       
       const result = await pool.query(query, values);
       
-      if (result.rowCount === 0) {
+      if (!result.rowCount || result.rowCount === 0) {
         return null;
       }
       
@@ -182,7 +182,7 @@ export class PostgresUserService extends UserService {
       const query = 'DELETE FROM users WHERE id = $1 RETURNING id';
       const result = await pool.query(query, [id]);
       
-      return result.rowCount > 0;
+      return result.rowCount ? result.rowCount > 0 : false;
     } catch (error) {
       console.error('Erro ao excluir usuário:', error);
       throw error;
@@ -194,7 +194,7 @@ export class PostgresUserService extends UserService {
       const query = 'UPDATE users SET password = $1 WHERE id = $2 RETURNING id';
       const result = await pool.query(query, [newPassword, id]);
       
-      return result.rowCount > 0;
+      return result.rowCount ? result.rowCount > 0 : false;
     } catch (error) {
       console.error('Erro ao redefinir senha do usuário:', error);
       throw error;
