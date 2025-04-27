@@ -1,0 +1,696 @@
+import { Router } from 'express';
+import { pool } from '../db';
+import { isAuthenticated } from '../middleware/auth';
+import multer from 'multer';
+import * as XLSX from 'xlsx';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+const router = Router();
+
+// Configuração do Multer para upload temporário
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+// Middleware de autenticação para todas as rotas
+router.use(isAuthenticated);
+
+// GET - Listar todas as peças em estoque
+router.get('/estoque-pecas', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        id,
+        codigo,
+        nome,
+        descricao,
+        categoria,
+        fabricante,
+        aplicacao,
+        quantidade,
+        valor_unitario,
+        valor_total,
+        estoque_minimo,
+        estoque_maximo,
+        localizacao,
+        unidade_medida,
+        CASE 
+          WHEN quantidade <= 0 THEN 'indisponível'
+          WHEN quantidade < estoque_minimo THEN 'baixo'
+          ELSE 'disponível'
+        END AS status_disponibilidade
+      FROM frota_estoque_pecas
+      ORDER BY codigo
+    `);
+
+    res.json(result.rows);
+  } catch (error: any) {
+    console.error('Erro ao listar peças:', error);
+    res.status(500).json({ message: `Erro ao listar peças: ${error.message}` });
+  }
+});
+
+// GET - Listar peças com estoque baixo
+router.get('/estoque-pecas/baixo', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        id,
+        codigo,
+        nome,
+        descricao,
+        categoria,
+        fabricante,
+        aplicacao,
+        quantidade,
+        valor_unitario,
+        valor_total,
+        estoque_minimo,
+        estoque_maximo,
+        localizacao,
+        unidade_medida,
+        'baixo' AS status_disponibilidade
+      FROM frota_estoque_pecas
+      WHERE quantidade > 0 AND quantidade < estoque_minimo
+      ORDER BY (quantidade::float / estoque_minimo) ASC, codigo
+    `);
+
+    res.json(result.rows);
+  } catch (error: any) {
+    console.error('Erro ao listar peças com estoque baixo:', error);
+    res.status(500).json({ message: `Erro ao listar peças com estoque baixo: ${error.message}` });
+  }
+});
+
+// GET - Listar peças com estoque zerado
+router.get('/estoque-pecas/zerado', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        id,
+        codigo,
+        nome,
+        descricao,
+        categoria,
+        fabricante,
+        aplicacao,
+        quantidade,
+        valor_unitario,
+        valor_total,
+        estoque_minimo,
+        estoque_maximo,
+        localizacao,
+        unidade_medida,
+        'indisponível' AS status_disponibilidade
+      FROM frota_estoque_pecas
+      WHERE quantidade <= 0
+      ORDER BY codigo
+    `);
+
+    res.json(result.rows);
+  } catch (error: any) {
+    console.error('Erro ao listar peças com estoque zerado:', error);
+    res.status(500).json({ message: `Erro ao listar peças com estoque zerado: ${error.message}` });
+  }
+});
+
+// GET - Obter resumo do estoque
+router.get('/estoque-resumo', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        COUNT(*) AS total_itens,
+        SUM(quantidade) AS total_quantidade,
+        SUM(valor_total) AS valor_total_estoque,
+        COUNT(*) FILTER (WHERE quantidade <= estoque_minimo AND quantidade > 0) AS itens_abaixo_minimo,
+        COUNT(*) FILTER (WHERE quantidade <= 0) AS itens_zerados,
+        MAX(ultima_atualizacao) AS ultima_atualizacao
+      FROM frota_estoque_pecas
+    `);
+
+    res.json(result.rows[0]);
+  } catch (error: any) {
+    console.error('Erro ao obter resumo do estoque:', error);
+    res.status(500).json({ message: `Erro ao obter resumo do estoque: ${error.message}` });
+  }
+});
+
+// POST - Adicionar nova peça
+router.post('/estoque-pecas', async (req, res) => {
+  const {
+    nome,
+    descricao,
+    categoria,
+    fabricante,
+    aplicacao,
+    quantidade,
+    valor_unitario,
+    estoque_minimo,
+    estoque_maximo,
+    localizacao,
+    unidade_medida
+  } = req.body;
+
+  try {
+    // Validar campos obrigatórios
+    if (!nome || valor_unitario === undefined) {
+      return res.status(400).json({ message: 'Nome e valor unitário são obrigatórios' });
+    }
+
+    // Inserir nova peça
+    const result = await pool.query(`
+      INSERT INTO frota_estoque_pecas (
+        nome,
+        descricao,
+        categoria,
+        fabricante,
+        aplicacao,
+        quantidade,
+        valor_unitario,
+        estoque_minimo,
+        estoque_maximo,
+        localizacao,
+        unidade_medida
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING id, codigo, nome, valor_unitario, quantidade
+    `, [
+      nome,
+      descricao || null,
+      categoria || null,
+      fabricante || null,
+      aplicacao || null,
+      quantidade || 0,
+      valor_unitario,
+      estoque_minimo || 5,
+      estoque_maximo || null,
+      localizacao || null,
+      unidade_medida || 'unidade'
+    ]);
+
+    // Se quantidade inicial for maior que zero, registrar movimentação de entrada
+    if (quantidade && quantidade > 0) {
+      await pool.query(`
+        INSERT INTO frota_movimentacao_estoque (
+          peca_id,
+          tipo_movimento,
+          quantidade,
+          valor_unitario,
+          motivo,
+          responsavel,
+          responsavel_id,
+          observacoes
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `, [
+        result.rows[0].id,
+        'entrada',
+        quantidade,
+        valor_unitario,
+        'Cadastro inicial',
+        req.user?.name || 'Sistema',
+        req.user?.id || null,
+        'Estoque inicial no cadastro da peça'
+      ]);
+    }
+
+    res.status(201).json(result.rows[0]);
+  } catch (error: any) {
+    console.error('Erro ao adicionar peça:', error);
+    res.status(500).json({ message: `Erro ao adicionar peça: ${error.message}` });
+  }
+});
+
+// POST - Registrar movimentação de estoque
+router.post('/movimentacao-estoque', async (req, res) => {
+  const {
+    peca_id,
+    tipo_movimento,
+    quantidade,
+    valor_unitario,
+    motivo,
+    nota_fiscal,
+    veiculo_placa,
+    observacoes
+  } = req.body;
+
+  try {
+    // Validar campos obrigatórios
+    if (!peca_id || !tipo_movimento || !quantidade || valor_unitario === undefined || !motivo) {
+      return res.status(400).json({ 
+        message: 'ID da peça, tipo de movimento, quantidade, valor unitário e motivo são obrigatórios' 
+      });
+    }
+
+    // Verificar se tipo de movimento é válido
+    if (!['entrada', 'saida', 'ajuste'].includes(tipo_movimento)) {
+      return res.status(400).json({ 
+        message: 'Tipo de movimento deve ser "entrada", "saida" ou "ajuste"' 
+      });
+    }
+
+    // Verificar se a peça existe
+    const pecaResult = await pool.query(
+      'SELECT id, codigo, nome, quantidade, valor_unitario FROM frota_estoque_pecas WHERE id = $1', 
+      [peca_id]
+    );
+
+    if (pecaResult.rowCount === 0) {
+      return res.status(404).json({ message: 'Peça não encontrada' });
+    }
+
+    const peca = pecaResult.rows[0];
+
+    // Verificar estoque para saídas
+    if (tipo_movimento === 'saida' && peca.quantidade < quantidade) {
+      return res.status(400).json({ 
+        message: `Estoque insuficiente. Disponível: ${peca.quantidade}, Solicitado: ${quantidade}` 
+      });
+    }
+
+    // Inserir registro de movimentação
+    const result = await pool.query(`
+      INSERT INTO frota_movimentacao_estoque (
+        peca_id,
+        tipo_movimento,
+        quantidade,
+        quantidade_anterior,
+        valor_unitario,
+        motivo,
+        nota_fiscal,
+        veiculo_placa,
+        responsavel,
+        responsavel_id,
+        observacoes
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING id
+    `, [
+      peca_id,
+      tipo_movimento,
+      quantidade,
+      peca.quantidade,
+      valor_unitario,
+      motivo,
+      nota_fiscal || null,
+      veiculo_placa || null,
+      req.user?.name || 'Sistema',
+      req.user?.id || null,
+      observacoes || null
+    ]);
+
+    // Atualizar estoque da peça
+    let novaQuantidade = peca.quantidade;
+    
+    if (tipo_movimento === 'entrada') {
+      novaQuantidade += quantidade;
+    } else if (tipo_movimento === 'saida') {
+      novaQuantidade -= quantidade;
+    } else if (tipo_movimento === 'ajuste') {
+      novaQuantidade = quantidade;
+    }
+
+    await pool.query(
+      'UPDATE frota_estoque_pecas SET quantidade = $1, ultima_atualizacao = NOW() WHERE id = $2',
+      [novaQuantidade, peca_id]
+    );
+
+    // Atualizar quantidade atual no registro de movimentação
+    await pool.query(
+      'UPDATE frota_movimentacao_estoque SET quantidade_atual = $1 WHERE id = $2',
+      [novaQuantidade, result.rows[0].id]
+    );
+
+    res.status(201).json({ 
+      id: result.rows[0].id,
+      peca_codigo: peca.codigo,
+      peca_nome: peca.nome,
+      tipo_movimento: tipo_movimento,
+      quantidade: quantidade,
+      estoque_anterior: peca.quantidade,
+      estoque_atual: novaQuantidade
+    });
+  } catch (error: any) {
+    console.error('Erro ao registrar movimentação:', error);
+    res.status(500).json({ message: `Erro ao registrar movimentação: ${error.message}` });
+  }
+});
+
+// GET - Obter histórico de movimentações de uma peça
+router.get('/movimentacao-estoque/:pecaId', async (req, res) => {
+  const { pecaId } = req.params;
+
+  try {
+    const result = await pool.query(`
+      SELECT 
+        m.id,
+        m.peca_id,
+        p.codigo AS peca_codigo,
+        p.nome AS peca_nome,
+        m.tipo_movimento,
+        m.quantidade,
+        m.quantidade_anterior,
+        m.quantidade_atual,
+        m.valor_unitario,
+        m.valor_total,
+        m.motivo,
+        m.nota_fiscal,
+        m.veiculo_placa,
+        m.responsavel,
+        m.responsavel_id,
+        m.observacoes,
+        m.data_movimento
+      FROM frota_movimentacao_estoque m
+      JOIN frota_estoque_pecas p ON m.peca_id = p.id
+      WHERE m.peca_id = $1
+      ORDER BY m.data_movimento DESC
+    `, [pecaId]);
+
+    res.json(result.rows);
+  } catch (error: any) {
+    console.error('Erro ao obter histórico de movimentações:', error);
+    res.status(500).json({ message: `Erro ao obter histórico de movimentações: ${error.message}` });
+  }
+});
+
+// GET - Exportar estoque para Excel
+router.get('/estoque-exportar', async (req, res) => {
+  try {
+    // Registrar operação de exportação
+    const userInfo = {
+      id: req.user?.id || null,
+      name: req.user?.name || 'Sistema'
+    };
+
+    const exportId = await registrarExportacao(userInfo.name, userInfo.id);
+
+    // Buscar dados do estoque
+    const result = await pool.query(`
+      SELECT
+        e.codigo,
+        e.nome,
+        e.descricao,
+        e.categoria,
+        e.fabricante,
+        e.aplicacao,
+        e.quantidade,
+        e.valor_unitario,
+        e.valor_total,
+        e.estoque_minimo,
+        e.estoque_maximo,
+        e.localizacao,
+        e.unidade_medida,
+        f.nome AS fornecedor,
+        CASE 
+          WHEN e.quantidade <= 0 THEN 'Zerado'
+          WHEN e.quantidade < e.estoque_minimo THEN 'Baixo'
+          ELSE 'Normal'
+        END AS status_estoque,
+        e.data_ultima_compra,
+        e.ultima_atualizacao
+      FROM
+        frota_estoque_pecas e
+      LEFT JOIN
+        frota_peca_fornecedor pf ON e.id = pf.peca_id AND pf.fornecedor_principal = TRUE
+      LEFT JOIN
+        frota_fornecedores_pecas f ON pf.fornecedor_id = f.id
+      ORDER BY
+        e.codigo
+    `);
+
+    // Criar arquivo Excel
+    const worksheet = XLSX.utils.json_to_sheet(result.rows);
+    
+    // Ajustar largura das colunas
+    const columnWidths = [
+      { wch: 10 }, // Código
+      { wch: 30 }, // Nome
+      { wch: 40 }, // Descrição
+      { wch: 15 }, // Categoria
+      { wch: 15 }, // Fabricante
+      { wch: 30 }, // Aplicação
+      { wch: 10 }, // Quantidade
+      { wch: 15 }, // Valor Unitário
+      { wch: 15 }, // Valor Total
+      { wch: 10 }, // Estoque Mínimo
+      { wch: 10 }, // Estoque Máximo
+      { wch: 15 }, // Localização
+      { wch: 10 }, // Unidade Medida
+      { wch: 20 }, // Fornecedor
+      { wch: 10 }, // Status
+      { wch: 20 }, // Data Última Compra
+      { wch: 20 }  // Última Atualização
+    ];
+    
+    worksheet['!cols'] = columnWidths;
+    
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Estoque');
+    
+    // Gerar buffer do Excel
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    
+    // Finalizar operação de exportação
+    await finalizarExportacao(exportId, result.rows.length);
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=estoque-pecas-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+    res.send(excelBuffer);
+  } catch (error: any) {
+    console.error('Erro ao exportar estoque:', error);
+    res.status(500).json({ message: `Erro ao exportar estoque: ${error.message}` });
+  }
+});
+
+// GET - Obter template para importação
+router.get('/estoque-template', async (req, res) => {
+  try {
+    // Obter estrutura do template
+    const result = await pool.query(`
+      SELECT * FROM gerar_template_excel_pecas()
+    `);
+    
+    const template = result.rows;
+    
+    // Transformar em formato adequado para o Excel
+    const excelData = [
+      // Cabeçalho
+      ['codigo', 'nome', 'descricao', 'categoria', 'fabricante', 'aplicacao', 
+       'quantidade', 'valor_unitario', 'estoque_minimo', 'estoque_maximo', 
+       'localizacao', 'unidade_medida', 'fornecedor'],
+      // Linha de exemplo
+      ['', 'Filtro de Óleo Motor Scania', 'Filtro para caminhões Scania P e G', 'Filtros', 
+       'Tecfil', 'Caminhões Scania P310, P340, G380', '15', '89.9', '5', '30', 
+       'Prateleira A3', 'unidade', 'Auto Peças Brasil']
+    ];
+    
+    // Adicionar informações sobre cada coluna
+    const info = template.map(t => {
+      return [
+        t.coluna,
+        t.descricao,
+        t.obrigatorio ? 'Sim' : 'Não',
+        t.exemplo
+      ];
+    });
+    
+    // Criar planilhas
+    const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+    const infoSheet = XLSX.utils.aoa_to_sheet([
+      ['Campo', 'Descrição', 'Obrigatório', 'Exemplo'],
+      ...info
+    ]);
+    
+    // Ajustar largura das colunas
+    worksheet['!cols'] = [
+      { wch: 10 }, // codigo
+      { wch: 30 }, // nome
+      { wch: 40 }, // descricao
+      { wch: 15 }, // categoria
+      { wch: 15 }, // fabricante
+      { wch: 30 }, // aplicacao
+      { wch: 10 }, // quantidade
+      { wch: 15 }, // valor_unitario
+      { wch: 15 }, // estoque_minimo
+      { wch: 15 }, // estoque_maximo
+      { wch: 15 }, // localizacao
+      { wch: 15 }, // unidade_medida
+      { wch: 20 }  // fornecedor
+    ];
+    
+    infoSheet['!cols'] = [
+      { wch: 15 }, // Campo
+      { wch: 60 }, // Descrição
+      { wch: 12 }, // Obrigatório
+      { wch: 30 }  // Exemplo
+    ];
+    
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Importação');
+    XLSX.utils.book_append_sheet(workbook, infoSheet, 'Instruções');
+    
+    // Gerar buffer do Excel
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=template-importacao-estoque.xlsx');
+    res.send(excelBuffer);
+  } catch (error: any) {
+    console.error('Erro ao gerar template:', error);
+    res.status(500).json({ message: `Erro ao gerar template: ${error.message}` });
+  }
+});
+
+// POST - Importar estoque do Excel
+router.post('/estoque-importar', upload.single('file'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'Nenhum arquivo enviado' });
+  }
+
+  try {
+    // Registrar operação de importação
+    const userInfo = {
+      id: req.user?.id || null,
+      name: req.user?.name || 'Sistema'
+    };
+
+    const importId = await registrarImportacao(req.file.originalname, userInfo.name, userInfo.id);
+    
+    // Ler arquivo Excel
+    const workbook = XLSX.read(req.file.buffer);
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = XLSX.utils.sheet_to_json(worksheet);
+    
+    if (data.length === 0) {
+      await finalizarImportacao(importId, 0, 0, 'Arquivo vazio');
+      return res.status(400).json({ message: 'Arquivo vazio ou sem dados válidos' });
+    }
+    
+    // Inserir dados na tabela temporária
+    let registrosInseridos = 0;
+    let erros = 0;
+    
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i] as any;
+      
+      try {
+        await pool.query(`
+          INSERT INTO frota_excel_importacao_temp (
+            importacao_id,
+            codigo,
+            nome,
+            descricao,
+            categoria,
+            fabricante,
+            aplicacao,
+            quantidade,
+            valor_unitario,
+            estoque_minimo,
+            estoque_maximo,
+            localizacao,
+            unidade_medida,
+            fornecedor,
+            linha_excel
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        `, [
+          importId,
+          row.codigo || '',
+          row.nome || '',
+          row.descricao || null,
+          row.categoria || null,
+          row.fabricante || null,
+          row.aplicacao || null,
+          row.quantidade || 0,
+          row.valor_unitario || 0,
+          row.estoque_minimo || 5,
+          row.estoque_maximo || null,
+          row.localizacao || null,
+          row.unidade_medida || 'unidade',
+          row.fornecedor || null,
+          i + 2 // +2 porque a linha 1 é o cabeçalho
+        ]);
+        
+        registrosInseridos++;
+      } catch (error: any) {
+        console.error(`Erro ao inserir linha ${i + 2}:`, error);
+        erros++;
+        
+        // Registrar erro de importação
+        await pool.query(`
+          INSERT INTO frota_excel_importacao_erros (
+            importacao_id,
+            linha_excel,
+            valor_original,
+            mensagem_erro
+          ) VALUES ($1, $2, $3, $4)
+        `, [
+          importId,
+          i + 2,
+          JSON.stringify(row),
+          error.message
+        ]);
+      }
+    }
+    
+    // Processar registros importados
+    await pool.query('SELECT processar_importacao_excel($1)', [importId]);
+    
+    // Obter resultado do processamento
+    const resultStats = await pool.query(`
+      SELECT 
+        registros_processados,
+        registros_com_erro
+      FROM frota_excel_importacao_historico
+      WHERE id = $1
+    `, [importId]);
+    
+    const stats = resultStats.rows[0];
+    
+    res.status(200).json({
+      message: 'Importação realizada com sucesso',
+      total: registrosInseridos,
+      processados: stats.registros_processados,
+      erros: stats.registros_com_erro
+    });
+  } catch (error: any) {
+    console.error('Erro ao processar importação:', error);
+    res.status(500).json({ message: `Erro ao processar importação: ${error.message}` });
+  }
+});
+
+// Funções auxiliares
+async function registrarImportacao(nomeArquivo: string, usuario: string, usuarioId: number | null): Promise<number> {
+  const result = await pool.query(`
+    SELECT iniciar_operacao_excel('importacao', $1, $2, $3) AS id
+  `, [nomeArquivo, usuario, usuarioId]);
+  
+  return result.rows[0].id;
+}
+
+async function finalizarImportacao(importId: number, processados: number, erros: number, mensagem?: string): Promise<void> {
+  await pool.query(`
+    SELECT finalizar_operacao_excel($1, $2, $3)
+  `, [importId, erros > 0 ? 'erro' : 'concluido', mensagem]);
+}
+
+async function registrarExportacao(usuario: string, usuarioId: number | null): Promise<number> {
+  const nomeArquivo = `estoque-pecas-${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+  
+  const result = await pool.query(`
+    SELECT iniciar_operacao_excel('exportacao', $1, $2, $3) AS id
+  `, [nomeArquivo, usuario, usuarioId]);
+  
+  return result.rows[0].id;
+}
+
+async function finalizarExportacao(exportId: number, totalRegistros: number): Promise<void> {
+  await pool.query(`
+    UPDATE frota_excel_importacao_historico
+    SET 
+      status = 'concluido',
+      data_conclusao = NOW(),
+      total_registros = $2,
+      registros_processados = $2
+    WHERE id = $1
+  `, [exportId, totalRegistros]);
+}
+
+export default router;
