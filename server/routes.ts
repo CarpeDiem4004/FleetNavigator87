@@ -27,6 +27,7 @@ import { registerPneusRoutes } from "./pneusApi";
 import { registerTireMoveRoutes } from "./tireMoveApi";
 import { compareSchemas } from "./compareSchemas";
 import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
+import { default as frotaEstoqueRoutes } from "./routes/frotaEstoqueRoutes";
 // Removida importação redundante, pois está sendo importada via supabaseInsertRoute
 import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoutes";
 import { registerPostosMapeamentoRoutes } from "./routes/postosMapeamentoRoutes";
@@ -5956,6 +5957,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registra as rotas para gerenciar usuários no Supabase
   registerUsuariosSupabaseRoutes(app);
+  
+  // Registra as rotas para o sistema de estoque de peças
+  app.use('/api/frota', frotaEstoqueRoutes);
   
   // Rota para buscar abastecimentos não sincronizados com o Supabase
   app.get("/api/sincronizar-supabase/:posto", async (req, res) => {

@@ -145,10 +145,6 @@ export default function PartsInventory() {
     refetch: refetchParts
   } = useQuery<Part[]>({
     queryKey: ['/api/frota/estoque-pecas'],
-    queryFn: async () => {
-      const res = await apiRequest('GET', '/api/frota/estoque-pecas');
-      return await res.json();
-    },
     refetchOnWindowFocus: false
   });
 
@@ -158,10 +154,6 @@ export default function PartsInventory() {
     isLoading: isLoadingSummary 
   } = useQuery<StockSummary>({
     queryKey: ['/api/frota/estoque-resumo'],
-    queryFn: async () => {
-      const res = await apiRequest('GET', '/api/frota/estoque-resumo');
-      return await res.json();
-    },
     refetchOnWindowFocus: false
   });
 
@@ -247,9 +239,7 @@ export default function PartsInventory() {
   // Funções para exportar e importar Excel
   const handleExportExcel = async () => {
     try {
-      const response = await apiRequest('GET', '/api/frota/estoque-exportar', undefined, {
-        responseType: 'blob',
-      });
+      const response = await apiRequest('GET', '/api/frota/estoque-exportar');
       
       if (response.ok) {
         // Criar URL para download
@@ -282,9 +272,7 @@ export default function PartsInventory() {
   // Função para obter template de importação
   const handleDownloadTemplate = async () => {
     try {
-      const response = await apiRequest('GET', '/api/frota/estoque-template', undefined, {
-        responseType: 'blob',
-      });
+      const response = await apiRequest('GET', '/api/frota/estoque-template');
       
       if (response.ok) {
         // Criar URL para download
@@ -323,9 +311,7 @@ export default function PartsInventory() {
     formData.append('file', file);
     
     try {
-      const response = await apiRequest('POST', '/api/frota/estoque-importar', formData, {
-        isFormData: true,
-      });
+      const response = await apiRequest('POST', '/api/frota/estoque-importar', formData);
       
       const result = await response.json();
       
