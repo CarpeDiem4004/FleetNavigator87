@@ -62,7 +62,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const navLinks = [
     { href: '/', label: 'Dashboard', icon: BarChart4 },
     { href: '/fleet-management', label: 'Gestão de Frota', icon: Truck },
-    { href: '/fleet-management/inventory', label: 'Estoque', icon: Boxes },
     { href: '/vehicles', label: 'Veículos', icon: Car },
     // { href: '/maintenance', label: 'Manutenções', icon: Wrench },
     { href: '/tires', label: 'Pneus', icon: CircleDollarSign },
