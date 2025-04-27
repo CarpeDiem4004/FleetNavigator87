@@ -27,7 +27,6 @@ import { registerPneusRoutes } from "./pneusApi";
 import { registerTireMoveRoutes } from "./tireMoveApi";
 import { compareSchemas } from "./compareSchemas";
 import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
-import { default as frotaEstoqueRoutes } from "./routes/frotaEstoqueRoutes";
 // Removida importação redundante, pois está sendo importada via supabaseInsertRoute
 import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoutes";
 import { registerPostosMapeamentoRoutes } from "./routes/postosMapeamentoRoutes";
@@ -6075,6 +6074,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar as rotas do Supabase específicas para postos
   // Usamos /api/posto-supabase como caminho para evitar conflitos com o Vite
   app.use('/api/posto-supabase', postoSupabaseRoutes);
+  
+  // Registrar as rotas para gerenciamento de estoque da frota
+  app.use('/api/frota', frotaEstoqueRoutes);
 
   // Para debugging, adicionar rota para listar todas as tabelas relacionadas a postos
   app.get("/api/debug/list-posto-tables", async (req, res) => {

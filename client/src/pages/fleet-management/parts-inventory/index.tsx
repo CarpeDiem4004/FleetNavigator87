@@ -311,7 +311,8 @@ export default function PartsInventory() {
     formData.append('file', file);
     
     try {
-      const response = await apiRequest('POST', '/api/frota/estoque-importar', formData);
+      // Precisamos incluir o parâmetro isFormData para o upload de arquivos
+      const response = await apiRequest('POST', '/api/frota/estoque-importar', formData, { isFormData: true });
       
       const result = await response.json();
       
