@@ -12,7 +12,9 @@ import {
   ArrowRight,
   DollarSign,
   MessageSquare,
-  AlertCircle
+  AlertCircle,
+  Package,
+  BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'wouter';
@@ -66,7 +68,7 @@ export default function FleetManagement() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2">
@@ -106,6 +108,28 @@ export default function FleetManagement() {
                 <Button variant="outline" className="w-full" asChild>
                   <Link href="/oficina/murici">
                     Acessar Oficina Murici <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5 text-primary" />
+                  Estoque de Peças
+                </CardTitle>
+                <CardDescription>
+                  Gerenciamento de peças
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p>Controle completo do estoque de peças com geração automática de códigos, histórico de movimentações, importação e exportação via Excel.</p>
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href="/fleet-management/parts-inventory">
+                    Gerenciar Estoque <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
               </CardFooter>
@@ -158,7 +182,7 @@ export default function FleetManagement() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2">
-                  <FileBarChart className="h-5 w-5 text-primary" />
+                  <BarChart3 className="h-5 w-5 text-primary" />
                   Análise de Operações
                 </CardTitle>
                 <CardDescription>
