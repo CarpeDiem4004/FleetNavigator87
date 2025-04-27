@@ -25,7 +25,9 @@ import {
   CreditCard,
   ChevronDown,
   ChevronRight,
-  Droplets
+  Droplets,
+  Hammer, // Ícone para Oficina Murici
+  Building // Ícone alternativo para Oficina
 } from 'lucide-react';
 
 // Define a interface para os itens do menu
@@ -190,6 +192,7 @@ const SidebarSimplificado: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Veículos', href: '/vehicles', icon: Truck },
     { name: 'Motoristas', href: '/drivers', icon: Users },
     { name: 'Manutenção', href: '/manutencao', icon: Wrench },
+    { name: 'Oficina Murici', href: '/oficina/murici', icon: Building },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
     { name: 'Abastecimento', href: '/refueling', icon: Fuel },
     { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
