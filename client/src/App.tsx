@@ -75,6 +75,7 @@ import ManutencaoPage from "@/pages/ManutencaoPage";
 import TratativaManutencaoPage from "@/pages/TratativaManutencaoPage";
 import OficinasExternaPage from "@/pages/OficinasExternaPage";
 import OficinaDashboard from "@/pages/oficina/OficinaDashboard";
+import OficinaMurici from "@/pages/OficinaMurici";
 import BaseRequests from "@/pages/BaseRequests";
 import CartaoAbastecimentoPage from "@/pages/CartaoAbastecimentoPage";
 import PainelPostosPage from "@/pages/PainelPostosPage";
@@ -227,6 +228,8 @@ function App() {
           {/* Rotas protegidas para oficinas */}
           <ProtectedRoute path="/oficina/dashboard" component={OficinaDashboard} />
           <ProtectedRoute path="/oficinas/dashboard" component={OficinaDashboard} /> {/* Rota alternativa para compatibilidade */}
+          <ProtectedRoute path="/oficina/murici" component={OficinaMurici} />
+          <ProtectedRoute path="/oficinas/murici" component={OficinaMurici} /> {/* Rota alternativa para compatibilidade */}
           
           {/* Rotas públicas para os postos de abastecimento - sem proteção e sem status de tanques */}
           <Route path="/posto/osasco/public">
