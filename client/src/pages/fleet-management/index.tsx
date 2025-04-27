@@ -8,6 +8,7 @@ import {
   CalendarDays, 
   Wrench, 
   Building2, 
+  Building,
   ArrowRight,
   DollarSign,
   MessageSquare,
@@ -65,7 +66,7 @@ export default function FleetManagement() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2">
@@ -83,6 +84,28 @@ export default function FleetManagement() {
                 <Button variant="outline" className="w-full" asChild>
                   <Link href="/fleet-management/maintenance">
                     Gerenciar Manutenções <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2">
+                  <Building className="h-5 w-5 text-primary" />
+                  Oficina Murici
+                </CardTitle>
+                <CardDescription>
+                  Centro de manutenção próprio
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p>Acesse o sistema da Oficina Murici para gerenciar todas as operações de manutenção interna, acompanhar reparos e verificar status de veículos em serviço.</p>
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href="/oficina/murici">
+                    Acessar Oficina Murici <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
               </CardFooter>
