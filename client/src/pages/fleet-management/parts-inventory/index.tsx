@@ -311,8 +311,21 @@ export default function PartsInventory() {
     formData.append('file', file);
     
     try {
-      // Precisamos incluir o parâmetro isFormData para o upload de arquivos
-      const response = await apiRequest('POST', '/api/frota/estoque-importar', formData, { isFormData: true });
+      // Para enviar FormData, criamos manualmente a requisição
+      const authToken = localStorage.getItem('authToken');
+      const headers: HeadersInit = {};
+      
+      // Adicionar o token JWT se disponível
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+      
+      const response = await fetch('/api/frota/estoque-importar', {
+        method: 'POST',
+        headers,
+        body: formData,
+        credentials: 'include'
+      });
       
       const result = await response.json();
       
