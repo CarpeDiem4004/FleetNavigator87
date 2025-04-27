@@ -359,7 +359,7 @@ const OficinaMurici: React.FC = () => {
       const reader = new FileReader();
       reader.onload = async (e) => {
         const fileData = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
+        const workbook = XLSX.read(fileData, { type: 'array' });
         
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json<any>(worksheet);
