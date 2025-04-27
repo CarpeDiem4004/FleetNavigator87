@@ -75,6 +75,7 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
+  isFormData: boolean = false,
 ): Promise<Response> {
   // If it's a Supabase endpoint, use Supabase client
   if (url.startsWith('/api/supabase/')) {
@@ -131,9 +132,12 @@ export async function apiRequest(
   const authToken = localStorage.getItem('authToken');
   
   // Configurar os cabeçalhos - sempre incluir Content-Type para consistência
-  const headers: HeadersInit = {
-    "Content-Type": "application/json"
-  };
+  // exceto se estiver enviando FormData
+  const headers: HeadersInit = {};
+  
+  if (!isFormData) {
+    headers["Content-Type"] = "application/json";
+  }
   
   // Adicionar o token JWT se estiver disponível
   if (authToken) {
@@ -152,10 +156,14 @@ export async function apiRequest(
   
   // Adicionar corpo apenas se necessário
   if (data) {
-    requestConfig.body = JSON.stringify(data);
+    if (isFormData && data instanceof FormData) {
+      requestConfig.body = data;
+    } else if (!isFormData) {
+      requestConfig.body = JSON.stringify(data);
+    }
   }
   
-  console.log(`[apiRequest] Enviando requisição ${method} para ${url}`);
+  console.log(`[apiRequest] Enviando requisição ${method} para ${url} ${isFormData ? 'com FormData' : ''}`);
   
   // Fazer a requisição
   const res = await fetch(url, requestConfig);
