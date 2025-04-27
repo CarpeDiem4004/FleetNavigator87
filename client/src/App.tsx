@@ -59,6 +59,7 @@ import WorkshopsPage from "@/pages/fleet-management/WorkshopsPage";
 import MaintenancePage from "@/pages/fleet-management/MaintenancePage";
 import BudgetManagementPage from "@/pages/fleet-management/BudgetManagementPage";
 import InventoryPage from "@/pages/fleet-management/InventoryPage";
+import PartsInventoryPage from "@/pages/fleet-management/parts-inventory";
 import TiresEntrada from "@/pages/TiresEntrada";
 import LineHallShopeePage from "@/pages/LineHallShopeePage";
 import LineHallDriverPage from "@/pages/LineHallDriverPage";
@@ -142,6 +143,7 @@ function App() {
           {/* Line Hall removido conforme solicitação */}
           <ProtectedRoute path="/fleet-management" component={FleetManagement} />
           <ProtectedRoute path="/fleet-management/inventory" component={InventoryPage} />
+          <ProtectedRoute path="/fleet-management/parts-inventory" component={PartsInventoryPage} />
           <ProtectedRoute path="/fleet-management/workshops" component={WorkshopsPage} />
           <ProtectedRoute path="/fleet-management/maintenance" component={MaintenancePage} />
           <ProtectedRoute path="/fleet-management/budgets" component={BudgetManagementPage} />
