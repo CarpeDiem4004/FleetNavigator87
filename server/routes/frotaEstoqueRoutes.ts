@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { pool } from '../db';
 import { isAuthenticated } from '../middleware/auth';
+import { verifyAuth } from '../middleware/hybridAuth';
 import multer from 'multer';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
