@@ -1236,16 +1236,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const nivelAtual = tipo_combustivel.toUpperCase() === 'ARLA' ? config.arla_nivel : config.diesel_nivel;
       const novoNivel = Math.max(nivelAtual - parseFloat(litros), 0);
       
-      // Atualizar o nível do tanque
+      // Calcular campos de consumo total e valor total
+      const isArla = tipo_combustivel.toUpperCase() === 'ARLA';
+      const consumoTotalField = isArla ? 'arla_consumo_total' : 'diesel_consumo_total';
+      const valorTotalField = isArla ? 'arla_valor_total' : 'diesel_valor_total';
+      
+      // Obter valores atuais
+      const consumoAtual = isArla ? (config.arla_consumo_total || 0) : (config.diesel_consumo_total || 0);
+      const valorAtual = isArla ? (config.arla_valor_total || 0) : (config.diesel_valor_total || 0);
+      
+      // Calcular o valor total do combustível consumido
+      const valorLitro = isArla ? config.arla_valor_litro : config.diesel_valor_litro;
+      const valorTotalAbastecimento = parseFloat(litros) * parseFloat(valorLitro);
+      
+      // Calcular novos valores
+      const novoConsumo = parseFloat(consumoAtual) + parseFloat(litros);
+      const novoValor = parseFloat(valorAtual) + valorTotalAbastecimento;
+      
+      // Atualizar o nível do tanque e os totais
       const updateQuery = `
         UPDATE configuracao_tanques 
         SET ${tanqueField} = $1,
-        updated_at = NOW()
-        WHERE posto = $2
+            ${consumoTotalField} = $2,
+            ${valorTotalField} = $3,
+            updated_at = NOW()
+        WHERE posto = $4
         RETURNING *
       `;
       
-      const result = await pool.query(updateQuery, [novoNivel, formattedPosto]);
+      const result = await pool.query(updateQuery, [novoNivel, novoConsumo, novoValor, formattedPosto]);
       
       console.log(`Nível do tanque de ${tipo_combustivel} atualizado para posto ${formattedPosto}: ${nivelAtual} -> ${novoNivel}`);
       
@@ -1358,14 +1377,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const nivelAtual = tipo === 'ARLA' ? config.arla_nivel : config.diesel_nivel;
             const novoNivel = Math.max(nivelAtual - qtdCombustivel, 0);
             
+            // Calcular campos de consumo total e valor total
+            const isArla = tipo === 'ARLA';
+            const consumoTotalField = isArla ? 'arla_consumo_total' : 'diesel_consumo_total';
+            const valorTotalField = isArla ? 'arla_valor_total' : 'diesel_valor_total';
+            
+            // Obter valores atuais
+            const consumoAtual = isArla ? (config.arla_consumo_total || 0) : (config.diesel_consumo_total || 0);
+            const valorAtual = isArla ? (config.arla_valor_total || 0) : (config.diesel_valor_total || 0);
+            
+            // Calcular o valor do combustível consumido
+            const valorLitro = isArla ? config.arla_valor_litro : config.diesel_valor_litro;
+            const valorTotalAbastecimento = qtdCombustivel * valorLitro;
+            
+            // Calcular novos valores
+            const novoConsumo = parseFloat(consumoAtual) + qtdCombustivel;
+            const novoValor = parseFloat(valorAtual) + valorTotalAbastecimento;
+            
             const updateQuery = `
               UPDATE configuracao_tanques 
               SET ${tanqueField} = $1,
-              updated_at = NOW()
-              WHERE posto = $2
+                  ${consumoTotalField} = $2,
+                  ${valorTotalField} = $3,
+                  updated_at = NOW()
+              WHERE posto = $4
             `;
             
-            await pool.query(updateQuery, [novoNivel, formattedPosto]);
+            await pool.query(updateQuery, [novoNivel, novoConsumo, novoValor, formattedPosto]);
             
             console.log(`Nível do tanque de ${tipo} atualizado para posto ${formattedPosto}: ${nivelAtual} -> ${novoNivel}`);
           }
