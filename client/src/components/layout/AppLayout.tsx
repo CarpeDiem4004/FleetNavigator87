@@ -142,10 +142,13 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               window.history.pushState(null, "", "/");
               window.dispatchEvent(new PopStateEvent("popstate"));
             }}
-            className="flex items-center gap-2"
+            className="flex items-center py-2"
           >
-            <Truck className="h-6 w-6 text-primary" />
-            <span className="font-bold text-lg bg-gradient-to-r from-primary-400 to-primary text-transparent bg-clip-text">Murici Fleet</span>
+            <img 
+              src="/assets/murici-logo.png" 
+              alt="Murici Logística" 
+              className="h-9" 
+            />
           </a>
         </div>
         {isMobile && (
@@ -313,10 +316,13 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                     window.dispatchEvent(new PopStateEvent("popstate"));
                     setSidebarOpen(false);
                   }}
-                  className="flex items-center gap-2"
+                  className="flex items-center py-2"
                 >
-                  <Truck className="h-5 w-5 text-primary" />
-                  <span className="font-bold bg-gradient-to-r from-primary-400 to-primary text-transparent bg-clip-text">Murici Fleet</span>
+                  <img 
+                    src="/assets/murici-logo.png" 
+                    alt="Murici Logística" 
+                    className="h-8" 
+                  />
                 </a>
               </div>
             </div>

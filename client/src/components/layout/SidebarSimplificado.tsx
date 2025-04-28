@@ -216,10 +216,13 @@ const SidebarSimplificado: React.FC<SidebarProps> = ({ open, setOpen }) => {
       <div className="flex flex-col w-64 bg-gradient-to-br from-gray-900 to-gray-800 text-white shadow-xl shadow-primary/20 border-r border-primary/10">
         {/* Logo */}
         <div className="flex items-center justify-center h-16 border-b border-gray-700">
-          <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-primary-400 to-primary text-transparent bg-clip-text">
-            <Truck className="inline-block mr-2 text-primary" size={20} />
-            Murici Fleet
-          </h1>
+          <div className="flex items-center py-3 px-2">
+            <img 
+              src="/assets/murici-logo.png" 
+              alt="Murici Logística" 
+              className="h-9" 
+            />
+          </div>
         </div>
 
         {/* Navegação */}
