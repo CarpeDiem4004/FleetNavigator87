@@ -119,6 +119,37 @@ export default function PartsInventory() {
     },
   });
 
+  // Função para verificar autenticação e diagóstico
+  const checkAuthentication = async () => {
+    try {
+      const response = await apiRequest('GET', '/api/frota/diagnostico');
+      const data = await response.json();
+      
+      toast({
+        title: data.isAuthenticated ? 'Autenticação OK ✅' : 'Autenticação Falhou ❌',
+        description: (
+          <div className="mt-2 text-xs">
+            <p>Host: {data.host}</p>
+            <p>Sessão ID: {data.session?.id || 'N/A'}</p>
+            <p>Cookie domain: {data.session?.cookie?.domain || 'N/A'}</p>
+            <p>User ID: {data.user?.id || 'N/A'}</p>
+            <p>User Email: {data.user?.email || 'N/A'}</p>
+          </div>
+        ),
+        duration: 10000,
+      });
+      
+      console.log('Diagnóstico de autenticação:', data);
+    } catch (error) {
+      console.error('Erro ao verificar autenticação:', error);
+      toast({
+        title: 'Erro ao verificar autenticação',
+        description: `${error}`,
+        variant: 'destructive',
+      });
+    }
+  };
+  
   // Formulário de cadastro de nova peça
   const newPartForm = useForm<z.infer<typeof novaPecaSchema>>({
     resolver: zodResolver(novaPecaSchema),
@@ -373,6 +404,10 @@ export default function PartsInventory() {
                   />
                 </Button>
               </div>
+              <Button variant="outline" onClick={checkAuthentication}>
+                <AlertCircle className="mr-2 h-4 w-4" />
+                Diagnóstico
+              </Button>
               <Button onClick={() => setIsNewPartDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Nova Peça

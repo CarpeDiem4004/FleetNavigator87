@@ -34,20 +34,31 @@ app.use((req, res, next) => {
   const allowedOrigins = [
     'http://localhost:5000', 
     'http://localhost:3000',
-    'https://murici-on-fleet-joaopaulo60.replit.app',
-    'https://gestaoonfleet.com.br',
-    'https://www.gestaoonfleet.com.br'
+    'https://murici-on-fleet-joaopaulo60.replit.app'
   ];
   
-  const origin = req.headers.origin;
-  if (origin && allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
+  const origin = req.headers.origin as string;
+  
+  // Permitir qualquer origem do domínio personalizado ou de suas origens específicas
+  if (origin) {
+    if (allowedOrigins.includes(origin) || 
+        origin.endsWith('gestaoonfleet.com.br')) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      console.log(`[CORS] Permitindo origem: ${origin}`);
+    } else {
+      console.log(`[CORS] Origem não permitida: ${origin}`);
+    }
+  } else {
+    console.log(`[CORS] Sem origem especificada na requisição`);
   }
   
+  // Cabeçalhos CORS necessários para autenticação
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Vary', 'Origin'); // Importante para caching correto
   
+  // Responder imediatamente a requisições OPTIONS (preflight)
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
