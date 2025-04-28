@@ -216,6 +216,20 @@ export const StatusTanquePosto = forwardRef<StatusTanqueRef, StatusTanqueProps>(
             setArlaStatusValorLitro(Number(config.arla_valor_litro));
           }
           
+          // Atualizar os valores de consumo total e valor total
+          if (config.diesel_consumo_total !== undefined) {
+            setDieselConsumoTotal(Number(config.diesel_consumo_total));
+          }
+          if (config.diesel_valor_total !== undefined) {
+            setDieselValorTotal(Number(config.diesel_valor_total));
+          }
+          if (config.arla_consumo_total !== undefined) {
+            setArlaConsumoTotal(Number(config.arla_consumo_total));
+          }
+          if (config.arla_valor_total !== undefined) {
+            setArlaValorTotal(Number(config.arla_valor_total));
+          }
+          
           // Salvar também no localStorage como backup
           saveStoredConfig(postId, config);
           
@@ -601,6 +615,19 @@ export const StatusTanquePosto = forwardRef<StatusTanqueRef, StatusTanqueProps>(
               <div className="font-medium">{Math.round(statusTanque.diesel.ultimosRecebimentos).toLocaleString()} L</div>
             </div>
           </div>
+          
+          <div className="border-t border-border mt-4 pt-4">
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <span className="text-muted-foreground">Consumo total:</span>
+                <div className="font-medium">{Number(dieselConsumoTotal).toLocaleString()} L</div>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Valor total:</span>
+                <div className="font-medium">R$ {Number(dieselValorTotal).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
       
@@ -636,6 +663,19 @@ export const StatusTanquePosto = forwardRef<StatusTanqueRef, StatusTanqueProps>(
             <div>
               <span className="text-muted-foreground">Recebimentos recentes:</span>
               <div className="font-medium">{Math.round(statusTanque.arla.ultimosRecebimentos).toLocaleString()} L</div>
+            </div>
+          </div>
+          
+          <div className="border-t border-border mt-4 pt-4">
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <span className="text-muted-foreground">Consumo total:</span>
+                <div className="font-medium">{Number(arlaConsumoTotal).toLocaleString()} L</div>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Valor total:</span>
+                <div className="font-medium">R$ {Number(arlaValorTotal).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+              </div>
             </div>
           </div>
         </CardContent>
