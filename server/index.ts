@@ -18,6 +18,10 @@ import {
 import userApi from "./api/userApi";
 // Importar API híbrida para usuários (ambiente Replit e externo)
 import hybridUserApi from "../hybrid-user-api.js";
+// Importar middleware de CORS personalizado
+import { corsMiddleware } from "./middleware/cors";
+// Importar rota de diagnóstico para frota
+import frotaDiagnosticoRoute from "./routes/frotaDiagnosticoRoute";
 
 // Configuração das variáveis de ambiente do Supabase
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
@@ -26,6 +30,8 @@ process.env.SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUz
 process.env.SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
 
 const app = express();
+// Aplicar middleware CORS personalizado
+app.use(corsMiddleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -112,6 +118,9 @@ app.use((req, res, next) => {
   
   // Registrar o roteador de API híbrida de usuários (funciona dentro e fora do Replit)
   app.use(hybridUserApi);
+  
+  // Registrar rota de diagnóstico para verificar autenticação no módulo de frota
+  app.use('/api/frota', frotaDiagnosticoRoute);
   
   // Registrar as rotas de API diretas para evitar interceptação do Vite
   // Estas rotas serão processadas antes do middleware do Vite e terão os headers adequados

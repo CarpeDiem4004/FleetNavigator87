@@ -12,6 +12,17 @@ const supabase = SUPABASE_URL && SUPABASE_SERVICE_KEY
   : null;
 
 /**
+ * Função para verificar autenticação
+ * Pode ser usada em rotas individuais
+ */
+export const verifyAuth = (req: Request, res: Response, next: NextFunction) => {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  return res.status(401).json({ message: "Não autorizado" });
+};
+
+/**
  * Middleware de autenticação híbrida que verifica:
  * 1. Se o usuário está autenticado via sessão (express-session + Passport)
  * 2. Se não estiver, tenta autenticar via token JWT (Supabase)
