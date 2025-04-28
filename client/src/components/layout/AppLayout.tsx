@@ -132,8 +132,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   };
 
   const Sidebar = () => (
-    <div className={cn("h-full flex flex-col bg-card border-r overflow-y-auto")}>
-      <div className="flex items-center justify-between p-4 border-b">
+    <div className={cn("h-full flex flex-col bg-gradient-to-br from-gray-900 to-gray-800 text-white overflow-y-auto shadow-xl shadow-primary/20")}>
+      <div className="flex items-center justify-between p-4 border-b border-gray-700">
         <div>
           <a 
             href="/"
@@ -145,7 +145,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             className="flex items-center gap-2"
           >
             <Truck className="h-6 w-6 text-primary" />
-            <span className="font-bold text-lg">Frota</span>
+            <span className="font-bold text-lg bg-gradient-to-r from-primary-400 to-primary text-transparent bg-clip-text">Murici Fleet</span>
           </a>
         </div>
         {isMobile && (
@@ -153,6 +153,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             variant="ghost"
             size="icon"
             onClick={() => setSidebarOpen(false)}
+            className="text-white hover:bg-primary/20"
           >
             <X className="h-5 w-5" />
           </Button>
@@ -168,8 +169,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                   <Button
                     variant="ghost"
                     className={cn(
-                      "w-full justify-start gap-2 font-normal",
-                      isActive(link.href) && "bg-accent text-accent-foreground font-medium"
+                      "w-full justify-start gap-2 font-normal text-white hover:bg-primary/20 hover:text-white",
+                      isActive(link.href) && "bg-primary-600 text-white font-medium shadow-md shadow-primary/30"
                     )}
                     onClick={link.toggle}
                   >
@@ -206,8 +207,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                                 }
                               }}
                               className={cn(
-                                "block py-1.5 px-2 text-sm rounded-md hover:bg-accent",
-                                isActive(subLink.href) && "bg-accent font-medium text-accent-foreground"
+                                "block py-1.5 px-2 text-sm rounded-md text-slate-100 hover:bg-primary/20 hover:text-white",
+                                isActive(subLink.href) && "bg-primary-600 text-white font-medium shadow-sm shadow-primary/30 border-l-2 border-white"
                               )}
                             >
                               {subLink.label}
@@ -231,8 +232,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                       }
                     }}
                     className={cn(
-                      "flex items-center gap-2 py-2 px-3 rounded-md hover:bg-accent",
-                      isActive(link.href) && "bg-accent text-accent-foreground font-medium"
+                      "flex items-center gap-2 py-2 px-3 rounded-md text-white hover:bg-primary/20 hover:text-white",
+                      isActive(link.href) && "bg-primary-600 text-white font-medium shadow-md shadow-primary/30"
                     )}
                   >
                     <link.icon className="h-4 w-4" />
@@ -245,14 +246,19 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         </ul>
       </nav>
       
-      <div className="p-4 border-t mt-auto">
+      <div className="p-4 border-t border-gray-700 mt-auto">
         {user && (
           <div className="flex flex-col gap-2">
-            <div className="flex flex-col">
-              <span className="font-medium">{user.name}</span>
-              <span className="text-xs text-muted-foreground">{user.email}</span>
+            <div className="flex items-center">
+              <div className="h-9 w-9 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-medium">
+                {user.name?.charAt(0) || user.email?.charAt(0) || 'U'}
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-white">{user.name || user.email || 'Usuário'}</p>
+                <p className="text-xs text-gray-400">{user.email || ''}</p>
+              </div>
             </div>
-            <Button variant="outline" size="sm" onClick={handleLogout} className="w-full gap-2">
+            <Button variant="outline" size="sm" onClick={handleLogout} className="w-full gap-2 bg-gray-800 text-white border-primary/30 hover:bg-primary/20 hover:text-white mt-2">
               <LogOut className="h-4 w-4" />
               Sair
             </Button>
@@ -286,11 +292,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
         {/* Header para mobile */}
         {isMobile && (
-          <header className="border-b bg-card p-4 flex items-center justify-between">
+          <header className="border-b bg-gradient-to-r from-gray-900 to-gray-800 p-4 flex items-center justify-between shadow-md shadow-primary/10">
             <div className="flex items-center gap-2">
               <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" className="text-white hover:bg-primary/20">
                     <MenuIcon className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
@@ -310,7 +316,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                   className="flex items-center gap-2"
                 >
                   <Truck className="h-5 w-5 text-primary" />
-                  <span className="font-bold">Sistema de Gestão de Frotas</span>
+                  <span className="font-bold bg-gradient-to-r from-primary-400 to-primary text-transparent bg-clip-text">Murici Fleet</span>
                 </a>
               </div>
             </div>
