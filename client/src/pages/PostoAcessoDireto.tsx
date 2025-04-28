@@ -34,7 +34,7 @@ const postosList = [
 ];
 
 const PostoAcessoDireto: React.FC = () => {
-  const [, navigate] = useLocation();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
   const [statusInfo, setStatusInfo] = useState<Record<string, any>>({});
@@ -71,11 +71,11 @@ const PostoAcessoDireto: React.FC = () => {
         description: 'Você precisa estar logado para acessar este posto',
         variant: 'destructive',
       });
-      navigate('/login');
+      setLocation('/login');
       return;
     }
     
-    navigate(`/posto/${postoId}`);
+    setLocation(`/posto/${postoId}`);
   };
 
   return (
