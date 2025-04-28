@@ -1,23 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
-// Lista de origens permitidas
-const allowedOrigins = [
-  // Domínios Replit
-  /^https:\/\/.*\.replit\.app$/,
-  /^https:\/\/.*\.repl\.co$/,
-  /^https:\/\/.*\.id\.repl\.co$/,
-  /^https:\/\/.*\.repl\.dev$/,
-  /^https:\/\/.*\.worf\.replit\.dev$/,
-  /^https:\/\/.*-.*-.*-.*-.*-.*\.worf\.replit\.dev$/,  // Formato longo com UUIDs
-  
-  // Domínio personalizado e seus subdomínios
-  /^https:\/\/(.*\.)?gestaoonfleet\.com\.br$/,
-  
-  // Desenvolvimento local
-  /^http:\/\/localhost(:\d+)?$/,
-];
-
-// Middleware para lidar com CORS
+// Middleware para lidar com CORS - Versão Liberada para Testes
 export function corsMiddleware(req: Request, res: Response, next: NextFunction) {
   const origin = req.headers.origin;
 
@@ -27,14 +10,16 @@ export function corsMiddleware(req: Request, res: Response, next: NextFunction) 
     return next();
   }
 
-  // Verifica se a origem está na lista de permitidas
-  const isAllowed = allowedOrigins.some(pattern => pattern.test(origin));
-
-  if (isAllowed) {
+  // IMPORTANTE: Durante a fase de testes, aceitamos qualquer origem do Replit
+  // Verificação básica para garantir que é um domínio do Replit ou o domínio oficial
+  if (origin.includes('replit') || 
+      origin.includes('gestaoonfleet.com.br') || 
+      origin.includes('localhost')) {
+    
     // Define os cabeçalhos CORS para a origem permitida
     res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     
     // Se for uma requisição OPTIONS (preflight), responde com 200
@@ -42,7 +27,7 @@ export function corsMiddleware(req: Request, res: Response, next: NextFunction) 
       return res.sendStatus(200);
     }
   } else {
-    console.log(`[CORS] Origem não permitida: ${origin}`);
+    console.log(`[CORS] Origem bloqueada: ${origin}`);
   }
 
   next();

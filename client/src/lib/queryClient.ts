@@ -131,6 +131,17 @@ export async function apiRequest(
   // Verificar se temos um token JWT armazenado para autenticação
   const authToken = localStorage.getItem('authToken');
   
+  // Também verificar a sessão Supabase como fallback
+  let supabaseToken = null;
+  try {
+    const session = await supabase.auth.getSession();
+    if (session?.data?.session?.access_token) {
+      supabaseToken = session.data.session.access_token;
+    }
+  } catch (error) {
+    console.error('[apiRequest] Erro ao obter sessão Supabase:', error);
+  }
+  
   // Configurar os cabeçalhos - sempre incluir Content-Type para consistência
   // exceto se estiver enviando FormData
   const headers: HeadersInit = {};
@@ -139,9 +150,10 @@ export async function apiRequest(
     headers["Content-Type"] = "application/json";
   }
   
-  // Adicionar o token JWT se estiver disponível
-  if (authToken) {
-    headers["Authorization"] = `Bearer ${authToken}`;
+  // Adicionar o token JWT - primeiro verificar o token armazenado e depois o Supabase
+  const tokenToUse = authToken || supabaseToken;
+  if (tokenToUse) {
+    headers["Authorization"] = `Bearer ${tokenToUse}`;
     console.log('[apiRequest] Adicionando token JWT ao cabeçalho da requisição:', url);
   } else {
     console.log('[apiRequest] Sem token JWT disponível para a requisição:', url);
@@ -211,13 +223,26 @@ export const getQueryFn: <T>(options: {
     // Verificar se temos um token JWT armazenado para autenticação
     const authToken = localStorage.getItem('authToken');
     
+    // Também verificar a sessão Supabase como fallback
+    let supabaseToken = null;
+    try {
+      const session = await supabase.auth.getSession();
+      if (session?.data?.session?.access_token) {
+        supabaseToken = session.data.session.access_token;
+      }
+    } catch (error) {
+      console.error('[QueryClient] Erro ao obter sessão Supabase:', error);
+    }
+    
     // Configurar os cabeçalhos com token JWT quando disponível
     const headers: HeadersInit = {
       "Content-Type": "application/json" // Adicionar Content-Type para consistência
     };
     
-    if (authToken) {
-      headers["Authorization"] = `Bearer ${authToken}`;
+    // Usar o token local ou o do Supabase como fallback
+    const tokenToUse = authToken || supabaseToken;
+    if (tokenToUse) {
+      headers["Authorization"] = `Bearer ${tokenToUse}`;
       console.log('[QueryClient] Adicionando token JWT à requisição GET:', urlOrTable);
     } else {
       console.log('[QueryClient] Sem token JWT disponível para GET:', urlOrTable);

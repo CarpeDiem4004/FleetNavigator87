@@ -696,7 +696,7 @@ router.post('/estoque-importar', upload.single('file'), async (req, res) => {
 });
 
 // Funções auxiliares
-async function registrarImportacao(nomeArquivo: string, usuario: string, usuarioId: number | null): Promise<number> {
+async function registrarImportacao(nomeArquivo: string, usuario: string, usuarioId: number | string | null): Promise<number> {
   const result = await pool.query(`
     SELECT iniciar_operacao_excel('importacao', $1, $2, $3) AS id
   `, [nomeArquivo, usuario, usuarioId]);
@@ -710,7 +710,7 @@ async function finalizarImportacao(importId: number, processados: number, erros:
   `, [importId, erros > 0 ? 'erro' : 'concluido', mensagem]);
 }
 
-async function registrarExportacao(usuario: string, usuarioId: number | null): Promise<number> {
+async function registrarExportacao(usuario: string, usuarioId: number | string | null): Promise<number> {
   const nomeArquivo = `estoque-pecas-${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
   
   const result = await pool.query(`
