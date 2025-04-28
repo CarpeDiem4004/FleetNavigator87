@@ -11,9 +11,16 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_KEY;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+console.log('🔑 Supabase URL:', supabaseUrl ? `${supabaseUrl.substring(0, 10)}...` : 'não definido');
+console.log('🔑 Supabase Key:', supabaseServiceKey ? `${supabaseServiceKey.substring(0, 5)}...${supabaseServiceKey.substring(supabaseServiceKey.length - 5)}` : 'não definida');
+
 // Conexão direta ao banco Supabase via PostgreSQL
+// IMPORTANTE: Para o Supabase, precisamos usar a string de conexão específica do Supabase
+const connectionString = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL;
+console.log('🔌 Usando string de conexão:', connectionString ? 'Definida' : 'Não definida');
+
 const supabasePool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: connectionString,
 });
 
 async function createUserRoleEnum(client) {
