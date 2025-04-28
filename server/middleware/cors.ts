@@ -8,6 +8,7 @@ const allowedOrigins = [
   /^https:\/\/.*\.id\.repl\.co$/,
   /^https:\/\/.*\.repl\.dev$/,
   /^https:\/\/.*\.worf\.replit\.dev$/,
+  /^https:\/\/.*-.*-.*-.*-.*-.*\.worf\.replit\.dev$/,  // Formato longo com UUIDs
   
   // Domínio personalizado e seus subdomínios
   /^https:\/\/(.*\.)?gestaoonfleet\.com\.br$/,

@@ -50,7 +50,9 @@ router.get('/diagnostico', (req, res) => {
 });
 
 // Middleware de autenticação para todas as rotas EXCETO diagnóstico
-router.use(isAuthenticated);
+// Usando nosso middleware de autenticação híbrida para garantir maior compatibilidade
+import { hybridAuth } from '../middleware/hybridAuth';
+router.use(hybridAuth);
 
 // GET - Listar todas as peças em estoque
 router.get('/estoque-pecas', async (req, res) => {
@@ -243,8 +245,8 @@ router.post('/estoque-pecas', async (req, res) => {
         quantidade,
         valor_unitario,
         'Cadastro inicial',
-        req.user?.name || 'Sistema',
-        req.user?.id || null,
+        req.user?.name || req.supabaseUser?.email || 'Sistema',
+        req.user?.id || req.supabaseUser?.id || null,
         'Estoque inicial no cadastro da peça'
       ]);
     }
@@ -328,8 +330,8 @@ router.post('/movimentacao-estoque', async (req, res) => {
       motivo,
       nota_fiscal || null,
       veiculo_placa || null,
-      req.user?.name || 'Sistema',
-      req.user?.id || null,
+      req.user?.name || req.supabaseUser?.email || 'Sistema',
+      req.user?.id || req.supabaseUser?.id || null,
       observacoes || null
     ]);
 
@@ -412,8 +414,8 @@ router.get('/estoque-exportar', async (req, res) => {
   try {
     // Registrar operação de exportação
     const userInfo = {
-      id: req.user?.id || null,
-      name: req.user?.name || 'Sistema'
+      id: req.user?.id || (req.supabaseUser?.id ? Number(req.supabaseUser.id) : null),
+      name: req.user?.name || req.supabaseUser?.email || 'Sistema'
     };
 
     const exportId = await registrarExportacao(userInfo.name, userInfo.id);
@@ -584,8 +586,8 @@ router.post('/estoque-importar', upload.single('file'), async (req, res) => {
   try {
     // Registrar operação de importação
     const userInfo = {
-      id: req.user?.id || null,
-      name: req.user?.name || 'Sistema'
+      id: req.user?.id || (req.supabaseUser?.id ? Number(req.supabaseUser.id) : null),
+      name: req.user?.name || req.supabaseUser?.email || 'Sistema'
     };
 
     const importId = await registrarImportacao(req.file.originalname, userInfo.name, userInfo.id);
