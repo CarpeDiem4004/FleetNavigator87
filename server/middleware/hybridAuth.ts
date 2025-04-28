@@ -20,6 +20,16 @@ export const hybridAuth = async (req: Request, res: Response, next: NextFunction
   // Etapa 1: Verificar autenticação por sessão
   if (req.isAuthenticated()) {
     console.log(`[HybridAuth] Usuário autenticado via sessão: ${req.user.id} (${req.user.email})`);
+    
+    // Se estamos no domínio personalizado, verificar se o cookie de sessão está configurado corretamente
+    if (req.hostname.includes('gestaoonfleet.com.br') && req.session) {
+      // Garantir que o cookie está configurado para o domínio correto
+      if ((req.session as any).cookie.domain !== '.gestaoonfleet.com.br') {
+        (req.session as any).cookie.domain = '.gestaoonfleet.com.br';
+        console.log(`[HybridAuth] Ajustando domínio do cookie para: .gestaoonfleet.com.br`);
+      }
+    }
+    
     return next();
   }
 
@@ -93,8 +103,23 @@ export const supabaseAuth = async (req: Request, res: Response, next: NextFuncti
  */
 export const sessionAuth = (req: Request, res: Response, next: NextFunction) => {
   if (req.isAuthenticated()) {
+    // Se estamos no domínio personalizado, verificar se o cookie de sessão está configurado corretamente
+    if (req.hostname.includes('gestaoonfleet.com.br') && req.session) {
+      // Garantir que o cookie está configurado para o domínio correto
+      if ((req.session as any).cookie.domain !== '.gestaoonfleet.com.br') {
+        (req.session as any).cookie.domain = '.gestaoonfleet.com.br';
+        console.log(`[SessionAuth] Ajustando domínio do cookie para: .gestaoonfleet.com.br`);
+      }
+    }
+    
     return next();
   }
+  
+  console.log('[SessionAuth] Usuário não autenticado', {
+    sessionID: req.sessionID,
+    hostname: req.hostname,
+    path: req.path
+  });
   
   return res.status(401).json({ message: "Não autenticado" });
 };

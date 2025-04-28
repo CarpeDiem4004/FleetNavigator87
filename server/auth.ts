@@ -85,8 +85,15 @@ export function setupAuth(app: Express) {
   // Middleware para ajustar o domínio do cookie para o domínio personalizado
   app.use((req, res, next) => {
     if (req.hostname && req.hostname.includes('gestaoonfleet.com.br') && req.session) {
-      (req.session as any).cookie.domain = '.gestaoonfleet.com.br';
-      console.log(`Ajustando domínio do cookie para: .gestaoonfleet.com.br`);
+      // Configurar domínio do cookie para o domínio personalizado
+      const domainName = '.gestaoonfleet.com.br';
+      if ((req.session as any).cookie.domain !== domainName) {
+        console.log(`[SessionMiddleware] Ajustando domínio do cookie para: ${domainName} (request para ${req.hostname}${req.path})`);
+        (req.session as any).cookie.domain = domainName;
+      }
+      
+      // Tocar na sessão para garantir que ela será salva com as novas configurações
+      req.session.touch();
     }
     next();
   });
