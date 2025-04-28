@@ -39,7 +39,10 @@ interface Maintenance {
   description: string;
   date: string;
   cost: number;
-  status: 'concluida' | 'em_andamento' | 'aguardando_pecas';
+  status: 'concluida' | 'em_andamento' | 'aguardando_pecas' | 'motor' | 'turbina' | 'funilaria' | 'bomba' | 'bico';
+  workshopName?: string; // Added workshop name field
+  deadline?: string;      // Added deadline field
+  valor?: number;          // Added valor field
 }
 
 // Dados mockados para a tabela de manutenções
@@ -105,7 +108,12 @@ const translateMaintenanceStatus = (status: string): string => {
   const statuses: Record<string, string> = {
     concluida: 'Concluída',
     em_andamento: 'Em Andamento',
-    aguardando_pecas: 'Aguardando Peças'
+    aguardando_pecas: 'Aguardando Peças',
+    motor: 'Motor',
+    turbina: 'Turbina',
+    funilaria: 'Funilaria',
+    bomba: 'Bomba',
+    bico: 'Bico'
   };
   return statuses[status] || status;
 };
@@ -115,7 +123,12 @@ const getStatusBadgeClass = (status: string): string => {
   const classes: Record<string, string> = {
     concluida: 'bg-green-100 text-green-800',
     em_andamento: 'bg-yellow-100 text-yellow-800',
-    aguardando_pecas: 'bg-red-100 text-red-800'
+    aguardando_pecas: 'bg-red-100 text-red-800',
+    motor: 'bg-blue-100 text-blue-800',
+    turbina: 'bg-purple-100 text-purple-800',
+    funilaria: 'bg-indigo-100 text-indigo-800',
+    bomba: 'bg-teal-100 text-teal-800',
+    bico: 'bg-pink-100 text-pink-800'
   };
   return classes[status] || 'bg-gray-100 text-gray-800';
 };
@@ -161,7 +174,7 @@ const MaintenanceNew: React.FC = () => {
         ...newMaintenance,
         id: maintenance.length + 1
       } as Maintenance;
-      
+
       setMaintenance([...maintenance, item]);
       setIsAddDialogOpen(false);
       setNewMaintenance({
@@ -185,7 +198,7 @@ const MaintenanceNew: React.FC = () => {
               Gestão de manutenções da frota
             </p>
           </div>
-          
+
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="flex items-center">
@@ -272,7 +285,7 @@ const MaintenanceNew: React.FC = () => {
                   </Label>
                   <Select 
                     value={newMaintenance.status}
-                    onValueChange={(value: 'concluida' | 'em_andamento' | 'aguardando_pecas') => 
+                    onValueChange={(value: 'concluida' | 'em_andamento' | 'aguardando_pecas' | 'motor' | 'turbina' | 'funilaria' | 'bomba' | 'bico') => 
                       setNewMaintenance({...newMaintenance, status: value})
                     }
                   >
@@ -283,9 +296,49 @@ const MaintenanceNew: React.FC = () => {
                       <SelectItem value="concluida">Concluída</SelectItem>
                       <SelectItem value="em_andamento">Em Andamento</SelectItem>
                       <SelectItem value="aguardando_pecas">Aguardando Peças</SelectItem>
+                      <SelectItem value="motor">Motor</SelectItem>
+                      <SelectItem value="turbina">Turbina</SelectItem>
+                      <SelectItem value="funilaria">Funilaria</SelectItem>
+                      <SelectItem value="bomba">Bomba</SelectItem>
+                      <SelectItem value="bico">Bico</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+                {['motor', 'turbina', 'funilaria', 'bomba', 'bico'].includes(newMaintenance.status) && (
+                  <div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="workshop_name" className="text-right">Nome da Oficina</Label>
+                      <Input
+                        id="workshop_name"
+                        value={newMaintenance.workshopName || ""}
+                        onChange={(e) => setNewMaintenance({...newMaintenance, workshopName: e.target.value})}
+                        className="col-span-3"
+                        placeholder="Nome da oficina"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="deadline" className="text-right">Prazo</Label>
+                      <Input
+                        id="deadline"
+                        type="date"
+                        value={newMaintenance.deadline || ""}
+                        onChange={(e) => setNewMaintenance({...newMaintenance, deadline: e.target.value})}
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="valor" className="text-right">Valor</Label>
+                      <Input
+                        id="valor"
+                        type="number"
+                        value={newMaintenance.valor || ""}
+                        onChange={(e) => setNewMaintenance({...newMaintenance, valor: parseFloat(e.target.value)})}
+                        className="col-span-3"
+                        placeholder="Valor"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
@@ -326,6 +379,9 @@ const MaintenanceNew: React.FC = () => {
                   <TableHead>Data</TableHead>
                   <TableHead>Custo</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Oficina</TableHead> {/* Added Oficina column */}
+                  <TableHead>Prazo</TableHead> {/* Added Prazo column */}
+                  <TableHead>Valor</TableHead> {/* Added Valor column */}
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -342,6 +398,9 @@ const MaintenanceNew: React.FC = () => {
                         {translateMaintenanceStatus(item.status)}
                       </span>
                     </TableCell>
+                    <TableCell>{item.workshopName}</TableCell> {/* Display workshop name */}
+                    <TableCell>{item.deadline}</TableCell> {/* Display deadline */}
+                    <TableCell>{item.valor ? formatCurrency(item.valor) : ""}</TableCell> {/* Display valor */}
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2">
                         <Button variant="outline" size="icon">
