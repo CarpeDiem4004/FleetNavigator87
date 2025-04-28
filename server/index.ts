@@ -35,42 +35,9 @@ app.use(corsMiddleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Configurar CORS para permitir acesso do domínio personalizado
-app.use((req, res, next) => {
-  const allowedOrigins = [
-    'http://localhost:5000', 
-    'http://localhost:3000',
-    'https://murici-on-fleet-joaopaulo60.replit.app'
-  ];
-  
-  const origin = req.headers.origin as string;
-  
-  // Permitir qualquer origem do domínio personalizado ou de suas origens específicas
-  if (origin) {
-    if (allowedOrigins.includes(origin) || 
-        origin.endsWith('gestaoonfleet.com.br')) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-      console.log(`[CORS] Permitindo origem: ${origin}`);
-    } else {
-      console.log(`[CORS] Origem não permitida: ${origin}`);
-    }
-  } else {
-    console.log(`[CORS] Sem origem especificada na requisição`);
-  }
-  
-  // Cabeçalhos CORS necessários para autenticação
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Vary', 'Origin'); // Importante para caching correto
-  
-  // Responder imediatamente a requisições OPTIONS (preflight)
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  
-  next();
-});
+// [COMENTADO] - Usando apenas o middleware corsMiddleware agora
+// O middleware de CORS personalizado foi movido para server/middleware/cors.ts
+// e é aplicado na linha app.use(corsMiddleware) acima.
 
 app.use((req, res, next) => {
   const start = Date.now();
