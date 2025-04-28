@@ -20,6 +20,8 @@ import userApi from "./api/userApi";
 import hybridUserApi from "../hybrid-user-api.js";
 // Importar middleware de CORS personalizado
 import { corsMiddleware } from "./middleware/cors";
+// Importar middleware para corrigir cookies de sessão
+import { fixCookieSessionMiddleware } from "./middleware/fixCookieSession";
 // Importar rota de diagnóstico para frota
 import frotaDiagnosticoRoute from "./routes/frotaDiagnosticoRoute";
 
@@ -32,6 +34,8 @@ process.env.SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.e
 const app = express();
 // Aplicar middleware CORS personalizado
 app.use(corsMiddleware);
+// Aplicar middleware para corrigir cookies de sessão
+app.use(fixCookieSessionMiddleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

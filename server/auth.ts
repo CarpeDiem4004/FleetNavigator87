@@ -9,6 +9,7 @@ import { User as SelectUser } from "@shared/schema";
 import createMemoryStore from "memorystore";
 import { pool } from "./db";
 import connectPg from "connect-pg-simple";
+import { createClient } from '@supabase/supabase-js';
 
 declare global {
   namespace Express {
@@ -65,7 +66,7 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: sessionStore,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Desabilitado para desenvolvimento, em produção deveria ser true
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
       sameSite: 'lax', // Ajuda nas requisições cross-site (importante para APIs)
       httpOnly: true,
@@ -446,6 +447,12 @@ export function setupAuth(app: Express) {
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || 'development'
     };
+    
+    console.log("[DiagnósticoAuth] Verificando status de autenticação:", {
+      isAuth: req.isAuthenticated(),
+      hasSession: !!req.session,
+      sessionID: req.sessionID
+    });
     
     console.log('Status de autenticação:', JSON.stringify(status, null, 2));
     res.json(status);
