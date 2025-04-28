@@ -220,7 +220,7 @@ const SidebarSimplificado: React.FC<SidebarProps> = ({ open, setOpen }) => {
             <img 
               src="/assets/murici-logo.png" 
               alt="Murici Logística" 
-              className="h-9" 
+              className="h-6" 
             />
           </div>
         </div>

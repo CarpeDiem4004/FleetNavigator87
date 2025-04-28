@@ -147,7 +147,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             <img 
               src="/assets/murici-logo.png" 
               alt="Murici Logística" 
-              className="h-9" 
+              className="h-6" 
             />
           </a>
         </div>
@@ -321,7 +321,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                   <img 
                     src="/assets/murici-logo.png" 
                     alt="Murici Logística" 
-                    className="h-8" 
+                    className="h-5" 
                   />
                 </a>
               </div>
