@@ -50,6 +50,20 @@ export async function getHistoricoPosto(req, res) {
       postoName = 'alair_v2';
       console.log("getHistoricoPosto - Identificado como Alair V2");
     }
+    // Caso especial para Socorro V2
+    else if (postoName.toLowerCase() === 'socorro_v2' || 
+        postoName.toLowerCase().includes('socorro_v2') || 
+        postoName.toLowerCase().includes('socorro v2')) {
+      postoName = 'socorro_v2';
+      console.log("getHistoricoPosto - Identificado como Socorro V2");
+    }
+    // Caso especial para Sorocaba V2
+    else if (postoName.toLowerCase() === 'sorocaba_v2' || 
+        postoName.toLowerCase().includes('sorocaba_v2') || 
+        postoName.toLowerCase().includes('sorocaba v2')) {
+      postoName = 'sorocaba_v2';
+      console.log("getHistoricoPosto - Identificado como Sorocaba V2");
+    }
     // Caso especial para Osasco
     else if (postoName.toLowerCase() === 'osasco' || 
         postoName.toLowerCase().includes('osasco')) {

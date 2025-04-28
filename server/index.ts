@@ -153,6 +153,40 @@ app.use((req, res, next) => {
     getHistoricoPosto(req, res);
   });
 
+  // Rotas especiais para Socorro V2
+  // Rota de abastecimento
+  app.post('/api/abastecimento-direto-socorro-v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE SOCORRO V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como socorro_v2
+    req.params = { ...req.params, posto: 'socorro_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Rota de histórico para Socorro V2
+  app.get('/api/historico-direto-socorro-v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE SOCORRO V2 ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'socorro_v2' };
+    getHistoricoPosto(req, res);
+  });
+
+  // Rotas especiais para Sorocaba V2
+  // Rota de abastecimento
+  app.post('/api/abastecimento-direto-sorocaba-v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE SOROCABA V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como sorocaba_v2
+    req.params = { ...req.params, posto: 'sorocaba_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Rota de histórico para Sorocaba V2
+  app.get('/api/historico-direto-sorocaba-v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE SOROCABA V2 ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'sorocaba_v2' };
+    getHistoricoPosto(req, res);
+  });
+
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
