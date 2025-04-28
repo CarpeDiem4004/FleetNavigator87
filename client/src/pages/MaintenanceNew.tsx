@@ -190,7 +190,7 @@ const MaintenanceNew: React.FC = () => {
 
   return (
     <MainLayoutSimple>
-      <div className="space-y-6">
+      <div className="space-y-6 px-4 py-6">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold mb-2">Manutenções</h1>
