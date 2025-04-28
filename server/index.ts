@@ -36,13 +36,12 @@ process.env.SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.e
 const app = express();
 // Aplicar middleware CORS personalizado
 app.use(corsMiddleware);
-// Aplicar middleware para corrigir cookies de sessão
-app.use(fixCookieSessionMiddleware);
-// Remover a importação duplicada que está no local incorreto
-app.use(debugAuthMiddleware);
-app.use(recoverSessionMiddleware);
+// Middlewares padrão do Express
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// * IMPORTANTE: É crucial que registerRoutes seja chamado antes dos middlewares de diagnóstico *
+// * pois registerRoutes inicializa o Passport.js com setupAuth, que adiciona o método isAuthenticated *
 
 // [COMENTADO] - Usando apenas o middleware corsMiddleware agora
 // O middleware de CORS personalizado foi movido para server/middleware/cors.ts
@@ -88,6 +87,12 @@ app.use((req, res, next) => {
   }
   
   const server = await registerRoutes(app);
+  
+  // Agora podemos aplicar o middleware de fixação de cookies e diagnóstico 
+  // já que o Passport está inicializado
+  app.use(fixCookieSessionMiddleware);
+  app.use(debugAuthMiddleware);
+  app.use(recoverSessionMiddleware);
   
   // Registrar o roteador de API de usuários
   app.use(userApi);
@@ -207,6 +212,66 @@ app.use((req, res, next) => {
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'sorocaba_v2' };
     getHistoricoPosto(req, res);
+  });
+  
+  // Rota de diagnóstico específica para autenticação
+  app.get('/api/auth-diagnostic', (req, res) => {
+    const isAuth = typeof req.isAuthenticated === 'function' ? req.isAuthenticated() : false;
+    
+    // Para compatibilidade com tipos, não podemos acessar diretamente req.session.cookie
+    const sessionObj: any = req.session || {};
+    const cookieObj = sessionObj.cookie || {};
+    
+    // Obter informações detalhadas sobre cookies
+    let cookieInfo: any = {};
+    if (req.headers.cookie) {
+      const cookies = req.headers.cookie.split(';').map(c => {
+        const [key, value] = c.trim().split('=');
+        return { key, value: value ? value.substring(0, 10) + '...' : 'vazio' };
+      });
+      cookieInfo = cookies;
+    }
+    
+    const status = {
+      success: true,
+      timestamp: new Date().toISOString(),
+      isAuthenticated: isAuth,
+      hasSession: !!req.session,
+      sessionID: req.sessionID,
+      cookiePresent: !!req.headers.cookie,
+      cookies: cookieInfo,
+      sessionMaxAge: cookieObj.maxAge,
+      sessionExpires: cookieObj.expires,
+      sessionSettings: {
+        secure: cookieObj.secure,
+        httpOnly: cookieObj.httpOnly,
+        sameSite: cookieObj.sameSite,
+        path: cookieObj.path,
+        domain: cookieObj.domain
+      },
+      passportInfo: {
+        initialized: typeof req.isAuthenticated === 'function',
+        passportSession: (req.session as any)?.passport,
+      },
+      user: isAuth && req.user ? {
+        id: req.user.id,
+        email: req.user.email,
+        role: req.user.role,
+        name: req.user.name
+      } : null,
+      requestInfo: {
+        host: req.hostname,
+        path: req.path,
+        method: req.method,
+        protocol: req.protocol,
+        secure: req.secure,
+        origin: req.headers.origin,
+        referer: req.headers.referer
+      }
+    };
+    
+    console.log('[AuthDiagnostic] Diagnóstico de autenticação executado');
+    res.json(status);
   });
   
   // Rota para diagnosticar problemas de CORS com domínio personalizado

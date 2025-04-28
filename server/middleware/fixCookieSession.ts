@@ -17,6 +17,8 @@ export const fixCookieSessionMiddleware = (req: Request, res: Response, next: Ne
       sameSite: 'lax', // Permitir cookies de terceiros em ambientes de desenvolvimento
       secure: process.env.NODE_ENV === 'production', // Apenas HTTPS em produção
       httpOnly: true, // Impedir acesso via JavaScript
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dias em milissegundos
+      path: '/' // Garantir acesso de qualquer rota
     };
     
     // Se estamos em desenvolvimento, não definir o domínio do cookie
@@ -26,10 +28,30 @@ export const fixCookieSessionMiddleware = (req: Request, res: Response, next: Ne
     }
     
     // Registrar para depuração
-    console.log(`[Cookie Middleware] Definindo cookie: ${name} (Domínio: ${newOptions.domain || 'default'}, Secure: ${newOptions.secure})`);
+    console.log(`[Cookie Middleware] Definindo cookie: ${name} (Domínio: ${newOptions.domain || 'default'}, Secure: ${newOptions.secure}, MaxAge: ${newOptions.maxAge})`);
     
     // Chamar o método original com as opções ajustadas
     return originalSetCookie.call(res, name, value, newOptions);
+  };
+  
+  // Também interceptamos setHeader para ajustar cookies de sessão
+  const originalSetHeader = res.setHeader;
+  res.setHeader = function(name: string, value: string | string[]) {
+    if (name.toLowerCase() === 'set-cookie' && Array.isArray(value)) {
+      value = value.map(cookie => {
+        if (cookie.includes('connect.sid=')) {
+          console.log(`[Cookie Middleware] Ajustando cookie de sessão: ${cookie.substring(0, 30)}...`);
+          return cookie
+            .replace(/; SameSite=(None|Lax|Strict)/gi, '; SameSite=Lax')
+            .replace(/; Domain=[^;]+/gi, '')
+            .replace(/; secure/gi, process.env.NODE_ENV === 'production' ? '; secure' : '')
+            .replace(/; Max-Age=[^;]+/gi, '; Max-Age=2592000')
+            .replace(/; Path=[^;]+/gi, '; Path=/');
+        }
+        return cookie;
+      });
+    }
+    return originalSetHeader.call(this, name, value);
   };
   
   // Se houver um objeto de sessão na requisição
@@ -42,12 +64,17 @@ export const fixCookieSessionMiddleware = (req: Request, res: Response, next: Ne
       // Ajustar configurações do cookie para funcionar no Replit
       (req.session as any).cookie.sameSite = 'lax';
       (req.session as any).cookie.secure = false; // Permitir HTTP para desenvolvimento
+      (req.session as any).cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 dias
+      (req.session as any).cookie.path = '/';
       
       // Remover configuração de domínio que pode estar causando problemas
       delete (req.session as any).cookie.domain;
       
       // "Tocar" na sessão para garantir que as alterações sejam aplicadas
       req.session.touch();
+      
+      // Debug
+      console.log(`[Cookie Middleware] Ajustando sessão: maxAge=${(req.session as any).cookie.maxAge}, sameSite=${(req.session as any).cookie.sameSite}`);
     }
   }
   

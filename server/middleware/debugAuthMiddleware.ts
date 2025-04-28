@@ -35,14 +35,17 @@ export const debugAuthMiddleware = (req: Request, res: Response, next: NextFunct
     }
     
     console.log(`[DebugAuth] Verificação de autenticação: ${req.path}`);
-    console.log(`[DebugAuth] isAuthenticated: ${req.isAuthenticated()}`);
+    // Verificar se a função isAuthenticated existe antes de chamá-la
+    const isAuthed = typeof req.isAuthenticated === 'function' ? req.isAuthenticated() : 'Função ainda não disponível';
+    console.log(`[DebugAuth] isAuthenticated: ${isAuthed}`);
     console.log(`[DebugAuth] SessionID: ${req.sessionID}`);
     console.log(`[DebugAuth] Cookies: ${cookieInfo}`);
     console.log(`[DebugAuth] Session Info:`, sessionInfo);
     console.log(`[DebugAuth] User:`, req.user || 'Não autenticado');
 
     // Se o usuário está autenticado, mas a informação não está chegando corretamente
-    if (req.sessionID && !req.isAuthenticated()) {
+    // Verificar se a função isAuthenticated existe antes de usá-la na comparação
+    if (req.sessionID && typeof req.isAuthenticated === 'function' && !req.isAuthenticated()) {
       console.warn(`[DebugAuth] ALERTA: sessionID existe (${req.sessionID}) mas isAuthenticated() = false!`);
       // Verificar se há info de passport na sessão
       console.warn(`[DebugAuth] Passport na sessão:`, (req.session as any)?.passport || 'ausente');
@@ -59,7 +62,8 @@ export const debugAuthMiddleware = (req: Request, res: Response, next: NextFunct
  */
 export const recoverSessionMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   // Se temos ID de sessão mas não estamos autenticados, tenta recuperar
-  if (req.sessionID && !req.isAuthenticated() && req.session) {
+  // Verificar se a função isAuthenticated existe antes de usá-la
+  if (req.sessionID && typeof req.isAuthenticated === 'function' && !req.isAuthenticated() && req.session) {
     try {
       // Verificar se há ID de usuário na sessão (passport)
       const passportData = (req.session as any)?.passport;
@@ -75,6 +79,13 @@ export const recoverSessionMiddleware = async (req: Request, res: Response, next
         if (result.rowCount > 0) {
           const user = result.rows[0];
           console.log(`[RecoverSession] Usuário recuperado do banco: ${user.email} (${user.id})`);
+          
+          // Verificar se req.login está disponível (adicionado pelo Passport.js)
+          if (typeof req.login !== 'function') {
+            console.error('[RecoverSession] req.login não está disponível, impossível realizar login manual');
+            next();
+            return;
+          }
           
           // "Simular" login manual para o usuário
           req.login(user, (err) => {
