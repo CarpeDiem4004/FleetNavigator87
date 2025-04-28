@@ -70,8 +70,8 @@ const NavItem: React.FC<{
       }}
       className={`flex items-center px-4 py-2 rounded-md group transition-all duration-200 ${
         isActive
-          ? 'text-white bg-primary-900 shadow-md shadow-primary-900/20 border-l-2 border-white font-medium' 
-          : 'text-primary-100 hover:bg-primary-700 hover:shadow-sm'
+          ? 'text-white bg-primary-600 shadow-md shadow-primary/30 border-l-2 border-white font-medium' 
+          : 'text-slate-100 hover:bg-primary/20 hover:text-white hover:shadow-sm'
       } ${item.className || ''}`}
     >
       <Icon className="flex-shrink-0 mr-3 h-5 w-5" />
@@ -136,8 +136,8 @@ const NavItemWithSubmenu: React.FC<{
                 }}
                 className={`flex items-center px-4 py-2 rounded-md group transition-all duration-200 cursor-pointer ${
                   isSubActive
-                    ? 'text-white bg-primary-900 shadow-md shadow-primary-900/20 border-l-2 border-white font-medium' 
-                    : 'text-primary-100 hover:bg-primary-700 hover:shadow-sm'
+                    ? 'text-white bg-primary-600 shadow-md shadow-primary/30 border-l-2 border-white font-medium' 
+                    : 'text-slate-100 hover:bg-primary/20 hover:text-white hover:shadow-sm'
                 } ${subItem.className || ''}`}
               >
                 <SubIcon className="w-5" size={16} />
@@ -156,8 +156,8 @@ const NavItemWithSubmenu: React.FC<{
         onClick={toggleExpanded}
         className={`w-full flex items-center justify-between px-4 py-2 rounded-md group transition-all duration-200 ${
           isActive || isSubItemActive
-            ? 'text-white shadow-sm shadow-primary-900/10 font-medium' 
-            : 'text-primary-100 hover:bg-primary-700 hover:shadow-sm'
+            ? 'text-white shadow-sm shadow-primary/20 font-medium' 
+            : 'text-slate-100 hover:bg-primary/20 hover:text-white hover:shadow-sm'
         } ${item.className || ''}`}
       >
         <div className="flex items-center">
@@ -213,12 +213,12 @@ const SidebarSimplificado: React.FC<SidebarProps> = ({ open, setOpen }) => {
         open ? 'block' : 'hidden'
       } md:flex md:flex-shrink-0 transition-all duration-300 fixed md:relative inset-0 z-40 md:z-auto`}
     >
-      <div className="flex flex-col w-64 bg-gradient-to-br from-primary-900 to-primary-800 text-white shadow-xl shadow-primary-900/25 border-r border-primary-900/20">
+      <div className="flex flex-col w-64 bg-gradient-to-br from-gray-900 to-gray-800 text-white shadow-xl shadow-primary/20 border-r border-primary/10">
         {/* Logo */}
-        <div className="flex items-center justify-center h-16 border-b border-primary-900">
-          <h1 className="text-xl font-bold tracking-tight">
-            <Truck className="inline-block mr-2" size={20} />
-            FleetManager
+        <div className="flex items-center justify-center h-16 border-b border-gray-700">
+          <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-primary-400 to-primary text-transparent bg-clip-text">
+            <Truck className="inline-block mr-2 text-primary" size={20} />
+            Murici Fleet
           </h1>
         </div>
 
@@ -256,20 +256,20 @@ const SidebarSimplificado: React.FC<SidebarProps> = ({ open, setOpen }) => {
         </div>
 
         {/* Perfil do usuário */}
-        <div className="border-t border-primary-900 p-4">
+        <div className="border-t border-gray-700 p-4">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="h-9 w-9 rounded-full bg-primary-700 flex items-center justify-center text-sm font-medium">
+              <div className="h-9 w-9 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-medium">
                 {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
               </div>
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-white">{user?.name || user?.email || 'Usuário'}</p>
-              <p className="text-xs text-primary-300">{user?.email || ''}</p>
+              <p className="text-xs text-gray-400">{user?.email || ''}</p>
             </div>
             <button
               onClick={logout}
-              className="ml-auto text-primary-300 hover:text-white"
+              className="ml-auto text-gray-400 hover:text-primary transition-colors"
               aria-label="Sign out"
             >
               <LogOut size={18} />
