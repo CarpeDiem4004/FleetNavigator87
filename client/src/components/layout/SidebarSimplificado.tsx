@@ -218,7 +218,7 @@ const SidebarSimplificado: React.FC<SidebarProps> = ({ open, setOpen }) => {
         <div className="flex items-center justify-center h-16 border-b border-gray-700">
           <div className="flex items-center py-3 px-2">
             <img 
-              src="/assets/murici-logo.png" 
+              src="/assets/murici-logo.png?v=2" 
               alt="Murici Logística" 
               className="h-6" 
             />
