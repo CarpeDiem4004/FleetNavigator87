@@ -174,8 +174,19 @@ router.get('/estoque-resumo', async (req, res) => {
   }
 });
 
-// POST - Adicionar nova peça
+// POST - Adicionar nova peça - Adiciona depuração para debug de problemas de autenticação
 router.post('/estoque-pecas', async (req, res) => {
+  // Verificar autenticação manualmente aqui antes de prosseguir
+  console.log('[EstoqueRoute] Requisição recebida para criação de peça:', {
+    cookies: !!req.headers.cookie,
+    hasSession: !!req.session,
+    isAuth: req.isAuthenticated(),
+    hasSupabaseUser: !!req.supabaseUser,
+    hasAuthHeader: !!req.headers.authorization,
+    contentType: req.headers['content-type'],
+    origem: req.headers.origin || 'não especificado',
+    userData: req.user || req.supabaseUser || null
+  });
   const {
     nome,
     descricao,

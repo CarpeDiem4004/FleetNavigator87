@@ -235,10 +235,51 @@ export default function PartsInventory() {
     }
   };
 
-  // Função para submeter nova peça
+  // Função para submeter nova peça com tratamento robusto de erros
   const onSubmitNewPart = async (data: z.infer<typeof novaPecaSchema>) => {
     try {
-      const response = await apiRequest('POST', '/api/frota/estoque-pecas', data);
+      // Log para depuração
+      console.log('Enviando dados para cadastro de peça:', data);
+      
+      let response;
+      try {
+        // Primeira tentativa com apiRequest
+        response = await apiRequest('POST', '/api/frota/estoque-pecas', data);
+      } catch (apiError) {
+        console.error('Falha na primeira tentativa com apiRequest:', apiError);
+        
+        // Segunda tentativa com fetch direta e recuperação de tokens
+        // Obter token Supabase se disponível
+        let authToken = localStorage.getItem('authToken');
+        let supabaseToken = null;
+        
+        try {
+          const { supabase } = await import('@/lib/supabase');
+          const session = await supabase.auth.getSession();
+          if (session?.data?.session?.access_token) {
+            supabaseToken = session.data.session.access_token;
+          }
+        } catch (tokenError) {
+          console.error('Erro ao obter token Supabase:', tokenError);
+        }
+        
+        const tokenToUse = authToken || supabaseToken;
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json'
+        };
+        
+        if (tokenToUse) {
+          headers['Authorization'] = `Bearer ${tokenToUse}`;
+        }
+        
+        response = await fetch('/api/frota/estoque-pecas', {
+          method: 'POST',
+          headers,
+          credentials: 'include',
+          body: JSON.stringify(data)
+        });
+      }
+      
       const result = await response.json();
       
       if (response.ok) {
