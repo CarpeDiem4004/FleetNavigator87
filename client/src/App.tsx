@@ -95,6 +95,7 @@ import ABCV2Public from "@/pages/postos/public/ABCV2Public";
 import SocorroPublic from "@/pages/postos/public/SocorroPublic";
 import SorocabaPublic from "@/pages/postos/public/SorocabaPublic";
 import RegisterPostoUser from "@/pages/postos/RegisterPostoUser";
+import RedirectToPosto from "@/pages/RedirectToPosto";
 
 function App() {
   return (
@@ -212,6 +213,11 @@ function App() {
           {/* Rota para acesso de motoristas do Line Hall */}
           <Route path="/line-hall-driver">
             <LineHallDriverPage />
+          </Route>
+          
+          {/* Rota para redirecionamento rápido para postos - sem autenticação */}
+          <Route path="/redirect-posto/:posto">
+            <RedirectToPosto />
           </Route>
           
           {/* Rota pública para cadastro de oficinas */}

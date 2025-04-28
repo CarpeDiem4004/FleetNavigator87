@@ -259,6 +259,88 @@ app.use((req, res, next) => {
     console.log('Verificação de CORS:', corsInfo);
     res.json(corsInfo);
   });
+  
+  // Rota de diagnóstico para postos
+  app.get('/api/postos/diagnostico', (req, res) => {
+    const isAuth = req.isAuthenticated();
+    const sessionInfo = req.session 
+      ? {
+          id: req.sessionID,
+          cookie: req.session.cookie ? {
+            domain: req.session.cookie.domain,
+            path: req.session.cookie.path,
+            secure: req.session.cookie.secure,
+            expires: req.session.cookie.expires,
+            maxAge: req.session.cookie.maxAge
+          } : undefined
+        }
+      : undefined;
+      
+    return res.json({
+      success: true,
+      currentRoute: '/api/postos/diagnostico',
+      isAuthenticated: isAuth,
+      user: isAuth ? { 
+        id: req.user.id, 
+        email: req.user.email,
+        role: req.user.role
+      } : null,
+      host: req.hostname,
+      path: req.path,
+      method: req.method,
+      session: sessionInfo,
+      headers: {
+        cookie: req.headers.cookie,
+        origin: req.headers.origin,
+        referer: req.headers.referer,
+        'user-agent': req.headers['user-agent']
+      },
+      isDomainGestaoonfleet: req.hostname.includes('gestaoonfleet.com.br'),
+      sugestedAction: !isAuth ? 'Necessário fazer login em gestaoonfleet.com.br/login antes de acessar' : 'Usuário está autenticado'
+    });
+  });
+  
+  // Rota especial pública para o domínio personalizado - sem autenticação
+  app.get('/postos-info', (req, res) => {
+    if (req.hostname.includes('gestaoonfleet.com.br')) {
+      console.log(`[Postos] Acesso à página de postos pelo domínio: ${req.hostname}`);
+      
+      // Redireciona para a SPA que irá lidar com a rota /postos no frontend
+      res.redirect('/');
+    } else {
+      // Se não for o domínio personalizado, retorna erro
+      res.status(403).json({ 
+        success: false, 
+        message: "Esta rota só pode ser acessada através do domínio gestaoonfleet.com.br"
+      });
+    }
+  });
+  
+  // Rota pública específica para cada posto (sem autenticação)
+  // Esta rota ajuda a resolver o problema de acesso pelo domínio personalizado
+  app.get('/api/postos/acesso-aberto/:posto', async (req, res) => {
+    try {
+      const nomePosto = req.params.posto;
+      console.log(`[Postos] Acesso aberto ao posto: ${nomePosto} - host: ${req.hostname}`);
+      
+      // Responde com um redirecionamento para a página de postos
+      res.json({
+        success: true,
+        message: `Acesso ao posto ${nomePosto}`,
+        redirectUrl: `/posto/${nomePosto}`,
+        host: req.hostname,
+        isDomainGestaoonfleet: req.hostname.includes('gestaoonfleet.com.br'),
+        isAuthenticated: req.isAuthenticated()
+      });
+    } catch (error) {
+      console.error(`[Postos] Erro no acesso aberto ao posto ${req.params.posto}:`, error);
+      res.status(500).json({
+        success: false,
+        message: `Erro ao acessar posto ${req.params.posto}`,
+        error: String(error)
+      });
+    }
+  });
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
