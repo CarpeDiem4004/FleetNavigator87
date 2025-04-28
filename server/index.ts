@@ -212,6 +212,33 @@ app.use((req, res, next) => {
     req.params = { posto: 'sorocaba_v2' };
     getHistoricoPosto(req, res);
   });
+  
+  // Rota para diagnosticar problemas de CORS com domínio personalizado
+  app.get('/api/cors-check', (req, res) => {
+    const corsInfo = {
+      success: true,
+      message: 'Verificação de CORS bem-sucedida',
+      requestInfo: {
+        host: req.hostname,
+        origin: req.headers.origin,
+        referer: req.headers.referer,
+        userAgent: req.headers['user-agent'],
+        method: req.method,
+        path: req.path,
+        ip: req.ip
+      },
+      responseHeaders: {
+        'access-control-allow-origin': res.getHeader('Access-Control-Allow-Origin'),
+        'access-control-allow-methods': res.getHeader('Access-Control-Allow-Methods'),
+        'access-control-allow-headers': res.getHeader('Access-Control-Allow-Headers'),
+        'access-control-allow-credentials': res.getHeader('Access-Control-Allow-Credentials')
+      },
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log('Verificação de CORS:', corsInfo);
+    res.json(corsInfo);
+  });
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
