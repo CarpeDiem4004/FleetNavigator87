@@ -89,6 +89,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         { href: '/posto/osasco', label: 'Posto Osasco' },
         { href: '/posto/osasco_v2', label: 'Posto Osasco V2' },
         { href: '/posto/guarulhos', label: 'Posto Alair' },
+        { href: '/posto/guarulhos_v2', label: 'Posto Alair V2' },
         { href: '/posto/saopaulo', label: 'Posto São Paulo' },
         { href: '/posto/campinas', label: 'Posto Campinas' },
         { href: '/posto/campinas_v2', label: 'Posto Campinas V2' },
