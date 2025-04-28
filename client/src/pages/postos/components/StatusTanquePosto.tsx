@@ -56,6 +56,10 @@ interface ConfiguracaoTanques {
   arla_nivel: number;
   diesel_valor_litro?: number;
   arla_valor_litro?: number;
+  diesel_consumo_total?: number;
+  diesel_valor_total?: number;
+  arla_consumo_total?: number;
+  arla_valor_total?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -99,6 +103,13 @@ export const StatusTanquePosto = forwardRef<StatusTanqueRef, StatusTanqueProps>(
   // Estados para armazenar os valores do litro no objeto de status
   const [dieselStatusValorLitro, setDieselStatusValorLitro] = useState<number>(5.00);
   const [arlaStatusValorLitro, setArlaStatusValorLitro] = useState<number>(3.00);
+  
+  // Estados para armazenar os totais de consumo e valor
+  const [dieselConsumoTotal, setDieselConsumoTotal] = useState<number>(0);
+  const [dieselValorTotal, setDieselValorTotal] = useState<number>(0);
+  const [arlaConsumoTotal, setArlaConsumoTotal] = useState<number>(0);
+  const [arlaValorTotal, setArlaValorTotal] = useState<number>(0);
+  
   const [isSalvando, setIsSalvando] = useState(false);
   
   // Expor o método refreshData para componentes pais
