@@ -22,6 +22,8 @@ import hybridUserApi from "../hybrid-user-api.js";
 import { corsMiddleware } from "./middleware/cors";
 // Importar middleware para corrigir cookies de sessão
 import { fixCookieSessionMiddleware } from "./middleware/fixCookieSession";
+// Importar middlewares de diagnóstico e recuperação de autenticação
+import { debugAuthMiddleware, recoverSessionMiddleware } from './middleware/debugAuthMiddleware';
 // Importar rota de diagnóstico para frota
 import frotaDiagnosticoRoute from "./routes/frotaDiagnosticoRoute";
 
@@ -36,6 +38,9 @@ const app = express();
 app.use(corsMiddleware);
 // Aplicar middleware para corrigir cookies de sessão
 app.use(fixCookieSessionMiddleware);
+// Remover a importação duplicada que está no local incorreto
+app.use(debugAuthMiddleware);
+app.use(recoverSessionMiddleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
