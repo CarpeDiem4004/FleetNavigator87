@@ -264,7 +264,8 @@ export function setupAuth(app: Express) {
     });
   });
 
-  app.get("/api/user", (req, res) => {
+  app.get("/api/user", async (req, res) => {
+    // Verificar se o usuário está autenticado
     if (!req.isAuthenticated()) {
       console.log('Tentativa de acesso não autenticado a /api/user', {
         hasSession: !!req.session,
@@ -274,10 +275,52 @@ export function setupAuth(app: Express) {
         referer: req.headers.referer,
         userAgent: req.headers['user-agent']
       });
+      
+      // Verificar tentativa de recuperação de sessão
+      if (req.session && (req.session as any)?.passport?.user) {
+        const userId = (req.session as any).passport.user;
+        console.log(`[API/USER] Tentando recuperação automática de sessão para userId: ${userId}`);
+        
+        try {
+          // Tentar obter o usuário do banco
+          const user = await storage.getUser(userId);
+          
+          if (user) {
+            console.log(`[API/USER] Recuperado usuário ${user.id} (${user.email}) do banco, tentando login manual`);
+            
+            // Login manual do usuário
+            return req.login(user, (loginErr) => {
+              if (loginErr) {
+                console.error('[API/USER] Falha na recuperação da sessão:', loginErr);
+                return res.status(401).json({ 
+                  message: "Não autenticado",
+                  recoveryAttempted: true,
+                  recoverySuccess: false,
+                  error: "Erro ao restaurar sessão"
+                });
+              }
+              
+              // Sucesso na recuperação
+              console.log('[API/USER] Sessão recuperada com sucesso!');
+              const userWithoutPassword = { ...user, password: undefined };
+              return res.json({
+                ...userWithoutPassword,
+                _sessionRecovered: true
+              });
+            });
+          }
+        } catch (error) {
+          console.error('[API/USER] Erro ao recuperar usuário para recuperação de sessão:', error);
+        }
+      }
+      
+      // Se não conseguiu recuperar, retornar erro de autenticação
       return res.status(401).json({ message: "Não autenticado" });
     }
     
+    // Usuário está autenticado normalmente
     console.log(`Informações do usuário solicitadas: ${req.user.id} (${req.user.email})`);
+    
     // Não enviar a senha para o cliente
     const userWithoutPassword = { ...req.user, password: undefined };
     res.json(userWithoutPassword);
