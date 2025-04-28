@@ -29,6 +29,32 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Configurar CORS para permitir acesso do domínio personalizado
+app.use((req, res, next) => {
+  const allowedOrigins = [
+    'http://localhost:5000', 
+    'http://localhost:3000',
+    'https://murici-on-fleet-joaopaulo60.replit.app',
+    'https://gestaoonfleet.com.br',
+    'https://www.gestaoonfleet.com.br'
+  ];
+  
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  
+  next();
+});
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
