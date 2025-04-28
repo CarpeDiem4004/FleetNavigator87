@@ -432,6 +432,10 @@ async function criarTabelaConfiguracaoTanques() {
         arla_nivel NUMERIC NOT NULL DEFAULT 750,
         diesel_valor_litro DECIMAL(10, 2) DEFAULT 5.00,
         arla_valor_litro DECIMAL(10, 2) DEFAULT 3.00,
+        diesel_consumo_total NUMERIC(12, 2) DEFAULT 0,
+        diesel_valor_total NUMERIC(12, 2) DEFAULT 0,
+        arla_consumo_total NUMERIC(12, 2) DEFAULT 0,
+        arla_valor_total NUMERIC(12, 2) DEFAULT 0,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );

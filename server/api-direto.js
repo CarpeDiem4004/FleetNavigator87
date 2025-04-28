@@ -777,24 +777,69 @@ export async function registrarAbastecimentoPosto(req, res) {
       console.log(`Atualizando nível do tanque para ${postoName} após abastecimento de ${litros} litros`);
       
       if (tipo_combustivel.toLowerCase() === 'arla') {
-        // Se for ARLA, diminui o nível do tanque de ARLA
+        // Se for ARLA, diminui o nível do tanque de ARLA e incrementa consumo total
         await pool.query(`
           UPDATE configuracao_tanques 
-          SET arla_nivel = GREATEST(0, arla_nivel - $1), 
+          SET arla_nivel = GREATEST(0, arla_nivel - $1),
+              arla_consumo_total = COALESCE(arla_consumo_total, 0) + $1,
+              arla_valor_total = COALESCE(arla_valor_total, 0) + $2,
               updated_at = NOW()
-          WHERE posto = $2
-        `, [parseFloat(litros), postoName]);
+          WHERE posto = $3
+        `, [parseFloat(litros), calculatedValorTotal, postoName]);
+        
+        console.log(`Tanque de ARLA atualizado: -${litros} litros, +${calculatedValorTotal} valor total`);
       } else {
-        // Se for Diesel ou outro combustível, diminui o nível do tanque de diesel
+        // Se for Diesel ou outro combustível, diminui o nível do tanque de diesel e incrementa consumo total
         await pool.query(`
           UPDATE configuracao_tanques 
-          SET diesel_nivel = GREATEST(0, diesel_nivel - $1), 
+          SET diesel_nivel = GREATEST(0, diesel_nivel - $1),
+              diesel_consumo_total = COALESCE(diesel_consumo_total, 0) + $1,
+              diesel_valor_total = COALESCE(diesel_valor_total, 0) + $2,
               updated_at = NOW()
-          WHERE posto = $2
-        `, [parseFloat(litros), postoName]);
+          WHERE posto = $3
+        `, [parseFloat(litros), calculatedValorTotal, postoName]);
+        
+        console.log(`Tanque de Diesel atualizado: -${litros} litros, +${calculatedValorTotal} valor total`);
+      }
+      
+      // Verificar se os campos de consumo e valor total existem, caso contrário, adicionar
+      const checkColumnsQuery = `
+        SELECT 
+          column_name 
+        FROM 
+          information_schema.columns 
+        WHERE 
+          table_name = 'configuracao_tanques' AND 
+          (column_name = 'diesel_consumo_total' OR 
+           column_name = 'diesel_valor_total' OR 
+           column_name = 'arla_consumo_total' OR 
+           column_name = 'arla_valor_total')
+      `;
+      
+      const columnResult = await pool.query(checkColumnsQuery);
+      const existingColumns = columnResult.rows.map(row => row.column_name);
+      
+      if (!existingColumns.includes('diesel_consumo_total') || 
+          !existingColumns.includes('diesel_valor_total') || 
+          !existingColumns.includes('arla_consumo_total') || 
+          !existingColumns.includes('arla_valor_total')) {
+        
+        console.log('Adicionando colunas de consumo total e valor total à tabela configuracao_tanques');
+        
+        // Criar as colunas que não existem
+        const alterTableQuery = `
+          ALTER TABLE configuracao_tanques
+          ${!existingColumns.includes('diesel_consumo_total') ? 'ADD COLUMN IF NOT EXISTS diesel_consumo_total NUMERIC(12, 2) DEFAULT 0,' : ''}
+          ${!existingColumns.includes('diesel_valor_total') ? 'ADD COLUMN IF NOT EXISTS diesel_valor_total NUMERIC(12, 2) DEFAULT 0,' : ''}
+          ${!existingColumns.includes('arla_consumo_total') ? 'ADD COLUMN IF NOT EXISTS arla_consumo_total NUMERIC(12, 2) DEFAULT 0,' : ''}
+          ${!existingColumns.includes('arla_valor_total') ? 'ADD COLUMN IF NOT EXISTS arla_valor_total NUMERIC(12, 2) DEFAULT 0' : ''}
+        `.replace(/,\s*$/, ''); // Remove a última vírgula se houver
+        
+        await pool.query(alterTableQuery);
       }
     } catch (tankUpdateError) {
       console.error(`Erro ao atualizar nível do tanque: ${tankUpdateError.message}`);
+      console.error(tankUpdateError.stack);
       // Não impede o fluxo principal se houver erro no update do tanque
     }
     
