@@ -27,7 +27,9 @@ import {
   ChevronRight,
   Droplets,
   Hammer, // Ícone para Oficina Murici
-  Building // Ícone alternativo para Oficina
+  Building, // Ícone alternativo para Oficina
+  Link2, // Ícone para acesso direto
+  Settings // Ícone para configurações
 } from 'lucide-react';
 
 // Define a interface para os itens do menu

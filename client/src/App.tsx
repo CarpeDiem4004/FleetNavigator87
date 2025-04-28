@@ -96,6 +96,7 @@ import SocorroPublic from "@/pages/postos/public/SocorroPublic";
 import SorocabaPublic from "@/pages/postos/public/SorocabaPublic";
 import RegisterPostoUser from "@/pages/postos/RegisterPostoUser";
 import RedirectToPosto from "@/pages/RedirectToPosto";
+import PostoAcessoDireto from "@/pages/PostoAcessoDireto";
 
 function App() {
   return (
@@ -218,6 +219,11 @@ function App() {
           {/* Rota para redirecionamento rápido para postos - sem autenticação */}
           <Route path="/redirect-posto/:posto">
             <RedirectToPosto />
+          </Route>
+          
+          {/* Rota de acesso direto a todos os postos */}
+          <Route path="/acesso-posto">
+            <PostoAcessoDireto />
           </Route>
           
           {/* Rota pública para cadastro de oficinas */}
