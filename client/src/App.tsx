@@ -38,7 +38,9 @@ import PostoCampinasV2 from "@/pages/postos/CampinasV2";
 import PostoABC from "@/pages/postos/ABC";
 import PostoABCV2 from "@/pages/postos/ABCV2";
 import PostoSocorro from "@/pages/postos/Socorro";
+import PostoSocorroV2 from "@/pages/postos/SocorroV2";
 import PostoSorocaba from "@/pages/postos/Sorocaba";
+import PostoSorocabaV2 from "@/pages/postos/SorocabaV2";
 import HistoricoGeralPage from "@/pages/postos/HistoricoGeralPage";
 import HistoricoPatioPage from "@/pages/postos/HistoricoPatioPage";
 import PostosVisaoGeralPage from "@/pages/postos/PostosVisaoGeralPage";
@@ -93,7 +95,9 @@ import CampinasV2Public from "@/pages/postos/public/CampinasV2Public";
 import ABCPublic from "@/pages/postos/public/ABCPublic";
 import ABCV2Public from "@/pages/postos/public/ABCV2Public";
 import SocorroPublic from "@/pages/postos/public/SocorroPublic";
+import SocorroV2Public from "@/pages/postos/public/SocorroV2Public";
 import SorocabaPublic from "@/pages/postos/public/SorocabaPublic";
+import SorocabaV2Public from "@/pages/postos/public/SorocabaV2Public";
 import RegisterPostoUser from "@/pages/postos/RegisterPostoUser";
 import RedirectToPosto from "@/pages/RedirectToPosto";
 import PostoAcessoDireto from "@/pages/PostoAcessoDireto";
@@ -167,7 +171,9 @@ function App() {
           <ProtectedRoute path="/posto/abc" component={PostoABC} />
           <ProtectedRoute path="/posto/abc_v2" component={PostoABCV2} />
           <ProtectedRoute path="/posto/socorro" component={PostoSocorro} />
+          <ProtectedRoute path="/posto/socorro_v2" component={PostoSocorroV2} />
           <ProtectedRoute path="/posto/sorocaba" component={PostoSorocaba} />
+          <ProtectedRoute path="/posto/sorocaba_v2" component={PostoSorocabaV2} />
           <ProtectedRoute path="/postos/historico-geral" component={HistoricoGeralPage} />
           <ProtectedRoute path="/postos/historico-patio" component={HistoricoPatioPage} />
           <ProtectedRoute path="/postos/visao-geral" component={PostosVisaoGeralPage} />
@@ -276,8 +282,14 @@ function App() {
           <Route path="/posto/socorro/public">
             <SocorroPublic />
           </Route>
+          <Route path="/posto/socorro_v2/public">
+            <SocorroV2Public />
+          </Route>
           <Route path="/posto/sorocaba/public">
             <SorocabaPublic />
+          </Route>
+          <Route path="/posto/sorocaba_v2/public">
+            <SorocabaV2Public />
           </Route>
           
           {/* Rotas públicas para o Posto Remédios */}
