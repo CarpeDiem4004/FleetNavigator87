@@ -211,11 +211,21 @@ const UsersNew: React.FC = () => {
   const [isViewUserDialogOpen, setIsViewUserDialogOpen] = useState(false);
   const [isDeleteUserDialogOpen, setIsDeleteUserDialogOpen] = useState(false);
   
-  // Buscar bases disponíveis usando React Query
-  const { data: bases, isLoading: basesLoading } = useQuery<Base[]>({
-    queryKey: ['/api/bases'],
+  // Interface para a resposta da API híbrida de bases
+  interface HybridBasesApiResponse {
+    success: boolean;
+    count: number;
+    bases: Base[];
+  }
+
+  // Buscar bases disponíveis usando React Query com a API híbrida
+  const { data: basesRaw, isLoading: basesLoading } = useQuery<HybridBasesApiResponse>({
+    queryKey: ['/api/hybrid/bases'],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
+  
+  // Extrair as bases da resposta
+  const bases = basesRaw?.bases || [];
 
   // Filtrar usuários com base no termo de busca
   const filteredUsers = Array.isArray(users) ? users.filter(
@@ -250,7 +260,7 @@ const UsersNew: React.FC = () => {
   useEffect(() => {
     if (isAddDialogOpen) {
       // Forçar uma atualização da lista de bases quando o modal é aberto
-      queryClient.invalidateQueries({ queryKey: ['/api/bases'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hybrid/bases'] });
       
       // Gerar senha aleatória para novo usuário
       const newPassword = generateRandomPassword(10);
@@ -276,8 +286,8 @@ const UsersNew: React.FC = () => {
     if (!selectedUserId) return;
     
     try {
-      // Chamar API para excluir o usuário usando apiRequest
-      await apiRequest('DELETE', `/api/users/${selectedUserId}`);
+      // Chamar API híbrida para excluir o usuário
+      await apiRequest('DELETE', `/api/hybrid/users/${selectedUserId}`);
       
       // Fechar o diálogo
       setIsDeleteUserDialogOpen(false);
@@ -302,8 +312,8 @@ const UsersNew: React.FC = () => {
   // Função para alternar o status do usuário (ativo/inativo)
   const handleToggleUserStatus = async (userId: number, currentStatus: boolean) => {
     try {
-      // Chamar API para atualizar o status do usuário
-      await apiRequest('PATCH', `/api/users/${userId}/status`, { 
+      // Chamar API híbrida para atualizar o status do usuário
+      await apiRequest('PATCH', `/api/hybrid/users/${userId}/status`, { 
         isActive: !currentStatus 
       });
       
@@ -331,8 +341,8 @@ const UsersNew: React.FC = () => {
     try {
       const newPassword = generateRandomPassword(10);
       
-      // Chamar API para atualizar a senha do usuário usando apiRequest
-      await apiRequest('POST', `/api/users/${selectedUserId}/reset-password`, { 
+      // Chamar API híbrida para atualizar a senha do usuário
+      await apiRequest('POST', `/api/hybrid/users/${selectedUserId}/reset-password`, { 
         password: newPassword 
       });
       
@@ -445,8 +455,8 @@ const UsersNew: React.FC = () => {
       
       console.log('Enviando dados de usuário:', { ...userData, password: password ? '***' : '[gerada automaticamente]' });
       
-      // Usar a nova rota de API para criação de usuários
-      const response = await apiRequest('POST', '/api/users', userData);
+      // Usar a rota híbrida para criação de usuários (para manter a autenticação consistente)
+      const response = await apiRequest('POST', '/api/hybrid/users', userData);
       const data = await response.json();
       
       // Armazenar a senha gerada e mostrar o diálogo
@@ -478,7 +488,7 @@ const UsersNew: React.FC = () => {
       }
       
       // Atualizar lista de bases após adicionar um usuário
-      queryClient.invalidateQueries({ queryKey: ['/api/bases'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hybrid/bases'] });
       
       toast({
         title: "Usuário adicionado",
