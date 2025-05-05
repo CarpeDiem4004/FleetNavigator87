@@ -149,21 +149,24 @@ const UsersNew: React.FC = () => {
     queryFn: getQueryFn({ on401: "returnNull" }), // Adicionado para lidar com erros 401
   });
   
-  // Mapear campos do backend para o formato esperado pelo frontend
-  const users: User[] = usersRaw.map(user => ({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    baseId: user.base_id,
-    baseName: user.basename,
-    lastLogin: user.last_login,
-    isActive: user.is_active !== undefined ? user.is_active : true,
-    // Manter os campos originais também para compatibilidade
-    base_id: user.base_id,
-    basename: user.basename,
-    is_active: user.is_active
-  }));
+  // Verificar e normalizar os dados de usuário
+  let users: User[] = [];
+  try {
+    if (usersRaw && Array.isArray(usersRaw)) {
+      users = usersRaw.map(user => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: (user.role || 'operador') as 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto',
+        baseId: user.base_id || null,
+        baseName: user.basename || null,
+        lastLogin: user.last_login || null,
+        isActive: user.is_active !== undefined ? user.is_active : true
+      }));
+    }
+  } catch (error) {
+    console.error('Erro ao processar dados de usuário:', error);
+  }
   
   // Log para debug
   useEffect(() => {
