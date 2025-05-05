@@ -16,8 +16,9 @@ import {
 } from "./api-direto.js";
 // Importar API para usuários via Supabase
 import userApi from "./api/userApi";
-// Importar API híbrida para usuários (ambiente Replit e externo)
+// Importar APIs híbridas (ambiente Replit e externo)
 import hybridUserApi from "../hybrid-user-api.js";
+import hybridBasesApi from "../hybrid-bases-api.js";
 // Importar middleware de CORS personalizado
 import { corsMiddleware } from "./middleware/cors";
 // Importar middleware para corrigir cookies de sessão
@@ -97,8 +98,9 @@ app.use((req, res, next) => {
   // Registrar o roteador de API de usuários
   app.use(userApi);
   
-  // Registrar o roteador de API híbrida de usuários (funciona dentro e fora do Replit)
+  // Registrar os roteadores de API híbrida (funcionam dentro e fora do Replit)
   app.use(hybridUserApi);
+  app.use(hybridBasesApi);
   
   // Registrar rota de diagnóstico para verificar autenticação no módulo de frota
   app.use('/api/frota', frotaDiagnosticoRoute);
