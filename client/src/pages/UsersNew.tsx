@@ -224,8 +224,14 @@ const UsersNew: React.FC = () => {
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
   
+  // Log para depuração dos dados das bases
+  console.log('Resposta da API de bases:', basesRaw);
+  
   // Extrair as bases da resposta
   const bases = basesRaw?.bases || [];
+  
+  // Log das bases extraídas
+  console.log('Bases extraídas:', bases);
 
   // Filtrar usuários com base no termo de busca
   const filteredUsers = Array.isArray(users) ? users.filter(
