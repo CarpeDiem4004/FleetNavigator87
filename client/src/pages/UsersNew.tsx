@@ -142,9 +142,16 @@ const UsersNew: React.FC = () => {
     isActive: true
   });
   
-  // Buscar usuários da API
-  const { data: usersRaw = [], isLoading: usersLoading, error: usersError } = useQuery<any[]>({
-    queryKey: ['/api/users'],
+  // Interface para a resposta da API híbrida
+  interface HybridApiResponse {
+    success: boolean;
+    count: number;
+    users: any[];
+  }
+
+  // Buscar usuários da API (usando a API híbrida que é mais robusta)
+  const { data: usersRaw = { success: false, count: 0, users: [] }, isLoading: usersLoading, error: usersError } = useQuery<HybridApiResponse>({
+    queryKey: ['/api/hybrid/users'],
     staleTime: 10000, // Considerar stale após 10 segundos para permitir atualizações frequentes
     queryFn: getQueryFn({ on401: "returnNull" }), // Adicionado para lidar com erros 401
   });
@@ -152,18 +159,28 @@ const UsersNew: React.FC = () => {
   // Verificar e normalizar os dados de usuário
   let users: User[] = [];
   try {
-    if (usersRaw && Array.isArray(usersRaw)) {
-      users = usersRaw.map(user => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: (user.role || 'operador') as 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto',
-        baseId: user.base_id || null,
-        baseName: user.basename || null,
-        lastLogin: user.last_login || null,
-        isActive: user.is_active !== undefined ? user.is_active : true
-      }));
+    // A API híbrida retorna os dados em um formato diferente
+    // { success: true, count: number, users: User[] }
+    if (usersRaw && typeof usersRaw === 'object') {
+      // Verificar se é o formato da API híbrida
+      if (usersRaw.success && Array.isArray(usersRaw.users)) {
+        // Formato da API híbrida
+        users = usersRaw.users.map((user: any) => ({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: (user.role || 'operador') as 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto',
+          baseId: user.baseId || user.base_id || null,
+          baseName: user.baseName || user.basename || null,
+          lastLogin: user.lastLogin || user.last_login || null,
+          isActive: user.isActive !== undefined ? user.isActive : 
+                   user.is_active !== undefined ? user.is_active : true
+        }));
+      }
     }
+    
+    // Log do formato dos dados para debug
+    console.log('Formato dos dados recebidos:', usersRaw);
   } catch (error) {
     console.error('Erro ao processar dados de usuário:', error);
   }
@@ -338,7 +355,7 @@ const UsersNew: React.FC = () => {
   // Atualizar lista de usuários após adicionar um novo ou resetar senha
   const handleUserDataChanged = () => {
     // Invalidar a query para forçar uma nova requisição e atualizar os dados
-    queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/hybrid/users'] });
   };
 
   // Estados para controlar o diálogo de senha gerada
