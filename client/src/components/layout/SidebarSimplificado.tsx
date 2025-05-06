@@ -199,7 +199,7 @@ const SidebarSimplificado: React.FC<SidebarProps> = ({ open, setOpen }) => {
     
     // Nova seção para Postos
     {
-      name: 'Postos de Abastecimento', 
+      name: 'Postos Murici', 
       href: '#', 
       icon: Fuel,
       subItems: [
@@ -217,7 +217,7 @@ const SidebarSimplificado: React.FC<SidebarProps> = ({ open, setOpen }) => {
     
     // Adicionando acesso rápido na lista principal também para maior visibilidade
     { 
-      name: 'Acesso Direto a Postos', 
+      name: 'Acesso Direto ao Posto Murici', 
       href: '/acesso-posto', 
       icon: Link2, 
       className: 'bg-green-800/20 text-green-400 hover:bg-green-800/30 hover:text-green-300 mt-4 font-medium' 

@@ -400,12 +400,12 @@ const RefuelingNew: React.FC = () => {
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle>Histórico de Abastecimentos</CardTitle>
+              <CardTitle>Histórico do Posto Murici</CardTitle>
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                 <Input
                   type="search"
-                  placeholder="Buscar abastecimentos..."
+                  placeholder="Buscar registros..."
                   className="pl-8 w-[250px]"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -415,7 +415,7 @@ const RefuelingNew: React.FC = () => {
           </CardHeader>
           <CardContent>
             <Table>
-              <TableCaption>Histórico de abastecimentos da frota</TableCaption>
+              <TableCaption>Histórico do Posto Murici - Abastecimentos da frota</TableCaption>
               <TableHeader>
                 <TableRow>
                   <TableHead>Data</TableHead>
