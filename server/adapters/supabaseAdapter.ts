@@ -18,19 +18,23 @@ interface SupabaseAdapter {
 }
 
 // Variável para armazenar a instância do adaptador
+// Inicializamos como null, mas a função getSupabaseAdapter garante que sempre retornará uma instância válida
 let supabaseAdapterInstance: SupabaseAdapter | null = null;
 
 /**
  * Cria e retorna um cliente Supabase
  */
 function createSupabaseClient() {
+  // Usando SUPABASE_URL e SUPABASE_ANON_KEY do ambiente
   const supabaseUrl = process.env.SUPABASE_URL || '';
-  const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY || '';
+  const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
 
   if (!supabaseUrl || !supabaseKey) {
     console.error('Credenciais do Supabase não configuradas corretamente.');
     throw new Error('Credenciais do Supabase não configuradas corretamente.');
   }
+  
+  console.log('[SupabaseAdapter] Inicializando adaptador com URL:', supabaseUrl);
 
   return createClient(supabaseUrl, supabaseKey);
 }

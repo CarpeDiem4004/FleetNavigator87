@@ -15,8 +15,7 @@ import {
   registrarAbastecimentoPosto
 } from "./api-direto.js";
 // Importar API para usuários via Supabase
-// Comentado temporariamente devido a erro "getSupabaseAdapter is not defined"
-// import userApi from "./api/userApi";
+import userApi from "./api/userApi";
 // Importar rotas para gerenciamento de usuários com sessão
 import usuariosRoutes from "./routes/usuariosRoutes";
 // Importar APIs híbridas (ambiente Replit e externo)
@@ -106,8 +105,8 @@ app.use((req, res, next) => {
   app.use(debugAuthMiddleware);
   app.use(recoverSessionMiddleware);
   
-  // Registrar o roteador de API de usuários - temporariamente desativado
-  // app.use(userApi);
+  // Registrar o roteador de API de usuários
+  app.use(userApi);
   
   // Registrar rotas para gerenciamento de usuários com sessão
   app.use('/api', usuariosRoutes);
