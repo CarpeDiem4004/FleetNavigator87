@@ -12,7 +12,8 @@ import {
   getConsumoPorVeiculoPosto,
   getComparativoCombustiveisPosto,
   checkTabelaPosto,
-  registrarAbastecimentoPosto
+  registrarAbastecimentoPosto,
+  getRecebimentosPosto
 } from "./api-direto.js";
 // Importar API para checklists de motoristas
 import {
@@ -150,6 +151,7 @@ app.use((req, res, next) => {
   app.get('/api/consumo-por-veiculo-direto/:posto', getConsumoPorVeiculoPosto);
   app.get('/api/comparativo-combustiveis-direto/:posto', getComparativoCombustiveisPosto);
   app.get('/api/check-tabela-direto/:posto', checkTabelaPosto);
+  app.get('/api/recebimentos-direto/:posto', getRecebimentosPosto);
   app.post('/api/abastecimento-direto/:posto', registrarAbastecimentoPosto);
   
   // Rota para recuperar todas as movimentações de pátio - evita interceptação do Vite
