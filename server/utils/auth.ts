@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { pool } from '../db';
+import jwt from 'jsonwebtoken';
 
 // Classe de erro personalizada para autenticação
 export class AuthError extends Error {
@@ -9,31 +10,77 @@ export class AuthError extends Error {
   }
 }
 
-// Função para validar token JWT do Supabase
+// Constantes para JWT
+const JWT_SECRET = process.env.JWT_SECRET || 'murici-fleet-jwt-secret-2025';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+
+// Função para gerar token JWT manualmente
+export function generateJwtToken(user: any): string {
+  const payload = {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    baseId: user.base_id,
+    basename: user.basename,
+    oficinaId: user.oficina_id,
+    isActive: user.is_active
+  };
+  
+  return jwt.sign(payload, JWT_SECRET as jwt.Secret, { expiresIn: JWT_EXPIRES_IN });
+}
+
+// Função para validar token JWT customizado (não Supabase)
+export function validateJwtToken(token: string): any {
+  try {
+    return jwt.verify(token, JWT_SECRET as jwt.Secret);
+  } catch (error) {
+    console.error('[validateJwtToken] Erro ao validar token JWT:', error);
+    throw new AuthError("Token JWT inválido ou expirado");
+  }
+}
+
+// Função para validar token - agora suporta tanto tokens Supabase quanto tokens JWT customizados
 export async function validateSupabaseToken(token: string) {
-  // Verificar configurações do Supabase
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
-  
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Configuração do Supabase não disponível');
+  try {
+    // Primeiro tenta validar como token JWT customizado
+    try {
+      const decodedToken = validateJwtToken(token);
+      console.log('[validateSupabaseToken] Token JWT customizado válido:', decodedToken.email);
+      return decodedToken;
+    } catch (jwtError) {
+      // Se falhar, tenta como token Supabase
+      console.log('[validateSupabaseToken] Não é um token JWT customizado, tentando como token Supabase...');
+    }
+    
+    // Verificar configurações do Supabase
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Configuração do Supabase não disponível');
+    }
+    
+    // Criar cliente Supabase
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Verificar token
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      console.error('[validateSupabaseToken] Erro ao validar token Supabase:', error);
+      throw new AuthError("Token Supabase inválido");
+    }
+    
+    // Vincular o usuário do Supabase ao usuário do PostgreSQL, se ainda não estiver vinculado
+    await linkSupabaseUserToPostgres(supabase, user, token);
+    
+    console.log('[validateSupabaseToken] Token Supabase válido:', user.email);
+    return user;
+  } catch (error) {
+    console.error('[validateSupabaseToken] Erro no processo de validação de token:', error);
+    throw new AuthError(error instanceof Error ? error.message : "Erro de autenticação");
   }
-  
-  // Criar cliente Supabase
-  const supabase = createClient(supabaseUrl, supabaseKey);
-  
-  // Verificar token
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  
-  if (error || !user) {
-    console.error('[validateSupabaseToken] Erro ao validar token:', error);
-    throw new AuthError();
-  }
-  
-  // Vincular o usuário do Supabase ao usuário do PostgreSQL, se ainda não estiver vinculado
-  await linkSupabaseUserToPostgres(supabase, user, token);
-  
-  return user;
 }
 
 /**
