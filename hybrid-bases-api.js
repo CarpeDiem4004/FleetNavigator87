@@ -32,14 +32,25 @@ const verifyJwtAuth = async (req, res, next) => {
       ip: req.ip,
     });
     
+    // ADICIONADO: Verificar se temos uma sessão Express válida com usuário
+    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+      console.log('[HybridAPI] Usuário já autenticado por sessão:', req.user.email);
+      
+      // Se já temos informações de usuário via sessão, usar elas
+      return next();
+    }
+    
     // Extrair token do cabeçalho de autorização
     const authHeader = req.headers.authorization;
     
     if (!authHeader) {
       console.log('[HybridAPI] Autenticação JWT falhou: Cabeçalho Authorization não fornecido');
+      // MODIFICADO: Enviar cookie de sessão vazio para forçar obter o cookie - pode ajudar em alguns casos
+      res.cookie('connect.sid', '', { path: '/', expires: new Date(0) });
+      
       return res.status(401).json({
         success: false,
-        message: 'Não autenticado - Token não fornecido'
+        message: 'Não autenticado - Token não fornecido. Libere o admin para acesso.'
       });
     }
     
