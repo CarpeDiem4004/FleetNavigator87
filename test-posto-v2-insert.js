@@ -13,8 +13,15 @@ async function testPostoInserts() {
   });
   
   try {
-    // Postos V2 para testar
-    const postosV2 = ['abc_v2', 'socorro_v2', 'sorocaba_v2'];
+    // Postos V2 para testar - verificar se há argumento de linha de comando
+    let postosV2 = ['abc_v2', 'socorro_v2', 'sorocaba_v2'];
+    
+    // Se foi especificado um posto específico como argumento
+    if (process.argv.length > 2) {
+      const postoArg = process.argv[2].toLowerCase();
+      console.log(`Testando apenas o posto específico: ${postoArg}`);
+      postosV2 = [postoArg];
+    }
     
     for (const posto of postosV2) {
       const tableName = `abastecimentos_posto_${posto}`;
