@@ -21,15 +21,14 @@ router.get('/verificar-tabela', async (req, res) => {
       const createTableQuery = `
         CREATE TABLE preco_combustivel (
           id SERIAL PRIMARY KEY,
-          tipo VARCHAR(50) NOT NULL,
+          tipo_combustivel TEXT NOT NULL,
           preco NUMERIC NOT NULL,
           ativo BOOLEAN DEFAULT TRUE,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         
         -- Inserir valores padrão
-        INSERT INTO preco_combustivel (tipo, preco) VALUES 
+        INSERT INTO preco_combustivel (tipo_combustivel, preco) VALUES 
         ('Diesel', 5.99),
         ('Gasolina', 6.29),
         ('Etanol', 4.89),
@@ -103,8 +102,8 @@ router.get('/:tipo', async (req, res) => {
     // Buscar preço do combustível
     const query = `
       SELECT * FROM preco_combustivel
-      WHERE tipo = $1 AND ativo = TRUE
-      ORDER BY updated_at DESC
+      WHERE tipo_combustivel = $1 AND ativo = TRUE
+      ORDER BY data_atualizacao DESC
       LIMIT 1
     `;
     
@@ -123,7 +122,7 @@ router.get('/:tipo', async (req, res) => {
       }
       
       const insertQuery = `
-        INSERT INTO preco_combustivel (tipo, preco)
+        INSERT INTO preco_combustivel (tipo_combustivel, preco)
         VALUES ($1, $2)
         RETURNING *
       `;
@@ -168,12 +167,12 @@ router.post('/:tipo', async (req, res) => {
     await pool.query(`
       UPDATE preco_combustivel
       SET ativo = FALSE
-      WHERE tipo = $1 AND ativo = TRUE
+      WHERE tipo_combustivel = $1 AND ativo = TRUE
     `, [tipo]);
     
     // Inserir novo preço
     const query = `
-      INSERT INTO preco_combustivel (tipo, preco)
+      INSERT INTO preco_combustivel (tipo_combustivel, preco)
       VALUES ($1, $2)
       RETURNING *
     `;
@@ -236,10 +235,10 @@ router.get('/', async (req, res) => {
     
     // Buscar todos os preços ativos
     const query = `
-      SELECT DISTINCT ON (tipo) *
+      SELECT DISTINCT ON (tipo_combustivel) *
       FROM preco_combustivel
       WHERE ativo = TRUE
-      ORDER BY tipo, updated_at DESC
+      ORDER BY tipo_combustivel, data_atualizacao DESC
     `;
     
     const result = await pool.query(query);
