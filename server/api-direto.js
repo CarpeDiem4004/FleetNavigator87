@@ -110,56 +110,28 @@ export async function getHistoricoPosto(req, res) {
       }
       
       querySource = tableName;
-      
-      // Consulta específica para postos V2
-      if (postoName.toLowerCase().includes('_v2')) {
-        dataQuery = `
-          SELECT 
-            id,
-            placa,
-            km_atual as km,
-            tipo_combustivel,
-            litros as quantidade_litros,
-            motorista as nome_motorista,
-            motorista_rg as rg_motorista,
-            operador as nome_operador,
-            valor_litro,
-            valor_total,
-            tipo_veiculo,
-            observacoes,
-            lavagem,
-            tipo_lavagem,
-            to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora,
-            created_at
-          FROM ${tableName}
-          ORDER BY created_at DESC
-          LIMIT ${req.query.limit || 50}
-        `;
-      } else {
-        // Consulta original para outros postos
-        dataQuery = `
-          SELECT 
-            id,
-            vehicle_plate as placa,
-            odometer as km,
-            type_fuel as tipo_combustivel,
-            quantity_litros as quantidade_litros,
-            driver_name as nome_motorista,
-            '' as rg_motorista,
-            '' as nome_operador,
-            valor_litro,
-            total_cartao as valor_total,
-            '' as tipo_veiculo,
-            obs as observacoes,
-            false as lavagem,
-            '' as tipo_lavagem,
-            to_char(data_abastecimento, 'DD/MM/YYYY HH24:MI') as data_hora,
-            data_abastecimento as created_at
-          FROM ${tableName}
-          ORDER BY created_at DESC
-          LIMIT ${req.query.limit || 50}
-        `;
-      }
+      dataQuery = `
+        SELECT 
+          id,
+          placa,
+          km_atual as km,
+          tipo_combustivel,
+          litros as quantidade_litros,
+          motorista as nome_motorista,
+          motorista_rg as rg_motorista,
+          operador as nome_operador,
+          valor_litro,
+          valor_total,
+          tipo_veiculo,
+          observacoes,
+          lavagem,
+          tipo_lavagem,
+          to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora,
+          created_at
+        FROM ${tableName}
+        ORDER BY created_at DESC
+        LIMIT ${req.query.limit || 50}
+      `;
     } else {
       // Fluxo normal usando view consolidada
       const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_consolidado`;

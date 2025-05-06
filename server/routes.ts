@@ -28,13 +28,12 @@ import { registerTireMoveRoutes } from "./tireMoveApi";
 import { compareSchemas } from "./compareSchemas";
 import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
 // Removida importação redundante, pois está sendo importada via supabaseInsertRoute
-import precosCombustivelRoutes from "./routes/precosCombustivelRoutes";
+import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoutes";
 import { registerPostosMapeamentoRoutes } from "./routes/postosMapeamentoRoutes";
 import { registerUsuariosSupabaseRoutes } from "./routes/usuariosSupabaseRoutes";
 import { supabaseInsertHandler } from "./routes/supabaseInsertRoute";
 import postoSupabaseRoutes from "./routes/postoSupabaseRoutes";
 import frotaEstoqueRoutes from "./routes/frotaEstoqueRoutes";
-import usuariosRoutes from "./routes/usuariosRoutes";
 import { db, pool } from "./db";
 import authHybridRoutes from "./routes/authHybridRoutes";
 import * as userHandler from "./handlers/userHandler";
@@ -828,9 +827,6 @@ async function criarTabelaSolicitacoesFuelCard() {
     console.error("Erro ao criar tabela solicitacoes_fuel_card:", error);
   }
 }
-
-// Importar funções de recebimentos de combustível
-import { getRecebimentosCombustivel, registrarRecebimentoCombustivel } from './recebimentosApi';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Criar tabelas necessárias se não existirem
@@ -5670,13 +5666,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rotas de atividades de pneus
   setupTireActivityRoutes(app);
   
-  // Rotas para recebimentos de combustível
-  app.get("/api/recebimentos/:posto", isAuthenticated, getRecebimentosCombustivel);
-  app.post("/api/recebimentos/:posto", isAuthenticated, registrarRecebimentoCombustivel);
-  
-  // Registrar rotas para preços de combustível
-  app.use("/api/precos-combustivel", precosCombustivelRoutes);
-  
   // Rotas para postos de abastecimento - acessíveis para usuários autenticados
   // Não é necessário middleware adicional pois a verificação de admin já está implementada no hook useBasePermission
   app.get("/api/postos", isAuthenticated, getPostosResumo);
@@ -6084,15 +6073,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rotas de autenticação híbrida
   app.use('/api/auth', authHybridRoutes);
   
-  // Registrar rotas para gerenciamento de usuários
-  app.use('/api', (req, res, next) => {
-    // Log para debug
-    console.log(`[routes.ts] Requisição para ${req.path}, método ${req.method}`);
-    next();
-  }, usuariosRoutes);
-  
   // Registrar rotas para gerenciar preços de combustível
-  app.use("/api/precos-combustivel", precosCombustivelRoutes);
+  registerPrecosCombustivelRoutes(app);
   
   // Registra as rotas para o mapeamento de postos
   registerPostosMapeamentoRoutes(app);
@@ -6218,118 +6200,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Usamos /api/posto-supabase como caminho para evitar conflitos com o Vite
   app.use('/api/posto-supabase', postoSupabaseRoutes);
 
-  // Rota pública para fins de teste da interface (sem autenticação) - Bypass total de autenticação
-  app.get("/api/users/list-public", (req, res, next) => {
-    // Bypass total do middleware de autenticação para fins de diagnóstico
-    console.log('[routes.ts] Endpoint público para listagem de usuários (bypass de autenticação)');
-    next();
-  }, async (req, res) => {
-    try {
-      console.log('[routes.ts] Listando usuários para interface de teste (rota pública)');
-      
-      // Consulta simplificada para listar usuários no formato esperado pela interface
-      const query = `
-        SELECT 
-          id, 
-          name, 
-          email, 
-          role,
-          base_id AS "baseId",
-          (SELECT name FROM bases WHERE id = users.base_id) AS "baseName",
-          is_active AS "isActive",
-          created_at AS "createdAt",
-          updated_at AS "updatedAt"
-        FROM 
-          users
-        LIMIT 50
-      `;
-      
-      const result = await pool.query(query);
-      
-      console.log(`[routes.ts] ${result.rows.length} usuário(s) encontrado(s) para interface de teste`);
-      
-      return res.status(200).json({
-        success: true,
-        count: result.rows.length,
-        users: result.rows
-      });
-    } catch (error: any) {
-      console.error('[routes.ts] Erro ao listar usuários para interface de teste:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Erro ao listar usuários: ' + error.message
-      });
-    }
-  });
-
-  // Rota pública para listar usuários para fins de diagnóstico (sem autenticação)
-  app.get("/api/debug/users-list", async (req, res) => {
-    try {
-      console.log('[routes.ts] Listando usuários para diagnóstico (rota pública)');
-      
-      // Consulta simplificada para listar usuários
-      const query = `
-        SELECT 
-          id, 
-          name, 
-          email, 
-          role,
-          is_active AS "isActive",
-          created_at AS "createdAt"
-        FROM 
-          users
-        LIMIT 50
-      `;
-      
-      const result = await pool.query(query);
-      
-      console.log(`[routes.ts] ${result.rows.length} usuário(s) encontrado(s) para diagnóstico`);
-      
-      return res.status(200).json({
-        success: true,
-        count: result.rows.length,
-        users: result.rows
-      });
-    } catch (error: any) {
-      console.error('[routes.ts] Erro ao listar usuários para diagnóstico:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Erro ao listar usuários: ' + error.message
-      });
-    }
-  });
-
-  // Rota pública para diagnóstico da conexão com o banco (sem autenticação)
-  app.get("/api/debug/users-connection", async (req, res) => {
-    try {
-      console.log('[routes.ts] Testando conexão com o banco de dados (rota pública)');
-      
-      // Teste de conexão básico
-      const testResult = await pool.query('SELECT NOW() as current_time');
-      
-      // Testar consulta simples para contar usuários
-      const countResult = await pool.query('SELECT COUNT(*) as user_count FROM users');
-      
-      return res.status(200).json({
-        success: true,
-        connection: "OK",
-        timestamp: testResult.rows[0].current_time,
-        user_count: parseInt(countResult.rows[0].user_count),
-        database_info: {
-          pool_total_count: pool.totalCount,
-          pool_idle_count: pool.idleCount,
-          pool_waiting_count: pool.waitingCount
-        }
-      });
-    } catch (error: any) {
-      console.error('[routes.ts] Erro no diagnóstico de conexão:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Erro na conexão com o banco: ' + error.message
-      });
-    }
-  });
-
   // Para debugging, adicionar rota para listar todas as tabelas relacionadas a postos
   app.get("/api/debug/list-posto-tables", async (req, res) => {
     try {
@@ -6359,57 +6229,5 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
-  
-  // Verificar e criar tabela de preços de combustível diretamente
-  try {
-    // Acessar a função diretamente sem fazer requisição HTTP
-    const verificarTabela = async () => {
-      try {
-        // Verificar se a tabela preco_combustivel existe
-        const checkTableQuery = `
-          SELECT EXISTS (
-            SELECT FROM information_schema.tables 
-            WHERE table_schema = 'public' 
-            AND table_name = 'preco_combustivel'
-          );
-        `;
-        const tableExists = await pool.query(checkTableQuery);
-        
-        if (!tableExists.rows[0].exists) {
-          // Se a tabela não existir, vamos criá-la
-          const createTableQuery = `
-            CREATE TABLE preco_combustivel (
-              id SERIAL PRIMARY KEY,
-              tipo VARCHAR(50) NOT NULL,
-              preco NUMERIC NOT NULL,
-              ativo BOOLEAN DEFAULT TRUE,
-              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-            
-            -- Inserir valores padrão
-            INSERT INTO preco_combustivel (tipo, preco) VALUES 
-            ('Diesel', 5.99),
-            ('Gasolina', 6.29),
-            ('Etanol', 4.89),
-            ('Arla 32', 7.50);
-          `;
-          await pool.query(createTableQuery);
-          
-          console.log('Tabela preco_combustivel criada com sucesso!');
-        } else {
-          console.log('Tabela preco_combustivel já existe.');
-        }
-      } catch (error) {
-        console.error('Erro ao verificar ou criar tabela preco_combustivel:', error);
-      }
-    };
-    
-    // Executar a verificação
-    verificarTabela();
-  } catch (error) {
-    console.error('Erro ao iniciar verificação da tabela de preços:', error);
-  }
-  
   return httpServer;
 }

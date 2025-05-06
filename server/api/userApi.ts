@@ -1,6 +1,5 @@
 import express from 'express';
 import { userService, generateRandomPassword } from '../services/userService';
-import { getSupabaseAdapter } from '../adapters/supabaseAdapter';
 
 // Router específico para API de usuários
 const router = express.Router();
@@ -131,7 +130,7 @@ router.get('/api/users/:id', async (req, res) => {
     const { id } = req.params;
     
     // Buscar usuário
-    const user = await supabaseAdapter.getUser(parseInt(id, 10));
+    const user = await supabaseAdapter.getUserById(id);
     
     if (!user) {
       return res.status(404).json({ 
@@ -178,7 +177,7 @@ router.put('/api/users/:id', async (req, res) => {
     const { name, email, role, baseId, isActive } = req.body;
     
     // Verificar se o usuário existe
-    const existingUser = await supabaseAdapter.getUser(id);
+    const existingUser = await supabaseAdapter.getUserById(id);
     if (!existingUser) {
       return res.status(404).json({ 
         success: false, 
@@ -233,7 +232,7 @@ router.post('/api/users/:id/reset-password', async (req, res) => {
     const { id } = req.params;
     
     // Verificar se o usuário existe
-    const existingUser = await supabaseAdapter.getUser(id);
+    const existingUser = await supabaseAdapter.getUserById(id);
     if (!existingUser) {
       return res.status(404).json({ 
         success: false, 
@@ -280,7 +279,7 @@ router.delete('/api/users/:id', async (req, res) => {
     const { id } = req.params;
     
     // Verificar se o usuário existe
-    const existingUser = await supabaseAdapter.getUser(id);
+    const existingUser = await supabaseAdapter.getUserById(id);
     if (!existingUser) {
       return res.status(404).json({ 
         success: false, 

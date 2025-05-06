@@ -16,8 +16,6 @@ import {
 } from "./api-direto.js";
 // Importar API para usuários via Supabase
 import userApi from "./api/userApi";
-// Importar rotas para gerenciamento de usuários com sessão
-import usuariosRoutes from "./routes/usuariosRoutes";
 // Importar APIs híbridas (ambiente Replit e externo)
 import hybridUserApi from "../hybrid-user-api.js";
 import hybridBasesApi from "../hybrid-bases-api.js";
@@ -29,10 +27,6 @@ import { fixCookieSessionMiddleware } from "./middleware/fixCookieSession";
 import { debugAuthMiddleware, recoverSessionMiddleware } from './middleware/debugAuthMiddleware';
 // Importar rota de diagnóstico para frota
 import frotaDiagnosticoRoute from "./routes/frotaDiagnosticoRoute";
-// Importar rotas de acesso externo para postos
-import postosExternalRoutes from "./routes/postosExternalRoutes";
-// Importar rotas de diagnóstico pública
-import diagnosticRoute from "./diagnosticRoute";
 
 // Configuração das variáveis de ambiente do Supabase
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
@@ -46,53 +40,6 @@ app.use(corsMiddleware);
 // Middlewares padrão do Express
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
-// IMPORTANTE: Adicionar rotas de diagnóstico ANTES de qualquer middleware de autenticação
-// Estas rotas não dependem de sessionStore ou autenticação
-app.use('/api', diagnosticRoute);
-
-// ROTA PÚBLICA TEMPORÁRIA para listar usuários (sem auth) para fins de debug da interface
-app.get("/api/users/public-test", async (req, res) => {
-  try {
-    console.log('[index.ts] Rota pública temporária para listar usuários (sem autenticação)');
-    
-    // Importar pool diretamente para evitar dependências cíclicas
-    const { pool } = await import('./db');
-    
-    // Consulta simplificada para listar usuários no formato esperado pela interface
-    const query = `
-      SELECT 
-        id, 
-        name, 
-        email, 
-        role,
-        base_id AS "baseId",
-        (SELECT name FROM bases WHERE id = users.base_id) AS "baseName",
-        is_active AS "isActive",
-        created_at AS "createdAt",
-        updated_at AS "updatedAt"
-      FROM 
-        users
-      LIMIT 50
-    `;
-    
-    const result = await pool.query(query);
-    
-    console.log(`[index.ts] ${result.rows.length} usuário(s) encontrado(s) na rota pública temporária`);
-    
-    return res.status(200).json({
-      success: true,
-      count: result.rows.length,
-      users: result.rows
-    });
-  } catch (error: any) {
-    console.error('[index.ts] Erro na rota pública temporária de usuários:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Erro ao listar usuários: ' + error.message
-    });
-  }
-});
 
 // * IMPORTANTE: É crucial que registerRoutes seja chamado antes dos middlewares de diagnóstico *
 // * pois registerRoutes inicializa o Passport.js com setupAuth, que adiciona o método isAuthenticated *
@@ -151,18 +98,12 @@ app.use((req, res, next) => {
   // Registrar o roteador de API de usuários
   app.use(userApi);
   
-  // Registrar rotas para gerenciamento de usuários com sessão
-  app.use('/api', usuariosRoutes);
-  
   // Registrar os roteadores de API híbrida (funcionam dentro e fora do Replit)
   app.use(hybridUserApi);
   app.use(hybridBasesApi);
   
   // Registrar rota de diagnóstico para verificar autenticação no módulo de frota
   app.use('/api/frota', frotaDiagnosticoRoute);
-  
-  // Registrar rotas para acesso externo de postos via domínio personalizado
-  app.use('/postos', postosExternalRoutes);
   
   // Registrar as rotas de API diretas para evitar interceptação do Vite
   // Estas rotas serão processadas antes do middleware do Vite e terão os headers adequados

@@ -1,258 +1,113 @@
-import { Request, Response, Router } from 'express';
+import { Express } from 'express';
 import { pool } from '../db';
 
-const router = Router();
-
-// Rota para verificar se a tabela preco_combustivel existe e criar se necessário
-router.get('/verificar-tabela', async (req, res) => {
-  try {
-    // Verificar se a tabela preco_combustivel existe
-    const checkTableQuery = `
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = 'preco_combustivel'
-      );
-    `;
-    const tableExists = await pool.query(checkTableQuery);
-    
-    if (!tableExists.rows[0].exists) {
-      // Se a tabela não existir, vamos criá-la
-      const createTableQuery = `
-        CREATE TABLE preco_combustivel (
-          id SERIAL PRIMARY KEY,
-          tipo_combustivel TEXT NOT NULL,
-          preco NUMERIC NOT NULL,
-          ativo BOOLEAN DEFAULT TRUE,
-          data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-        
-        -- Inserir valores padrão
-        INSERT INTO preco_combustivel (tipo_combustivel, preco) VALUES 
-        ('Diesel', 5.99),
-        ('Gasolina', 6.29),
-        ('Etanol', 4.89),
-        ('Arla 32', 7.50);
-      `;
-      await pool.query(createTableQuery);
-      
-      return res.json({
-        success: true,
-        message: 'Tabela preco_combustivel criada com sucesso e dados padrão inseridos',
-        created: true
-      });
-    }
-    
-    return res.json({
-      success: true,
-      message: 'Tabela preco_combustivel já existe',
-      created: false
-    });
-  } catch (error) {
-    console.error('Erro ao verificar ou criar tabela preco_combustivel:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Erro ao verificar ou criar tabela',
-      error: error instanceof Error ? error.message : 'Erro desconhecido'
-    });
-  }
-});
-
-// Buscar preço atual de um tipo de combustível
-router.get('/:tipo', async (req, res) => {
-  try {
-    const { tipo } = req.params;
-    
-    // Verificar se a tabela existe
+export function registerPrecosCombustivelRoutes(app: Express) {
+  // Obter preços do combustível
+  app.get('/api/precos-combustivel', async (req, res) => {
     try {
-      const checkTableQuery = `
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables 
-          WHERE table_schema = 'public' 
-          AND table_name = 'preco_combustivel'
-        );
-      `;
-      const tableExists = await pool.query(checkTableQuery);
+      const query = 'SELECT * FROM preco_combustivel ORDER BY tipo';
+      const result = await pool.query(query);
       
-      if (!tableExists.rows[0].exists) {
-        // Criar tabela se não existir
-        const createTableQuery = `
-          CREATE TABLE preco_combustivel (
-            id SERIAL PRIMARY KEY,
-            tipo_combustivel TEXT NOT NULL,
-            preco NUMERIC NOT NULL,
-            ativo BOOLEAN DEFAULT TRUE,
-            data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-          );
-          
-          -- Inserir valores padrão
-          INSERT INTO preco_combustivel (tipo_combustivel, preco) VALUES 
-          ('Diesel', 5.99),
-          ('Gasolina', 6.29),
-          ('Etanol', 4.89),
-          ('Arla 32', 7.50);
-        `;
-        await pool.query(createTableQuery);
-      }
-    } catch (error) {
-      console.error('Erro ao verificar ou criar tabela preco_combustivel:', error);
-    }
-    
-    // Buscar preço do combustível
-    const query = `
-      SELECT * FROM preco_combustivel
-      WHERE tipo_combustivel = $1 AND ativo = TRUE
-      ORDER BY data_atualizacao DESC
-      LIMIT 1
-    `;
-    
-    const result = await pool.query(query, [tipo]);
-    
-    if (result.rows.length === 0) {
-      // Caso não exista o preço para o tipo solicitado, criar um valor padrão
-      let precoDefault = 5.99; // Valor padrão para Diesel
-      
-      if (tipo.toLowerCase().includes('gasol')) {
-        precoDefault = 6.29;
-      } else if (tipo.toLowerCase().includes('etanol')) {
-        precoDefault = 4.89;
-      } else if (tipo.toLowerCase().includes('arla')) {
-        precoDefault = 7.50;
-      }
-      
-      const insertQuery = `
-        INSERT INTO preco_combustivel (tipo_combustivel, preco)
-        VALUES ($1, $2)
-        RETURNING *
-      `;
-      
-      const insertResult = await pool.query(insertQuery, [tipo, precoDefault]);
-      
-      return res.json({
+      return res.status(200).json({
         success: true,
-        data: insertResult.rows[0],
-        message: `Preço padrão criado para ${tipo}`
+        data: result.rows
       });
-    }
-    
-    return res.json({
-      success: true,
-      data: result.rows[0]
-    });
-  } catch (error) {
-    console.error(`Erro ao buscar preço para combustível ${req.params.tipo}:`, error);
-    return res.status(500).json({
-      success: false,
-      message: 'Erro ao buscar preço do combustível',
-      error: error instanceof Error ? error.message : 'Erro desconhecido'
-    });
-  }
-});
-
-// Atualizar preço de um combustível
-router.post('/:tipo', async (req, res) => {
-  try {
-    const { tipo } = req.params;
-    const { preco } = req.body;
-    
-    if (!preco || isNaN(parseFloat(preco))) {
-      return res.status(400).json({
+    } catch (error) {
+      console.error('Erro ao buscar preços do combustível:', error);
+      return res.status(500).json({
         success: false,
-        message: 'Preço inválido'
+        message: 'Erro ao buscar preços do combustível',
+        error: String(error)
       });
     }
-    
-    // Desativar preços anteriores
-    await pool.query(`
-      UPDATE preco_combustivel
-      SET ativo = FALSE
-      WHERE tipo_combustivel = $1 AND ativo = TRUE
-    `, [tipo]);
-    
-    // Inserir novo preço
-    const query = `
-      INSERT INTO preco_combustivel (tipo_combustivel, preco)
-      VALUES ($1, $2)
-      RETURNING *
-    `;
-    
-    const result = await pool.query(query, [tipo, parseFloat(preco)]);
-    
-    return res.json({
-      success: true,
-      data: result.rows[0],
-      message: `Preço atualizado para ${tipo}`
-    });
-  } catch (error) {
-    console.error(`Erro ao atualizar preço para combustível ${req.params.tipo}:`, error);
-    return res.status(500).json({
-      success: false,
-      message: 'Erro ao atualizar preço do combustível',
-      error: error instanceof Error ? error.message : 'Erro desconhecido'
-    });
-  }
-});
+  });
 
-// Listar todos os preços de combustíveis ativos
-router.get('/', async (req, res) => {
-  try {
-    // Verificar se a tabela existe
+  // Obter preço por tipo de combustível
+  app.get('/api/precos-combustivel/:tipo', async (req, res) => {
     try {
-      const checkTableQuery = `
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables 
-          WHERE table_schema = 'public' 
-          AND table_name = 'preco_combustivel'
-        );
-      `;
-      const tableExists = await pool.query(checkTableQuery);
+      const { tipo } = req.params;
       
-      if (!tableExists.rows[0].exists) {
-        // Criar tabela se não existir
-        const createTableQuery = `
-          CREATE TABLE preco_combustivel (
-            id SERIAL PRIMARY KEY,
-            tipo_combustivel TEXT NOT NULL,
-            preco NUMERIC NOT NULL,
-            ativo BOOLEAN DEFAULT TRUE,
-            data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-          );
-          
-          -- Inserir valores padrão
-          INSERT INTO preco_combustivel (tipo_combustivel, preco) VALUES 
-          ('Diesel', 5.99),
-          ('Gasolina', 6.29),
-          ('Etanol', 4.89),
-          ('Arla 32', 7.50);
-        `;
-        await pool.query(createTableQuery);
+      const query = 'SELECT * FROM preco_combustivel WHERE tipo = $1';
+      const result = await pool.query(query, [tipo]);
+      
+      if (result.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: `Preço para o combustível ${tipo} não encontrado`
+        });
       }
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows[0]
+      });
     } catch (error) {
-      console.error('Erro ao verificar ou criar tabela preco_combustivel:', error);
+      console.error(`Erro ao buscar preço para combustível ${req.params.tipo}:`, error);
+      return res.status(500).json({
+        success: false,
+        message: `Erro ao buscar preço para combustível ${req.params.tipo}`,
+        error: String(error)
+      });
     }
-    
-    // Buscar todos os preços ativos
-    const query = `
-      SELECT DISTINCT ON (tipo_combustivel) *
-      FROM preco_combustivel
-      WHERE ativo = TRUE
-      ORDER BY tipo_combustivel, data_atualizacao DESC
-    `;
-    
-    const result = await pool.query(query);
-    
-    return res.json({
-      success: true,
-      data: result.rows
-    });
-  } catch (error) {
-    console.error('Erro ao listar preços de combustíveis:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Erro ao listar preços de combustíveis',
-      error: error instanceof Error ? error.message : 'Erro desconhecido'
-    });
-  }
-});
+  });
 
-export default router;
+  // Atualizar ou inserir preço de combustível
+  app.post('/api/precos-combustivel', async (req, res) => {
+    try {
+      // Verificar se o usuário é admin
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          message: 'Permissão negada. Apenas administradores podem atualizar preços.'
+        });
+      }
+
+      const { tipo, valor_litro } = req.body;
+      
+      // Validação básica
+      if (!tipo || valor_litro === undefined || valor_litro === null) {
+        return res.status(400).json({
+          success: false,
+          message: 'Dados incompletos. Tipo e valor_litro são obrigatórios.'
+        });
+      }
+      
+      // Verificar se o combustível já existe
+      const checkQuery = 'SELECT id FROM preco_combustivel WHERE tipo = $1';
+      const checkResult = await pool.query(checkQuery, [tipo]);
+      
+      let result;
+      if (checkResult.rowCount > 0) {
+        // Atualizar preço existente
+        const updateQuery = `
+          UPDATE preco_combustivel 
+          SET valor_litro = $1, updated_at = NOW()
+          WHERE tipo = $2
+          RETURNING *
+        `;
+        result = await pool.query(updateQuery, [valor_litro, tipo]);
+      } else {
+        // Inserir novo preço
+        const insertQuery = `
+          INSERT INTO preco_combustivel (tipo, valor_litro)
+          VALUES ($1, $2)
+          RETURNING *
+        `;
+        result = await pool.query(insertQuery, [tipo, valor_litro]);
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Preço atualizado com sucesso',
+        data: result.rows[0]
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar preço do combustível:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao atualizar preço do combustível',
+        error: String(error)
+      });
+    }
+  });
+}

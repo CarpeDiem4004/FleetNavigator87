@@ -78,7 +78,14 @@
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+    
+    // Configuração do Supabase
+    const supabaseUrl = 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
     // Elementos do DOM
     const loginForm = document.getElementById('login-form');
     const loginButton = document.getElementById('login-button');
@@ -86,27 +93,12 @@
     
     // Verifica se já existe uma sessão ativa
     async function checkSession() {
-      try {
-        const response = await fetch('/api/user', {
-          method: 'GET',
-          credentials: 'include' // Importante: inclui cookies de autenticação
-        });
-        
-        if (response.ok) {
-          // Se a resposta for bem-sucedida, o usuário já está autenticado
-          const data = await response.json();
-          console.log('Sessão ativa encontrada:', data);
-          
-          // Redirecionar para a página principal ou a última URL acessada
-          const urlParams = new URLSearchParams(window.location.search);
-          const redirectUrl = urlParams.get('redirect') || '/posto/remedios';
-          window.location.href = redirectUrl;
-          return true;
-        }
-      } catch (error) {
-        console.error('Erro ao verificar sessão:', error);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        // Já está logado, redireciona para o formulário de abastecimento
+        window.location.href = 'abastecimento.html';
       }
-      return false;
     }
     
     // Verifica sessão ao carregar a página
@@ -131,30 +123,32 @@
       const password = document.getElementById('password').value;
       
       try {
-        // Tenta fazer login usando a rota de autenticação tradicional (não Supabase)
-        const response = await fetch('/api/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ email, password }),
-          credentials: 'include' // Importante: permite enviar e receber cookies de sessão
+        // Tenta fazer login no Supabase
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password
         });
         
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Credenciais inválidas');
+        if (error) {
+          throw new Error(error.message || 'Erro ao fazer login');
         }
         
-        const userData = await response.json();
-        console.log('Login bem-sucedido:', userData);
-        
-        // Obtém parâmetros de URL para redirecionamento após login
-        const urlParams = new URLSearchParams(window.location.search);
-        const redirectUrl = urlParams.get('redirect') || '/posto/remedios';
-        
-        // Redireciona para a página solicitada após o login
-        window.location.href = redirectUrl;
+        if (data && data.session) {
+          // Armazena o token e as informações básicas do usuário
+          localStorage.setItem('access_token', data.session.access_token);
+          localStorage.setItem('user_email', email);
+          localStorage.setItem('user_id', data.user.id);
+          
+          if (data.user.user_metadata) {
+            localStorage.setItem('user_name', data.user.user_metadata.name || '');
+            localStorage.setItem('user_role', data.user.user_metadata.role || 'operador');
+          }
+          
+          // Redireciona para a página de abastecimento
+          window.location.href = 'abastecimento.html';
+        } else {
+          showError('Ocorreu um erro desconhecido. Tente novamente.');
+        }
       } catch (error) {
         console.error('Erro de login:', error);
         showError(error.message || 'Credenciais inválidas. Verifique seu email e senha.');

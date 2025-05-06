@@ -55,17 +55,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Rota para servir a página de login no domínio personalizado
-router.get('/login', (req, res) => {
-  // Manter registro da rota de redirecionamento após o login
-  const redirectUrl = req.query.redirect || '/posto/remedios';
-  
-  console.log(`[PostosExternalRoutes] Acesso à página de login externo com redirecionamento para: ${redirectUrl}`);
-  
-  // Servir a página HTML de login
-  res.sendFile('login.html', { root: './public/externo' });
-});
-
 // Rota para acesso a um posto específico através do domínio personalizado
 router.get('/:posto', async (req, res) => {
   try {
@@ -113,35 +102,6 @@ router.get('/:posto', async (req, res) => {
       error: String(error)
     });
   }
-});
-
-// Rota para verificar autenticação e redirecionar se necessário
-router.get('/check-auth', (req, res) => {
-  const isAuthenticated = req.isAuthenticated();
-  const redirectTo = req.query.redirectTo || '/posto/remedios';
-  
-  console.log(`[PostosExternalRoutes] Verificação de autenticação: ${isAuthenticated ? 'Autenticado' : 'Não autenticado'}`);
-  
-  if (!isAuthenticated) {
-    // Se não estiver autenticado, redirecionar para a página de login com parâmetro de redirecionamento
-    return res.json({
-      success: false,
-      authenticated: false,
-      redirectTo: `/postos/login?redirect=${encodeURIComponent(redirectTo)}`
-    });
-  }
-  
-  // Se estiver autenticado, retornar informações do usuário
-  res.json({
-    success: true,
-    authenticated: true,
-    user: {
-      id: req.user.id,
-      name: req.user.name,
-      email: req.user.email,
-      role: req.user.role
-    }
-  });
 });
 
 export default router;
