@@ -93,7 +93,8 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
       console.log(`[FETCH] Buscando histórico para posto usando ID limpo: "${postoId}"`);
       
       // Usar a nova rota direta para evitar problemas com interceptação do Vite
-      const response = await axios.get(`/api/historico-direto/${encodeURIComponent(postoId)}?t=${timestamp}`, {
+      // Solicitar todos os registros com limit=1000
+      const response = await axios.get(`/api/historico-direto/${encodeURIComponent(postoId)}?t=${timestamp}&limit=1000`, {
         headers,
         withCredentials: true // Incluir cookies para autenticação baseada em sessão
       });
@@ -321,7 +322,7 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
             <CardTitle className="text-lg">Histórico de Abastecimentos</CardTitle>
             <CardDescription>
               {isLoading ? 'Carregando dados...' : 
-                `Últimos registros do posto ${posto.toUpperCase()}`}
+                `${historico.length} registros do posto ${posto.toUpperCase()}`}
             </CardDescription>
           </div>
           <div className="flex gap-2">
