@@ -46,7 +46,7 @@ function createSupabaseClient() {
  */
 export function getSupabaseAdapter(): SupabaseAdapter {
   if (supabaseAdapterInstance) {
-    return supabaseAdapterInstance;
+    return supabaseAdapterInstance as SupabaseAdapter;
   }
 
   // Criar nova instância do adaptador
@@ -219,7 +219,7 @@ export function getSupabaseAdapter(): SupabaseAdapter {
     }
   };
 
-  return supabaseAdapterInstance;
+  return supabaseAdapterInstance as SupabaseAdapter;
 }
 
 export default { getSupabaseAdapter };
