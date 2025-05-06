@@ -7,7 +7,7 @@ import { createClient } from '@supabase/supabase-js';
 // Interfaces para tipagem
 interface SupabaseAdapter {
   getClient: () => ReturnType<typeof createClient>;
-  getUser: (id: number) => Promise<any>;
+  getUser: (id: number | string) => Promise<any>;
   getUserById: (id: number | string) => Promise<any>; // Alias para getUser
   getUserByEmail: (email: string) => Promise<any>;
   listUsers: (options?: { limit?: number; offset?: number }) => Promise<any>;
@@ -38,6 +38,7 @@ function createSupabaseClient() {
 /**
  * Função para obter o adaptador do Supabase
  * Esta função implementa o adaptador que estava faltando
+ * Sempre retorna uma instância válida do adaptador, nunca null
  */
 export function getSupabaseAdapter(): SupabaseAdapter {
   if (supabaseAdapterInstance) {
@@ -52,12 +53,13 @@ export function getSupabaseAdapter(): SupabaseAdapter {
     getClient: () => supabase,
 
     // Busca um usuário pelo ID
-    getUser: async (id: number) => {
-      console.log(`[SupabaseAdapter] Buscando usuário com ID: ${id}`);
+    getUser: async (id: number | string) => {
+      const userId = typeof id === 'string' ? parseInt(id, 10) : id;
+      console.log(`[SupabaseAdapter] Buscando usuário com ID: ${userId}`);
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('id', id)
+        .eq('id', userId)
         .single();
 
       if (error) {
@@ -131,8 +133,9 @@ export function getSupabaseAdapter(): SupabaseAdapter {
     },
 
     // Atualiza um usuário existente
-    updateUser: async (id: number, userData: any) => {
-      console.log(`[SupabaseAdapter] Atualizando usuário ID ${id}:`, { 
+    updateUser: async (id: number | string, userData: any) => {
+      const userId = typeof id === 'string' ? parseInt(id, 10) : id;
+      console.log(`[SupabaseAdapter] Atualizando usuário ID ${userId}:`, { 
         ...userData, 
         password: userData.password ? '[REDACTED]' : undefined 
       });
@@ -140,7 +143,7 @@ export function getSupabaseAdapter(): SupabaseAdapter {
       const { data, error } = await supabase
         .from('users')
         .update(userData)
-        .eq('id', id)
+        .eq('id', userId)
         .select()
         .single();
 

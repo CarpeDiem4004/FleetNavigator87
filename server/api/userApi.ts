@@ -178,7 +178,7 @@ router.put('/api/users/:id', async (req, res) => {
     const { name, email, role, baseId, isActive } = req.body;
     
     // Verificar se o usuário existe
-    const existingUser = await supabaseAdapter.getUserById(id);
+    const existingUser = await supabaseAdapter.getUser(id);
     if (!existingUser) {
       return res.status(404).json({ 
         success: false, 
@@ -233,7 +233,7 @@ router.post('/api/users/:id/reset-password', async (req, res) => {
     const { id } = req.params;
     
     // Verificar se o usuário existe
-    const existingUser = await supabaseAdapter.getUserById(id);
+    const existingUser = await supabaseAdapter.getUser(id);
     if (!existingUser) {
       return res.status(404).json({ 
         success: false, 
@@ -280,7 +280,7 @@ router.delete('/api/users/:id', async (req, res) => {
     const { id } = req.params;
     
     // Verificar se o usuário existe
-    const existingUser = await supabaseAdapter.getUserById(id);
+    const existingUser = await supabaseAdapter.getUser(id);
     if (!existingUser) {
       return res.status(404).json({ 
         success: false, 
