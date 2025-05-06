@@ -129,7 +129,8 @@ export async function apiRequest(
   
   // Otherwise use regular fetch for backend API
   // Verificar se temos um token JWT armazenado para autenticação
-  const authToken = localStorage.getItem('authToken');
+  // Tenta diferentes nomes de chave para compatibilidade com diferentes partes do sistema
+  const authToken = localStorage.getItem('authToken') || localStorage.getItem('jwt_token');
   
   // Também verificar a sessão Supabase como fallback
   let supabaseToken = null;
@@ -221,7 +222,8 @@ export const getQueryFn: <T>(options: {
     
     // Otherwise use regular fetch for backend API
     // Verificar se temos um token JWT armazenado para autenticação
-    const authToken = localStorage.getItem('authToken');
+    // Tenta diferentes nomes de chave para compatibilidade
+    const authToken = localStorage.getItem('authToken') || localStorage.getItem('jwt_token');
     
     // Também verificar a sessão Supabase como fallback
     let supabaseToken = null;

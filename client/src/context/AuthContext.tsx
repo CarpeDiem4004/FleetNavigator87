@@ -61,8 +61,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       try {
         console.log("Verificando autenticação...");
         
-        // Verificar se temos um token JWT armazenado
-        const authToken = localStorage.getItem('authToken');
+        // Verificar se temos um token JWT armazenado (tenta ambos os nomes de chave)
+        // Isso é necessário porque temos duas formas diferentes de armazenar o token
+        const authToken = localStorage.getItem('authToken') || localStorage.getItem('jwt_token');
         let authSource = 'sessão';
         let isAuthenticated = false;
         let userData = null;
@@ -90,8 +91,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               isAuthenticated = true;
             } else {
               console.warn("Token JWT inválido ou expirado");
-              // Remove o token inválido
+              // Remove os tokens inválidos (ambos os métodos de armazenamento)
               localStorage.removeItem('authToken');
+              localStorage.removeItem('jwt_token');
             }
           } catch (jwtError) {
             console.error("Erro ao verificar token JWT:", jwtError);
@@ -176,7 +178,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           
           // Armazenar o token JWT no localStorage para uso futuro
           if (jwtData.token) {
+            // Armazenar em ambos os lugares para compatibilidade
             localStorage.setItem('authToken', jwtData.token);
+            localStorage.setItem('jwt_token', jwtData.token);
             console.log("Token JWT armazenado com sucesso");
             userData = jwtData.user;
             authSuccess = true;
@@ -242,7 +246,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       // Forçar uma verificação de autenticação após o login
       setTimeout(() => {
-        const authToken = localStorage.getItem('authToken');
+        const authToken = localStorage.getItem('authToken') || localStorage.getItem('jwt_token');
         const headers: HeadersInit = { 
           'Content-Type': 'application/json'
         };
@@ -287,9 +291,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const logout = async () => {
     try {
-      // Remover token JWT do localStorage
+      // Remover tokens JWT do localStorage (ambos os métodos de armazenamento)
       localStorage.removeItem('authToken');
-      console.log("Token JWT removido do localStorage");
+      localStorage.removeItem('jwt_token');
+      console.log("Tokens JWT removidos do localStorage");
       
       const response = await apiRequest('POST', '/api/logout');
       
