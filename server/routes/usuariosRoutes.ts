@@ -36,6 +36,26 @@ const adminRequired = (req: any, res: any, next: any) => {
 router.get('/users/list', isAuthenticated, adminRequired, async (req: any, res: any) => {
   try {
     console.log('[UsuariosRoutes] Listando usuários via sessão');
+    console.log('[UsuariosRoutes] Verificando autenticação:', {
+      isAuthenticated: req.isAuthenticated?.() || false,
+      user: req.user ? {
+        id: req.user.id,
+        email: req.user.email,
+        role: req.user.role
+      } : null
+    });
+    
+    // Verificar se o pool está disponível
+    console.log('[UsuariosRoutes] Pool está disponível:', !!pool);
+    
+    try {
+      // Testar a conexão com o banco
+      const testResult = await pool.query('SELECT NOW()');
+      console.log('[UsuariosRoutes] Teste de conexão com banco bem-sucedido:', testResult.rows[0]);
+    } catch (dbErr) {
+      console.error('[UsuariosRoutes] Erro ao testar conexão com banco:', dbErr);
+      throw new Error('Erro de conexão com o banco de dados: ' + dbErr.message);
+    }
     
     // Extrair filtros da query string
     const { role, baseId, active } = req.query;
@@ -87,16 +107,21 @@ router.get('/users/list', isAuthenticated, adminRequired, async (req: any, res: 
     query += ' ORDER BY u.name';
     
     console.log('[UsuariosRoutes] Executando consulta SQL:', query);
+    console.log('[UsuariosRoutes] Parâmetros da consulta:', params);
     
-    const result = await pool.query(query, params);
-    
-    console.log(`[UsuariosRoutes] ${result.rows.length} usuário(s) encontrado(s)`);
-    
-    return res.status(200).json({
-      success: true,
-      count: result.rows.length,
-      users: result.rows
-    });
+    try {
+      const result = await pool.query(query, params);
+      console.log(`[UsuariosRoutes] ${result.rows.length} usuário(s) encontrado(s)`);
+      
+      return res.status(200).json({
+        success: true,
+        count: result.rows.length,
+        users: result.rows
+      });
+    } catch (queryErr) {
+      console.error('[UsuariosRoutes] Erro na consulta SQL:', queryErr);
+      throw new Error('Erro na consulta SQL: ' + queryErr.message);
+    }
   } catch (error) {
     console.error('[UsuariosRoutes] Erro ao listar usuários:', error);
     return res.status(500).json({
