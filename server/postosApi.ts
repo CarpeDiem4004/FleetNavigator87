@@ -107,6 +107,7 @@ export async function getPostosResumo(req: Request, res: Response) {
           volume_atual: 9000,
           total_abastecimentos: 180,
           total_litros: 18000,
+          total_cartao: 4200,
           alerta_nivel_baixo: false,
           percentual: 60,
           ultima_atualizacao: new Date().toISOString()
@@ -119,6 +120,7 @@ export async function getPostosResumo(req: Request, res: Response) {
           volume_atual: 9000,
           total_abastecimentos: 310,
           total_litros: 31000,
+          total_cartao: 7500,
           alerta_nivel_baixo: false,
           percentual: 75,
           ultima_atualizacao: new Date().toISOString()
@@ -131,6 +133,7 @@ export async function getPostosResumo(req: Request, res: Response) {
           volume_atual: 8000,
           total_abastecimentos: 290,
           total_litros: 29000,
+          total_cartao: 6800,
           alerta_nivel_baixo: false,
           percentual: 40,
           ultima_atualizacao: new Date().toISOString()
@@ -180,6 +183,7 @@ export async function getPostosResumo(req: Request, res: Response) {
           volume_atual: 12000,
           total_abastecimentos: 150,
           total_litros: 15000,
+          total_cartao: 8500,
           alerta_nivel_baixo: false,
           percentual: 60,
           ultima_atualizacao: new Date().toISOString()
@@ -192,6 +196,7 @@ export async function getPostosResumo(req: Request, res: Response) {
           volume_atual: 1800,
           total_abastecimentos: 120,
           total_litros: 12000,
+          total_cartao: 4200,
           alerta_nivel_baixo: true,
           percentual: 12,
           ultima_atualizacao: new Date().toISOString()
@@ -204,6 +209,7 @@ export async function getPostosResumo(req: Request, res: Response) {
           volume_atual: 5000,
           total_abastecimentos: 180,
           total_litros: 18000,
+          total_cartao: 5800,
           alerta_nivel_baixo: false,
           percentual: 50,
           ultima_atualizacao: new Date().toISOString()
@@ -216,6 +222,7 @@ export async function getPostosResumo(req: Request, res: Response) {
           volume_atual: 8400,
           total_abastecimentos: 210,
           total_litros: 21000,
+          total_cartao: 6200,
           alerta_nivel_baixo: false,
           percentual: 70,
           ultima_atualizacao: new Date().toISOString()
@@ -228,6 +235,7 @@ export async function getPostosResumo(req: Request, res: Response) {
           volume_atual: 9000,
           total_abastecimentos: 230,
           total_litros: 23000,
+          total_cartao: 7800,
           alerta_nivel_baixo: false,
           percentual: 60,
           ultima_atualizacao: new Date().toISOString()
@@ -240,6 +248,7 @@ export async function getPostosResumo(req: Request, res: Response) {
           volume_atual: 1000,
           total_abastecimentos: 110,
           total_litros: 11000,
+          total_cartao: 3600,
           alerta_nivel_baixo: true,
           percentual: 12.5,
           ultima_atualizacao: new Date().toISOString()
@@ -252,6 +261,7 @@ export async function getPostosResumo(req: Request, res: Response) {
           volume_atual: 6000,
           total_abastecimentos: 180,
           total_litros: 18000,
+          total_cartao: 5300,
           alerta_nivel_baixo: false,
           percentual: 60,
           ultima_atualizacao: new Date().toISOString()
