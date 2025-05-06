@@ -248,7 +248,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE SOCORRO V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como socorro_v2
     req.params = { ...req.params, posto: 'socorro_v2' };
-    registrarAbastecimentoPosto(req, res);
+    registrarPostoMurici(req, res);
   });
   
   // Rota de histórico para Socorro V2
@@ -265,7 +265,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE SOROCABA V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como sorocaba_v2
     req.params = { ...req.params, posto: 'sorocaba_v2' };
-    registrarAbastecimentoPosto(req, res);
+    registrarPostoMurici(req, res);
   });
   
   // Rota de histórico para Sorocaba V2
