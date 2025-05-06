@@ -26,7 +26,7 @@ export function formatarNomePosto(nome: string): string {
     'são paulo': 'saopaulo',
     'sao paulo': 'saopaulo',
     'posto osasco': 'osasco',
-    'posto abc': 'abc',
+    // 'posto abc': 'abc', // Removido: ABC foi descontinuado
     'posto socorro': 'socorro',
     'posto sorocaba': 'sorocaba',
     'posto ipatinga': 'ipatinga',
@@ -67,7 +67,7 @@ export function isPostoValido(nome: string): boolean {
   const postosValidos = [
     'campinas',
     'osasco',
-    'abc',
+    // 'abc', // Removido: ABC foi descontinuado
     'socorro',
     'sorocaba',
     'saopaulo',
@@ -94,7 +94,7 @@ export function obterNomeExibicaoPosto(nome: string): string {
   const mapeamentoExibicao: Record<string, string> = {
     'campinas': 'Posto Campinas',
     'osasco': 'Posto Osasco',
-    'abc': 'Posto ABC',
+    'abc': 'Posto ABC (Removido)',
     'socorro': 'Posto Socorro',
     'sorocaba': 'Posto Sorocaba',
     'saopaulo': 'Posto São Paulo',
@@ -128,7 +128,7 @@ export function listarTodosPosto(): string[] {
   return [
     'campinas',
     'osasco',
-    'abc',
+    // 'abc', // Removido: ABC foi descontinuado
     'socorro',
     'sorocaba',
     'saopaulo',
