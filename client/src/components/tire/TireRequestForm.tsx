@@ -36,7 +36,7 @@ const TireRequestForm: React.FC<TireRequestFormProps> = ({ onRequestSubmitted })
   const [currentUser, setCurrentUser] = useState<{id: number, name: string} | null>(null);
   
   // Estados para formulário
-  const [baseId, setBaseId] = useState<number | string>('');
+  const [baseId, setBaseId] = useState<number | string>(0);
   const [baseName, setBaseName] = useState('');
   const [marca, setMarca] = useState('');
   const [modelo, setModelo] = useState('');
@@ -85,7 +85,7 @@ const TireRequestForm: React.FC<TireRequestFormProps> = ({ onRequestSubmitted })
 
   // Resetar o formulário
   const resetForm = () => {
-    setBaseId('');
+    setBaseId(0);
     setBaseName('');
     setMarca('');
     setModelo('');
@@ -196,7 +196,6 @@ const TireRequestForm: React.FC<TireRequestFormProps> = ({ onRequestSubmitted })
                 <SelectValue placeholder="Selecione a Base" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Selecione a Base</SelectItem>
                 {bases.map((base) => (
                   <SelectItem key={base.id} value={base.id.toString()}>
                     {base.nome}
