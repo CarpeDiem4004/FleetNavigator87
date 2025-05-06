@@ -214,19 +214,20 @@ const HistoricoGeralPage: React.FC = () => {
     }
   };
 
-  const formatarNumero = (valor: number) => {
+  const formatarNumero = (valor?: number | null) => {
+    if (valor === null || valor === undefined) return '-';
     try {
       return new Intl.NumberFormat('pt-BR').format(Math.round(valor));
     } catch (error) {
       console.error('Erro ao formatar número:', error);
-      return '0';
+      return '-';
     }
   };
 
-  const formatarPreco = (valor?: number) => {
-    if (!valor) return '-';
+  const formatarPreco = (valor?: number | null) => {
+    if (valor === null || valor === undefined || isNaN(Number(valor))) return '-';
     try {
-      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(valor));
     } catch (error) {
       console.error('Erro ao formatar preço:', error);
       return '-';
