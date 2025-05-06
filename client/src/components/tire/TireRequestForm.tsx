@@ -175,24 +175,25 @@ const TireRequestForm: React.FC<TireRequestFormProps> = ({ onRequestSubmitted })
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="flex items-center">
-          <ShoppingBag className="mr-2 h-4 w-4" />
+        <Button variant="default" className="flex items-center bg-green-600 hover:bg-green-700 text-white">
+          <ShoppingBag className="mr-2 h-5 w-5" />
           Solicitar Pneus
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-[520px]">
-        <DialogHeader>
-          <DialogTitle>Solicitar Pneus</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="max-w-[600px] p-6">
+        <DialogHeader className="pb-4 border-b">
+          <DialogTitle className="text-xl font-bold">Solicitar Pneus</DialogTitle>
+          <DialogDescription className="mt-2 text-gray-600">
             Preencha os detalhes para solicitar novos pneus para sua base
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          {/* Base */}
-          <div className="space-y-2">
-            <Label htmlFor="base">Base Solicitante *</Label>
+        
+        <div className="grid gap-5 py-5">
+          {/* Base - Campo destacado */}
+          <div className="space-y-2 bg-gray-50 p-3 rounded-md border border-gray-100">
+            <Label htmlFor="base" className="font-medium text-gray-800">Base Solicitante *</Label>
             <Select value={baseId.toString()} onValueChange={(value) => setBaseId(parseInt(value))}>
-              <SelectTrigger id="base">
+              <SelectTrigger id="base" className="bg-white">
                 <SelectValue placeholder="Selecione a Base" />
               </SelectTrigger>
               <SelectContent>
@@ -205,104 +206,127 @@ const TireRequestForm: React.FC<TireRequestFormProps> = ({ onRequestSubmitted })
             </Select>
           </div>
           
-          {/* Marca e Modelo */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Seção: Informações do Pneu */}
+          <div className="border rounded-md p-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Informações do Pneu</h3>
+            
+            {/* Marca e Modelo */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="space-y-2">
+                <Label htmlFor="marca" className="text-gray-700">Marca *</Label>
+                <Input
+                  id="marca"
+                  value={marca}
+                  onChange={(e) => setMarca(e.target.value)}
+                  placeholder="Ex: Pirelli"
+                  required
+                  className="bg-white"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="modelo" className="text-gray-700">Modelo *</Label>
+                <Input
+                  id="modelo"
+                  value={modelo}
+                  onChange={(e) => setModelo(e.target.value)}
+                  placeholder="Ex: Formula Energy"
+                  required
+                  className="bg-white"
+                />
+              </div>
+            </div>
+            
+            {/* Medida e Tipo */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="space-y-2">
+                <Label htmlFor="medida" className="text-gray-700">Medida</Label>
+                <Input
+                  id="medida"
+                  value={medida}
+                  onChange={(e) => setMedida(e.target.value)}
+                  placeholder="Ex: 295/80R22.5"
+                  className="bg-white"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="tipo" className="text-gray-700">Tipo</Label>
+                <Select 
+                  value={tipo} 
+                  onValueChange={(value) => setTipo(value)}
+                >
+                  <SelectTrigger id="tipo" className="bg-white">
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tiposOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            {/* Quantidade */}
             <div className="space-y-2">
-              <Label htmlFor="marca">Marca *</Label>
+              <Label htmlFor="quantidade" className="text-gray-700">Quantidade *</Label>
               <Input
-                id="marca"
-                value={marca}
-                onChange={(e) => setMarca(e.target.value)}
-                placeholder="Ex: Pirelli"
+                id="quantidade"
+                type="number"
+                min="1"
+                value={quantidade.toString()}
+                onChange={(e) => setQuantidade(parseInt(e.target.value) || 1)}
                 required
+                className="bg-white w-1/3"
+              />
+            </div>
+          </div>
+          
+          {/* Motivo e Observações */}
+          <div className="border rounded-md p-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Justificativa</h3>
+            
+            {/* Motivo */}
+            <div className="space-y-2 mb-4">
+              <Label htmlFor="motivo" className="text-gray-700">Motivo da Solicitação *</Label>
+              <Textarea
+                id="motivo"
+                value={motivo}
+                onChange={(e) => setMotivo(e.target.value)}
+                placeholder="Ex: Substituição de pneus desgastados"
+                required
+                rows={2}
+                className="bg-white resize-none"
               />
             </div>
             
+            {/* Observações */}
             <div className="space-y-2">
-              <Label htmlFor="modelo">Modelo *</Label>
-              <Input
-                id="modelo"
-                value={modelo}
-                onChange={(e) => setModelo(e.target.value)}
-                placeholder="Ex: Formula Energy"
-                required
+              <Label htmlFor="observacao" className="text-gray-700">Observações Adicionais</Label>
+              <Textarea
+                id="observacao"
+                value={observacao}
+                onChange={(e) => setObservacao(e.target.value)}
+                placeholder="Informações complementares"
+                rows={2}
+                className="bg-white resize-none"
               />
             </div>
-          </div>
-          
-          {/* Medida e Tipo */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="medida">Medida</Label>
-              <Input
-                id="medida"
-                value={medida}
-                onChange={(e) => setMedida(e.target.value)}
-                placeholder="Ex: 295/80R22.5"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="tipo">Tipo</Label>
-              <Select 
-                value={tipo} 
-                onValueChange={(value) => setTipo(value)}
-              >
-                <SelectTrigger id="tipo">
-                  <SelectValue placeholder="Selecione o tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tiposOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          {/* Quantidade */}
-          <div className="space-y-2">
-            <Label htmlFor="quantidade">Quantidade *</Label>
-            <Input
-              id="quantidade"
-              type="number"
-              min="1"
-              value={quantidade.toString()}
-              onChange={(e) => setQuantidade(parseInt(e.target.value) || 1)}
-              required
-            />
-          </div>
-          
-          {/* Motivo */}
-          <div className="space-y-2">
-            <Label htmlFor="motivo">Motivo da Solicitação *</Label>
-            <Textarea
-              id="motivo"
-              value={motivo}
-              onChange={(e) => setMotivo(e.target.value)}
-              placeholder="Ex: Substituição de pneus desgastados"
-              required
-              rows={2}
-            />
-          </div>
-          
-          {/* Observações */}
-          <div className="space-y-2">
-            <Label htmlFor="observacao">Observações</Label>
-            <Textarea
-              id="observacao"
-              value={observacao}
-              onChange={(e) => setObservacao(e.target.value)}
-              placeholder="Observações adicionais"
-              rows={2}
-            />
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
+        
+        <DialogFooter className="border-t pt-4 gap-2">
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleSubmit} 
+            disabled={isSubmitting}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
             {isSubmitting ? (
               <span className="flex items-center">
                 <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
