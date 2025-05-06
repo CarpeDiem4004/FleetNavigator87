@@ -18,7 +18,7 @@ interface Abastecimento {
   created_at: string;
 }
 
-const HistoricoGeralPage: React.FC = () => {
+const HistoricoGeralPage: React.FC<{}> = () => {
   const [abastecimentos, setAbastecimentos] = useState<Abastecimento[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,29 +33,33 @@ const HistoricoGeralPage: React.FC = () => {
       // Array para armazenar todos os abastecimentos
       let todosAbastecimentos: Abastecimento[] = [];
       
-      // Verificar se precisamos usar API local ou Supabase
+      // 1. Tentar API local first para abastecimentos próprios
       try {
-        // 1. Tentar API local first para abastecimentos próprios
         const responsePostosProprios = await fetch('/api/abastecimentos');
         const textData = await responsePostosProprios.text();
-        console.log("[FETCH] Resposta bruta da API local (postos próprios):", textData);
+        console.log("[FETCH] Resposta bruta da API local (postos próprios):", textData.substring(0, 150)); 
         
         if (responsePostosProprios.ok) {
-          let data;
           try {
-            data = JSON.parse(textData);
-            console.log("[FETCH] Dados da API local (postos próprios) parseados:", data);
-            
-            if (data.success && Array.isArray(data.data)) {
-              // Adicionar abastecimentos
-              console.log("[FETCH] Adicionando dados da API local:", data.data.length, "registros");
-              todosAbastecimentos = [...todosAbastecimentos, ...data.data];
-            } else if (Array.isArray(data)) {
-              // Caso a API retorne um array diretamente
-              console.log("[FETCH] Adicionando array da API local:", data.length, "registros");
-              todosAbastecimentos = [...todosAbastecimentos, ...data];
+            // Verifica se a resposta parece ser HTML (resposta de erro típica com <!DOCTYPE)
+            if (textData.trim().startsWith('<!DOCTYPE') || textData.trim().startsWith('<html')) {
+              console.error("[FETCH] A resposta parece ser HTML, não JSON válido");
+              // Pular este processamento mas não lançar erro
             } else {
-              console.log("[FETCH] Formato de dados inesperado da API local:", data);
+              const data = JSON.parse(textData);
+              console.log("[FETCH] Dados da API local (postos próprios) parseados:", data);
+              
+              if (data.success && Array.isArray(data.data)) {
+                // Adicionar abastecimentos
+                console.log("[FETCH] Adicionando dados da API local:", data.data.length, "registros");
+                todosAbastecimentos = [...todosAbastecimentos, ...data.data];
+              } else if (Array.isArray(data)) {
+                // Caso a API retorne um array diretamente
+                console.log("[FETCH] Adicionando array da API local:", data.length, "registros");
+                todosAbastecimentos = [...todosAbastecimentos, ...data];
+              } else {
+                console.log("[FETCH] Formato de dados inesperado da API local:", data);
+              }
             }
           } catch (parseError) {
             console.error("[FETCH] Erro ao processar resposta da API local:", parseError);
@@ -67,8 +71,8 @@ const HistoricoGeralPage: React.FC = () => {
         console.error("[FETCH] Erro ao buscar abastecimentos próprios:", error);
       }
       
+      // 2. Buscar abastecimentos externos do Supabase
       try {
-        // 2. Buscar abastecimentos externos do Supabase
         const response = await fetchRecords('abastecimentos_postos', {
           limit: 500 // Aumentamos o limite para trazer mais registros
         });
@@ -84,28 +88,33 @@ const HistoricoGeralPage: React.FC = () => {
         console.error("[FETCH] Erro ao buscar abastecimentos do Supabase:", supabaseError);
       }
       
+      // 3. Buscar abastecimentos do PostgreSQL diretamente
       try {
-        // 3. Buscar abastecimentos do PostgreSQL diretamente
         const responsePG = await fetch('/api/abastecimentos/todos');
         const textPG = await responsePG.text();
-        console.log("[FETCH] Resposta bruta do PostgreSQL:", textPG);
+        console.log("[FETCH] Resposta bruta do PostgreSQL:", textPG.substring(0, 150));
         
         if (responsePG.ok) {
-          let dataPG;
           try {
-            dataPG = JSON.parse(textPG);
-            console.log("[FETCH] Dados do PostgreSQL parseados:", dataPG);
-            
-            if (dataPG.success && Array.isArray(dataPG.data)) {
-              // Adicionar abastecimentos
-              console.log("[FETCH] Adicionando dados do PostgreSQL:", dataPG.data.length, "registros");
-              todosAbastecimentos = [...todosAbastecimentos, ...dataPG.data];
-            } else if (Array.isArray(dataPG)) {
-              // Caso a API retorne um array diretamente
-              console.log("[FETCH] Adicionando array do PostgreSQL:", dataPG.length, "registros");
-              todosAbastecimentos = [...todosAbastecimentos, ...dataPG];
+            // Verifica se a resposta parece ser HTML (resposta de erro típica com <!DOCTYPE)
+            if (textPG.trim().startsWith('<!DOCTYPE') || textPG.trim().startsWith('<html')) {
+              console.error("[FETCH] A resposta do PostgreSQL parece ser HTML, não JSON válido");
+              // Pular este processamento mas não lançar erro
             } else {
-              console.log("[FETCH] Formato de dados inesperado do PostgreSQL:", dataPG);
+              const dataPG = JSON.parse(textPG);
+              console.log("[FETCH] Dados do PostgreSQL parseados:", dataPG);
+              
+              if (dataPG.success && Array.isArray(dataPG.data)) {
+                // Adicionar abastecimentos
+                console.log("[FETCH] Adicionando dados do PostgreSQL:", dataPG.data.length, "registros");
+                todosAbastecimentos = [...todosAbastecimentos, ...dataPG.data];
+              } else if (Array.isArray(dataPG)) {
+                // Caso a API retorne um array diretamente
+                console.log("[FETCH] Adicionando array do PostgreSQL:", dataPG.length, "registros");
+                todosAbastecimentos = [...todosAbastecimentos, ...dataPG];
+              } else {
+                console.log("[FETCH] Formato de dados inesperado do PostgreSQL:", dataPG);
+              }
             }
           } catch (pgParseError) {
             console.error("[FETCH] Erro ao processar resposta do PostgreSQL:", pgParseError);
