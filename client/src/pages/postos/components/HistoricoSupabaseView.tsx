@@ -98,28 +98,54 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
         if (Array.isArray(response.data.data)) {
           // Mapear os dados para garantir que estejam no formato correto
           const dadosFormatados = response.data.data.map((item: any) => {
-            // Extrair todos os possíveis nomes de campos e mapeá-los para o formato padrão
-            const processedItem = {
+            // Log do item original para diagnóstico
+            console.log(`[FETCH] Item original do posto ${posto}:`, item);
+            
+            // Mapeamento detalhado para compatibilidade com todos os tipos de tabelas de postos
+            const mappedValues = {
+              // Identificador único (sempre presente)
               id: item.id,
+              
+              // Informações do veículo
               placa: item.placa || item.veiculo || '',
-              km: item.km || item.km_atual || item.hodometro || item.odometro || 0,
+              km: extractNumber(item.km || item.km_atual || item.hodometro || item.odometro),
+              tipo_veiculo: item.tipo_veiculo || '',
+              
+              // Informações do combustível
               tipo_combustivel: item.tipo_combustivel || item.tipo || 'Diesel',
-              quantidade_litros: item.quantidade_litros || item.litros || item.quantidade || 0,
+              quantidade_litros: extractNumber(item.quantidade_litros || item.litros || item.quantidade),
+              valor_litro: extractNumber(item.valor_litro || item.preco_litro || item.valor_unitario),
+              valor_total: extractNumber(item.valor_total),
+              
+              // Informações das pessoas
               nome_motorista: item.nome_motorista || item.motorista || item.motorista_nome || '',
               rg_motorista: item.rg_motorista || item.motorista_rg || '',
               nome_operador: item.nome_operador || item.operador || item.funcionario || '',
-              valor_litro: item.valor_litro || item.preco_litro || item.valor_unitario || 0,
-              valor_total: item.valor_total || 0,
-              tipo_veiculo: item.tipo_veiculo || '',
+              
+              // Informações adicionais
               observacoes: item.observacoes || '',
-              lavagem: item.lavagem || false,
+              lavagem: item.lavagem === true || (typeof item.lavagem === 'string' && item.lavagem.toLowerCase() === 'true'),
               tipo_lavagem: item.tipo_lavagem || '',
+              
+              // Informações de data/hora
               data_hora: item.data_hora || formatDate(item.created_at) || '',
               created_at: item.created_at
             };
             
-            console.log('[FETCH] Item processado:', processedItem);
-            return processedItem;
+            // Função auxiliar para extrair número de diferentes tipos de entrada
+            function extractNumber(value: any): number {
+              if (value === null || value === undefined) return 0;
+              if (typeof value === 'number') return value;
+              if (typeof value === 'string') {
+                const cleaned = value.replace(/[^\d.,]/g, '').replace(',', '.');
+                const parsed = parseFloat(cleaned);
+                return isNaN(parsed) ? 0 : parsed;
+              }
+              return 0;
+            }
+            
+            console.log('[FETCH] Item processado:', mappedValues);
+            return mappedValues;
           });
           
           console.log('[FETCH] Dados formatados:', dadosFormatados);
