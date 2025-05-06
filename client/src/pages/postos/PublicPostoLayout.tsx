@@ -115,11 +115,20 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Usar HistoricoSupabaseView para todos os postos V2, Osasco e qualquer posto que utilize o novo formato */}
-            {id.endsWith('_v2') || id === 'osasco' || id === 'remedios' ? (
-              <HistoricoSupabaseView 
-                posto={id} 
-                refreshTrigger={refreshTrigger}
-              />
+            {id.toLowerCase().endsWith('_v2') || id.toLowerCase() === 'osasco' || id.toLowerCase() === 'remedios' ? (
+              <div className="w-full">
+                <Alert className="mb-4" variant="default">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Histórico de Abastecimentos - {id}</AlertTitle>
+                  <AlertDescription>
+                    Exibindo registros de abastecimento do posto usando o novo formato.
+                  </AlertDescription>
+                </Alert>
+                <HistoricoSupabaseView 
+                  posto={id.replace(/\s+/g, '_')} 
+                  refreshTrigger={refreshTrigger}
+                />
+              </div>
             ) : (
               <HistoricoAbastecimentos 
                 postId={id} 

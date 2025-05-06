@@ -56,6 +56,11 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
   showLimparButton = false,
   refreshTrigger = 0
 }) => {
+  // Log de debug para o nome do posto
+  useEffect(() => {
+    console.log(`[DEBUG] HistoricoSupabaseView montado para posto: "${posto}"`);
+  }, [posto]);
+  
   const [historico, setHistorico] = useState<HistoricoAbastecimento[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
