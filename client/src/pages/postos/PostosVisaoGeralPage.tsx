@@ -90,11 +90,35 @@ export default function PostosVisaoGeralPage() {
   const postosFiltrados = React.useMemo(() => {
     if (!data) return [];
     
-    // Mostrar apenas Campinas_v2 e Remedios
+    // Mostrar os postos solicitados: Osasco v2, Campinas v2, Socorro v2, Sorocaba v2, ABC v2, Remedios e Alair v2
     let resultado = data.filter(posto => {
-      const nomeLower = posto.nome.toLowerCase();
-      // Incluir apenas Campinas_v2 e Remedios
-      return nomeLower === 'campinas_v2' || nomeLower === 'remedios';
+      // Normalizar nome do posto para comparação
+      const nomePosto = posto.nome.toLowerCase().trim();
+      
+      // Lista dos postos a exibir - com várias formas possíveis de escrita
+      return (
+        // Osasco
+        nomePosto === 'osasco_v2' || 
+        nomePosto === 'osasco v2' ||
+        // Campinas
+        nomePosto === 'campinas_v2' || 
+        nomePosto === 'campinas v2' ||
+        // Socorro
+        nomePosto === 'socorro_v2' || 
+        nomePosto === 'socorro v2' ||
+        // Sorocaba
+        nomePosto === 'sorocaba_v2' || 
+        nomePosto === 'sorocaba v2' ||
+        // ABC
+        nomePosto === 'abc_v2' || 
+        nomePosto === 'abc v2' ||
+        // Remédios
+        nomePosto === 'remedios' ||
+        nomePosto === 'remédios' ||
+        // Alair
+        nomePosto === 'alair_v2' ||
+        nomePosto === 'alair v2'
+      );
     });
     
     // Aplicar filtro de pesquisa
@@ -254,13 +278,19 @@ export default function PostosVisaoGeralPage() {
         {/* Contadores */}
         <div className="flex flex-wrap gap-4 mt-4">
           <div className="bg-gray-50 px-3 py-1 rounded-full text-sm">
-            Total de postos: <span className="font-medium">{data?.length || 0}</span>
+            Total de postos: <span className="font-medium">{Array.isArray(data) ? data.length : 0}</span>
           </div>
           <div className="bg-red-50 px-3 py-1 rounded-full text-sm text-red-700">
-            Postos em alerta: <span className="font-medium">{data?.filter(p => p.alerta_nivel_baixo).length || 0}</span>
+            Postos em alerta: <span className="font-medium">
+              {Array.isArray(data) ? data.filter(p => p.alerta_nivel_baixo).length : 0}
+            </span>
           </div>
           <div className="bg-blue-50 px-3 py-1 rounded-full text-sm text-blue-700">
-            Volume total: <span className="font-medium">{formatarNumero(data?.reduce((acc, p) => acc + p.volume_atual, 0) || 0)} L</span>
+            Volume total: <span className="font-medium">
+              {formatarNumero(
+                Array.isArray(data) ? data.reduce((acc, p) => acc + p.volume_atual, 0) : 0
+              )} L
+            </span>
           </div>
         </div>
         
@@ -293,21 +323,31 @@ export default function PostosVisaoGeralPage() {
             <div className="bg-white p-3 rounded-lg shadow-sm">
               <p className="text-sm text-gray-500">Total de Litros</p>
               <p className="text-2xl font-bold text-purple-700">
-                {formatarNumero(data?.reduce((acc, p) => acc + (p.total_cartao || 0), 0) || 0)} L
+                {formatarNumero(
+                  Array.isArray(data) 
+                    ? data.reduce((acc, p) => acc + (p.total_cartao || 0), 0) 
+                    : 0
+                )} L
               </p>
             </div>
             <div className="bg-white p-3 rounded-lg shadow-sm">
               <p className="text-sm text-gray-500">Total de Solicitações</p>
               <p className="text-2xl font-bold text-purple-700">
-                {formatarNumero(data?.reduce((acc, p) => p.total_cartao ? acc + 1 : acc, 0) || 0)}
+                {formatarNumero(
+                  Array.isArray(data) 
+                    ? data.reduce((acc, p) => p.total_cartao ? acc + 1 : acc, 0)
+                    : 0
+                )}
               </p>
             </div>
             <div className="bg-white p-3 rounded-lg shadow-sm">
               <p className="text-sm text-gray-500">Média por Solicitação</p>
               <p className="text-2xl font-bold text-purple-700">
                 {formatarNumero(
-                  data?.reduce((acc, p) => acc + (p.total_cartao || 0), 0) / 
-                  Math.max(1, data?.reduce((acc, p) => p.total_cartao ? acc + 1 : acc, 0) || 1)
+                  Array.isArray(data)
+                    ? data.reduce((acc, p) => acc + (p.total_cartao || 0), 0) / 
+                      Math.max(1, data.reduce((acc, p) => p.total_cartao ? acc + 1 : acc, 0))
+                    : 0
                 )} L
               </p>
             </div>
