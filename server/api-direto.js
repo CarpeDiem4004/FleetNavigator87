@@ -135,7 +135,7 @@ export async function getHistoricoPosto(req, res) {
             created_at
           FROM ${tableName}
           ORDER BY created_at DESC
-          LIMIT ${req.query.limit || 50}
+          LIMIT ${req.query.limit || 10000}
         `;
       } else if (postoName.toLowerCase().endsWith('_v2')) {
         // Formato Osasco_v2, Alair_v2, Campinas_v2 (usa hodometro, quantidade, motorista, funcionario)
@@ -163,7 +163,7 @@ export async function getHistoricoPosto(req, res) {
             created_at
           FROM ${tableName}
           ORDER BY created_at DESC
-          LIMIT ${req.query.limit || 50}
+          LIMIT ${req.query.limit || 10000}
         `;
       } else {
         // Consulta padrão para outros postos
@@ -187,7 +187,7 @@ export async function getHistoricoPosto(req, res) {
             created_at
           FROM ${tableName}
           ORDER BY created_at DESC
-          LIMIT ${req.query.limit || 50}
+          LIMIT ${req.query.limit || 10000}
         `;
       }
     } else {
@@ -213,7 +213,7 @@ export async function getHistoricoPosto(req, res) {
       }
       
       querySource = viewName;
-      dataQuery = `SELECT * FROM "${viewName}" ORDER BY data_hora DESC LIMIT ${req.query.limit || 50}`;
+      dataQuery = `SELECT * FROM "${viewName}" ORDER BY data_hora DESC LIMIT ${req.query.limit || 10000}`;
     }
     const result = await pool.query(dataQuery);
     
