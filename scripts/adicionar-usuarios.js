@@ -196,11 +196,13 @@ async function adicionarBaseEUsuarios() {
             operation, 
             has_maintenance, 
             has_tires, 
-            active, 
-            created_at, 
-            updated_at
+            active,
+            type,
+            basename,
+            requests_enabled,
+            created_at
           )
-          VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
           RETURNING id
         `;
         
@@ -210,7 +212,10 @@ async function adicionarBaseEUsuarios() {
           base.operation,
           base.has_maintenance,
           base.has_tires,
-          base.active
+          base.active,
+          base.type || 'padrao',
+          base.basename || base.name.replace('Base ', ''),
+          base.requests_enabled || false
         ]);
         
         const baseId = baseResult.rows[0].id;
@@ -231,9 +236,11 @@ async function adicionarBaseEUsuarios() {
             operation = $2, 
             has_maintenance = $3, 
             has_tires = $4, 
-            active = $5, 
-            updated_at = NOW()
-          WHERE id = $6
+            active = $5,
+            type = $6,
+            basename = $7,
+            requests_enabled = $8
+          WHERE id = $9
         `;
         
         await pool.query(updateBaseQuery, [
@@ -242,6 +249,9 @@ async function adicionarBaseEUsuarios() {
           base.has_maintenance,
           base.has_tires,
           base.active,
+          base.type || 'padrao',
+          base.basename || base.name.replace('Base ', ''),
+          base.requests_enabled || false,
           baseId
         ]);
         
@@ -287,10 +297,14 @@ async function adicionarBaseEUsuarios() {
         const senhaHash = await hashPassword(usuario.password);
         
         const insertQuery = `
-          INSERT INTO users (name, email, password, role, base_id, is_active, created_at, updated_at)
-          VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+          INSERT INTO users (name, email, password, role, base_id, basename, oficina_id, is_active, created_at, updated_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
           RETURNING id
         `;
+        
+        // Se temos o nome da base, vamos usá-lo para conseguir o basename
+        const basenameFinal = usuario.basename || 
+                            (usuario.base_name ? usuario.base_name.replace('Base ', '') : null);
         
         const result = await pool.query(insertQuery, [
           usuario.name,
@@ -298,6 +312,8 @@ async function adicionarBaseEUsuarios() {
           senhaHash,
           usuario.role,
           usuario.base_id,
+          basenameFinal,
+          usuario.oficina_id || null,
           usuario.is_active
         ]);
         
@@ -311,10 +327,15 @@ async function adicionarBaseEUsuarios() {
         // Atualizar a senha do usuário existente
         const senhaHash = await hashPassword(usuario.password);
         
+        // Se temos o nome da base, vamos usá-lo para conseguir o basename
+        const basenameFinal = usuario.basename || 
+                            (usuario.base_name ? usuario.base_name.replace('Base ', '') : null);
+        
         const updateQuery = `
           UPDATE users
-          SET password = $1, name = $2, role = $3, base_id = $4, is_active = $5, updated_at = NOW()
-          WHERE id = $6
+          SET password = $1, name = $2, role = $3, base_id = $4, basename = $5, 
+              oficina_id = $6, is_active = $7, updated_at = NOW()
+          WHERE id = $8
         `;
         
         await pool.query(updateQuery, [
@@ -322,6 +343,8 @@ async function adicionarBaseEUsuarios() {
           usuario.name,
           usuario.role,
           usuario.base_id,
+          basenameFinal,
+          usuario.oficina_id || null,
           usuario.is_active,
           userId
         ]);
