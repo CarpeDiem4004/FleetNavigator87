@@ -259,7 +259,10 @@ app.use((req, res, next) => {
     // Forçar o Content-Type como application/json para evitar interceptação do Vite
     res.setHeader('Content-Type', 'application/json');
     // Consultar diretamente os dados do banco
-    getMovimentacoesPatioPosto({ params: { posto: 'abc_v2' } } as any, res);
+    getMovimentacoesPatioPosto({ 
+      params: { posto: 'abc_v2' },
+      query: { limit: req.query.limit || '1000' }
+    } as any, res);
   });
 
   // Rotas especiais para Alair V2
