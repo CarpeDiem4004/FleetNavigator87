@@ -110,28 +110,58 @@ export async function getHistoricoPosto(req, res) {
       }
       
       querySource = tableName;
-      dataQuery = `
-        SELECT 
-          id,
-          placa,
-          km_atual as km,
-          tipo_combustivel,
-          litros as quantidade_litros,
-          motorista as nome_motorista,
-          motorista_rg as rg_motorista,
-          operador as nome_operador,
-          valor_litro,
-          valor_total,
-          tipo_veiculo,
-          observacoes,
-          lavagem,
-          tipo_lavagem,
-          to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora,
-          created_at
-        FROM ${tableName}
-        ORDER BY created_at DESC
-        LIMIT ${req.query.limit || 50}
-      `;
+      
+      // Consulta SQL diferente para postos _v2 (Osasco_v2, Alair_v2, Campinas_v2)
+      if (postoName.toLowerCase().endsWith('_v2')) {
+        console.log(`getHistoricoPosto - Usando consulta específica para posto V2: ${postoName}`);
+        dataQuery = `
+          SELECT 
+            id,
+            placa,
+            hodometro as km,
+            tipo_combustivel,
+            quantidade as quantidade_litros,
+            motorista as nome_motorista,
+            NULL as rg_motorista,
+            funcionario as nome_operador,
+            valor_unitario as valor_litro,
+            valor_total,
+            tipo_veiculo,
+            observacoes,
+            NULL as lavagem,
+            NULL as tipo_lavagem,
+            to_char(data_hora, 'DD/MM/YYYY HH24:MI') as data_hora,
+            created_at
+          FROM ${tableName}
+          WHERE status = 'ativo'
+          ORDER BY created_at DESC
+          LIMIT ${req.query.limit || 50}
+        `;
+      } else {
+        // Consulta padrão para outros postos
+        dataQuery = `
+          SELECT 
+            id,
+            placa,
+            km_atual as km,
+            tipo_combustivel,
+            litros as quantidade_litros,
+            motorista as nome_motorista,
+            motorista_rg as rg_motorista,
+            operador as nome_operador,
+            valor_litro,
+            valor_total,
+            tipo_veiculo,
+            observacoes,
+            lavagem,
+            tipo_lavagem,
+            to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora,
+            created_at
+          FROM ${tableName}
+          ORDER BY created_at DESC
+          LIMIT ${req.query.limit || 50}
+        `;
+      }
     } else {
       // Fluxo normal usando view consolidada
       const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_consolidado`;
@@ -238,7 +268,16 @@ export async function getEstatisticasMensaisPosto(req, res) {
       console.log("getEstatisticasMensaisPosto - Formatado para:", postoName);
     }
     
-    const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_estatisticas_mensais`;
+    // Verificar se é um posto v2 e tentar usar a view específica v2
+    let viewName;
+    let dataQuery;
+    
+    if (postoName.toLowerCase().endsWith('_v2')) {
+      viewName = `view_${postoName.toLowerCase()}_consumo_mensal`;
+      console.log(`getEstatisticasMensaisPosto - Tentando usar view específica V2: ${viewName}`);
+    } else {
+      viewName = `abastecimentos_posto_${postoName.toLowerCase()}_estatisticas_mensais`;
+    }
     
     // Verificar se a view existe
     const checkQuery = `
@@ -252,14 +291,48 @@ export async function getEstatisticasMensaisPosto(req, res) {
     const checkResult = await pool.query(checkQuery, [viewName]);
     
     if (!checkResult.rows[0].exists) {
-      return res.status(404).json({ 
-        success: false, 
-        error: `View de estatísticas mensais para posto ${postoName} não encontrada.` 
-      });
+      // Se não encontrou a view específica e é um posto v2, tentar gerar as estatísticas diretamente da tabela
+      if (postoName.toLowerCase().endsWith('_v2')) {
+        console.log(`getEstatisticasMensaisPosto - View ${viewName} não encontrada. Gerando estatísticas diretamente da tabela.`);
+        
+        const tableName = `abastecimentos_posto_${postoName.toLowerCase()}`;
+        
+        // Verificar se a tabela existe
+        const tableCheckResult = await pool.query(checkQuery, [tableName]);
+        
+        if (!tableCheckResult.rows[0].exists) {
+          return res.status(404).json({ 
+            success: false, 
+            error: `Tabela para posto ${postoName} não encontrada.` 
+          });
+        }
+        
+        // Gerar estatísticas mensais diretamente da tabela
+        dataQuery = `
+          SELECT 
+            EXTRACT(YEAR FROM data_hora) as ano,
+            EXTRACT(MONTH FROM data_hora) as mes,
+            tipo_combustivel,
+            COUNT(*) as total_abastecimentos,
+            SUM(quantidade) as litros_totais,
+            SUM(valor_total) as valor_total,
+            AVG(valor_unitario) as valor_medio_litro
+          FROM ${tableName}
+          WHERE status = 'ativo'
+          GROUP BY ano, mes, tipo_combustivel
+          ORDER BY ano DESC, mes DESC
+          LIMIT 12
+        `;
+      } else {
+        return res.status(404).json({ 
+          success: false, 
+          error: `View de estatísticas mensais para posto ${postoName} não encontrada.` 
+        });
+      }
+    } else {
+      // View existe, usar a consulta padrão
+      dataQuery = `SELECT * FROM "${viewName}" ORDER BY ano DESC, mes DESC LIMIT 12`;
     }
-    
-    // Obter dados da view
-    const dataQuery = `SELECT * FROM "${viewName}" ORDER BY ano DESC, mes DESC LIMIT 12`;
     const result = await pool.query(dataQuery);
     
     res.json({
@@ -341,7 +414,16 @@ export async function getConsumoPorVeiculoPosto(req, res) {
       console.log("getConsumoPorVeiculoPosto - Formatado para:", postoName);
     }
     
-    const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_consumo_por_veiculo`;
+    // Verificar se é um posto v2 e tentar usar a view específica v2
+    let viewName;
+    let dataQuery;
+    
+    if (postoName.toLowerCase().endsWith('_v2')) {
+      viewName = `view_${postoName.toLowerCase()}_consumo_por_veiculo`;
+      console.log(`getConsumoPorVeiculoPosto - Tentando usar view específica V2: ${viewName}`);
+    } else {
+      viewName = `abastecimentos_posto_${postoName.toLowerCase()}_consumo_por_veiculo`;
+    }
     
     // Verificar se a view existe
     const checkQuery = `
@@ -355,14 +437,48 @@ export async function getConsumoPorVeiculoPosto(req, res) {
     const checkResult = await pool.query(checkQuery, [viewName]);
     
     if (!checkResult.rows[0].exists) {
-      return res.status(404).json({ 
-        success: false, 
-        error: `View de consumo por veículo para posto ${postoName} não encontrada.` 
-      });
+      // Se não encontrou a view específica e é um posto v2, tentar gerar as estatísticas diretamente da tabela
+      if (postoName.toLowerCase().endsWith('_v2')) {
+        console.log(`getConsumoPorVeiculoPosto - View ${viewName} não encontrada. Gerando estatísticas diretamente da tabela.`);
+        
+        const tableName = `abastecimentos_posto_${postoName.toLowerCase()}`;
+        
+        // Verificar se a tabela existe
+        const tableCheckResult = await pool.query(checkQuery, [tableName]);
+        
+        if (!tableCheckResult.rows[0].exists) {
+          return res.status(404).json({ 
+            success: false, 
+            error: `Tabela para posto ${postoName} não encontrada.` 
+          });
+        }
+        
+        // Gerar estatísticas consumo por veículo diretamente da tabela
+        dataQuery = `
+          SELECT 
+            placa,
+            veiculo,
+            COUNT(*) as total_abastecimentos,
+            SUM(quantidade) as litros_totais,
+            SUM(valor_total) as valor_total,
+            AVG(consumo_medio) as media_consumo,
+            MAX(data_hora) as ultimo_abastecimento
+          FROM ${tableName}
+          WHERE status = 'ativo'
+          GROUP BY placa, veiculo
+          ORDER BY litros_totais DESC
+          LIMIT 20
+        `;
+      } else {
+        return res.status(404).json({ 
+          success: false, 
+          error: `View de consumo por veículo para posto ${postoName} não encontrada.` 
+        });
+      }
+    } else {
+      // View existe, usar a consulta padrão
+      dataQuery = `SELECT * FROM "${viewName}" ORDER BY total_litros DESC LIMIT 20`;
     }
-    
-    // Obter dados da view
-    const dataQuery = `SELECT * FROM "${viewName}" ORDER BY total_litros DESC LIMIT 20`;
     const result = await pool.query(dataQuery);
     
     res.json({
@@ -444,7 +560,16 @@ export async function getComparativoCombustiveisPosto(req, res) {
       console.log("getComparativoCombustiveisPosto - Formatado para:", postoName);
     }
     
-    const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_comparativo_combustiveis`;
+    // Verificar se é um posto v2 e tentar usar a view específica v2
+    let viewName;
+    let dataQuery;
+    
+    if (postoName.toLowerCase().endsWith('_v2')) {
+      viewName = `view_${postoName.toLowerCase()}_comparativo_combustiveis`;
+      console.log(`getComparativoCombustiveisPosto - Tentando usar view específica V2: ${viewName}`);
+    } else {
+      viewName = `abastecimentos_posto_${postoName.toLowerCase()}_comparativo_combustiveis`;
+    }
     
     // Verificar se a view existe
     const checkQuery = `
@@ -458,14 +583,45 @@ export async function getComparativoCombustiveisPosto(req, res) {
     const checkResult = await pool.query(checkQuery, [viewName]);
     
     if (!checkResult.rows[0].exists) {
-      return res.status(404).json({ 
-        success: false, 
-        error: `View de comparativo de combustíveis para posto ${postoName} não encontrada.` 
-      });
+      // Se não encontrou a view específica e é um posto v2, tentar gerar as estatísticas diretamente da tabela
+      if (postoName.toLowerCase().endsWith('_v2')) {
+        console.log(`getComparativoCombustiveisPosto - View ${viewName} não encontrada. Gerando estatísticas diretamente da tabela.`);
+        
+        const tableName = `abastecimentos_posto_${postoName.toLowerCase()}`;
+        
+        // Verificar se a tabela existe
+        const tableCheckResult = await pool.query(checkQuery, [tableName]);
+        
+        if (!tableCheckResult.rows[0].exists) {
+          return res.status(404).json({ 
+            success: false, 
+            error: `Tabela para posto ${postoName} não encontrada.` 
+          });
+        }
+        
+        // Gerar estatísticas comparativo por combustíveis diretamente da tabela
+        dataQuery = `
+          SELECT 
+            tipo_combustivel,
+            COUNT(*) as total_abastecimentos,
+            SUM(quantidade) as litros_totais,
+            SUM(valor_total) as valor_total,
+            AVG(valor_unitario) as valor_medio_litro
+          FROM ${tableName}
+          WHERE status = 'ativo'
+          GROUP BY tipo_combustivel
+          ORDER BY litros_totais DESC
+        `;
+      } else {
+        return res.status(404).json({ 
+          success: false, 
+          error: `View de comparativo de combustíveis para posto ${postoName} não encontrada.` 
+        });
+      }
+    } else {
+      // View existe, usar a consulta padrão
+      dataQuery = `SELECT * FROM "${viewName}"`;
     }
-    
-    // Obter dados da view
-    const dataQuery = `SELECT * FROM "${viewName}"`;
     const result = await pool.query(dataQuery);
     
     res.json({
