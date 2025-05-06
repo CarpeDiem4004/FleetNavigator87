@@ -40,9 +40,8 @@ export function generateJwtToken(user: any): string {
   };
   
   try {
-    // Usar objeto Buffer para o segredo para compatibilidade com tipos do jsonwebtoken
-    const secretBuffer = Buffer.from(JWT_SECRET_STR, 'utf8');
-    return jwt.sign(payload, secretBuffer, {
+    // Usar string diretamente
+    return jwt.sign(payload, JWT_SECRET_STR, {
       expiresIn: JWT_EXPIRES_IN,
       algorithm: 'HS256'
     });
@@ -55,9 +54,8 @@ export function generateJwtToken(user: any): string {
 // Função para validar token JWT customizado (não Supabase)
 export function validateJwtToken(token: string): JwtPayload {
   try {
-    // Usar objeto Buffer para o segredo para compatibilidade com tipos do jsonwebtoken
-    const secretBuffer = Buffer.from(JWT_SECRET_STR, 'utf8');
-    return jwt.verify(token, secretBuffer) as JwtPayload;
+    // Usar string diretamente
+    return jwt.verify(token, JWT_SECRET_STR) as JwtPayload;
   } catch (error) {
     console.error('[validateJwtToken] Erro ao validar token JWT:', error);
     throw new AuthError("Token JWT inválido ou expirado");
