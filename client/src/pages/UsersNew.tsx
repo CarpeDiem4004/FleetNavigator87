@@ -55,6 +55,8 @@ interface User {
   base_id?: number | null;
   basename?: string | null;
   is_active?: boolean;
+  // Campo para armazenar o posto específico
+  posto?: string | null;
 }
 
 // Dados mockados para a tabela de usuários
@@ -107,6 +109,17 @@ const formatDateTime = (dateTimeString: string | null): string => {
     timeStyle: 'short'
   }).format(date);
 };
+
+// Lista dos postos V2 disponíveis no sistema
+const postosV2 = [
+  { id: 'osasco_v2', nome: 'Osasco V2' },
+  { id: 'campinas_v2', nome: 'Campinas V2' },
+  { id: 'socorro_v2', nome: 'Socorro V2' },
+  { id: 'sorocaba_v2', nome: 'Sorocaba V2' },
+  { id: 'abc_v2', nome: 'ABC V2' },
+  { id: 'remedios', nome: 'Remédios' },
+  { id: 'alair_v2', nome: 'Alair V2' }
+];
 
 // Função para gerar senha aleatória
 const generateRandomPassword = (length: number = 8): string => {
@@ -696,6 +709,33 @@ const UsersNew: React.FC = () => {
                     />
                   </div>
                 </div>
+                {/* Campo de Posto - exibido apenas quando o perfil é "posto" */}
+                {newUser.role === 'posto' && (
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="posto" className="text-right">
+                      Posto
+                    </Label>
+                    <div className="col-span-3">
+                      <NativeSelect
+                        id="posto"
+                        value={newUser.posto || ''}
+                        onChange={(e) => setNewUser({...newUser, posto: e.target.value})}
+                        options={[
+                          { value: '', label: 'Selecione um posto...' },
+                          ...postosV2.map(posto => ({
+                            value: posto.id,
+                            label: posto.nome
+                          }))
+                        ]}
+                        placeholder="Selecione o posto"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Este usuário terá acesso específico a este posto.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="base" className="text-right">
                     Base
