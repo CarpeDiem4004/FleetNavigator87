@@ -205,6 +205,11 @@ function App() {
           <ProtectedRoute path="/manutencao" component={ManutencaoPage} />
           <ProtectedRoute path="/tratativa-manutencao" component={TratativaManutencaoPage} />
           
+          {/* Rotas para o Posto Campinas */}
+          <ProtectedRoute path="/posto-campinas" component={PostoCampinasIndex} />
+          <ProtectedRoute path="/posto-campinas/operador" component={PostoCampinasOperador} />
+          <ProtectedRoute path="/posto-campinas/admin" component={PostoCampinasAdmin} />
+          
           {/* Rota pública para checklist do motorista */}
           <Route path="/checklist/:id">
             <DriverChecklist />
@@ -309,6 +314,11 @@ function App() {
           {/* Formulário simplificado para Abastecimento do Posto Remédios */}
           <Route path="/abastecimento-posto-remedios">
             <AbastecimentoPostoRemediosPage />
+          </Route>
+          
+          {/* Rota pública para o Posto Campinas */}
+          <Route path="/posto-campinas/public">
+            <PostoCampinasOperador />
           </Route>
           
           <Route>
