@@ -32,11 +32,11 @@ const verifyJwtAuth = async (req, res, next) => {
       ip: req.ip,
     });
     
-    // ADICIONADO: Verificar se temos uma sessão Express válida com usuário
-    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
-      console.log('[HybridAPI] Usuário já autenticado por sessão:', req.user.email);
+    // ADICIONADO: Verificar se temos uma sessão Express válida ou usuário simulado
+    if (req.user) {
+      console.log('[HybridAPI] Usuário disponível:', req.user.email);
       
-      // Se já temos informações de usuário via sessão, usar elas
+      // Se já temos informações de usuário via sessão ou middleware de bypass, usar elas
       return next();
     }
     
