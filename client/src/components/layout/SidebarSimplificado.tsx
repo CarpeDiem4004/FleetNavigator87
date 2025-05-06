@@ -195,7 +195,7 @@ const SidebarSimplificado: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Motoristas', href: '/drivers', icon: Users },
     { name: 'Manutenção', href: '/manutencao', icon: Wrench },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
-    { name: 'Abastecimento', href: '/refueling', icon: Fuel },
+    { name: 'Posto Murici', href: '/refueling', icon: Fuel },
     
     // Nova seção para Postos
     {
