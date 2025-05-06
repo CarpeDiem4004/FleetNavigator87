@@ -28,7 +28,7 @@ import { registerTireMoveRoutes } from "./tireMoveApi";
 import { compareSchemas } from "./compareSchemas";
 import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
 // Removida importação redundante, pois está sendo importada via supabaseInsertRoute
-import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoutes";
+import precosCombustivelRoutes from "./routes/precosCombustivelRoutes";
 import { registerPostosMapeamentoRoutes } from "./routes/postosMapeamentoRoutes";
 import { registerUsuariosSupabaseRoutes } from "./routes/usuariosSupabaseRoutes";
 import { supabaseInsertHandler } from "./routes/supabaseInsertRoute";
@@ -827,6 +827,9 @@ async function criarTabelaSolicitacoesFuelCard() {
     console.error("Erro ao criar tabela solicitacoes_fuel_card:", error);
   }
 }
+
+// Importar funções de recebimentos de combustível
+import { getRecebimentosCombustivel, registrarRecebimentoCombustivel } from './recebimentosApi';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Criar tabelas necessárias se não existirem
@@ -5666,6 +5669,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rotas de atividades de pneus
   setupTireActivityRoutes(app);
   
+  // Rotas para recebimentos de combustível
+  app.get("/api/recebimentos/:posto", isAuthenticated, getRecebimentosCombustivel);
+  app.post("/api/recebimentos/:posto", isAuthenticated, registrarRecebimentoCombustivel);
+  
+  // Registrar rotas para preços de combustível
+  app.use("/api/precos-combustivel", precosCombustivelRoutes);
+  
   // Rotas para postos de abastecimento - acessíveis para usuários autenticados
   // Não é necessário middleware adicional pois a verificação de admin já está implementada no hook useBasePermission
   app.get("/api/postos", isAuthenticated, getPostosResumo);
@@ -6074,7 +6084,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/auth', authHybridRoutes);
   
   // Registrar rotas para gerenciar preços de combustível
-  registerPrecosCombustivelRoutes(app);
+  app.use("/api/precos-combustivel", precosCombustivelRoutes);
   
   // Registra as rotas para o mapeamento de postos
   registerPostosMapeamentoRoutes(app);
@@ -6229,5 +6239,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // Verificar e criar tabela de preços de combustível diretamente
+  try {
+    // Acessar a função diretamente sem fazer requisição HTTP
+    const verificarTabela = async () => {
+      try {
+        // Verificar se a tabela preco_combustivel existe
+        const checkTableQuery = `
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = 'preco_combustivel'
+          );
+        `;
+        const tableExists = await pool.query(checkTableQuery);
+        
+        if (!tableExists.rows[0].exists) {
+          // Se a tabela não existir, vamos criá-la
+          const createTableQuery = `
+            CREATE TABLE preco_combustivel (
+              id SERIAL PRIMARY KEY,
+              tipo VARCHAR(50) NOT NULL,
+              preco NUMERIC NOT NULL,
+              ativo BOOLEAN DEFAULT TRUE,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            -- Inserir valores padrão
+            INSERT INTO preco_combustivel (tipo, preco) VALUES 
+            ('Diesel', 5.99),
+            ('Gasolina', 6.29),
+            ('Etanol', 4.89),
+            ('Arla 32', 7.50);
+          `;
+          await pool.query(createTableQuery);
+          
+          console.log('Tabela preco_combustivel criada com sucesso!');
+        } else {
+          console.log('Tabela preco_combustivel já existe.');
+        }
+      } catch (error) {
+        console.error('Erro ao verificar ou criar tabela preco_combustivel:', error);
+      }
+    };
+    
+    // Executar a verificação
+    verificarTabela();
+  } catch (error) {
+    console.error('Erro ao iniciar verificação da tabela de preços:', error);
+  }
+  
   return httpServer;
 }
