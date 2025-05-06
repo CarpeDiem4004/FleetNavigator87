@@ -92,9 +92,41 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
       console.log(`[FETCH] Resposta da API de histórico:`, response.data);
       
       if (response.data && response.data.success) {
-        console.log(`[FETCH] Histórico carregado com sucesso, ${response.data.data.length} registros encontrados`);
-        setHistorico(response.data.data || []);
-        setLastRefreshTime(new Date());
+        console.log(`[FETCH] Histórico carregado com sucesso, ${response.data.data?.length || 0} registros encontrados`, response.data.data);
+        
+        // Verificar se os dados estão no formato esperado e adaptá-los se necessário
+        if (Array.isArray(response.data.data)) {
+          // Mapear os dados para garantir que estejam no formato correto
+          const dadosFormatados = response.data.data.map((item: any) => {
+            // Verificar campos específicos e adaptá-los
+            return {
+              id: item.id,
+              placa: item.placa,
+              km: item.km !== undefined ? item.km : item.km_atual,
+              tipo_combustivel: item.tipo_combustivel,
+              quantidade_litros: item.quantidade_litros !== undefined ? item.quantidade_litros : item.litros,
+              nome_motorista: item.nome_motorista,
+              rg_motorista: item.rg_motorista,
+              nome_operador: item.nome_operador,
+              valor_litro: item.valor_litro !== undefined ? item.valor_litro : item.preco_litro,
+              valor_total: item.valor_total,
+              tipo_veiculo: item.tipo_veiculo,
+              observacoes: item.observacoes,
+              lavagem: item.lavagem || false,
+              tipo_lavagem: item.tipo_lavagem,
+              data_hora: item.data_hora || item.created_at,
+              created_at: item.created_at
+            };
+          });
+          
+          console.log('[FETCH] Dados formatados:', dadosFormatados);
+          setHistorico(dadosFormatados);
+          setLastRefreshTime(new Date());
+        } else {
+          console.error('[FETCH] Os dados não estão em formato de array:', response.data.data);
+          setHistorico([]);
+          setError('Formato de dados inesperado');
+        }
       } else {
         console.error('[FETCH] Erro na resposta da API:', response.data);
         setError(response.data?.error || 'Erro ao carregar o histórico');
