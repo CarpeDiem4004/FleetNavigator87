@@ -133,7 +133,6 @@ export async function getHistoricoPosto(req, res) {
             to_char(data_hora, 'DD/MM/YYYY HH24:MI') as data_hora,
             created_at
           FROM ${tableName}
-          WHERE status = 'ativo'
           ORDER BY created_at DESC
           LIMIT ${req.query.limit || 50}
         `;
