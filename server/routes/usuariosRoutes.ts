@@ -94,30 +94,31 @@ router.get('/users/list', isAuthenticated, adminRequired, async (req: any, res: 
       } : null
     });
     
-    // Simplificando ao máximo a consulta para encontrar o problema
     try {
-      // Consulta simples - apenas os campos básicos
+      console.log('[UsuariosRoutes] Testando pool do banco antes da consulta:', {
+        totalCount: pool.totalCount,
+        idleCount: pool.idleCount,
+        waitingCount: pool.waitingCount
+      });
+      
+      // ABORDAGEM EXTREMAMENTE SIMPLIFICADA
+      // Removendo campos possivelmente problemáticos
       const query = `
         SELECT 
           id, 
           name, 
           email, 
-          role, 
-          base_id as "baseId", 
-          basename as "baseName", 
-          oficina_id as "oficinaId", 
-          is_active as "isActive", 
-          created_at as "createdAt", 
-          updated_at as "updatedAt"
+          role,
+          is_active AS "isActive"
         FROM 
           users
-        ORDER BY 
-          name
+        LIMIT 50
       `;
       
-      console.log('[UsuariosRoutes] Executando consulta SQL simplificada...');
+      console.log('[UsuariosRoutes] Executando consulta minimalista...');
       
       const result = await pool.query(query);
+      
       console.log(`[UsuariosRoutes] ${result.rows.length} usuário(s) encontrado(s)`);
       
       return res.status(200).json({
@@ -130,7 +131,7 @@ router.get('/users/list', isAuthenticated, adminRequired, async (req: any, res: 
       return res.status(500).json({
         success: false,
         message: 'Erro na consulta SQL: ' + queryErr.message,
-        error: queryErr
+        stack: queryErr.stack
       });
     }
   } catch (error) {
@@ -194,49 +195,51 @@ router.get('/users/:id', isAuthenticated, adminRequired, async (req: any, res: a
   }
 });
 
-// APENAS PARA TESTES: Rota sem autenticação para listar usuários (remover em produção)
+// APENAS PARA TESTES: Rota sem autenticação para verificar a conexão com o banco
 router.get('/users/list-debug', async (req: any, res: any) => {
   try {
-    console.log('[UsuariosRoutes] Listando usuários SEM autenticação (rota de debug)');
+    console.log('[UsuariosRoutes] Teste de conexão ao banco (rota de debug)');
     
+    // Primeiro tentamos executar um comando simples para verificar a conexão
     try {
-      // Consulta simples
-      const query = `
-        SELECT 
-          id, 
-          name, 
-          email, 
-          role
-        FROM 
-          users
-        ORDER BY 
-          name
-        LIMIT 10
-      `;
+      console.log('[UsuariosRoutes] Testando conexão com SELECT NOW()...');
       
-      console.log('[UsuariosRoutes] Executando consulta SQL de debug...');
+      // Teste de conexão básico
+      const testResult = await pool.query('SELECT NOW() as current_time');
       
-      const result = await pool.query(query);
-      console.log(`[UsuariosRoutes] ${result.rows.length} usuário(s) encontrado(s) em debug`);
+      console.log('[UsuariosRoutes] Conexão bem-sucedida, hora atual:', testResult.rows[0].current_time);
       
+      // Testar consulta simples para contar usuários
+      const countResult = await pool.query('SELECT COUNT(*) as user_count FROM users');
+      
+      console.log(`[UsuariosRoutes] Total de ${countResult.rows[0].user_count} usuário(s) no banco`);
+      
+      // Se chegou até aqui, o banco de dados está funcionando
       return res.status(200).json({
         success: true,
-        count: result.rows.length,
-        users: result.rows
+        connection: "OK",
+        timestamp: testResult.rows[0].current_time,
+        user_count: parseInt(countResult.rows[0].user_count),
+        database_info: {
+          pool_total_count: pool.totalCount,
+          pool_idle_count: pool.idleCount,
+          pool_waiting_count: pool.waitingCount,
+          connection_string: process.env.DATABASE_URL?.substring(0, 20) + '...'
+        }
       });
-    } catch (queryErr: any) {
-      console.error('[UsuariosRoutes] Erro na consulta SQL de debug:', queryErr);
+    } catch (dbErr: any) {
+      console.error('[UsuariosRoutes] Erro de conexão com o banco:', dbErr);
       return res.status(500).json({
         success: false,
-        message: 'Erro na consulta SQL de debug: ' + queryErr.message,
-        error: queryErr
+        message: 'Erro na conexão com o banco: ' + dbErr.message,
+        error: dbErr
       });
     }
   } catch (error) {
-    console.error('[UsuariosRoutes] Erro ao listar usuários debug:', error);
+    console.error('[UsuariosRoutes] Erro geral no teste de conexão:', error);
     return res.status(500).json({
       success: false,
-      message: 'Erro ao listar usuários debug',
+      message: 'Erro geral no teste de conexão',
       error: String(error)
     });
   }
