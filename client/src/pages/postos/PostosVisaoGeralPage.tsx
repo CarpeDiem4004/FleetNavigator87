@@ -90,19 +90,11 @@ export default function PostosVisaoGeralPage() {
   const postosFiltrados = React.useMemo(() => {
     if (!data) return [];
     
-    // Filtrar apenas os postos V2 específicos, excluindo Campinas e Guarulhos_v2
+    // Mostrar apenas Campinas_v2 e Remedios
     let resultado = data.filter(posto => {
       const nomeLower = posto.nome.toLowerCase();
-      // Excluir Campinas (normal) e Campinas_v2
-      if (nomeLower === 'campinas' || nomeLower === 'campinas v1' || nomeLower === 'campinas_v2') {
-        return false;
-      }
-      // Excluir Guarulhos_v2
-      if (nomeLower === 'guarulhos_v2') {
-        return false;
-      }
-      // Incluir apenas os demais postos que terminam com _v2
-      return nomeLower.endsWith('v2');
+      // Incluir apenas Campinas_v2 e Remedios
+      return nomeLower === 'campinas_v2' || nomeLower === 'remedios';
     });
     
     // Aplicar filtro de pesquisa
@@ -269,6 +261,56 @@ export default function PostosVisaoGeralPage() {
           </div>
           <div className="bg-blue-50 px-3 py-1 rounded-full text-sm text-blue-700">
             Volume total: <span className="font-medium">{formatarNumero(data?.reduce((acc, p) => acc + p.volume_atual, 0) || 0)} L</span>
+          </div>
+        </div>
+        
+        {/* Card de total de abastecimento via solicitação de cartão */}
+        <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-100 shadow-sm">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold text-purple-900">Total de Abastecimento via Solicitação de Cartão</h3>
+              <p className="text-sm text-purple-700">Consumo acumulado para todos os postos</p>
+            </div>
+            <div className="bg-white p-3 rounded-full shadow">
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="24" 
+                height="24" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className="text-purple-600"
+              >
+                <rect width="20" height="14" x="2" y="5" rx="2" />
+                <line x1="2" x2="22" y1="10" y2="10" />
+              </svg>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <div className="bg-white p-3 rounded-lg shadow-sm">
+              <p className="text-sm text-gray-500">Total de Litros</p>
+              <p className="text-2xl font-bold text-purple-700">
+                {formatarNumero(data?.reduce((acc, p) => acc + (p.total_cartao || 0), 0) || 0)} L
+              </p>
+            </div>
+            <div className="bg-white p-3 rounded-lg shadow-sm">
+              <p className="text-sm text-gray-500">Total de Solicitações</p>
+              <p className="text-2xl font-bold text-purple-700">
+                {formatarNumero(data?.reduce((acc, p) => p.total_cartao ? acc + 1 : acc, 0) || 0)}
+              </p>
+            </div>
+            <div className="bg-white p-3 rounded-lg shadow-sm">
+              <p className="text-sm text-gray-500">Média por Solicitação</p>
+              <p className="text-2xl font-bold text-purple-700">
+                {formatarNumero(
+                  data?.reduce((acc, p) => acc + (p.total_cartao || 0), 0) / 
+                  Math.max(1, data?.reduce((acc, p) => p.total_cartao ? acc + 1 : acc, 0) || 1)
+                )} L
+              </p>
+            </div>
           </div>
         </div>
       </div>
