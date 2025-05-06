@@ -14,14 +14,23 @@ interface Movimentacao {
   id: number;
   placa: string;
   tipo_movimento: string | null;
-  nome_motorista: string | null;
-  nome_operador: string | null;
-  posto: string;
-  created_at: string;
-  motivo?: string | null;
+  motorista: string | null;      // Coluna motorista para os postos que usam essa nomenclatura
+  motorista_rg?: string | null;  // Coluna do posto ABC_v2
+  nome_motorista?: string | null; // Compatibilidade com outras interfaces
+  operador: string | null;       // Coluna operador dos postos ABC_v2
+  nome_operador?: string | null; // Compatibilidade com outras interfaces
+  posto?: string;                // Campo derivado (não presente na tabela)
+  tipo_veiculo?: string | null;
+  km_registrado?: number | null;
+  destino?: string | null;
+  origem?: string | null;
+  observacoes?: string | null;
+  data_movimento?: string;      // Campo específico da tabela de movimentações
+  created_at: string;           // Timestamp padrão
+  updated_at?: string;
+  motivo?: string | null;       // Campos de compatibilidade
   data_entrada?: string | null;
   data_saida?: string | null;
-  motorista?: string | null;
 }
 
 export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ postId, refreshTrigger = 0 }) => {
@@ -40,8 +49,18 @@ export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ 
       console.log("[FETCH] Buscando movimentações de pátio para o posto:", postId);
       console.log("[FETCH] Usando nome capitalizado:", formatPosto(postId));
       
+      // Verifica se é o posto ABC_v2 para usar a API direta
+      const isAbcV2 = postId.toLowerCase().includes('abc_v2') || postId.toLowerCase().includes('abc v2');
+      
+      // Determinar URL da API baseada no tipo de posto
+      let apiUrl = isAbcV2 
+        ? `/api/movimentacoes-patio-direto/${postId.toLowerCase().replace(' ', '_')}`
+        : `/api/movimentacoes-patio/${postId}`;
+        
+      console.log("[FETCH] Usando API:", apiUrl);
+      
       // Usando a API do servidor para buscar os dados
-      const response = await fetch(`/api/movimentacoes-patio/${postId}`);
+      const response = await fetch(apiUrl);
       
       if (!response.ok) {
         console.error('[FETCH] Erro ao buscar movimentações:', response.statusText);
@@ -54,7 +73,22 @@ export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ 
       // Verificar se a operação foi bem-sucedida e extrair os dados
       if (result.success) {
         console.log("[FETCH] Movimentações recuperadas:", result.data?.length || 0);
-        setMovimentacoes(result.data || []);
+        
+        // Mapear e normalizar os dados
+        const dadosNormalizados = result.data.map((item: any) => {
+          return {
+            ...item,
+            // Normalizar nomes de campos para compatibilidade com a interface
+            nome_motorista: item.nome_motorista || item.motorista || null,
+            nome_operador: item.nome_operador || item.operador || null,
+            posto: result.posto || postId,
+            // Garantir que há uma data formatada
+            data_formatted: item.data_movimento || item.created_at
+          };
+        });
+        
+        console.log("[FETCH] Dados normalizados:", dadosNormalizados.length);
+        setMovimentacoes(dadosNormalizados || []);
       } else {
         console.error('[FETCH] Erro ao buscar movimentações:', result.message);
         setMovimentacoes([]);

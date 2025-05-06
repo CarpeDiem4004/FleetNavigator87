@@ -13,7 +13,8 @@ import {
   getComparativoCombustiveisPosto,
   checkTabelaPosto,
   registrarAbastecimentoPosto,
-  getRecebimentosPosto
+  getRecebimentosPosto,
+  getMovimentacoesPatioPosto
 } from "./api-direto.js";
 // Importar API para checklists de motoristas
 import {
@@ -152,6 +153,7 @@ app.use((req, res, next) => {
   app.get('/api/comparativo-combustiveis-direto/:posto', getComparativoCombustiveisPosto);
   app.get('/api/check-tabela-direto/:posto', checkTabelaPosto);
   app.get('/api/recebimentos-direto/:posto', getRecebimentosPosto);
+  app.get('/api/movimentacoes-patio-direto/:posto', getMovimentacoesPatioPosto);
   app.post('/api/abastecimento-direto/:posto', registrarAbastecimentoPosto);
   
   // Rota para recuperar todas as movimentações de pátio - evita interceptação do Vite
@@ -224,6 +226,8 @@ app.use((req, res, next) => {
   // Rota de abastecimento
   app.post('/api/abastecimento-direto-abc-v2', (req, res) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ABC V2 ====");
+    // Forçar o Content-Type como application/json para evitar interceptação do Vite
+    res.setHeader('Content-Type', 'application/json');
     // Forçar o parâmetro posto para garantir que seja tratado como abc_v2
     req.params = { ...req.params, posto: 'abc_v2' };
     registrarAbastecimentoPosto(req, res);
@@ -232,9 +236,30 @@ app.use((req, res, next) => {
   // Rota de histórico para ABC V2
   app.get('/api/historico-direto-abc-v2', (req, res) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE ABC V2 ====");
+    // Forçar o Content-Type como application/json para evitar interceptação do Vite
+    res.setHeader('Content-Type', 'application/json');
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'abc_v2' };
     getHistoricoPosto(req, res);
+  });
+
+  // Rota de movimentações de pátio para ABC V2
+  app.get('/api/movimentacoes-patio-direto-abc-v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA MOVIMENTAÇÕES DE PÁTIO DE ABC V2 ====");
+    // Forçar o Content-Type como application/json para evitar interceptação do Vite
+    res.setHeader('Content-Type', 'application/json');
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'abc_v2' };
+    getMovimentacoesPatioPosto(req, res);
+  });
+  
+  // Rota alternativa que não será interceptada pelo Vite
+  app.get('/_special/abc/movimentacoes', (req, res) => {
+    console.log("==== USANDO ROTA ALTERNATIVA PARA MOVIMENTAÇÕES DE ABC V2 ====");
+    // Forçar o Content-Type como application/json para evitar interceptação do Vite
+    res.setHeader('Content-Type', 'application/json');
+    // Consultar diretamente os dados do banco
+    getMovimentacoesPatioPosto({ params: { posto: 'abc_v2' } } as any, res);
   });
 
   // Rotas especiais para Alair V2
