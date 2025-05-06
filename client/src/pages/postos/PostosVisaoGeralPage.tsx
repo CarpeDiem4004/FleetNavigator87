@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { format } from 'date-fns';
-import { AlertTriangle, DropletIcon, Filter, Fuel, LogIn, RefreshCw, Search } from 'lucide-react';
+import { AlertTriangle, DropletIcon, Filter, Fuel, LogIn, RefreshCw, Search, DollarSign, Droplets } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -294,67 +294,122 @@ export default function PostosVisaoGeralPage() {
           </div>
         </div>
         
-        {/* Card de total de abastecimento via solicitação de cartão */}
-        <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-100 shadow-sm">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="text-lg font-semibold text-purple-900">Total de Abastecimento via Solicitação de Cartão</h3>
-              <p className="text-sm text-purple-700">Consumo acumulado para todos os postos</p>
-            </div>
-            <div className="bg-white p-3 rounded-full shadow">
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                width="24" 
-                height="24" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                className="text-purple-600"
-              >
-                <rect width="20" height="14" x="2" y="5" rx="2" />
-                <line x1="2" x2="22" y1="10" y2="10" />
-              </svg>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-            <div className="bg-white p-3 rounded-lg shadow-sm">
-              <p className="text-sm text-gray-500">Total de Litros</p>
-              <p className="text-2xl font-bold text-purple-700">
-                {formatarNumero(
-                  Array.isArray(data) 
-                    ? data.reduce((acc, p) => acc + (p.total_cartao || 0), 0) 
-                    : 0
-                )} L
-              </p>
-            </div>
-            <div className="bg-white p-3 rounded-lg shadow-sm">
-              <p className="text-sm text-gray-500">Total de Solicitações</p>
-              <p className="text-2xl font-bold text-purple-700">
-                {formatarNumero(
-                  Array.isArray(data) 
-                    ? data.reduce((acc, p) => p.total_cartao ? acc + 1 : acc, 0)
-                    : 0
-                )}
-              </p>
-            </div>
-            <div className="bg-white p-3 rounded-lg shadow-sm">
-              <p className="text-sm text-gray-500">Média por Solicitação</p>
-              <p className="text-2xl font-bold text-purple-700">
-                {formatarNumero(
-                  Array.isArray(data)
-                    ? data.reduce((acc, p) => acc + (p.total_cartao || 0), 0) / 
-                      Math.max(1, data.reduce((acc, p) => p.total_cartao ? acc + 1 : acc, 0))
-                    : 0
-                )} L
-              </p>
-            </div>
-          </div>
-        </div>
+
       </div>
       
+      {/* Card dedicado para abastecimentos via solicitação de cartão */}
+      <div className="mb-6">
+        <Card className="overflow-hidden shadow-md">
+          <CardHeader className="pb-2 bg-purple-50">
+            <div className="flex justify-between">
+              <div>
+                <CardTitle className="flex items-center">
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="20" 
+                    height="20" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    className="mr-2 text-purple-600"
+                  >
+                    <rect width="20" height="14" x="2" y="5" rx="2" />
+                    <line x1="2" x2="22" y1="10" y2="10" />
+                  </svg>
+                  Abastecimentos via Solicitação de Cartão
+                </CardTitle>
+                <CardDescription className="text-base">
+                  Resumo de todos os abastecimentos realizados com cartão
+                </CardDescription>
+              </div>
+              <Badge 
+                variant="outline" 
+                className="py-1 px-2 rounded-full bg-purple-100 text-purple-700 border-purple-200"
+              >
+                Controle
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="pb-2">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+              <div className="text-center">
+                <div className="flex items-center justify-center">
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="16" 
+                    height="16" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    className="mr-1 text-purple-600"
+                  >
+                    <rect width="20" height="14" x="2" y="5" rx="2" />
+                    <line x1="2" x2="22" y1="10" y2="10" />
+                  </svg>
+                  <span className="text-sm text-gray-500">Total de Solicitações</span>
+                </div>
+                <p className="font-medium text-xl text-purple-700">
+                  {formatarNumero(
+                    Array.isArray(data) 
+                      ? data.reduce((acc, p) => p.total_cartao ? acc + 1 : acc, 0)
+                      : 0
+                  )}
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center">
+                  <Fuel className="h-4 w-4 mr-1 text-purple-600" />
+                  <span className="text-sm text-gray-500">Total em Litros</span>
+                </div>
+                <p className="font-medium text-xl text-purple-700">
+                  {formatarNumero(
+                    Array.isArray(data) 
+                      ? data.reduce((acc, p) => acc + (p.total_cartao || 0), 0) 
+                      : 0
+                  )} L
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center">
+                  <DollarSign className="h-4 w-4 mr-1 text-purple-600" />
+                  <span className="text-sm text-gray-500">Valor Estimado</span>
+                </div>
+                <p className="font-medium text-xl text-purple-700">
+                  R$ {formatarNumero(
+                    Array.isArray(data) 
+                      ? data.reduce((acc, p) => acc + (p.total_cartao || 0), 0) * 5.19 // valor estimado do litro
+                      : 0
+                  )}
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center">
+                  <Droplets className="h-4 w-4 mr-1 text-purple-600" />
+                  <span className="text-sm text-gray-500">Média por Solicitação</span>
+                </div>
+                <p className="font-medium text-xl text-purple-700">
+                  {formatarNumero(
+                    Array.isArray(data)
+                      ? data.reduce((acc, p) => acc + (p.total_cartao || 0), 0) / 
+                        Math.max(1, data.reduce((acc, p) => p.total_cartao ? acc + 1 : acc, 0))
+                      : 0
+                  )} L
+                </p>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="text-xs text-gray-500 border-t pt-3">
+            Dados atualizados em: {format(new Date(), 'dd/MM/yyyy HH:mm')}
+          </CardFooter>
+        </Card>
+      </div>
+
       {/* Grid de cards dos postos */}
       {postosFiltrados.length === 0 ? (
         <div className="bg-white rounded-lg shadow-md p-8 text-center">
