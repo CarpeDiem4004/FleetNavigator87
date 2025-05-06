@@ -688,22 +688,22 @@ const OficinaMurici: React.FC = () => {
       
       {/* Diálogo para adicionar/editar manutenção */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>
+        <DialogContent className="sm:max-w-[600px] p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="pb-3 border-b">
+            <DialogTitle className="text-xl font-bold">
               {isEditMode ? 'Editar Manutenção' : 'Nova Manutenção'}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="mt-1 text-gray-600 text-sm">
               {isEditMode 
                 ? 'Atualize os dados da manutenção selecionada.' 
                 : 'Registre uma nova manutenção na Oficina Murici.'}
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="placa">Placa do Veículo*</Label>
+          <div className="grid gap-3 py-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="placa" className="text-sm">Placa do Veículo*</Label>
                 <Input
                   id="placa"
                   name="placa"
@@ -711,11 +711,12 @@ const OficinaMurici: React.FC = () => {
                   onChange={handleInputChange}
                   placeholder="AAA1234"
                   maxLength={10}
+                  className="h-9"
                 />
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="km">Quilometragem*</Label>
+              <div className="space-y-1">
+                <Label htmlFor="km" className="text-sm">Quilometragem*</Label>
                 <Input
                   id="km"
                   name="km"
@@ -723,12 +724,13 @@ const OficinaMurici: React.FC = () => {
                   value={currentManutencao.km || ''}
                   onChange={handleInputChange}
                   placeholder="Ex: 15000"
+                  className="h-9"
                 />
               </div>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="descricao_manutencao">Descrição da Manutenção*</Label>
+            <div className="space-y-1">
+              <Label htmlFor="descricao_manutencao" className="text-sm">Descrição da Manutenção*</Label>
               <Textarea
                 id="descricao_manutencao"
                 name="descricao_manutencao"
@@ -736,43 +738,46 @@ const OficinaMurici: React.FC = () => {
                 onChange={handleInputChange}
                 placeholder="Descreva o problema ou serviço a ser realizado"
                 rows={3}
+                className="min-h-[80px] resize-none"
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="mecanico">Mecânico Responsável*</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="mecanico" className="text-sm">Mecânico Responsável*</Label>
                 <Input
                   id="mecanico"
                   name="mecanico"
                   value={currentManutencao.mecanico}
                   onChange={handleInputChange}
                   placeholder="Nome do mecânico"
+                  className="h-9"
                 />
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="prazo">Prazo</Label>
+              <div className="space-y-1">
+                <Label htmlFor="prazo" className="text-sm">Prazo</Label>
                 <Input
                   id="prazo"
                   name="prazo"
                   type="date"
                   value={currentManutencao.prazo}
                   onChange={handleInputChange}
+                  className="h-9"
                 />
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="status" className="text-sm">Status</Label>
                 <Select
                   value={currentManutencao.status}
                   onValueChange={(value: 'em_andamento' | 'aguardando_peca' | 'finalizado') => 
                     handleSelectChange('status', value)
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-9">
                     <SelectValue placeholder="Selecione o status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -785,8 +790,8 @@ const OficinaMurici: React.FC = () => {
                 </Select>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="custo_total">Custo Total (R$)</Label>
+              <div className="space-y-1">
+                <Label htmlFor="custo_total" className="text-sm">Custo Total (R$)</Label>
                 <Input
                   id="custo_total"
                   name="custo_total"
@@ -796,12 +801,13 @@ const OficinaMurici: React.FC = () => {
                   value={currentManutencao.custo_total || ''}
                   onChange={handleInputChange}
                   placeholder="0,00"
+                  className="h-9"
                 />
               </div>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="pecas_utilizadas">Peças Utilizadas</Label>
+            <div className="space-y-1">
+              <Label htmlFor="pecas_utilizadas" className="text-sm">Peças Utilizadas</Label>
               <Textarea
                 id="pecas_utilizadas"
                 name="peças_utilizadas"
@@ -809,11 +815,12 @@ const OficinaMurici: React.FC = () => {
                 onChange={handleInputChange}
                 placeholder="Liste as peças utilizadas na manutenção"
                 rows={2}
+                className="min-h-[60px] resize-none"
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="observacoes">Observações</Label>
+            <div className="space-y-1">
+              <Label htmlFor="observacoes" className="text-sm">Observações</Label>
               <Textarea
                 id="observacoes"
                 name="observacoes"
@@ -821,6 +828,7 @@ const OficinaMurici: React.FC = () => {
                 onChange={handleInputChange}
                 placeholder="Observações adicionais"
                 rows={2}
+                className="min-h-[60px] resize-none"
               />
             </div>
           </div>
