@@ -27,17 +27,37 @@ const HistoricoPatioPage: React.FC = () => {
       setIsLoading(true);
       console.log("[FETCH] Buscando todas as movimentações de pátio");
       
-      // Buscar todas as movimentações sem filtro de posto
+      // Tentar usar a API direta do servidor primeiro
+      try {
+        const apiResponse = await fetch('/api/movimentacoes-patio');
+        const apiData = await apiResponse.json();
+        
+        console.log("[FETCH] Resposta da API de movimentações:", apiData);
+        
+        if (apiResponse.ok && apiData && apiData.success && Array.isArray(apiData.data)) {
+          console.log("[FETCH] Dados recuperados da API:", apiData.data.length);
+          setMovimentacoes(apiData.data);
+          setIsLoading(false);
+          return;
+        } else {
+          console.warn("[FETCH] Resposta inválida da API, tentando Supabase como alternativa");
+        }
+      } catch (apiError) {
+        console.warn("[FETCH] Erro ao usar API direta:", apiError);
+        console.warn("[FETCH] Tentando Supabase como alternativa");
+      }
+      
+      // Fallback: usar Supabase
       const response = await fetchRecords('movimentacoes_patio', {
         limit: 500 // Aumentamos o limite para trazer mais registros
       });
       
       // Verificar se os dados são válidos e um array
       if (response && response.success && Array.isArray(response.data)) {
-        console.log("[FETCH] Dados recuperados:", response.data.length);
+        console.log("[FETCH] Dados recuperados do Supabase:", response.data.length);
         setMovimentacoes(response.data);
       } else {
-        console.error("[FETCH] Dados inválidos recebidos:", response);
+        console.error("[FETCH] Dados inválidos recebidos do Supabase:", response);
         setMovimentacoes([]);
       }
     } catch (error) {

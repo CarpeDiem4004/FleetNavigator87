@@ -995,6 +995,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Rota para recuperar todas as movimentações de pátio
+  app.get('/api/movimentacoes-patio', async (req, res) => {
+    try {
+      console.log('Buscando todas as movimentações de pátio');
+      
+      // Consulta SQL para buscar registros
+      const query = `
+        SELECT * FROM movimentacoes_patio 
+        ORDER BY created_at DESC
+        LIMIT 500
+      `;
+      
+      const result = await pool.query(query);
+      
+      console.log(`Total de movimentações encontradas: ${result.rowCount || 0}`);
+      
+      return res.status(200).json({
+        success: true,
+        count: result.rowCount || 0,
+        data: result.rows
+      });
+    } catch (error) {
+      console.error('Erro ao buscar todas as movimentações de pátio:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar todas as movimentações de pátio',
+        error: String(error)
+      });
+    }
+  });
+  
   // Rota para recuperar movimentações de pátio por posto
   app.get('/api/movimentacoes-patio/:posto', async (req, res) => {
     try {
