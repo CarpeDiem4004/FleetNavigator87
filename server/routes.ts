@@ -46,6 +46,8 @@ import { consultarUsuarios, consultarUsuarioPorId } from "./handlers/userHandler
 import authTestRoutes from './routes/authTest';
 // Importação da rota de ressincronização de sessão
 import { resyncSession } from './routes/sessionResyncRoute';
+// Importação das rotas do Posto Campinas
+import postoCampinasRoutes from './routes/postoCampinasRoutes';
 // Importação dos middlewares antigos para compatibilidade com código existente
 import { 
   isAuthenticated as authMiddleware, 
@@ -6227,6 +6229,156 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // Registrar as rotas do Posto Campinas
+  // Usamos /api/posto-campinas como caminho para evitar conflitos
+  app.use('/api/posto-campinas', postoCampinasRoutes);
+
+  // Criar função para criar as tabelas do Posto Campinas se não existirem
+  async function criarTabelasPostoCampinas() {
+    try {
+      console.log("Verificando tabelas do Posto Campinas...");
+      
+      // Criar tabela de configuração de tanques
+      const checkTanquesQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'posto_campinas_tanques'
+        );
+      `;
+      
+      const tanquesResult = await pool.query(checkTanquesQuery);
+      
+      if (!tanquesResult.rows[0].exists) {
+        console.log("Criando tabela posto_campinas_tanques...");
+        
+        await pool.query(`
+          CREATE TABLE posto_campinas_tanques (
+            id SERIAL PRIMARY KEY,
+            tipo TEXT NOT NULL,
+            capacidade_total NUMERIC(10,2) NOT NULL,
+            nivel_atual NUMERIC(10,2) NOT NULL,
+            valor_litro_frota NUMERIC(10,2) NOT NULL,
+            valor_litro_agregado NUMERIC(10,2) NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW(),
+            ultima_atualizacao TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
+          );
+        `);
+        
+        console.log("Tabela posto_campinas_tanques criada com sucesso!");
+      }
+      
+      // Criar tabela de abastecimentos
+      const checkAbastecimentosQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'posto_campinas_abastecimentos'
+        );
+      `;
+      
+      const abastecimentosResult = await pool.query(checkAbastecimentosQuery);
+      
+      if (!abastecimentosResult.rows[0].exists) {
+        console.log("Criando tabela posto_campinas_abastecimentos...");
+        
+        await pool.query(`
+          CREATE TABLE posto_campinas_abastecimentos (
+            id SERIAL PRIMARY KEY,
+            placa TEXT NOT NULL,
+            km INTEGER NOT NULL,
+            tipo_veiculo TEXT NOT NULL,
+            tipo_combustivel TEXT NOT NULL,
+            quantidade_litros NUMERIC(10,2) NOT NULL,
+            valor_litro NUMERIC(10,2) NOT NULL,
+            valor_total NUMERIC(10,2) NOT NULL,
+            motorista TEXT NOT NULL,
+            observacoes TEXT,
+            data_registro TIMESTAMP DEFAULT NOW(),
+            operador_id INTEGER,
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
+          );
+        `);
+        
+        console.log("Tabela posto_campinas_abastecimentos criada com sucesso!");
+      }
+      
+      // Criar tabela de abastecimentos de tanques
+      const checkAbastecimentosTanqueQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'posto_campinas_abastecimentos_tanque'
+        );
+      `;
+      
+      const abastecimentosTanqueResult = await pool.query(checkAbastecimentosTanqueQuery);
+      
+      if (!abastecimentosTanqueResult.rows[0].exists) {
+        console.log("Criando tabela posto_campinas_abastecimentos_tanque...");
+        
+        await pool.query(`
+          CREATE TABLE posto_campinas_abastecimentos_tanque (
+            id SERIAL PRIMARY KEY,
+            tanque_id INTEGER NOT NULL,
+            quantidade_litros NUMERIC(10,2) NOT NULL,
+            valor_litro NUMERIC(10,2) NOT NULL,
+            valor_total NUMERIC(10,2) NOT NULL,
+            nota_fiscal TEXT,
+            fornecedor TEXT,
+            data_registro TIMESTAMP DEFAULT NOW(),
+            operador_id INTEGER,
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW(),
+            CONSTRAINT fk_tanque FOREIGN KEY (tanque_id) REFERENCES posto_campinas_tanques(id)
+          );
+        `);
+        
+        console.log("Tabela posto_campinas_abastecimentos_tanque criada com sucesso!");
+      }
+      
+      // Criar tabela de configurações gerais
+      const checkConfiguracoesQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'posto_campinas_configuracoes'
+        );
+      `;
+      
+      const configuracoesResult = await pool.query(checkConfiguracoesQuery);
+      
+      if (!configuracoesResult.rows[0].exists) {
+        console.log("Criando tabela posto_campinas_configuracoes...");
+        
+        await pool.query(`
+          CREATE TABLE posto_campinas_configuracoes (
+            id SERIAL PRIMARY KEY,
+            chave TEXT NOT NULL UNIQUE,
+            valor TEXT NOT NULL,
+            descricao TEXT,
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
+          );
+          
+          -- Inserir configurações iniciais
+          INSERT INTO posto_campinas_configuracoes (chave, valor, descricao)
+          VALUES 
+            ('alerta_nivel_baixo', '20', 'Percentual para alerta de nível baixo do tanque'),
+            ('alerta_nivel_critico', '10', 'Percentual para alerta de nível crítico do tanque');
+        `);
+        
+        console.log("Tabela posto_campinas_configuracoes criada com sucesso!");
+      }
+      
+      console.log("Verificação de tabelas do Posto Campinas concluída!");
+      
+    } catch (error) {
+      console.error("Erro ao criar tabelas do Posto Campinas:", error);
+    }
+  }
+  
+  // Criar as tabelas do Posto Campinas se não existirem
+  criarTabelasPostoCampinas();
 
   const httpServer = createServer(app);
   return httpServer;

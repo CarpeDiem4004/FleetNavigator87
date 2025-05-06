@@ -73,6 +73,10 @@ import FuelCardRequestsPanel from "@/pages/FuelCardRequestsPanel";
 import PostoRemediosPage from "@/pages/PostoRemediosPage";
 import PostoRemediosStandalone from "@/pages/PostoRemediosStandalone";
 import AbastecimentoPostoRemediosPage from "@/pages/AbastecimentoPostoRemediosPage";
+// Importação do Posto Campinas
+import PostoCampinasIndex from "@/pages/posto-campinas";
+import PostoCampinasOperador from "@/pages/posto-campinas/PostoCampinasOperador";
+import PostoCampinasAdmin from "@/pages/posto-campinas/PostoCampinasAdmin";
 import ProfileWithSupabase from "@/pages/ProfileWithSupabase";
 import DriverChecklist from "@/pages/DriverChecklist";
 import DriversPage from "@/pages/DriversPage";

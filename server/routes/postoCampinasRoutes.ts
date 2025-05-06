@@ -4,6 +4,7 @@
 import { Request, Response, Router } from 'express';
 import { db } from '../db';
 import { eq, desc, and, gte, lte, sql, like } from 'drizzle-orm';
+import { users } from '@shared/schema';
 import { 
   postoCampinasAbastecimentos, 
   postoCampinasTanques, 
@@ -13,13 +14,20 @@ import {
   insertTanqueSchema,
   insertAbastecimentoTanqueSchema,
   updateTanqueValoresSchema
-} from '../../shared/posto-campinas-schema';
+} from '@shared/posto-campinas-schema';
 import { createClient } from '@supabase/supabase-js';
 
 // Cliente Supabase para autenticação
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error("Erro: Variáveis de ambiente do Supabase não estão definidas corretamente");
+  console.log("SUPABASE_URL disponível:", !!supabaseUrl);
+  console.log("SUPABASE_SERVICE_KEY disponível:", !!supabaseKey);
+}
+
+const supabase = createClient(supabaseUrl || '', supabaseKey || '');
 
 // Middleware de autenticação
 const authMiddleware = async (req: Request, res: Response, next: Function) => {
