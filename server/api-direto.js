@@ -11,6 +11,37 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
+// Função para formatar o nome do posto para usar nas consultas
+function normalizarNomePosto(postoName) {
+  if (postoName.toLowerCase() === 'abc_v2' || 
+      postoName.toLowerCase().includes('abc_v2') || 
+      postoName.toLowerCase().includes('abc v2')) {
+    return 'abc_v2';
+  } else if (postoName.toLowerCase() === 'osasco_v2' || 
+      postoName.toLowerCase().includes('osasco_v2') || 
+      postoName.toLowerCase().includes('osasco v2')) {
+    return 'osasco_v2';
+  } else if (postoName.toLowerCase() === 'campinas_v2' || 
+      postoName.toLowerCase().includes('campinas_v2') || 
+      postoName.toLowerCase().includes('campinas v2')) {
+    return 'campinas_v2';
+  } else if (postoName.toLowerCase() === 'socorro_v2' || 
+      postoName.toLowerCase().includes('socorro_v2') || 
+      postoName.toLowerCase().includes('socorro v2')) {
+    return 'socorro_v2';
+  } else if (postoName.toLowerCase() === 'sorocaba_v2' || 
+      postoName.toLowerCase().includes('sorocaba_v2') || 
+      postoName.toLowerCase().includes('sorocaba v2')) {
+    return 'sorocaba_v2';
+  } else if (postoName.toLowerCase() === 'alair_v2' || 
+      postoName.toLowerCase().includes('alair_v2') || 
+      postoName.toLowerCase().includes('alair v2')) {
+    return 'alair_v2';
+  } else {
+    return formatPostoName(postoName);
+  }
+}
+
 // Função para obter recebimentos de um posto específico
 export async function getRecebimentosPosto(req, res) {
   try {
@@ -21,26 +52,9 @@ export async function getRecebimentosPosto(req, res) {
     
     console.log("getRecebimentosPosto - Posto solicitado:", postoName);
     
-    // Normalizar o nome do posto usando a mesma lógica que para histórico
-    if (postoName.toLowerCase() === 'abc_v2' || 
-        postoName.toLowerCase().includes('abc_v2') || 
-        postoName.toLowerCase().includes('abc v2')) {
-      postoName = 'abc_v2';
-      console.log("getRecebimentosPosto - Identificado como ABC V2");
-    } else if (postoName.toLowerCase() === 'osasco_v2' || 
-        postoName.toLowerCase().includes('osasco_v2') || 
-        postoName.toLowerCase().includes('osasco v2')) {
-      postoName = 'osasco_v2';
-      console.log("getRecebimentosPosto - Identificado como Osasco V2");
-    } else if (postoName.toLowerCase() === 'campinas_v2' || 
-        postoName.toLowerCase().includes('campinas_v2') || 
-        postoName.toLowerCase().includes('campinas v2')) {
-      postoName = 'campinas_v2';
-      console.log("getRecebimentosPosto - Identificado como Campinas V2");
-    } else {
-      postoName = formatPostoName(postoName);
-      console.log("getRecebimentosPosto - Formatado para:", postoName);
-    }
+    // Normalizar o nome do posto usando a função auxiliar
+    postoName = normalizarNomePosto(postoName);
+    console.log("getRecebimentosPosto - Identificado como", postoName);
     
     // Verificar se a tabela de recebimentos existe
     const tableName = `recebimentos_posto_${postoName.toLowerCase()}`;
@@ -88,6 +102,70 @@ export async function getRecebimentosPosto(req, res) {
     res.status(500).json({ 
       success: false, 
       error: `Erro ao consultar recebimentos: ${error.message}` 
+    });
+  }
+}
+
+// Função para obter movimentações de pátio de um posto específico
+export async function getMovimentacoesPatioPosto(req, res) {
+  try {
+    // Forçar o Content-Type como application/json para evitar interceptação do Vite
+    res.setHeader('Content-Type', 'application/json');
+    
+    let postoName = req.params.posto;
+    
+    console.log("getMovimentacoesPatioPosto - Posto solicitado:", postoName);
+    
+    // Normalizar o nome do posto usando a função auxiliar
+    postoName = normalizarNomePosto(postoName);
+    console.log("getMovimentacoesPatioPosto - Identificado como", postoName);
+    
+    // Verificar se a tabela de movimentações existe
+    const tableName = `movimentacoes_patio_${postoName.toLowerCase()}`;
+    
+    const tableCheckQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = $1
+      ) as "exists";
+    `;
+    
+    const tableCheckResult = await pool.query(tableCheckQuery, [tableName]);
+    
+    if (!tableCheckResult.rows[0].exists) {
+      // Tabela não existe, retornar array vazio
+      console.log(`getMovimentacoesPatioPosto - Tabela ${tableName} não encontrada`);
+      return res.json({
+        success: true,
+        data: [],
+        count: 0,
+        posto: postoName
+      });
+    }
+    
+    // Consultar movimentações de pátio
+    const dataQuery = `
+      SELECT * FROM ${tableName}
+      ORDER BY created_at DESC
+      LIMIT ${req.query.limit || 1000}
+    `;
+    
+    const result = await pool.query(dataQuery);
+    
+    console.log(`getMovimentacoesPatioPosto - Encontradas ${result.rowCount} movimentações para ${postoName}`);
+    
+    return res.json({
+      success: true,
+      data: result.rows,
+      count: result.rowCount,
+      posto: postoName
+    });
+  } catch (error) {
+    console.error(`Erro ao consultar movimentações para posto ${req.params.posto}:`, error);
+    res.status(500).json({ 
+      success: false, 
+      error: `Erro ao consultar movimentações: ${error.message}` 
     });
   }
 }
