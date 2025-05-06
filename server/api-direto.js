@@ -156,7 +156,10 @@ export async function getHistoricoPosto(req, res) {
             observacoes,
             NULL as lavagem,
             NULL as tipo_lavagem,
-            to_char(data_hora, 'DD/MM/YYYY HH24:MI') as data_hora,
+            COALESCE(
+              to_char(data_hora, 'DD/MM/YYYY HH24:MI'),
+              to_char(created_at, 'DD/MM/YYYY HH24:MI')
+            ) as data_hora,
             created_at
           FROM ${tableName}
           ORDER BY created_at DESC
