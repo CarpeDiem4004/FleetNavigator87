@@ -193,8 +193,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
     // Modificado para apontar para a página principal em vez de submenu
-    { name: 'Abastecimentos', href: '/abastecimentos', icon: Fuel },
-    { name: 'Histórico Abastecimento', href: '/refueling', icon: ClipboardList },
+    { name: 'Posto Murici', href: '/abastecimentos', icon: Fuel },
+    { name: 'Histórico Posto Murici', href: '/refueling', icon: ClipboardList },
     // Alterado para usar o ícone de posto de gasolina (Droplets) em vez de Warehouse para Postos Externos
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
@@ -219,8 +219,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Oficinas Credenciadas', href: '/fleet-management/workshops', icon: ClipboardList },
     { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package },
     // Modificado para apontar para a página principal em vez de submenu
-    { name: 'Abastecimentos', href: '/abastecimentos', icon: Fuel },
-    { name: 'Histórico Abastecimento', href: '/refueling', icon: ClipboardList },
+    { name: 'Posto Murici', href: '/abastecimentos', icon: Fuel },
+    { name: 'Histórico Posto Murici', href: '/refueling', icon: ClipboardList },
     // Corrigido para usar o mesmo ícone e estrutura em ambas as listas de navegação
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
