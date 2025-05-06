@@ -6218,8 +6218,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Usamos /api/posto-supabase como caminho para evitar conflitos com o Vite
   app.use('/api/posto-supabase', postoSupabaseRoutes);
 
-  // Rota pública para fins de teste da interface (sem autenticação)
-  app.get("/api/users/list-public", async (req, res) => {
+  // Rota pública para fins de teste da interface (sem autenticação) - Bypass total de autenticação
+  app.get("/api/users/list-public", (req, res, next) => {
+    // Bypass total do middleware de autenticação para fins de diagnóstico
+    console.log('[routes.ts] Endpoint público para listagem de usuários (bypass de autenticação)');
+    next();
+  }, async (req, res) => {
     try {
       console.log('[routes.ts] Listando usuários para interface de teste (rota pública)');
       

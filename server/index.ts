@@ -47,9 +47,52 @@ app.use(corsMiddleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// IMPORTANTE: Adicionar rota de diagnóstico ANTES de qualquer middleware de autenticação
-// Esta rota não depende de sessionStore ou autenticação
+// IMPORTANTE: Adicionar rotas de diagnóstico ANTES de qualquer middleware de autenticação
+// Estas rotas não dependem de sessionStore ou autenticação
 app.use('/api', diagnosticRoute);
+
+// ROTA PÚBLICA TEMPORÁRIA para listar usuários (sem auth) para fins de debug da interface
+app.get("/api/users/public-test", async (req, res) => {
+  try {
+    console.log('[index.ts] Rota pública temporária para listar usuários (sem autenticação)');
+    
+    // Importar pool diretamente para evitar dependências cíclicas
+    const { pool } = await import('./db');
+    
+    // Consulta simplificada para listar usuários no formato esperado pela interface
+    const query = `
+      SELECT 
+        id, 
+        name, 
+        email, 
+        role,
+        base_id AS "baseId",
+        (SELECT name FROM bases WHERE id = users.base_id) AS "baseName",
+        is_active AS "isActive",
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
+      FROM 
+        users
+      LIMIT 50
+    `;
+    
+    const result = await pool.query(query);
+    
+    console.log(`[index.ts] ${result.rows.length} usuário(s) encontrado(s) na rota pública temporária`);
+    
+    return res.status(200).json({
+      success: true,
+      count: result.rows.length,
+      users: result.rows
+    });
+  } catch (error: any) {
+    console.error('[index.ts] Erro na rota pública temporária de usuários:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao listar usuários: ' + error.message
+    });
+  }
+});
 
 // * IMPORTANTE: É crucial que registerRoutes seja chamado antes dos middlewares de diagnóstico *
 // * pois registerRoutes inicializa o Passport.js com setupAuth, que adiciona o método isAuthenticated *

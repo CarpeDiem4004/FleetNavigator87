@@ -149,9 +149,9 @@ const UsersNew: React.FC = () => {
     users: any[];
   }
 
-  // Buscar usuários da API (usando a rota pública para testes)
+  // Buscar usuários da API (usando a rota pública temporária sem autenticação)
   const { data: usersRaw = { success: false, count: 0, users: [] }, isLoading: usersLoading, error: usersError } = useQuery<HybridApiResponse>({
-    queryKey: ['/api/users/list-public'],
+    queryKey: ['/api/users/public-test'],
     staleTime: 10000, // Considerar stale após 10 segundos para permitir atualizações frequentes
     queryFn: getQueryFn({ on401: "returnNull" }), // Adicionado para lidar com erros 401
   });
