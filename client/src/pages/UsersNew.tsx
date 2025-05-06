@@ -153,7 +153,34 @@ const UsersNew: React.FC = () => {
   const { data: usersRaw = { success: false, count: 0, users: [] }, isLoading: usersLoading, error: usersError } = useQuery<HybridApiResponse>({
     queryKey: ['/api/hybrid/users'],
     staleTime: 10000, // Considerar stale após 10 segundos para permitir atualizações frequentes
-    queryFn: getQueryFn({ on401: "returnNull" }), // Adicionado para lidar com erros 401
+    queryFn: async () => {
+      // Implementação personalizada com cabeçalhos de autenticação explícitos
+      // Obter o token JWT do armazenamento local
+      const authToken = localStorage.getItem('authToken') || localStorage.getItem('jwt_token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+        console.log('[UsersNew] Adicionando token JWT ao cabeçalho da requisição para /api/hybrid/users');
+      } else {
+        console.warn('[UsersNew] Sem token JWT disponível para requisição de usuários');
+      }
+      
+      try {
+        const response = await fetch('/api/hybrid/users', { headers, credentials: 'include' });
+        if (!response.ok) {
+          if (response.status === 401) {
+            console.error('[UsersNew] Erro de autenticação (401) ao buscar usuários');
+            return { success: false, count: 0, users: [] };
+          }
+          throw new Error(`Erro ao buscar usuários: ${response.statusText}`);
+        }
+        return await response.json();
+      } catch (error) {
+        console.error('[UsersNew] Erro na requisição de usuários:', error);
+        throw error;
+      }
+    }
   });
   
   // Verificar e normalizar os dados de usuário
@@ -221,7 +248,34 @@ const UsersNew: React.FC = () => {
   // Buscar bases disponíveis usando React Query com a API híbrida
   const { data: basesRaw, isLoading: basesLoading } = useQuery<HybridBasesApiResponse>({
     queryKey: ['/api/hybrid/bases'],
-    queryFn: getQueryFn({ on401: "returnNull" }),
+    queryFn: async () => {
+      // Implementação personalizada com cabeçalhos de autenticação explícitos
+      // Obter o token JWT do armazenamento local
+      const authToken = localStorage.getItem('authToken') || localStorage.getItem('jwt_token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+        console.log('[UsersNew] Adicionando token JWT ao cabeçalho da requisição para /api/hybrid/bases');
+      } else {
+        console.warn('[UsersNew] Sem token JWT disponível para requisição de bases');
+      }
+      
+      try {
+        const response = await fetch('/api/hybrid/bases', { headers, credentials: 'include' });
+        if (!response.ok) {
+          if (response.status === 401) {
+            console.error('[UsersNew] Erro de autenticação (401) ao buscar bases');
+            return { success: false, count: 0, bases: [] };
+          }
+          throw new Error(`Erro ao buscar bases: ${response.statusText}`);
+        }
+        return await response.json();
+      } catch (error) {
+        console.error('[UsersNew] Erro na requisição de bases:', error);
+        throw error;
+      }
+    }
   });
   
   // Log para depuração dos dados das bases
@@ -292,8 +346,24 @@ const UsersNew: React.FC = () => {
     if (!selectedUserId) return;
     
     try {
-      // Chamar API híbrida para excluir o usuário
-      await apiRequest('DELETE', `/api/hybrid/users/${selectedUserId}`);
+      // Chamar API híbrida para excluir o usuário com token JWT explícito
+      const authToken = localStorage.getItem('authToken') || localStorage.getItem('jwt_token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+        console.log('[UsersNew] Adicionando token JWT para excluir usuário');
+      }
+      
+      const response = await fetch(`/api/hybrid/users/${selectedUserId}`, {
+        method: 'DELETE',
+        headers,
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erro ao excluir usuário: ${response.statusText}`);
+      }
       
       // Fechar o diálogo
       setIsDeleteUserDialogOpen(false);
@@ -462,7 +532,21 @@ const UsersNew: React.FC = () => {
       console.log('Enviando dados de usuário:', { ...userData, password: password ? '***' : '[gerada automaticamente]' });
       
       // Usar a rota híbrida para criação de usuários (para manter a autenticação consistente)
-      const response = await apiRequest('POST', '/api/hybrid/users', userData);
+      // Incluir token JWT explicitamente para garantir autenticação
+      const authToken = localStorage.getItem('authToken') || localStorage.getItem('jwt_token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+        console.log('[UsersNew] Adicionando token JWT para criar usuário');
+      }
+      
+      const response = await fetch('/api/hybrid/users', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(userData),
+        credentials: 'include'
+      });
       const data = await response.json();
       
       // Armazenar a senha gerada e mostrar o diálogo
