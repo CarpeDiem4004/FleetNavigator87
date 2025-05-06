@@ -14,6 +14,15 @@ import {
   checkTabelaPosto,
   registrarAbastecimentoPosto
 } from "./api-direto.js";
+// Importar API para checklists de motoristas
+import {
+  getDriverChecklists,
+  getDriverChecklistById,
+  createDriverChecklist,
+  updateDriverChecklist,
+  deleteDriverChecklist,
+  getDriverChecklistsByPosto
+} from "./api-driver-checklist.js";
 // Importar API para usuários via Supabase
 import userApi from "./api/userApi";
 // Importar APIs híbridas (ambiente Replit e externo)
@@ -276,6 +285,14 @@ app.use((req, res, next) => {
     req.params = { posto: 'sorocaba_v2' };
     getHistoricoPosto(req, res);
   });
+  
+  // Rotas para API de checklist de motoristas
+  app.get('/api/driver-checklists', getDriverChecklists);
+  app.post('/api/driver-checklists', createDriverChecklist);
+  app.get('/api/driver-checklists/posto/:posto', getDriverChecklistsByPosto);
+  app.get('/api/driver-checklists/:id', getDriverChecklistById);
+  app.put('/api/driver-checklists/:id', updateDriverChecklist);
+  app.delete('/api/driver-checklists/:id', deleteDriverChecklist);
   
   // Rota de diagnóstico específica para autenticação
   app.get('/api/auth-diagnostic', (req, res) => {
