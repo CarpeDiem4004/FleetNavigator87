@@ -22,7 +22,7 @@ export const NOME_POSTO_ALAIR_V2 = "Posto Alair V2";
 // São Paulo removido - Abril/2025
 export const NOME_POSTO_CAMPINAS = "Posto Campinas";
 export const NOME_POSTO_CAMPINAS_V2 = "Posto Campinas V2";
-export const NOME_POSTO_ABC = "Posto ABC";
+export const NOME_POSTO_ABC = "Posto ABC (Removido)";
 // ABC_V2 removido - Maio/2025
 export const NOME_POSTO_SOCORRO = "Posto Socorro";
 export const NOME_POSTO_SOCORRO_V2 = "Posto Socorro V2";
@@ -70,7 +70,7 @@ export const POSTOS_INFO = [
   { 
     id: POSTO_ABC, 
     nome: NOME_POSTO_ABC, 
-    descricao: 'Posto de abastecimento da região do ABC Paulista' 
+    descricao: 'Posto de abastecimento da região do ABC Paulista (Removido em Maio/2025)' 
   },
   /* ABC_V2 removido - Maio/2025 */
   { 

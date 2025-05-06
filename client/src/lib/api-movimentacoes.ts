@@ -77,16 +77,12 @@ export async function getMovimentacoesPatio(posto: string): Promise<{
   message?: string
 }> {
   const postoFormatado = formatarNomePosto(posto);
-  const isAbcV2 = postoFormatado === 'abc_v2';
   
   console.log(`[API] Buscando movimentações para ${posto} (formatado: ${postoFormatado})`);
   
   // Lista de URLs a tentar, em ordem de prioridade
   const urlsToTry = [
-    // Rota especial não interceptada pelo Vite (mais confiável)
-    `/_special/abc/movimentacoes`,
-    
-    // Rota específica para ABC_v2
+    // Rota específica para postos v2
     `/api/movimentacoes-patio-direto-${postoFormatado}`,
     
     // Rota genérica para movimentações
@@ -99,9 +95,8 @@ export async function getMovimentacoesPatio(posto: string): Promise<{
   // Adiciona timestamp para evitar cache
   const timestamp = Date.now();
   
-  // Se não for ABC_v2, remover as rotas específicas que não se aplicam
-  const filteredUrls = isAbcV2 ? urlsToTry : urlsToTry.filter(url => 
-    !url.includes('_special/abc') && !url.includes('movimentacoes-patio-direto-abc'));
+  // Filtrar rotas que não se aplicam ao posto específico
+  const filteredUrls = urlsToTry;
   
   // Resultado padrão para erro
   const errorResult = {
