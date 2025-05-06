@@ -15,6 +15,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           className
         )}
         ref={ref}
+        data-component-name="Input"
+        autoComplete={props.autoComplete || (type === "password" ? "current-password" : type === "email" ? "email" : "off")}
         {...props}
       />
     )
