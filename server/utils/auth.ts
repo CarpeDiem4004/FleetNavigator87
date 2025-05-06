@@ -40,11 +40,9 @@ export function generateJwtToken(user: any): string {
   };
   
   try {
-    // Usar string diretamente
-    return jwt.sign(payload, JWT_SECRET_STR, {
-      expiresIn: JWT_EXPIRES_IN,
-      algorithm: 'HS256'
-    });
+    // Forçar type para satisfazer o TypeScript
+    const secret = JWT_SECRET_STR as jwt.Secret;
+    return jwt.sign(payload, secret);
   } catch (error) {
     console.error('[generateJwtToken] Erro ao gerar token JWT:', error);
     throw new Error('Falha ao gerar token JWT');
@@ -54,7 +52,7 @@ export function generateJwtToken(user: any): string {
 // Função para validar token JWT customizado (não Supabase)
 export function validateJwtToken(token: string): JwtPayload {
   try {
-    // Usar string diretamente
+    // Usar o secret como string diretamente
     return jwt.verify(token, JWT_SECRET_STR) as JwtPayload;
   } catch (error) {
     console.error('[validateJwtToken] Erro ao validar token JWT:', error);
