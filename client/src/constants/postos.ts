@@ -6,6 +6,7 @@ export const POSTO_ALAIR_V2 = "alair_v2";
 // São Paulo removido - Abril/2025
 export const POSTO_CAMPINAS = "campinas";
 export const POSTO_CAMPINAS_V2 = "campinas_v2";
+// ABC removido - Maio/2025
 export const POSTO_ABC = "abc";
 // ABC_V2 removido - Maio/2025
 export const POSTO_SOCORRO = "socorro";
