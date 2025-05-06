@@ -46,6 +46,18 @@ export async function checkSupabaseConnection(): Promise<boolean> {
     // Usamos uma tabela simples para verificar a conexão que é menos provável de ter problemas de permissão
     const client = createSupabaseClient();
     
+    // Verificação direta no Osasco_v2 que é o foco atual
+    try {
+      console.log('Tentando verificar conexão com tabela abastecimentos_posto_osasco_v2');
+      const { data, error } = await client.from('abastecimentos_posto_osasco_v2').select('count()', { count: 'exact' });
+      if (!error) {
+        console.log('Conexão com Supabase estabelecida com sucesso (abastecimentos_posto_osasco_v2)');
+        return true;
+      }
+    } catch (directError) {
+      console.log('Verificação direta em osasco_v2 falhou, tentando alternativas:', directError);
+    }
+    
     // Tentamos primeiro com uma tabela comum com baixa chance de erro de permissão
     try {
       const { data, error } = await client.from('abastecimentos_postos').select('count()', { count: 'exact' });
@@ -77,6 +89,21 @@ export async function checkSupabaseConnection(): Promise<boolean> {
       }
     } catch (thirdError) {
       console.log('Terceiro método de verificação falhou:', thirdError);
+    }
+    
+    // Última tentativa - só verificar se consegue conectar
+    try {
+      const healthCheck = await fetch(`${supabaseUrl}/health`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (healthCheck.ok) {
+        console.log('Conexão básica com Supabase estabelecida (health check)');
+        return true;
+      }
+    } catch (healthError) {
+      console.log('Health check falhou:', healthError);
     }
     
     console.error('Todos os métodos de verificação de conexão falharam');
