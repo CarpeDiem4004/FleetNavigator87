@@ -27,8 +27,6 @@ const postosList = [
   { id: 'saopaulo', nome: 'São Paulo', version: 'v1' },
   { id: 'campinas', nome: 'Campinas', version: 'v1' },
   { id: 'campinas_v2', nome: 'Campinas', version: 'v2' },
-  { id: 'abc', nome: 'ABC', version: 'v1' },
-  { id: 'abc_v2', nome: 'ABC', version: 'v2' },
   { id: 'socorro', nome: 'Socorro', version: 'v1' },
   { id: 'sorocaba', nome: 'Sorocaba', version: 'v1' }
 ];
