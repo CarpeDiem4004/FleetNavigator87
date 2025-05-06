@@ -1,30 +1,30 @@
 /**
- * Página pública de redirecionamento para o Posto Socorro V1
+ * Página de redirecionamento para o Posto Alair V2
  * Este posto foi removido em Maio/2025 e redireciona para o Posto Remédios
  */
 
 import React, { useEffect } from 'react';
 import { useLocation } from 'wouter';
+import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { InfoIcon } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 
-const SocorroPublic: React.FC = () => {
+const Alair_v2V2: React.FC = () => {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   
   useEffect(() => {
     toast({
       title: "Posto desativado",
-      description: "Este posto foi removido. Redirecionando para o acesso público do Posto Remédios...",
+      description: "Este posto foi removido. Redirecionando para o Posto Remédios...",
       variant: "default",
     });
     
     // Redirecionar após um pequeno atraso para permitir que o toast seja exibido
     const timer = setTimeout(() => {
-      setLocation('/posto-remedios/public');
+      setLocation('/posto-remedios');
     }, 3000);
     
     return () => clearTimeout(timer);
@@ -34,7 +34,7 @@ const SocorroPublic: React.FC = () => {
     <div className="container mx-auto py-6 max-w-md">
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl text-center">Posto Socorro V1 Desativado</CardTitle>
+          <CardTitle className="text-xl text-center">Posto Alair V2 Desativado</CardTitle>
           <CardDescription className="text-center">
             Este posto não está mais disponível
           </CardDescription>
@@ -44,14 +44,14 @@ const SocorroPublic: React.FC = () => {
             <InfoIcon className="h-5 w-5 mr-2" />
             <AlertTitle>Posto desativado</AlertTitle>
             <AlertDescription>
-              O Posto Socorro V1 foi desativado em Maio/2025. 
-              Você será redirecionado para o acesso público do Posto Remédios automaticamente.
+              O Posto Alair V2 foi desativado em Maio/2025. 
+              Você será redirecionado para o Posto Remédios automaticamente.
             </AlertDescription>
           </Alert>
         </CardContent>
         <CardFooter className="flex justify-center">
           <Button 
-            onClick={() => setLocation('/posto-remedios/public')}
+            onClick={() => setLocation('/posto-remedios')}
             className="w-full"
           >
             Ir para o Posto Remédios agora
@@ -62,4 +62,4 @@ const SocorroPublic: React.FC = () => {
   );
 };
 
-export default SocorroPublic;
+export default Alair_v2V2;

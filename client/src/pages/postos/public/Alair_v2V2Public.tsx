@@ -1,5 +1,5 @@
 /**
- * Página pública de redirecionamento para o Posto Socorro V1
+ * Página pública de redirecionamento para o Posto Alair V2
  * Este posto foi removido em Maio/2025 e redireciona para o Posto Remédios
  */
 
@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { InfoIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const SocorroPublic: React.FC = () => {
+const Alair_v2V2Public: React.FC = () => {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   
@@ -34,7 +34,7 @@ const SocorroPublic: React.FC = () => {
     <div className="container mx-auto py-6 max-w-md">
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl text-center">Posto Socorro V1 Desativado</CardTitle>
+          <CardTitle className="text-xl text-center">Posto Alair V2 Desativado</CardTitle>
           <CardDescription className="text-center">
             Este posto não está mais disponível
           </CardDescription>
@@ -44,7 +44,7 @@ const SocorroPublic: React.FC = () => {
             <InfoIcon className="h-5 w-5 mr-2" />
             <AlertTitle>Posto desativado</AlertTitle>
             <AlertDescription>
-              O Posto Socorro V1 foi desativado em Maio/2025. 
+              O Posto Alair V2 foi desativado em Maio/2025. 
               Você será redirecionado para o acesso público do Posto Remédios automaticamente.
             </AlertDescription>
           </Alert>
@@ -62,4 +62,4 @@ const SocorroPublic: React.FC = () => {
   );
 };
 
-export default SocorroPublic;
+export default Alair_v2V2Public;
