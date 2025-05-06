@@ -79,15 +79,14 @@ router.get('/:tipo', async (req, res) => {
         const createTableQuery = `
           CREATE TABLE preco_combustivel (
             id SERIAL PRIMARY KEY,
-            tipo VARCHAR(50) NOT NULL,
+            tipo_combustivel TEXT NOT NULL,
             preco NUMERIC NOT NULL,
             ativo BOOLEAN DEFAULT TRUE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
           );
           
           -- Inserir valores padrão
-          INSERT INTO preco_combustivel (tipo, preco) VALUES 
+          INSERT INTO preco_combustivel (tipo_combustivel, preco) VALUES 
           ('Diesel', 5.99),
           ('Gasolina', 6.29),
           ('Etanol', 4.89),
@@ -213,15 +212,14 @@ router.get('/', async (req, res) => {
         const createTableQuery = `
           CREATE TABLE preco_combustivel (
             id SERIAL PRIMARY KEY,
-            tipo VARCHAR(50) NOT NULL,
+            tipo_combustivel TEXT NOT NULL,
             preco NUMERIC NOT NULL,
             ativo BOOLEAN DEFAULT TRUE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
           );
           
           -- Inserir valores padrão
-          INSERT INTO preco_combustivel (tipo, preco) VALUES 
+          INSERT INTO preco_combustivel (tipo_combustivel, preco) VALUES 
           ('Diesel', 5.99),
           ('Gasolina', 6.29),
           ('Etanol', 4.89),
