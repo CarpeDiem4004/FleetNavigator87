@@ -111,9 +111,35 @@ export async function getHistoricoPosto(req, res) {
       
       querySource = tableName;
       
-      // Consulta SQL diferente para postos _v2 (Osasco_v2, Alair_v2, Campinas_v2)
-      if (postoName.toLowerCase().endsWith('_v2')) {
-        console.log(`getHistoricoPosto - Usando consulta específica para posto V2: ${postoName}`);
+      // Consulta SQL diferente para postos específicos
+      if (postoName.toLowerCase() === 'abc_v2' || postoName.toLowerCase() === 'socorro_v2' || postoName.toLowerCase() === 'sorocaba_v2') {
+        // Formato ABC_v2, Socorro_v2, Sorocaba_v2 (usa km_atual, litros, motorista, operador)
+        console.log(`getHistoricoPosto - Usando consulta específica para posto tipo ABC: ${postoName}`);
+        dataQuery = `
+          SELECT 
+            id,
+            placa,
+            km_atual as km,
+            tipo_combustivel,
+            litros as quantidade_litros,
+            motorista as nome_motorista,
+            motorista_rg as rg_motorista,
+            operador as nome_operador,
+            valor_litro,
+            valor_total,
+            tipo_veiculo,
+            observacoes,
+            lavagem,
+            tipo_lavagem,
+            to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora,
+            created_at
+          FROM ${tableName}
+          ORDER BY created_at DESC
+          LIMIT ${req.query.limit || 50}
+        `;
+      } else if (postoName.toLowerCase().endsWith('_v2')) {
+        // Formato Osasco_v2, Alair_v2, Campinas_v2 (usa hodometro, quantidade, motorista, funcionario)
+        console.log(`getHistoricoPosto - Usando consulta específica para posto tipo Osasco/Campinas: ${postoName}`);
         dataQuery = `
           SELECT 
             id,
