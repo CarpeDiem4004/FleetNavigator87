@@ -6218,6 +6218,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Usamos /api/posto-supabase como caminho para evitar conflitos com o Vite
   app.use('/api/posto-supabase', postoSupabaseRoutes);
 
+  // Rota pública para fins de teste da interface (sem autenticação)
+  app.get("/api/users/list-public", async (req, res) => {
+    try {
+      console.log('[routes.ts] Listando usuários para interface de teste (rota pública)');
+      
+      // Consulta simplificada para listar usuários no formato esperado pela interface
+      const query = `
+        SELECT 
+          id, 
+          name, 
+          email, 
+          role,
+          base_id AS "baseId",
+          (SELECT name FROM bases WHERE id = users.base_id) AS "baseName",
+          is_active AS "isActive",
+          created_at AS "createdAt",
+          updated_at AS "updatedAt"
+        FROM 
+          users
+        LIMIT 50
+      `;
+      
+      const result = await pool.query(query);
+      
+      console.log(`[routes.ts] ${result.rows.length} usuário(s) encontrado(s) para interface de teste`);
+      
+      return res.status(200).json({
+        success: true,
+        count: result.rows.length,
+        users: result.rows
+      });
+    } catch (error: any) {
+      console.error('[routes.ts] Erro ao listar usuários para interface de teste:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao listar usuários: ' + error.message
+      });
+    }
+  });
+
+  // Rota pública para listar usuários para fins de diagnóstico (sem autenticação)
+  app.get("/api/debug/users-list", async (req, res) => {
+    try {
+      console.log('[routes.ts] Listando usuários para diagnóstico (rota pública)');
+      
+      // Consulta simplificada para listar usuários
+      const query = `
+        SELECT 
+          id, 
+          name, 
+          email, 
+          role,
+          is_active AS "isActive",
+          created_at AS "createdAt"
+        FROM 
+          users
+        LIMIT 50
+      `;
+      
+      const result = await pool.query(query);
+      
+      console.log(`[routes.ts] ${result.rows.length} usuário(s) encontrado(s) para diagnóstico`);
+      
+      return res.status(200).json({
+        success: true,
+        count: result.rows.length,
+        users: result.rows
+      });
+    } catch (error: any) {
+      console.error('[routes.ts] Erro ao listar usuários para diagnóstico:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao listar usuários: ' + error.message
+      });
+    }
+  });
+
   // Rota pública para diagnóstico da conexão com o banco (sem autenticação)
   app.get("/api/debug/users-connection", async (req, res) => {
     try {

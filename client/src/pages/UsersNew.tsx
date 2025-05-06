@@ -149,9 +149,9 @@ const UsersNew: React.FC = () => {
     users: any[];
   }
 
-  // Buscar usuários da API (usando a nova API com autenticação por sessão)
+  // Buscar usuários da API (usando a rota pública para testes)
   const { data: usersRaw = { success: false, count: 0, users: [] }, isLoading: usersLoading, error: usersError } = useQuery<HybridApiResponse>({
-    queryKey: ['/api/users/list'],
+    queryKey: ['/api/users/list-public'],
     staleTime: 10000, // Considerar stale após 10 segundos para permitir atualizações frequentes
     queryFn: getQueryFn({ on401: "returnNull" }), // Adicionado para lidar com erros 401
   });
@@ -371,7 +371,7 @@ const UsersNew: React.FC = () => {
   // Atualizar lista de usuários após adicionar um novo ou resetar senha
   const handleUserDataChanged = () => {
     // Invalidar a query para forçar uma nova requisição e atualizar os dados
-    queryClient.invalidateQueries({ queryKey: ['/api/users/list'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/users/list-public'] });
   };
 
   // Estados para controlar o diálogo de senha gerada
