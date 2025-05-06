@@ -90,11 +90,19 @@ export default function PostosVisaoGeralPage() {
   const postosFiltrados = React.useMemo(() => {
     if (!data) return [];
     
-    // Primeiro filtrar apenas os postos _v2 e Campinas
+    // Filtrar apenas os postos V2 específicos, excluindo Campinas e Guarulhos_v2
     let resultado = data.filter(posto => {
       const nomeLower = posto.nome.toLowerCase();
-      // Incluir apenas postos com final _v2 ou Campinas (sem o v2)
-      return nomeLower.endsWith('v2') || (nomeLower === 'campinas' || nomeLower === 'campinas v1');
+      // Excluir Campinas (normal) e Campinas_v2
+      if (nomeLower === 'campinas' || nomeLower === 'campinas v1' || nomeLower === 'campinas_v2') {
+        return false;
+      }
+      // Excluir Guarulhos_v2
+      if (nomeLower === 'guarulhos_v2') {
+        return false;
+      }
+      // Incluir apenas os demais postos que terminam com _v2
+      return nomeLower.endsWith('v2');
     });
     
     // Aplicar filtro de pesquisa
