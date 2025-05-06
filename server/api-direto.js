@@ -950,7 +950,7 @@ export async function checkTabelaPosto(req, res) {
 }
 
 // Função para registrar abastecimento em um posto específico
-export async function registrarAbastecimentoPosto(req, res) {
+export async function registrarPostoMurici(req, res) {
   try {
     // Forçar o Content-Type como application/json para evitar interceptação do Vite
     res.setHeader('Content-Type', 'application/json');
@@ -1288,14 +1288,14 @@ export async function registrarAbastecimentoPosto(req, res) {
     
     res.status(201).json({
       success: true,
-      message: `Abastecimento registrado com sucesso para ${postoName}`,
+      message: `Registro realizado com sucesso no Posto Murici ${postoName}`,
       data: result.rows[0]
     });
   } catch (error) {
-    console.error(`Erro ao registrar abastecimento para posto ${req.params.posto}:`, error);
+    console.error(`Erro ao registrar operação no Posto Murici ${req.params.posto}:`, error);
     res.status(500).json({ 
       success: false, 
-      error: `Erro ao registrar abastecimento: ${error.message}` 
+      error: `Erro ao registrar no Posto Murici: ${error.message}` 
     });
   }
 }

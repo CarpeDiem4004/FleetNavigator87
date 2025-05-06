@@ -12,7 +12,7 @@ import {
   getConsumoPorVeiculoPosto,
   getComparativoCombustiveisPosto,
   checkTabelaPosto,
-  registrarAbastecimentoPosto,
+  registrarPostoMurici,
   getRecebimentosPosto,
   getMovimentacoesPatioPosto
 } from "./api-direto.js";
@@ -154,7 +154,7 @@ app.use((req, res, next) => {
   app.get('/api/check-tabela-direto/:posto', checkTabelaPosto);
   app.get('/api/recebimentos-direto/:posto', getRecebimentosPosto);
   app.get('/api/movimentacoes-patio-direto/:posto', getMovimentacoesPatioPosto);
-  app.post('/api/abastecimento-direto/:posto', registrarAbastecimentoPosto);
+  app.post('/api/abastecimento-direto/:posto', registrarPostoMurici);
   
   // Rota para recuperar todas as movimentações de pátio - evita interceptação do Vite
   app.get('/api/movimentacoes-patio-direto', async (req, res) => {
@@ -194,7 +194,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE CAMPINAS V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como campinas_v2
     req.params = { ...req.params, posto: 'campinas_v2' };
-    registrarAbastecimentoPosto(req, res);
+    registrarPostoMurici(req, res);
   });
   
   // Rota de histórico para Campinas V2
@@ -211,7 +211,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE OSASCO V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como osasco_v2
     req.params = { ...req.params, posto: 'osasco_v2' };
-    registrarAbastecimentoPosto(req, res);
+    registrarPostoMurici(req, res);
   });
   
   // Rota de histórico para Osasco V2
@@ -231,7 +231,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ALAIR V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como alair_v2
     req.params = { ...req.params, posto: 'alair_v2' };
-    registrarAbastecimentoPosto(req, res);
+    registrarPostoMurici(req, res);
   });
   
   // Rota de histórico para Alair V2
