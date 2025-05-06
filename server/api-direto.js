@@ -145,10 +145,13 @@ export async function getMovimentacoesPatioPosto(req, res) {
     }
     
     // Consultar movimentações de pátio
+    // Verificar se req.query está definido e obter o limite, ou usar 1000 como padrão
+    const limit = req.query && req.query.limit ? req.query.limit : 1000;
+    
     const dataQuery = `
       SELECT * FROM ${tableName}
       ORDER BY created_at DESC
-      LIMIT ${req.query.limit || 1000}
+      LIMIT ${limit}
     `;
     
     const result = await pool.query(dataQuery);
@@ -274,6 +277,10 @@ export async function getHistoricoPosto(req, res) {
       if (postoName.toLowerCase() === 'abc_v2' || postoName.toLowerCase() === 'socorro_v2' || postoName.toLowerCase() === 'sorocaba_v2') {
         // Formato ABC_v2, Socorro_v2, Sorocaba_v2 (usa km_atual, litros, motorista, operador)
         console.log(`getHistoricoPosto - Usando consulta específica para posto tipo ABC: ${postoName}`);
+        
+        // Verificar se req.query está definido e obter o limite, ou usar 10000 como padrão
+        const abcLimit = req.query && req.query.limit ? req.query.limit : 10000;
+        
         dataQuery = `
           SELECT 
             id,
@@ -294,11 +301,15 @@ export async function getHistoricoPosto(req, res) {
             created_at
           FROM ${tableName}
           ORDER BY created_at DESC
-          LIMIT ${req.query.limit || 10000}
+          LIMIT ${abcLimit}
         `;
       } else if (postoName.toLowerCase().endsWith('_v2')) {
         // Formato Osasco_v2, Alair_v2, Campinas_v2 (usa hodometro, quantidade, motorista, funcionario)
         console.log(`getHistoricoPosto - Usando consulta específica para posto tipo Osasco/Campinas: ${postoName}`);
+        
+        // Verificar se req.query está definido e obter o limite, ou usar 10000 como padrão
+        const osascoLimit = req.query && req.query.limit ? req.query.limit : 10000;
+        
         dataQuery = `
           SELECT 
             id,
@@ -322,10 +333,13 @@ export async function getHistoricoPosto(req, res) {
             created_at
           FROM ${tableName}
           ORDER BY created_at DESC
-          LIMIT ${req.query.limit || 10000}
+          LIMIT ${osascoLimit}
         `;
       } else {
         // Consulta padrão para outros postos
+        // Verificar se req.query está definido e obter o limite, ou usar 10000 como padrão
+        const defaultLimit = req.query && req.query.limit ? req.query.limit : 10000;
+        
         dataQuery = `
           SELECT 
             id,
@@ -346,7 +360,7 @@ export async function getHistoricoPosto(req, res) {
             created_at
           FROM ${tableName}
           ORDER BY created_at DESC
-          LIMIT ${req.query.limit || 10000}
+          LIMIT ${defaultLimit}
         `;
       }
     } else {
@@ -372,7 +386,9 @@ export async function getHistoricoPosto(req, res) {
       }
       
       querySource = viewName;
-      dataQuery = `SELECT * FROM "${viewName}" ORDER BY data_hora DESC LIMIT ${req.query.limit || 10000}`;
+      // Verificar se req.query está definido e obter o limite, ou usar 10000 como padrão
+      const viewLimit = req.query && req.query.limit ? req.query.limit : 10000;
+      dataQuery = `SELECT * FROM "${viewName}" ORDER BY data_hora DESC LIMIT ${viewLimit}`;
     }
     const result = await pool.query(dataQuery);
     
