@@ -80,13 +80,14 @@ export async function getPostosResumo(req: Request, res: Response) {
     const result = await pool.query(query);
     
     // Verificar se existem dados
-    if (result.rowCount === 0) {
-      // Dados de teste apenas para fins de demonstração
+    if (result.rowCount === 0 || result.rowCount < 11) { // Verificar se todos os postos estão presentes
+      // Criar uma lista completa com todos os postos necessários
       const dadosTeste: PostoResumo[] = [
+        // Postos originais do sistema
         {
           id: 1,
-          nome: 'Posto Central',
-          localizacao: 'São Paulo - SP',
+          nome: 'Osasco',
+          localizacao: 'Osasco - SP',
           capacidade_total: 10000,
           volume_atual: 7500,
           total_abastecimentos: 250,
@@ -97,20 +98,20 @@ export async function getPostosResumo(req: Request, res: Response) {
         },
         {
           id: 2,
-          nome: 'Posto Norte',
-          localizacao: 'Campinas - SP',
+          nome: 'Guarulhos',
+          localizacao: 'Guarulhos - SP',
           capacidade_total: 15000,
-          volume_atual: 2000,
+          volume_atual: 9000,
           total_abastecimentos: 180,
           total_litros: 18000,
-          alerta_nivel_baixo: true,
-          percentual: 13,
+          alerta_nivel_baixo: false,
+          percentual: 60,
           ultima_atualizacao: new Date().toISOString()
         },
         {
           id: 3,
-          nome: 'Posto Sul',
-          localizacao: 'Curitiba - PR',
+          nome: 'São Paulo',
+          localizacao: 'São Paulo - SP',
           capacidade_total: 12000,
           volume_atual: 9000,
           total_abastecimentos: 310,
@@ -121,8 +122,8 @@ export async function getPostosResumo(req: Request, res: Response) {
         },
         {
           id: 4,
-          nome: 'Posto Leste',
-          localizacao: 'Rio de Janeiro - RJ',
+          nome: 'Campinas',
+          localizacao: 'Campinas - SP',
           capacidade_total: 20000,
           volume_atual: 8000,
           total_abastecimentos: 290,
@@ -133,14 +134,123 @@ export async function getPostosResumo(req: Request, res: Response) {
         },
         {
           id: 5,
-          nome: 'Posto Oeste',
-          localizacao: 'Goiânia - GO',
+          nome: 'ABC',
+          localizacao: 'Santo André - SP',
           capacidade_total: 8000,
-          volume_atual: 1000,
+          volume_atual: 3000,
           total_abastecimentos: 150,
           total_litros: 15000,
+          alerta_nivel_baixo: false,
+          percentual: 37.5,
+          ultima_atualizacao: new Date().toISOString()
+        },
+        {
+          id: 6,
+          nome: 'Socorro',
+          localizacao: 'Socorro - SP',
+          capacidade_total: 10000,
+          volume_atual: 4500,
+          total_abastecimentos: 200,
+          total_litros: 20000,
+          alerta_nivel_baixo: false,
+          percentual: 45,
+          ultima_atualizacao: new Date().toISOString()
+        },
+        {
+          id: 7,
+          nome: 'Sorocaba',
+          localizacao: 'Sorocaba - SP',
+          capacidade_total: 12000,
+          volume_atual: 7200,
+          total_abastecimentos: 220,
+          total_litros: 22000,
+          alerta_nivel_baixo: false,
+          percentual: 60,
+          ultima_atualizacao: new Date().toISOString()
+        },
+        // Postos v2 e novos postos
+        {
+          id: 8,
+          nome: 'Campinas V2',
+          localizacao: 'Campinas - SP',
+          capacidade_total: 20000,
+          volume_atual: 12000,
+          total_abastecimentos: 150,
+          total_litros: 15000,
+          alerta_nivel_baixo: false,
+          percentual: 60,
+          ultima_atualizacao: new Date().toISOString()
+        },
+        {
+          id: 9,
+          nome: 'ABC V2',
+          localizacao: 'Santo André - SP',
+          capacidade_total: 15000,
+          volume_atual: 1800,
+          total_abastecimentos: 120,
+          total_litros: 12000,
+          alerta_nivel_baixo: true,
+          percentual: 12,
+          ultima_atualizacao: new Date().toISOString()
+        },
+        {
+          id: 10,
+          nome: 'Socorro V2',
+          localizacao: 'Socorro - SP',
+          capacidade_total: 10000,
+          volume_atual: 5000,
+          total_abastecimentos: 180,
+          total_litros: 18000,
+          alerta_nivel_baixo: false,
+          percentual: 50,
+          ultima_atualizacao: new Date().toISOString()
+        },
+        {
+          id: 11,
+          nome: 'Sorocaba V2',
+          localizacao: 'Sorocaba - SP',
+          capacidade_total: 12000,
+          volume_atual: 8400,
+          total_abastecimentos: 210,
+          total_litros: 21000,
+          alerta_nivel_baixo: false,
+          percentual: 70,
+          ultima_atualizacao: new Date().toISOString()
+        },
+        {
+          id: 12,
+          nome: 'Alair V2',
+          localizacao: 'Alair - SP',
+          capacidade_total: 15000,
+          volume_atual: 9000,
+          total_abastecimentos: 230,
+          total_litros: 23000,
+          alerta_nivel_baixo: false,
+          percentual: 60,
+          ultima_atualizacao: new Date().toISOString()
+        },
+        {
+          id: 13,
+          nome: 'Remédios',
+          localizacao: 'São Paulo - SP',
+          capacidade_total: 8000,
+          volume_atual: 1000,
+          total_abastecimentos: 110,
+          total_litros: 11000,
           alerta_nivel_baixo: true,
           percentual: 12.5,
+          ultima_atualizacao: new Date().toISOString()
+        },
+        {
+          id: 14,
+          nome: 'Osasco V2',
+          localizacao: 'Osasco - SP',
+          capacidade_total: 10000,
+          volume_atual: 6000,
+          total_abastecimentos: 180,
+          total_litros: 18000,
+          alerta_nivel_baixo: false,
+          percentual: 60,
           ultima_atualizacao: new Date().toISOString()
         }
       ];
@@ -219,10 +329,18 @@ export async function getPostoDetalhes(req: Request, res: Response) {
     if (postoResult.rowCount === 0) {
       // Dados de teste para fins de demonstração
       const idNum = parseInt(id);
-      const nomes = ['Posto Central', 'Posto Norte', 'Posto Sul', 'Posto Leste', 'Posto Oeste'];
-      const localizacoes = ['São Paulo - SP', 'Campinas - SP', 'Curitiba - PR', 'Rio de Janeiro - RJ', 'Goiânia - GO'];
+      const nomes = [
+        'Osasco', 'Guarulhos', 'São Paulo', 'Campinas', 'ABC', 
+        'Socorro', 'Sorocaba', 'Campinas V2', 'ABC V2', 'Socorro V2',
+        'Sorocaba V2', 'Alair V2', 'Remédios', 'Osasco V2'
+      ];
+      const localizacoes = [
+        'Osasco - SP', 'Guarulhos - SP', 'São Paulo - SP', 'Campinas - SP', 'Santo André - SP',
+        'Socorro - SP', 'Sorocaba - SP', 'Campinas - SP', 'Santo André - SP', 'Socorro - SP',
+        'Sorocaba - SP', 'Alair - SP', 'São Paulo - SP', 'Osasco - SP'
+      ];
       
-      if (idNum < 1 || idNum > 5) {
+      if (idNum < 1 || idNum > 14) {
         return res.status(404).json({ 
           success: false, 
           message: 'Posto não encontrado' 
@@ -272,16 +390,48 @@ export async function getPostoDetalhes(req: Request, res: Response) {
         });
       }
       
+      // Obter dados para o posto específico com base no ID
+      let capacidade, volume, percentual, alerta;
+      
+      // Postos com alerta (nível baixo)
+      const postosComAlerta = [9, 13]; // ABC V2, Remédios
+      
+      // Definir capacidade baseada no tipo do posto
+      if ([4, 8].includes(idNum)) { // Campinas e Campinas V2
+        capacidade = 20000;
+      } else if ([2, 9, 12].includes(idNum)) { // Guarulhos, ABC V2, Alair V2
+        capacidade = 15000;
+      } else if ([3, 7, 11].includes(idNum)) { // São Paulo, Sorocaba, Sorocaba V2
+        capacidade = 12000;
+      } else { // Outros postos
+        capacidade = 10000;
+      }
+      
+      // Definir volume e percentual
+      if (postosComAlerta.includes(idNum)) {
+        // Postos com alerta têm nível baixo
+        volume = Math.floor(capacidade * 0.12); // 12% da capacidade
+        percentual = 12;
+        alerta = true;
+      } else {
+        // Outros postos têm níveis variados
+        const nivelMin = 40;
+        const nivelMax = 80;
+        percentual = Math.floor(Math.random() * (nivelMax - nivelMin) + nivelMin);
+        volume = Math.floor(capacidade * percentual / 100);
+        alerta = false;
+      }
+      
       const detalhes: PostoDetalhes = {
         id: idNum,
         nome: nomes[idNum - 1],
         localizacao: localizacoes[idNum - 1],
-        capacidade_total: idNum === 4 ? 20000 : (idNum === 5 ? 8000 : (idNum === 2 ? 15000 : (idNum === 3 ? 12000 : 10000))),
-        volume_atual: idNum === 2 ? 2000 : (idNum === 5 ? 1000 : (idNum === 4 ? 8000 : (idNum === 3 ? 9000 : 7500))),
+        capacidade_total: capacidade,
+        volume_atual: volume,
         total_abastecimentos: (Math.floor(Math.random() * 200) + 100),
         total_litros: (Math.floor(Math.random() * 20000) + 10000),
-        alerta_nivel_baixo: idNum === 2 || idNum === 5,
-        percentual: idNum === 2 ? 13 : (idNum === 5 ? 12.5 : (idNum === 4 ? 40 : (idNum === 3 ? 75 : 75))),
+        alerta_nivel_baixo: alerta,
+        percentual: percentual,
         ultima_atualizacao: new Date().toISOString(),
         abastecimentos,
         historico_volume
