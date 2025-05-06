@@ -18,9 +18,10 @@ DROP TABLE IF EXISTS movimentacoes_patio_posto_abc CASCADE;
 DROP TABLE IF EXISTS configuracao_tanques_posto_abc CASCADE;
 
 -- Limpar associações de usuários com o posto ABC (se existirem)
+-- A tabela users tem "basename" em vez de "posto_id"
 UPDATE users 
-SET posto_id = NULL 
-WHERE posto_id = 'abc';
+SET basename = NULL 
+WHERE basename = 'abc';
 
 -- Verificação final após remoção
 SELECT table_name 

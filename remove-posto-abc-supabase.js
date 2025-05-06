@@ -63,11 +63,12 @@ async function executeOperation(operation, tableName) {
         }
         
       case 'UPDATE_USERS':
-        // Atualizar usuários
+        // Atualizar usuários - verificar usuários com basename 'abc'
+        // A tabela users tem basename em vez de posto_id
         const { data, error } = await supabase
           .from('users')
-          .update({ posto_id: null })
-          .eq('posto_id', 'abc');
+          .update({ basename: null })
+          .eq('basename', 'abc');
         
         if (error) {
           return { success: false, error };
