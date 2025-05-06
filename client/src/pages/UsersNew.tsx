@@ -152,7 +152,8 @@ const UsersNew: React.FC = () => {
     baseId: null,
     baseName: null,
     lastLogin: null,
-    isActive: true
+    isActive: true,
+    posto: null
   });
   
   // Interface para a resposta da API híbrida
@@ -214,7 +215,8 @@ const UsersNew: React.FC = () => {
           baseName: user.baseName || user.basename || null,
           lastLogin: user.lastLogin || user.last_login || null,
           isActive: user.isActive !== undefined ? user.isActive : 
-                   user.is_active !== undefined ? user.is_active : true
+                   user.is_active !== undefined ? user.is_active : true,
+          posto: user.posto || null
         }));
       }
     }
@@ -572,6 +574,11 @@ const UsersNew: React.FC = () => {
         userData.baseId = newUser.baseId;
       }
       
+      // Adicionar posto apenas se o perfil for "posto" e um posto foi selecionado
+      if (newUser.role === 'posto' && newUser.posto) {
+        userData.posto = newUser.posto;
+      }
+      
       console.log('Enviando dados de usuário:', { ...userData, password: password ? '***' : '[gerada automaticamente]' });
       
       // Usar a rota híbrida para criação de usuários (para manter a autenticação consistente)
@@ -614,7 +621,8 @@ const UsersNew: React.FC = () => {
           baseId: null,
           baseName: null,
           lastLogin: null,
-          isActive: true
+          isActive: true,
+          posto: null
         });
         setPassword('');
         setConfirmPassword('');
@@ -989,6 +997,15 @@ const UsersNew: React.FC = () => {
                     </span>
                   </div>
                 </div>
+                {/* Exibir posto quando o usuário for do tipo posto */}
+                {selectedUser.role === 'posto' && selectedUser.posto && (
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="font-medium">Posto:</div>
+                    <div className="col-span-2">
+                      {postosV2.find(p => p.id === selectedUser.posto)?.nome || selectedUser.posto}
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-3 gap-2">
                   <div className="font-medium">Base:</div>
                   <div className="col-span-2">{selectedUser.baseName || 'Global'}</div>
@@ -1057,7 +1074,8 @@ const UsersNew: React.FC = () => {
                 baseId: null,
                 baseName: null,
                 lastLogin: null,
-                isActive: true
+                isActive: true,
+                posto: null
               });
               setPassword('');
               setConfirmPassword('');
