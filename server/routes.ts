@@ -6085,7 +6085,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/auth', authHybridRoutes);
   
   // Registrar rotas para gerenciamento de usuários
-  app.use('/api', usuariosRoutes);
+  app.use('/api', (req, res, next) => {
+    // Log para debug
+    console.log(`[routes.ts] Requisição para ${req.path}, método ${req.method}`);
+    next();
+  }, usuariosRoutes);
   
   // Registrar rotas para gerenciar preços de combustível
   app.use("/api/precos-combustivel", precosCombustivelRoutes);
@@ -6213,6 +6217,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar as rotas do Supabase específicas para postos
   // Usamos /api/posto-supabase como caminho para evitar conflitos com o Vite
   app.use('/api/posto-supabase', postoSupabaseRoutes);
+
+  // Rota pública para diagnóstico da conexão com o banco (sem autenticação)
+  app.get("/api/debug/users-connection", async (req, res) => {
+    try {
+      console.log('[routes.ts] Testando conexão com o banco de dados (rota pública)');
+      
+      // Teste de conexão básico
+      const testResult = await pool.query('SELECT NOW() as current_time');
+      
+      // Testar consulta simples para contar usuários
+      const countResult = await pool.query('SELECT COUNT(*) as user_count FROM users');
+      
+      return res.status(200).json({
+        success: true,
+        connection: "OK",
+        timestamp: testResult.rows[0].current_time,
+        user_count: parseInt(countResult.rows[0].user_count),
+        database_info: {
+          pool_total_count: pool.totalCount,
+          pool_idle_count: pool.idleCount,
+          pool_waiting_count: pool.waitingCount
+        }
+      });
+    } catch (error: any) {
+      console.error('[routes.ts] Erro no diagnóstico de conexão:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro na conexão com o banco: ' + error.message
+      });
+    }
+  });
 
   // Para debugging, adicionar rota para listar todas as tabelas relacionadas a postos
   app.get("/api/debug/list-posto-tables", async (req, res) => {

@@ -197,11 +197,9 @@ router.get('/users/:id', isAuthenticated, adminRequired, async (req: any, res: a
 
 // APENAS PARA TESTES: Rota sem autenticação para verificar a conexão com o banco
 // Esta rota é pública, sem necessidade de autenticação.
-router.get('/users/list-debug', (req: any, res: any, next: any) => {
-  // Ignorar verificação de autenticação para esta rota específica
+router.get('/users/list-debug', async (req: any, res: any) => {
+  // Esta rota não usa o middleware de autenticação para permitir diagnóstico
   console.log('[UsuariosRoutes] Executando rota de diagnóstico (sem autenticação)');
-  next();
-}, async (req: any, res: any) => {
   try {
     console.log('[UsuariosRoutes] Teste de conexão ao banco (rota de debug)');
     
