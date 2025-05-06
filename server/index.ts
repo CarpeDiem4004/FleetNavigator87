@@ -222,48 +222,8 @@ app.use((req, res, next) => {
     getHistoricoPosto(req, res);
   });
 
-  // Rotas especiais para ABC V2
-  // Rota de abastecimento
-  app.post('/api/abastecimento-direto-abc-v2', (req, res) => {
-    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ABC V2 ====");
-    // Forçar o Content-Type como application/json para evitar interceptação do Vite
-    res.setHeader('Content-Type', 'application/json');
-    // Forçar o parâmetro posto para garantir que seja tratado como abc_v2
-    req.params = { ...req.params, posto: 'abc_v2' };
-    registrarAbastecimentoPosto(req, res);
-  });
-  
-  // Rota de histórico para ABC V2
-  app.get('/api/historico-direto-abc-v2', (req, res) => {
-    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE ABC V2 ====");
-    // Forçar o Content-Type como application/json para evitar interceptação do Vite
-    res.setHeader('Content-Type', 'application/json');
-    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
-    req.params = { posto: 'abc_v2' };
-    getHistoricoPosto(req, res);
-  });
-
-  // Rota de movimentações de pátio para ABC V2
-  app.get('/api/movimentacoes-patio-direto-abc-v2', (req, res) => {
-    console.log("==== USANDO ROTA ESPECÍFICA PARA MOVIMENTAÇÕES DE PÁTIO DE ABC V2 ====");
-    // Forçar o Content-Type como application/json para evitar interceptação do Vite
-    res.setHeader('Content-Type', 'application/json');
-    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
-    req.params = { posto: 'abc_v2' };
-    getMovimentacoesPatioPosto(req, res);
-  });
-  
-  // Rota alternativa que não será interceptada pelo Vite
-  app.get('/_special/abc/movimentacoes', (req, res) => {
-    console.log("==== USANDO ROTA ALTERNATIVA PARA MOVIMENTAÇÕES DE ABC V2 ====");
-    // Forçar o Content-Type como application/json para evitar interceptação do Vite
-    res.setHeader('Content-Type', 'application/json');
-    // Consultar diretamente os dados do banco
-    getMovimentacoesPatioPosto({ 
-      params: { posto: 'abc_v2' },
-      query: { limit: req.query.limit || '1000' }
-    } as any, res);
-  });
+  // Rotas especiais para ABC V2 - REMOVIDAS (Maio/2025)
+  // As tabelas associadas ao posto ABC_v2 foram excluídas do banco de dados
 
   // Rotas especiais para Alair V2
   // Rota de abastecimento
