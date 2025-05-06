@@ -347,7 +347,7 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
                   historico.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-mono text-xs">
-                        {item.data_hora}
+                        {item.data_hora || format(new Date(item.created_at), 'dd/MM/yyyy HH:mm', {locale: ptBR})}
                       </TableCell>
                       <TableCell className="font-semibold">{item.placa}</TableCell>
                       <TableCell>
