@@ -98,25 +98,28 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
         if (Array.isArray(response.data.data)) {
           // Mapear os dados para garantir que estejam no formato correto
           const dadosFormatados = response.data.data.map((item: any) => {
-            // Verificar campos específicos e adaptá-los
-            return {
+            // Extrair todos os possíveis nomes de campos e mapeá-los para o formato padrão
+            const processedItem = {
               id: item.id,
-              placa: item.placa,
-              km: item.km !== undefined ? item.km : item.km_atual,
-              tipo_combustivel: item.tipo_combustivel,
-              quantidade_litros: item.quantidade_litros !== undefined ? item.quantidade_litros : item.litros,
-              nome_motorista: item.nome_motorista,
-              rg_motorista: item.rg_motorista,
-              nome_operador: item.nome_operador,
-              valor_litro: item.valor_litro !== undefined ? item.valor_litro : item.preco_litro,
-              valor_total: item.valor_total,
-              tipo_veiculo: item.tipo_veiculo,
-              observacoes: item.observacoes,
+              placa: item.placa || item.veiculo || '',
+              km: item.km || item.km_atual || item.hodometro || item.odometro || 0,
+              tipo_combustivel: item.tipo_combustivel || item.tipo || 'Diesel',
+              quantidade_litros: item.quantidade_litros || item.litros || item.quantidade || 0,
+              nome_motorista: item.nome_motorista || item.motorista || item.motorista_nome || '',
+              rg_motorista: item.rg_motorista || item.motorista_rg || '',
+              nome_operador: item.nome_operador || item.operador || item.funcionario || '',
+              valor_litro: item.valor_litro || item.preco_litro || item.valor_unitario || 0,
+              valor_total: item.valor_total || 0,
+              tipo_veiculo: item.tipo_veiculo || '',
+              observacoes: item.observacoes || '',
               lavagem: item.lavagem || false,
-              tipo_lavagem: item.tipo_lavagem,
-              data_hora: item.data_hora || item.created_at,
+              tipo_lavagem: item.tipo_lavagem || '',
+              data_hora: item.data_hora || formatDate(item.created_at) || '',
               created_at: item.created_at
             };
+            
+            console.log('[FETCH] Item processado:', processedItem);
+            return processedItem;
           });
           
           console.log('[FETCH] Dados formatados:', dadosFormatados);
@@ -188,6 +191,17 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
       clearInterval(intervalId);
     };
   }, [posto, refreshTrigger]);
+
+  // Função para formatar uma data
+  const formatDate = (dateString?: string): string => {
+    if (!dateString) return '';
+    try {
+      return format(new Date(dateString), 'dd/MM/yyyy HH:mm', {locale: ptBR});
+    } catch (e) {
+      console.error('[FORMAT] Erro ao formatar data:', e);
+      return dateString;
+    }
+  };
 
   // Função para formatar o valor do combustível
   const formatCurrency = (value: number | string | null | undefined): string => {
