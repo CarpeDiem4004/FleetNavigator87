@@ -205,12 +205,6 @@ const SidebarSimplificado: React.FC<SidebarProps> = ({ open, setOpen }) => {
       subItems: [
         { name: 'Acesso Direto', href: '/acesso-posto', icon: Link2, className: 'bg-green-800/20 text-green-400 hover:bg-green-800/30 hover:text-green-300' },
         { name: 'Visão Geral', href: '/postos/visao-geral', icon: Gauge },
-        { name: 'Posto Osasco V2', href: '/posto/osasco_v2', icon: Fuel },
-        { name: 'Posto Alair V2', href: '/posto/alair_v2', icon: Fuel },
-        { name: 'Posto Campinas V2', href: '/posto/campinas_v2', icon: Fuel },
-        { name: 'Posto ABC V2', href: '/posto/abc_v2', icon: Fuel },
-        { name: 'Posto Socorro', href: '/posto/socorro', icon: Fuel },
-        { name: 'Posto Sorocaba', href: '/posto/sorocaba', icon: Fuel },
       ]
     },
     

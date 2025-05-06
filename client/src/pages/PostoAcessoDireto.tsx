@@ -19,16 +19,9 @@ import { FuelIcon, HomeIcon, ArrowRightIcon, InfoIcon, AlertTriangleIcon } from 
 import { useAuth } from '@/context/AuthContext';
 
 // Lista de todos os postos disponíveis
+// A partir de Maio/2025, apenas o Posto Remédios está disponível
 const postosList = [
-  { id: 'osasco', nome: 'Osasco', version: 'v1' },
-  { id: 'osasco_v2', nome: 'Osasco', version: 'v2' },
-  { id: 'guarulhos', nome: 'Guarulhos', version: 'v1' },
-  { id: 'alair_v2', nome: 'Alair', version: 'v2' },
-  { id: 'saopaulo', nome: 'São Paulo', version: 'v1' },
-  { id: 'campinas', nome: 'Campinas', version: 'v1' },
-  { id: 'campinas_v2', nome: 'Campinas', version: 'v2' },
-  { id: 'socorro', nome: 'Socorro', version: 'v1' },
-  { id: 'sorocaba', nome: 'Sorocaba', version: 'v1' }
+  { id: 'posto-remedios', nome: 'Posto Remédios', version: 'atual' },
 ];
 
 const PostoAcessoDireto: React.FC = () => {
