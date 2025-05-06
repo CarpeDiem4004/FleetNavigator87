@@ -710,58 +710,105 @@ export async function registrarAbastecimentoPosto(req, res) {
       ? parseFloat(valor_litro) * parseFloat(litros) 
       : 0);
     
-    // Montar a query de inserção
-    const insertQuery = `
-      INSERT INTO "${tableName}" (
-        placa,
-        km_atual,
-        hodometro_atual,
+    // Verificar se é um posto v2
+    const isV2Posto = postoName.includes('_v2');
+    
+    let insertQuery, values;
+    
+    if (isV2Posto) {
+      // Query para postos v2 (Socorro_v2, Sorocaba_v2, ABC_v2, etc)
+      // que têm uma estrutura de tabela mais simples
+      insertQuery = `
+        INSERT INTO "${tableName}" (
+          placa,
+          km_atual,
+          tipo_combustivel,
+          litros,
+          motorista,
+          motorista_rg,
+          operador,
+          valor_litro,
+          valor_total,
+          tipo_veiculo,
+          observacoes,
+          lavagem,
+          tipo_lavagem,
+          created_at,
+          updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW()
+        ) RETURNING *
+      `;
+      
+      values = [
+        placa.toUpperCase(),
+        km_atual ? parseInt(km_atual, 10) : null,
         tipo_combustivel,
-        litros,
-        quantidade_litros,
-        quantity_litros,
-        valor_litro,
-        valor_total,
+        litros ? parseFloat(litros) : null,
         motorista,
-        motorista_nome,
-        nome_motorista,
         motorista_rg,
-        rg_motorista,
         operador,
-        nome_operador,
+        valor_litro ? parseFloat(valor_litro) : null,
+        calculatedValorTotal,
         tipo_veiculo,
         observacoes,
         lavagem,
-        tipo_lavagem,
-        created_at,
-        data_registro
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW(), NOW()
-      ) RETURNING *
-    `;
-    
-    const values = [
-      placa.toUpperCase(),
-      km_atual ? parseInt(km_atual, 10) : null,
-      hodometro_atual ? parseInt(hodometro_atual, 10) : null,
-      tipo_combustivel,
-      litros ? parseFloat(litros) : null,
-      litros ? parseFloat(litros) : null, // quantidade_litros é o mesmo que litros
-      litros ? parseFloat(litros) : null, // quantity_litros é o mesmo que litros
-      valor_litro ? parseFloat(valor_litro) : null,
-      calculatedValorTotal,
-      motorista, // campo motorista
-      motorista, // campo motorista_nome 
-      motorista, // campo nome_motorista
-      motorista_rg, // campo motorista_rg
-      motorista_rg, // campo rg_motorista
-      operador, // campo operador
-      operador, // campo nome_operador
-      tipo_veiculo,
-      observacoes,
-      lavagem,
-      tipo_lavagem
-    ];
+        tipo_lavagem
+      ];
+    } else {
+      // Query para os outros postos que têm uma estrutura de tabela mais complexa
+      insertQuery = `
+        INSERT INTO "${tableName}" (
+          placa,
+          km_atual,
+          hodometro_atual,
+          tipo_combustivel,
+          litros,
+          quantidade_litros,
+          quantity_litros,
+          valor_litro,
+          valor_total,
+          motorista,
+          motorista_nome,
+          nome_motorista,
+          motorista_rg,
+          rg_motorista,
+          operador,
+          nome_operador,
+          tipo_veiculo,
+          observacoes,
+          lavagem,
+          tipo_lavagem,
+          created_at,
+          data_registro
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW(), NOW()
+        ) RETURNING *
+      `;
+      
+      values = [
+        placa.toUpperCase(),
+        km_atual ? parseInt(km_atual, 10) : null,
+        hodometro_atual ? parseInt(hodometro_atual, 10) : null,
+        tipo_combustivel,
+        litros ? parseFloat(litros) : null,
+        litros ? parseFloat(litros) : null, // quantidade_litros é o mesmo que litros
+        litros ? parseFloat(litros) : null, // quantity_litros é o mesmo que litros
+        valor_litro ? parseFloat(valor_litro) : null,
+        calculatedValorTotal,
+        motorista, // campo motorista
+        motorista, // campo motorista_nome 
+        motorista, // campo nome_motorista
+        motorista_rg, // campo motorista_rg
+        motorista_rg, // campo rg_motorista
+        operador, // campo operador
+        operador, // campo nome_operador
+        tipo_veiculo,
+        observacoes,
+        lavagem,
+        tipo_lavagem
+      ];
+    }
     
     console.log('Query SQL a ser executada:', insertQuery);
     console.log('Valores:', values);
