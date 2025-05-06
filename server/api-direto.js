@@ -113,21 +113,21 @@ export async function getHistoricoPosto(req, res) {
       dataQuery = `
         SELECT 
           id,
-          placa,
-          km_atual as km,
-          tipo_combustivel,
-          litros as quantidade_litros,
-          motorista as nome_motorista,
-          motorista_rg as rg_motorista,
-          operador as nome_operador,
+          vehicle_plate as placa,
+          odometer as km,
+          type_fuel as tipo_combustivel,
+          quantity_litros as quantidade_litros,
+          driver_name as nome_motorista,
+          '' as rg_motorista,
+          '' as nome_operador,
           valor_litro,
-          valor_total,
-          tipo_veiculo,
-          observacoes,
-          lavagem,
-          tipo_lavagem,
-          to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora,
-          created_at
+          total_cartao as valor_total,
+          '' as tipo_veiculo,
+          obs as observacoes,
+          false as lavagem,
+          '' as tipo_lavagem,
+          to_char(data_abastecimento, 'DD/MM/YYYY HH24:MI') as data_hora,
+          data_abastecimento as created_at
         FROM ${tableName}
         ORDER BY created_at DESC
         LIMIT ${req.query.limit || 50}
