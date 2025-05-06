@@ -180,20 +180,20 @@ const TireRequestForm: React.FC<TireRequestFormProps> = ({ onRequestSubmitted })
           Solicitar Pneus
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-[600px] p-6">
-        <DialogHeader className="pb-4 border-b">
+      <DialogContent className="max-w-[600px] p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-3 border-b">
           <DialogTitle className="text-xl font-bold">Solicitar Pneus</DialogTitle>
-          <DialogDescription className="mt-2 text-gray-600">
+          <DialogDescription className="mt-1 text-gray-600 text-sm">
             Preencha os detalhes para solicitar novos pneus para sua base
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid gap-5 py-5">
+        <div className="grid gap-4 py-3">
           {/* Base - Campo destacado */}
-          <div className="space-y-2 bg-gray-50 p-3 rounded-md border border-gray-100">
-            <Label htmlFor="base" className="font-medium text-gray-800">Base Solicitante *</Label>
+          <div className="space-y-1 bg-gray-50 p-3 rounded-md border border-gray-100">
+            <Label htmlFor="base" className="font-medium text-gray-800 text-sm">Base Solicitante *</Label>
             <Select value={baseId.toString()} onValueChange={(value) => setBaseId(parseInt(value))}>
-              <SelectTrigger id="base" className="bg-white">
+              <SelectTrigger id="base" className="bg-white h-9">
                 <SelectValue placeholder="Selecione a Base" />
               </SelectTrigger>
               <SelectContent>
@@ -207,56 +207,56 @@ const TireRequestForm: React.FC<TireRequestFormProps> = ({ onRequestSubmitted })
           </div>
           
           {/* Seção: Informações do Pneu */}
-          <div className="border rounded-md p-4">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Informações do Pneu</h3>
+          <div className="border rounded-md p-3">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Informações do Pneu</h3>
             
             {/* Marca e Modelo */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div className="space-y-2">
-                <Label htmlFor="marca" className="text-gray-700">Marca *</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+              <div className="space-y-1">
+                <Label htmlFor="marca" className="text-gray-700 text-sm">Marca *</Label>
                 <Input
                   id="marca"
                   value={marca}
                   onChange={(e) => setMarca(e.target.value)}
                   placeholder="Ex: Pirelli"
                   required
-                  className="bg-white"
+                  className="bg-white h-9"
                 />
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="modelo" className="text-gray-700">Modelo *</Label>
+              <div className="space-y-1">
+                <Label htmlFor="modelo" className="text-gray-700 text-sm">Modelo *</Label>
                 <Input
                   id="modelo"
                   value={modelo}
                   onChange={(e) => setModelo(e.target.value)}
                   placeholder="Ex: Formula Energy"
                   required
-                  className="bg-white"
+                  className="bg-white h-9"
                 />
               </div>
             </div>
             
             {/* Medida e Tipo */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div className="space-y-2">
-                <Label htmlFor="medida" className="text-gray-700">Medida</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+              <div className="space-y-1">
+                <Label htmlFor="medida" className="text-gray-700 text-sm">Medida</Label>
                 <Input
                   id="medida"
                   value={medida}
                   onChange={(e) => setMedida(e.target.value)}
                   placeholder="Ex: 295/80R22.5"
-                  className="bg-white"
+                  className="bg-white h-9"
                 />
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="tipo" className="text-gray-700">Tipo</Label>
+              <div className="space-y-1">
+                <Label htmlFor="tipo" className="text-gray-700 text-sm">Tipo</Label>
                 <Select 
                   value={tipo} 
                   onValueChange={(value) => setTipo(value)}
                 >
-                  <SelectTrigger id="tipo" className="bg-white">
+                  <SelectTrigger id="tipo" className="bg-white h-9">
                     <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
                   <SelectContent>
@@ -271,8 +271,8 @@ const TireRequestForm: React.FC<TireRequestFormProps> = ({ onRequestSubmitted })
             </div>
             
             {/* Quantidade */}
-            <div className="space-y-2">
-              <Label htmlFor="quantidade" className="text-gray-700">Quantidade *</Label>
+            <div className="space-y-1">
+              <Label htmlFor="quantidade" className="text-gray-700 text-sm">Quantidade *</Label>
               <Input
                 id="quantidade"
                 type="number"
@@ -280,18 +280,18 @@ const TireRequestForm: React.FC<TireRequestFormProps> = ({ onRequestSubmitted })
                 value={quantidade.toString()}
                 onChange={(e) => setQuantidade(parseInt(e.target.value) || 1)}
                 required
-                className="bg-white w-1/3"
+                className="bg-white w-1/3 h-9"
               />
             </div>
           </div>
           
           {/* Motivo e Observações */}
-          <div className="border rounded-md p-4">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Justificativa</h3>
+          <div className="border rounded-md p-3">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Justificativa</h3>
             
             {/* Motivo */}
-            <div className="space-y-2 mb-4">
-              <Label htmlFor="motivo" className="text-gray-700">Motivo da Solicitação *</Label>
+            <div className="space-y-1 mb-3">
+              <Label htmlFor="motivo" className="text-gray-700 text-sm">Motivo da Solicitação *</Label>
               <Textarea
                 id="motivo"
                 value={motivo}
@@ -299,33 +299,33 @@ const TireRequestForm: React.FC<TireRequestFormProps> = ({ onRequestSubmitted })
                 placeholder="Ex: Substituição de pneus desgastados"
                 required
                 rows={2}
-                className="bg-white resize-none"
+                className="bg-white resize-none min-h-[60px]"
               />
             </div>
             
             {/* Observações */}
-            <div className="space-y-2">
-              <Label htmlFor="observacao" className="text-gray-700">Observações Adicionais</Label>
+            <div className="space-y-1">
+              <Label htmlFor="observacao" className="text-gray-700 text-sm">Observações Adicionais</Label>
               <Textarea
                 id="observacao"
                 value={observacao}
                 onChange={(e) => setObservacao(e.target.value)}
                 placeholder="Informações complementares"
                 rows={2}
-                className="bg-white resize-none"
+                className="bg-white resize-none min-h-[60px]"
               />
             </div>
           </div>
         </div>
         
-        <DialogFooter className="border-t pt-4 gap-2">
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
+        <DialogFooter className="border-t pt-3 gap-2 mt-2">
+          <Button variant="outline" onClick={() => setIsOpen(false)} className="h-9">
             Cancelar
           </Button>
           <Button 
             onClick={handleSubmit} 
             disabled={isSubmitting}
-            className="bg-green-600 hover:bg-green-700 text-white"
+            className="bg-green-600 hover:bg-green-700 text-white h-9"
           >
             {isSubmitting ? (
               <span className="flex items-center">
