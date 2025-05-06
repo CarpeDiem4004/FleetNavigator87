@@ -5643,6 +5643,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/postos/excluir-saopaulo", isAuthenticated, excluirPostoSaoPaulo);
   
   // Endpoint para buscar abastecimentos por posto usando o modelo de duas tabelas
+  // Endpoint para buscar todos os abastecimentos (histórico geral)
+  app.get('/api/abastecimentos/todos', async (req, res) => {
+    try {
+      console.log(`Buscando todos os abastecimentos para histórico geral`);
+      
+      // Definir cabeçalhos para evitar cache
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
+      // Consulta para obter os últimos 1000 abastecimentos de todos os postos
+      const query = `
+        SELECT * FROM abastecimentos_postos
+        ORDER BY created_at DESC
+        LIMIT 1000
+      `;
+      
+      console.log(`[Histórico Geral] Executando consulta SQL para obter todos os abastecimentos`);
+      
+      // Executar a consulta
+      const result = await pool.query(query);
+      
+      // Informações adicionais para debug
+      console.log(`[Histórico Geral] Total de abastecimentos encontrados: ${result.rows.length}`);
+      
+      // Verificar se a tabela possui registros recentes (últimas 24 horas)
+      const now = new Date();
+      const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      
+      const recentRecords = result.rows.filter(row => {
+        const createdAt = new Date(row.created_at);
+        return createdAt > oneDayAgo;
+      });
+      
+      console.log(`[Histórico Geral] Registros nas últimas 24 horas: ${recentRecords.length}`);
+      
+      return res.json({
+        success: true,
+        data: result.rows,
+        count: result.rowCount,
+        recentCount: recentRecords.length,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('[Histórico Geral] Erro ao consultar abastecimentos de todos os postos:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: `Erro ao consultar histórico de abastecimentos: ${error.message}` 
+      });
+    }
+  });
+  
   app.get('/api/abastecimentos/:posto', async (req, res) => {
     try {
       const { posto } = req.params;
