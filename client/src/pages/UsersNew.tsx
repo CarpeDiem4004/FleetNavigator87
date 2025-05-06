@@ -371,7 +371,7 @@ const UsersNew: React.FC = () => {
   // Atualizar lista de usuários após adicionar um novo ou resetar senha
   const handleUserDataChanged = () => {
     // Invalidar a query para forçar uma nova requisição e atualizar os dados
-    queryClient.invalidateQueries({ queryKey: ['/api/users/list-public'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/users/public-test'] });
   };
 
   // Estados para controlar o diálogo de senha gerada
