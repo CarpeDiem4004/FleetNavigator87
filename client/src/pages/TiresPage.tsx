@@ -909,7 +909,7 @@ const TiresPage: React.FC = () => {
                       Solicitações Pendentes
                     </CardTitle>
                     <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-300">
-                      {tireRequests.filter(req => req.status === 'pendente').length}
+                      {tireRequests && tireRequests.length > 0 ? tireRequests.filter(req => req.status === 'pendente').length : 0}
                     </Badge>
                   </div>
                   <CardDescription className="text-xs">
@@ -1021,7 +1021,7 @@ const TiresPage: React.FC = () => {
                       Solicitações Aprovadas
                     </CardTitle>
                     <Badge variant="outline" className="bg-green-50 text-green-800 border-green-300">
-                      {tireRequests.filter(req => req.status === 'aprovado').length}
+                      {tireRequests && tireRequests.length > 0 ? tireRequests.filter(req => req.status === 'aprovado').length : 0}
                     </Badge>
                   </div>
                   <CardDescription className="text-xs">
@@ -1101,7 +1101,7 @@ const TiresPage: React.FC = () => {
                       Solicitações Rejeitadas
                     </CardTitle>
                     <Badge variant="outline" className="bg-red-50 text-red-800 border-red-300">
-                      {tireRequests.filter(req => req.status === 'rejeitado').length}
+                      {tireRequests && tireRequests.length > 0 ? tireRequests.filter(req => req.status === 'rejeitado').length : 0}
                     </Badge>
                   </div>
                   <CardDescription className="text-xs">
