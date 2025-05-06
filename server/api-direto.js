@@ -871,45 +871,81 @@ export async function registrarAbastecimentoPosto(req, res) {
     let insertQuery, values;
     
     if (isV2Posto) {
-      // Query para postos v2 (Socorro_v2, Sorocaba_v2, ABC_v2, etc)
-      // que têm uma estrutura de tabela mais simples
-      insertQuery = `
-        INSERT INTO "${tableName}" (
-          placa,
-          km_atual,
+      // Query especial para Osasco_v2 que tem estrutura de tabela diferente
+      if (postoName.toLowerCase() === 'osasco_v2') {
+        console.log("Usando query específica para Osasco V2");
+        insertQuery = `
+          INSERT INTO "${tableName}" (
+            placa,
+            hodometro,
+            tipo_combustivel,
+            quantidade,
+            motorista,
+            funcionario,
+            valor_unitario,
+            valor_total,
+            tipo_veiculo,
+            observacoes,
+            status,
+            data_hora,
+            created_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ativo', NOW(), NOW()
+          ) RETURNING *
+        `;
+        
+        values = [
+          placa.toUpperCase(),
+          km_atual ? parseInt(km_atual, 10) : null,
           tipo_combustivel,
-          litros,
+          litros ? parseFloat(litros) : null,
+          motorista,
+          operador,
+          valor_litro ? parseFloat(valor_litro) : null,
+          calculatedValorTotal,
+          tipo_veiculo,
+          observacoes
+        ];
+      } else {
+        // Query para outros postos v2 (Socorro_v2, Sorocaba_v2, ABC_v2, etc)
+        insertQuery = `
+          INSERT INTO "${tableName}" (
+            placa,
+            km_atual,
+            tipo_combustivel,
+            litros,
+            motorista,
+            motorista_rg,
+            operador,
+            valor_litro,
+            valor_total,
+            tipo_veiculo,
+            observacoes,
+            lavagem,
+            tipo_lavagem,
+            created_at,
+            updated_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW()
+          ) RETURNING *
+        `;
+        
+        values = [
+          placa.toUpperCase(),
+          km_atual ? parseInt(km_atual, 10) : null,
+          tipo_combustivel,
+          litros ? parseFloat(litros) : null,
           motorista,
           motorista_rg,
           operador,
-          valor_litro,
-          valor_total,
+          valor_litro ? parseFloat(valor_litro) : null,
+          calculatedValorTotal,
           tipo_veiculo,
           observacoes,
           lavagem,
-          tipo_lavagem,
-          created_at,
-          updated_at
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW()
-        ) RETURNING *
-      `;
-      
-      values = [
-        placa.toUpperCase(),
-        km_atual ? parseInt(km_atual, 10) : null,
-        tipo_combustivel,
-        litros ? parseFloat(litros) : null,
-        motorista,
-        motorista_rg,
-        operador,
-        valor_litro ? parseFloat(valor_litro) : null,
-        calculatedValorTotal,
-        tipo_veiculo,
-        observacoes,
-        lavagem,
-        tipo_lavagem
-      ];
+          tipo_lavagem
+        ];
+      }
     } else {
       // Query para os outros postos que têm uma estrutura de tabela mais complexa
       insertQuery = `
