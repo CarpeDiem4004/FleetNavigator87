@@ -234,7 +234,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           throw new Error(errorData.message || 'Erro de autenticação');
         }
         
-        userData = await response.json();
+        const responseData = await response.json();
+        userData = responseData;
+        
+        // Se o endpoint da API também retornar um token JWT, salve-o
+        if (responseData.token) {
+          console.log("Token JWT recebido da autenticação tradicional");
+          saveJwtToken(responseData.token);
+        }
+        
         console.log("Login tradicional bem-sucedido:", userData);
       } else {
         console.log("Usando dados de usuário da autenticação JWT:", userData);

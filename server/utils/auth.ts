@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { pool } from '../db';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 
 // Classe de erro personalizada para autenticação
 export class AuthError extends Error {
@@ -27,13 +27,22 @@ export function generateJwtToken(user: any): string {
     isActive: user.is_active
   };
   
-  return jwt.sign(payload, JWT_SECRET as jwt.Secret, { expiresIn: JWT_EXPIRES_IN });
+  try {
+    // Converte o segredo em um Buffer para garantir compatibilidade
+    const secretBuffer = Buffer.from(JWT_SECRET, 'utf-8');
+    return jwt.sign(payload, secretBuffer, { expiresIn: JWT_EXPIRES_IN });
+  } catch (error) {
+    console.error('[generateJwtToken] Erro ao gerar token JWT:', error);
+    throw new Error('Falha ao gerar token JWT');
+  }
 }
 
 // Função para validar token JWT customizado (não Supabase)
 export function validateJwtToken(token: string): any {
   try {
-    return jwt.verify(token, JWT_SECRET as jwt.Secret);
+    // Converte o segredo em um Buffer para garantir compatibilidade
+    const secretBuffer = Buffer.from(JWT_SECRET, 'utf-8');
+    return jwt.verify(token, secretBuffer);
   } catch (error) {
     console.error('[validateJwtToken] Erro ao validar token JWT:', error);
     throw new AuthError("Token JWT inválido ou expirado");

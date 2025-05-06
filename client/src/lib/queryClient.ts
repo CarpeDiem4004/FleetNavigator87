@@ -105,7 +105,13 @@ export async function apiRequest(
         break;
       case 'delete':
         if (data && typeof data === 'object' && 'id' in (data as DataWithId)) {
-          result = await supabase.from(table).delete().eq('id', (data as DataWithId).id);
+          // For delete operations, we need to handle the return type correctly
+          const deleteResult = await supabase.from(table).delete().eq('id', (data as DataWithId).id);
+          // Create a compatible result format
+          result = {
+            data: [], // Empty array instead of null for compatibility
+            error: deleteResult.error
+          };
         }
         break;
       default:
