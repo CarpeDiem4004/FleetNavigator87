@@ -1,5 +1,6 @@
 import express from 'express';
 import { userService, generateRandomPassword } from '../services/userService';
+import { getSupabaseAdapter } from '../adapters/supabaseAdapter';
 
 // Router específico para API de usuários
 const router = express.Router();
@@ -130,7 +131,7 @@ router.get('/api/users/:id', async (req, res) => {
     const { id } = req.params;
     
     // Buscar usuário
-    const user = await supabaseAdapter.getUserById(id);
+    const user = await supabaseAdapter.getUser(parseInt(id, 10));
     
     if (!user) {
       return res.status(404).json({ 
