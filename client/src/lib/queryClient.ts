@@ -107,11 +107,19 @@ export async function apiRequest(
         if (data && typeof data === 'object' && 'id' in (data as DataWithId)) {
           // For delete operations, we need to handle the return type correctly
           const deleteResult = await supabase.from(table).delete().eq('id', (data as DataWithId).id);
-          // Create a compatible result format
-          result = {
-            data: [], // Empty array instead of null for compatibility
-            error: deleteResult.error
+          
+          // Create a compatible result format that satisfies the type system
+          type PostgrestResult = {
+            data: any[];
+            error: any;
           };
+          
+          const compatibleResult: PostgrestResult = {
+            data: [],  // Empty array instead of null for compatibility
+            error: deleteResult.error 
+          };
+          
+          result = compatibleResult;
         }
         break;
       default:

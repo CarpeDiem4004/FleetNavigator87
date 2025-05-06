@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { pool } from '../db';
-import jwt, { SignOptions } from 'jsonwebtoken';
+import jwt, { SignOptions, Secret, JwtPayload as JWTPayload } from 'jsonwebtoken';
 
 // Classe de erro personalizada para autenticação
 export class AuthError extends Error {
@@ -11,12 +11,24 @@ export class AuthError extends Error {
 }
 
 // Constantes para JWT
-const JWT_SECRET = process.env.JWT_SECRET || 'murici-fleet-jwt-secret-2025';
+const JWT_SECRET_STR = process.env.JWT_SECRET || 'murici-fleet-jwt-secret-2025';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+
+// Interface para o payload do token JWT
+interface JwtPayload {
+  id: number;
+  email: string;
+  name: string;
+  role: string;
+  baseId?: number | null;
+  basename?: string | null;
+  oficinaId?: number | null;
+  isActive?: boolean;
+}
 
 // Função para gerar token JWT manualmente
 export function generateJwtToken(user: any): string {
-  const payload = {
+  const payload: JwtPayload = {
     id: user.id,
     email: user.email,
     name: user.name,
@@ -28,9 +40,12 @@ export function generateJwtToken(user: any): string {
   };
   
   try {
-    // Converte o segredo em um Buffer para garantir compatibilidade
-    const secretBuffer = Buffer.from(JWT_SECRET, 'utf-8');
-    return jwt.sign(payload, secretBuffer, { expiresIn: JWT_EXPIRES_IN });
+    // Usar objeto Buffer para o segredo para compatibilidade com tipos do jsonwebtoken
+    const secretBuffer = Buffer.from(JWT_SECRET_STR, 'utf8');
+    return jwt.sign(payload, secretBuffer, {
+      expiresIn: JWT_EXPIRES_IN,
+      algorithm: 'HS256'
+    });
   } catch (error) {
     console.error('[generateJwtToken] Erro ao gerar token JWT:', error);
     throw new Error('Falha ao gerar token JWT');
@@ -38,11 +53,11 @@ export function generateJwtToken(user: any): string {
 }
 
 // Função para validar token JWT customizado (não Supabase)
-export function validateJwtToken(token: string): any {
+export function validateJwtToken(token: string): JwtPayload {
   try {
-    // Converte o segredo em um Buffer para garantir compatibilidade
-    const secretBuffer = Buffer.from(JWT_SECRET, 'utf-8');
-    return jwt.verify(token, secretBuffer);
+    // Usar objeto Buffer para o segredo para compatibilidade com tipos do jsonwebtoken
+    const secretBuffer = Buffer.from(JWT_SECRET_STR, 'utf8');
+    return jwt.verify(token, secretBuffer) as JwtPayload;
   } catch (error) {
     console.error('[validateJwtToken] Erro ao validar token JWT:', error);
     throw new AuthError("Token JWT inválido ou expirado");
