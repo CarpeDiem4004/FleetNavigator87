@@ -888,9 +888,10 @@ export async function registrarAbastecimentoPosto(req, res) {
             observacoes,
             status,
             data_hora,
-            created_at
+            created_at,
+            updated_at
           ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ativo', NOW(), NOW()
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ativo', NOW(), NOW(), NOW()
           ) RETURNING *
         `;
         
