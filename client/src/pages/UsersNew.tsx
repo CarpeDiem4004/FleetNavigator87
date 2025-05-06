@@ -388,10 +388,25 @@ const UsersNew: React.FC = () => {
   // Função para alternar o status do usuário (ativo/inativo)
   const handleToggleUserStatus = async (userId: number, currentStatus: boolean) => {
     try {
-      // Chamar API híbrida para atualizar o status do usuário
-      await apiRequest('PATCH', `/api/hybrid/users/${userId}/status`, { 
-        isActive: !currentStatus 
+      // Chamar API híbrida para atualizar o status do usuário com token JWT explícito
+      const authToken = localStorage.getItem('authToken') || localStorage.getItem('jwt_token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+        console.log('[UsersNew] Adicionando token JWT para atualizar status de usuário');
+      }
+      
+      const response = await fetch(`/api/hybrid/users/${userId}/status`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ isActive: !currentStatus }),
+        credentials: 'include'
       });
+      
+      if (!response.ok) {
+        throw new Error(`Erro ao atualizar status: ${response.statusText}`);
+      }
       
       // Atualizar a lista de usuários
       handleUserDataChanged();
@@ -417,10 +432,25 @@ const UsersNew: React.FC = () => {
     try {
       const newPassword = generateRandomPassword(10);
       
-      // Chamar API híbrida para atualizar a senha do usuário
-      await apiRequest('POST', `/api/hybrid/users/${selectedUserId}/reset-password`, { 
-        password: newPassword 
+      // Chamar API híbrida para atualizar a senha do usuário com token JWT explícito
+      const authToken = localStorage.getItem('authToken') || localStorage.getItem('jwt_token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+        console.log('[UsersNew] Adicionando token JWT para redefinir senha');
+      }
+      
+      const response = await fetch(`/api/hybrid/users/${selectedUserId}/reset-password`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ password: newPassword }),
+        credentials: 'include'
       });
+      
+      if (!response.ok) {
+        throw new Error(`Erro ao redefinir senha: ${response.statusText}`);
+      }
       
       // Fechar o diálogo e mostrar a nova senha
       setIsResetPasswordDialogOpen(false);
