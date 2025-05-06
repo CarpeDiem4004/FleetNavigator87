@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Fuel, TruckIcon, Truck, History } from 'lucide-react';
+import { Fuel, TruckIcon, Truck, History, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import FormularioAbastecimento from './components/FormularioAbastecimento';
 import FormularioRecebimento from './components/FormularioRecebimento';
 import FormularioControlePatio from './components/FormularioControlePatio';

@@ -83,8 +83,12 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
       
       console.log(`[FETCH] Buscando histórico para o posto: ${posto} com timestamp ${timestamp}`);
       
+      // Corrigir o problema de espaço no nome do posto
+      const postoId = posto.includes(' ') ? posto.trim() : posto;
+      console.log(`[FETCH] Buscando histórico para posto usando ID limpo: "${postoId}"`);
+      
       // Usar a nova rota direta para evitar problemas com interceptação do Vite
-      const response = await axios.get(`/api/historico-direto/${encodeURIComponent(posto)}?t=${timestamp}`, {
+      const response = await axios.get(`/api/historico-direto/${encodeURIComponent(postoId)}?t=${timestamp}`, {
         headers,
         withCredentials: true // Incluir cookies para autenticação baseada em sessão
       });
@@ -191,6 +195,13 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
   // Carregar dados quando o componente montar ou quando o refreshTrigger mudar
   useEffect(() => {
     console.log(`[DEBUG] Carregando histórico do posto ${posto}, refreshTrigger: ${refreshTrigger}`);
+    
+    // Verificar se o posto tem formato correto
+    const postoProcessado = posto.trim().toLowerCase();
+    if (postoProcessado.includes(' ')) {
+      console.log(`[DEBUG] Detectado espaço no nome do posto: "${posto}" -> "${postoProcessado.replace(' ', '_')}"`);
+    }
+    
     loadHistorico();
 
     // Verificações adicionais para garantir carregamento dos dados
@@ -204,7 +215,7 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
       loadHistorico();
     }, 2500);
 
-    // Configurar atualização automática a cada 30 segundos
+    // Configurar atualização automática a cada 20 segundos
     const intervalId = setInterval(() => {
       console.log(`[DEBUG] Atualizando histórico automaticamente para ${posto}`);
       loadHistorico();
