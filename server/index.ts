@@ -15,7 +15,8 @@ import {
   registrarAbastecimentoPosto
 } from "./api-direto.js";
 // Importar API para usuários via Supabase
-import userApi from "./api/userApi";
+// Comentado temporariamente devido a erro "getSupabaseAdapter is not defined"
+// import userApi from "./api/userApi";
 // Importar rotas para gerenciamento de usuários com sessão
 import usuariosRoutes from "./routes/usuariosRoutes";
 // Importar APIs híbridas (ambiente Replit e externo)
@@ -31,6 +32,8 @@ import { debugAuthMiddleware, recoverSessionMiddleware } from './middleware/debu
 import frotaDiagnosticoRoute from "./routes/frotaDiagnosticoRoute";
 // Importar rotas de acesso externo para postos
 import postosExternalRoutes from "./routes/postosExternalRoutes";
+// Importar rotas de diagnóstico pública
+import diagnosticRoute from "./diagnosticRoute";
 
 // Configuração das variáveis de ambiente do Supabase
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
@@ -44,6 +47,10 @@ app.use(corsMiddleware);
 // Middlewares padrão do Express
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// IMPORTANTE: Adicionar rota de diagnóstico ANTES de qualquer middleware de autenticação
+// Esta rota não depende de sessionStore ou autenticação
+app.use('/api', diagnosticRoute);
 
 // * IMPORTANTE: É crucial que registerRoutes seja chamado antes dos middlewares de diagnóstico *
 // * pois registerRoutes inicializa o Passport.js com setupAuth, que adiciona o método isAuthenticated *
@@ -99,8 +106,8 @@ app.use((req, res, next) => {
   app.use(debugAuthMiddleware);
   app.use(recoverSessionMiddleware);
   
-  // Registrar o roteador de API de usuários
-  app.use(userApi);
+  // Registrar o roteador de API de usuários - temporariamente desativado
+  // app.use(userApi);
   
   // Registrar rotas para gerenciamento de usuários com sessão
   app.use('/api', usuariosRoutes);
