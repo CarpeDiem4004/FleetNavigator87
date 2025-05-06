@@ -668,3 +668,6 @@ export type InsertInventoryStock = z.infer<typeof insertInventoryStockSchema>;
 export type InsertInventoryMovement = z.infer<typeof insertInventoryMovementSchema>;
 export type InsertBaseRequest = z.infer<typeof insertBaseRequestSchema>;
 export type InsertBaseRequestUpdate = z.infer<typeof insertBaseRequestUpdateSchema>;
+
+// Importando schemas do Posto Campinas
+export * from './posto-campinas-schema';
