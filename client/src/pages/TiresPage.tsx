@@ -883,68 +883,112 @@ const TiresPage: React.FC = () => {
           </TabsContent>
           
           <TabsContent value="requests" className="mt-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              
+            <div className="bg-white p-4 rounded-lg shadow-sm mb-6 flex flex-wrap gap-4 items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Solicitações de Pneus</h2>
+                <p className="text-gray-500 text-sm">Gerencie todas as solicitações de pneus no sistema</p>
+              </div>
+              <div className="flex gap-3">
+                <Button 
+                  onClick={() => setIsRequestDialogOpen(true)}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <ShoppingBag className="mr-2 h-4 w-4" />
+                  Nova Solicitação
+                </Button>
+              </div>
+            </div>
+          
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Card para Solicitações pendentes */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center">
-                    <AlertCircle className="mr-2 h-5 w-5 text-yellow-500" />
-                    Solicitações Pendentes
-                  </CardTitle>
-                  <CardDescription>
+              <Card className="border-l-4 border-l-yellow-400 shadow-sm">
+                <CardHeader className="pb-2 border-b">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg flex items-center">
+                      <AlertCircle className="mr-2 h-5 w-5 text-yellow-500" />
+                      Solicitações Pendentes
+                    </CardTitle>
+                    <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-300">
+                      {tireRequests.filter(req => req.status === 'pendente').length}
+                    </Badge>
+                  </div>
+                  <CardDescription className="text-xs">
                     Solicitações aguardando aprovação
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="max-h-[300px] overflow-y-auto">
+                <CardContent className="p-0">
                   {isLoadingRequests ? (
                     <div className="flex justify-center items-center h-32">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
                     </div>
                   ) : (
-                    <>
+                    <div className="max-h-[350px] overflow-y-auto py-2 px-3">
                       {!tireRequests || tireRequests.length === 0 || tireRequests.filter(req => req.status === 'pendente').length === 0 ? (
-                        <div className="text-center text-gray-500 my-8">
-                          Não há solicitações pendentes
+                        <div className="text-center text-gray-500 my-8 flex flex-col items-center">
+                          <AlertCircle className="h-10 w-10 text-gray-300 mb-2" />
+                          <p>Não há solicitações pendentes</p>
                         </div>
                       ) : (
                         <div className="space-y-4">
                           {tireRequests
                             .filter(req => req.status === 'pendente')
                             .map(request => (
-                              <div key={request.id} className="border rounded-lg p-3 bg-gray-50">
-                                <div className="flex justify-between items-start mb-2">
+                              <div key={request.id} className="border rounded-lg p-3 bg-white hover:bg-gray-50 transition-colors">
+                                <div className="flex justify-between items-start mb-3">
                                   <div>
-                                    <h4 className="font-semibold">{request.marca} {request.modelo}</h4>
-                                    <p className="text-sm text-gray-600">{request.medida || '-'}</p>
+                                    <h4 className="font-semibold text-gray-800">{request.marca} {request.modelo}</h4>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <Badge variant="outline" className="bg-gray-100 px-2 py-0 h-5 text-xs">
+                                        {request.tipo}
+                                      </Badge>
+                                      {request.medida && (
+                                        <Badge variant="outline" className="bg-gray-100 px-2 py-0 h-5 text-xs">
+                                          {request.medida}
+                                        </Badge>
+                                      )}
+                                    </div>
                                   </div>
                                   <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-300">
                                     Pendente
                                   </Badge>
                                 </div>
-                                <div className="grid grid-cols-2 gap-1 text-sm mb-2">
-                                  <div>
-                                    <span className="text-gray-500">Base:</span> {request.base_nome}
+                                
+                                <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm mb-3 bg-gray-50 p-2 rounded">
+                                  <div className="flex items-center">
+                                    <span className="text-gray-500 w-24">Base:</span> 
+                                    <span className="font-medium">{request.base_nome}</span>
                                   </div>
-                                  <div>
-                                    <span className="text-gray-500">Qt:</span> {request.quantidade}
+                                  <div className="flex items-center">
+                                    <span className="text-gray-500 w-24">Quantidade:</span> 
+                                    <span className="font-medium">{request.quantidade}</span>
                                   </div>
-                                  <div>
-                                    <span className="text-gray-500">Solicitante:</span> {request.usuario_nome}
+                                  <div className="flex items-center">
+                                    <span className="text-gray-500 w-24">Solicitante:</span> 
+                                    <span className="font-medium">{request.usuario_nome}</span>
                                   </div>
-                                  <div>
-                                    <span className="text-gray-500">Data:</span> {formatDate(request.data_solicitacao)}
+                                  <div className="flex items-center">
+                                    <span className="text-gray-500 w-24">Data:</span> 
+                                    <span className="font-medium">{formatDate(request.data_solicitacao)}</span>
                                   </div>
                                 </div>
-                                <div className="text-sm mb-3">
-                                  <span className="text-gray-500">Motivo:</span> {request.motivo}
+                                
+                                <div className="text-sm mb-3 p-2 bg-gray-50 rounded">
+                                  <div className="text-gray-600 font-medium mb-1">Motivo da solicitação:</div>
+                                  <p className="text-gray-700">{request.motivo}</p>
+                                  {request.observacoes && (
+                                    <div className="mt-2 pt-2 border-t border-gray-200">
+                                      <span className="text-gray-600 font-medium">Observações:</span>
+                                      <p className="text-gray-600 text-xs mt-1">{request.observacoes}</p>
+                                    </div>
+                                  )}
                                 </div>
-                                <div className="flex justify-end gap-2">
+                                
+                                <div className="flex justify-end gap-2 mt-2">
                                   <Button 
                                     size="sm" 
                                     variant="default" 
                                     onClick={() => handleApproveRequest(request.id)}
-                                    className="h-8"
+                                    className="h-9 bg-green-600 hover:bg-green-700 text-white"
                                   >
                                     <CheckCircle className="mr-1 h-4 w-4" />
                                     Aprovar
@@ -953,7 +997,7 @@ const TiresPage: React.FC = () => {
                                     size="sm" 
                                     variant="outline" 
                                     onClick={() => handleRejectRequest(request.id)}
-                                    className="h-8"
+                                    className="h-9 border-red-200 text-red-600 hover:bg-red-50"
                                   >
                                     <XCircle className="mr-1 h-4 w-4" />
                                     Rejeitar
@@ -963,145 +1007,169 @@ const TiresPage: React.FC = () => {
                             ))}
                         </div>
                       )}
-                    </>
+                    </div>
                   )}
                 </CardContent>
               </Card>
 
               {/* Card para Solicitações aprovadas */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center">
-                    <CheckCircle className="mr-2 h-5 w-5 text-green-500" />
-                    Solicitações Aprovadas
-                  </CardTitle>
-                  <CardDescription>
-                    Solicitações já aprovadas pela gestão
+              <Card className="border-l-4 border-l-green-400 shadow-sm">
+                <CardHeader className="pb-2 border-b">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg flex items-center">
+                      <CheckCircle className="mr-2 h-5 w-5 text-green-500" />
+                      Solicitações Aprovadas
+                    </CardTitle>
+                    <Badge variant="outline" className="bg-green-50 text-green-800 border-green-300">
+                      {tireRequests.filter(req => req.status === 'aprovado').length}
+                    </Badge>
+                  </div>
+                  <CardDescription className="text-xs">
+                    Solicitações aprovadas pela gestão
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="max-h-[300px] overflow-y-auto">
+                <CardContent className="p-0">
                   {isLoadingRequests ? (
                     <div className="flex justify-center items-center h-32">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
                     </div>
                   ) : (
-                    <>
+                    <div className="max-h-[350px] overflow-y-auto py-2 px-3">
                       {!tireRequests || tireRequests.length === 0 || tireRequests.filter(req => req.status === 'aprovado').length === 0 ? (
-                        <div className="text-center text-gray-500 my-8">
-                          Não há solicitações aprovadas
+                        <div className="text-center text-gray-500 my-8 flex flex-col items-center">
+                          <CheckCircle className="h-10 w-10 text-gray-300 mb-2" />
+                          <p>Não há solicitações aprovadas</p>
                         </div>
                       ) : (
                         <div className="space-y-4">
                           {tireRequests
                             .filter(req => req.status === 'aprovado')
                             .map(request => (
-                              <div key={request.id} className="border rounded-lg p-3 bg-gray-50">
-                                <div className="flex justify-between items-start mb-2">
+                              <div key={request.id} className="border rounded-lg p-3 bg-white hover:bg-gray-50 transition-colors">
+                                <div className="flex justify-between items-start mb-3">
                                   <div>
-                                    <h4 className="font-semibold">{request.marca} {request.modelo}</h4>
-                                    <p className="text-sm text-gray-600">{request.medida || '-'}</p>
+                                    <h4 className="font-semibold text-gray-800">{request.marca} {request.modelo}</h4>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <Badge variant="outline" className="bg-gray-100 px-2 py-0 h-5 text-xs">
+                                        {request.tipo}
+                                      </Badge>
+                                      {request.medida && (
+                                        <Badge variant="outline" className="bg-gray-100 px-2 py-0 h-5 text-xs">
+                                          {request.medida}
+                                        </Badge>
+                                      )}
+                                    </div>
                                   </div>
                                   <Badge variant="outline" className="bg-green-50 text-green-800 border-green-300">
                                     Aprovado
                                   </Badge>
                                 </div>
-                                <div className="grid grid-cols-2 gap-1 text-sm mb-2">
-                                  <div>
-                                    <span className="text-gray-500">Base:</span> {request.base_nome}
+                                
+                                <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm mb-3 bg-gray-50 p-2 rounded">
+                                  <div className="flex items-center">
+                                    <span className="text-gray-500 w-24">Base:</span> 
+                                    <span className="font-medium">{request.base_nome}</span>
                                   </div>
-                                  <div>
-                                    <span className="text-gray-500">Qt:</span> {request.quantidade}
+                                  <div className="flex items-center">
+                                    <span className="text-gray-500 w-24">Quantidade:</span> 
+                                    <span className="font-medium">{request.quantidade}</span>
                                   </div>
-                                  <div>
-                                    <span className="text-gray-500">Solicitante:</span> {request.usuario_nome}
+                                  <div className="flex items-center">
+                                    <span className="text-gray-500 w-24">Solicitante:</span> 
+                                    <span className="font-medium">{request.usuario_nome}</span>
                                   </div>
-                                  <div>
-                                    <span className="text-gray-500">Data:</span> {formatDate(request.data_solicitacao)}
+                                  <div className="flex items-center">
+                                    <span className="text-gray-500 w-24">Aprovado por:</span> 
+                                    <span className="font-medium">{request.aprovador_nome || '-'}</span>
                                   </div>
-                                </div>
-                                <div className="text-sm">
-                                  <span className="text-gray-500">Aprovador:</span> {request.aprovador_nome || '-'}
                                 </div>
                               </div>
                             ))}
                         </div>
                       )}
-                    </>
+                    </div>
                   )}
                 </CardContent>
               </Card>
 
               {/* Card para Solicitações rejeitadas */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center">
-                    <XCircle className="mr-2 h-5 w-5 text-red-500" />
-                    Solicitações Rejeitadas
-                  </CardTitle>
-                  <CardDescription>
-                    Solicitações que foram negadas
+              <Card className="border-l-4 border-l-red-400 shadow-sm">
+                <CardHeader className="pb-2 border-b">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg flex items-center">
+                      <XCircle className="mr-2 h-5 w-5 text-red-500" />
+                      Solicitações Rejeitadas
+                    </CardTitle>
+                    <Badge variant="outline" className="bg-red-50 text-red-800 border-red-300">
+                      {tireRequests.filter(req => req.status === 'rejeitado').length}
+                    </Badge>
+                  </div>
+                  <CardDescription className="text-xs">
+                    Solicitações recusadas pela gestão
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="max-h-[300px] overflow-y-auto">
+                <CardContent className="p-0">
                   {isLoadingRequests ? (
                     <div className="flex justify-center items-center h-32">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
                     </div>
                   ) : (
-                    <>
+                    <div className="max-h-[350px] overflow-y-auto py-2 px-3">
                       {!tireRequests || tireRequests.length === 0 || tireRequests.filter(req => req.status === 'rejeitado').length === 0 ? (
-                        <div className="text-center text-gray-500 my-8">
-                          Não há solicitações rejeitadas
+                        <div className="text-center text-gray-500 my-8 flex flex-col items-center">
+                          <XCircle className="h-10 w-10 text-gray-300 mb-2" />
+                          <p>Não há solicitações rejeitadas</p>
                         </div>
                       ) : (
                         <div className="space-y-4">
                           {tireRequests
                             .filter(req => req.status === 'rejeitado')
                             .map(request => (
-                              <div key={request.id} className="border rounded-lg p-3 bg-gray-50">
-                                <div className="flex justify-between items-start mb-2">
+                              <div key={request.id} className="border rounded-lg p-3 bg-white hover:bg-gray-50 transition-colors">
+                                <div className="flex justify-between items-start mb-3">
                                   <div>
-                                    <h4 className="font-semibold">{request.marca} {request.modelo}</h4>
-                                    <p className="text-sm text-gray-600">{request.medida || '-'}</p>
+                                    <h4 className="font-semibold text-gray-800">{request.marca} {request.modelo}</h4>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <Badge variant="outline" className="bg-gray-100 px-2 py-0 h-5 text-xs">
+                                        {request.tipo}
+                                      </Badge>
+                                      {request.medida && (
+                                        <Badge variant="outline" className="bg-gray-100 px-2 py-0 h-5 text-xs">
+                                          {request.medida}
+                                        </Badge>
+                                      )}
+                                    </div>
                                   </div>
                                   <Badge variant="outline" className="bg-red-50 text-red-800 border-red-300">
                                     Rejeitado
                                   </Badge>
                                 </div>
-                                <div className="grid grid-cols-2 gap-1 text-sm mb-2">
-                                  <div>
-                                    <span className="text-gray-500">Base:</span> {request.base_nome}
+                                
+                                <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm mb-3 bg-gray-50 p-2 rounded">
+                                  <div className="flex items-center">
+                                    <span className="text-gray-500 w-24">Base:</span> 
+                                    <span className="font-medium">{request.base_nome}</span>
                                   </div>
-                                  <div>
-                                    <span className="text-gray-500">Qt:</span> {request.quantidade}
+                                  <div className="flex items-center">
+                                    <span className="text-gray-500 w-24">Quantidade:</span> 
+                                    <span className="font-medium">{request.quantidade}</span>
                                   </div>
-                                  <div>
-                                    <span className="text-gray-500">Solicitante:</span> {request.usuario_nome}
+                                  <div className="flex items-center">
+                                    <span className="text-gray-500 w-24">Solicitante:</span> 
+                                    <span className="font-medium">{request.usuario_nome}</span>
                                   </div>
-                                  <div>
-                                    <span className="text-gray-500">Data:</span> {formatDate(request.data_solicitacao)}
+                                  <div className="flex items-center">
+                                    <span className="text-gray-500 w-24">Rejeitado por:</span> 
+                                    <span className="font-medium">{request.aprovador_nome || '-'}</span>
                                   </div>
-                                </div>
-                                <div className="text-sm">
-                                  <span className="text-gray-500">Rejeitado por:</span> {request.aprovador_nome || '-'}
                                 </div>
                               </div>
                             ))}
                         </div>
                       )}
-                    </>
+                    </div>
                   )}
                 </CardContent>
-                <CardFooter className="pt-2 pb-4 flex justify-center">
-                  <Button 
-                    variant="outline" 
-                    className="text-sm"
-                    onClick={() => setIsRequestDialogOpen(true)}
-                  >
-                    <ShoppingBag className="mr-2 h-4 w-4" />
-                    Nova Solicitação
-                  </Button>
-                </CardFooter>
               </Card>
             </div>
           </TabsContent>
