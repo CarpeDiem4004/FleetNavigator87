@@ -129,17 +129,32 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
 
   // Carregar dados quando o componente montar ou quando o refreshTrigger mudar
   useEffect(() => {
-    console.log(`Carregando histórico do posto posto ${posto}, refreshTrigger: ${refreshTrigger}`);
+    console.log(`[DEBUG] Carregando histórico do posto ${posto}, refreshTrigger: ${refreshTrigger}`);
     loadHistorico();
+
+    // Verificações adicionais para garantir carregamento dos dados
+    const timer1 = setTimeout(() => {
+      console.log(`[DEBUG] Verificação adicional após 1s para posto ${posto}`);
+      loadHistorico();
+    }, 1000);
+
+    const timer2 = setTimeout(() => {
+      console.log(`[DEBUG] Verificação adicional após 2.5s para posto ${posto}`);
+      loadHistorico();
+    }, 2500);
 
     // Configurar atualização automática a cada 30 segundos
     const intervalId = setInterval(() => {
-      console.log(`Atualizando histórico automaticamente para ${posto}`);
+      console.log(`[DEBUG] Atualizando histórico automaticamente para ${posto}`);
       loadHistorico();
-    }, 30000); // 30 segundos
+    }, 20000); // 20 segundos
 
-    // Limpar o intervalo quando o componente for desmontado
-    return () => clearInterval(intervalId);
+    // Limpar os timers quando o componente for desmontado
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearInterval(intervalId);
+    };
   }, [posto, refreshTrigger]);
 
   // Função para formatar o valor do combustível
