@@ -113,7 +113,7 @@ export function obterNomeExibicaoPosto(nome: string): string {
  * @returns Nome da tabela formatado
  */
 export function formatarNomeTabela(posto: string): string {
-  return `abastecimentos_posto_${formatarNomePosto(posto).toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+  return `posto_murici_${formatarNomePosto(posto).toLowerCase().replace(/[^a-z0-9]/g, '')}`;
 }
 
 /**

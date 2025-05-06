@@ -286,10 +286,10 @@ const HistoricoGeralPage: React.FC = () => {
       const workbook = XLSX.utils.book_new();
       
       // Adicionar a planilha ao livro
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Histórico Abastecimentos');
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Histórico Posto Murici');
       
       // Gerar arquivo e fazer download
-      XLSX.writeFile(workbook, `historico_abastecimentos_geral_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      XLSX.writeFile(workbook, `historico_posto_murici_${new Date().toISOString().slice(0, 10)}.xlsx`);
       
       console.log('Exportação concluída com sucesso');
     } catch (error) {
@@ -345,7 +345,7 @@ const HistoricoGeralPage: React.FC = () => {
     <div className="container mx-auto p-4">
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex flex-wrap justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">Histórico Geral de Abastecimentos</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Histórico Geral do Posto Murici</h1>
           
           <div className="flex items-center space-x-2 mt-4 sm:mt-0">
             <button 
@@ -421,7 +421,7 @@ const HistoricoGeralPage: React.FC = () => {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-lg mt-4">Nenhum abastecimento encontrado.</p>
+            <p className="text-lg mt-4">Nenhum registro do Posto Murici encontrado.</p>
             {(searchTerm || dateStart || dateEnd) && (
               <p className="text-sm mt-2">Tente ajustar os filtros de busca.</p>
             )}
