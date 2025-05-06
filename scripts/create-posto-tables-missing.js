@@ -34,7 +34,7 @@ async function verificarTabela(nomePosto) {
     SELECT EXISTS (
       SELECT FROM information_schema.tables 
       WHERE table_schema = 'public' 
-      AND table_name = 'abastecimentos_posto_${nomePosto.toLowerCase()}'
+      AND table_name = 'posto_murici_${nomePosto.toLowerCase()}'
     ) as "exists";
   `;
   

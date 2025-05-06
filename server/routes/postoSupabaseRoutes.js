@@ -23,7 +23,7 @@ router.use((req, res, next) => {
 router.get('/check-table/:posto', async (req, res) => {
   try {
     const postoName = formatPostoName(req.params.posto);
-    const tableName = `abastecimentos_posto_${postoName.toLowerCase()}`;
+    const tableName = `posto_murici_${postoName.toLowerCase()}`;
     
     // Verificar se a tabela existe
     const tableQuery = `
@@ -37,7 +37,7 @@ router.get('/check-table/:posto', async (req, res) => {
     const tableResult = await pool.query(tableQuery, [tableName]);
     
     // Verificar se a view consolidada existe
-    const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_consolidado`;
+    const viewName = `posto_murici_${postoName.toLowerCase()}_consolidado`;
     const viewQuery = `
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
@@ -70,7 +70,7 @@ router.get('/check-table/:posto', async (req, res) => {
 router.get('/historico/:posto', async (req, res) => {
   try {
     const postoName = formatPostoName(req.params.posto);
-    const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_consolidado`;
+    const viewName = `posto_murici_${postoName.toLowerCase()}_consolidado`;
     
     // Verificar se a view existe
     const checkQuery = `
@@ -113,7 +113,7 @@ router.get('/historico/:posto', async (req, res) => {
 router.get('/estatisticas-mensais/:posto', async (req, res) => {
   try {
     const postoName = formatPostoName(req.params.posto);
-    const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_estatisticas_mensais`;
+    const viewName = `posto_murici_${postoName.toLowerCase()}_estatisticas_mensais`;
     
     // Verificar se a view existe
     const checkQuery = `
@@ -156,7 +156,7 @@ router.get('/estatisticas-mensais/:posto', async (req, res) => {
 router.get('/consumo-por-veiculo/:posto', async (req, res) => {
   try {
     const postoName = formatPostoName(req.params.posto);
-    const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_consumo_por_veiculo`;
+    const viewName = `posto_murici_${postoName.toLowerCase()}_consumo_por_veiculo`;
     
     // Verificar se a view existe
     const checkQuery = `
@@ -199,7 +199,7 @@ router.get('/consumo-por-veiculo/:posto', async (req, res) => {
 router.get('/comparativo-combustiveis/:posto', async (req, res) => {
   try {
     const postoName = formatPostoName(req.params.posto);
-    const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_comparativo_combustiveis`;
+    const viewName = `posto_murici_${postoName.toLowerCase()}_comparativo_combustiveis`;
     
     // Verificar se a view existe
     const checkQuery = `

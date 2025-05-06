@@ -6207,7 +6207,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         SELECT table_name
         FROM information_schema.tables
         WHERE table_schema = 'public'
-          AND table_name LIKE 'abastecimentos_posto_%'
+          AND table_name LIKE 'posto_murici_%'
         ORDER BY table_name;
       `;
       

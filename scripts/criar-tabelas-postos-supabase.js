@@ -32,7 +32,7 @@ function formatarNomePosto(nome) {
 
 // Função para formatar o nome da tabela de um posto específico
 function obterNomeTabela(posto) {
-  return `abastecimentos_posto_${formatarNomePosto(posto)}`;
+  return `posto_murici_${formatarNomePosto(posto)}`;
 }
 
 // Função para criar tabela de abastecimentos para um posto específico

@@ -41,10 +41,10 @@ async function executarScript() {
         SELECT EXISTS (
           SELECT FROM information_schema.tables 
           WHERE table_schema = 'public' 
-          AND table_name = 'abastecimentos_posto_abc_v2'
+          AND table_name = 'posto_murici_abc_v2'
         );
       `);
-      console.log(`- Tabela 'abastecimentos_posto_abc_v2': ${abastecimentosResult.rows[0].exists ? 'Criada' : 'Não encontrada'}`);
+      console.log(`- Tabela 'posto_murici_abc_v2': ${abastecimentosResult.rows[0].exists ? 'Criada' : 'Não encontrada'}`);
       
       // Verificar tabela de configuração de tanques
       const tanquesResult = await client.query(`
@@ -59,10 +59,10 @@ async function executarScript() {
       // Verificar views criadas
       console.log('\nVerificando views criadas:');
       const viewsToCheck = [
-        'abastecimentos_posto_abc_v2_consumo_por_veiculo',
-        'abastecimentos_posto_abc_v2_estatisticas_mensais',
-        'abastecimentos_posto_abc_v2_comparativo_combustiveis',
-        'abastecimentos_posto_abc_v2_ultimos'
+        'posto_murici_abc_v2_consumo_por_veiculo',
+        'posto_murici_abc_v2_estatisticas_mensais',
+        'posto_murici_abc_v2_comparativo_combustiveis',
+        'posto_murici_abc_v2_ultimos'
       ];
       
       for (const view of viewsToCheck) {

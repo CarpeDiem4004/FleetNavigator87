@@ -251,7 +251,7 @@ export async function getHistoricoPosto(req, res) {
       console.log(`getHistoricoPosto - Usando tabela direta para ${postoName} em vez de view`);
       
       // Definir o nome da tabela com base no posto
-      const tableName = `abastecimentos_posto_${postoName.toLowerCase()}`;
+      const tableName = `posto_murici_${postoName.toLowerCase()}`;
       
       // Verificar se a tabela existe
       const tableCheckQuery = `
@@ -365,7 +365,7 @@ export async function getHistoricoPosto(req, res) {
       }
     } else {
       // Fluxo normal usando view consolidada
-      const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_consolidado`;
+      const viewName = `posto_murici_${postoName.toLowerCase()}_consolidado`;
       
       // Verificar se a view existe
       const checkQuery = `
@@ -479,7 +479,7 @@ export async function getEstatisticasMensaisPosto(req, res) {
       viewName = `view_${postoName.toLowerCase()}_consumo_mensal`;
       console.log(`getEstatisticasMensaisPosto - Tentando usar view específica V2: ${viewName}`);
     } else {
-      viewName = `abastecimentos_posto_${postoName.toLowerCase()}_estatisticas_mensais`;
+      viewName = `posto_murici_${postoName.toLowerCase()}_estatisticas_mensais`;
     }
     
     // Verificar se a view existe
@@ -498,7 +498,7 @@ export async function getEstatisticasMensaisPosto(req, res) {
       if (postoName.toLowerCase().endsWith('_v2')) {
         console.log(`getEstatisticasMensaisPosto - View ${viewName} não encontrada. Gerando estatísticas diretamente da tabela.`);
         
-        const tableName = `abastecimentos_posto_${postoName.toLowerCase()}`;
+        const tableName = `posto_murici_${postoName.toLowerCase()}`;
         
         // Verificar se a tabela existe
         const tableCheckResult = await pool.query(checkQuery, [tableName]);
@@ -625,7 +625,7 @@ export async function getConsumoPorVeiculoPosto(req, res) {
       viewName = `view_${postoName.toLowerCase()}_consumo_por_veiculo`;
       console.log(`getConsumoPorVeiculoPosto - Tentando usar view específica V2: ${viewName}`);
     } else {
-      viewName = `abastecimentos_posto_${postoName.toLowerCase()}_consumo_por_veiculo`;
+      viewName = `posto_murici_${postoName.toLowerCase()}_consumo_por_veiculo`;
     }
     
     // Verificar se a view existe
@@ -644,7 +644,7 @@ export async function getConsumoPorVeiculoPosto(req, res) {
       if (postoName.toLowerCase().endsWith('_v2')) {
         console.log(`getConsumoPorVeiculoPosto - View ${viewName} não encontrada. Gerando estatísticas diretamente da tabela.`);
         
-        const tableName = `abastecimentos_posto_${postoName.toLowerCase()}`;
+        const tableName = `posto_murici_${postoName.toLowerCase()}`;
         
         // Verificar se a tabela existe
         const tableCheckResult = await pool.query(checkQuery, [tableName]);
@@ -771,7 +771,7 @@ export async function getComparativoCombustiveisPosto(req, res) {
       viewName = `view_${postoName.toLowerCase()}_comparativo_combustiveis`;
       console.log(`getComparativoCombustiveisPosto - Tentando usar view específica V2: ${viewName}`);
     } else {
-      viewName = `abastecimentos_posto_${postoName.toLowerCase()}_comparativo_combustiveis`;
+      viewName = `posto_murici_${postoName.toLowerCase()}_comparativo_combustiveis`;
     }
     
     // Verificar se a view existe
@@ -790,7 +790,7 @@ export async function getComparativoCombustiveisPosto(req, res) {
       if (postoName.toLowerCase().endsWith('_v2')) {
         console.log(`getComparativoCombustiveisPosto - View ${viewName} não encontrada. Gerando estatísticas diretamente da tabela.`);
         
-        const tableName = `abastecimentos_posto_${postoName.toLowerCase()}`;
+        const tableName = `posto_murici_${postoName.toLowerCase()}`;
         
         // Verificar se a tabela existe
         const tableCheckResult = await pool.query(checkQuery, [tableName]);
@@ -906,7 +906,7 @@ export async function checkTabelaPosto(req, res) {
       console.log("checkTabelaPosto - Formatado para:", postoName);
     }
     
-    const tableName = `abastecimentos_posto_${postoName.toLowerCase()}`;
+    const tableName = `posto_murici_${postoName.toLowerCase()}`;
     
     // Verificar se a tabela existe
     const tableQuery = `
@@ -920,7 +920,7 @@ export async function checkTabelaPosto(req, res) {
     const tableResult = await pool.query(tableQuery, [tableName]);
     
     // Verificar se a view consolidada existe
-    const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_consolidado`;
+    const viewName = `posto_murici_${postoName.toLowerCase()}_consolidado`;
     const viewQuery = `
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
@@ -1014,7 +1014,7 @@ export async function registrarPostoMurici(req, res) {
       console.log("Posto formatado para:", postoName);
     }
     
-    const tableName = `abastecimentos_posto_${postoName.toLowerCase()}`;
+    const tableName = `posto_murici_${postoName.toLowerCase()}`;
     
     console.log(`Tentando registrar abastecimento na tabela ${tableName}`);
     console.log('Dados recebidos:', req.body);
