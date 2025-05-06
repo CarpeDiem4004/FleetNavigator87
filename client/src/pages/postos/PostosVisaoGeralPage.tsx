@@ -33,6 +33,7 @@ interface PostoResumo {
   volume_atual: number;
   total_abastecimentos: number;
   total_litros: number;
+  total_cartao?: number; // Total abastecido pelo cartão
   alerta_nivel_baixo: boolean;
   percentual: number;
   ultima_atualizacao: string;
@@ -89,8 +90,15 @@ export default function PostosVisaoGeralPage() {
   const postosFiltrados = React.useMemo(() => {
     if (!data) return [];
     
+    // Primeiro filtrar apenas os postos _v2 e Campinas
+    let resultado = data.filter(posto => {
+      const nomeLower = posto.nome.toLowerCase();
+      // Incluir apenas postos com final _v2 ou Campinas (sem o v2)
+      return nomeLower.endsWith('v2') || (nomeLower === 'campinas' || nomeLower === 'campinas v1');
+    });
+    
     // Aplicar filtro de pesquisa
-    let resultado = data.filter(posto => 
+    resultado = resultado.filter(posto => 
       posto.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       posto.localizacao.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -328,6 +336,22 @@ export default function PostosVisaoGeralPage() {
                       <span className="text-sm text-gray-500">Total Abastecido</span>
                     </div>
                     <p className="font-medium">{formatarNumero(posto.total_litros)} L</p>
+                  </div>
+                </div>
+                
+                {/* Total abastecido pelo cartão */}
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 text-purple-500">
+                        <rect width="20" height="14" x="2" y="5" rx="2" />
+                        <line x1="2" x2="22" y1="10" y2="10" />
+                      </svg>
+                      <span className="text-sm text-gray-500">Total por Cartão</span>
+                    </div>
+                    <p className="font-medium">
+                      {posto.total_cartao !== undefined ? `${formatarNumero(posto.total_cartao)} L` : '-'}
+                    </p>
                   </div>
                 </div>
               </CardContent>

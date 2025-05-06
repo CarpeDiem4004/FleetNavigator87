@@ -12,6 +12,7 @@ interface PostoResumo {
   volume_atual: number;
   total_abastecimentos: number;
   total_litros: number;
+  total_cartao?: number; // Total abastecido pelo cartão
   alerta_nivel_baixo: boolean;
   percentual: number; // Percentual de capacidade ocupada
   ultima_atualizacao: string;
@@ -52,6 +53,7 @@ export async function getPostosResumo(req: Request, res: Response) {
         diesel_nivel as volume_atual,
         COALESCE((SELECT COUNT(*) FROM abastecimentos_postos WHERE posto = configuracao_tanques.posto), 0) as total_abastecimentos,
         COALESCE((SELECT SUM(litros) FROM abastecimentos_postos WHERE posto = configuracao_tanques.posto), 0) as total_litros,
+        COALESCE((SELECT SUM(litros) FROM abastecimentos_postos WHERE posto = configuracao_tanques.posto AND tipo_combustivel = 'cartao'), 0) as total_cartao,
         (diesel_nivel / diesel_capacidade * 100) as percentual,
         CASE WHEN (diesel_nivel / diesel_capacidade * 100) < 15 THEN true ELSE false END as alerta_nivel_baixo,
         updated_at as ultima_atualizacao
@@ -92,6 +94,7 @@ export async function getPostosResumo(req: Request, res: Response) {
           volume_atual: 7500,
           total_abastecimentos: 250,
           total_litros: 25000,
+          total_cartao: 5800,
           alerta_nivel_baixo: false,
           percentual: 75,
           ultima_atualizacao: new Date().toISOString()
@@ -318,6 +321,7 @@ export async function getPostoDetalhes(req: Request, res: Response) {
         diesel_nivel as volume_atual,
         COALESCE((SELECT COUNT(*) FROM abastecimentos_postos WHERE posto = configuracao_tanques.posto), 0) as total_abastecimentos,
         COALESCE((SELECT SUM(litros) FROM abastecimentos_postos WHERE posto = configuracao_tanques.posto), 0) as total_litros,
+        COALESCE((SELECT SUM(litros) FROM abastecimentos_postos WHERE posto = configuracao_tanques.posto AND tipo_combustivel = 'cartao'), 0) as total_cartao,
         (diesel_nivel / diesel_capacidade * 100) as percentual,
         CASE WHEN (diesel_nivel / diesel_capacidade * 100) < 15 THEN true ELSE false END as alerta_nivel_baixo,
         updated_at as ultima_atualizacao
@@ -430,6 +434,7 @@ export async function getPostoDetalhes(req: Request, res: Response) {
         volume_atual: volume,
         total_abastecimentos: (Math.floor(Math.random() * 200) + 100),
         total_litros: (Math.floor(Math.random() * 20000) + 10000),
+        total_cartao: (Math.floor(Math.random() * 5000) + 2000), // Adicionando total_cartao
         alerta_nivel_baixo: alerta,
         percentual: percentual,
         ultima_atualizacao: new Date().toISOString(),
