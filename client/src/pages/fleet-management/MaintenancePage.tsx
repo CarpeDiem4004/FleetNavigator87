@@ -433,7 +433,7 @@ export default function MaintenancePage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">
-                  {maintenances.filter(m => m.status === 'pendente').length}
+                  {maintenances && Array.isArray(maintenances) ? maintenances.filter(m => m.status === 'pendente').length : 0}
                 </div>
               </CardContent>
             </Card>
@@ -443,7 +443,7 @@ export default function MaintenancePage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">
-                  {maintenances.filter(m => m.status === 'em_andamento' || m.status === 'aguardando_orcamento').length}
+                  {maintenances && Array.isArray(maintenances) ? maintenances.filter(m => m.status === 'em_andamento' || m.status === 'aguardando_orcamento').length : 0}
                 </div>
               </CardContent>
             </Card>
@@ -453,7 +453,7 @@ export default function MaintenancePage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">
-                  {maintenances.filter(m => m.status === 'concluida').length}
+                  {maintenances && Array.isArray(maintenances) ? maintenances.filter(m => m.status === 'concluida').length : 0}
                 </div>
               </CardContent>
             </Card>
@@ -517,7 +517,7 @@ export default function MaintenancePage() {
                 <div className="flex justify-center p-4">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
-              ) : maintenances.length === 0 ? (
+              ) : !maintenances || !Array.isArray(maintenances) || maintenances.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-8 text-center">
                   <Wrench className="h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium">Nenhuma manutenção encontrada</h3>
@@ -549,7 +549,7 @@ export default function MaintenancePage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {maintenances.map((maintenance) => (
+                      {maintenances && Array.isArray(maintenances) ? maintenances.map((maintenance) => (
                         <TableRow key={maintenance.id}>
                           <TableCell className="font-medium">
                             <div className="flex items-center">
@@ -607,7 +607,7 @@ export default function MaintenancePage() {
                             )}
                           </TableCell>
                         </TableRow>
-                      ))}
+                      )) : null}
                     </TableBody>
                   </Table>
                 </div>
