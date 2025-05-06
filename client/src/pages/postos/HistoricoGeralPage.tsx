@@ -7,9 +7,10 @@ interface Abastecimento {
   placa: string;
   km_atual: number;
   tipo_combustivel: string;
-  litros: number;
-  preco_litro?: number;
-  valor_total?: number;
+  litros?: number | null;
+  quantity_litros?: number | null;
+  preco_litro?: number | null;
+  valor_total?: number | null;
   nome_motorista: string;
   nome_operador: string;
   project?: string;
@@ -243,19 +244,24 @@ const HistoricoGeralPage: React.FC = () => {
       let dadosFiltrados = [...filteredData];
       
       // Preparar os dados para Excel
-      const excelData = dadosFiltrados.map(item => ({
-        'Data/Hora': formatarDataHora(item.created_at),
-        'Placa': item.placa,
-        'KM': item.km_atual,
-        'Combustível': item.tipo_combustivel,
-        'Litros': item.litros,
-        'Preço/L': item.preco_litro ? `R$ ${item.preco_litro.toFixed(2)}` : '-',
-        'Valor Total': item.valor_total ? `R$ ${item.valor_total.toFixed(2)}` : '-',
-        'Motorista': item.nome_motorista,
-        'Operador': item.nome_operador,
-        'Projeto': item.project || '-',
-        'Posto': item.posto
-      }));
+      const excelData = dadosFiltrados.map(item => {
+        // Obter o valor de litros, considerando diferentes campos possíveis
+        const litrosValue = item.litros || item.quantity_litros;
+        
+        return {
+          'Data/Hora': formatarDataHora(item.created_at),
+          'Placa': item.placa,
+          'KM': item.km_atual,
+          'Combustível': item.tipo_combustivel || '-',
+          'Litros': litrosValue ? Number(litrosValue).toFixed(2) : '-',
+          'Preço/L': item.preco_litro ? `R$ ${Number(item.preco_litro).toFixed(2)}` : '-',
+          'Valor Total': item.valor_total ? `R$ ${Number(item.valor_total).toFixed(2)}` : '-',
+          'Motorista': item.nome_motorista || '-',
+          'Operador': item.nome_operador || '-',
+          'Projeto': item.project || '-',
+          'Posto': item.posto
+        };
+      });
       
       // Criar uma nova planilha
       const worksheet = XLSX.utils.json_to_sheet(excelData);
@@ -451,11 +457,11 @@ const HistoricoGeralPage: React.FC = () => {
                       </td>
                       <td className="py-3 px-4 font-medium">{abast.placa}</td>
                       <td className="py-3 px-4">{formatarNumero(abast.km_atual)}</td>
-                      <td className="py-3 px-4">{abast.tipo_combustivel}</td>
-                      <td className="py-3 px-4">{formatarNumero(abast.litros)}</td>
+                      <td className="py-3 px-4">{abast.tipo_combustivel || '-'}</td>
+                      <td className="py-3 px-4">{formatarNumero(abast.litros || abast.quantity_litros)}</td>
                       <td className="py-3 px-4">{abast.project || '-'}</td>
-                      <td className="py-3 px-4">{abast.nome_motorista}</td>
-                      <td className="py-3 px-4">{abast.valor_total ? formatarPreco(abast.valor_total) : '-'}</td>
+                      <td className="py-3 px-4">{abast.nome_motorista || '-'}</td>
+                      <td className="py-3 px-4">{formatarPreco(abast.valor_total)}</td>
                     </tr>
                   ))}
                 </tbody>
