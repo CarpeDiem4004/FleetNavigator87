@@ -317,6 +317,8 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
+                type="email"
+                autoComplete="email"
                 placeholder="seu.email@exemplo.com"
                 value={loginData.email}
                 onChange={(e) => {
@@ -334,6 +336,7 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
               <Input
                 id="password"
                 type="password"
+                autoComplete="current-password"
                 value={loginData.password}
                 onChange={(e) => {
                   if (isMountedRef.current) {
