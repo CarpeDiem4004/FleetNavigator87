@@ -69,39 +69,57 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
       // Prevenção de cache adicionando timestamp na URL
       const timestamp = new Date().getTime();
       
+      // Adicionar token JWT ao cabeçalho, se disponível
+      const headers: Record<string, string> = {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest' // Indicar que é uma solicitação AJAX
+      };
+      
+      // Obter token do localStorage se existir
+      const token = localStorage.getItem('authToken') || localStorage.getItem('access_token') || localStorage.getItem('jwt_token');
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      console.log(`[FETCH] Buscando histórico para o posto: ${posto} com timestamp ${timestamp}`);
+      
       // Usar a nova rota direta para evitar problemas com interceptação do Vite
       const response = await axios.get(`/api/historico-direto/${encodeURIComponent(posto)}?t=${timestamp}`, {
-        headers: {
-          'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest' // Indicar que é uma solicitação AJAX
-        }
+        headers,
+        withCredentials: true // Incluir cookies para autenticação baseada em sessão
       });
       
-      console.log('Resposta do histórico:', response);
+      console.log(`[FETCH] Resposta da API de histórico:`, response.data);
       
       if (response.data && response.data.success) {
+        console.log(`[FETCH] Histórico carregado com sucesso, ${response.data.data.length} registros encontrados`);
         setHistorico(response.data.data || []);
         setLastRefreshTime(new Date());
       } else {
+        console.error('[FETCH] Erro na resposta da API:', response.data);
         setError(response.data?.error || 'Erro ao carregar o histórico');
-        console.error('Erro na resposta:', response.data);
       }
     } catch (err: any) {
-      console.error('Erro ao carregar histórico:', err);
+      console.error('[FETCH] Erro ao carregar histórico:', err);
       
       // Tentar a rota original como fallback
       try {
-        console.log('Tentando rota alternativa...');
+        console.log('[FETCH] Tentando rota alternativa...');
         const timestamp = new Date().getTime();
-        const fallbackResponse = await axios.get(`/api/posto-supabase/historico/${posto.toLowerCase()}?t=${timestamp}`);
+        const fallbackResponse = await axios.get(`/api/posto-supabase/historico/${posto.toLowerCase()}?t=${timestamp}`, {
+          withCredentials: true // Incluir cookies para autenticação baseada em sessão
+        });
         
         if (fallbackResponse.data && fallbackResponse.data.success) {
+          console.log('[FETCH] Fallback bem-sucedido');
           setHistorico(fallbackResponse.data.data || []);
           setLastRefreshTime(new Date());
         } else {
+          console.error('[FETCH] Erro na resposta do fallback:', fallbackResponse.data);
           setError(fallbackResponse.data?.error || 'Erro ao carregar o histórico');
         }
       } catch (fallbackErr: any) {
+        console.error('[FETCH] Fallback também falhou:', fallbackErr);
         setError(`Erro ao carregar histórico: ${err.message}. Fallback também falhou.`);
       }
     } finally {
@@ -111,22 +129,46 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
 
   // Carregar dados quando o componente montar ou quando o refreshTrigger mudar
   useEffect(() => {
-    console.log(`Carregando histórico do posto ${posto}, refreshTrigger: ${refreshTrigger}`);
+    console.log(`Carregando histórico do posto posto ${posto}, refreshTrigger: ${refreshTrigger}`);
     loadHistorico();
 
-    // Configurar atualização automática a cada 45 segundos
+    // Configurar atualização automática a cada 30 segundos
     const intervalId = setInterval(() => {
       console.log(`Atualizando histórico automaticamente para ${posto}`);
       loadHistorico();
-    }, 45000); // 45 segundos
+    }, 30000); // 30 segundos
 
     // Limpar o intervalo quando o componente for desmontado
     return () => clearInterval(intervalId);
   }, [posto, refreshTrigger]);
 
   // Função para formatar o valor do combustível
-  const formatCurrency = (value: number | string): string => {
-    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  const formatCurrency = (value: number | string | null | undefined): string => {
+    if (value === null || value === undefined) {
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      }).format(0);
+    }
+    
+    let numValue: number;
+    
+    if (typeof value === 'string') {
+      // Remover caracteres não numéricos, exceto pontos e vírgulas
+      const cleanValue = value.replace(/[^\d.,]/g, '')
+        // Substituir vírgula por ponto para parsing correto
+        .replace(',', '.');
+      
+      numValue = cleanValue ? parseFloat(cleanValue) : 0;
+    } else {
+      numValue = value;
+    }
+    
+    // Verificar se é um número válido
+    if (isNaN(numValue)) {
+      numValue = 0;
+    }
+    
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
@@ -263,10 +305,10 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
                       <TableCell className="font-semibold">{item.placa}</TableCell>
                       <TableCell>
                         <Badge
-                          variant={item.tipo_combustivel === 'ARLA' ? "outline" : "default"}
+                          variant={item.tipo_combustivel?.toUpperCase() === 'ARLA' ? "outline" : "default"}
                           className={
-                            item.tipo_combustivel === 'DIESEL' ? "bg-amber-500 hover:bg-amber-600" :
-                            item.tipo_combustivel === 'ARLA' ? "border-blue-500 text-blue-500" :
+                            item.tipo_combustivel?.toUpperCase() === 'DIESEL' ? "bg-amber-500 hover:bg-amber-600" :
+                            item.tipo_combustivel?.toUpperCase() === 'ARLA' ? "border-blue-500 text-blue-500" :
                             undefined
                           }
                         >
@@ -281,12 +323,12 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
                       <TableCell className="text-right">
                         {typeof item.quantidade_litros === 'number' 
                           ? item.quantidade_litros.toFixed(2) 
-                          : parseFloat(item.quantidade_litros).toFixed(2)}
+                          : parseFloat(String(item.quantidade_litros || '0')).toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right font-semibold">
                         {formatCurrency(typeof item.valor_total === 'number' 
                           ? item.valor_total 
-                          : parseFloat(item.valor_total))}
+                          : parseFloat(String(item.valor_total || '0')))}
                       </TableCell>
                     </TableRow>
                   ))
