@@ -251,6 +251,12 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       return true;
     }
     
+    // Para administradores, sempre mostrar o menu Postos Externos
+    if (item.name === 'Postos Externos' && user.role?.toLowerCase() === 'admin') {
+      console.log(`Menu Postos Externos incluído diretamente para admin`);
+      return true;
+    }
+    
     // Sempre incluir menus com submenus (href='#')
     if (item.href === '#') {
       // Verificar se pelo menos um submenu é permitido
@@ -261,6 +267,12 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
         console.log(`Usuário: ${user.name} (${user.email}), Role: ${user.role}, Base: ${user.basename || 'N/A'}, BaseID: ${user.baseId || 'N/A'}`);
         console.log("Número de subitems:", item.subItems?.length || 0);
         console.log("SubItems detalhados:", JSON.stringify(item.subItems, null, 2));
+        
+        // Se for admin, mostrar menu independentemente das verificações
+        if (user.role?.toLowerCase() === 'admin') {
+          console.log(`Usuário é admin, forçando exibição do menu Postos Externos`);
+          return true;
+        }
         
         if (item.subItems) {
           console.log("Verificando permissões para cada submenu:");
