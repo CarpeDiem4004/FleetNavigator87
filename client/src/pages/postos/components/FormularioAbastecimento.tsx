@@ -568,8 +568,8 @@ const FormularioAbastecimento: React.FC<
         if (postId.toLowerCase() === "campinas_v2" || 
             postId.toLowerCase().includes("campinas_v2") || 
             postId.toLowerCase().includes("campinas v2")) {
-          // Usar a rota específica que foi criada para resolver o problema com Campinas V2
-          endpoint = `/api/abastecimento-direto-campinas-v2`;
+          // Usar a rota direta para Campinas V2
+          endpoint = `/api/abastecimento-direto/campinas_v2`;
           usarRotaDireta = true;
           console.log(">>> Usando rota específica para Campinas V2");
         } else if (postId.toLowerCase() === "osasco_v2" || 
@@ -579,6 +579,20 @@ const FormularioAbastecimento: React.FC<
           endpoint = `/api/abastecimento-direto/osasco_v2`;
           usarRotaDireta = true;
           console.log(">>> Usando rota específica para Osasco V2");
+        } else if (postId.toLowerCase() === "socorro_v2" || 
+            postId.toLowerCase().includes("socorro_v2") || 
+            postId.toLowerCase().includes("socorro v2")) {
+          // Usar a rota direta para Socorro V2
+          endpoint = `/api/abastecimento-direto/socorro_v2`;
+          usarRotaDireta = true;
+          console.log(">>> Usando rota específica para Socorro V2");
+        } else if (postId.toLowerCase() === "sorocaba_v2" || 
+            postId.toLowerCase().includes("sorocaba_v2") || 
+            postId.toLowerCase().includes("sorocaba v2")) {
+          // Usar a rota direta para Sorocaba V2
+          endpoint = `/api/abastecimento-direto/sorocaba_v2`;
+          usarRotaDireta = true;
+          console.log(">>> Usando rota específica para Sorocaba V2");
         } else if (postId.toLowerCase().includes("remedios")) {
           endpoint = "/api/posto-remedios-standalone/abastecimentos";
         } else {
