@@ -195,13 +195,11 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     // Modificado para apontar para a página principal em vez de submenu
     { name: 'Posto Murici', href: '/abastecimentos', icon: Fuel },
     { name: 'Histórico Posto Murici', href: '/refueling', icon: ClipboardList },
-    // Alterado para usar o ícone de posto de gasolina (Droplets) em vez de Warehouse para Postos Externos
+    // Postos Externos com submenu atualizado
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
       { name: 'Posto Murici', href: '/posto-murici', icon: Fuel }
     ]},
-    // Adicionado item de menu separado para Posto Murici para debug
-    { name: 'Posto Murici Direto', href: '/posto-murici', icon: Fuel },
     // Item de menu separado para Cartão de Abastecimento
     { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
       { name: 'Operações', href: '/fuel-card', icon: CreditCard },
