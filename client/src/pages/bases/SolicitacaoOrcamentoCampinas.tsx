@@ -81,6 +81,11 @@ interface BudgetRequest {
   approved_by?: string;
   approved_at?: string;
   comments?: string;
+  budget_file_url?: string; // URL para o arquivo de orçamento (PDF/imagem)
+  budget_file_name?: string; // Nome do arquivo de orçamento
+  invoice_file_url?: string; // URL para a nota fiscal (PDF/imagem)
+  invoice_file_name?: string; // Nome do arquivo da nota fiscal
+  pending_invoice?: boolean; // Indica se está pendente o envio da NF após aprovação
 }
 
 // Componente principal
@@ -92,9 +97,16 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
+  const [isInvoiceUploadDialogOpen, setIsInvoiceUploadDialogOpen] = useState(false);
   const [approvalComments, setApprovalComments] = useState('');
   const [approvedValue, setApprovedValue] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
+  
+  // Estados para lidar com arquivos
+  const [budgetFile, setBudgetFile] = useState<File | null>(null);
+  const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
+  const [budgetFileName, setBudgetFileName] = useState('');
+  const [invoiceFileName, setInvoiceFileName] = useState('');
 
   // Configuração do formulário
   const form = useForm<BudgetRequestForm>({
@@ -363,6 +375,120 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
         return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">Alta</Badge>;
       default:
         return <Badge variant="outline">{priority}</Badge>;
+    }
+  };
+  
+  // Função para lidar com upload de orçamento
+  const handleBudgetFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setBudgetFile(file);
+      setBudgetFileName(file.name);
+    }
+  };
+  
+  // Função para lidar com upload de nota fiscal
+  const handleInvoiceFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setInvoiceFile(file);
+      setInvoiceFileName(file.name);
+    }
+  };
+  
+  // Função para salvar orçamento anexado
+  const saveBudgetFile = async () => {
+    if (!selectedRequest || !budgetFile) return;
+    
+    setIsLoading(true);
+    try {
+      // Simulando upload do arquivo
+      // Em uma implementação real, você enviaria o arquivo para o servidor
+      console.log("Enviando arquivo de orçamento:", budgetFile);
+      
+      setTimeout(() => {
+        // Atualizar a solicitação com as informações do arquivo
+        const updatedRequests = requests.map(req => {
+          if (req.id === selectedRequest.id) {
+            return {
+              ...req,
+              budget_file_name: budgetFile.name,
+              budget_file_url: URL.createObjectURL(budgetFile), // Simulando URL
+              updated_at: new Date().toISOString()
+            };
+          }
+          return req;
+        });
+        
+        setRequests(updatedRequests);
+        setBudgetFile(null);
+        setBudgetFileName('');
+        
+        toast({
+          title: "Orçamento Anexado",
+          description: "O arquivo de orçamento foi anexado com sucesso.",
+          variant: "default"
+        });
+        
+        setIsLoading(false);
+        setIsDialogOpen(false);
+      }, 800);
+    } catch (error) {
+      console.error("Erro ao salvar arquivo:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível anexar o arquivo de orçamento.",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+    }
+  };
+  
+  // Função para salvar nota fiscal anexada
+  const saveInvoiceFile = async () => {
+    if (!selectedRequest || !invoiceFile) return;
+    
+    setIsLoading(true);
+    try {
+      // Simulando upload do arquivo
+      console.log("Enviando arquivo de nota fiscal:", invoiceFile);
+      
+      setTimeout(() => {
+        // Atualizar a solicitação com as informações do arquivo
+        const updatedRequests = requests.map(req => {
+          if (req.id === selectedRequest.id) {
+            return {
+              ...req,
+              invoice_file_name: invoiceFile.name,
+              invoice_file_url: URL.createObjectURL(invoiceFile), // Simulando URL
+              pending_invoice: false, // Marca como não pendente após anexar NF
+              updated_at: new Date().toISOString()
+            };
+          }
+          return req;
+        });
+        
+        setRequests(updatedRequests);
+        setInvoiceFile(null);
+        setInvoiceFileName('');
+        
+        toast({
+          title: "Nota Fiscal Anexada",
+          description: "A nota fiscal foi anexada com sucesso.",
+          variant: "default"
+        });
+        
+        setIsLoading(false);
+        setIsInvoiceUploadDialogOpen(false);
+      }, 800);
+    } catch (error) {
+      console.error("Erro ao salvar arquivo:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível anexar a nota fiscal.",
+        variant: "destructive"
+      });
+      setIsLoading(false);
     }
   };
 
