@@ -55,23 +55,37 @@ const NavItemWithSubmenu: React.FC<{
 }> = ({ item, isActive, isSubItemActive, onClose, currentLocation }) => {
   // Se isSubItemActive for undefined, defina como false
   const subItemActive = isSubItemActive === true;
-  // Forçar a expansão do menu Bases durante a montagem inicial
-  const forceExpanded = item.name === 'Bases';
-  const [expanded, setExpanded] = useState(isActive || subItemActive || forceExpanded);
+  // Forçar a expansão do menu Bases sempre
+  const isBases = item.name === 'Bases';
+  // Sempre inicializar expandido se for o menu Bases
+  const [expanded, setExpanded] = useState(isActive || subItemActive || isBases);
   
   // Garantir que o submenu seja expandido quando um subitem estiver ativo ou quando for o menu Bases
   useEffect(() => {
-    if ((subItemActive && !expanded) || (item.name === 'Bases' && !expanded)) {
-      console.log(`Expandindo menu ${item.name} automaticamente: subItemActive=${subItemActive}, forceExpanded=${forceExpanded}`);
+    if ((subItemActive && !expanded) || (isBases && !expanded)) {
+      console.log(`Expandindo menu ${item.name} automaticamente: subItemActive=${subItemActive}, isBases=${isBases}`);
       setExpanded(true);
     }
-  }, [subItemActive, expanded, item.name, forceExpanded]);
+  }, [subItemActive, expanded, item.name, isBases]);
+  
+  // Garantir que o menu Bases nunca seja colapsável
+  useEffect(() => {
+    if (isBases && !expanded) {
+      console.log('Forçando o menu Bases a permanecer aberto');
+      setExpanded(true);
+    }
+  }, [expanded, isBases]);
   
   const Icon = item.icon;
 
   const toggleExpanded = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    // Se for o menu Bases, não permitir fechá-lo
+    if (isBases && expanded) {
+      console.log('Tentativa de fechar o menu Bases bloqueada');
+      return;
+    }
     setExpanded(!expanded);
   };
 
@@ -128,7 +142,9 @@ const NavItemWithSubmenu: React.FC<{
         className={`flex w-full items-center justify-between px-4 py-3 rounded-md group transition-all duration-200 text-left cursor-pointer ${
           isActive || subItemActive
             ? 'text-white bg-primary-900 shadow-lg shadow-primary-900/30 border-l-4 border-white font-medium' 
-            : 'text-primary-100 hover:bg-primary-700 hover:shadow-md'
+            : isBases
+              ? 'text-white bg-primary-800 shadow-md shadow-primary-900/20 border-l-2 border-white font-medium'
+              : 'text-primary-100 hover:bg-primary-700 hover:shadow-md'
         } ${item.className || ''}`}
       >
         <div className="flex items-center">
