@@ -404,16 +404,29 @@ export default function BudgetManagementPage() {
                       {new Date(request.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      {request.budget_file_url ? (
-                        <a 
-                          href={request.budget_file_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 underline flex items-center"
-                        >
+                      {request.budget_file_name ? (
+                        <span className="text-blue-600 flex items-center">
                           <FileText className="h-4 w-4 mr-1" />
-                          {request.budget_file_name || "Anexo"}
-                        </a>
+                          {request.budget_file_name}
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="ml-2 h-6 px-2 py-1"
+                            onClick={() => {
+                              toast({
+                                title: "Informação",
+                                description: "Baixando arquivo de orçamento. Aguarde...",
+                                // @ts-ignore
+                                variant: "info"
+                              });
+                              
+                              // Adicionar código para visualizar/baixar anexo via API
+                              window.open(`/api/fleet/budget-requests/${request.id}/download-attachment`, "_blank");
+                            }}
+                          >
+                            Ver
+                          </Button>
+                        </span>
                       ) : (
                         <span className="text-gray-400 text-sm">Sem anexo</span>
                       )}
