@@ -209,8 +209,8 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
       setBudgetFileName('');
       
       toast({
-        title: "Sucesso",
-        description: "Solicitação de orçamento criada com sucesso.",
+        title: "Solicitação Enviada",
+        description: "Solicitação de orçamento enviada para análise. A equipe de gestão de frotas irá responder em breve.",
         variant: "default"
       });
     } catch (error) {
