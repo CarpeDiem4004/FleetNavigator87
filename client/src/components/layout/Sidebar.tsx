@@ -197,7 +197,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Histórico Posto Murici', href: '/refueling', icon: ClipboardList },
     // Alterado para usar o ícone de posto de gasolina (Droplets) em vez de Warehouse para Postos Externos
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
-      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
+      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
+      { name: 'Posto Murici', href: '/posto-murici', icon: Fuel }
     ]},
     // Item de menu separado para Cartão de Abastecimento
     { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
@@ -223,7 +224,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Histórico Posto Murici', href: '/refueling', icon: ClipboardList },
     // Corrigido para usar o mesmo ícone e estrutura em ambas as listas de navegação
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
-      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
+      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
+      { name: 'Posto Murici', href: '/posto-murici', icon: Fuel }
     ]},
     // Item de menu separado para Cartão de Abastecimento
     { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
