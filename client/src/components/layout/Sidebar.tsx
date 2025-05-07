@@ -240,11 +240,53 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   // Verifique se o usuário é da gestão de frotas
   const isFleetUser = user.basename === "Gestão de Frotas" || user.baseId === 12;
   
-  // Selecionando os itens de navegação apropriados
-  const navItemsBase = isFleetUser ? fleetManagementItems : allNavItems;
+  // Criando menu Posto Externos que será adicionado diretamente
+  const postoExternosItem: NavItem = {
+    name: 'Postos Externos',
+    href: '#',
+    icon: Droplets,
+    subItems: [
+      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
+      { name: 'Posto Murici', href: '/posto-murici', icon: Fuel },
+      { name: 'Posto Murici Links', href: '/posto-murici/links', icon: Fuel }
+    ]
+  };
   
-  // Filtrando itens de navegação com base nas permissões do usuário
+  // Selecionando os itens de navegação apropriados
+  let navItemsBase = isFleetUser ? fleetManagementItems : allNavItems;
+  
+  // LOG DOS ITENS DE NAVEGAÇÃO ANTES DA MANIPULAÇÃO
+  console.log("ANTES da manipulação, itens de menu:", navItemsBase.map(item => item.name));
+  
+  // ADICIONANDO EXPLICITAMENTE O MENU POSTOS EXTERNOS
+  // Verificando se já existe um menu com este nome para não duplicar
+  const hasPostosExternos = navItemsBase.some(item => item.name === 'Postos Externos');
+  if (!hasPostosExternos) {
+    console.log("ADICIONANDO menu Postos Externos DIRETAMENTE");
+    // Adicionar após o item "Pneus"
+    const pneusIndex = navItemsBase.findIndex(item => item.name === 'Pneus');
+    if (pneusIndex !== -1) {
+      navItemsBase = [
+        ...navItemsBase.slice(0, pneusIndex + 1),
+        postoExternosItem,
+        ...navItemsBase.slice(pneusIndex + 1)
+      ];
+    } else {
+      // Adicionar no início caso não encontre "Pneus"
+      navItemsBase = [postoExternosItem, ...navItemsBase];
+    }
+  }
+  
+  console.log("DEPOIS da manipulação, itens de menu:", navItemsBase.map(item => item.name));
+  
+  // Filtrando itens de navegação com base nas permissões do usuário, mas garantindo Postos Externos
   const navItems = navItemsBase.filter(item => {
+    // FORÇAR MOSTRAR POSTO EXTERNOS
+    if (item.name === 'Postos Externos') {
+      console.log(`Menu Postos Externos FORÇADO a ser exibido sem verificações`);
+      return true;
+    }
+    
     // Verificação para showInMenu (valor explícito para exibir o item)
     if (item.showInMenu === true) {
       console.log(`Menu "${item.name}" exibido devido ao showInMenu=true`);
@@ -254,18 +296,6 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     // Sempre incluir menu Cartão para todos os usuários
     if (item.name === 'Cartão') {
       console.log(`Menu Cartão incluído independente de permissões`);
-      return true;
-    }
-    
-    // SEMPRE MOSTRAR POSTOS EXTERNOS - FORÇAR SEM VERIFICAÇÕES
-    if (item.name === 'Postos Externos') {
-      console.log(`Menu Postos Externos FORÇADO a ser exibido sem verificações`);
-      return true;
-    }
-    
-    // Para administradores, sempre mostrar o menu Postos Externos (verificação extra)
-    if (item.name === 'Postos Externos' && user.role?.toLowerCase() === 'admin') {
-      console.log(`Menu Postos Externos incluído diretamente para admin`);
       return true;
     }
     
@@ -324,6 +354,18 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     return has;
   });
 
+  // Menu Postos Externos que será inserido DIRETAMENTE independente do filtro
+  const postoExternosDiretoItem: NavItem = {
+    name: 'Postos Externos (Forçado)',
+    href: '#',
+    icon: Droplets,
+    subItems: [
+      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
+      { name: 'Posto Murici', href: '/posto-murici', icon: Fuel },
+      { name: 'Posto Murici Links', href: '/posto-murici/links', icon: Fuel }
+    ]
+  };
+
   return (
     <div
       className={`${
@@ -343,8 +385,22 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
         <div className="overflow-y-auto">
           <nav className="flex-1 py-4">
             <div className="space-y-1 px-2">
+              {/* MENU POSTO EXTERNOS FORÇADO - SEMPRE VISÍVEL */}
+              <div className="mb-1 bg-primary-800 rounded-md p-1 border border-primary-700">
+                <NavItemWithSubmenu 
+                  item={postoExternosDiretoItem} 
+                  isActive={false} 
+                  isSubItemActive={location.includes('/posto-murici') || location.includes('/posto-remedios')}
+                  onClose={closeSidebar}
+                  currentLocation={location}
+                />
+              </div>
+            
               {/* Renderizando itens de menu usando componentes dedicados */}
               {navItems.map((item) => {
+                // Pular o item Postos Externos pois já adicionamos manualmente
+                if (item.name === 'Postos Externos') return null;
+                
                 const isActive = location === item.href;
                 const isSubItemActive = item.subItems?.some(subItem => location === subItem.href);
                 
