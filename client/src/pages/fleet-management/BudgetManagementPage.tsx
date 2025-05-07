@@ -90,6 +90,27 @@ export default function BudgetManagementPage() {
   const [chatDialogOpen, setChatDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const [fetchingMessages, setFetchingMessages] = useState(false);
+  const [budgetRequests, setBudgetRequests] = useState<any[]>([]);
+  const [loadingBudgetRequests, setLoadingBudgetRequests] = useState(true);
+
+  // Função para obter as solicitações de orçamento da Base Campinas
+  const fetchBudgetRequests = async () => {
+    try {
+      setLoadingBudgetRequests(true);
+      const response = await apiRequest("GET", "/api/fleet/budget-requests");
+      console.log("Solicitações de orçamento:", response);
+      setBudgetRequests(response);
+    } catch (error) {
+      console.error("Erro ao buscar solicitações de orçamento:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar as solicitações de orçamento",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingBudgetRequests(false);
+    }
+  };
 
   // Função para obter as manutenções com chats
   const fetchMaintenancesWithChats = async () => {
@@ -136,9 +157,10 @@ export default function BudgetManagementPage() {
     }
   };
 
-  // Carregar manutenções com chats quando a página carrega
+  // Carregar manutenções com chats e solicitações de orçamento quando a página carrega
   useEffect(() => {
     fetchMaintenancesWithChats();
+    fetchBudgetRequests();
   }, []);
 
   // Abrir o chat de uma manutenção
@@ -236,6 +258,63 @@ export default function BudgetManagementPage() {
     );
   };
 
+  // Função para aprovar uma solicitação de orçamento
+  const approveBudgetRequest = async (requestId: number, approvedValue: number) => {
+    try {
+      const response = await apiRequest(
+        "PUT",
+        `/api/fleet/budget-requests/${requestId}/approve`,
+        {
+          approvedValue,
+          approvedBy: (budgetRequests[0]?.name || "Administrador")
+        }
+      );
+      
+      toast({
+        title: "Sucesso",
+        description: "Solicitação de orçamento aprovada com sucesso",
+        variant: "success"
+      });
+      
+      // Recarregar dados
+      fetchBudgetRequests();
+    } catch (error) {
+      console.error("Erro ao aprovar solicitação de orçamento:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível aprovar a solicitação de orçamento",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Função para rejeitar uma solicitação de orçamento
+  const rejectBudgetRequest = async (requestId: number, comments: string) => {
+    try {
+      const response = await apiRequest(
+        "PUT",
+        `/api/fleet/budget-requests/${requestId}/reject`,
+        { comments }
+      );
+      
+      toast({
+        title: "Sucesso",
+        description: "Solicitação de orçamento rejeitada",
+        variant: "success"
+      });
+      
+      // Recarregar dados
+      fetchBudgetRequests();
+    } catch (error) {
+      console.error("Erro ao rejeitar solicitação de orçamento:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível rejeitar a solicitação de orçamento",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <AppLayout>
       <div className="container mx-auto py-6">
@@ -246,8 +325,106 @@ export default function BudgetManagementPage() {
               Acompanhe e aprove orçamentos de manutenção de veículos
             </p>
           </div>
-          <Button onClick={() => fetchMaintenancesWithChats()}>Atualizar</Button>
+          <div className="space-x-2">
+            <Button onClick={() => fetchBudgetRequests()} variant="outline">
+              Atualizar Solicitações
+            </Button>
+            <Button onClick={() => fetchMaintenancesWithChats()}>
+              Atualizar Manutenções
+            </Button>
+          </div>
         </div>
+
+      {/* Solicitações de Orçamento da Base Campinas */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Solicitações de Orçamento - Base Campinas</CardTitle>
+          <CardDescription>
+            Solicitações de orçamento recebidas da Base Campinas
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loadingBudgetRequests ? (
+            <div className="flex justify-center items-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : budgetRequests.length === 0 ? (
+            <Alert variant="default" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Nenhuma solicitação encontrada</AlertTitle>
+              <AlertDescription>
+                Não há solicitações de orçamento da Base Campinas.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Título</TableHead>
+                  <TableHead>Departamento</TableHead>
+                  <TableHead>Solicitante</TableHead>
+                  <TableHead>Valor Estimado</TableHead>
+                  <TableHead>Prioridade</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {budgetRequests.map((request) => (
+                  <TableRow key={request.id}>
+                    <TableCell className="font-medium">
+                      {request.title}
+                    </TableCell>
+                    <TableCell>{request.department}</TableCell>
+                    <TableCell>{request.requester_name}</TableCell>
+                    <TableCell>
+                      {formatCurrency(Number(request.estimated_value))}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={priorityMap[request.priority]?.color || "default"}>
+                        {priorityMap[request.priority]?.label || request.priority}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={statusMap[request.status]?.color || "default"}>
+                        {statusMap[request.status]?.label || request.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(request.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            approveBudgetRequest(request.id, Number(request.estimated_value));
+                          }}
+                          disabled={request.status !== "pendente"}
+                        >
+                          Aprovar
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => {
+                            rejectBudgetRequest(request.id, "Solicitação rejeitada pela Gestão de Frotas");
+                          }}
+                          disabled={request.status !== "pendente"}
+                        >
+                          Rejeitar
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
       {renderStats()}
 

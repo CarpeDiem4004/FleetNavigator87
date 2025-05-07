@@ -114,16 +114,22 @@ export const hasMaintenanceAccess = async (req: Request, res: Response, next: Ne
             // Verificar token com o serviço híbrido
             const tokenVerification = await hybridService.verifyToken(token, true);
             
-            if (tokenVerification && tokenVerification.user) {
+            console.log('[hasMaintenanceAccess] Resultado da verificação do token JWT híbrido:', JSON.stringify(tokenVerification));
+            
+            // Se o token retornou um objeto de usuário diretamente
+            if (tokenVerification && !tokenVerification.user && typeof tokenVerification === 'object' && tokenVerification.id) {
+              // Anexar o próprio objeto como usuário
+              (req as any).hybridUser = tokenVerification;
+              console.log(`[hasMaintenanceAccess] Token JWT híbrido direto validado para ${tokenVerification.email || tokenVerification.id}`);
+            }
+            // Se o token retornou um objeto com propriedade user
+            else if (tokenVerification && tokenVerification.user) {
               // Anexar usuário verificado à requisição
               (req as any).hybridUser = tokenVerification.user;
               console.log(`[hasMaintenanceAccess] Token JWT híbrido validado para ${tokenVerification.user.email}`);
             } else {
               console.log('[hasMaintenanceAccess] Token JWT híbrido inválido ou expirado');
             }
-            
-            // Em caso de problema com o log de resultado
-            console.log('[hasMaintenanceAccess] Resultado da verificação do token JWT híbrido:', JSON.stringify(tokenVerification));
           } catch (error) {
             const hybridError = error as Error;
             console.error('[hasMaintenanceAccess] Erro ao verificar token JWT híbrido:', hybridError.message);
@@ -213,7 +219,16 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
             
             // Verificar token com o serviço híbrido
             const verifyResult = await hybridService.verifyToken(token, true);
-            if (verifyResult && verifyResult.user) {
+            console.log(`[isAdmin] Resultado verificação do token JWT híbrido:`, JSON.stringify(verifyResult));
+            
+            // Se o token retornou um objeto de usuário diretamente
+            if (verifyResult && !verifyResult.user && typeof verifyResult === 'object' && verifyResult.id) {
+              // Anexar o próprio objeto como usuário
+              (req as any).hybridUser = verifyResult;
+              console.log(`[isAdmin] Token JWT híbrido direto validado para ${verifyResult.email || verifyResult.id}`);
+            }
+            // Se o token retornou um objeto com propriedade user
+            else if (verifyResult && verifyResult.user) {
               // Usuário autenticado via JWT híbrido, anexá-lo à requisição
               (req as any).hybridUser = verifyResult.user;
               console.log(`[isAdmin] Token JWT híbrido validado para usuário: ${verifyResult.user.email}`);
