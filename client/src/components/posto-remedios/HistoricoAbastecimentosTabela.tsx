@@ -245,12 +245,21 @@ export default function HistoricoAbastecimentosTabela({
         return;
       }
       
+      console.log(`Tentando excluir registro ${deletingId} com token JWT:`, authToken.substring(0, 15) + '...');
+      
       const response = await fetch(`/api/posto-remedios/abastecimentos/${deletingId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json'
-        }
+        },
+        credentials: 'include' // Incluir cookies para garantir que a sessão seja enviada
+      });
+      
+      console.log('Resposta da exclusão:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
       });
       
       if (response.ok) {
@@ -263,7 +272,8 @@ export default function HistoricoAbastecimentosTabela({
         // Atualizar a lista de registros
         carregarRegistros();
       } else {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ message: `Erro ${response.status}: ${response.statusText}` }));
+        console.error('Erro retornado pelo servidor:', errorData);
         throw new Error(errorData.message || 'Erro ao excluir registro');
       }
     } catch (error: any) {

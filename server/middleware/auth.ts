@@ -50,26 +50,54 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
  * Middleware para verificar se o usuário é administrador
  * Permite acesso para usuários com role='admin' ou emails específicos
  */
-export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
-  // Verificar autenticação primeiro
-  if (!req.isAuthenticated() && !(req as any).supabaseUser) {
-    return res.status(401).json({ message: "Usuário não autenticado" });
+export const isAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Verificar se existe header de autorização com token JWT
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        // Extrair e validar token JWT
+        const token = extractJwtToken(authHeader);
+        const user = await validateSupabaseToken(token);
+        
+        // Usuário autenticado via JWT, anexá-lo à requisição
+        (req as any).supabaseUser = user;
+        
+        console.log(`[isAdmin] Token JWT validado para usuário: ${user.email}`);
+      } catch (error) {
+        console.error('[isAdmin] Erro ao validar token JWT:', error);
+      }
+    }
+    
+    // Verificar autenticação 
+    if (!req.isAuthenticated() && !(req as any).supabaseUser) {
+      console.log('[isAdmin] Usuário não autenticado:', {
+        authHeader: !!authHeader,
+        sessionAuth: req.isAuthenticated(),
+        jwtAuth: !!(req as any).supabaseUser
+      });
+      return res.status(401).json({ message: "Usuário não autenticado" });
+    }
+    
+    // Verificar se o usuário é administrador
+    const user = req.user || (req as any).supabaseUser;
+    if (user && isUserAdmin(user)) {
+      console.log(`[isAdmin] Acesso autorizado para admin: ${user.email}, role: ${user.role}`);
+      return next();
+    }
+    
+    console.log("[isAdmin] Acesso negado - Permissão de administrador necessária:", {
+      url: req.originalUrl,
+      method: req.method,
+      userEmail: user?.email,
+      userRole: user?.role
+    });
+    
+    return res.status(403).json({ message: "Acesso negado. Permissão de administrador necessária." });
+  } catch (error) {
+    console.error('[isAdmin] Erro no middleware:', error);
+    return res.status(500).json({ message: "Erro interno no servidor" });
   }
-  
-  // Verificar se o usuário é administrador
-  const user = req.user || (req as any).supabaseUser;
-  if (user && isUserAdmin(user)) {
-    return next();
-  }
-  
-  console.log("Acesso negado - Permissão de administrador necessária:", {
-    url: req.originalUrl,
-    method: req.method,
-    userEmail: req.user?.email,
-    userRole: req.user?.role
-  });
-  
-  return res.status(403).json({ message: "Acesso negado. Permissão de administrador necessária." });
 };
 
 /**
