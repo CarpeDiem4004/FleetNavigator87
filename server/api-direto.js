@@ -708,7 +708,107 @@ export async function registrarAbastecimentoPosto(req, res) {
       ? parseFloat(valor_litro) * parseFloat(litros) 
       : 0);
     
-    // Montar a query de inserção
+    // Verificar se estamos lidando com postos V2
+    const isV2Posto = ['osasco_v2', 'campinas_v2', 'abc_v2', 'socorro_v2', 'sorocaba_v2', 'alair_v2'].includes(postoName.toLowerCase());
+    
+    // Adaptação para os postos V2 - diferentes campos na tabela
+    if (isV2Posto) {
+      const insertQueryV2 = `
+        INSERT INTO "${tableName}" (
+          placa,
+          km_atual,
+          tipo_combustivel,
+          litros,
+          motorista,
+          motorista_rg,
+          operador,
+          valor_litro,
+          valor_total,
+          tipo_veiculo,
+          observacoes,
+          lavagem,
+          tipo_lavagem,
+          created_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW()
+        ) RETURNING *
+      `;
+      
+      const valuesV2 = [
+        placa.toUpperCase(),
+        km_atual ? parseInt(km_atual, 10) : null,
+        tipo_combustivel,
+        litros ? parseFloat(litros) : null,
+        motorista,
+        motorista_rg,
+        operador,
+        valor_litro ? parseFloat(valor_litro) : null,
+        calculatedValorTotal,
+        tipo_veiculo,
+        observacoes,
+        lavagem === true,
+        tipo_lavagem
+      ];
+      
+      console.log('Query SQL V2 a ser executada:', insertQueryV2);
+      console.log('Valores V2:', valuesV2);
+      
+      const result = await pool.query(insertQueryV2, valuesV2);
+      
+      if (result.rows.length === 0) {
+        throw new Error('Falha ao inserir registro de abastecimento');
+      }
+      
+      // Continuar com a atualização do tanque...
+      try {
+        console.log(`Atualizando nível do tanque para ${postoName} após abastecimento de ${litros} litros`);
+        
+        if (tipo_combustivel.toLowerCase() === 'arla') {
+          // Se for ARLA, diminui o nível do tanque de ARLA e incrementa consumo total
+          await pool.query(`
+            UPDATE configuracao_tanques 
+            SET arla_nivel = GREATEST(0, arla_nivel - $1),
+                arla_consumo_total = COALESCE(arla_consumo_total, 0) + $1,
+                arla_valor_total = COALESCE(arla_valor_total, 0) + $2,
+                updated_at = NOW()
+            WHERE posto = $3
+          `, [parseFloat(litros), calculatedValorTotal, postoName]);
+          
+          console.log(`Tanque de ARLA atualizado: -${litros} litros, +${calculatedValorTotal} valor total`);
+        } else {
+          // Se for Diesel ou outro combustível, diminui o nível do tanque de diesel e incrementa consumo total
+          await pool.query(`
+            UPDATE configuracao_tanques 
+            SET diesel_nivel = GREATEST(0, diesel_nivel - $1),
+                diesel_consumo_total = COALESCE(diesel_consumo_total, 0) + $1,
+                diesel_valor_total = COALESCE(diesel_valor_total, 0) + $2,
+                updated_at = NOW()
+            WHERE posto = $3
+          `, [parseFloat(litros), calculatedValorTotal, postoName]);
+          
+          console.log(`Tanque de Diesel atualizado: -${litros} litros, +${calculatedValorTotal} valor total`);
+        }
+        
+        console.log('Atualização de tanque concluída!');
+        
+        return res.status(201).json({
+          success: true,
+          message: `Abastecimento registrado com sucesso para posto ${postoName}`,
+          data: result.rows[0]
+        });
+      } catch (updateError) {
+        console.error('Erro ao atualizar tanque:', updateError);
+        // Mesmo se houver erro no tanque, o abastecimento foi registrado
+        return res.status(201).json({
+          success: true,
+          warning: 'Abastecimento registrado mas houve erro ao atualizar o tanque',
+          message: `Abastecimento registrado com sucesso para posto ${postoName}, mas falha ao atualizar o tanque`,
+          data: result.rows[0]
+        });
+      }
+    }
+    
+    // Versão original para postos não V2
     const insertQuery = `
       INSERT INTO "${tableName}" (
         placa,
