@@ -114,10 +114,10 @@ app.use((req, res, next) => {
   app.get('/api/check-tabela-direto/:posto', checkTabelaPosto);
   app.post('/api/abastecimento-direto/:posto', registrarAbastecimentoPosto);
   
-  // Rotas especiais para Campinas V2, para resolver o problema de nomenclatura
+  // Rotas especiais para Campinas V2, para resolver o problema de nomenclatura (formato antigo)
   // Rota de abastecimento
   app.post('/api/abastecimento-direto-campinas-v2', (req, res) => {
-    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE CAMPINAS V2 ====");
+    console.log("==== USANDO ROTA ESPECÍFICA ANTIGA PARA ABASTECIMENTO DE CAMPINAS V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como campinas_v2
     req.params = { ...req.params, posto: 'campinas_v2' };
     registrarAbastecimentoPosto(req, res);
@@ -125,7 +125,7 @@ app.use((req, res, next) => {
   
   // Rota de histórico para Campinas V2
   app.get('/api/historico-direto-campinas-v2', (req, res) => {
-    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE CAMPINAS V2 ====");
+    console.log("==== USANDO ROTA ESPECÍFICA ANTIGA PARA HISTÓRICO DE CAMPINAS V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'campinas_v2' };
     getHistoricoPosto(req, res);
@@ -164,44 +164,27 @@ app.use((req, res, next) => {
     req.params = { posto: 'osasco_v2' };
     getHistoricoPosto(req, res);
   });
-
-  // Rotas especiais para ABC V2
+  
+  // Rotas especiais para Campinas V2
   // Rota de abastecimento
-  app.post('/api/abastecimento-direto-abc-v2', (req, res) => {
-    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ABC V2 ====");
-    // Forçar o parâmetro posto para garantir que seja tratado como abc_v2
-    req.params = { ...req.params, posto: 'abc_v2' };
+  app.post('/api/abastecimento-direto/campinas_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE CAMPINAS V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como campinas_v2
+    req.params = { ...req.params, posto: 'campinas_v2' };
     registrarAbastecimentoPosto(req, res);
   });
   
-  // Rota de histórico para ABC V2
-  app.get('/api/historico-direto-abc-v2', (req, res) => {
-    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE ABC V2 ====");
+  // Rota de histórico para Campinas V2
+  app.get('/api/historico-direto/campinas_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE CAMPINAS V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
-    req.params = { posto: 'abc_v2' };
+    req.params = { posto: 'campinas_v2' };
     getHistoricoPosto(req, res);
-  });
-
-  // Rotas especiais para Alair V2
-  // Rota de abastecimento
-  app.post('/api/abastecimento-direto-alair-v2', (req, res) => {
-    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ALAIR V2 ====");
-    // Forçar o parâmetro posto para garantir que seja tratado como alair_v2
-    req.params = { ...req.params, posto: 'alair_v2' };
-    registrarAbastecimentoPosto(req, res);
   });
   
-  // Rota de histórico para Alair V2
-  app.get('/api/historico-direto-alair-v2', (req, res) => {
-    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE ALAIR V2 ====");
-    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
-    req.params = { posto: 'alair_v2' };
-    getHistoricoPosto(req, res);
-  });
-
   // Rotas especiais para Socorro V2
   // Rota de abastecimento
-  app.post('/api/abastecimento-direto-socorro-v2', (req, res) => {
+  app.post('/api/abastecimento-direto/socorro_v2', (req, res) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE SOCORRO V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como socorro_v2
     req.params = { ...req.params, posto: 'socorro_v2' };
@@ -209,16 +192,16 @@ app.use((req, res, next) => {
   });
   
   // Rota de histórico para Socorro V2
-  app.get('/api/historico-direto-socorro-v2', (req, res) => {
+  app.get('/api/historico-direto/socorro_v2', (req, res) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE SOCORRO V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'socorro_v2' };
     getHistoricoPosto(req, res);
   });
-
+  
   // Rotas especiais para Sorocaba V2
   // Rota de abastecimento
-  app.post('/api/abastecimento-direto-sorocaba-v2', (req, res) => {
+  app.post('/api/abastecimento-direto/sorocaba_v2', (req, res) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE SOROCABA V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como sorocaba_v2
     req.params = { ...req.params, posto: 'sorocaba_v2' };
@@ -226,12 +209,80 @@ app.use((req, res, next) => {
   });
   
   // Rota de histórico para Sorocaba V2
-  app.get('/api/historico-direto-sorocaba-v2', (req, res) => {
+  app.get('/api/historico-direto/sorocaba_v2', (req, res) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE SOROCABA V2 ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
     req.params = { posto: 'sorocaba_v2' };
     getHistoricoPosto(req, res);
   });
+
+  // Rotas especiais para ABC V2
+  // Rota de abastecimento (formato novo)
+  app.post('/api/abastecimento-direto/abc_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ABC V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como abc_v2
+    req.params = { ...req.params, posto: 'abc_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Rota de histórico para ABC V2 (formato novo)
+  app.get('/api/historico-direto/abc_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE ABC V2 ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'abc_v2' };
+    getHistoricoPosto(req, res);
+  });
+  
+  // Manter rota de abastecimento antiga para compatibilidade
+  app.post('/api/abastecimento-direto-abc-v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA ANTIGA PARA ABASTECIMENTO DE ABC V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como abc_v2
+    req.params = { ...req.params, posto: 'abc_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Manter rota de histórico antiga para compatibilidade
+  app.get('/api/historico-direto-abc-v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA ANTIGA PARA HISTÓRICO DE ABC V2 ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'abc_v2' };
+    getHistoricoPosto(req, res);
+  });
+
+  // Rotas especiais para Alair V2
+  // Rota de abastecimento (formato novo)
+  app.post('/api/abastecimento-direto/alair_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ALAIR V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como alair_v2
+    req.params = { ...req.params, posto: 'alair_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Rota de histórico para Alair V2 (formato novo)
+  app.get('/api/historico-direto/alair_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE ALAIR V2 ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'alair_v2' };
+    getHistoricoPosto(req, res);
+  });
+  
+  // Manter rota de abastecimento antiga para compatibilidade
+  app.post('/api/abastecimento-direto-alair-v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA ANTIGA PARA ABASTECIMENTO DE ALAIR V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como alair_v2
+    req.params = { ...req.params, posto: 'alair_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Manter rota de histórico antiga para compatibilidade
+  app.get('/api/historico-direto-alair-v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA ANTIGA PARA HISTÓRICO DE ALAIR V2 ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'alair_v2' };
+    getHistoricoPosto(req, res);
+  });
+
+  // Mantendo as rotas antigas para compatibilidade, mas são substituídas pelas novas acima
   
   // Rota de diagnóstico específica para autenticação
   app.get('/api/auth-diagnostic', (req, res) => {
