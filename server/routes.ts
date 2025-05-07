@@ -6581,8 +6581,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/fleet/budget-requests", hasMaintenanceAccess, async (req, res) => {
     try {
       // O middleware hasMaintenanceAccess já verificou a autenticação
-
-      console.log('Buscando solicitações de orçamento da Base Campinas para o painel...');
+      const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
+      console.log('[BudgetRequests] Usuário autenticado:', {
+        id: user?.id,
+        email: user?.email,
+        role: user?.role,
+        baseId: user?.baseId
+      });
+      
+      console.log('[BudgetRequests] Buscando solicitações de orçamento da Base Campinas para o painel...');
+      
+      // Verificar primeiro se a tabela existe
+      const tableCheckQuery = `
+        SELECT EXISTS (
+          SELECT 1 FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'campinas_budget_requests'
+        ) AS "exists";
+      `;
+      
+      const tableCheck = await pool.query(tableCheckQuery);
+      const tableExists = tableCheck.rows[0].exists;
+      
+      console.log('[BudgetRequests] Tabela campinas_budget_requests existe:', tableExists);
+      
+      if (!tableExists) {
+        console.log('[BudgetRequests] A tabela não existe, retornando array vazio');
+        return res.json([]);
+      }
       
       const query = `
         SELECT 
@@ -6620,10 +6646,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       `;
       
       const result = await pool.query(query);
-      console.log(`Encontradas ${result.rows.length} solicitações de orçamento`);
+      console.log(`[BudgetRequests] Encontradas ${result.rows.length} solicitações de orçamento`);
+      
+      // Se houver resultados, vamos logar o primeiro para diagnóstico
+      if (result.rows.length > 0) {
+        console.log('[BudgetRequests] Primeira solicitação:', {
+          id: result.rows[0].id,
+          title: result.rows[0].title,
+          status: result.rows[0].status,
+          requester: result.rows[0].requester_name,
+          base: result.rows[0].base_name
+        });
+      }
+      
       res.json(result.rows);
     } catch (error) {
-      console.error('Erro ao buscar solicitações de orçamento para o painel:', error);
+      console.error('[BudgetRequests] Erro ao buscar solicitações de orçamento para o painel:', error);
       res.status(500).json({ message: 'Erro ao buscar solicitações de orçamento' });
     }
   });
