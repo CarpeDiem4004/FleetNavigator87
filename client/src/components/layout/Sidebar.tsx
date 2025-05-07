@@ -200,6 +200,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
       { name: 'Posto Murici', href: '/posto-murici', icon: Fuel }
     ]},
+    // Adicionado item de menu separado para Posto Murici para debug
+    { name: 'Posto Murici Direto', href: '/posto-murici', icon: Fuel },
     // Item de menu separado para Cartão de Abastecimento
     { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
       { name: 'Operações', href: '/fuel-card', icon: CreditCard },
@@ -256,6 +258,19 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     // Sempre incluir menus com submenus (href='#')
     if (item.href === '#') {
       // Verificar se pelo menos um submenu é permitido
+      console.log(`Verificando permissões para submenu "${item.name}" com ${item.subItems?.length || 0} itens`);
+      
+      if (item.name === "Postos Externos") {
+        console.log("DEBUGGING POSTOS EXTERNOS MENU");
+        console.log("SubItems:", item.subItems);
+        
+        if (item.subItems) {
+          item.subItems.forEach(subItem => {
+            console.log(`Submenu ${subItem.name} (${subItem.href}): ${hasPermission(subItem.href) ? 'PERMITIDO' : 'NEGADO'}`);
+          });
+        }
+      }
+      
       const hasSubItemPermission = item.subItems?.some(subItem => {
         console.log(`Verificando permissão para submenu ${subItem.name} (${subItem.href}): ${hasPermission(subItem.href) ? 'PERMITIDO' : 'NEGADO'}`);
         return hasPermission(subItem.href);
