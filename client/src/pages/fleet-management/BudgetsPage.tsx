@@ -148,16 +148,26 @@ export default function BudgetsPage() {
   const { data: budgetChats = [], isLoading } = useQuery<BudgetChat[]>({
     queryKey: ['/api/fleet/budget-chats', { status: activeTab }],
     queryFn: async () => {
-      let url = '/api/fleet/budget-chats';
-      
-      // Adicionar filtro por status se necessário
-      if (activeTab !== 'todos') {
-        url += `?status=${activeTab}`;
+      try {
+        let url = '/api/fleet/budget-chats';
+        
+        // Adicionar filtro por status se necessário
+        if (activeTab !== 'todos') {
+          url += `?status=${activeTab}`;
+        }
+        
+        const response = await apiRequest('GET', url);
+        if (!response.ok) {
+          console.error(`Erro ao buscar orçamentos: ${response.status} ${response.statusText}`);
+          return [];
+        }
+        return await response.json();
+      } catch (error) {
+        console.error("Erro ao buscar orçamentos:", error);
+        return [];
       }
-      
-      const response = await apiRequest('GET', url);
-      return await response.json();
-    }
+    },
+    retry: false
   });
   
   // Carregar solicitações de orçamento da Base Campinas
