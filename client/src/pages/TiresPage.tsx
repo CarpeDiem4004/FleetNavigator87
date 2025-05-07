@@ -36,11 +36,11 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, FileEdit, Trash2, ArrowUpCircle, ShoppingBag, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Search, Plus, FileEdit, Trash2, ArrowUpCircle, ShoppingBag, CheckCircle, XCircle, AlertCircle, Package, DollarSign } from 'lucide-react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
-import { Tire, TireModel, getAllTires, createTire, updateTire, deleteTire, getTireModels } from '@/services/tiresService';
+import { Tire, TireModel, TireStockStats, getAllTires, createTire, updateTire, deleteTire, getTireModels, getTireStockStats } from '@/services/tiresService';
 import { TireRequest, getAllTireRequests, updateTireRequestStatus } from '@/services/tireRequestsService';
 import TireRequestForm from '@/components/tire/TireRequestForm';
 import TireMountingHistory from '@/components/tires/TireMountingHistory';
@@ -115,6 +115,8 @@ const TiresPage: React.FC = () => {
   const [tireRequests, setTireRequests] = useState<TireRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingRequests, setIsLoadingRequests] = useState(true);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [stockStats, setStockStats] = useState<TireStockStats>({ quantidade: 0, valor_total: 0 });
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState("inventory");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -171,6 +173,27 @@ const TiresPage: React.FC = () => {
     loadTires();
   }, [toast]);
   
+  // Carregar estatísticas de estoque
+  useEffect(() => {
+    const loadStockStats = async () => {
+      setIsLoadingStats(true);
+      try {
+        const response = await getTireStockStats();
+        if (response.success) {
+          setStockStats(response.data);
+        } else {
+          console.error("Falha ao carregar estatísticas de estoque:", response.error);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar estatísticas de estoque:", error);
+      } finally {
+        setIsLoadingStats(false);
+      }
+    };
+    
+    loadStockStats();
+  }, [tires]); // Recarregar quando a lista de pneus mudar
+
   // Carregar modelos de pneus quando o diálogo é aberto
   useEffect(() => {
     if (isAddDialogOpen) {
@@ -745,6 +768,42 @@ const TiresPage: React.FC = () => {
           </TabsList>
           
           <TabsContent value="inventory" className="mt-4">
+            {/* Card de estatísticas de estoque */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xl">Estatísticas de Estoque</CardTitle>
+                  <CardDescription>Quantidade e valor total de pneus em estoque</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingStats ? (
+                    <div className="flex items-center justify-center h-24">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 bg-blue-50 rounded-lg flex flex-col items-center">
+                        <div className="bg-blue-100 p-2 rounded-full mb-2">
+                          <Package className="h-5 w-5 text-blue-700" />
+                        </div>
+                        <span className="text-2xl font-bold text-blue-700">{stockStats.quantidade}</span>
+                        <span className="text-sm text-blue-700">Pneus em Estoque</span>
+                      </div>
+                      <div className="p-4 bg-green-50 rounded-lg flex flex-col items-center">
+                        <div className="bg-green-100 p-2 rounded-full mb-2">
+                          <DollarSign className="h-5 w-5 text-green-700" />
+                        </div>
+                        <span className="text-2xl font-bold text-green-700">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stockStats.valor_total)}
+                        </span>
+                        <span className="text-sm text-green-700">Valor Total</span>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
             <div className="flex justify-between items-center mb-6">
               <div className="flex items-center gap-2">
                 <div className="relative">

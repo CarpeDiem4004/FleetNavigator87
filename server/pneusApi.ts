@@ -5,6 +5,35 @@ import { pool } from './db';
  * Registra as rotas da API para gerenciamento de pneus
  */
 export function registerPneusRoutes(app: Express) {
+  // Rota para obter estatísticas de estoque (quantidade e valor total)
+  app.get('/api/pneus/estatisticas/estoque', async (req, res) => {
+    try {
+      const query = `
+        SELECT 
+          COUNT(*) as quantidade,
+          COALESCE(SUM(valor_unitario), 0) as valor_total
+        FROM pneus
+        WHERE status = 'estoque'
+      `;
+      
+      const result = await pool.query(query);
+      
+      return res.status(200).json({
+        success: true,
+        data: {
+          quantidade: parseInt(result.rows[0].quantidade) || 0,
+          valor_total: parseFloat(result.rows[0].valor_total) || 0
+        }
+      });
+    } catch (error) {
+      console.error('Erro ao obter estatísticas de estoque de pneus:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao obter estatísticas de estoque',
+        error: String(error)
+      });
+    }
+  });
   // Rota para cadastrar novo pneu
   app.post('/api/pneus', async (req, res) => {
     try {

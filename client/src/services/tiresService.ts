@@ -1,5 +1,11 @@
 import { apiRequest } from "@/lib/queryClient";
 
+// Interface para estatísticas de estoque
+export interface TireStockStats {
+  quantidade: number;
+  valor_total: number;
+}
+
 // Interface para o modelo de pneus
 export interface Tire {
   id?: number;
@@ -143,6 +149,19 @@ export async function getTireModelById(id: number) {
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.message || `Erro ao buscar modelo de pneu com ID ${id}`);
+  }
+  
+  const data = await response.json();
+  return data;
+}
+
+// Obter estatísticas de estoque de pneus (quantidade e valor total)
+export async function getTireStockStats(): Promise<{ success: boolean, data: TireStockStats }> {
+  const response = await apiRequest('GET', '/api/pneus/estatisticas/estoque');
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Erro ao buscar estatísticas de estoque');
   }
   
   const data = await response.json();
