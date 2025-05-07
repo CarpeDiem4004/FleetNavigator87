@@ -205,8 +205,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Operações', href: '/fuel-card', icon: CreditCard, showInMenu: true },
       { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList, showInMenu: true }
     ]},
-    // Postos Externos com submenu atualizado - showInMenu forçado como true
-    { name: 'Postos Externos', href: '#', icon: Droplets, showInMenu: true, subItems: [
+    // Abastecimentos com submenu incluindo os postos
+    { name: 'Abastecimentos', href: '#', icon: Droplets, showInMenu: true, subItems: [
+      { name: 'Histórico', href: '/refueling', icon: ClipboardList, showInMenu: true },
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel, showInMenu: true },
       { name: 'Posto Murici', href: '/posto-murici', icon: Fuel, showInMenu: true },
       { name: 'Posto Murici Links', href: '/posto-murici/links', icon: Fuel, showInMenu: true }
@@ -230,14 +231,13 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Operações', href: '/fuel-card', icon: CreditCard, showInMenu: true },
       { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList, showInMenu: true }
     ]},
-    // Postos Externos com submenu consistente - forçado a mostrar
-    { name: 'Postos Externos', href: '#', icon: Droplets, showInMenu: true, subItems: [
+    // Abastecimentos com submenu incluindo os postos
+    { name: 'Abastecimentos', href: '#', icon: Droplets, showInMenu: true, subItems: [
+      { name: 'Histórico', href: '/refueling', icon: ClipboardList, showInMenu: true },
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel, showInMenu: true },
       { name: 'Posto Murici', href: '/posto-murici', icon: Fuel, showInMenu: true },
       { name: 'Posto Murici Links', href: '/posto-murici/links', icon: Fuel, showInMenu: true }
     ]},
-    // Operações de combustível e abastecimento
-    { name: 'Histórico Posto Murici', href: '/refueling', icon: ClipboardList },
     { name: 'Line Hall', href: '/line-hall-shopee', icon: Map },
     { name: 'Análise da Operação', href: '/fleet-management/operational-analysis', icon: BarChart4 },
     { name: 'Visão Geral da Frota', href: '/fleet-management/fleet-overview', icon: Activity },
@@ -403,7 +403,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
               
               {/* Primeiro renderizamos todos os itens até o Cartão */}
               {navItems
-                .filter(item => item.name !== 'Postos Externos' && item.name !== 'Multas' && item.name !== 'Abastecimento' && item.name !== 'Line Hall')
+                .filter(item => item.name !== 'Postos Externos' && item.name !== 'Multas' && item.name !== 'Abastecimentos' && item.name !== 'Line Hall')
                 .map((item) => {
                   const isActive = location === item.href;
                   const isSubItemActive = item.subItems?.some(subItem => location === subItem.href);
