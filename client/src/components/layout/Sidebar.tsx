@@ -243,6 +243,15 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Visão Geral da Frota', href: '/fleet-management/fleet-overview', icon: Activity },
     { name: 'Veículos Parados', href: '/fleet-management/downtime-analysis', icon: ChevronsDown },
     { name: 'Segurança do Trabalho', href: '/work-safety', icon: ShieldAlert },
+    // Submenu para Bases com opções específicas para Campinas
+    { name: 'Bases', href: '#', icon: Warehouse, subItems: [
+      { name: 'Todas as Bases', href: '/bases', icon: Warehouse },
+      { name: 'Base Campinas', href: '/bases/campinas', icon: Warehouse },
+      { name: 'Despesas Campinas', href: '/bases/campinas/despesas', icon: CreditCard },
+      { name: 'Solicitação de Pneus', href: '/bases/campinas/solicitacao-pneus', icon: CircleDot },
+      { name: 'Solicitação de Orçamento', href: '/bases/campinas/solicitacao-orcamento', icon: FileText },
+      { name: 'Manutenção de Frota', href: '/bases/campinas/manutencao-frota', icon: Wrench }
+    ]},
   ];
   
   // Verifique se o usuário é da gestão de frotas
@@ -256,6 +265,12 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     // Sempre incluir menu Cartão para todos os usuários
     if (item.name === 'Cartão') {
       console.log(`Menu Cartão incluído independente de permissões`);
+      return true;
+    }
+    
+    // Sempre incluir o menu Bases para todos (especialmente para admin)
+    if (item.name === 'Bases') {
+      console.log(`Menu Bases incluído independente de permissões`);
       return true;
     }
     
