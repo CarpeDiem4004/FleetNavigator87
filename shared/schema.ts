@@ -671,3 +671,6 @@ export type InsertBaseRequestUpdate = z.infer<typeof insertBaseRequestUpdateSche
 
 // Importando schemas do Posto Campinas
 export * from './posto-campinas-schema';
+
+// Importando schemas do Posto Murici
+export * from './posto-murici-schema';

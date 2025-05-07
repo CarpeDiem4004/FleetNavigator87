@@ -11,6 +11,9 @@ import {
   type InsertMaintenanceChat, type InsertChatMessage,
   type InsertBaseRequest, type InsertBaseRequestUpdate
 } from "@shared/schema";
+
+// Importação das rotas do Posto Murici
+import postoMuriciRoutes from "./routes/postoMuriciRoutes";
 import { setupAuth } from "./auth";
 import { getDashboardKPIs, getPainelPrincipal } from "./dashboardApi";
 import { getExecutiveDashboard } from "./executiveDashboard";
@@ -6234,6 +6237,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Usamos /api/posto-campinas como caminho para evitar conflitos
   app.use('/api/posto-campinas', postoCampinasRoutes);
 
+  // Registrar rotas do Posto Murici
+  app.use('/api/posto-murici', postoMuriciRoutes);
+
   // Criar função para criar as tabelas do Posto Campinas se não existirem
   async function criarTabelasPostoCampinas() {
     try {
@@ -6377,8 +6383,323 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }
   
+  // Criar função para criar as tabelas do Posto Murici se não existirem
+  async function criarTabelasPostoMurici() {
+    try {
+      console.log("Verificando tabelas do Posto Murici...");
+      
+      // Criar tabela de postos
+      const checkPostosQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'posto_murici_postos'
+        );
+      `;
+      
+      const postosResult = await pool.query(checkPostosQuery);
+      
+      if (!postosResult.rows[0].exists) {
+        console.log("Criando tabela posto_murici_postos...");
+        
+        await pool.query(`
+          CREATE TABLE posto_murici_postos (
+            id SERIAL PRIMARY KEY,
+            nome TEXT NOT NULL,
+            codigo TEXT NOT NULL UNIQUE,
+            endereco TEXT,
+            cidade TEXT NOT NULL,
+            uf TEXT NOT NULL,
+            telefone TEXT,
+            responsavel TEXT,
+            email_responsavel TEXT,
+            esta_ativo BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
+          );
+        `);
+        
+        console.log("Tabela posto_murici_postos criada com sucesso!");
+      }
+      
+      // Criar tabela de tanques
+      const checkTanquesQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'posto_murici_tanques'
+        );
+      `;
+      
+      const tanquesResult = await pool.query(checkTanquesQuery);
+      
+      if (!tanquesResult.rows[0].exists) {
+        console.log("Criando tabela posto_murici_tanques...");
+        
+        await pool.query(`
+          CREATE TABLE posto_murici_tanques (
+            id SERIAL PRIMARY KEY,
+            posto_id INTEGER NOT NULL,
+            tipo TEXT NOT NULL,
+            capacidade_total NUMERIC(10,2) NOT NULL,
+            nivel_atual NUMERIC(10,2) NOT NULL,
+            valor_litro_frota NUMERIC(10,2) NOT NULL,
+            valor_litro_agregado NUMERIC(10,2) NOT NULL,
+            ultima_atualizacao TIMESTAMP DEFAULT NOW(),
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW(),
+            CONSTRAINT fk_posto_murici_tanques_posto
+              FOREIGN KEY (posto_id)
+              REFERENCES posto_murici_postos(id)
+              ON DELETE CASCADE
+          );
+          
+          -- Trigger para atualizar timestamp de última atualização
+          CREATE OR REPLACE FUNCTION update_posto_murici_tanque_updated_at()
+          RETURNS TRIGGER AS $$
+          BEGIN
+            NEW.ultima_atualizacao = NOW();
+            NEW.updated_at = NOW();
+            RETURN NEW;
+          END;
+          $$ LANGUAGE plpgsql;
+          
+          CREATE TRIGGER trigger_update_posto_murici_tanque_timestamp
+          BEFORE UPDATE ON posto_murici_tanques
+          FOR EACH ROW
+          EXECUTE FUNCTION update_posto_murici_tanque_updated_at();
+        `);
+        
+        console.log("Tabela posto_murici_tanques criada com sucesso!");
+      }
+      
+      // Criar tabela de abastecimentos
+      const checkAbastecimentosQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'posto_murici_abastecimentos'
+        );
+      `;
+      
+      const abastecimentosResult = await pool.query(checkAbastecimentosQuery);
+      
+      if (!abastecimentosResult.rows[0].exists) {
+        console.log("Criando tabela posto_murici_abastecimentos...");
+        
+        await pool.query(`
+          CREATE TABLE posto_murici_abastecimentos (
+            id SERIAL PRIMARY KEY,
+            posto_id INTEGER NOT NULL,
+            tanque_id INTEGER NOT NULL,
+            placa TEXT NOT NULL,
+            km INTEGER NOT NULL,
+            tipo_veiculo TEXT NOT NULL,
+            tipo_combustivel TEXT NOT NULL,
+            quantidade_litros NUMERIC(10,2) NOT NULL,
+            valor_litro NUMERIC(10,2) NOT NULL,
+            valor_total NUMERIC(10,2) NOT NULL,
+            motorista TEXT NOT NULL,
+            rg_motorista TEXT,
+            usuario_id INTEGER,
+            observacoes TEXT,
+            data_registro TIMESTAMP DEFAULT NOW(),
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW(),
+            CONSTRAINT fk_posto_murici_abastecimentos_posto
+              FOREIGN KEY (posto_id)
+              REFERENCES posto_murici_postos(id)
+              ON DELETE CASCADE,
+            CONSTRAINT fk_posto_murici_abastecimentos_tanque
+              FOREIGN KEY (tanque_id)
+              REFERENCES posto_murici_tanques(id)
+              ON DELETE CASCADE
+          );
+          
+          -- Trigger para atualizar nível de tanque após abastecimento
+          CREATE OR REPLACE FUNCTION update_posto_murici_tanque_nivel()
+          RETURNS TRIGGER AS $$
+          BEGIN
+            -- Subtrair a quantidade abastecida do nível atual do tanque
+            UPDATE posto_murici_tanques
+            SET nivel_atual = nivel_atual - NEW.quantidade_litros
+            WHERE id = NEW.tanque_id;
+            
+            RETURN NEW;
+          END;
+          $$ LANGUAGE plpgsql;
+          
+          CREATE TRIGGER trigger_update_posto_murici_tanque_nivel
+          AFTER INSERT ON posto_murici_abastecimentos
+          FOR EACH ROW
+          EXECUTE FUNCTION update_posto_murici_tanque_nivel();
+        `);
+        
+        console.log("Tabela posto_murici_abastecimentos criada com sucesso!");
+      }
+      
+      // Criar tabela de abastecimentos de tanques
+      const checkAbastecimentosTanqueQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'posto_murici_abastecimentos_tanque'
+        );
+      `;
+      
+      const abastecimentosTanqueResult = await pool.query(checkAbastecimentosTanqueQuery);
+      
+      if (!abastecimentosTanqueResult.rows[0].exists) {
+        console.log("Criando tabela posto_murici_abastecimentos_tanque...");
+        
+        await pool.query(`
+          CREATE TABLE posto_murici_abastecimentos_tanque (
+            id SERIAL PRIMARY KEY,
+            posto_id INTEGER NOT NULL,
+            tanque_id INTEGER NOT NULL,
+            quantidade_litros NUMERIC(10,2) NOT NULL,
+            valor_litro NUMERIC(10,2) NOT NULL,
+            valor_total NUMERIC(10,2) NOT NULL,
+            nota_fiscal TEXT,
+            fornecedor TEXT,
+            usuario_id INTEGER,
+            data_registro TIMESTAMP DEFAULT NOW(),
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW(),
+            CONSTRAINT fk_posto_murici_abast_tanque_posto
+              FOREIGN KEY (posto_id)
+              REFERENCES posto_murici_postos(id)
+              ON DELETE CASCADE,
+            CONSTRAINT fk_posto_murici_abast_tanque_tanque
+              FOREIGN KEY (tanque_id)
+              REFERENCES posto_murici_tanques(id)
+              ON DELETE CASCADE
+          );
+          
+          -- Trigger para atualizar nível de tanque após reabastecimento
+          CREATE OR REPLACE FUNCTION update_posto_murici_tanque_nivel_apos_reabastecimento()
+          RETURNS TRIGGER AS $$
+          BEGIN
+            -- Adicionar a quantidade abastecida ao nível atual do tanque
+            UPDATE posto_murici_tanques
+            SET nivel_atual = nivel_atual + NEW.quantidade_litros
+            WHERE id = NEW.tanque_id;
+            
+            RETURN NEW;
+          END;
+          $$ LANGUAGE plpgsql;
+          
+          CREATE TRIGGER trigger_update_posto_murici_tanque_nivel_apos_reabastecimento
+          AFTER INSERT ON posto_murici_abastecimentos_tanque
+          FOR EACH ROW
+          EXECUTE FUNCTION update_posto_murici_tanque_nivel_apos_reabastecimento();
+        `);
+        
+        console.log("Tabela posto_murici_abastecimentos_tanque criada com sucesso!");
+      }
+      
+      // Criar tabela de configurações
+      const checkConfiguracoesQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'posto_murici_configuracoes'
+        );
+      `;
+      
+      const configuracoesResult = await pool.query(checkConfiguracoesQuery);
+      
+      if (!configuracoesResult.rows[0].exists) {
+        console.log("Criando tabela posto_murici_configuracoes...");
+        
+        await pool.query(`
+          CREATE TABLE posto_murici_configuracoes (
+            id SERIAL PRIMARY KEY,
+            posto_id INTEGER NOT NULL,
+            nome_configuracao TEXT NOT NULL,
+            valor TEXT,
+            tipo TEXT NOT NULL,
+            descricao TEXT,
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW(),
+            CONSTRAINT fk_posto_murici_configuracoes_posto
+              FOREIGN KEY (posto_id)
+              REFERENCES posto_murici_postos(id)
+              ON DELETE CASCADE
+          );
+        `);
+        
+        console.log("Tabela posto_murici_configuracoes criada com sucesso!");
+      }
+      
+      // Criar tabela de movimentações do pátio
+      const checkMovimentacoesQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'posto_murici_movimentacoes_patio'
+        );
+      `;
+      
+      const movimentacoesResult = await pool.query(checkMovimentacoesQuery);
+      
+      if (!movimentacoesResult.rows[0].exists) {
+        console.log("Criando tabela posto_murici_movimentacoes_patio...");
+        
+        await pool.query(`
+          CREATE TABLE posto_murici_movimentacoes_patio (
+            id SERIAL PRIMARY KEY,
+            posto_id INTEGER NOT NULL,
+            placa TEXT NOT NULL,
+            motorista TEXT NOT NULL,
+            rg_motorista TEXT,
+            tipo_operacao TEXT NOT NULL,
+            base_destino TEXT,
+            observacoes TEXT,
+            usuario_id INTEGER,
+            data_registro TIMESTAMP DEFAULT NOW(),
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW(),
+            CONSTRAINT fk_posto_murici_movimentacoes_posto
+              FOREIGN KEY (posto_id)
+              REFERENCES posto_murici_postos(id)
+              ON DELETE CASCADE
+          );
+        `);
+        
+        console.log("Tabela posto_murici_movimentacoes_patio criada com sucesso!");
+      }
+      
+      // Inserir postos padrão se não existirem
+      const checkPostoPadraoQuery = `
+        SELECT COUNT(*) as count FROM posto_murici_postos;
+      `;
+      
+      const postoPadraoResult = await pool.query(checkPostoPadraoQuery);
+      
+      if (parseInt(postoPadraoResult.rows[0].count) === 0) {
+        console.log("Inserindo postos padrão...");
+        
+        await pool.query(`
+          INSERT INTO posto_murici_postos (nome, codigo, cidade, uf, endereco, responsavel)
+          VALUES 
+            ('Posto Murici Osasco', 'OSASCO', 'Osasco', 'SP', 'Av. dos Autonomistas, 1000', 'Supervisor Osasco'),
+            ('Posto Murici Alair', 'ALAIR', 'Alair', 'SP', 'Rua Joaquim Nabuco, 250', 'Supervisor Alair'),
+            ('Posto Murici Campinas', 'CAMP', 'Campinas', 'SP', 'Rodovia Anhanguera, Km 95', 'Supervisor Campinas'),
+            ('Posto Murici ABC', 'ABC', 'Santo André', 'SP', 'Av. Industrial, 1500', 'Supervisor ABC'),
+            ('Posto Murici Socorro', 'SOCORRO', 'Socorro', 'SP', 'Rodovia do Açúcar, Km 20', 'Supervisor Socorro'),
+            ('Posto Murici Sorocaba', 'SOROC', 'Sorocaba', 'SP', 'Rodovia Raposo Tavares, Km 92', 'Supervisor Sorocaba');
+        `);
+        
+        console.log("Postos padrão inseridos com sucesso!");
+      }
+      
+      console.log("Verificação de tabelas do Posto Murici concluída!");
+      
+    } catch (error) {
+      console.error("Erro ao criar tabelas do Posto Murici:", error);
+    }
+  }
+  
   // Criar as tabelas do Posto Campinas se não existirem
   criarTabelasPostoCampinas();
+  
+  // Criar as tabelas do Posto Murici se não existirem
+  criarTabelasPostoMurici();
 
   const httpServer = createServer(app);
   return httpServer;
