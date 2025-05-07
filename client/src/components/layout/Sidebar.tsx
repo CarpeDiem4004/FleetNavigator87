@@ -394,9 +394,11 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
         </div>
 
         {/* Navigation */}
-        <div className="overflow-y-auto">
+        <div className="overflow-y-auto h-[calc(100vh-9rem)] min-h-[20rem] overflow-x-visible">
           <nav className="flex-1 py-4">
             <div className="space-y-1 px-2">
+              {/* Espaço intencional para deixar o menu mais visível */}
+              <div className="mb-6 mt-6 px-1" id="espaco-antes-menu" />
               {/* Precisamos ordenar manualmente para garantir a posição correta */}
               
               {/* Primeiro renderizamos todos os itens até o Cartão */}
@@ -457,7 +459,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
               
               {/* Inserir menu Postos Externos usando componente personalizado para garantir visibilidade */}
               {console.log('RENDERIZANDO MENU POSTOS EXTERNOS FIXO COM DESTAQUE', postoExternosDiretoItem)}
-              <div className="mb-4 mt-2 bg-primary-600/20 border-2 border-primary-500 rounded-md p-2 overflow-visible">
+              <div className="mb-8 mt-8 bg-primary-600/20 border-2 border-primary-500 rounded-md p-2 fixed top-1/3 left-32 -translate-x-1/2 z-10 shadow-lg max-w-[200px]">
                 <div className="text-sm text-white font-bold mx-2 mt-1 mb-2 flex items-center gap-2">
                   <Droplets className="text-primary-300" size={16} />
                   <span>Postos Externos</span>
