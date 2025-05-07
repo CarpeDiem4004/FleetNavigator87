@@ -134,7 +134,6 @@ const TiresPage: React.FC = () => {
     posicao: null,
     km_inicial: 0,
     km_atual: 0,
-    profundidade_sulco: 12.0,
     localizacao: 'almoxarifado',
     status: 'estoque',
     observacao: '',
@@ -315,7 +314,6 @@ const TiresPage: React.FC = () => {
         posicao: null,
         km_inicial: 0,
         km_atual: 0,
-        profundidade_sulco: 12.0,
         localizacao: 'almoxarifado',
         status: 'estoque',
         observacao: '',
@@ -546,40 +544,7 @@ const TiresPage: React.FC = () => {
                     </div>
                   </div>
                   
-                  {/* Modelo de pneu pré-cadastrado */}
-                  <div className="space-y-2 mb-4">
-                    <Label htmlFor="modelo_pneu">Modelo pré-cadastrado</Label>
-                    <Select 
-                      onValueChange={(value) => {
-                        if (value) {
-                          const selectedModel = tireModels.find(model => model.id?.toString() === value);
-                          if (selectedModel) {
-                            setNewTire({
-                              ...newTire,
-                              marca: selectedModel.marca,
-                              modelo: selectedModel.modelo,
-                              medida: selectedModel.medida || '',
-                              valor_unitario: selectedModel.valor_unitario || 0
-                            });
-                          }
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um modelo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {tireModels.map((model) => (
-                          <SelectItem key={model.id} value={model.id?.toString() || ''}>
-                            {model.marca} {model.modelo} - {model.medida} (R$ {typeof model.valor_unitario === 'number' ? model.valor_unitario.toFixed(2) : '0.00'})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
-                      Selecione um modelo pré-cadastrado para auto-preencher os campos
-                    </p>
-                  </div>
+
                   
                   {/* Marca e Modelo */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -711,21 +676,8 @@ const TiresPage: React.FC = () => {
                     </div>
                   </div>
                   
-                  {/* Profundidade e KM */}
+                  {/* KM Inicial */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="profundidade_sulco">Profundidade do Sulco (mm)</Label>
-                      <Input
-                        id="profundidade_sulco"
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max="20"
-                        value={newTire.profundidade_sulco?.toString() || '12.0'}
-                        onChange={(e) => setNewTire({...newTire, profundidade_sulco: parseFloat(e.target.value) || 0})}
-                      />
-                    </div>
-                    
                     <div className="space-y-2">
                       <Label htmlFor="km_inicial">KM Inicial</Label>
                       <Input
@@ -734,6 +686,10 @@ const TiresPage: React.FC = () => {
                         value={newTire.km_inicial?.toString() || '0'}
                         onChange={(e) => setNewTire({...newTire, km_inicial: parseInt(e.target.value) || 0})}
                       />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      {/* Campo vazio para manter o layout em grid */}
                     </div>
                   </div>
                   
