@@ -18,8 +18,26 @@ export function PostoMuriciLinksPage() {
             <p>A página principal contém o menu de navegação para o Posto Murici.</p>
           </CardContent>
           <CardFooter>
-            <Button asChild className="w-full">
-              <Link href="/posto-murici">Acessar Página Principal</Link>
+            <Button 
+              className="w-full"
+              onClick={() => {
+                console.log("Navegando para /posto-murici");
+                // Método múltiplo para navegação garantida
+                try {
+                  window.history.pushState(null, "", "/posto-murici");
+                  window.dispatchEvent(new PopStateEvent("popstate"));
+                  
+                  // Método alternativo com timeout como fallback
+                  setTimeout(() => {
+                    window.location.href = "/posto-murici";
+                  }, 100);
+                } catch (error) {
+                  console.error("Erro na navegação:", error);
+                  window.location.href = "/posto-murici";
+                }
+              }}
+            >
+              Acessar Página Principal
             </Button>
           </CardFooter>
         </Card>
@@ -33,8 +51,26 @@ export function PostoMuriciLinksPage() {
             <p>Interface para registrar abastecimentos e movimentações de pátio.</p>
           </CardContent>
           <CardFooter>
-            <Button asChild className="w-full">
-              <Link href="/posto-murici/operador">Acessar Interface do Operador</Link>
+            <Button 
+              className="w-full"
+              onClick={() => {
+                console.log("Navegando para /posto-murici/operador");
+                // Método múltiplo para navegação garantida
+                try {
+                  window.history.pushState(null, "", "/posto-murici/operador");
+                  window.dispatchEvent(new PopStateEvent("popstate"));
+                  
+                  // Método alternativo com timeout como fallback
+                  setTimeout(() => {
+                    window.location.href = "/posto-murici/operador";
+                  }, 100);
+                } catch (error) {
+                  console.error("Erro na navegação:", error);
+                  window.location.href = "/posto-murici/operador";
+                }
+              }}
+            >
+              Acessar Interface do Operador
             </Button>
           </CardFooter>
         </Card>
@@ -48,8 +84,26 @@ export function PostoMuriciLinksPage() {
             <p>Interface pública para registro de abastecimentos externos.</p>
           </CardContent>
           <CardFooter>
-            <Button asChild className="w-full">
-              <Link href="/posto-murici/public">Acessar Interface Pública</Link>
+            <Button 
+              className="w-full"
+              onClick={() => {
+                console.log("Navegando para /posto-murici/public");
+                // Método múltiplo para navegação garantida
+                try {
+                  window.history.pushState(null, "", "/posto-murici/public");
+                  window.dispatchEvent(new PopStateEvent("popstate"));
+                  
+                  // Método alternativo com timeout como fallback
+                  setTimeout(() => {
+                    window.location.href = "/posto-murici/public";
+                  }, 100);
+                } catch (error) {
+                  console.error("Erro na navegação:", error);
+                  window.location.href = "/posto-murici/public";
+                }
+              }}
+            >
+              Acessar Interface Pública
             </Button>
           </CardFooter>
         </Card>

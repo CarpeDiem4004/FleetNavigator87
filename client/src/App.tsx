@@ -83,6 +83,7 @@ import PostoMuriciIndex from "@/pages/posto-murici";
 import PostoMuriciOperador from "@/pages/posto-murici/PostoMuriciOperador";
 import PostoMuriciPublico from "@/pages/posto-murici/PostoMuriciPublico";
 import PostoMuriciLinksPage from "@/components/posto-murici-links";
+// Verificamos que o componente é importado corretamente
 import ProfileWithSupabase from "@/pages/ProfileWithSupabase";
 import DriverChecklist from "@/pages/DriverChecklist";
 import DriversPage from "@/pages/DriversPage";

@@ -84,11 +84,28 @@ const NavItemWithSubmenu: React.FC<{
               <Link 
                 href={subItem.href}
                 onClick={(e) => {
+                  console.log(`Clicou no link para: ${subItem.href}`);
                   e.preventDefault();
                   e.stopPropagation();
-                  // Usar wouter para navegação em vez de manipular history diretamente
-                  window.history.pushState(null, "", subItem.href);
-                  window.dispatchEvent(new PopStateEvent("popstate"));
+                  
+                  // Método mais confiável para navegação
+                  try {
+                    // Primeiro método - usar wouter
+                    window.history.pushState(null, "", subItem.href);
+                    window.dispatchEvent(new PopStateEvent("popstate"));
+                    
+                    // Método alternativo com timeout como fallback
+                    setTimeout(() => {
+                      window.location.href = subItem.href;
+                    }, 100);
+                    
+                    console.log(`Navegação para: ${subItem.href} iniciada`);
+                  } catch (error) {
+                    console.error("Erro na navegação:", error);
+                    // Método direto como fallback final
+                    window.location.href = subItem.href;
+                  }
+                  
                   onClose();
                 }}
                 className={`flex items-center px-4 py-2 rounded-md group transition-all duration-200 cursor-pointer ${
@@ -148,10 +165,28 @@ const NavItem: React.FC<{
       <Link
         href={item.href}
         onClick={(e) => {
+          console.log(`Clicou no link direto para: ${item.href}`);
           e.preventDefault();
           e.stopPropagation();
-          window.history.pushState(null, "", item.href);
-          window.dispatchEvent(new PopStateEvent("popstate"));
+          
+          // Método mais confiável para navegação
+          try {
+            // Primeiro método - usar wouter
+            window.history.pushState(null, "", item.href);
+            window.dispatchEvent(new PopStateEvent("popstate"));
+            
+            // Método alternativo com timeout como fallback
+            setTimeout(() => {
+              window.location.href = item.href;
+            }, 100);
+            
+            console.log(`Navegação para: ${item.href} iniciada`);
+          } catch (error) {
+            console.error("Erro na navegação:", error);
+            // Método direto como fallback final
+            window.location.href = item.href;
+          }
+          
           onClose();
         }}
         className={`flex items-center px-4 py-3 rounded-md group transition-all duration-200 cursor-pointer ${
