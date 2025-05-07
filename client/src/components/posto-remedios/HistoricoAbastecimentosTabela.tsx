@@ -54,7 +54,8 @@ export default function HistoricoAbastecimentosTabela({
   onRefresh
 }: HistoricoAbastecimentosTabelaProps) {
   const { toast } = useToast();
-  const { user } = useAuth(); // Para verificar se o usuário é admin
+  const auth = useAuth(); // Para verificar se o usuário é admin
+  const { user } = auth || {};
   const [internalRegistros, setInternalRegistros] = useState<Abastecimento[]>([]);
   const [filtroPlaca, setFiltroPlaca] = useState('');
   const [internalLoading, setInternalLoading] = useState(false);
@@ -233,24 +234,43 @@ export default function HistoricoAbastecimentosTabela({
     
     setDeleteLoading(true);
     try {
-      // Obter token JWT do localStorage para autenticação
-      const authToken = localStorage.getItem('authToken');
+      // Obter token JWT do Auth Context para garantir que é o token mais recente
+      const user = auth?.user;
+      const token = localStorage.getItem('authToken');
       
-      if (!authToken) {
+      if (!user || !token) {
+        console.error('Usuário não autenticado ou token ausente:', { user: !!user, token: !!token });
         toast({
-          title: 'Erro',
-          description: 'Autenticação necessária para excluir registros',
+          title: 'Erro de autenticação',
+          description: 'Você precisa estar autenticado como administrador para excluir registros',
           variant: 'destructive',
         });
         return;
       }
       
-      console.log(`Tentando excluir registro ${deletingId} com token JWT:`, authToken.substring(0, 15) + '...');
+      console.log('Autenticação para exclusão:', { 
+        usuario: user.email, 
+        role: user.role,
+        tokenLength: token.length,
+        tokenStart: token.substring(0, 10),
+        tokenEnd: token.substring(token.length - 10)
+      });
       
+      // Verificar se o usuário tem permissão de admin
+      if (user.role !== 'admin') {
+        toast({
+          title: 'Permissão negada',
+          description: 'Apenas administradores podem excluir registros',
+          variant: 'destructive', 
+        });
+        return;
+      }
+      
+      // Fazer a requisição de exclusão
       const response = await fetch(`/api/posto-remedios/abastecimentos/${deletingId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${authToken}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         credentials: 'include' // Incluir cookies para garantir que a sessão seja enviada
@@ -259,9 +279,11 @@ export default function HistoricoAbastecimentosTabela({
       console.log('Resposta da exclusão:', {
         status: response.status,
         statusText: response.statusText,
+        url: response.url,
         ok: response.ok
       });
       
+      // Verificar resposta
       if (response.ok) {
         toast({
           title: 'Sucesso',
@@ -272,12 +294,25 @@ export default function HistoricoAbastecimentosTabela({
         // Atualizar a lista de registros
         carregarRegistros();
       } else {
-        const errorData = await response.json().catch(() => ({ message: `Erro ${response.status}: ${response.statusText}` }));
-        console.error('Erro retornado pelo servidor:', errorData);
-        throw new Error(errorData.message || 'Erro ao excluir registro');
+        // Tentar obter detalhes do erro
+        let errorMessage = 'Erro ao excluir registro';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || `Erro ${response.status}: ${response.statusText}`;
+          console.error('Detalhes do erro:', errorData);
+        } catch (jsonError) {
+          console.error('Erro ao processar resposta JSON:', jsonError);
+          errorMessage = `Erro ${response.status}: ${response.statusText}`;
+        }
+        
+        toast({
+          title: 'Falha na exclusão',
+          description: errorMessage,
+          variant: 'destructive',
+        });
       }
     } catch (error: any) {
-      console.error('Erro ao excluir registro:', error);
+      console.error('Exceção ao excluir registro:', error);
       toast({
         title: 'Erro',
         description: error.message || 'Falha ao excluir registro',
@@ -298,13 +333,11 @@ export default function HistoricoAbastecimentosTabela({
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              <div className="flex items-center gap-2 text-amber-500">
+              <div className="flex items-center gap-2 text-amber-500 mb-2">
                 <AlertTriangle className="h-5 w-5" />
                 <span>Esta ação não pode ser desfeita.</span>
               </div>
-              <p className="mt-2">
-                Você tem certeza que deseja excluir o registro #{deletingId}?
-              </p>
+              Você tem certeza que deseja excluir o registro #{deletingId}?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
