@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -55,6 +55,34 @@ export default function HistoricoAbastecimentosTabela({
   console.log("[HISTÓRICO TABELA] Modo:", externalRegistros ? "Externo" : "Interno");
   console.log("[HISTÓRICO TABELA] Total de registros:", registros?.length || 0);
   console.log("[HISTÓRICO TABELA] Estado de carregamento:", loading);
+  
+  // Inicializar carregamento de dados ao montar o componente
+  useEffect(() => {
+    // Carregar registros na inicialização do componente
+    carregarRegistros();
+    
+    // Atualizar registros automaticamente a cada 20 segundos
+    const interval = setInterval(() => {
+      console.log("[HISTÓRICO TABELA] Atualizando dados automaticamente...");
+      carregarRegistros();
+    }, 20000);
+    
+    // Função para limpar o intervalo quando o componente for desmontado
+    return () => clearInterval(interval);
+  }, []);
+  
+  // Atualizar quando o filtro de placa mudar
+  useEffect(() => {
+    // Se temos um filtro, vamos buscar após um curto delay (debounce simples)
+    const timeoutId = setTimeout(() => {
+      if (filtroPlaca.trim()) {
+        carregarRegistros();
+      }
+    }, 800);
+    
+    // Limpar o timeout quando o componente for desmontado ou o filtro mudar novamente
+    return () => clearTimeout(timeoutId);
+  }, [filtroPlaca]);
 
   // Carregar registros - dependendo do modo (interno ou externo)
   const carregarRegistros = async () => {

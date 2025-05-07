@@ -109,6 +109,26 @@ export default function PostoRemediosForm() {
           observacoes: "",
           tipo_veiculo: "frota"
         });
+        
+        // Atualizar a tabela de histórico - Verifica se existe uma função global para isso
+        if (window.location.pathname.includes('/posto-remedios')) {
+          console.log("Atualizando histórico após cadastro bem-sucedido");
+          
+          // Se estivermos na página do posto remédios, vamos mudar para a aba de histórico
+          const historicoTab = document.querySelector('[value="historico"]');
+          if (historicoTab) {
+            (historicoTab as HTMLElement).click();
+          }
+          
+          // Acionar evento de atualização - isto irá recarregar os dados
+          setTimeout(() => {
+            const atualizarBtn = document.querySelector('button:has(.h-4.w-4.mr-2)');
+            if (atualizarBtn) {
+              console.log("Clicando no botão de atualizar automaticamente");
+              (atualizarBtn as HTMLElement).click();
+            }
+          }, 500);
+        }
       } else {
         const errorData = await response.json();
         setStatus(`Erro ao enviar: ${errorData.message || 'Falha ao registrar'}`);
