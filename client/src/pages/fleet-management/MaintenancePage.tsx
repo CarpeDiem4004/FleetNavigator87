@@ -671,11 +671,11 @@ export default function MaintenancePage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="0">Selecione uma oficina</SelectItem>
-                        {workshops.map((workshop) => (
+                        {Array.isArray(workshops) ? workshops.map((workshop) => (
                           <SelectItem key={workshop.id} value={workshop.id.toString()}>
                             {workshop.name}
                           </SelectItem>
-                        ))}
+                        )) : <SelectItem value="-1">Erro ao carregar oficinas</SelectItem>}
                       </SelectContent>
                     </Select>
                   </div>
@@ -702,11 +702,11 @@ export default function MaintenancePage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="0">Selecione uma base</SelectItem>
-                          {bases.map((base) => (
+                          {Array.isArray(bases) ? bases.map((base) => (
                             <SelectItem key={base.id} value={base.id.toString()}>
                               {base.name}
                             </SelectItem>
-                          ))}
+                          )) : <SelectItem value="-1">Erro ao carregar bases</SelectItem>}
                         </SelectContent>
                       </Select>
                     )}
@@ -870,7 +870,7 @@ export default function MaintenancePage() {
                   Selecione o Novo Status
                 </Label>
                 <div className="grid grid-cols-1 gap-2">
-                  {selectedMaintenance && getNextAvailableStatuses(selectedMaintenance.status).map(status => (
+                  {selectedMaintenance && Array.isArray(getNextAvailableStatuses(selectedMaintenance.status)) && getNextAvailableStatuses(selectedMaintenance.status).map(status => (
                     <Button
                       key={status}
                       type="button"
