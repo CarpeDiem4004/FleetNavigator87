@@ -4744,6 +4744,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Deletar um registro de abastecimento (SOMENTE ADMIN)
   app.delete("/api/posto-remedios/abastecimentos/:id", isAdmin, async (req, res) => {
     try {
+      console.log(`[DELETE Posto Remédios] Processando requisição DELETE para ID: ${req.params.id}`);
+      console.log(`[DELETE Posto Remédios] Usuário autenticado:`, {
+        sessionUser: req.user ? { 
+          id: req.user.id, 
+          email: req.user.email,
+          role: req.user.role 
+        } : null,
+        jwtUser: (req as any).supabaseUser ? { 
+          id: (req as any).supabaseUser.id,
+          email: (req as any).supabaseUser.email,
+          role: (req as any).supabaseUser.role
+        } : null
+      });
+      
       const id = parseInt(req.params.id);
       
       if (isNaN(id)) {
@@ -4756,48 +4770,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verificar se o registro existe antes de tentar excluir
       const checkResult = await pool.query("SELECT id FROM posto_remedios_abastecimentos WHERE id = $1", [id]);
       
-      if (checkResult.rowCount === 0) {
+      if (checkResult.rowCount === 0 || !checkResult.rowCount) {
         return res.status(404).json({
           success: false,
           message: "Registro não encontrado"
         });
       }
       
-      // Registrar a operação de exclusão em um log
-      const logQuery = `
-        INSERT INTO logs_operacoes (
-          user_id, 
-          user_email, 
-          user_role, 
-          tipo_operacao, 
-          tabela, 
-          registro_id, 
-          detalhes
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-      `;
+      // Obter informações do usuário (sessão ou JWT)
+      const user = req.user || (req as any).supabaseUser;
       
-      await pool.query(logQuery, [
-        req.user.id,
-        req.user.email,
-        req.user.role,
-        'exclusão',
-        'posto_remedios_abastecimentos',
-        id,
-        `Excluído pelo administrador em ${new Date().toISOString()}`
-      ]).catch(err => {
-        console.error("Erro ao registrar log de exclusão:", err);
+      if (!user) {
+        console.error("[DELETE Posto Remédios] Usuário não encontrado na requisição");
+        return res.status(401).json({
+          success: false,
+          message: "Usuário não autenticado"
+        });
+      }
+      
+      console.log(`[DELETE Posto Remédios] Usuário confirmado: ${user.email} (${user.role})`);
+      
+      try {
+        // Verificar se a tabela logs_operacoes existe
+        const tableCheck = await pool.query(`
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public'
+            AND table_name = 'logs_operacoes'
+          );
+        `);
+        
+        const logsTableExists = tableCheck.rows[0].exists;
+        
+        if (!logsTableExists) {
+          // Criar tabela de logs se não existir
+          console.log("[DELETE Posto Remédios] Criando tabela logs_operacoes");
+          await pool.query(`
+            CREATE TABLE IF NOT EXISTS logs_operacoes (
+              id SERIAL PRIMARY KEY,
+              user_id INTEGER,
+              user_email VARCHAR(255),
+              user_role VARCHAR(50),
+              tipo_operacao VARCHAR(50) NOT NULL,
+              tabela VARCHAR(100) NOT NULL,
+              registro_id INTEGER,
+              detalhes TEXT,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+          `);
+        }
+        
+        // Registrar a operação de exclusão em um log
+        const logQuery = `
+          INSERT INTO logs_operacoes (
+            user_id, 
+            user_email, 
+            user_role, 
+            tipo_operacao, 
+            tabela, 
+            registro_id, 
+            detalhes
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `;
+        
+        await pool.query(logQuery, [
+          user.id,
+          user.email,
+          user.role,
+          'exclusão',
+          'posto_remedios_abastecimentos',
+          id,
+          `Excluído pelo administrador em ${new Date().toISOString()}`
+        ]);
+        
+        console.log(`[DELETE Posto Remédios] Log de exclusão registrado para ID ${id}`);
+      } catch (logError) {
+        console.error("[DELETE Posto Remédios] Erro ao registrar log de exclusão:", logError);
         // Continuamos a operação mesmo se falhar o log
-      });
+      }
       
       // Executar a exclusão
       const result = await pool.query("DELETE FROM posto_remedios_abastecimentos WHERE id = $1", [id]);
+      console.log(`[DELETE Posto Remédios] Registro ${id} excluído com sucesso`);
       
       return res.status(200).json({
         success: true,
         message: "Registro excluído com sucesso"
       });
     } catch (error) {
-      console.error("Erro ao excluir registro do posto Remédios:", error);
+      console.error("[DELETE Posto Remédios] Erro ao excluir registro:", error);
       return res.status(500).json({
         success: false,
         message: "Erro ao excluir registro do posto Remédios"
