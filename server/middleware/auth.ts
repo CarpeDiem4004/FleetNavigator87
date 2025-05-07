@@ -195,7 +195,7 @@ export const hasMaintenanceAccess = async (req: Request, res: Response, next: Ne
           (req as any).hybridUser = verifyResult.user;
           
           // Verificar permissões
-          const user = decoded.user;
+          const user = verifyResult.user;
           console.log('[hasMaintenanceAccess] Usuário autenticado via JWT:', {
             id: user.id,
             email: user.email,
