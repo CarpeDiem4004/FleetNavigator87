@@ -453,16 +453,53 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
                   );
               })}
               
-              {/* Inserir Menu Postos Externos FORÇADO na posição correta */}
-              <div className="mb-1 bg-primary-600/20 border border-primary-500 rounded-md p-1">
-                <div className="text-xs text-primary-300 mx-2 mt-1 mb-2">Posto Externo</div>
-                <NavItemWithSubmenu 
-                  item={postoExternosDiretoItem} 
-                  isActive={false} 
-                  isSubItemActive={location.includes('/posto-murici') || location.includes('/posto-remedios')}
-                  onClose={closeSidebar}
-                  currentLocation={location}
-                />
+              {/* Inserir DIRETAMENTE o menu de Postos Externos COMO COMPONENTE DIRETO */}
+              <div className="mb-4 bg-primary-600/20 border-2 border-primary-500 rounded-md p-2 mt-2 mb-2 overflow-visible">
+                <div className="text-sm text-white font-bold mx-2 mt-1 mb-2 flex items-center gap-2">
+                  <Droplets className="text-primary-300" size={16} />
+                  <span>Postos Externos</span>
+                </div>
+                <div className="pl-4 space-y-2">
+                  <Link 
+                    href="/posto-remedios"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      navigateTo('/posto-remedios');
+                      closeSidebar();
+                    }}
+                    className="flex items-center px-3 py-2 text-sm rounded-md group transition-all duration-200 cursor-pointer text-primary-100 hover:bg-primary-700 hover:shadow-sm"
+                  >
+                    <Fuel size={16} />
+                    <span className="ml-2">Posto Remédios</span>
+                  </Link>
+                  <Link 
+                    href="/posto-murici"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      navigateTo('/posto-murici');
+                      closeSidebar();
+                    }}
+                    className="flex items-center px-3 py-2 text-sm rounded-md group transition-all duration-200 cursor-pointer text-primary-100 hover:bg-primary-700 hover:shadow-sm"
+                  >
+                    <Fuel size={16} />
+                    <span className="ml-2">Posto Murici</span>
+                  </Link>
+                  <Link 
+                    href="/posto-murici/links"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      navigateTo('/posto-murici/links');
+                      closeSidebar();
+                    }}
+                    className="flex items-center px-3 py-2 text-sm rounded-md group transition-all duration-200 cursor-pointer text-primary-100 hover:bg-primary-700 hover:shadow-sm"
+                  >
+                    <Fuel size={16} />
+                    <span className="ml-2">Posto Murici Links</span>
+                  </Link>
+                </div>
               </div>
               
               {/* Inserir Abastecimento e outros itens restantes */}
