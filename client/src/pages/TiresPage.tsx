@@ -132,7 +132,6 @@ const TiresPage: React.FC = () => {
     data_aquisicao: new Date().toISOString().split('T')[0],
     veiculo_placa: null,
     posicao: null,
-    km_inicial: 0,
     km_atual: 0,
     localizacao: 'almoxarifado',
     status: 'estoque',
@@ -314,7 +313,6 @@ const TiresPage: React.FC = () => {
         data_aquisicao: new Date().toISOString().split('T')[0],
         veiculo_placa: null,
         posicao: null,
-        km_inicial: 0,
         km_atual: 0,
         localizacao: 'almoxarifado',
         status: 'estoque',
@@ -678,22 +676,7 @@ const TiresPage: React.FC = () => {
                     </div>
                   </div>
                   
-                  {/* KM Inicial */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="km_inicial">KM Inicial</Label>
-                      <Input
-                        id="km_inicial"
-                        type="number"
-                        value={newTire.km_inicial?.toString() || '0'}
-                        onChange={(e) => setNewTire({...newTire, km_inicial: parseInt(e.target.value) || 0})}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      {/* Campo vazio para manter o layout em grid */}
-                    </div>
-                  </div>
+                  {/* Espaço removido - o campo KM Inicial foi removido */}
                   
                   {/* Quantidade e Valor Unitário */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
