@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import navigateTo from '@/lib/navigation';
 
 export function PostoMuriciLinksPage() {
   return (
@@ -20,22 +21,7 @@ export function PostoMuriciLinksPage() {
           <CardFooter>
             <Button 
               className="w-full"
-              onClick={() => {
-                console.log("Navegando para /posto-murici");
-                // Método múltiplo para navegação garantida
-                try {
-                  window.history.pushState(null, "", "/posto-murici");
-                  window.dispatchEvent(new PopStateEvent("popstate"));
-                  
-                  // Método alternativo com timeout como fallback
-                  setTimeout(() => {
-                    window.location.href = "/posto-murici";
-                  }, 100);
-                } catch (error) {
-                  console.error("Erro na navegação:", error);
-                  window.location.href = "/posto-murici";
-                }
-              }}
+              onClick={() => navigateTo('/posto-murici')}
             >
               Acessar Página Principal
             </Button>
@@ -53,22 +39,7 @@ export function PostoMuriciLinksPage() {
           <CardFooter>
             <Button 
               className="w-full"
-              onClick={() => {
-                console.log("Navegando para /posto-murici/operador");
-                // Método múltiplo para navegação garantida
-                try {
-                  window.history.pushState(null, "", "/posto-murici/operador");
-                  window.dispatchEvent(new PopStateEvent("popstate"));
-                  
-                  // Método alternativo com timeout como fallback
-                  setTimeout(() => {
-                    window.location.href = "/posto-murici/operador";
-                  }, 100);
-                } catch (error) {
-                  console.error("Erro na navegação:", error);
-                  window.location.href = "/posto-murici/operador";
-                }
-              }}
+              onClick={() => navigateTo('/posto-murici/operador')}
             >
               Acessar Interface do Operador
             </Button>
@@ -86,22 +57,7 @@ export function PostoMuriciLinksPage() {
           <CardFooter>
             <Button 
               className="w-full"
-              onClick={() => {
-                console.log("Navegando para /posto-murici/public");
-                // Método múltiplo para navegação garantida
-                try {
-                  window.history.pushState(null, "", "/posto-murici/public");
-                  window.dispatchEvent(new PopStateEvent("popstate"));
-                  
-                  // Método alternativo com timeout como fallback
-                  setTimeout(() => {
-                    window.location.href = "/posto-murici/public";
-                  }, 100);
-                } catch (error) {
-                  console.error("Erro na navegação:", error);
-                  window.location.href = "/posto-murici/public";
-                }
-              }}
+              onClick={() => navigateTo('/posto-murici/public')}
             >
               Acessar Interface Pública
             </Button>
