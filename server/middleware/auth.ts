@@ -163,50 +163,109 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
  * Middleware para verificar se o usuário tem permissão para acessar funcionalidades de manutenção
  * Permite acesso para admin, gestor, oficina ou baseId=12 (Gestão de Frotas)
  */
-export const hasMaintenanceAccess = (req: Request, res: Response, next: NextFunction) => {
-  // Adicionar logs para diagnóstico
-  console.log('[hasMaintenanceAccess] Verificando acesso para rota:', req.originalUrl, {
-    isAuthenticated: req.isAuthenticated(),
-    hasSession: !!req.session,
-    hasSupabaseUser: !!(req as any).supabaseUser,
-    hasHybridUser: !!(req as any).hybridUser,
-    authHeader: !!req.headers.authorization
-  });
-  
-  // Verificar autenticação primeiro
-  if (!req.isAuthenticated() && !(req as any).supabaseUser && !(req as any).hybridUser) {
-    console.log('[hasMaintenanceAccess] Acesso negado - usuário não autenticado');
-    return res.status(401).json({ message: "Usuário não autenticado" });
+export const hasMaintenanceAccess = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Adicionar logs para diagnóstico
+    console.log('[hasMaintenanceAccess] Verificando acesso para rota:', req.originalUrl, {
+      isAuthenticated: req.isAuthenticated(),
+      hasSession: !!req.session,
+      hasSupabaseUser: !!(req as any).supabaseUser,
+      hasHybridUser: !!(req as any).hybridUser,
+      authHeader: !!req.headers.authorization
+    });
+    
+    // Se temos um cabeçalho de autorização, temos que verificar o token JWT
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      console.log('[hasMaintenanceAccess] Verificando token JWT do cabeçalho Authorization');
+      const token = authHeader.substring(7); // Remover 'Bearer ' do início
+      
+      try {
+        // Verificar o token JWT diretamente usando o serviço híbrido
+        // Importar getHybridUserService para verificar token (usando dynamic import)
+        const hybridModule = await import('../../hybrid-user-service');
+        const hybridService = hybridModule.getHybridUserService();
+        
+        // Usar o serviço híbrido para verificar o token
+        const verifyResult = await hybridService.verifyToken(token, true);
+        console.log('[hasMaintenanceAccess] Token JWT verificado:', verifyResult);
+        
+        if (verifyResult && verifyResult.user) {
+          // Usuário autenticado via JWT, anexar à requisição
+          (req as any).hybridUser = verifyResult.user;
+          
+          // Verificar permissões
+          const user = decoded.user;
+          console.log('[hasMaintenanceAccess] Usuário autenticado via JWT:', {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            baseId: user.baseId
+          });
+          
+          if (user && (
+            isUserAdmin(user) ||
+            user.role === 'gestor' || 
+            user.baseId === FLEET_MANAGEMENT_BASE_ID || 
+            user.role === 'oficina'
+          )) {
+            console.log('[hasMaintenanceAccess] Acesso concedido para usuário JWT:', user.email);
+            return next();
+          }
+          
+          console.log("[hasMaintenanceAccess] Acesso negado a recurso de manutenção (permissões insuficientes):", {
+            url: req.originalUrl,
+            method: req.method,
+            role: user.role,
+            baseId: user.baseId,
+            email: user.email
+          });
+          
+          return res.status(403).json({ message: "Acesso negado. Permissão de gestão de frotas, admin, gestor ou oficina necessária." });
+        }
+      } catch (jwtError) {
+        console.error('[hasMaintenanceAccess] Erro ao verificar token JWT:', jwtError);
+      }
+    }
+    
+    // Se não temos token JWT ou ele falhou, verificar autenticação normal
+    if (!req.isAuthenticated() && !(req as any).supabaseUser && !(req as any).hybridUser) {
+      console.log('[hasMaintenanceAccess] Acesso negado - usuário não autenticado');
+      return res.status(401).json({ message: "Usuário não autenticado" });
+    }
+    
+    // Verifica se o usuário está autenticado e tem permissão de acesso a manutenção
+    const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
+    console.log('[hasMaintenanceAccess] Usuário autenticado (sessão):', {
+      id: user?.id,
+      email: user?.email,
+      role: user?.role,
+      baseId: user?.baseId
+    });
+    
+    if (user && (
+        isUserAdmin(user) ||
+        user.role === 'gestor' || 
+        user.baseId === FLEET_MANAGEMENT_BASE_ID || 
+        user.role === 'oficina'
+      )) {
+      console.log('[hasMaintenanceAccess] Acesso concedido para usuário:', user.email);
+      return next();
+    }
+    
+    console.log("[hasMaintenanceAccess] Acesso negado a recurso de manutenção:", {
+      url: req.originalUrl,
+      method: req.method,
+      role: user?.role,
+      baseId: user?.baseId,
+      email: user?.email
+    });
+    
+    return res.status(403).json({ message: "Acesso negado. Permissão de gestão de frotas, admin, gestor ou oficina necessária." });
+  } catch (error) {
+    console.error('[hasMaintenanceAccess] Erro inesperado:', error);
+    return res.status(500).json({ message: "Erro interno do servidor" });
   }
-  
-  // Verifica se o usuário está autenticado e tem permissão de acesso a manutenção
-  const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
-  console.log('[hasMaintenanceAccess] Usuário autenticado:', {
-    id: user?.id,
-    email: user?.email,
-    role: user?.role,
-    baseId: user?.baseId
-  });
-  
-  if (user && (
-      isUserAdmin(user) ||
-      user.role === 'gestor' || 
-      user.baseId === FLEET_MANAGEMENT_BASE_ID || 
-      user.role === 'oficina'
-    )) {
-    console.log('[hasMaintenanceAccess] Acesso concedido para usuário:', user.email);
-    return next();
-  }
-  
-  console.log("[hasMaintenanceAccess] Acesso negado a recurso de manutenção:", {
-    url: req.originalUrl,
-    method: req.method,
-    role: user?.role,
-    baseId: user?.baseId,
-    email: user?.email
-  });
-  
-  return res.status(403).json({ message: "Acesso negado. Permissão de gestão de frotas, admin, gestor ou oficina necessária." });
 };
 
 /**
