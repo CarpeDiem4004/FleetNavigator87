@@ -80,60 +80,61 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
  */
 export const hasMaintenanceAccess = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Verificar autenticação primeiro
-    console.log('[hasMaintenanceAccess] Verificando acesso para rota:', req.originalUrl, {
-      isAuthenticated: req.isAuthenticated(),
-      hasSession: !!req.session,
-      hasSupabaseUser: !!(req as any).supabaseUser,
-      hasHybridUser: !!(req as any).hybridUser,
-      authHeader: !!req.headers.authorization
-    });
-    
-    // Se não houver autenticação por sessão, Supabase ou híbrida, verificar token JWT no header
-    if (!req.isAuthenticated() && !(req as any).supabaseUser && !(req as any).hybridUser) {
-      if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
-        console.log('[hasMaintenanceAccess] Verificando token JWT do cabeçalho Authorization');
+    // Verificar autenticação primeiro usando sessão, se presente
+    if (req.isAuthenticated()) {
+      console.log(`[hasMaintenanceAccess] Usuário autenticado por sessão: ${req.user?.email}`);
+    }
+    // Se não houver autenticação por sessão, verificar token JWT no header
+    else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+      console.log('[hasMaintenanceAccess] Verificando token JWT do cabeçalho Authorization');
+      
+      try {
+        // Extrair token do header Authorization
+        const token = extractJwtToken(req.headers.authorization);
         
+        // Primeiro tentar validar com Supabase
         try {
-          // Extrair token do header Authorization
-          const token = extractJwtToken(req.headers.authorization);
-          
-          // Primeiro tentar validar com Supabase
-          try {
-            const supabaseUser = await validateSupabaseToken(token);
-            if (supabaseUser) {
-              (req as any).supabaseUser = supabaseUser;
-              console.log(`[hasMaintenanceAccess] Token JWT Supabase validado para ${supabaseUser.email}`);
-            }
-          } catch (supabaseError) {
-            console.log('[hasMaintenanceAccess] Token não é do Supabase:', supabaseError.message);
+          const supabaseUser = await validateSupabaseToken(token);
+          if (supabaseUser) {
+            (req as any).supabaseUser = supabaseUser;
+            console.log(`[hasMaintenanceAccess] Token JWT Supabase validado para ${supabaseUser.email}`);
           }
-          
-          // Se ainda não temos usuário autenticado, tentar com o serviço híbrido
-          if (!(req as any).supabaseUser) {
-            try {
-              // Importar o serviço híbrido para verificar o token JWT
-              const hybridModule = await import('../../hybrid-user-service');
-              const hybridService = hybridModule.getHybridUserService();
-              
-              // Verificar token com o serviço híbrido
-              const tokenVerification = await hybridService.verifyToken(token);
-              
-              if (tokenVerification && tokenVerification.user) {
-                // Anexar usuário verificado à requisição
-                (req as any).hybridUser = tokenVerification.user;
-                console.log(`[hasMaintenanceAccess] Token JWT híbrido validado para ${tokenVerification.user.email}`);
-              } else {
-                console.log('[hasMaintenanceAccess] Token JWT híbrido inválido ou expirado');
-              }
-            } catch (hybridError) {
-              console.error('[hasMaintenanceAccess] Erro ao verificar token JWT híbrido:', hybridError);
-            }
-          }
-        } catch (jwtError) {
-          console.error('[hasMaintenanceAccess] Erro ao extrair token JWT:', jwtError);
+        } catch (error) {
+          const supabaseError = error as Error; 
+          console.log('[hasMaintenanceAccess] Token não é do Supabase:', supabaseError.message);
         }
+        
+        // Se ainda não temos usuário autenticado, tentar com o serviço híbrido
+        if (!(req as any).supabaseUser) {
+          try {
+            // Importar o serviço híbrido para verificar o token JWT
+            const hybridModule = await import('../../hybrid-user-service');
+            const hybridService = hybridModule.getHybridUserService();
+            
+            // Verificar token com o serviço híbrido
+            const tokenVerification = await hybridService.verifyToken(token, true);
+            
+            if (tokenVerification && tokenVerification.user) {
+              // Anexar usuário verificado à requisição
+              (req as any).hybridUser = tokenVerification.user;
+              console.log(`[hasMaintenanceAccess] Token JWT híbrido validado para ${tokenVerification.user.email}`);
+            } else {
+              console.log('[hasMaintenanceAccess] Token JWT híbrido inválido ou expirado');
+            }
+            
+            // Em caso de problema com o log de resultado
+            console.log('[hasMaintenanceAccess] Resultado da verificação do token JWT híbrido:', JSON.stringify(tokenVerification));
+          } catch (error) {
+            const hybridError = error as Error;
+            console.error('[hasMaintenanceAccess] Erro ao verificar token JWT híbrido:', hybridError.message);
+          }
+        }
+      } catch (error) {
+        const jwtError = error as Error;
+        console.error('[hasMaintenanceAccess] Erro ao extrair token JWT:', jwtError.message);
       }
+    } else {
+      console.log('[hasMaintenanceAccess] Nenhum método de autenticação encontrado');
     }
     
     // Verificar se alguma autenticação foi bem-sucedida
@@ -174,7 +175,8 @@ export const hasMaintenanceAccess = async (req: Request, res: Response, next: Ne
     
     return res.status(403).json({ message: "Acesso negado. Permissão de gestão de frotas, admin, gestor ou oficina necessária." });
   } catch (error) {
-    console.error('[hasMaintenanceAccess] Erro inesperado:', error);
+    const serverError = error as Error;
+    console.error('[hasMaintenanceAccess] Erro inesperado:', serverError.message);
     return res.status(500).json({ message: "Erro interno do servidor" });
   }
 };
