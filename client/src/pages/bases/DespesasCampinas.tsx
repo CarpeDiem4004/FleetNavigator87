@@ -83,7 +83,7 @@ const DespesasCampinas: React.FC = () => {
   const { data: expenses, isLoading, error } = useQuery({
     queryKey: ['/api/bases/campinas/despesas'],
     queryFn: async () => {
-      const response = await apiRequest<BaseExpense[]>('/api/bases/campinas/despesas');
+      const response = await apiRequest('/api/bases/campinas/despesas');
       return response;
     },
   });
@@ -226,174 +226,244 @@ const DespesasCampinas: React.FC = () => {
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 bg-blue-100 p-6 rounded-lg">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="month"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Mês</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 bg-blue-100 p-6 rounded-lg">
+                {/* Mês e Ano */}
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Mês</h3>
+                    <FormField
+                      control={form.control}
+                      name="month"
+                      render={({ field }) => (
+                        <FormItem>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="bg-white">
+                                <SelectValue placeholder="Selecione o mês" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="1">Janeiro</SelectItem>
+                              <SelectItem value="2">Fevereiro</SelectItem>
+                              <SelectItem value="3">Março</SelectItem>
+                              <SelectItem value="4">Abril</SelectItem>
+                              <SelectItem value="5">Maio</SelectItem>
+                              <SelectItem value="6">Junho</SelectItem>
+                              <SelectItem value="7">Julho</SelectItem>
+                              <SelectItem value="8">Agosto</SelectItem>
+                              <SelectItem value="9">Setembro</SelectItem>
+                              <SelectItem value="10">Outubro</SelectItem>
+                              <SelectItem value="11">Novembro</SelectItem>
+                              <SelectItem value="12">Dezembro</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Ano</h3>
+                    <FormField
+                      control={form.control}
+                      name="year"
+                      render={({ field }) => (
+                        <FormItem>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="bg-white">
+                                <SelectValue placeholder="Selecione o ano" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="2024">2024</SelectItem>
+                              <SelectItem value="2025">2025</SelectItem>
+                              <SelectItem value="2026">2026</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* Água e Energia */}
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Água (R$)</h3>
+                    <FormField
+                      control={form.control}
+                      name="agua"
+                      render={({ field }) => (
+                        <FormItem>
                           <FormControl>
-                            <SelectTrigger className="bg-white">
-                              <SelectValue placeholder="Selecione o mês" />
-                            </SelectTrigger>
+                            <div className="relative">
+                              <span className="absolute left-3 top-2.5 text-gray-500">R$</span>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                placeholder="0.00"
+                                className="pl-8 bg-white"
+                                {...field}
+                              />
+                            </div>
                           </FormControl>
-                          <SelectContent>
-                            <SelectItem value="1">Janeiro</SelectItem>
-                            <SelectItem value="2">Fevereiro</SelectItem>
-                            <SelectItem value="3">Março</SelectItem>
-                            <SelectItem value="4">Abril</SelectItem>
-                            <SelectItem value="5">Maio</SelectItem>
-                            <SelectItem value="6">Junho</SelectItem>
-                            <SelectItem value="7">Julho</SelectItem>
-                            <SelectItem value="8">Agosto</SelectItem>
-                            <SelectItem value="9">Setembro</SelectItem>
-                            <SelectItem value="10">Outubro</SelectItem>
-                            <SelectItem value="11">Novembro</SelectItem>
-                            <SelectItem value="12">Dezembro</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="year"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Ano</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Energia (R$)</h3>
+                    <FormField
+                      control={form.control}
+                      name="energia"
+                      render={({ field }) => (
+                        <FormItem>
                           <FormControl>
-                            <SelectTrigger className="bg-white">
-                              <SelectValue placeholder="Selecione o ano" />
-                            </SelectTrigger>
+                            <div className="relative">
+                              <span className="absolute left-3 top-2.5 text-gray-500">R$</span>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                placeholder="0.00"
+                                className="pl-8 bg-white"
+                                {...field}
+                              />
+                            </div>
                           </FormControl>
-                          <SelectContent>
-                            <SelectItem value="2024">2024</SelectItem>
-                            <SelectItem value="2025">2025</SelectItem>
-                            <SelectItem value="2026">2026</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="agua"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Água (R$)</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <span className="absolute left-3 top-2.5 text-gray-500">R$</span>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              placeholder="0.00"
-                              className="pl-8"
-                              {...field}
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="energia"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Energia (R$)</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <span className="absolute left-3 top-2.5 text-gray-500">R$</span>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              placeholder="0.00"
-                              className="pl-8"
-                              {...field}
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                {/* Funcionários e PJ */}
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Funcionários (R$)</h3>
+                    <FormField
+                      control={form.control}
+                      name="funcionarios"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <div className="relative">
+                              <span className="absolute left-3 top-2.5 text-gray-500">R$</span>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                placeholder="0.00"
+                                className="pl-8 bg-white"
+                                {...field}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">PJ (R$)</h3>
+                    <FormField
+                      control={form.control}
+                      name="pj"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <div className="relative">
+                              <span className="absolute left-3 top-2.5 text-gray-500">R$</span>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                placeholder="0.00"
+                                className="pl-8 bg-white"
+                                {...field}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="funcionarios"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Funcionários (R$)</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <span className="absolute left-3 top-2.5 text-gray-500">R$</span>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              placeholder="0.00"
-                              className="pl-8"
-                              {...field}
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="pj"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>PJ (R$)</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <span className="absolute left-3 top-2.5 text-gray-500">R$</span>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              placeholder="0.00"
-                              className="pl-8"
-                              {...field}
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                {/* Aluguel e Internet */}
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Aluguel (R$)</h3>
+                    <FormField
+                      control={form.control}
+                      name="aluguel"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <div className="relative">
+                              <span className="absolute left-3 top-2.5 text-gray-500">R$</span>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                placeholder="0.00"
+                                className="pl-8 bg-white"
+                                {...field}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Internet (R$)</h3>
+                    <FormField
+                      control={form.control}
+                      name="internet"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <div className="relative">
+                              <span className="absolute left-3 top-2.5 text-gray-500">R$</span>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                placeholder="0.00"
+                                className="pl-8 bg-white"
+                                {...field}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                {/* Despesas Extras */}
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Despesas Extras (R$)</h3>
                   <FormField
                     control={form.control}
-                    name="aluguel"
+                    name="despesas_extras"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Aluguel (R$)</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <span className="absolute left-3 top-2.5 text-gray-500">R$</span>
@@ -402,30 +472,7 @@ const DespesasCampinas: React.FC = () => {
                               step="0.01"
                               min="0"
                               placeholder="0.00"
-                              className="pl-8"
-                              {...field}
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="internet"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Internet (R$)</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <span className="absolute left-3 top-2.5 text-gray-500">R$</span>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              placeholder="0.00"
-                              className="pl-8"
+                              className="pl-8 bg-white"
                               {...field}
                             />
                           </div>
@@ -436,47 +483,26 @@ const DespesasCampinas: React.FC = () => {
                   />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="despesas_extras"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Despesas Extras (R$)</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <span className="absolute left-3 top-2.5 text-gray-500">R$</span>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            placeholder="0.00"
-                            className="pl-8"
+                {/* Observações */}
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Observações</h3>
+                  <FormField
+                    control={form.control}
+                    name="observacoes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Observações adicionais sobre as despesas deste mês"
+                            className="resize-none bg-white"
                             {...field}
                           />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="observacoes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Observações</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Observações adicionais sobre as despesas deste mês"
-                          className="resize-none"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <DialogFooter>
                   <Button
@@ -575,7 +601,11 @@ const DespesasCampinas: React.FC = () => {
                       </TableCell>
                       <TableCell>{getStatusDisplay(expense.status)}</TableCell>
                       <TableCell className="text-sm text-gray-500">
-                        {new Date(expense.last_updated).toLocaleDateString('pt-BR')}
+                        {new Date(expense.last_updated).toLocaleDateString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                        })}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -584,13 +614,8 @@ const DespesasCampinas: React.FC = () => {
             </div>
           )}
         </CardContent>
-        <CardFooter className="bg-gray-50 border-t flex justify-between">
-          <div className="text-sm text-gray-500">
-            Última atualização: {expenses && expenses.length > 0 
-              ? new Date(expenses[0].last_updated).toLocaleString('pt-BR') 
-              : 'Nunca atualizado'}
-          </div>
-          <Button variant="outline" size="sm" className="text-gray-500">
+        <CardFooter className="bg-gray-50 border-t flex justify-end p-4">
+          <Button variant="outline" className="flex items-center">
             <Download className="w-4 h-4 mr-2" />
             Exportar
           </Button>
