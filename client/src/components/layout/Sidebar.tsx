@@ -192,16 +192,16 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText },
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
-    // Postos Externos com submenu atualizado
-    { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
-      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
-      { name: 'Posto Murici', href: '/posto-murici', icon: Fuel },
-      { name: 'Posto Murici Links', href: '/posto-murici/links', icon: Fuel }
+    // Postos Externos com submenu atualizado - showInMenu forçado como true
+    { name: 'Postos Externos', href: '#', icon: Droplets, showInMenu: true, subItems: [
+      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel, showInMenu: true },
+      { name: 'Posto Murici', href: '/posto-murici', icon: Fuel, showInMenu: true },
+      { name: 'Posto Murici Links', href: '/posto-murici/links', icon: Fuel, showInMenu: true }
     ]},
     // Item de menu separado para Cartão de Abastecimento
-    { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
-      { name: 'Operações', href: '/fuel-card', icon: CreditCard },
-      { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList }
+    { name: 'Cartão', href: '#', icon: CreditCard, showInMenu: true, subItems: [
+      { name: 'Operações', href: '/fuel-card', icon: CreditCard, showInMenu: true },
+      { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList, showInMenu: true }
     ]},
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
     { name: 'Line Hall', href: '/line-hall-shopee', icon: Map },
@@ -219,16 +219,16 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package },
     // Operações de combustível e abastecimento
     { name: 'Histórico Posto Murici', href: '/refueling', icon: ClipboardList },
-    // Postos Externos com submenu consistente
-    { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
-      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
-      { name: 'Posto Murici', href: '/posto-murici', icon: Fuel },
-      { name: 'Posto Murici Links', href: '/posto-murici/links', icon: Fuel }
+    // Postos Externos com submenu consistente - forçado a mostrar
+    { name: 'Postos Externos', href: '#', icon: Droplets, showInMenu: true, subItems: [
+      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel, showInMenu: true },
+      { name: 'Posto Murici', href: '/posto-murici', icon: Fuel, showInMenu: true },
+      { name: 'Posto Murici Links', href: '/posto-murici/links', icon: Fuel, showInMenu: true }
     ]},
     // Item de menu separado para Cartão de Abastecimento
-    { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
-      { name: 'Operações', href: '/fuel-card', icon: CreditCard },
-      { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList }
+    { name: 'Cartão', href: '#', icon: CreditCard, showInMenu: true, subItems: [
+      { name: 'Operações', href: '/fuel-card', icon: CreditCard, showInMenu: true },
+      { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList, showInMenu: true }
     ]},
     { name: 'Line Hall', href: '/line-hall-shopee', icon: Map },
     { name: 'Análise da Operação', href: '/fleet-management/operational-analysis', icon: BarChart4 },
@@ -245,13 +245,25 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   
   // Filtrando itens de navegação com base nas permissões do usuário
   const navItems = navItemsBase.filter(item => {
+    // Verificação para showInMenu (valor explícito para exibir o item)
+    if (item.showInMenu === true) {
+      console.log(`Menu "${item.name}" exibido devido ao showInMenu=true`);
+      return true;
+    }
+    
     // Sempre incluir menu Cartão para todos os usuários
     if (item.name === 'Cartão') {
       console.log(`Menu Cartão incluído independente de permissões`);
       return true;
     }
     
-    // Para administradores, sempre mostrar o menu Postos Externos
+    // SEMPRE MOSTRAR POSTOS EXTERNOS - FORÇAR SEM VERIFICAÇÕES
+    if (item.name === 'Postos Externos') {
+      console.log(`Menu Postos Externos FORÇADO a ser exibido sem verificações`);
+      return true;
+    }
+    
+    // Para administradores, sempre mostrar o menu Postos Externos (verificação extra)
     if (item.name === 'Postos Externos' && user.role?.toLowerCase() === 'admin') {
       console.log(`Menu Postos Externos incluído diretamente para admin`);
       return true;
@@ -268,6 +280,11 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
         console.log("Número de subitems:", item.subItems?.length || 0);
         console.log("SubItems detalhados:", JSON.stringify(item.subItems, null, 2));
         
+        // FORÇAR EXIBIÇÃO SEM VERIFICAÇÕES PARA POSTO MURICI
+        console.log(`FORÇANDO exibição do menu "Postos Externos" SEM verificações`);
+        return true;
+        
+        /* Código original comentado para substituição pela solução direta
         // Se for admin, mostrar menu independentemente das verificações
         if (user.role?.toLowerCase() === 'admin') {
           console.log(`Usuário é admin, forçando exibição do menu Postos Externos`);
@@ -290,6 +307,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
           
           console.log(`Menu "Postos Externos" será mostrado: ${temPermissao ? 'SIM ✅' : 'NÃO ❌'}`);
         }
+        */
         
         console.log("===== FIM DEBUG POSTOS EXTERNOS =====\n\n");
       }
