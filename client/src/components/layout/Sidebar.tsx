@@ -367,10 +367,12 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     name: 'Postos Externos',
     href: '#',
     icon: Droplets,
+    showInMenu: true, // Garantir que seja exibido
+    className: 'bg-primary-600/50', // Adicionar destaque
     subItems: [
-      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
-      { name: 'Posto Murici', href: '/posto-murici', icon: Fuel },
-      { name: 'Posto Murici Links', href: '/posto-murici/links', icon: Fuel }
+      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel, showInMenu: true },
+      { name: 'Posto Murici', href: '/posto-murici', icon: Fuel, showInMenu: true },
+      { name: 'Posto Murici Links', href: '/posto-murici/links', icon: Fuel, showInMenu: true }
     ]
   };
 
@@ -452,7 +454,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
               })}
               
               {/* Inserir Menu Postos Externos FORÇADO na posição correta */}
-              <div className="mb-1">
+              <div className="mb-1 bg-primary-600/20 border border-primary-500 rounded-md p-1">
+                <div className="text-xs text-primary-300 mx-2 mt-1 mb-2">Posto Externo</div>
                 <NavItemWithSubmenu 
                   item={postoExternosDiretoItem} 
                   isActive={false} 
