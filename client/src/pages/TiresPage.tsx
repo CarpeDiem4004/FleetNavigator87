@@ -179,10 +179,10 @@ const TiresPage: React.FC = () => {
       setIsLoadingStats(true);
       try {
         const response = await getTireStockStats();
-        if (response.success) {
+        if (response && response.success) {
           setStockStats(response.data);
         } else {
-          console.error("Falha ao carregar estatísticas de estoque:", response.error);
+          console.error("Falha ao carregar estatísticas de estoque");
         }
       } catch (error) {
         console.error("Erro ao buscar estatísticas de estoque:", error);
