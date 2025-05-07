@@ -593,6 +593,20 @@ const FormularioAbastecimento: React.FC<
           endpoint = `/api/abastecimento-direto/sorocaba_v2`;
           usarRotaDireta = true;
           console.log(">>> Usando rota específica para Sorocaba V2");
+        } else if (postId.toLowerCase() === "abc_v2" || 
+            postId.toLowerCase().includes("abc_v2") || 
+            postId.toLowerCase().includes("abc v2")) {
+          // Usar a rota direta para ABC V2
+          endpoint = `/api/abastecimento-direto/abc_v2`;
+          usarRotaDireta = true;
+          console.log(">>> Usando rota específica para ABC V2");
+        } else if (postId.toLowerCase() === "alair_v2" || 
+            postId.toLowerCase().includes("alair_v2") || 
+            postId.toLowerCase().includes("alair v2")) {
+          // Usar a rota direta para Alair V2
+          endpoint = `/api/abastecimento-direto/alair_v2`;
+          usarRotaDireta = true;
+          console.log(">>> Usando rota específica para Alair V2");
         } else if (postId.toLowerCase().includes("remedios")) {
           endpoint = "/api/posto-remedios-standalone/abastecimentos";
         } else {
@@ -726,11 +740,33 @@ const FormularioAbastecimento: React.FC<
           // Primeira tentativa imediata
           const atualizarTanque = async () => {
             try {
-              // Se for Campinas V2, forçar o nome correto para atualização do tanque
-              const tanquePostoId = postId.toLowerCase().includes("campinas_v2") || 
-                                   postId.toLowerCase().includes("campinas v2") 
-                                    ? "Campinas_v2" 
-                                    : postId;
+              // Se for posto V2, forçar o nome correto para atualização do tanque
+              let tanquePostoId = postId;
+              
+              // Tratamento para Campinas V2
+              if (postId.toLowerCase().includes("campinas_v2") || postId.toLowerCase().includes("campinas v2")) {
+                tanquePostoId = "Campinas_v2";
+              }
+              // Tratamento para Osasco V2
+              else if (postId.toLowerCase().includes("osasco_v2") || postId.toLowerCase().includes("osasco v2")) {
+                tanquePostoId = "Osasco_v2";
+              }
+              // Tratamento para Socorro V2
+              else if (postId.toLowerCase().includes("socorro_v2") || postId.toLowerCase().includes("socorro v2")) {
+                tanquePostoId = "Socorro_v2";
+              }
+              // Tratamento para Sorocaba V2
+              else if (postId.toLowerCase().includes("sorocaba_v2") || postId.toLowerCase().includes("sorocaba v2")) {
+                tanquePostoId = "Sorocaba_v2";
+              }
+              // Tratamento para ABC V2
+              else if (postId.toLowerCase().includes("abc_v2") || postId.toLowerCase().includes("abc v2")) {
+                tanquePostoId = "ABC_v2";
+              }
+              // Tratamento para Alair V2
+              else if (postId.toLowerCase().includes("alair_v2") || postId.toLowerCase().includes("alair v2")) {
+                tanquePostoId = "Alair_v2";
+              }
               
               console.log(`Atualizando tanque para o posto: ${tanquePostoId}`);
               
