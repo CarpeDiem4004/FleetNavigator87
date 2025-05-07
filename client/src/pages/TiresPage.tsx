@@ -255,7 +255,8 @@ const TiresPage: React.FC = () => {
         const response = await createTire({
           ...newTire,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          change_date: new Date().toISOString() // Adicionando campo obrigatório
         });
         
         if (response.success && response.data) {
@@ -276,6 +277,7 @@ const TiresPage: React.FC = () => {
             codigo: novoCodigo,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
+            change_date: new Date().toISOString(), // Adicionando campo obrigatório
             // Define quantidade como 1 para cada pneu individual
             quantidade: 1
           });
