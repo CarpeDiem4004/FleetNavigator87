@@ -218,7 +218,7 @@ const DespesasCampinas: React.FC = () => {
               Registrar Despesas
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[750px]">
             <DialogHeader>
               <DialogTitle>Registrar Despesas Mensais</DialogTitle>
               <DialogDescription>
@@ -226,7 +226,7 @@ const DespesasCampinas: React.FC = () => {
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 bg-blue-100 p-6 rounded-lg">
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -239,7 +239,7 @@ const DespesasCampinas: React.FC = () => {
                           defaultValue={field.value}
                         >
                           <FormControl>
-                            <SelectTrigger>
+                            <SelectTrigger className="bg-white">
                               <SelectValue placeholder="Selecione o mês" />
                             </SelectTrigger>
                           </FormControl>
@@ -273,7 +273,7 @@ const DespesasCampinas: React.FC = () => {
                           defaultValue={field.value}
                         >
                           <FormControl>
-                            <SelectTrigger>
+                            <SelectTrigger className="bg-white">
                               <SelectValue placeholder="Selecione o ano" />
                             </SelectTrigger>
                           </FormControl>
