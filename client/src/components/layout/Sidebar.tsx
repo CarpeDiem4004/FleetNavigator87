@@ -364,7 +364,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
 
   // Menu Postos Externos que será inserido DIRETAMENTE independente do filtro
   const postoExternosDiretoItem: NavItem = {
-    name: 'Postos Externos (Forçado)',
+    name: 'Postos Externos',
     href: '#',
     icon: Droplets,
     subItems: [
@@ -393,35 +393,105 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
         <div className="overflow-y-auto">
           <nav className="flex-1 py-4">
             <div className="space-y-1 px-2">
-              {/* Os menus adicionais serão inseridos normalmente na ordem correta */}
-            
-              {/* Renderizando itens de menu usando componentes dedicados */}
-              {navItems.map((item) => {
-                // Pular o item Postos Externos pois já adicionamos manualmente
-                if (item.name === 'Postos Externos') return null;
-                
-                const isActive = location === item.href;
-                const isSubItemActive = item.subItems?.some(subItem => location === subItem.href);
-                
-                return (
-                  <div key={item.name} className="mb-1">
-                    {item.subItems ? (
-                      <NavItemWithSubmenu 
-                        item={item} 
-                        isActive={isActive} 
-                        isSubItemActive={isSubItemActive || false}
-                        onClose={closeSidebar}
-                        currentLocation={location}
-                      />
-                    ) : (
-                      <NavItem 
-                        item={item} 
-                        isActive={isActive}
-                        onClose={closeSidebar}
-                      />
-                    )}
-                  </div>
-                );
+              {/* Precisamos ordenar manualmente para garantir a posição correta */}
+              
+              {/* Primeiro renderizamos todos os itens até o Cartão */}
+              {navItems
+                .filter(item => item.name !== 'Postos Externos' && item.name !== 'Multas' && item.name !== 'Abastecimento' && item.name !== 'Line Hall')
+                .map((item) => {
+                  const isActive = location === item.href;
+                  const isSubItemActive = item.subItems?.some(subItem => location === subItem.href);
+                  
+                  return (
+                    <div key={item.name} className="mb-1">
+                      {item.subItems ? (
+                        <NavItemWithSubmenu 
+                          item={item} 
+                          isActive={isActive} 
+                          isSubItemActive={isSubItemActive || false}
+                          onClose={closeSidebar}
+                          currentLocation={location}
+                        />
+                      ) : (
+                        <NavItem 
+                          item={item} 
+                          isActive={isActive}
+                          onClose={closeSidebar}
+                        />
+                      )}
+                    </div>
+                  );
+              })}
+              
+              {/* Inserir Menu Cartão */}
+              {navItems
+                .filter(item => item.name === 'Cartão')
+                .map((item) => {
+                  const isActive = location === item.href;
+                  const isSubItemActive = item.subItems?.some(subItem => location === subItem.href);
+                  
+                  return (
+                    <div key={item.name} className="mb-1">
+                      {item.subItems ? (
+                        <NavItemWithSubmenu 
+                          item={item} 
+                          isActive={isActive} 
+                          isSubItemActive={isSubItemActive || false}
+                          onClose={closeSidebar}
+                          currentLocation={location}
+                        />
+                      ) : (
+                        <NavItem 
+                          item={item} 
+                          isActive={isActive}
+                          onClose={closeSidebar}
+                        />
+                      )}
+                    </div>
+                  );
+              })}
+              
+              {/* Inserir Menu Postos Externos FORÇADO na posição correta */}
+              <div className="mb-1">
+                <NavItemWithSubmenu 
+                  item={postoExternosDiretoItem} 
+                  isActive={false} 
+                  isSubItemActive={location.includes('/posto-murici') || location.includes('/posto-remedios')}
+                  onClose={closeSidebar}
+                  currentLocation={location}
+                />
+              </div>
+              
+              {/* Inserir Abastecimento e outros itens restantes */}
+              {navItems
+                .filter(item => item.name === 'Multas' || item.name === 'Abastecimento' || item.name === 'Line Hall' || 
+                              (item.name !== 'Cartão' && item.name !== 'Postos Externos'))
+                .map((item) => {
+                  // Pular o item Postos Externos pois já adicionamos manualmente
+                  if (item.name === 'Postos Externos') return null;
+                  
+                  const isActive = location === item.href;
+                  const isSubItemActive = item.subItems?.some(subItem => location === subItem.href);
+                  
+                  return (
+                    <div key={item.name} className="mb-1">
+                      {item.subItems ? (
+                        <NavItemWithSubmenu 
+                          item={item} 
+                          isActive={isActive} 
+                          isSubItemActive={isSubItemActive || false}
+                          onClose={closeSidebar}
+                          currentLocation={location}
+                        />
+                      ) : (
+                        <NavItem 
+                          item={item} 
+                          isActive={isActive}
+                          onClose={closeSidebar}
+                        />
+                      )}
+                    </div>
+                  );
               })}
             </div>
           </nav>
