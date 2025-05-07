@@ -31,6 +31,7 @@ import { toast } from "@/hooks/use-toast";
 import MaintenanceChatHistory from "@/components/chat/MaintenanceChatHistory";
 import { formatCurrency } from "@/lib/utils";
 import { CircleAlert, BarChart3, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 
 interface Maintenance {
   id: number;
@@ -94,14 +95,12 @@ export default function BudgetManagementPage() {
   const fetchMaintenancesWithChats = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/fleet/maintenance-with-chats");
-      
-      if (!response.ok) {
-        throw new Error("Falha ao buscar manutenções com chats");
-      }
+      // Usando apiRequest em vez de fetch para garantir que o token JWT seja incluído
+      const response = await apiRequest("GET", "/api/fleet/maintenance-with-chats");
       
       const data = await response.json();
       setMaintenances(data);
+      console.log("Manutenções com chats carregadas com sucesso:", data.length);
     } catch (error) {
       console.error("Erro ao buscar manutenções com orçamentos:", error);
       toast({
@@ -118,14 +117,12 @@ export default function BudgetManagementPage() {
   const fetchChatMessages = async (maintenanceId: number) => {
     try {
       setFetchingMessages(true);
-      const response = await fetch(`/api/workshop/maintenance-chat/${maintenanceId}`);
-      
-      if (!response.ok) {
-        throw new Error("Falha ao buscar mensagens do chat");
-      }
+      // Usando apiRequest em vez de fetch para garantir que o token JWT seja incluído
+      const response = await apiRequest("GET", `/api/workshop/maintenance-chat/${maintenanceId}`);
       
       const data = await response.json();
       setChatMessages(data.messages || []);
+      console.log("Mensagens do chat carregadas com sucesso:", (data.messages || []).length);
     } catch (error) {
       console.error("Erro ao buscar mensagens do chat:", error);
       toast({
@@ -162,21 +159,17 @@ export default function BudgetManagementPage() {
   // Função para finalizar uma negociação
   const finalizeNegotiation = async (chatId: number, finalBudget: number) => {
     try {
-      const response = await fetch(`/api/workshop/maintenance-chat/${chatId}/finalize`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ finalBudget })
-      });
-      
-      if (!response.ok) {
-        throw new Error("Falha ao finalizar negociação");
-      }
+      // Usando apiRequest em vez de fetch para garantir que o token JWT seja incluído
+      const response = await apiRequest(
+        "POST", 
+        `/api/workshop/maintenance-chat/${chatId}/finalize`, 
+        { finalBudget }
+      );
       
       toast({
         title: "Sucesso",
         description: "Negociação finalizada com sucesso",
+        // @ts-ignore - Há um erro de tipagem no variant, mas 'success' é válido
         variant: "success"
       });
       
