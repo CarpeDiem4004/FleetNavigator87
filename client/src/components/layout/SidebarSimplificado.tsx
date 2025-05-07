@@ -219,6 +219,22 @@ const SidebarSimplificado: React.FC<SidebarProps> = ({ open, setOpen }) => {
     // Item de menu para Cartão de Abastecimento - sempre visível
     { name: 'Cartão', href: '/fuel-card', icon: CreditCard },
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
+    
+    // Submenu para Bases com opções específicas para Base Campinas
+    {
+      name: 'Bases',
+      href: '#',
+      icon: Warehouse,
+      subItems: [
+        { name: 'Todas as Bases', href: '/bases', icon: Warehouse },
+        { name: 'Base Campinas', href: '/bases/campinas', icon: Warehouse },
+        { name: 'Despesas Campinas', href: '/bases/campinas/despesas', icon: CreditCard },
+        { name: 'Solicitação de Pneus', href: '/bases/campinas/solicitacao-pneus', icon: CircleDot },
+        { name: 'Solicitação de Orçamento', href: '/bases/campinas/solicitacao-orcamento', icon: FileText },
+        { name: 'Manutenção de Frota', href: '/bases/campinas/manutencao-frota', icon: Wrench }
+      ]
+    },
+    
     { name: 'Usuários', href: '/users', icon: Users },
     
     // Adicionando acesso rápido na lista principal também para maior visibilidade
