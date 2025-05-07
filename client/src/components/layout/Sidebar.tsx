@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/context/AuthContext';
 import { useBasePermission } from '@/hooks/use-base-permission';
+import navigateTo from '@/lib/navigation';
 
 // Icons
 import { 
@@ -88,23 +89,9 @@ const NavItemWithSubmenu: React.FC<{
                   e.preventDefault();
                   e.stopPropagation();
                   
-                  // Método mais confiável para navegação
-                  try {
-                    // Primeiro método - usar wouter
-                    window.history.pushState(null, "", subItem.href);
-                    window.dispatchEvent(new PopStateEvent("popstate"));
-                    
-                    // Método alternativo com timeout como fallback
-                    setTimeout(() => {
-                      window.location.href = subItem.href;
-                    }, 100);
-                    
-                    console.log(`Navegação para: ${subItem.href} iniciada`);
-                  } catch (error) {
-                    console.error("Erro na navegação:", error);
-                    // Método direto como fallback final
-                    window.location.href = subItem.href;
-                  }
+                  // Método robusto de navegação com múltiplos fallbacks
+                  console.log(`Navegação para: ${subItem.href} iniciada via utilitário`);
+                  navigateTo(subItem.href);
                   
                   onClose();
                 }}
@@ -169,23 +156,9 @@ const NavItem: React.FC<{
           e.preventDefault();
           e.stopPropagation();
           
-          // Método mais confiável para navegação
-          try {
-            // Primeiro método - usar wouter
-            window.history.pushState(null, "", item.href);
-            window.dispatchEvent(new PopStateEvent("popstate"));
-            
-            // Método alternativo com timeout como fallback
-            setTimeout(() => {
-              window.location.href = item.href;
-            }, 100);
-            
-            console.log(`Navegação para: ${item.href} iniciada`);
-          } catch (error) {
-            console.error("Erro na navegação:", error);
-            // Método direto como fallback final
-            window.location.href = item.href;
-          }
+          // Método robusto de navegação com múltiplos fallbacks
+          console.log(`Navegação para: ${item.href} iniciada via utilitário`);
+          navigateTo(item.href);
           
           onClose();
         }}
