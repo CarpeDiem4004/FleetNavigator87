@@ -200,16 +200,16 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText },
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
+    // Item de menu separado para Cartão de Abastecimento
+    { name: 'Cartão', href: '#', icon: CreditCard, showInMenu: true, subItems: [
+      { name: 'Operações', href: '/fuel-card', icon: CreditCard, showInMenu: true },
+      { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList, showInMenu: true }
+    ]},
     // Postos Externos com submenu atualizado - showInMenu forçado como true
     { name: 'Postos Externos', href: '#', icon: Droplets, showInMenu: true, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel, showInMenu: true },
       { name: 'Posto Murici', href: '/posto-murici', icon: Fuel, showInMenu: true },
       { name: 'Posto Murici Links', href: '/posto-murici/links', icon: Fuel, showInMenu: true }
-    ]},
-    // Item de menu separado para Cartão de Abastecimento
-    { name: 'Cartão', href: '#', icon: CreditCard, showInMenu: true, subItems: [
-      { name: 'Operações', href: '/fuel-card', icon: CreditCard, showInMenu: true },
-      { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList, showInMenu: true }
     ]},
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
     { name: 'Line Hall', href: '/line-hall-shopee', icon: Map },
@@ -225,19 +225,19 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Oficinas Credenciadas', href: '/fleet-management/workshops', icon: ClipboardList },
     { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package },
-    // Operações de combustível e abastecimento
-    { name: 'Histórico Posto Murici', href: '/refueling', icon: ClipboardList },
+    // Item de menu separado para Cartão de Abastecimento
+    { name: 'Cartão', href: '#', icon: CreditCard, showInMenu: true, subItems: [
+      { name: 'Operações', href: '/fuel-card', icon: CreditCard, showInMenu: true },
+      { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList, showInMenu: true }
+    ]},
     // Postos Externos com submenu consistente - forçado a mostrar
     { name: 'Postos Externos', href: '#', icon: Droplets, showInMenu: true, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel, showInMenu: true },
       { name: 'Posto Murici', href: '/posto-murici', icon: Fuel, showInMenu: true },
       { name: 'Posto Murici Links', href: '/posto-murici/links', icon: Fuel, showInMenu: true }
     ]},
-    // Item de menu separado para Cartão de Abastecimento
-    { name: 'Cartão', href: '#', icon: CreditCard, showInMenu: true, subItems: [
-      { name: 'Operações', href: '/fuel-card', icon: CreditCard, showInMenu: true },
-      { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList, showInMenu: true }
-    ]},
+    // Operações de combustível e abastecimento
+    { name: 'Histórico Posto Murici', href: '/refueling', icon: ClipboardList },
     { name: 'Line Hall', href: '/line-hall-shopee', icon: Map },
     { name: 'Análise da Operação', href: '/fleet-management/operational-analysis', icon: BarChart4 },
     { name: 'Visão Geral da Frota', href: '/fleet-management/fleet-overview', icon: Activity },
@@ -271,16 +271,16 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   const hasPostosExternos = navItemsBase.some(item => item.name === 'Postos Externos');
   if (!hasPostosExternos) {
     console.log("ADICIONANDO menu Postos Externos DIRETAMENTE");
-    // Adicionar após o item "Pneus"
-    const pneusIndex = navItemsBase.findIndex(item => item.name === 'Pneus');
-    if (pneusIndex !== -1) {
+    // Adicionar após o item "Cartão"
+    const cartaoIndex = navItemsBase.findIndex(item => item.name === 'Cartão');
+    if (cartaoIndex !== -1) {
       navItemsBase = [
-        ...navItemsBase.slice(0, pneusIndex + 1),
+        ...navItemsBase.slice(0, cartaoIndex + 1),
         postoExternosItem,
-        ...navItemsBase.slice(pneusIndex + 1)
+        ...navItemsBase.slice(cartaoIndex + 1)
       ];
     } else {
-      // Adicionar no início caso não encontre "Pneus"
+      // Adicionar no início caso não encontre "Cartão"
       navItemsBase = [postoExternosItem, ...navItemsBase];
     }
   }
@@ -393,16 +393,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
         <div className="overflow-y-auto">
           <nav className="flex-1 py-4">
             <div className="space-y-1 px-2">
-              {/* MENU POSTO EXTERNOS FORÇADO - SEMPRE VISÍVEL */}
-              <div className="mb-1 bg-primary-800 rounded-md p-1 border border-primary-700">
-                <NavItemWithSubmenu 
-                  item={postoExternosDiretoItem} 
-                  isActive={false} 
-                  isSubItemActive={location.includes('/posto-murici') || location.includes('/posto-remedios')}
-                  onClose={closeSidebar}
-                  currentLocation={location}
-                />
-              </div>
+              {/* Os menus adicionais serão inseridos normalmente na ordem correta */}
             
               {/* Renderizando itens de menu usando componentes dedicados */}
               {navItems.map((item) => {
