@@ -91,6 +91,10 @@ interface BudgetRequest {
 // Componente principal
 const SolicitacaoOrcamentoCampinas: React.FC = () => {
   const { user } = useAuth();
+  // Flag para verificar se o usuário tem permissão para aprovar/rejeitar solicitações
+  // Apenas usuários com papel 'admin' ou 'gestor' podem aprovar/rejeitar
+  const canApproveReject = user?.role === 'admin' || user?.role === 'gestor';
+  
   const [isLoading, setIsLoading] = useState(false);
   const [requests, setRequests] = useState<BudgetRequest[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<BudgetRequest | null>(null);
@@ -849,7 +853,7 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
             </div>
             
             <DialogFooter className="flex justify-between items-center">
-              {selectedRequest.status === 'pendente' && (
+              {selectedRequest.status === 'pendente' && canApproveReject && (
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -872,6 +876,11 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
                   </Button>
                 </div>
               )}
+              {selectedRequest.status === 'pendente' && !canApproveReject && (
+                <div className="text-sm text-gray-500 italic">
+                  * Esta solicitação está aguardando aprovação pela equipe de gestão de frotas
+                </div>
+              )}
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Fechar
               </Button>
@@ -880,8 +889,8 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
         </Dialog>
       )}
 
-      {/* Modal de aprovação */}
-      {selectedRequest && (
+      {/* Modal de aprovação - apenas visível para usuários autorizados */}
+      {selectedRequest && canApproveReject && (
         <Dialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -938,8 +947,8 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
         </Dialog>
       )}
 
-      {/* Modal de rejeição */}
-      {selectedRequest && (
+      {/* Modal de rejeição - apenas visível para usuários autorizados */}
+      {selectedRequest && canApproveReject && (
         <AlertDialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
