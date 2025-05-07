@@ -39,7 +39,7 @@ const allRoutes = [
   '/fuel-card',                        // Cartão de Combustível
   '/fuel-card-requests',               // Painel de Solicitações Fuel Card
   '/posto-remedios',                   // Posto Remédios
-  '/cartao-abastecimento',            // Cartão de Abastecimento
+  '/cartao-abastecimento',             // Cartão de Abastecimento
   '/fines',                            // Multas
   '/multas',                           // Alias para Multas
   '/line-hall',                        // Line Hall (antigo)
@@ -60,6 +60,11 @@ const allRoutes = [
   '/acidentes',                        // Alias para Acidentes
   '/users',                            // Usuários (só admin)
   '/bases',                            // Bases (só admin)
+  '/bases/campinas',                   // Base Campinas
+  '/bases/campinas/despesas',          // Despesas Campinas
+  '/bases/campinas/solicitacao-pneus', // Solicitação de Pneus
+  '/bases/campinas/solicitacao-orcamento', // Solicitação de Orçamento
+  '/bases/campinas/manutencao-frota',  // Manutenção de Frota
   '/postos/visao-geral',               // Visão Geral dos Postos
   '/postos'                            // Postos de Abastecimento
 ];
@@ -69,6 +74,13 @@ const baseRouteMapping = {
   'line hall': ['/line-hall', '/line-hall-shopee'],
   'multas': ['/multas', '/fines'],
   'pneus': ['/pneus', '/tires'],
+  'campinas': [
+    '/bases/campinas',
+    '/bases/campinas/despesas',
+    '/bases/campinas/solicitacao-pneus',
+    '/bases/campinas/solicitacao-orcamento',
+    '/bases/campinas/manutencao-frota'
+  ],
   'gestão de frotas': [
     '/gestao-de-frotas', 
     '/fleet-management', 
@@ -125,30 +137,36 @@ const baseRouteMapping = {
 
 // Rotas básicas que TODAS as bases têm acesso (modelo padrão de acesso para qualquer base)
 const basicRoutes = [
-  '/',                       // Dashboard
-  '/executive-dashboard',    // Dashboard Executivo
-  '/vehicles',               // Cadastro e gestão de veículos
-  '/drivers',                // Cadastro e gestão de motoristas
-  '/maintenance',            // Solicitações de manutenção
-  '/manutencao',             // Alias para manutenção
-  '/tires',                  // Solicitações de pneus
-  '/pneus',                  // Alias para pneus
-  '/refueling',              // Registros de abastecimento
-  '/fuel-card',              // Cartão de Combustível
-  '/fuel-card-requests',     // Painel de Solicitações Fuel Card
-  '/posto-remedios',         // Posto Remédios
-  '/cartao-abastecimento',  // Cartão de Abastecimento
-  '/work-safety',            // Informar acidentes de trabalho
-  '/seguranca-trabalho',     // Alias para segurança do trabalho
-  '/theft',                  // Registro de roubos
-  '/roubo',                  // Alias para roubo
-  '/sinister',               // Registros de sinistros
-  '/sinistro',               // Alias para sinistro
-  '/accidents',              // Registros de acidentes
-  '/acidentes',              // Alias para acidentes
-  '/postos/visao-geral',     // Visão Geral dos Postos
-  '/postos',                 // Postos de Abastecimento
-  '/users'                   // Página de Usuários (acesso para todos, verificação adicional feita no hasPermission)
+  '/',                                   // Dashboard
+  '/executive-dashboard',                // Dashboard Executivo
+  '/vehicles',                           // Cadastro e gestão de veículos
+  '/drivers',                            // Cadastro e gestão de motoristas
+  '/maintenance',                        // Solicitações de manutenção
+  '/manutencao',                         // Alias para manutenção
+  '/tires',                              // Solicitações de pneus
+  '/pneus',                              // Alias para pneus
+  '/refueling',                          // Registros de abastecimento
+  '/fuel-card',                          // Cartão de Combustível
+  '/fuel-card-requests',                 // Painel de Solicitações Fuel Card
+  '/posto-remedios',                     // Posto Remédios
+  '/cartao-abastecimento',               // Cartão de Abastecimento
+  '/work-safety',                        // Informar acidentes de trabalho
+  '/seguranca-trabalho',                 // Alias para segurança do trabalho
+  '/theft',                              // Registro de roubos
+  '/roubo',                              // Alias para roubo
+  '/sinister',                           // Registros de sinistros
+  '/sinistro',                           // Alias para sinistro
+  '/accidents',                          // Registros de acidentes
+  '/acidentes',                          // Alias para acidentes
+  '/postos/visao-geral',                 // Visão Geral dos Postos
+  '/postos',                             // Postos de Abastecimento
+  '/bases',                              // Bases
+  '/bases/campinas',                     // Base Campinas
+  '/bases/campinas/despesas',            // Despesas Campinas
+  '/bases/campinas/solicitacao-pneus',   // Solicitação de Pneus
+  '/bases/campinas/solicitacao-orcamento', // Solicitação de Orçamento
+  '/bases/campinas/manutencao-frota',    // Manutenção de Frota
+  '/users'                               // Página de Usuários (acesso para todos, verificação adicional feita no hasPermission)
 ];
 
 export const useBasePermission = (): BasePermissionHook => {
