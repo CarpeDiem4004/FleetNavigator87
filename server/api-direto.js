@@ -75,7 +75,7 @@ export async function getHistoricoPosto(req, res) {
       console.log("getHistoricoPosto - Formatado para:", postoName);
     }
     
-    // Caso especial para postos V2 (Campinas, Osasco, ABC, Alair) e Osasco: usar tabela diretamente em vez de view
+    // Caso especial para postos V2 (Campinas, Osasco, ABC, Alair, Socorro, Sorocaba) e Osasco: usar tabela diretamente em vez de view
     let querySource;
     let dataQuery;
     
@@ -83,7 +83,9 @@ export async function getHistoricoPosto(req, res) {
         postoName.toLowerCase() === 'osasco' || 
         postoName.toLowerCase() === 'osasco_v2' || 
         postoName.toLowerCase() === 'abc_v2' || 
-        postoName.toLowerCase() === 'alair_v2') {
+        postoName.toLowerCase() === 'alair_v2' ||
+        postoName.toLowerCase() === 'socorro_v2' ||
+        postoName.toLowerCase() === 'sorocaba_v2') {
       console.log(`getHistoricoPosto - Usando tabela direta para ${postoName} em vez de view`);
       
       // Definir o nome da tabela com base no posto
