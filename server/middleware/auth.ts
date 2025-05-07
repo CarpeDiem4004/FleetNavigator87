@@ -164,28 +164,46 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
  * Permite acesso para admin, gestor, oficina ou baseId=12 (Gestão de Frotas)
  */
 export const hasMaintenanceAccess = (req: Request, res: Response, next: NextFunction) => {
+  // Adicionar logs para diagnóstico
+  console.log('[hasMaintenanceAccess] Verificando acesso para rota:', req.originalUrl, {
+    isAuthenticated: req.isAuthenticated(),
+    hasSession: !!req.session,
+    hasSupabaseUser: !!(req as any).supabaseUser,
+    hasHybridUser: !!(req as any).hybridUser,
+    authHeader: !!req.headers.authorization
+  });
+  
   // Verificar autenticação primeiro
   if (!req.isAuthenticated() && !(req as any).supabaseUser && !(req as any).hybridUser) {
+    console.log('[hasMaintenanceAccess] Acesso negado - usuário não autenticado');
     return res.status(401).json({ message: "Usuário não autenticado" });
   }
   
   // Verifica se o usuário está autenticado e tem permissão de acesso a manutenção
   const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
+  console.log('[hasMaintenanceAccess] Usuário autenticado:', {
+    id: user?.id,
+    email: user?.email,
+    role: user?.role,
+    baseId: user?.baseId
+  });
+  
   if (user && (
       isUserAdmin(user) ||
       user.role === 'gestor' || 
       user.baseId === FLEET_MANAGEMENT_BASE_ID || 
       user.role === 'oficina'
     )) {
+    console.log('[hasMaintenanceAccess] Acesso concedido para usuário:', user.email);
     return next();
   }
   
-  console.log("Acesso negado a recurso de manutenção:", {
+  console.log("[hasMaintenanceAccess] Acesso negado a recurso de manutenção:", {
     url: req.originalUrl,
     method: req.method,
-    role: req.user?.role,
-    baseId: req.user?.baseId,
-    email: req.user?.email
+    role: user?.role,
+    baseId: user?.baseId,
+    email: user?.email
   });
   
   return res.status(403).json({ message: "Acesso negado. Permissão de gestão de frotas, admin, gestor ou oficina necessária." });
