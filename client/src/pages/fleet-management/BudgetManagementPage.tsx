@@ -339,12 +339,12 @@ export default function BudgetManagementPage() {
           </div>
         </div>
 
-      {/* Solicitações de Orçamento da Base Campinas */}
+      {/* Solicitações de Orçamento das Bases */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Solicitações de Orçamento - Base Campinas</CardTitle>
+          <CardTitle>Solicitações Bases - Murici</CardTitle>
           <CardDescription>
-            Solicitações de orçamento recebidas da Base Campinas
+            Solicitações de orçamento recebidas das bases operacionais
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -357,13 +357,14 @@ export default function BudgetManagementPage() {
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Nenhuma solicitação encontrada</AlertTitle>
               <AlertDescription>
-                Não há solicitações de orçamento da Base Campinas.
+                Não há solicitações de orçamento das bases.
               </AlertDescription>
             </Alert>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Base</TableHead>
                   <TableHead>Título</TableHead>
                   <TableHead>Departamento</TableHead>
                   <TableHead>Solicitante</TableHead>
@@ -378,6 +379,9 @@ export default function BudgetManagementPage() {
                 {budgetRequests.map((request) => (
                   <TableRow key={request.id}>
                     <TableCell className="font-medium">
+                      {request.base_name || "Base Murici"}
+                    </TableCell>
+                    <TableCell>
                       {request.title}
                     </TableCell>
                     <TableCell>{request.department}</TableCell>

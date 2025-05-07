@@ -6666,6 +6666,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rota para aprovar uma solicitação de orçamento
+  app.put("/api/fleet/budget-requests/:id/approve", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { approvedValue } = req.body;
+      const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
+      
+      if (!approvedValue) {
+        return res.status(400).json({ message: 'Valor de aprovação é obrigatório' });
+      }
+
+      console.log(`[BudgetRequests] Solicitação de aprovação para orçamento #${id}`, {
+        approvedValue,
+        approvedBy: user?.name || 'Administrador',
+        userId: user?.id
+      });
+      
+      // Atualizar a solicitação de orçamento para aprovada
+      const query = `
+        UPDATE campinas_budget_requests
+        SET 
+          status = 'aprovado',
+          approved_value = $1,
+          approved_by = $2,
+          approved_at = NOW(),
+          updated_at = NOW()
+        WHERE id = $3
+        RETURNING *;
+      `;
+      
+      const result = await pool.query(query, [
+        approvedValue, 
+        user?.name || 'Administrador', 
+        id
+      ]);
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: 'Solicitação de orçamento não encontrada' });
+      }
+      
+      console.log(`[BudgetRequests] Solicitação #${id} aprovada com sucesso`);
+      res.json({ 
+        message: 'Solicitação de orçamento aprovada com sucesso',
+        data: result.rows[0]
+      });
+    } catch (error) {
+      console.error('[BudgetRequests] Erro ao aprovar solicitação de orçamento:', error);
+      res.status(500).json({ message: 'Erro ao aprovar solicitação de orçamento' });
+    }
+  });
+  
+  // Rota para rejeitar uma solicitação de orçamento
+  app.put("/api/fleet/budget-requests/:id/reject", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { comments } = req.body;
+      const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
+      
+      console.log(`[BudgetRequests] Solicitação de rejeição para orçamento #${id}`, {
+        comments,
+        userId: user?.id
+      });
+      
+      // Atualizar a solicitação de orçamento para rejeitada
+      const query = `
+        UPDATE campinas_budget_requests
+        SET 
+          status = 'rejeitado',
+          comments = $1,
+          updated_at = NOW()
+        WHERE id = $2
+        RETURNING *;
+      `;
+      
+      const result = await pool.query(query, [comments || 'Solicitação rejeitada pela Gestão de Frotas', id]);
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: 'Solicitação de orçamento não encontrada' });
+      }
+      
+      console.log(`[BudgetRequests] Solicitação #${id} rejeitada com sucesso`);
+      res.json({ 
+        message: 'Solicitação de orçamento rejeitada com sucesso',
+        data: result.rows[0]
+      });
+    } catch (error) {
+      console.error('[BudgetRequests] Erro ao rejeitar solicitação de orçamento:', error);
+      res.status(500).json({ message: 'Erro ao rejeitar solicitação de orçamento' });
+    }
+  });
+
   // Rota para ressincronização de sessão (resolver problema de 401 após reinicialização do servidor)
   app.post("/api/resync-session", resyncSession);
 
