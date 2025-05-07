@@ -6359,6 +6359,268 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para gerenciamento de solicitações de orçamento da Base Campinas
+  
+  // Rota para listar todas as solicitações de orçamento da Base Campinas
+  app.get("/api/bases/campinas/solicitacao-orcamento", async (req, res) => {
+    try {
+      const query = `
+        SELECT 
+          id,
+          title,
+          description,
+          priority,
+          status,
+          requester_id,
+          requester_name,
+          created_at,
+          updated_at,
+          estimated_value,
+          department,
+          approved_value,
+          approved_by,
+          approved_at,
+          comments,
+          budget_file_url,
+          budget_file_name,
+          invoice_file_url,
+          invoice_file_name,
+          CASE
+            WHEN invoice_file_url IS NOT NULL THEN false
+            WHEN status = 'aprovado' AND invoice_file_url IS NULL THEN true
+            ELSE false
+          END as pending_invoice
+        FROM 
+          campinas_budget_requests
+        ORDER BY 
+          created_at DESC;
+      `;
+      
+      const result = await pool.query(query);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Erro ao buscar solicitações de orçamento:', error);
+      res.status(500).json({ message: 'Erro ao buscar solicitações de orçamento' });
+    }
+  });
+  
+  // Rota para obter uma solicitação específica da Base Campinas
+  app.get("/api/bases/campinas/solicitacao-orcamento/:id", async (req, res) => {
+    try {
+      const requestId = parseInt(req.params.id);
+      
+      const query = `
+        SELECT * FROM campinas_budget_requests
+        WHERE id = $1;
+      `;
+      
+      const result = await pool.query(query, [requestId]);
+      if (result.rowCount === 0) {
+        return res.status(404).json({ message: 'Solicitação não encontrada' });
+      }
+      
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('Erro ao buscar solicitação:', error);
+      res.status(500).json({ message: 'Erro ao buscar solicitação' });
+    }
+  });
+  
+  // Rota para criar uma nova solicitação de orçamento da Base Campinas
+  app.post("/api/bases/campinas/solicitacao-orcamento", async (req, res) => {
+    try {
+      const {
+        title,
+        description,
+        priority,
+        estimated_value,
+        department,
+        budget_file_url,
+        budget_file_name
+      } = req.body;
+      
+      // Validar dados
+      if (!title || !description || !priority || !estimated_value || !department) {
+        return res.status(400).json({ message: 'Todos os campos obrigatórios devem ser preenchidos' });
+      }
+      
+      const query = `
+        INSERT INTO campinas_budget_requests 
+          (title, description, priority, status, requester_id, requester_name, 
+          estimated_value, department, budget_file_url, budget_file_name, created_at, updated_at)
+        VALUES 
+          ($1, $2, $3, 'pendente', $4, $5, $6, $7, $8, $9, NOW(), NOW())
+        RETURNING *;
+      `;
+      
+      const values = [
+        title,
+        description,
+        priority,
+        req.user?.id || 0,
+        req.user?.name || 'Usuário',
+        estimated_value,
+        department,
+        budget_file_url || null,
+        budget_file_name || null
+      ];
+      
+      const result = await pool.query(query, values);
+      res.status(201).json(result.rows[0]);
+    } catch (error) {
+      console.error('Erro ao criar solicitação:', error);
+      res.status(500).json({ message: 'Erro ao criar solicitação' });
+    }
+  });
+  
+  // Rota para atualizar uma solicitação de orçamento da Base Campinas (aprovar, rejeitar, etc)
+  app.put("/api/bases/campinas/solicitacao-orcamento/:id", async (req, res) => {
+    try {
+      const requestId = parseInt(req.params.id);
+      const {
+        status,
+        approved_value,
+        comments,
+        budget_file_url,
+        budget_file_name,
+        invoice_file_url,
+        invoice_file_name
+      } = req.body;
+      
+      // Verificar se a solicitação existe
+      const checkQuery = `SELECT * FROM campinas_budget_requests WHERE id = $1;`;
+      const checkResult = await pool.query(checkQuery, [requestId]);
+      
+      if (checkResult.rowCount === 0) {
+        return res.status(404).json({ message: 'Solicitação não encontrada' });
+      }
+      
+      // Montar a query de atualização dinâmica
+      let updateFields = [];
+      let values = [requestId]; // O primeiro parâmetro é sempre o ID
+      let paramCount = 2; // Começamos do 2 porque $1 já é o ID
+      
+      if (status) {
+        updateFields.push(`status = $${paramCount}`);
+        values.push(status);
+        paramCount++;
+      }
+      
+      if (approved_value) {
+        updateFields.push(`approved_value = $${paramCount}`);
+        values.push(approved_value);
+        paramCount++;
+        
+        // Se estiver aprovando, adicionar quem aprovou e quando
+        if (status === 'aprovado') {
+          updateFields.push(`approved_by = $${paramCount}`);
+          values.push(req.user?.name || 'Administrador');
+          paramCount++;
+          
+          updateFields.push(`approved_at = $${paramCount}`);
+          values.push(new Date());
+          paramCount++;
+        }
+      }
+      
+      if (comments) {
+        updateFields.push(`comments = $${paramCount}`);
+        values.push(comments);
+        paramCount++;
+      }
+      
+      if (budget_file_url) {
+        updateFields.push(`budget_file_url = $${paramCount}`);
+        values.push(budget_file_url);
+        paramCount++;
+      }
+      
+      if (budget_file_name) {
+        updateFields.push(`budget_file_name = $${paramCount}`);
+        values.push(budget_file_name);
+        paramCount++;
+      }
+      
+      if (invoice_file_url) {
+        updateFields.push(`invoice_file_url = $${paramCount}`);
+        values.push(invoice_file_url);
+        paramCount++;
+      }
+      
+      if (invoice_file_name) {
+        updateFields.push(`invoice_file_name = $${paramCount}`);
+        values.push(invoice_file_name);
+        paramCount++;
+      }
+      
+      // Sempre atualizar o timestamp
+      updateFields.push(`updated_at = NOW()`);
+      
+      // Se não há campos para atualizar, retornar o registro atual
+      if (updateFields.length === 1) { // Apenas o update_at foi adicionado
+        return res.json(checkResult.rows[0]);
+      }
+      
+      const updateQuery = `
+        UPDATE campinas_budget_requests
+        SET ${updateFields.join(', ')}
+        WHERE id = $1
+        RETURNING *;
+      `;
+      
+      const result = await pool.query(updateQuery, values);
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('Erro ao atualizar solicitação:', error);
+      res.status(500).json({ message: 'Erro ao atualizar solicitação' });
+    }
+  });
+  
+  // Integração com o sistema principal de gestão de orçamentos
+  // Rota para listar todas as solicitações de orçamento para o painel principal
+  app.get("/api/fleet/budget-requests", async (req, res) => {
+    try {
+      const query = `
+        SELECT 
+          id,
+          title,
+          description,
+          priority,
+          status,
+          requester_id,
+          requester_name,
+          created_at,
+          updated_at,
+          estimated_value,
+          department,
+          approved_value,
+          approved_by,
+          approved_at,
+          comments,
+          budget_file_url,
+          budget_file_name,
+          invoice_file_url,
+          invoice_file_name,
+          CASE
+            WHEN invoice_file_url IS NOT NULL THEN false
+            WHEN status = 'aprovado' AND invoice_file_url IS NULL THEN true
+            ELSE false
+          END as pending_invoice,
+          'campinas' as source
+        FROM 
+          campinas_budget_requests
+        ORDER BY 
+          created_at DESC;
+      `;
+      
+      const result = await pool.query(query);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Erro ao buscar solicitações de orçamento para o painel:', error);
+      res.status(500).json({ message: 'Erro ao buscar solicitações de orçamento' });
+    }
+  });
+
   // Rota para ressincronização de sessão (resolver problema de 401 após reinicialização do servidor)
   app.post("/api/resync-session", resyncSession);
 
