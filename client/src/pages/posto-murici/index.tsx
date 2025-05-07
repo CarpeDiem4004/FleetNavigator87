@@ -3,13 +3,19 @@ import { useLocation } from 'wouter';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Fuel, User, Truck, ArrowRight } from 'lucide-react';
-import Dashboard from '@/components/dashboard/Dashboard';
 
 const PostoMuriciIndex: React.FC = () => {
   const [, setLocation] = useLocation();
 
   return (
-    <Dashboard title="Posto Murici" subtitle="Sistema de Gestão de Abastecimentos">
+    <div className="container mx-auto py-10">
+      <div className="flex flex-col items-center justify-center mb-6">
+        <h1 className="text-3xl font-bold mb-2">Posto Murici</h1>
+        <p className="text-muted-foreground text-center max-w-md">
+          Sistema de Gestão de Abastecimentos
+        </p>
+      </div>
+      
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="pb-3">
@@ -82,7 +88,7 @@ const PostoMuriciIndex: React.FC = () => {
           </CardFooter>
         </Card>
       </div>
-    </Dashboard>
+    </div>
   );
 };
 

@@ -77,6 +77,11 @@ import AbastecimentoPostoRemediosPage from "@/pages/AbastecimentoPostoRemediosPa
 import PostoCampinasIndex from "@/pages/posto-campinas";
 import PostoCampinasOperador from "@/pages/posto-campinas/PostoCampinasOperador";
 import PostoCampinasAdmin from "@/pages/posto-campinas/PostoCampinasAdmin";
+
+// Importação do Posto Murici
+import PostoMuriciIndex from "@/pages/posto-murici";
+import PostoMuriciOperador from "@/pages/posto-murici/PostoMuriciOperador";
+import PostoMuriciPublico from "@/pages/posto-murici/PostoMuriciPublico";
 import ProfileWithSupabase from "@/pages/ProfileWithSupabase";
 import DriverChecklist from "@/pages/DriverChecklist";
 import DriversPage from "@/pages/DriversPage";
@@ -209,6 +214,15 @@ function App() {
           <ProtectedRoute path="/posto-campinas" component={PostoCampinasIndex} />
           <ProtectedRoute path="/posto-campinas/operador" component={PostoCampinasOperador} />
           <ProtectedRoute path="/posto-campinas/admin" component={PostoCampinasAdmin} />
+          
+          {/* Rotas para o Posto Murici */}
+          <ProtectedRoute path="/posto-murici" component={PostoMuriciIndex} />
+          <ProtectedRoute path="/posto-murici/operador" component={PostoMuriciOperador} />
+          
+          {/* Rota pública para o Posto Murici */}
+          <Route path="/posto-murici/public">
+            <PostoMuriciPublico />
+          </Route>
           
           {/* Rota pública para checklist do motorista */}
           <Route path="/checklist/:id">
