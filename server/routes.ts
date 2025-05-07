@@ -6113,6 +6113,251 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rota para inserir dados no Supabase usando a chave de serviço do servidor
   app.post("/api/supabase-insert", supabaseInsertHandler);
+  
+  // Rotas para a base de Campinas
+  app.get("/api/bases/campinas/despesas", async (req, res) => {
+    try {
+      const query = `
+        SELECT 
+          d.id, 
+          d.base_id,
+          b.nome as base_name,
+          d.month, 
+          d.year,
+          CASE 
+            WHEN d.month = 1 THEN 'Janeiro'
+            WHEN d.month = 2 THEN 'Fevereiro'
+            WHEN d.month = 3 THEN 'Março'
+            WHEN d.month = 4 THEN 'Abril'
+            WHEN d.month = 5 THEN 'Maio'
+            WHEN d.month = 6 THEN 'Junho'
+            WHEN d.month = 7 THEN 'Julho'
+            WHEN d.month = 8 THEN 'Agosto'
+            WHEN d.month = 9 THEN 'Setembro'
+            WHEN d.month = 10 THEN 'Outubro'
+            WHEN d.month = 11 THEN 'Novembro'
+            WHEN d.month = 12 THEN 'Dezembro'
+          END as month_name,
+          d.agua, 
+          d.energia, 
+          d.funcionarios, 
+          d.pj, 
+          d.aluguel, 
+          d.internet, 
+          d.despesas_extras,
+          (d.agua + d.energia + d.funcionarios + d.pj + d.aluguel + d.internet + d.despesas_extras) as total_despesas,
+          d.observacoes, 
+          d.status, 
+          d.last_updated,
+          u.name as updated_by_name
+        FROM 
+          base_expenses d
+        LEFT JOIN 
+          bases b ON d.base_id = b.id
+        LEFT JOIN 
+          users u ON d.updated_by = u.id
+        WHERE 
+          d.base_id = 9
+        ORDER BY 
+          d.year DESC, d.month DESC
+      `;
+      
+      const result = await pool.query(query);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Erro ao buscar despesas da base:', error);
+      res.status(500).json({ error: 'Erro ao buscar despesas da base' });
+    }
+  });
+
+  app.post("/api/bases/campinas/despesas", async (req, res) => {
+    try {
+      const { 
+        base_id, month, year, agua, energia, funcionarios, 
+        pj, aluguel, internet, despesas_extras, observacoes, status 
+      } = req.body;
+      
+      // Calcular o valor total das despesas
+      const total_despesas = agua + energia + funcionarios + pj + aluguel + internet + (despesas_extras || 0);
+      
+      // Verificar se já existe um registro para este mês/ano
+      const checkQuery = `
+        SELECT id FROM base_expenses 
+        WHERE base_id = $1 AND month = $2 AND year = $3
+      `;
+      const checkResult = await pool.query(checkQuery, [base_id, month, year]);
+      
+      let result;
+      if (checkResult.rowCount > 0) {
+        // Atualizar registro existente
+        const updateQuery = `
+          UPDATE base_expenses 
+          SET 
+            agua = $1, 
+            energia = $2, 
+            funcionarios = $3, 
+            pj = $4, 
+            aluguel = $5, 
+            internet = $6, 
+            despesas_extras = $7,
+            observacoes = $8,
+            status = $9,
+            last_updated = NOW(),
+            updated_by = $10
+          WHERE 
+            base_id = $11 AND month = $12 AND year = $13
+          RETURNING *
+        `;
+        
+        result = await pool.query(updateQuery, [
+          agua, energia, funcionarios, pj, aluguel, internet, 
+          despesas_extras, observacoes, status, 
+          req.user ? req.user.id : null, 
+          base_id, month, year
+        ]);
+      } else {
+        // Inserir novo registro
+        const insertQuery = `
+          INSERT INTO base_expenses (
+            base_id, month, year, agua, energia, funcionarios, 
+            pj, aluguel, internet, despesas_extras, observacoes, 
+            status, last_updated, updated_by
+          ) 
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), $13)
+          RETURNING *
+        `;
+        
+        result = await pool.query(insertQuery, [
+          base_id, month, year, agua, energia, funcionarios, 
+          pj, aluguel, internet, despesas_extras, observacoes, 
+          status, req.user ? req.user.id : null
+        ]);
+      }
+      
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('Erro ao salvar despesas da base:', error);
+      res.status(500).json({ error: 'Erro ao salvar despesas da base' });
+    }
+  });
+  
+  // Rotas para solicitações de pneus da base Campinas
+  app.get("/api/bases/campinas/solicitacao-pneus", async (req, res) => {
+    try {
+      const query = `
+        SELECT 
+          s.id, 
+          s.base_id,
+          b.nome as base_nome,
+          s.usuario_id,
+          u.name as usuario_nome,
+          s.quantidade, 
+          s.marca, 
+          s.modelo, 
+          s.medida, 
+          s.tipo, 
+          s.motivo, 
+          s.observacoes, 
+          s.status, 
+          s.data_solicitacao,
+          s.data_aprovacao,
+          s.aprovador_id,
+          a.name as aprovador_nome
+        FROM 
+          tire_requests s
+        LEFT JOIN 
+          bases b ON s.base_id = b.id
+        LEFT JOIN 
+          users u ON s.usuario_id = u.id
+        LEFT JOIN 
+          users a ON s.aprovador_id = a.id
+        WHERE 
+          s.base_id = 9
+        ORDER BY 
+          s.data_solicitacao DESC
+      `;
+      
+      const result = await pool.query(query);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Erro ao buscar solicitações de pneus:', error);
+      res.status(500).json({ error: 'Erro ao buscar solicitações de pneus' });
+    }
+  });
+
+  app.post("/api/bases/campinas/solicitacao-pneus", async (req, res) => {
+    try {
+      const { 
+        base_id, quantidade, marca, modelo, medida, tipo, motivo, observacoes
+      } = req.body;
+      
+      const insertQuery = `
+        INSERT INTO tire_requests (
+          base_id, usuario_id, quantidade, marca, modelo, medida, tipo, 
+          motivo, observacoes, status, data_solicitacao
+        ) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+        RETURNING *
+      `;
+      
+      const result = await pool.query(insertQuery, [
+        base_id, 
+        req.user ? req.user.id : null,
+        quantidade, 
+        marca, 
+        modelo, 
+        medida, 
+        tipo, 
+        motivo, 
+        observacoes,
+        'pendente' // Status inicial
+      ]);
+      
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('Erro ao registrar solicitação de pneus:', error);
+      res.status(500).json({ error: 'Erro ao registrar solicitação de pneus' });
+    }
+  });
+  
+  // Rota para aprovar/rejeitar solicitação de pneus
+  app.put("/api/bases/campinas/solicitacao-pneus/:id", async (req, res) => {
+    try {
+      const id = req.params.id;
+      const { status, observacoes } = req.body;
+      
+      if (!['aprovado', 'negado', 'concluido'].includes(status)) {
+        return res.status(400).json({ error: 'Status inválido' });
+      }
+      
+      const updateQuery = `
+        UPDATE tire_requests 
+        SET 
+          status = $1,
+          observacoes = COALESCE($2, observacoes),
+          data_aprovacao = NOW(),
+          aprovador_id = $3
+        WHERE id = $4
+        RETURNING *
+      `;
+      
+      const result = await pool.query(updateQuery, [
+        status, 
+        observacoes, 
+        req.user ? req.user.id : null,
+        id
+      ]);
+      
+      if (result.rowCount === 0) {
+        return res.status(404).json({ error: 'Solicitação não encontrada' });
+      }
+      
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('Erro ao atualizar solicitação de pneus:', error);
+      res.status(500).json({ error: 'Erro ao atualizar solicitação de pneus' });
+    }
+  });
 
   // Rota para ressincronização de sessão (resolver problema de 401 após reinicialização do servidor)
   app.post("/api/resync-session", resyncSession);

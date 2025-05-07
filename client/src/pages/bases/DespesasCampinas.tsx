@@ -28,7 +28,7 @@ import {
   AlertCircle, ArrowLeft, Banknote, Check, CreditCard, 
   Download, DollarSign, MoreHorizontal 
 } from 'lucide-react';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -75,7 +75,7 @@ type ExpenseFormValues = z.infer<typeof expenseFormSchema>;
 
 const DespesasCampinas: React.FC = () => {
   const [open, setOpen] = useState(false);
-  const [, navigate] = useNavigate();
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 

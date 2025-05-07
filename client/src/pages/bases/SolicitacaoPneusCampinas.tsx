@@ -28,7 +28,7 @@ import { z } from 'zod';
 import { 
   AlertCircle, ArrowLeft, Check, CircleDot, Clock, Trash
 } from 'lucide-react';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 
 // ID da base Campinas (presumindo que já foi criada no banco)
 const CAMPINAS_BASE_ID = 9; // Ajuste este ID conforme necessário
@@ -69,7 +69,7 @@ type TireRequestFormValues = z.infer<typeof tireRequestSchema>;
 
 const SolicitacaoPneusCampinas: React.FC = () => {
   const [open, setOpen] = useState(false);
-  const [, navigate] = useNavigate();
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
