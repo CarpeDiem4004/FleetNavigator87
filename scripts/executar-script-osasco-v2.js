@@ -47,7 +47,7 @@ async function executarScript() {
         SELECT EXISTS (
           SELECT FROM information_schema.tables 
           WHERE table_schema = 'public' 
-          AND table_name = 'posto_murici_osasco_v2'
+          AND table_name = 'abastecimentos_posto_osasco_v2'
         ) as "exists";
       `);
       
@@ -60,15 +60,15 @@ async function executarScript() {
       `);
       
       console.log('Verificação de tabelas:');
-      console.log(`- Tabela posto_murici_osasco_v2: ${verificarTabela.rows[0].exists ? 'Criada' : 'Erro'}`);
+      console.log(`- Tabela abastecimentos_posto_osasco_v2: ${verificarTabela.rows[0].exists ? 'Criada' : 'Erro'}`);
       console.log(`- Tabela configuracao_tanques_osasco_v2: ${verificarConfiguracaoTanques.rows[0].exists ? 'Criada' : 'Erro'}`);
       
       // Verifica as views
       const views = [
-        'posto_murici_osasco_v2_consumo_por_veiculo',
-        'posto_murici_osasco_v2_estatisticas_mensais',
-        'posto_murici_osasco_v2_comparativo_combustiveis',
-        'posto_murici_osasco_v2_ultimos'
+        'abastecimentos_posto_osasco_v2_consumo_por_veiculo',
+        'abastecimentos_posto_osasco_v2_estatisticas_mensais',
+        'abastecimentos_posto_osasco_v2_comparativo_combustiveis',
+        'abastecimentos_posto_osasco_v2_ultimos'
       ];
       
       console.log('\nVerificação de views:');

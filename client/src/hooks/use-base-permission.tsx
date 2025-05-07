@@ -39,7 +39,6 @@ const allRoutes = [
   '/fuel-card',                        // Cartão de Combustível
   '/fuel-card-requests',               // Painel de Solicitações Fuel Card
   '/posto-remedios',                   // Posto Remédios
-  '/posto-murici',                     // Posto Murici
   '/cartao-abastecimento',            // Cartão de Abastecimento
   '/fines',                            // Multas
   '/multas',                           // Alias para Multas
@@ -138,7 +137,6 @@ const basicRoutes = [
   '/fuel-card',              // Cartão de Combustível
   '/fuel-card-requests',     // Painel de Solicitações Fuel Card
   '/posto-remedios',         // Posto Remédios
-  '/posto-murici',           // Posto Murici
   '/cartao-abastecimento',  // Cartão de Abastecimento
   '/work-safety',            // Informar acidentes de trabalho
   '/seguranca-trabalho',     // Alias para segurança do trabalho
@@ -176,14 +174,6 @@ export const useBasePermission = (): BasePermissionHook => {
   
   // Verifica se o usuário tem permissão para acessar a rota
   const hasPermission = useCallback((route: string): boolean => {
-    console.log(`[DEBUG hasPermission] Verificando permissão para rota: ${route}`);
-    
-    // FORÇAR PERMISSÃO PARA ROTAS ESPECÍFICAS
-    if (route === '/posto-murici' || route === '/posto-murici/links') {
-      console.log(`[FORCE PERMISSION] PERMITINDO acesso à rota: ${route}`);
-      return true;
-    }
-    
     // Se for um link '#' usado para menus com subitens, sempre permitir
     if (route === '#') {
       return true;
@@ -199,7 +189,7 @@ export const useBasePermission = (): BasePermissionHook => {
     // Verificamos admin com case-insensitive e também verificamos emails específicos de admin
     if (
       user.role?.toLowerCase() === 'admin' || 
-      (user.email && ['joao.paulo@muricionfleet.com', 'regio@muricionfleet.com', 'andre.rosa@muricionfleet.com', 'admin@muricionfleet.com'].includes(user.email.toLowerCase()))
+      (user.email && ['joao.paulo@muricionfleet.com', 'regio@muricionfleet.com', 'andre.rosa@muricionfleet.com'].includes(user.email.toLowerCase()))
     ) {
       console.log(`Permission granted for admin user to route: ${route} (admin role: ${user.role}, email: ${user.email})`);
       return true;
@@ -259,7 +249,6 @@ export const useBasePermission = (): BasePermissionHook => {
         '/fuel-card',                                 // Cartão de Combustível
         '/fuel-card-requests',                        // Painel de Solicitações Fuel Card
         '/posto-remedios',                            // Posto Remédios
-        '/posto-murici',                              // Posto Murici
         '/cartao-abastecimento',                     // Cartão de Abastecimento
         '/tires',                                     // Pneus
         '/fines',                                     // Multas

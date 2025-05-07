@@ -1,427 +1,130 @@
--- Script para criar a tabela abastecimentos_posto_osasco_v2
--- Observações:
--- 1. Este script cria a tabela de abastecimentos para o Posto Osasco V2
--- 2. Configura um tanque inicial de diesel com capacidade de 18000 litros e nível atual de 9000 litros
--- 3. Cria views para relatórios e análises
--- 4. Implementa triggers para atualização automática
+-- Script para criação da tabela e views para o Posto Osasco V2
+-- Baseado na mesma estrutura utilizada para Campinas V2 e Osasco
 
--- Criação da tabela principal de abastecimentos
+-- Verificação e criação da tabela de abastecimentos
 CREATE TABLE IF NOT EXISTS abastecimentos_posto_osasco_v2 (
     id SERIAL PRIMARY KEY,
-    data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    placa TEXT,
-    veiculo TEXT,
-    motorista TEXT,
-    hodometro NUMERIC,
-    horimetro NUMERIC,
-    tipo_combustivel TEXT,
-    quantidade NUMERIC, -- quantidade em litros
-    valor_unitario NUMERIC, -- valor por litro
-    valor_total NUMERIC,
-    forma_pagamento TEXT,
+    placa VARCHAR(10) NOT NULL,
+    km_atual INTEGER,
+    tipo_combustivel VARCHAR(20) NOT NULL,
+    litros DECIMAL(10, 2) NOT NULL,
+    motorista VARCHAR(100) NOT NULL,
+    motorista_rg VARCHAR(20),
+    operador VARCHAR(100) NOT NULL,
+    valor_litro DECIMAL(10, 3) NOT NULL,
+    valor_total DECIMAL(10, 2) NOT NULL,
+    tipo_veiculo VARCHAR(50),
     observacoes TEXT,
-    funcionario TEXT, -- funcionário que autorizou o abastecimento
-    tanque TEXT, -- identificação do tanque utilizado
-    nivel_tanque_apos NUMERIC, -- nível do tanque após o abastecimento
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    base TEXT, -- base do veículo
-    empresa TEXT, -- empresa do veículo
-    tipo_veiculo TEXT, -- tipo de veículo (caminhão, carro, etc.)
-    odometro_ant NUMERIC, -- hodômetro anterior
-    consumo_medio NUMERIC, -- consumo médio calculado
-    km_percorrido NUMERIC, -- quilometragem percorrida desde o último abastecimento
-    status TEXT DEFAULT 'ativo' -- status do registro (ativo ou inativo)
+    lavagem BOOLEAN DEFAULT FALSE,
+    tipo_lavagem VARCHAR(50),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Verificação da tabela de configuração de tanques
-CREATE TABLE IF NOT EXISTS configuracao_tanques (
+-- Verificação e criação da tabela de configuração de tanques
+CREATE TABLE IF NOT EXISTS configuracao_tanques_osasco_v2 (
     id SERIAL PRIMARY KEY,
-    posto TEXT UNIQUE NOT NULL, -- Nome do posto
-    diesel_capacidade NUMERIC NOT NULL, -- Capacidade total do tanque de diesel
-    diesel_nivel_atual NUMERIC NOT NULL, -- Nível atual do tanque de diesel
-    diesel_valor_litro NUMERIC NOT NULL, -- Valor por litro do diesel
-    gasolina_capacidade NUMERIC, -- Capacidade total do tanque de gasolina
-    gasolina_nivel_atual NUMERIC, -- Nível atual do tanque de gasolina
-    gasolina_valor_litro NUMERIC, -- Valor por litro da gasolina
-    etanol_capacidade NUMERIC, -- Capacidade total do tanque de etanol
-    etanol_nivel_atual NUMERIC, -- Nível atual do tanque de etanol
-    etanol_valor_litro NUMERIC, -- Valor por litro do etanol
-    arla_capacidade NUMERIC, -- Capacidade total do tanque de arla
-    arla_nivel_atual NUMERIC, -- Nível atual do tanque de arla
-    arla_valor_litro NUMERIC, -- Valor por litro do arla
-    s10_capacidade NUMERIC, -- Capacidade total do tanque de diesel S10
-    s10_nivel_atual NUMERIC, -- Nível atual do tanque de diesel S10
-    s10_valor_litro NUMERIC, -- Valor por litro do diesel S10
-    ultima_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    tanque VARCHAR(50) NOT NULL,
+    capacidade_maxima DECIMAL(10, 2) NOT NULL,
+    nivel_atual DECIMAL(10, 2) NOT NULL,
+    tipo_combustivel VARCHAR(20) NOT NULL,
+    ultima_atualizacao TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Inserir configuração inicial para o posto Osasco V2 se ainda não existir
-INSERT INTO configuracao_tanques 
-(posto, diesel_capacidade, diesel_nivel_atual, diesel_valor_litro)
-VALUES 
-('Osasco_v2', 18000, 9000, 5.79)
-ON CONFLICT (posto) DO NOTHING;
-
--- Criar função para atualizar o nível do tanque após um abastecimento
-CREATE OR REPLACE FUNCTION atualizar_nivel_tanque_osasco_v2() 
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Atualiza o nível do tanque com base no tipo de combustível
-    IF NEW.tipo_combustivel = 'Diesel' THEN
-        UPDATE configuracao_tanques
-        SET diesel_nivel_atual = diesel_nivel_atual - NEW.quantidade,
-            ultima_atualizacao = CURRENT_TIMESTAMP
-        WHERE posto = 'Osasco_v2';
-    ELSIF NEW.tipo_combustivel = 'Gasolina' THEN
-        UPDATE configuracao_tanques
-        SET gasolina_nivel_atual = gasolina_nivel_atual - NEW.quantidade,
-            ultima_atualizacao = CURRENT_TIMESTAMP
-        WHERE posto = 'Osasco_v2';
-    ELSIF NEW.tipo_combustivel = 'Etanol' THEN
-        UPDATE configuracao_tanques
-        SET etanol_nivel_atual = etanol_nivel_atual - NEW.quantidade,
-            ultima_atualizacao = CURRENT_TIMESTAMP
-        WHERE posto = 'Osasco_v2';
-    ELSIF NEW.tipo_combustivel = 'Arla' THEN
-        UPDATE configuracao_tanques
-        SET arla_nivel_atual = arla_nivel_atual - NEW.quantidade,
-            ultima_atualizacao = CURRENT_TIMESTAMP
-        WHERE posto = 'Osasco_v2';
-    ELSIF NEW.tipo_combustivel = 'S10' THEN
-        UPDATE configuracao_tanques
-        SET s10_nivel_atual = s10_nivel_atual - NEW.quantidade,
-            ultima_atualizacao = CURRENT_TIMESTAMP
-        WHERE posto = 'Osasco_v2';
-    END IF;
-    
-    -- Registra o nível do tanque após o abastecimento
-    IF NEW.tipo_combustivel = 'Diesel' THEN
-        SELECT diesel_nivel_atual INTO NEW.nivel_tanque_apos FROM configuracao_tanques WHERE posto = 'Osasco_v2';
-    ELSIF NEW.tipo_combustivel = 'Gasolina' THEN
-        SELECT gasolina_nivel_atual INTO NEW.nivel_tanque_apos FROM configuracao_tanques WHERE posto = 'Osasco_v2';
-    ELSIF NEW.tipo_combustivel = 'Etanol' THEN
-        SELECT etanol_nivel_atual INTO NEW.nivel_tanque_apos FROM configuracao_tanques WHERE posto = 'Osasco_v2';
-    ELSIF NEW.tipo_combustivel = 'Arla' THEN
-        SELECT arla_nivel_atual INTO NEW.nivel_tanque_apos FROM configuracao_tanques WHERE posto = 'Osasco_v2';
-    ELSIF NEW.tipo_combustivel = 'S10' THEN
-        SELECT s10_nivel_atual INTO NEW.nivel_tanque_apos FROM configuracao_tanques WHERE posto = 'Osasco_v2';
-    END IF;
-    
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Criar trigger para atualizar o nível do tanque após um abastecimento
-DROP TRIGGER IF EXISTS tr_atualizar_nivel_tanque_osasco_v2 ON abastecimentos_posto_osasco_v2;
-CREATE TRIGGER tr_atualizar_nivel_tanque_osasco_v2
-BEFORE INSERT ON abastecimentos_posto_osasco_v2
-FOR EACH ROW
-EXECUTE FUNCTION atualizar_nivel_tanque_osasco_v2();
-
--- Criar função para calcular consumo médio e km percorrido
-CREATE OR REPLACE FUNCTION calcular_consumo_osasco_v2() 
-RETURNS TRIGGER AS $$
-DECLARE
-    ultimo_hodometro NUMERIC;
-    ultimo_abastecimento RECORD;
-BEGIN
-    -- Busca o último abastecimento para o mesmo veículo
-    SELECT * INTO ultimo_abastecimento FROM abastecimentos_posto_osasco_v2
-    WHERE placa = NEW.placa AND id != NEW.id AND status = 'ativo'
-    ORDER BY data_hora DESC
-    LIMIT 1;
-    
-    -- Se encontrou um abastecimento anterior
-    IF ultimo_abastecimento.id IS NOT NULL THEN
-        -- Calcula a quilometragem percorrida
-        NEW.odometro_ant := ultimo_abastecimento.hodometro;
-        NEW.km_percorrido := NEW.hodometro - ultimo_abastecimento.hodometro;
-        
-        -- Calcula o consumo médio se a quilometragem for positiva
-        IF NEW.km_percorrido > 0 AND NEW.quantidade > 0 THEN
-            NEW.consumo_medio := NEW.km_percorrido / NEW.quantidade;
-        END IF;
-    END IF;
-    
-    -- Seta o valor unitário automaticamente se não foi informado
-    IF NEW.valor_unitario IS NULL OR NEW.valor_unitario = 0 THEN
-        IF NEW.tipo_combustivel = 'Diesel' THEN
-            SELECT diesel_valor_litro INTO NEW.valor_unitario FROM configuracao_tanques WHERE posto = 'Osasco_v2';
-        ELSIF NEW.tipo_combustivel = 'Gasolina' THEN
-            SELECT gasolina_valor_litro INTO NEW.valor_unitario FROM configuracao_tanques WHERE posto = 'Osasco_v2';
-        ELSIF NEW.tipo_combustivel = 'Etanol' THEN
-            SELECT etanol_valor_litro INTO NEW.valor_unitario FROM configuracao_tanques WHERE posto = 'Osasco_v2';
-        ELSIF NEW.tipo_combustivel = 'Arla' THEN
-            SELECT arla_valor_litro INTO NEW.valor_unitario FROM configuracao_tanques WHERE posto = 'Osasco_v2';
-        ELSIF NEW.tipo_combustivel = 'S10' THEN
-            SELECT s10_valor_litro INTO NEW.valor_unitario FROM configuracao_tanques WHERE posto = 'Osasco_v2';
-        END IF;
-    END IF;
-    
-    -- Calcula o valor total se não foi informado
-    IF NEW.valor_total IS NULL OR NEW.valor_total = 0 THEN
-        NEW.valor_total := NEW.quantidade * NEW.valor_unitario;
-    END IF;
-    
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Criar trigger para calcular consumo médio e km percorrido
-DROP TRIGGER IF EXISTS tr_calcular_consumo_osasco_v2 ON abastecimentos_posto_osasco_v2;
-CREATE TRIGGER tr_calcular_consumo_osasco_v2
-BEFORE INSERT ON abastecimentos_posto_osasco_v2
-FOR EACH ROW
-EXECUTE FUNCTION calcular_consumo_osasco_v2();
-
--- Criar função para reabastecimento de tanque
-CREATE OR REPLACE FUNCTION reabastecer_tanque_osasco_v2(
-    p_tipo_combustivel TEXT,
-    p_quantidade NUMERIC,
-    p_valor_unitario NUMERIC DEFAULT NULL
-) RETURNS TEXT AS $$
-DECLARE
-    mensagem TEXT;
-    capacidade NUMERIC;
-    nivel_atual NUMERIC;
-BEGIN
-    -- Verifica o tipo de combustível
-    IF p_tipo_combustivel = 'Diesel' THEN
-        UPDATE configuracao_tanques
-        SET diesel_nivel_atual = diesel_nivel_atual + p_quantidade,
-            diesel_valor_litro = COALESCE(p_valor_unitario, diesel_valor_litro),
-            ultima_atualizacao = CURRENT_TIMESTAMP
-        WHERE posto = 'Osasco_v2'
-        RETURNING diesel_capacidade, diesel_nivel_atual INTO capacidade, nivel_atual;
-        
-    ELSIF p_tipo_combustivel = 'Gasolina' THEN
-        UPDATE configuracao_tanques
-        SET gasolina_nivel_atual = gasolina_nivel_atual + p_quantidade,
-            gasolina_valor_litro = COALESCE(p_valor_unitario, gasolina_valor_litro),
-            ultima_atualizacao = CURRENT_TIMESTAMP
-        WHERE posto = 'Osasco_v2'
-        RETURNING gasolina_capacidade, gasolina_nivel_atual INTO capacidade, nivel_atual;
-        
-    ELSIF p_tipo_combustivel = 'Etanol' THEN
-        UPDATE configuracao_tanques
-        SET etanol_nivel_atual = etanol_nivel_atual + p_quantidade,
-            etanol_valor_litro = COALESCE(p_valor_unitario, etanol_valor_litro),
-            ultima_atualizacao = CURRENT_TIMESTAMP
-        WHERE posto = 'Osasco_v2'
-        RETURNING etanol_capacidade, etanol_nivel_atual INTO capacidade, nivel_atual;
-        
-    ELSIF p_tipo_combustivel = 'Arla' THEN
-        UPDATE configuracao_tanques
-        SET arla_nivel_atual = arla_nivel_atual + p_quantidade,
-            arla_valor_litro = COALESCE(p_valor_unitario, arla_valor_litro),
-            ultima_atualizacao = CURRENT_TIMESTAMP
-        WHERE posto = 'Osasco_v2'
-        RETURNING arla_capacidade, arla_nivel_atual INTO capacidade, nivel_atual;
-        
-    ELSIF p_tipo_combustivel = 'S10' THEN
-        UPDATE configuracao_tanques
-        SET s10_nivel_atual = s10_nivel_atual + p_quantidade,
-            s10_valor_litro = COALESCE(p_valor_unitario, s10_valor_litro),
-            ultima_atualizacao = CURRENT_TIMESTAMP
-        WHERE posto = 'Osasco_v2'
-        RETURNING s10_capacidade, s10_nivel_atual INTO capacidade, nivel_atual;
-        
-    ELSE
-        RETURN 'Tipo de combustível inválido';
-    END IF;
-    
-    -- Verifica se o nível atual excede a capacidade
-    IF nivel_atual > capacidade THEN
-        mensagem := 'Alerta: O nível atual de ' || p_tipo_combustivel || ' (' || nivel_atual || 'L) excede a capacidade do tanque (' || capacidade || 'L)';
-    ELSE
-        mensagem := 'Tanque de ' || p_tipo_combustivel || ' reabastecido com sucesso. Nível atual: ' || nivel_atual || 'L de ' || capacidade || 'L';
-    END IF;
-    
-    RETURN mensagem;
-END;
-$$ LANGUAGE plpgsql;
-
--- Criar função para obter o valor do combustível
-CREATE OR REPLACE FUNCTION obter_valor_combustivel_osasco_v2(p_tipo_combustivel TEXT) 
-RETURNS NUMERIC AS $$
-DECLARE
-    valor NUMERIC;
-BEGIN
-    IF p_tipo_combustivel = 'Diesel' THEN
-        SELECT diesel_valor_litro INTO valor FROM configuracao_tanques WHERE posto = 'Osasco_v2';
-    ELSIF p_tipo_combustivel = 'Gasolina' THEN
-        SELECT gasolina_valor_litro INTO valor FROM configuracao_tanques WHERE posto = 'Osasco_v2';
-    ELSIF p_tipo_combustivel = 'Etanol' THEN
-        SELECT etanol_valor_litro INTO valor FROM configuracao_tanques WHERE posto = 'Osasco_v2';
-    ELSIF p_tipo_combustivel = 'Arla' THEN
-        SELECT arla_valor_litro INTO valor FROM configuracao_tanques WHERE posto = 'Osasco_v2';
-    ELSIF p_tipo_combustivel = 'S10' THEN
-        SELECT s10_valor_litro INTO valor FROM configuracao_tanques WHERE posto = 'Osasco_v2';
-    ELSE
-        valor := 0;
-    END IF;
-    
-    RETURN valor;
-END;
-$$ LANGUAGE plpgsql;
-
--- Criar view para status atual dos tanques
-CREATE OR REPLACE VIEW view_osasco_v2_status_tanques AS
-SELECT 
-    posto,
-    diesel_capacidade,
-    diesel_nivel_atual,
-    (diesel_nivel_atual / NULLIF(diesel_capacidade, 0) * 100)::NUMERIC(5,2) as diesel_percentual,
-    diesel_valor_litro,
-    gasolina_capacidade,
-    gasolina_nivel_atual,
-    (gasolina_nivel_atual / NULLIF(gasolina_capacidade, 0) * 100)::NUMERIC(5,2) as gasolina_percentual,
-    gasolina_valor_litro,
-    etanol_capacidade,
-    etanol_nivel_atual,
-    (etanol_nivel_atual / NULLIF(etanol_capacidade, 0) * 100)::NUMERIC(5,2) as etanol_percentual,
-    etanol_valor_litro,
-    arla_capacidade,
-    arla_nivel_atual,
-    (arla_nivel_atual / NULLIF(arla_capacidade, 0) * 100)::NUMERIC(5,2) as arla_percentual,
-    arla_valor_litro,
-    s10_capacidade,
-    s10_nivel_atual,
-    (s10_nivel_atual / NULLIF(s10_capacidade, 0) * 100)::NUMERIC(5,2) as s10_percentual,
-    s10_valor_litro,
-    ultima_atualizacao
-FROM 
-    configuracao_tanques
-WHERE 
-    posto = 'Osasco_v2';
-
--- Criar view consolidada de abastecimentos
-CREATE OR REPLACE VIEW view_abastecimentos_osasco_v2_consolidado AS
-SELECT 
-    id,
-    data_hora,
-    placa,
-    veiculo,
-    tipo_combustivel,
-    quantidade,
-    valor_unitario,
-    valor_total,
-    hodometro,
-    km_percorrido,
-    consumo_medio,
-    base,
-    empresa,
-    status
-FROM 
-    abastecimentos_posto_osasco_v2
-WHERE 
-    status = 'ativo'
-ORDER BY 
-    data_hora DESC;
-
--- Criar view para consumo por veículo
-CREATE OR REPLACE VIEW view_osasco_v2_consumo_por_veiculo AS
-SELECT 
-    placa,
-    veiculo,
-    COUNT(*) as total_abastecimentos,
-    SUM(quantidade) as litros_totais,
-    SUM(valor_total) as valor_total,
-    AVG(consumo_medio) as media_consumo,
-    MAX(data_hora) as ultimo_abastecimento
-FROM 
-    abastecimentos_posto_osasco_v2
-WHERE 
-    status = 'ativo'
-GROUP BY 
-    placa, veiculo
-ORDER BY 
-    litros_totais DESC;
-
--- Criar view para consumo mensal
-CREATE OR REPLACE VIEW view_osasco_v2_consumo_mensal AS
-SELECT 
-    EXTRACT(YEAR FROM data_hora) as ano,
-    EXTRACT(MONTH FROM data_hora) as mes,
-    tipo_combustivel,
-    COUNT(*) as total_abastecimentos,
-    SUM(quantidade) as litros_totais,
-    SUM(valor_total) as valor_total,
-    AVG(valor_unitario) as valor_medio_litro
-FROM 
-    abastecimentos_posto_osasco_v2
-WHERE 
-    status = 'ativo'
-GROUP BY 
-    ano, mes, tipo_combustivel
-ORDER BY 
-    ano DESC, mes DESC, tipo_combustivel;
-
--- Criar view para comparativo de combustíveis
-CREATE OR REPLACE VIEW view_osasco_v2_comparativo_combustiveis AS
-SELECT 
-    tipo_combustivel,
-    COUNT(*) as total_abastecimentos,
-    SUM(quantidade) as litros_totais,
-    SUM(valor_total) as valor_total,
-    AVG(valor_unitario) as valor_medio_litro
-FROM 
-    abastecimentos_posto_osasco_v2
-WHERE 
-    status = 'ativo'
-GROUP BY 
-    tipo_combustivel
-ORDER BY 
-    litros_totais DESC;
-
--- Criar view para os últimos abastecimentos
-CREATE OR REPLACE VIEW view_osasco_v2_ultimos_abastecimentos AS
-SELECT 
-    id,
-    data_hora,
-    placa,
-    veiculo,
-    motorista,
-    tipo_combustivel,
-    quantidade,
-    valor_unitario,
-    valor_total,
-    hodometro,
-    funcionario
-FROM 
-    abastecimentos_posto_osasco_v2
-WHERE 
-    status = 'ativo'
-ORDER BY
-    data_hora DESC
-LIMIT 
-    50;
-
--- Criar view para estatísticas por base
-CREATE OR REPLACE VIEW view_osasco_v2_estatisticas_por_base AS
-SELECT 
-    base,
-    COUNT(DISTINCT placa) as total_veiculos,
-    COUNT(*) as total_abastecimentos,
-    SUM(quantidade) as litros_totais,
-    SUM(valor_total) as valor_total,
-    AVG(consumo_medio) as media_consumo
-FROM 
-    abastecimentos_posto_osasco_v2
-WHERE 
-    status = 'ativo' AND
-    base IS NOT NULL
-GROUP BY 
-    base
-ORDER BY 
-    litros_totais DESC;
-
--- Criar índices para otimizar consultas
+-- Índices para otimização das consultas
 CREATE INDEX IF NOT EXISTS idx_abastecimentos_osasco_v2_placa ON abastecimentos_posto_osasco_v2(placa);
-CREATE INDEX IF NOT EXISTS idx_abastecimentos_osasco_v2_data_hora ON abastecimentos_posto_osasco_v2(data_hora);
+CREATE INDEX IF NOT EXISTS idx_abastecimentos_osasco_v2_created_at ON abastecimentos_posto_osasco_v2(created_at);
 CREATE INDEX IF NOT EXISTS idx_abastecimentos_osasco_v2_tipo_combustivel ON abastecimentos_posto_osasco_v2(tipo_combustivel);
-CREATE INDEX IF NOT EXISTS idx_abastecimentos_osasco_v2_base ON abastecimentos_posto_osasco_v2(base);
-CREATE INDEX IF NOT EXISTS idx_abastecimentos_osasco_v2_status ON abastecimentos_posto_osasco_v2(status);
 
--- Confirmar finalização
-SELECT 'Tabela e configurações para posto Osasco V2 criadas com sucesso.' as resultado;
+-- View para consumo por veículo
+CREATE OR REPLACE VIEW abastecimentos_posto_osasco_v2_consumo_por_veiculo AS
+SELECT 
+    placa,
+    COUNT(*) as total_abastecimentos,
+    SUM(litros) as total_litros,
+    SUM(valor_total) as total_valor,
+    MAX(created_at) as ultimo_abastecimento,
+    MIN(created_at) as primeiro_abastecimento
+FROM abastecimentos_posto_osasco_v2
+GROUP BY placa
+ORDER BY total_litros DESC;
+
+-- View para estatísticas mensais
+CREATE OR REPLACE VIEW abastecimentos_posto_osasco_v2_estatisticas_mensais AS
+SELECT 
+    EXTRACT(YEAR FROM created_at) as ano,
+    EXTRACT(MONTH FROM created_at) as mes,
+    COUNT(*) as total_abastecimentos,
+    SUM(litros) as total_litros,
+    SUM(valor_total) as total_valor,
+    COUNT(DISTINCT placa) as total_veiculos,
+    SUM(CASE WHEN tipo_combustivel = 'DIESEL' THEN litros ELSE 0 END) as total_diesel,
+    SUM(CASE WHEN tipo_combustivel = 'ARLA' THEN litros ELSE 0 END) as total_arla,
+    SUM(CASE WHEN lavagem = true THEN 1 ELSE 0 END) as total_lavagens
+FROM abastecimentos_posto_osasco_v2
+GROUP BY ano, mes
+ORDER BY ano DESC, mes DESC;
+
+-- View para comparativo de combustíveis
+CREATE OR REPLACE VIEW abastecimentos_posto_osasco_v2_comparativo_combustiveis AS
+SELECT 
+    tipo_combustivel,
+    COUNT(*) as total_abastecimentos,
+    SUM(litros) as total_litros,
+    SUM(valor_total) as total_valor,
+    AVG(valor_litro) as media_valor_litro,
+    MAX(valor_litro) as max_valor_litro,
+    MIN(valor_litro) as min_valor_litro
+FROM abastecimentos_posto_osasco_v2
+GROUP BY tipo_combustivel;
+
+-- View para últimos abastecimentos
+CREATE OR REPLACE VIEW abastecimentos_posto_osasco_v2_ultimos AS
+SELECT 
+    id,
+    placa,
+    km_atual as km,
+    tipo_combustivel,
+    litros as quantidade_litros,
+    motorista as nome_motorista,
+    motorista_rg as rg_motorista,
+    operador as nome_operador,
+    valor_litro,
+    valor_total,
+    tipo_veiculo,
+    observacoes,
+    lavagem,
+    tipo_lavagem,
+    to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora,
+    created_at
+FROM abastecimentos_posto_osasco_v2
+ORDER BY created_at DESC
+LIMIT 50;
+
+-- Função para atualizar timestamp de última atualização quando houver modificação nos tanques
+CREATE OR REPLACE FUNCTION atualizar_timestamp_tanque_osasco_v2()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.ultima_atualizacao = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger para atualizar o timestamp
+DROP TRIGGER IF EXISTS trigger_update_tanque_timestamp_osasco_v2 ON configuracao_tanques_osasco_v2;
+CREATE TRIGGER trigger_update_tanque_timestamp_osasco_v2
+BEFORE UPDATE ON configuracao_tanques_osasco_v2
+FOR EACH ROW
+EXECUTE FUNCTION atualizar_timestamp_tanque_osasco_v2();
+
+-- Inserção dos dados iniciais dos tanques se não existirem
+INSERT INTO configuracao_tanques_osasco_v2 (tanque, capacidade_maxima, nivel_atual, tipo_combustivel)
+SELECT 'Tanque Principal', 15000.00, 7500.00, 'DIESEL'
+WHERE NOT EXISTS (
+    SELECT 1 FROM configuracao_tanques_osasco_v2 WHERE tanque = 'Tanque Principal' AND tipo_combustivel = 'DIESEL'
+);
+
+INSERT INTO configuracao_tanques_osasco_v2 (tanque, capacidade_maxima, nivel_atual, tipo_combustivel)
+SELECT 'Tanque ARLA', 5000.00, 2500.00, 'ARLA'
+WHERE NOT EXISTS (
+    SELECT 1 FROM configuracao_tanques_osasco_v2 WHERE tanque = 'Tanque ARLA' AND tipo_combustivel = 'ARLA'
+);

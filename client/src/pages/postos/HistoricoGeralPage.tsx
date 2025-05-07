@@ -7,10 +7,9 @@ interface Abastecimento {
   placa: string;
   km_atual: number;
   tipo_combustivel: string;
-  litros?: number | null;
-  quantity_litros?: number | null;
-  preco_litro?: number | null;
-  valor_total?: number | null;
+  litros: number;
+  preco_litro?: number;
+  valor_total?: number;
   nome_motorista: string;
   nome_operador: string;
   project?: string;
@@ -215,20 +214,19 @@ const HistoricoGeralPage: React.FC = () => {
     }
   };
 
-  const formatarNumero = (valor?: number | null) => {
-    if (valor === null || valor === undefined) return '-';
+  const formatarNumero = (valor: number) => {
     try {
       return new Intl.NumberFormat('pt-BR').format(Math.round(valor));
     } catch (error) {
       console.error('Erro ao formatar número:', error);
-      return '-';
+      return '0';
     }
   };
 
-  const formatarPreco = (valor?: number | null) => {
-    if (valor === null || valor === undefined || isNaN(Number(valor))) return '-';
+  const formatarPreco = (valor?: number) => {
+    if (!valor) return '-';
     try {
-      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(valor));
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
     } catch (error) {
       console.error('Erro ao formatar preço:', error);
       return '-';
@@ -244,24 +242,19 @@ const HistoricoGeralPage: React.FC = () => {
       let dadosFiltrados = [...filteredData];
       
       // Preparar os dados para Excel
-      const excelData = dadosFiltrados.map(item => {
-        // Obter o valor de litros, considerando diferentes campos possíveis
-        const litrosValue = item.litros || item.quantity_litros;
-        
-        return {
-          'Data/Hora': formatarDataHora(item.created_at),
-          'Placa': item.placa,
-          'KM': item.km_atual,
-          'Combustível': item.tipo_combustivel || '-',
-          'Litros': litrosValue ? Number(litrosValue).toFixed(2) : '-',
-          'Preço/L': item.preco_litro ? `R$ ${Number(item.preco_litro).toFixed(2)}` : '-',
-          'Valor Total': item.valor_total ? `R$ ${Number(item.valor_total).toFixed(2)}` : '-',
-          'Motorista': item.nome_motorista || '-',
-          'Operador': item.nome_operador || '-',
-          'Projeto': item.project || '-',
-          'Posto': item.posto
-        };
-      });
+      const excelData = dadosFiltrados.map(item => ({
+        'Data/Hora': formatarDataHora(item.created_at),
+        'Placa': item.placa,
+        'KM': item.km_atual,
+        'Combustível': item.tipo_combustivel,
+        'Litros': item.litros,
+        'Preço/L': item.preco_litro ? `R$ ${item.preco_litro.toFixed(2)}` : '-',
+        'Valor Total': item.valor_total ? `R$ ${item.valor_total.toFixed(2)}` : '-',
+        'Motorista': item.nome_motorista,
+        'Operador': item.nome_operador,
+        'Projeto': item.project || '-',
+        'Posto': item.posto
+      }));
       
       // Criar uma nova planilha
       const worksheet = XLSX.utils.json_to_sheet(excelData);
@@ -286,10 +279,10 @@ const HistoricoGeralPage: React.FC = () => {
       const workbook = XLSX.utils.book_new();
       
       // Adicionar a planilha ao livro
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Histórico Posto Murici');
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Histórico Abastecimentos');
       
       // Gerar arquivo e fazer download
-      XLSX.writeFile(workbook, `historico_posto_murici_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      XLSX.writeFile(workbook, `historico_abastecimentos_geral_${new Date().toISOString().slice(0, 10)}.xlsx`);
       
       console.log('Exportação concluída com sucesso');
     } catch (error) {
@@ -345,7 +338,7 @@ const HistoricoGeralPage: React.FC = () => {
     <div className="container mx-auto p-4">
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex flex-wrap justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">Histórico Geral do Posto Murici</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Histórico Geral de Abastecimentos</h1>
           
           <div className="flex items-center space-x-2 mt-4 sm:mt-0">
             <button 
@@ -421,7 +414,7 @@ const HistoricoGeralPage: React.FC = () => {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-lg mt-4">Nenhum registro do Posto Murici encontrado.</p>
+            <p className="text-lg mt-4">Nenhum abastecimento encontrado.</p>
             {(searchTerm || dateStart || dateEnd) && (
               <p className="text-sm mt-2">Tente ajustar os filtros de busca.</p>
             )}
@@ -457,11 +450,11 @@ const HistoricoGeralPage: React.FC = () => {
                       </td>
                       <td className="py-3 px-4 font-medium">{abast.placa}</td>
                       <td className="py-3 px-4">{formatarNumero(abast.km_atual)}</td>
-                      <td className="py-3 px-4">{abast.tipo_combustivel || '-'}</td>
-                      <td className="py-3 px-4">{formatarNumero(abast.litros || abast.quantity_litros)}</td>
+                      <td className="py-3 px-4">{abast.tipo_combustivel}</td>
+                      <td className="py-3 px-4">{formatarNumero(abast.litros)}</td>
                       <td className="py-3 px-4">{abast.project || '-'}</td>
-                      <td className="py-3 px-4">{abast.nome_motorista || '-'}</td>
-                      <td className="py-3 px-4">{formatarPreco(abast.valor_total)}</td>
+                      <td className="py-3 px-4">{abast.nome_motorista}</td>
+                      <td className="py-3 px-4">{abast.valor_total ? formatarPreco(abast.valor_total) : '-'}</td>
                     </tr>
                   ))}
                 </tbody>

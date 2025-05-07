@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Fuel, TruckIcon, Truck, History, AlertCircle } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Fuel, TruckIcon, Truck, History } from 'lucide-react';
 import FormularioAbastecimento from './components/FormularioAbastecimento';
 import FormularioRecebimento from './components/FormularioRecebimento';
 import FormularioControlePatio from './components/FormularioControlePatio';
@@ -114,21 +113,12 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
             Históricos
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Usar HistoricoSupabaseView para todos os postos V2, Osasco e qualquer posto que utilize o novo formato */}
-            {id.toLowerCase().endsWith('_v2') || id.toLowerCase() === 'osasco' || id.toLowerCase() === 'remedios' ? (
-              <div className="w-full">
-                <Alert className="mb-4" variant="default">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Histórico de Abastecimentos - {id}</AlertTitle>
-                  <AlertDescription>
-                    Exibindo registros de abastecimento do posto usando o novo formato.
-                  </AlertDescription>
-                </Alert>
-                <HistoricoSupabaseView 
-                  posto={id.replace(/\s+/g, '_')} 
-                  refreshTrigger={refreshTrigger}
-                />
-              </div>
+            {/* Usar HistoricoSupabaseView para Campinas V2, Osasco e Osasco V2, HistoricoAbastecimentos para outros postos */}
+            {id === 'campinas_v2' || id === 'osasco' || id === 'osasco_v2' ? (
+              <HistoricoSupabaseView 
+                posto={id} 
+                refreshTrigger={refreshTrigger}
+              />
             ) : (
               <HistoricoAbastecimentos 
                 postId={id} 

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { format } from 'date-fns';
-import { AlertTriangle, DropletIcon, Filter, Fuel, LogIn, RefreshCw, Search, DollarSign, Droplets } from 'lucide-react';
+import { AlertTriangle, DropletIcon, Filter, Fuel, LogIn, RefreshCw, Search } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import clsx from 'clsx';
-
+import RemoverPostoSaoPaulo from '@/components/postos/RemoverPostoSaoPaulo';
 
 interface PostoResumo {
   id: number;
@@ -33,7 +33,6 @@ interface PostoResumo {
   volume_atual: number;
   total_abastecimentos: number;
   total_litros: number;
-  total_cartao?: number; // Total abastecido pelo cartão
   alerta_nivel_baixo: boolean;
   percentual: number;
   ultima_atualizacao: string;
@@ -90,39 +89,8 @@ export default function PostosVisaoGeralPage() {
   const postosFiltrados = React.useMemo(() => {
     if (!data) return [];
     
-    // Mostrar os postos solicitados: Osasco v2, Campinas v2, Socorro v2, Sorocaba v2, ABC v2, Remedios e Alair v2
-    let resultado = data.filter(posto => {
-      // Normalizar nome do posto para comparação
-      const nomePosto = posto.nome.toLowerCase().trim();
-      
-      // Lista dos postos a exibir - com várias formas possíveis de escrita
-      return (
-        // Osasco
-        nomePosto === 'osasco_v2' || 
-        nomePosto === 'osasco v2' ||
-        // Campinas
-        nomePosto === 'campinas_v2' || 
-        nomePosto === 'campinas v2' ||
-        // Socorro
-        nomePosto === 'socorro_v2' || 
-        nomePosto === 'socorro v2' ||
-        // Sorocaba
-        nomePosto === 'sorocaba_v2' || 
-        nomePosto === 'sorocaba v2' ||
-        // ABC
-        nomePosto === 'abc_v2' || 
-        nomePosto === 'abc v2' ||
-        // Remédios
-        nomePosto === 'remedios' ||
-        nomePosto === 'remédios' ||
-        // Alair
-        nomePosto === 'alair_v2' ||
-        nomePosto === 'alair v2'
-      );
-    });
-    
     // Aplicar filtro de pesquisa
-    resultado = resultado.filter(posto => 
+    let resultado = data.filter(posto => 
       posto.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       posto.localizacao.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -202,6 +170,7 @@ export default function PostosVisaoGeralPage() {
             <RefreshCw className="mr-2 h-4 w-4" />
             Atualizar
           </Button>
+          <RemoverPostoSaoPaulo />
         </div>
       </div>
 
@@ -278,350 +247,17 @@ export default function PostosVisaoGeralPage() {
         {/* Contadores */}
         <div className="flex flex-wrap gap-4 mt-4">
           <div className="bg-gray-50 px-3 py-1 rounded-full text-sm">
-            Total de postos: <span className="font-medium">{Array.isArray(data) ? data.length : 0}</span>
+            Total de postos: <span className="font-medium">{data?.length || 0}</span>
           </div>
           <div className="bg-red-50 px-3 py-1 rounded-full text-sm text-red-700">
-            Postos em alerta: <span className="font-medium">
-              {Array.isArray(data) ? data.filter(p => p.alerta_nivel_baixo).length : 0}
-            </span>
+            Postos em alerta: <span className="font-medium">{data?.filter(p => p.alerta_nivel_baixo).length || 0}</span>
           </div>
           <div className="bg-blue-50 px-3 py-1 rounded-full text-sm text-blue-700">
-            Volume total: <span className="font-medium">
-              {formatarNumero(
-                Array.isArray(data) ? data.reduce((acc, p) => acc + p.volume_atual, 0) : 0
-              )} L
-            </span>
+            Volume total: <span className="font-medium">{formatarNumero(data?.reduce((acc, p) => acc + p.volume_atual, 0) || 0)} L</span>
           </div>
         </div>
-        
-
       </div>
       
-      {/* Card dedicado para abastecimentos via solicitação de cartão */}
-      <div className="mb-6">
-        <Card className="overflow-hidden shadow-md">
-          <CardHeader className="pb-2 bg-purple-50">
-            <div className="flex justify-between">
-              <div>
-                <CardTitle className="flex items-center">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="20" 
-                    height="20" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    className="mr-2 text-purple-600"
-                  >
-                    <rect width="20" height="14" x="2" y="5" rx="2" />
-                    <line x1="2" x2="22" y1="10" y2="10" />
-                  </svg>
-                  Abastecimentos via Solicitação de Cartão
-                </CardTitle>
-                <CardDescription className="text-base">
-                  Resumo de todos os abastecimentos realizados com cartão
-                </CardDescription>
-              </div>
-              <Badge 
-                variant="outline" 
-                className="py-1 px-2 rounded-full bg-purple-100 text-purple-700 border-purple-200"
-              >
-                Controle
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="pb-2">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-              <div className="text-center">
-                <div className="flex items-center justify-center">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="16" 
-                    height="16" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    className="mr-1 text-purple-600"
-                  >
-                    <rect width="20" height="14" x="2" y="5" rx="2" />
-                    <line x1="2" x2="22" y1="10" y2="10" />
-                  </svg>
-                  <span className="text-sm text-gray-500">Total de Solicitações</span>
-                </div>
-                <p className="font-medium text-xl text-purple-700">
-                  {formatarNumero(
-                    Array.isArray(data) 
-                      ? data.reduce((acc, p) => p.total_cartao ? acc + 1 : acc, 0)
-                      : 0
-                  )}
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="16" 
-                    height="16" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    className="mr-1 text-purple-600"
-                  >
-                    <path d="M3 22h12" />
-                    <path d="M19 22h2" />
-                    <path d="M19 22a2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 6" />
-                    <path d="M5 4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v2.17a1 1 0 0 1-.29.7L12 13.67a1 1 0 0 1-1.41 0L4.29 6.88A1 1 0 0 1 4 6.17V4" />
-                  </svg>
-                  <span className="text-sm text-gray-500">Total em Litros</span>
-                </div>
-                <p className="font-medium text-xl text-purple-700">
-                  {formatarNumero(
-                    Array.isArray(data) 
-                      ? data.reduce((acc, p) => acc + (p.total_cartao || 0), 0) 
-                      : 0
-                  )} L
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="16" 
-                    height="16" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    className="mr-1 text-purple-600"
-                  >
-                    <line x1="12" y1="1" x2="12" y2="23" />
-                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                  </svg>
-                  <span className="text-sm text-gray-500">Valor Estimado</span>
-                </div>
-                <p className="font-medium text-xl text-purple-700">
-                  R$ {formatarNumero(
-                    Array.isArray(data) 
-                      ? data.reduce((acc, p) => acc + (p.total_cartao || 0), 0) * 5.19 // valor estimado do litro
-                      : 0
-                  )}
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="16" 
-                    height="16" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    className="mr-1 text-purple-600"
-                  >
-                    <path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19-1.14-.93-1.71-2.03-1.71-3.19C7.57 3.53 6 2 3.78 2" />
-                    <path d="M12.57 6.33A2 2 0 0 0 15.71 4" />
-                    <path d="M16.25 6.39A6 6 0 0 0 21.2 4.1" />
-                    <path d="M12 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19-1.14-.93-1.71-2.03-1.71-3.19C12.57 3.53 11 2 8.78 2" />
-                  </svg>
-                  <span className="text-sm text-gray-500">Média por Solicitação</span>
-                </div>
-                <p className="font-medium text-xl text-purple-700">
-                  {formatarNumero(
-                    Array.isArray(data)
-                      ? data.reduce((acc, p) => acc + (p.total_cartao || 0), 0) / 
-                        Math.max(1, data.reduce((acc, p) => p.total_cartao ? acc + 1 : acc, 0))
-                      : 0
-                  )} L
-                </p>
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="text-xs text-gray-500 border-t pt-3">
-            Dados atualizados em: {format(new Date(), 'dd/MM/yyyy HH:mm')}
-          </CardFooter>
-        </Card>
-      </div>
-
-      {/* Card específico para o Posto Remédios */}
-      <div className="mb-6">
-        <Card className="overflow-hidden shadow-md">
-          <CardHeader className="pb-2 bg-green-50">
-            <div className="flex justify-between">
-              <div>
-                <CardTitle className="flex items-center">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="20" 
-                    height="20" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    className="mr-2 text-green-600"
-                  >
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                    <polyline points="16 17 21 12 16 7" />
-                    <line x1="21" y1="12" x2="9" y2="12" />
-                  </svg>
-                  Posto Remédios
-                </CardTitle>
-                <CardDescription className="text-base">
-                  Resumo dos abastecimentos no Posto Remédios
-                </CardDescription>
-              </div>
-              <Badge 
-                variant="outline" 
-                className="py-1 px-2 rounded-full bg-green-100 text-green-700 border-green-200"
-              >
-                Destaque
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="pb-2">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-              <div className="text-center">
-                <div className="flex items-center justify-center">
-                  <DropletIcon className="h-4 w-4 mr-1 text-green-600" />
-                  <span className="text-sm text-gray-500">Abastecimentos</span>
-                </div>
-                <p className="font-medium text-xl text-green-700">
-                  {formatarNumero(
-                    Array.isArray(data) 
-                      ? data.filter(p => 
-                          p.nome.toLowerCase().includes('remedios') || 
-                          p.nome.toLowerCase().includes('remédios')
-                        ).reduce((acc, p) => acc + p.total_abastecimentos, 0)
-                      : 0
-                  )}
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="16" 
-                    height="16" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    className="mr-1 text-green-600"
-                  >
-                    <path d="M3 22h12" />
-                    <path d="M19 22h2" />
-                    <path d="M19 22a2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 6" />
-                    <path d="M5 4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v2.17a1 1 0 0 1-.29.7L12 13.67a1 1 0 0 1-1.41 0L4.29 6.88A1 1 0 0 1 4 6.17V4" />
-                  </svg>
-                  <span className="text-sm text-gray-500">Total em Litros</span>
-                </div>
-                <p className="font-medium text-xl text-green-700">
-                  {formatarNumero(
-                    Array.isArray(data) 
-                      ? data.filter(p => 
-                          p.nome.toLowerCase().includes('remedios') || 
-                          p.nome.toLowerCase().includes('remédios')
-                        ).reduce((acc, p) => acc + p.total_litros, 0) 
-                      : 0
-                  )} L
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="16" 
-                    height="16" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    className="mr-1 text-green-600"
-                  >
-                    <line x1="12" y1="1" x2="12" y2="23" />
-                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                  </svg>
-                  <span className="text-sm text-gray-500">Valor Estimado</span>
-                </div>
-                <p className="font-medium text-xl text-green-700">
-                  R$ {formatarNumero(
-                    Array.isArray(data) 
-                      ? data.filter(p => 
-                          p.nome.toLowerCase().includes('remedios') || 
-                          p.nome.toLowerCase().includes('remédios')
-                        ).reduce((acc, p) => acc + p.total_litros, 0) * 5.19 // valor estimado do litro
-                      : 0
-                  )}
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="16" 
-                    height="16" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    className="mr-1 text-green-600"
-                  >
-                    <rect width="20" height="14" x="2" y="5" rx="2" />
-                    <line x1="2" x2="22" y1="10" y2="10" />
-                  </svg>
-                  <span className="text-sm text-gray-500">Cartão (Litros)</span>
-                </div>
-                <p className="font-medium text-xl text-green-700">
-                  {formatarNumero(
-                    Array.isArray(data)
-                      ? data.filter(p => 
-                          p.nome.toLowerCase().includes('remedios') || 
-                          p.nome.toLowerCase().includes('remédios')
-                        ).reduce((acc, p) => acc + (p.total_cartao || 0), 0)
-                      : 0
-                  )} L
-                </p>
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="text-xs text-gray-500 border-t pt-3 flex justify-between">
-            <span>Atualizado em: {format(new Date(), 'dd/MM/yyyy HH:mm')}</span>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={(e) => {
-                e.stopPropagation(); 
-                setLocation('/postos/remedios');
-              }}
-              className="text-green-600 hover:text-green-800 hover:bg-green-50"
-            >
-              Ver detalhes
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
-
       {/* Grid de cards dos postos */}
       {postosFiltrados.length === 0 ? (
         <div className="bg-white rounded-lg shadow-md p-8 text-center">
@@ -692,22 +328,6 @@ export default function PostosVisaoGeralPage() {
                       <span className="text-sm text-gray-500">Total Abastecido</span>
                     </div>
                     <p className="font-medium">{formatarNumero(posto.total_litros)} L</p>
-                  </div>
-                </div>
-                
-                {/* Total abastecido pelo cartão */}
-                <div className="mt-3 pt-3 border-t border-gray-100">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 text-purple-500">
-                        <rect width="20" height="14" x="2" y="5" rx="2" />
-                        <line x1="2" x2="22" y1="10" y2="10" />
-                      </svg>
-                      <span className="text-sm text-gray-500">Total por Cartão</span>
-                    </div>
-                    <p className="font-medium">
-                      {posto.total_cartao !== undefined ? `${formatarNumero(posto.total_cartao)} L` : '-'}
-                    </p>
                   </div>
                 </div>
               </CardContent>

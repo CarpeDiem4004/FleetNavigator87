@@ -11,168 +11,6 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-// Função para formatar o nome do posto para usar nas consultas
-function normalizarNomePosto(postoName) {
-  if (postoName.toLowerCase() === 'abc_v2' || 
-      postoName.toLowerCase().includes('abc_v2') || 
-      postoName.toLowerCase().includes('abc v2')) {
-    return 'abc_v2';
-  } else if (postoName.toLowerCase() === 'osasco_v2' || 
-      postoName.toLowerCase().includes('osasco_v2') || 
-      postoName.toLowerCase().includes('osasco v2')) {
-    return 'osasco_v2';
-  } else if (postoName.toLowerCase() === 'campinas_v2' || 
-      postoName.toLowerCase().includes('campinas_v2') || 
-      postoName.toLowerCase().includes('campinas v2')) {
-    return 'campinas_v2';
-  } else if (postoName.toLowerCase() === 'socorro_v2' || 
-      postoName.toLowerCase().includes('socorro_v2') || 
-      postoName.toLowerCase().includes('socorro v2')) {
-    return 'socorro_v2';
-  } else if (postoName.toLowerCase() === 'sorocaba_v2' || 
-      postoName.toLowerCase().includes('sorocaba_v2') || 
-      postoName.toLowerCase().includes('sorocaba v2')) {
-    return 'sorocaba_v2';
-  } else if (postoName.toLowerCase() === 'alair_v2' || 
-      postoName.toLowerCase().includes('alair_v2') || 
-      postoName.toLowerCase().includes('alair v2')) {
-    return 'alair_v2';
-  } else {
-    return formatPostoName(postoName);
-  }
-}
-
-// Função para obter recebimentos de um posto específico
-export async function getRecebimentosPosto(req, res) {
-  try {
-    // Forçar o Content-Type como application/json para evitar interceptação do Vite
-    res.setHeader('Content-Type', 'application/json');
-    
-    let postoName = req.params.posto;
-    
-    console.log("getRecebimentosPosto - Posto solicitado:", postoName);
-    
-    // Normalizar o nome do posto usando a função auxiliar
-    postoName = normalizarNomePosto(postoName);
-    console.log("getRecebimentosPosto - Identificado como", postoName);
-    
-    // Verificar se a tabela de recebimentos existe
-    const tableName = `recebimentos_posto_${postoName.toLowerCase()}`;
-    
-    const tableCheckQuery = `
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = $1
-      ) as "exists";
-    `;
-    
-    const tableCheckResult = await pool.query(tableCheckQuery, [tableName]);
-    
-    if (!tableCheckResult.rows[0].exists) {
-      // Tabela não existe, retornar array vazio
-      console.log(`getRecebimentosPosto - Tabela ${tableName} não encontrada`);
-      return res.json({
-        success: true,
-        data: [],
-        count: 0,
-        posto: postoName
-      });
-    }
-    
-    // Consultar recebimentos
-    const dataQuery = `
-      SELECT * FROM ${tableName}
-      ORDER BY created_at DESC
-      LIMIT ${req.query.limit || 1000}
-    `;
-    
-    const result = await pool.query(dataQuery);
-    
-    console.log(`getRecebimentosPosto - Encontrados ${result.rowCount} recebimentos para ${postoName}`);
-    
-    return res.json({
-      success: true,
-      data: result.rows,
-      count: result.rowCount,
-      posto: postoName
-    });
-  } catch (error) {
-    console.error(`Erro ao consultar recebimentos para posto ${req.params.posto}:`, error);
-    res.status(500).json({ 
-      success: false, 
-      error: `Erro ao consultar recebimentos: ${error.message}` 
-    });
-  }
-}
-
-// Função para obter movimentações de pátio de um posto específico
-export async function getMovimentacoesPatioPosto(req, res) {
-  try {
-    // Forçar o Content-Type como application/json para evitar interceptação do Vite
-    res.setHeader('Content-Type', 'application/json');
-    
-    let postoName = req.params.posto;
-    
-    console.log("getMovimentacoesPatioPosto - Posto solicitado:", postoName);
-    
-    // Normalizar o nome do posto usando a função auxiliar
-    postoName = normalizarNomePosto(postoName);
-    console.log("getMovimentacoesPatioPosto - Identificado como", postoName);
-    
-    // Verificar se a tabela de movimentações existe
-    const tableName = `movimentacoes_patio_${postoName.toLowerCase()}`;
-    
-    const tableCheckQuery = `
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = $1
-      ) as "exists";
-    `;
-    
-    const tableCheckResult = await pool.query(tableCheckQuery, [tableName]);
-    
-    if (!tableCheckResult.rows[0].exists) {
-      // Tabela não existe, retornar array vazio
-      console.log(`getMovimentacoesPatioPosto - Tabela ${tableName} não encontrada`);
-      return res.json({
-        success: true,
-        data: [],
-        count: 0,
-        posto: postoName
-      });
-    }
-    
-    // Consultar movimentações de pátio
-    // Verificar se req.query está definido e obter o limite, ou usar 1000 como padrão
-    const limit = req.query && req.query.limit ? req.query.limit : 1000;
-    
-    const dataQuery = `
-      SELECT * FROM ${tableName}
-      ORDER BY created_at DESC
-      LIMIT ${limit}
-    `;
-    
-    const result = await pool.query(dataQuery);
-    
-    console.log(`getMovimentacoesPatioPosto - Encontradas ${result.rowCount} movimentações para ${postoName}`);
-    
-    return res.json({
-      success: true,
-      data: result.rows,
-      count: result.rowCount,
-      posto: postoName
-    });
-  } catch (error) {
-    console.error(`Erro ao consultar movimentações para posto ${req.params.posto}:`, error);
-    res.status(500).json({ 
-      success: false, 
-      error: `Erro ao consultar movimentações: ${error.message}` 
-    });
-  }
-}
-
 // Função para obter histórico de um posto específico da view consolidada
 export async function getHistoricoPosto(req, res) {
   try {
@@ -251,7 +89,7 @@ export async function getHistoricoPosto(req, res) {
       console.log(`getHistoricoPosto - Usando tabela direta para ${postoName} em vez de view`);
       
       // Definir o nome da tabela com base no posto
-      const tableName = `posto_murici_${postoName.toLowerCase()}`;
+      const tableName = `abastecimentos_posto_${postoName.toLowerCase()}`;
       
       // Verificar se a tabela existe
       const tableCheckQuery = `
@@ -272,100 +110,31 @@ export async function getHistoricoPosto(req, res) {
       }
       
       querySource = tableName;
-      
-      // Consulta SQL diferente para postos específicos
-      if (postoName.toLowerCase() === 'abc_v2' || postoName.toLowerCase() === 'socorro_v2' || postoName.toLowerCase() === 'sorocaba_v2') {
-        // Formato ABC_v2, Socorro_v2, Sorocaba_v2 (usa km_atual, litros, motorista, operador)
-        console.log(`getHistoricoPosto - Usando consulta específica para posto tipo ABC: ${postoName}`);
-        
-        // Verificar se req.query está definido e obter o limite, ou usar 10000 como padrão
-        const abcLimit = req.query && req.query.limit ? req.query.limit : 10000;
-        
-        dataQuery = `
-          SELECT 
-            id,
-            placa,
-            km_atual as km,
-            tipo_combustivel,
-            litros as quantidade_litros,
-            motorista as nome_motorista,
-            motorista_rg as rg_motorista,
-            operador as nome_operador,
-            valor_litro,
-            valor_total,
-            tipo_veiculo,
-            observacoes,
-            lavagem,
-            tipo_lavagem,
-            to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora,
-            created_at
-          FROM ${tableName}
-          ORDER BY created_at DESC
-          LIMIT ${abcLimit}
-        `;
-      } else if (postoName.toLowerCase().endsWith('_v2')) {
-        // Formato Osasco_v2, Alair_v2, Campinas_v2 (usa hodometro, quantidade, motorista, funcionario)
-        console.log(`getHistoricoPosto - Usando consulta específica para posto tipo Osasco/Campinas: ${postoName}`);
-        
-        // Verificar se req.query está definido e obter o limite, ou usar 10000 como padrão
-        const osascoLimit = req.query && req.query.limit ? req.query.limit : 10000;
-        
-        dataQuery = `
-          SELECT 
-            id,
-            placa,
-            hodometro as km,
-            tipo_combustivel,
-            quantidade as quantidade_litros,
-            motorista as nome_motorista,
-            NULL as rg_motorista,
-            funcionario as nome_operador,
-            valor_unitario as valor_litro,
-            valor_total,
-            tipo_veiculo,
-            observacoes,
-            NULL as lavagem,
-            NULL as tipo_lavagem,
-            COALESCE(
-              to_char(data_hora, 'DD/MM/YYYY HH24:MI'),
-              to_char(created_at, 'DD/MM/YYYY HH24:MI')
-            ) as data_hora,
-            created_at
-          FROM ${tableName}
-          ORDER BY created_at DESC
-          LIMIT ${osascoLimit}
-        `;
-      } else {
-        // Consulta padrão para outros postos
-        // Verificar se req.query está definido e obter o limite, ou usar 10000 como padrão
-        const defaultLimit = req.query && req.query.limit ? req.query.limit : 10000;
-        
-        dataQuery = `
-          SELECT 
-            id,
-            placa,
-            km_atual as km,
-            tipo_combustivel,
-            litros as quantidade_litros,
-            motorista as nome_motorista,
-            motorista_rg as rg_motorista,
-            operador as nome_operador,
-            valor_litro,
-            valor_total,
-            tipo_veiculo,
-            observacoes,
-            lavagem,
-            tipo_lavagem,
-            to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora,
-            created_at
-          FROM ${tableName}
-          ORDER BY created_at DESC
-          LIMIT ${defaultLimit}
-        `;
-      }
+      dataQuery = `
+        SELECT 
+          id,
+          placa,
+          km_atual as km,
+          tipo_combustivel,
+          litros as quantidade_litros,
+          motorista as nome_motorista,
+          motorista_rg as rg_motorista,
+          operador as nome_operador,
+          valor_litro,
+          valor_total,
+          tipo_veiculo,
+          observacoes,
+          lavagem,
+          tipo_lavagem,
+          to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora,
+          created_at
+        FROM ${tableName}
+        ORDER BY created_at DESC
+        LIMIT ${req.query.limit || 50}
+      `;
     } else {
       // Fluxo normal usando view consolidada
-      const viewName = `posto_murici_${postoName.toLowerCase()}_consolidado`;
+      const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_consolidado`;
       
       // Verificar se a view existe
       const checkQuery = `
@@ -386,9 +155,7 @@ export async function getHistoricoPosto(req, res) {
       }
       
       querySource = viewName;
-      // Verificar se req.query está definido e obter o limite, ou usar 10000 como padrão
-      const viewLimit = req.query && req.query.limit ? req.query.limit : 10000;
-      dataQuery = `SELECT * FROM "${viewName}" ORDER BY data_hora DESC LIMIT ${viewLimit}`;
+      dataQuery = `SELECT * FROM "${viewName}" ORDER BY data_hora DESC LIMIT ${req.query.limit || 50}`;
     }
     const result = await pool.query(dataQuery);
     
@@ -471,16 +238,7 @@ export async function getEstatisticasMensaisPosto(req, res) {
       console.log("getEstatisticasMensaisPosto - Formatado para:", postoName);
     }
     
-    // Verificar se é um posto v2 e tentar usar a view específica v2
-    let viewName;
-    let dataQuery;
-    
-    if (postoName.toLowerCase().endsWith('_v2')) {
-      viewName = `view_${postoName.toLowerCase()}_consumo_mensal`;
-      console.log(`getEstatisticasMensaisPosto - Tentando usar view específica V2: ${viewName}`);
-    } else {
-      viewName = `posto_murici_${postoName.toLowerCase()}_estatisticas_mensais`;
-    }
+    const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_estatisticas_mensais`;
     
     // Verificar se a view existe
     const checkQuery = `
@@ -494,48 +252,14 @@ export async function getEstatisticasMensaisPosto(req, res) {
     const checkResult = await pool.query(checkQuery, [viewName]);
     
     if (!checkResult.rows[0].exists) {
-      // Se não encontrou a view específica e é um posto v2, tentar gerar as estatísticas diretamente da tabela
-      if (postoName.toLowerCase().endsWith('_v2')) {
-        console.log(`getEstatisticasMensaisPosto - View ${viewName} não encontrada. Gerando estatísticas diretamente da tabela.`);
-        
-        const tableName = `posto_murici_${postoName.toLowerCase()}`;
-        
-        // Verificar se a tabela existe
-        const tableCheckResult = await pool.query(checkQuery, [tableName]);
-        
-        if (!tableCheckResult.rows[0].exists) {
-          return res.status(404).json({ 
-            success: false, 
-            error: `Tabela para posto ${postoName} não encontrada.` 
-          });
-        }
-        
-        // Gerar estatísticas mensais diretamente da tabela
-        dataQuery = `
-          SELECT 
-            EXTRACT(YEAR FROM data_hora) as ano,
-            EXTRACT(MONTH FROM data_hora) as mes,
-            tipo_combustivel,
-            COUNT(*) as total_abastecimentos,
-            SUM(quantidade) as litros_totais,
-            SUM(valor_total) as valor_total,
-            AVG(valor_unitario) as valor_medio_litro
-          FROM ${tableName}
-          WHERE status = 'ativo'
-          GROUP BY ano, mes, tipo_combustivel
-          ORDER BY ano DESC, mes DESC
-          LIMIT 12
-        `;
-      } else {
-        return res.status(404).json({ 
-          success: false, 
-          error: `View de estatísticas mensais para posto ${postoName} não encontrada.` 
-        });
-      }
-    } else {
-      // View existe, usar a consulta padrão
-      dataQuery = `SELECT * FROM "${viewName}" ORDER BY ano DESC, mes DESC LIMIT 12`;
+      return res.status(404).json({ 
+        success: false, 
+        error: `View de estatísticas mensais para posto ${postoName} não encontrada.` 
+      });
     }
+    
+    // Obter dados da view
+    const dataQuery = `SELECT * FROM "${viewName}" ORDER BY ano DESC, mes DESC LIMIT 12`;
     const result = await pool.query(dataQuery);
     
     res.json({
@@ -617,16 +341,7 @@ export async function getConsumoPorVeiculoPosto(req, res) {
       console.log("getConsumoPorVeiculoPosto - Formatado para:", postoName);
     }
     
-    // Verificar se é um posto v2 e tentar usar a view específica v2
-    let viewName;
-    let dataQuery;
-    
-    if (postoName.toLowerCase().endsWith('_v2')) {
-      viewName = `view_${postoName.toLowerCase()}_consumo_por_veiculo`;
-      console.log(`getConsumoPorVeiculoPosto - Tentando usar view específica V2: ${viewName}`);
-    } else {
-      viewName = `posto_murici_${postoName.toLowerCase()}_consumo_por_veiculo`;
-    }
+    const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_consumo_por_veiculo`;
     
     // Verificar se a view existe
     const checkQuery = `
@@ -640,48 +355,14 @@ export async function getConsumoPorVeiculoPosto(req, res) {
     const checkResult = await pool.query(checkQuery, [viewName]);
     
     if (!checkResult.rows[0].exists) {
-      // Se não encontrou a view específica e é um posto v2, tentar gerar as estatísticas diretamente da tabela
-      if (postoName.toLowerCase().endsWith('_v2')) {
-        console.log(`getConsumoPorVeiculoPosto - View ${viewName} não encontrada. Gerando estatísticas diretamente da tabela.`);
-        
-        const tableName = `posto_murici_${postoName.toLowerCase()}`;
-        
-        // Verificar se a tabela existe
-        const tableCheckResult = await pool.query(checkQuery, [tableName]);
-        
-        if (!tableCheckResult.rows[0].exists) {
-          return res.status(404).json({ 
-            success: false, 
-            error: `Tabela para posto ${postoName} não encontrada.` 
-          });
-        }
-        
-        // Gerar estatísticas consumo por veículo diretamente da tabela
-        dataQuery = `
-          SELECT 
-            placa,
-            veiculo,
-            COUNT(*) as total_abastecimentos,
-            SUM(quantidade) as litros_totais,
-            SUM(valor_total) as valor_total,
-            AVG(consumo_medio) as media_consumo,
-            MAX(data_hora) as ultimo_abastecimento
-          FROM ${tableName}
-          WHERE status = 'ativo'
-          GROUP BY placa, veiculo
-          ORDER BY litros_totais DESC
-          LIMIT 20
-        `;
-      } else {
-        return res.status(404).json({ 
-          success: false, 
-          error: `View de consumo por veículo para posto ${postoName} não encontrada.` 
-        });
-      }
-    } else {
-      // View existe, usar a consulta padrão
-      dataQuery = `SELECT * FROM "${viewName}" ORDER BY total_litros DESC LIMIT 20`;
+      return res.status(404).json({ 
+        success: false, 
+        error: `View de consumo por veículo para posto ${postoName} não encontrada.` 
+      });
     }
+    
+    // Obter dados da view
+    const dataQuery = `SELECT * FROM "${viewName}" ORDER BY total_litros DESC LIMIT 20`;
     const result = await pool.query(dataQuery);
     
     res.json({
@@ -763,16 +444,7 @@ export async function getComparativoCombustiveisPosto(req, res) {
       console.log("getComparativoCombustiveisPosto - Formatado para:", postoName);
     }
     
-    // Verificar se é um posto v2 e tentar usar a view específica v2
-    let viewName;
-    let dataQuery;
-    
-    if (postoName.toLowerCase().endsWith('_v2')) {
-      viewName = `view_${postoName.toLowerCase()}_comparativo_combustiveis`;
-      console.log(`getComparativoCombustiveisPosto - Tentando usar view específica V2: ${viewName}`);
-    } else {
-      viewName = `posto_murici_${postoName.toLowerCase()}_comparativo_combustiveis`;
-    }
+    const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_comparativo_combustiveis`;
     
     // Verificar se a view existe
     const checkQuery = `
@@ -786,45 +458,14 @@ export async function getComparativoCombustiveisPosto(req, res) {
     const checkResult = await pool.query(checkQuery, [viewName]);
     
     if (!checkResult.rows[0].exists) {
-      // Se não encontrou a view específica e é um posto v2, tentar gerar as estatísticas diretamente da tabela
-      if (postoName.toLowerCase().endsWith('_v2')) {
-        console.log(`getComparativoCombustiveisPosto - View ${viewName} não encontrada. Gerando estatísticas diretamente da tabela.`);
-        
-        const tableName = `posto_murici_${postoName.toLowerCase()}`;
-        
-        // Verificar se a tabela existe
-        const tableCheckResult = await pool.query(checkQuery, [tableName]);
-        
-        if (!tableCheckResult.rows[0].exists) {
-          return res.status(404).json({ 
-            success: false, 
-            error: `Tabela para posto ${postoName} não encontrada.` 
-          });
-        }
-        
-        // Gerar estatísticas comparativo por combustíveis diretamente da tabela
-        dataQuery = `
-          SELECT 
-            tipo_combustivel,
-            COUNT(*) as total_abastecimentos,
-            SUM(quantidade) as litros_totais,
-            SUM(valor_total) as valor_total,
-            AVG(valor_unitario) as valor_medio_litro
-          FROM ${tableName}
-          WHERE status = 'ativo'
-          GROUP BY tipo_combustivel
-          ORDER BY litros_totais DESC
-        `;
-      } else {
-        return res.status(404).json({ 
-          success: false, 
-          error: `View de comparativo de combustíveis para posto ${postoName} não encontrada.` 
-        });
-      }
-    } else {
-      // View existe, usar a consulta padrão
-      dataQuery = `SELECT * FROM "${viewName}"`;
+      return res.status(404).json({ 
+        success: false, 
+        error: `View de comparativo de combustíveis para posto ${postoName} não encontrada.` 
+      });
     }
+    
+    // Obter dados da view
+    const dataQuery = `SELECT * FROM "${viewName}"`;
     const result = await pool.query(dataQuery);
     
     res.json({
@@ -906,7 +547,7 @@ export async function checkTabelaPosto(req, res) {
       console.log("checkTabelaPosto - Formatado para:", postoName);
     }
     
-    const tableName = `posto_murici_${postoName.toLowerCase()}`;
+    const tableName = `abastecimentos_posto_${postoName.toLowerCase()}`;
     
     // Verificar se a tabela existe
     const tableQuery = `
@@ -920,7 +561,7 @@ export async function checkTabelaPosto(req, res) {
     const tableResult = await pool.query(tableQuery, [tableName]);
     
     // Verificar se a view consolidada existe
-    const viewName = `posto_murici_${postoName.toLowerCase()}_consolidado`;
+    const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_consolidado`;
     const viewQuery = `
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
@@ -950,7 +591,7 @@ export async function checkTabelaPosto(req, res) {
 }
 
 // Função para registrar abastecimento em um posto específico
-export async function registrarPostoMurici(req, res) {
+export async function registrarAbastecimentoPosto(req, res) {
   try {
     // Forçar o Content-Type como application/json para evitar interceptação do Vite
     res.setHeader('Content-Type', 'application/json');
@@ -1014,7 +655,7 @@ export async function registrarPostoMurici(req, res) {
       console.log("Posto formatado para:", postoName);
     }
     
-    const tableName = `posto_murici_${postoName.toLowerCase()}`;
+    const tableName = `abastecimentos_posto_${postoName.toLowerCase()}`;
     
     console.log(`Tentando registrar abastecimento na tabela ${tableName}`);
     console.log('Dados recebidos:', req.body);
@@ -1069,142 +710,58 @@ export async function registrarPostoMurici(req, res) {
       ? parseFloat(valor_litro) * parseFloat(litros) 
       : 0);
     
-    // Verificar se é um posto v2
-    const isV2Posto = postoName.includes('_v2');
-    
-    let insertQuery, values;
-    
-    if (isV2Posto) {
-      // Query especial para Osasco_v2 que tem estrutura de tabela diferente
-      if (postoName.toLowerCase() === 'osasco_v2') {
-        console.log("Usando query específica para Osasco V2");
-        insertQuery = `
-          INSERT INTO "${tableName}" (
-            placa,
-            hodometro,
-            tipo_combustivel,
-            quantidade,
-            motorista,
-            funcionario,
-            valor_unitario,
-            valor_total,
-            tipo_veiculo,
-            observacoes,
-            status,
-            data_hora,
-            created_at,
-            updated_at
-          ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ativo', NOW(), NOW(), NOW()
-          ) RETURNING *
-        `;
-        
-        values = [
-          placa.toUpperCase(),
-          km_atual ? parseInt(km_atual, 10) : null,
-          tipo_combustivel,
-          litros ? parseFloat(litros) : null,
-          motorista,
-          operador,
-          valor_litro ? parseFloat(valor_litro) : null,
-          calculatedValorTotal,
-          tipo_veiculo,
-          observacoes
-        ];
-      } else {
-        // Query para outros postos v2 (Socorro_v2, Sorocaba_v2, ABC_v2, etc)
-        insertQuery = `
-          INSERT INTO "${tableName}" (
-            placa,
-            km_atual,
-            tipo_combustivel,
-            litros,
-            motorista,
-            motorista_rg,
-            operador,
-            valor_litro,
-            valor_total,
-            tipo_veiculo,
-            observacoes,
-            lavagem,
-            tipo_lavagem,
-            created_at,
-            updated_at
-          ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW()
-          ) RETURNING *
-        `;
-        
-        values = [
-          placa.toUpperCase(),
-          km_atual ? parseInt(km_atual, 10) : null,
-          tipo_combustivel,
-          litros ? parseFloat(litros) : null,
-          motorista,
-          motorista_rg,
-          operador,
-          valor_litro ? parseFloat(valor_litro) : null,
-          calculatedValorTotal,
-          tipo_veiculo,
-          observacoes,
-          lavagem,
-          tipo_lavagem
-        ];
-      }
-    } else {
-      // Query para os outros postos que têm uma estrutura de tabela mais complexa
-      insertQuery = `
-        INSERT INTO "${tableName}" (
-          placa,
-          km_atual,
-          hodometro_atual,
-          tipo_combustivel,
-          litros,
-          quantidade_litros,
-          quantity_litros,
-          valor_litro,
-          valor_total,
-          motorista,
-          motorista_nome,
-          nome_motorista,
-          motorista_rg,
-          rg_motorista,
-          operador,
-          nome_operador,
-          tipo_veiculo,
-          observacoes,
-          lavagem,
-          tipo_lavagem,
-          created_at,
-          data_registro
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW(), NOW()
-        ) RETURNING *
-      `;
-      
-      values = [
-        placa.toUpperCase(),
-        km_atual ? parseInt(km_atual, 10) : null,
-        hodometro_atual ? parseInt(hodometro_atual, 10) : null,
+    // Montar a query de inserção
+    const insertQuery = `
+      INSERT INTO "${tableName}" (
+        placa,
+        km_atual,
+        hodometro_atual,
         tipo_combustivel,
-        litros ? parseFloat(litros) : null,
-        litros ? parseFloat(litros) : null, // quantidade_litros é o mesmo que litros
-        litros ? parseFloat(litros) : null, // quantity_litros é o mesmo que litros
-        valor_litro ? parseFloat(valor_litro) : null,
-        calculatedValorTotal,
-        motorista, // campo motorista
-        motorista, // campo motorista_nome 
-        motorista, // campo nome_motorista
-        motorista_rg, // campo motorista_rg
-        motorista_rg, // campo rg_motorista
-        operador, // campo operador
-        operador, // campo nome_operador
+        litros,
+        quantidade_litros,
+        quantity_litros,
+        valor_litro,
+        valor_total,
+        motorista,
+        motorista_nome,
+        nome_motorista,
+        motorista_rg,
+        rg_motorista,
+        operador,
+        nome_operador,
         tipo_veiculo,
         observacoes,
         lavagem,
-        tipo_lavagem
-      ];
-    }
+        tipo_lavagem,
+        created_at,
+        data_registro
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW(), NOW()
+      ) RETURNING *
+    `;
+    
+    const values = [
+      placa.toUpperCase(),
+      km_atual ? parseInt(km_atual, 10) : null,
+      hodometro_atual ? parseInt(hodometro_atual, 10) : null,
+      tipo_combustivel,
+      litros ? parseFloat(litros) : null,
+      litros ? parseFloat(litros) : null, // quantidade_litros é o mesmo que litros
+      litros ? parseFloat(litros) : null, // quantity_litros é o mesmo que litros
+      valor_litro ? parseFloat(valor_litro) : null,
+      calculatedValorTotal,
+      motorista, // campo motorista
+      motorista, // campo motorista_nome 
+      motorista, // campo nome_motorista
+      motorista_rg, // campo motorista_rg
+      motorista_rg, // campo rg_motorista
+      operador, // campo operador
+      operador, // campo nome_operador
+      tipo_veiculo,
+      observacoes,
+      lavagem,
+      tipo_lavagem
+    ];
     
     console.log('Query SQL a ser executada:', insertQuery);
     console.log('Valores:', values);
@@ -1288,14 +845,14 @@ export async function registrarPostoMurici(req, res) {
     
     res.status(201).json({
       success: true,
-      message: `Registro realizado com sucesso no Posto Murici ${postoName}`,
+      message: `Abastecimento registrado com sucesso para ${postoName}`,
       data: result.rows[0]
     });
   } catch (error) {
-    console.error(`Erro ao registrar operação no Posto Murici ${req.params.posto}:`, error);
+    console.error(`Erro ao registrar abastecimento para posto ${req.params.posto}:`, error);
     res.status(500).json({ 
       success: false, 
-      error: `Erro ao registrar no Posto Murici: ${error.message}` 
+      error: `Erro ao registrar abastecimento: ${error.message}` 
     });
   }
 }

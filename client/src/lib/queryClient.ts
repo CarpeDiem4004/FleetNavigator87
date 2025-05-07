@@ -1,7 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { PostgrestResponse } from '@supabase/supabase-js';
 import { supabase } from "./supabase";
-import { getJwtToken } from '@/utils/jwtInitializer';
 
 // Estado para controlar tentativas de ressincronização
 let isAttemptingResync = false;
@@ -105,18 +104,7 @@ export async function apiRequest(
         break;
       case 'delete':
         if (data && typeof data === 'object' && 'id' in (data as DataWithId)) {
-          // For delete operations, we need to handle the return type correctly
-          await supabase.from(table).delete().eq('id', (data as DataWithId).id);
-          
-          // Create a compatible result format with empty data and no error
-          // This avoids TypeScript errors while maintaining compatibility
-          result = {
-            data: [], 
-            error: null,
-            count: null,
-            status: 200,
-            statusText: 'OK'
-          };
+          result = await supabase.from(table).delete().eq('id', (data as DataWithId).id);
         }
         break;
       default:
@@ -140,9 +128,8 @@ export async function apiRequest(
   }
   
   // Otherwise use regular fetch for backend API
-  // Verificar se temos um token JWT armazenado para autenticação usando nosso utilitário
-  // que garante a consistência entre diferentes chaves de armazenamento
-  const authToken = getJwtToken();
+  // Verificar se temos um token JWT armazenado para autenticação
+  const authToken = localStorage.getItem('authToken');
   
   // Também verificar a sessão Supabase como fallback
   let supabaseToken = null;
@@ -233,9 +220,8 @@ export const getQueryFn: <T>(options: {
     }
     
     // Otherwise use regular fetch for backend API
-    // Verificar se temos um token JWT armazenado para autenticação usando nosso utilitário
-    // que garante a consistência entre diferentes chaves de armazenamento
-    const authToken = getJwtToken();
+    // Verificar se temos um token JWT armazenado para autenticação
+    const authToken = localStorage.getItem('authToken');
     
     // Também verificar a sessão Supabase como fallback
     let supabaseToken = null;

@@ -56,11 +56,6 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
   showLimparButton = false,
   refreshTrigger = 0
 }) => {
-  // Log de debug para o nome do posto
-  useEffect(() => {
-    console.log(`[DEBUG] HistoricoSupabaseView montado para posto: "${posto}"`);
-  }, [posto]);
-  
   const [historico, setHistorico] = useState<HistoricoAbastecimento[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,123 +69,39 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
       // Prevenção de cache adicionando timestamp na URL
       const timestamp = new Date().getTime();
       
-      // Adicionar token JWT ao cabeçalho, se disponível
-      const headers: Record<string, string> = {
-        'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest' // Indicar que é uma solicitação AJAX
-      };
-      
-      // Obter token do localStorage se existir
-      const token = localStorage.getItem('authToken') || localStorage.getItem('access_token') || localStorage.getItem('jwt_token');
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      console.log(`[FETCH] Buscando histórico para o posto: ${posto} com timestamp ${timestamp}`);
-      
-      // Corrigir o problema de espaço no nome do posto
-      const postoId = posto.includes(' ') ? posto.trim() : posto;
-      console.log(`[FETCH] Buscando histórico para posto usando ID limpo: "${postoId}"`);
-      
       // Usar a nova rota direta para evitar problemas com interceptação do Vite
-      // Solicitar todos os registros com limit=1000
-      const response = await axios.get(`/api/historico-direto/${encodeURIComponent(postoId)}?t=${timestamp}&limit=1000`, {
-        headers,
-        withCredentials: true // Incluir cookies para autenticação baseada em sessão
+      const response = await axios.get(`/api/historico-direto/${encodeURIComponent(posto)}?t=${timestamp}`, {
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest' // Indicar que é uma solicitação AJAX
+        }
       });
       
-      console.log(`[FETCH] Resposta da API de histórico:`, response.data);
+      console.log('Resposta do histórico:', response);
       
       if (response.data && response.data.success) {
-        console.log(`[FETCH] Histórico carregado com sucesso, ${response.data.data?.length || 0} registros encontrados`, response.data.data);
-        
-        // Verificar se os dados estão no formato esperado e adaptá-los se necessário
-        if (Array.isArray(response.data.data)) {
-          // Mapear os dados para garantir que estejam no formato correto
-          const dadosFormatados = response.data.data.map((item: any) => {
-            // Log do item original para diagnóstico
-            console.log(`[FETCH] Item original do posto ${posto}:`, item);
-            
-            // Mapeamento detalhado para compatibilidade com todos os tipos de tabelas de postos
-            const mappedValues = {
-              // Identificador único (sempre presente)
-              id: item.id,
-              
-              // Informações do veículo
-              placa: item.placa || item.veiculo || '',
-              km: extractNumber(item.km || item.km_atual || item.hodometro || item.odometro),
-              tipo_veiculo: item.tipo_veiculo || '',
-              
-              // Informações do combustível
-              tipo_combustivel: item.tipo_combustivel || item.tipo || 'Diesel',
-              quantidade_litros: extractNumber(item.quantidade_litros || item.litros || item.quantidade),
-              valor_litro: extractNumber(item.valor_litro || item.preco_litro || item.valor_unitario),
-              valor_total: extractNumber(item.valor_total),
-              
-              // Informações das pessoas
-              nome_motorista: item.nome_motorista || item.motorista || item.motorista_nome || '',
-              rg_motorista: item.rg_motorista || item.motorista_rg || '',
-              nome_operador: item.nome_operador || item.operador || item.funcionario || '',
-              
-              // Informações adicionais
-              observacoes: item.observacoes || '',
-              lavagem: item.lavagem === true || (typeof item.lavagem === 'string' && item.lavagem.toLowerCase() === 'true'),
-              tipo_lavagem: item.tipo_lavagem || '',
-              
-              // Informações de data/hora
-              data_hora: item.data_hora || formatDate(item.created_at) || '',
-              created_at: item.created_at
-            };
-            
-            // Função auxiliar para extrair número de diferentes tipos de entrada
-            function extractNumber(value: any): number {
-              if (value === null || value === undefined) return 0;
-              if (typeof value === 'number') return value;
-              if (typeof value === 'string') {
-                const cleaned = value.replace(/[^\d.,]/g, '').replace(',', '.');
-                const parsed = parseFloat(cleaned);
-                return isNaN(parsed) ? 0 : parsed;
-              }
-              return 0;
-            }
-            
-            console.log('[FETCH] Item processado:', mappedValues);
-            return mappedValues;
-          });
-          
-          console.log('[FETCH] Dados formatados:', dadosFormatados);
-          setHistorico(dadosFormatados);
-          setLastRefreshTime(new Date());
-        } else {
-          console.error('[FETCH] Os dados não estão em formato de array:', response.data.data);
-          setHistorico([]);
-          setError('Formato de dados inesperado');
-        }
+        setHistorico(response.data.data || []);
+        setLastRefreshTime(new Date());
       } else {
-        console.error('[FETCH] Erro na resposta da API:', response.data);
         setError(response.data?.error || 'Erro ao carregar o histórico');
+        console.error('Erro na resposta:', response.data);
       }
     } catch (err: any) {
-      console.error('[FETCH] Erro ao carregar histórico:', err);
+      console.error('Erro ao carregar histórico:', err);
       
       // Tentar a rota original como fallback
       try {
-        console.log('[FETCH] Tentando rota alternativa...');
+        console.log('Tentando rota alternativa...');
         const timestamp = new Date().getTime();
-        const fallbackResponse = await axios.get(`/api/posto-supabase/historico/${posto.toLowerCase()}?t=${timestamp}`, {
-          withCredentials: true // Incluir cookies para autenticação baseada em sessão
-        });
+        const fallbackResponse = await axios.get(`/api/posto-supabase/historico/${posto.toLowerCase()}?t=${timestamp}`);
         
         if (fallbackResponse.data && fallbackResponse.data.success) {
-          console.log('[FETCH] Fallback bem-sucedido');
           setHistorico(fallbackResponse.data.data || []);
           setLastRefreshTime(new Date());
         } else {
-          console.error('[FETCH] Erro na resposta do fallback:', fallbackResponse.data);
           setError(fallbackResponse.data?.error || 'Erro ao carregar o histórico');
         }
       } catch (fallbackErr: any) {
-        console.error('[FETCH] Fallback também falhou:', fallbackErr);
         setError(`Erro ao carregar histórico: ${err.message}. Fallback também falhou.`);
       }
     } finally {
@@ -200,79 +111,22 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
 
   // Carregar dados quando o componente montar ou quando o refreshTrigger mudar
   useEffect(() => {
-    console.log(`[DEBUG] Carregando histórico do posto ${posto}, refreshTrigger: ${refreshTrigger}`);
-    
-    // Verificar se o posto tem formato correto
-    const postoProcessado = posto.trim().toLowerCase();
-    if (postoProcessado.includes(' ')) {
-      console.log(`[DEBUG] Detectado espaço no nome do posto: "${posto}" -> "${postoProcessado.replace(' ', '_')}"`);
-    }
-    
+    console.log(`Carregando histórico do posto ${posto}, refreshTrigger: ${refreshTrigger}`);
     loadHistorico();
 
-    // Verificações adicionais para garantir carregamento dos dados
-    const timer1 = setTimeout(() => {
-      console.log(`[DEBUG] Verificação adicional após 1s para posto ${posto}`);
-      loadHistorico();
-    }, 1000);
-
-    const timer2 = setTimeout(() => {
-      console.log(`[DEBUG] Verificação adicional após 2.5s para posto ${posto}`);
-      loadHistorico();
-    }, 2500);
-
-    // Configurar atualização automática a cada 20 segundos
+    // Configurar atualização automática a cada 45 segundos
     const intervalId = setInterval(() => {
-      console.log(`[DEBUG] Atualizando histórico automaticamente para ${posto}`);
+      console.log(`Atualizando histórico automaticamente para ${posto}`);
       loadHistorico();
-    }, 20000); // 20 segundos
+    }, 45000); // 45 segundos
 
-    // Limpar os timers quando o componente for desmontado
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearInterval(intervalId);
-    };
+    // Limpar o intervalo quando o componente for desmontado
+    return () => clearInterval(intervalId);
   }, [posto, refreshTrigger]);
 
-  // Função para formatar uma data
-  const formatDate = (dateString?: string): string => {
-    if (!dateString) return '';
-    try {
-      return format(new Date(dateString), 'dd/MM/yyyy HH:mm', {locale: ptBR});
-    } catch (e) {
-      console.error('[FORMAT] Erro ao formatar data:', e);
-      return dateString;
-    }
-  };
-
   // Função para formatar o valor do combustível
-  const formatCurrency = (value: number | string | null | undefined): string => {
-    if (value === null || value === undefined) {
-      return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-      }).format(0);
-    }
-    
-    let numValue: number;
-    
-    if (typeof value === 'string') {
-      // Remover caracteres não numéricos, exceto pontos e vírgulas
-      const cleanValue = value.replace(/[^\d.,]/g, '')
-        // Substituir vírgula por ponto para parsing correto
-        .replace(',', '.');
-      
-      numValue = cleanValue ? parseFloat(cleanValue) : 0;
-    } else {
-      numValue = value;
-    }
-    
-    // Verificar se é um número válido
-    if (isNaN(numValue)) {
-      numValue = 0;
-    }
-    
+  const formatCurrency = (value: number | string): string => {
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
@@ -322,7 +176,7 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
             <CardTitle className="text-lg">Histórico de Abastecimentos</CardTitle>
             <CardDescription>
               {isLoading ? 'Carregando dados...' : 
-                `${historico.length} registros do posto ${posto.toUpperCase()}`}
+                `Últimos registros do posto ${posto.toUpperCase()}`}
             </CardDescription>
           </div>
           <div className="flex gap-2">
@@ -404,15 +258,15 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
                   historico.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-mono text-xs">
-                        {item.data_hora || format(new Date(item.created_at), 'dd/MM/yyyy HH:mm', {locale: ptBR})}
+                        {item.data_hora}
                       </TableCell>
                       <TableCell className="font-semibold">{item.placa}</TableCell>
                       <TableCell>
                         <Badge
-                          variant={item.tipo_combustivel?.toUpperCase() === 'ARLA' ? "outline" : "default"}
+                          variant={item.tipo_combustivel === 'ARLA' ? "outline" : "default"}
                           className={
-                            item.tipo_combustivel?.toUpperCase() === 'DIESEL' ? "bg-amber-500 hover:bg-amber-600" :
-                            item.tipo_combustivel?.toUpperCase() === 'ARLA' ? "border-blue-500 text-blue-500" :
+                            item.tipo_combustivel === 'DIESEL' ? "bg-amber-500 hover:bg-amber-600" :
+                            item.tipo_combustivel === 'ARLA' ? "border-blue-500 text-blue-500" :
                             undefined
                           }
                         >
@@ -427,12 +281,12 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
                       <TableCell className="text-right">
                         {typeof item.quantidade_litros === 'number' 
                           ? item.quantidade_litros.toFixed(2) 
-                          : parseFloat(String(item.quantidade_litros || '0')).toFixed(2)}
+                          : parseFloat(item.quantidade_litros).toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right font-semibold">
                         {formatCurrency(typeof item.valor_total === 'number' 
                           ? item.valor_total 
-                          : parseFloat(String(item.valor_total || '0')))}
+                          : parseFloat(item.valor_total))}
                       </TableCell>
                     </TableRow>
                   ))

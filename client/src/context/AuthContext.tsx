@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { syncJwtToken, saveJwtToken, clearJwtToken, getJwtToken } from '@/utils/jwtInitializer';
 
 interface User {
   id: number;
@@ -62,9 +61,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       try {
         console.log("Verificando autenticação...");
         
-        // Verificar se temos um token JWT armazenado (usando nosso utilitário de sincronização)
-        // Isso garante que o token esteja consistente em ambos os locais de armazenamento
-        const authToken = getJwtToken();
+        // Verificar se temos um token JWT armazenado
+        const authToken = localStorage.getItem('authToken');
         let authSource = 'sessão';
         let isAuthenticated = false;
         let userData = null;
@@ -92,8 +90,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               isAuthenticated = true;
             } else {
               console.warn("Token JWT inválido ou expirado");
-              // Remove os tokens inválidos usando nosso utilitário
-              clearJwtToken();
+              // Remove o token inválido
+              localStorage.removeItem('authToken');
             }
           } catch (jwtError) {
             console.error("Erro ao verificar token JWT:", jwtError);
@@ -178,8 +176,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           
           // Armazenar o token JWT no localStorage para uso futuro
           if (jwtData.token) {
-            // Armazenar em ambos os lugares para compatibilidade usando nosso utilitário
-            saveJwtToken(jwtData.token);
+            localStorage.setItem('authToken', jwtData.token);
             console.log("Token JWT armazenado com sucesso");
             userData = jwtData.user;
             authSuccess = true;
@@ -234,15 +231,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           throw new Error(errorData.message || 'Erro de autenticação');
         }
         
-        const responseData = await response.json();
-        userData = responseData;
-        
-        // Se o endpoint da API também retornar um token JWT, salve-o
-        if (responseData.token) {
-          console.log("Token JWT recebido da autenticação tradicional");
-          saveJwtToken(responseData.token);
-        }
-        
+        userData = await response.json();
         console.log("Login tradicional bem-sucedido:", userData);
       } else {
         console.log("Usando dados de usuário da autenticação JWT:", userData);
@@ -253,7 +242,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       // Forçar uma verificação de autenticação após o login
       setTimeout(() => {
-        const authToken = getJwtToken();
+        const authToken = localStorage.getItem('authToken');
         const headers: HeadersInit = { 
           'Content-Type': 'application/json'
         };
@@ -298,9 +287,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const logout = async () => {
     try {
-      // Remover tokens JWT usando nosso utilitário
-      clearJwtToken();
-      console.log("Tokens JWT removidos do localStorage");
+      // Remover token JWT do localStorage
+      localStorage.removeItem('authToken');
+      console.log("Token JWT removido do localStorage");
       
       const response = await apiRequest('POST', '/api/logout');
       

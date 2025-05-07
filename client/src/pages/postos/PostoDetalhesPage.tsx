@@ -66,7 +66,6 @@ interface PostoDetalhes {
   volume_atual: number;
   total_abastecimentos: number;
   total_litros: number;
-  total_cartao?: number; // Total abastecido pelo cartão
   alerta_nivel_baixo: boolean;
   percentual: number;
   ultima_atualizacao: string;
@@ -378,25 +377,6 @@ export default function PostoDetalhesPage() {
                 <FileText className="h-6 w-6 mx-auto mb-2 text-green-500" />
                 <div className="text-sm text-gray-500">Abastecimentos</div>
                 <div className="text-xl font-bold">{formatarNumero(data.total_abastecimentos)}</div>
-              </div>
-            </div>
-            
-            {/* Cartão para Total abastecido por cartão */}
-            <div className="mt-6 p-4 bg-purple-50 rounded-lg border border-purple-100">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-3 text-purple-500">
-                    <rect width="20" height="14" x="2" y="5" rx="2" />
-                    <line x1="2" x2="22" y1="10" y2="10" />
-                  </svg>
-                  <div>
-                    <div className="font-medium">Total Abastecido por Cartão</div>
-                    <div className="text-sm text-gray-500">Litros abastecidos utilizando cartão de combustível</div>
-                  </div>
-                </div>
-                <div className="text-xl font-bold text-purple-700">
-                  {data.total_cartao !== undefined ? `${formatarNumero(data.total_cartao)} L` : '-'}
-                </div>
               </div>
             </div>
           </CardContent>

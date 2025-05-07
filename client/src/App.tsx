@@ -28,21 +28,19 @@ import { SupabaseAuthProvider } from "@/context/SupabaseAuthContext";
 
 // Importação das páginas de postos
 import IndexPostos from "@/pages/postos/IndexPostos";
-// Páginas de redirecionamento dos postos removidos - Maio/2025
 import PostoOsasco from "@/pages/postos/Osasco";
-import PostoOsascoV2 from "@/pages/postos/Osasco_v2V2";
+import PostoOsascoV2 from "@/pages/postos/OsascoV2";
 import PostoGuarulhos from "@/pages/postos/Guarulhos";
-import PostoAlairV2 from "@/pages/postos/Alair_v2V2";
-import PostoGuarulhosV2 from "@/pages/postos/Guarulhos_v2V2";
-import PostoSaoPaulo from "@/pages/postos/Saopaulo";
+import PostoAlairV2 from "@/pages/postos/AlairV2";
+import PostoSaoPaulo from "@/pages/postos/SaoPaulo";
 import PostoCampinas from "@/pages/postos/Campinas";
-import PostoCampinasV2 from "@/pages/postos/Campinas_v2V2";
-import PostoABC from "@/pages/postos/Abc";
-import PostoABCV2 from "@/pages/postos/Abc_v2V2";
+import PostoCampinasV2 from "@/pages/postos/CampinasV2";
+import PostoABC from "@/pages/postos/ABC";
+import PostoABCV2 from "@/pages/postos/ABCV2";
 import PostoSocorro from "@/pages/postos/Socorro";
-import PostoSocorroV2 from "@/pages/postos/Socorro_v2V2";
+import PostoSocorroV2 from "@/pages/postos/SocorroV2";
 import PostoSorocaba from "@/pages/postos/Sorocaba";
-import PostoSorocabaV2 from "@/pages/postos/Sorocaba_v2V2";
+import PostoSorocabaV2 from "@/pages/postos/SorocabaV2";
 import HistoricoGeralPage from "@/pages/postos/HistoricoGeralPage";
 import HistoricoPatioPage from "@/pages/postos/HistoricoPatioPage";
 import PostosVisaoGeralPage from "@/pages/postos/PostosVisaoGeralPage";
@@ -73,17 +71,6 @@ import FuelCardRequestsPanel from "@/pages/FuelCardRequestsPanel";
 import PostoRemediosPage from "@/pages/PostoRemediosPage";
 import PostoRemediosStandalone from "@/pages/PostoRemediosStandalone";
 import AbastecimentoPostoRemediosPage from "@/pages/AbastecimentoPostoRemediosPage";
-// Importação do Posto Campinas
-import PostoCampinasIndex from "@/pages/posto-campinas";
-import PostoCampinasOperador from "@/pages/posto-campinas/PostoCampinasOperador";
-import PostoCampinasAdmin from "@/pages/posto-campinas/PostoCampinasAdmin";
-
-// Importação do Posto Murici
-import PostoMuriciIndex from "@/pages/posto-murici";
-import PostoMuriciOperador from "@/pages/posto-murici/PostoMuriciOperador";
-import PostoMuriciPublico from "@/pages/posto-murici/PostoMuriciPublico";
-import PostoMuriciLinksPage from "@/components/posto-murici-links";
-// Verificamos que o componente é importado corretamente
 import ProfileWithSupabase from "@/pages/ProfileWithSupabase";
 import DriverChecklist from "@/pages/DriverChecklist";
 import DriversPage from "@/pages/DriversPage";
@@ -97,21 +84,20 @@ import CartaoAbastecimentoPage from "@/pages/CartaoAbastecimentoPage";
 import PainelPostosPage from "@/pages/PainelPostosPage";
 import AbastecimentosPage from "@/pages/AbastecimentosPage";
 
-// Importação das páginas públicas de postos - redirecionamento para Remédios (Maio/2025)
+// Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
-import OsascoV2Public from "@/pages/postos/public/Osasco_v2V2Public";
+import OsascoV2Public from "@/pages/postos/public/OsascoV2Public";
 import GuarulhosPublic from "@/pages/postos/public/GuarulhosPublic";
-import GuarulhosV2Public from "@/pages/postos/public/Guarulhos_v2V2Public";
-import AlairV2Public from "@/pages/postos/public/Alair_v2V2Public";
-import SaoPauloPublic from "@/pages/postos/public/SaopauloPublic";
+import AlairV2Public from "@/pages/postos/public/AlairV2Public";
+import SaoPauloPublic from "@/pages/postos/public/SaoPauloPublic";
 import CampinasPublic from "@/pages/postos/public/CampinasPublic";
-import CampinasV2Public from "@/pages/postos/public/Campinas_v2V2Public";
-import ABCPublic from "@/pages/postos/public/AbcPublic";
-import ABCV2Public from "@/pages/postos/public/Abc_v2V2Public";
+import CampinasV2Public from "@/pages/postos/public/CampinasV2Public";
+import ABCPublic from "@/pages/postos/public/ABCPublic";
+import ABCV2Public from "@/pages/postos/public/ABCV2Public";
 import SocorroPublic from "@/pages/postos/public/SocorroPublic";
-import SocorroV2Public from "@/pages/postos/public/Socorro_v2V2Public";
+import SocorroV2Public from "@/pages/postos/public/SocorroV2Public";
 import SorocabaPublic from "@/pages/postos/public/SorocabaPublic";
-import SorocabaV2Public from "@/pages/postos/public/Sorocaba_v2V2Public";
+import SorocabaV2Public from "@/pages/postos/public/SorocabaV2Public";
 import RegisterPostoUser from "@/pages/postos/RegisterPostoUser";
 import RedirectToPosto from "@/pages/RedirectToPosto";
 import PostoAcessoDireto from "@/pages/PostoAcessoDireto";
@@ -179,12 +165,11 @@ function App() {
           <ProtectedRoute path="/posto/osasco_v2" component={PostoOsascoV2} />
           <ProtectedRoute path="/posto/guarulhos" component={PostoGuarulhos} />
           <ProtectedRoute path="/posto/alair_v2" component={PostoAlairV2} />
-          <ProtectedRoute path="/posto/guarulhos_v2" component={PostoGuarulhosV2} />
           <ProtectedRoute path="/posto/saopaulo" component={PostoSaoPaulo} />
           <ProtectedRoute path="/posto/campinas" component={PostoCampinas} />
           <ProtectedRoute path="/posto/campinas_v2" component={PostoCampinasV2} />
           <ProtectedRoute path="/posto/abc" component={PostoABC} />
-          {/* ABC_V2 removido - Maio/2025 */}
+          <ProtectedRoute path="/posto/abc_v2" component={PostoABCV2} />
           <ProtectedRoute path="/posto/socorro" component={PostoSocorro} />
           <ProtectedRoute path="/posto/socorro_v2" component={PostoSocorroV2} />
           <ProtectedRoute path="/posto/sorocaba" component={PostoSorocaba} />
@@ -211,21 +196,6 @@ function App() {
           <ProtectedRoute path="/drivers" component={DriversPage} />
           <ProtectedRoute path="/manutencao" component={ManutencaoPage} />
           <ProtectedRoute path="/tratativa-manutencao" component={TratativaManutencaoPage} />
-          
-          {/* Rotas para o Posto Campinas */}
-          <ProtectedRoute path="/posto-campinas" component={PostoCampinasIndex} />
-          <ProtectedRoute path="/posto-campinas/operador" component={PostoCampinasOperador} />
-          <ProtectedRoute path="/posto-campinas/admin" component={PostoCampinasAdmin} />
-          
-          {/* Rotas para o Posto Murici */}
-          <ProtectedRoute path="/posto-murici" component={PostoMuriciIndex} />
-          <ProtectedRoute path="/posto-murici/operador" component={PostoMuriciOperador} />
-          <ProtectedRoute path="/posto-murici/links" component={PostoMuriciLinksPage} />
-          
-          {/* Rota pública para o Posto Murici */}
-          <Route path="/posto-murici/public">
-            <PostoMuriciPublico />
-          </Route>
           
           {/* Rota pública para checklist do motorista */}
           <Route path="/checklist/:id">
@@ -291,9 +261,6 @@ function App() {
           <Route path="/posto/guarulhos/public">
             <GuarulhosPublic />
           </Route>
-          <Route path="/posto/guarulhos_v2/public">
-            <GuarulhosV2Public />
-          </Route>
           <Route path="/posto/alair_v2/public">
             <AlairV2Public />
           </Route>
@@ -309,7 +276,9 @@ function App() {
           <Route path="/posto/abc/public">
             <ABCPublic />
           </Route>
-          {/* ABC_V2 removido - Maio/2025 */}
+          <Route path="/posto/abc_v2/public">
+            <ABCV2Public />
+          </Route>
           <Route path="/posto/socorro/public">
             <SocorroPublic />
           </Route>
@@ -331,11 +300,6 @@ function App() {
           {/* Formulário simplificado para Abastecimento do Posto Remédios */}
           <Route path="/abastecimento-posto-remedios">
             <AbastecimentoPostoRemediosPage />
-          </Route>
-          
-          {/* Rota pública para o Posto Campinas */}
-          <Route path="/posto-campinas/public">
-            <PostoCampinasOperador />
           </Route>
           
           <Route>

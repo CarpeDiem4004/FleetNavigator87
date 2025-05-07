@@ -27,57 +27,17 @@ const HistoricoPatioPage: React.FC = () => {
       setIsLoading(true);
       console.log("[FETCH] Buscando todas as movimentações de pátio");
       
-      // Tentar usar a API direta do servidor primeiro (nova rota direta)
-      try {
-        const apiResponse = await fetch('/api/movimentacoes-patio-direto');
-        const apiData = await apiResponse.json();
-        
-        console.log("[FETCH] Resposta da API de movimentações (rota direta):", apiData);
-        
-        if (apiResponse.ok && apiData && apiData.success && Array.isArray(apiData.data)) {
-          console.log("[FETCH] Dados recuperados da API (rota direta):", apiData.data.length);
-          setMovimentacoes(apiData.data);
-          setIsLoading(false);
-          return;
-        } else {
-          console.warn("[FETCH] Resposta inválida da API direta, tentando rota padrão");
-        }
-      } catch (apiDirectError) {
-        console.warn("[FETCH] Erro ao usar API direta:", apiDirectError);
-        console.warn("[FETCH] Tentando rota padrão");
-      }
-      
-      // Tentar usar a API padrão como segunda opção
-      try {
-        const apiResponse = await fetch('/api/movimentacoes-patio');
-        const apiData = await apiResponse.json();
-        
-        console.log("[FETCH] Resposta da API de movimentações (rota padrão):", apiData);
-        
-        if (apiResponse.ok && apiData && apiData.success && Array.isArray(apiData.data)) {
-          console.log("[FETCH] Dados recuperados da API (rota padrão):", apiData.data.length);
-          setMovimentacoes(apiData.data);
-          setIsLoading(false);
-          return;
-        } else {
-          console.warn("[FETCH] Resposta inválida da API padrão, tentando Supabase como alternativa");
-        }
-      } catch (apiError) {
-        console.warn("[FETCH] Erro ao usar API padrão:", apiError);
-        console.warn("[FETCH] Tentando Supabase como alternativa");
-      }
-      
-      // Fallback: usar Supabase
+      // Buscar todas as movimentações sem filtro de posto
       const response = await fetchRecords('movimentacoes_patio', {
         limit: 500 // Aumentamos o limite para trazer mais registros
       });
       
       // Verificar se os dados são válidos e um array
       if (response && response.success && Array.isArray(response.data)) {
-        console.log("[FETCH] Dados recuperados do Supabase:", response.data.length);
+        console.log("[FETCH] Dados recuperados:", response.data.length);
         setMovimentacoes(response.data);
       } else {
-        console.error("[FETCH] Dados inválidos recebidos do Supabase:", response);
+        console.error("[FETCH] Dados inválidos recebidos:", response);
         setMovimentacoes([]);
       }
     } catch (error) {

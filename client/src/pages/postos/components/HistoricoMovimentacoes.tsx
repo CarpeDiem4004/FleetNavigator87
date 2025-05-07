@@ -4,24 +4,30 @@ import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, Tabl
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Truck, ArrowUpRight, ArrowDownLeft, Settings, RefreshCw, Download } from 'lucide-react';
-import { getMovimentacoesPatio, type MovimentacaoData } from "@/lib/api-movimentacoes";
 
 interface HistoricoMovimentacoesProps {
   postId: string;
   refreshTrigger?: number;
 }
 
-// Utilizamos a interface de MovimentacaoData diretamente da biblioteca API
-interface Movimentacao extends MovimentacaoData {
-  // Adicionamos campos adicionais que possam ser necessários
-  data_formatted?: string;
+interface Movimentacao {
+  id: number;
+  placa: string;
+  tipo_movimento: string | null;
+  nome_motorista: string | null;
+  nome_operador: string | null;
+  posto: string;
+  created_at: string;
+  motivo?: string | null;
+  data_entrada?: string | null;
+  data_saida?: string | null;
+  motorista?: string | null;
 }
 
 export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ postId, refreshTrigger = 0 }) => {
   const [movimentacoes, setMovimentacoes] = useState<Movimentacao[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(new Date());
-  const [hasError, setHasError] = useState(false);
   
   // Função para capitalizar a primeira letra
   const formatPosto = (posto: string) => {
@@ -31,39 +37,33 @@ export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ 
   const fetchMovimentacoes = async () => {
     try {
       setIsLoading(true);
-      setHasError(false);
       console.log("[FETCH] Buscando movimentações de pátio para o posto:", postId);
+      console.log("[FETCH] Usando nome capitalizado:", formatPosto(postId));
       
-      // Utilizamos a nova API que lida com múltiplos cenários e formatos de resposta
-      const result = await getMovimentacoesPatio(postId);
+      // Usando a API do servidor para buscar os dados
+      const response = await fetch(`/api/movimentacoes-patio/${postId}`);
+      
+      if (!response.ok) {
+        console.error('[FETCH] Erro ao buscar movimentações:', response.statusText);
+        setMovimentacoes([]);
+        return;
+      }
+      
+      const result = await response.json();
       
       // Verificar se a operação foi bem-sucedida e extrair os dados
-      if (result.success && Array.isArray(result.data)) {
-        console.log("[FETCH] Movimentações recuperadas:", result.data.length);
-        
-        // Mapear e normalizar os dados
-        const dadosNormalizados = result.data.map((item: MovimentacaoData) => {
-          return {
-            ...item,
-            // Adicionar campos formatados para exibição
-            data_formatted: item.data_movimento || 
-                          formatarData(item.created_at)
-          };
-        });
-        
-        console.log("[FETCH] Dados normalizados:", dadosNormalizados.length);
-        setMovimentacoes(dadosNormalizados || []);
+      if (result.success) {
+        console.log("[FETCH] Movimentações recuperadas:", result.data?.length || 0);
+        setMovimentacoes(result.data || []);
       } else {
         console.error('[FETCH] Erro ao buscar movimentações:', result.message);
         setMovimentacoes([]);
-        setHasError(true);
       }
       
       setLastUpdated(new Date());
     } catch (error) {
       console.error('Erro ao buscar histórico de movimentações:', error);
       setMovimentacoes([]);
-      setHasError(true);
     } finally {
       setIsLoading(false);
     }
@@ -94,7 +94,7 @@ export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ 
     return data.toLocaleDateString('pt-BR') + ' ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   };
   
-  const getTipoIcon = (tipo: string | null | undefined) => {
+  const getTipoIcon = (tipo: string | null) => {
     if (!tipo) return <Settings className="h-4 w-4 text-orange-500" />;
     
     if (tipo.includes('Entrada')) {
@@ -106,7 +106,7 @@ export const HistoricoMovimentacoes: React.FC<HistoricoMovimentacoesProps> = ({ 
     }
   };
   
-  const getTipoBadge = (tipo: string | null | undefined) => {
+  const getTipoBadge = (tipo: string | null) => {
     if (!tipo) return <Badge variant="outline">Desconhecido</Badge>;
     
     if (tipo.includes('Entrada')) {

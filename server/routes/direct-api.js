@@ -18,7 +18,7 @@ router.get('/historico/:posto', async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     
     const postoName = formatPostoName(req.params.posto);
-    const viewName = `posto_murici_${postoName.toLowerCase()}_consolidado`;
+    const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_consolidado`;
     
     // Verificar se a view existe
     const checkQuery = `
@@ -64,7 +64,7 @@ router.get('/estatisticas-mensais/:posto', async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     
     const postoName = formatPostoName(req.params.posto);
-    const viewName = `posto_murici_${postoName.toLowerCase()}_estatisticas_mensais`;
+    const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_estatisticas_mensais`;
     
     // Verificar se a view existe
     const checkQuery = `
@@ -110,7 +110,7 @@ router.get('/consumo-por-veiculo/:posto', async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     
     const postoName = formatPostoName(req.params.posto);
-    const viewName = `posto_murici_${postoName.toLowerCase()}_consumo_por_veiculo`;
+    const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_consumo_por_veiculo`;
     
     // Verificar se a view existe
     const checkQuery = `

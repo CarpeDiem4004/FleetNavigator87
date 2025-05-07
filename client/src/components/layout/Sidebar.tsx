@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/context/AuthContext';
 import { useBasePermission } from '@/hooks/use-base-permission';
-import navigateTo from '@/lib/navigation';
 
 // Icons
 import { 
@@ -85,14 +84,11 @@ const NavItemWithSubmenu: React.FC<{
               <Link 
                 href={subItem.href}
                 onClick={(e) => {
-                  console.log(`Clicou no link para: ${subItem.href}`);
                   e.preventDefault();
                   e.stopPropagation();
-                  
-                  // Método robusto de navegação com múltiplos fallbacks
-                  console.log(`Navegação para: ${subItem.href} iniciada via utilitário`);
-                  navigateTo(subItem.href);
-                  
+                  // Usar wouter para navegação em vez de manipular history diretamente
+                  window.history.pushState(null, "", subItem.href);
+                  window.dispatchEvent(new PopStateEvent("popstate"));
                   onClose();
                 }}
                 className={`flex items-center px-4 py-2 rounded-md group transition-all duration-200 cursor-pointer ${
@@ -152,14 +148,10 @@ const NavItem: React.FC<{
       <Link
         href={item.href}
         onClick={(e) => {
-          console.log(`Clicou no link direto para: ${item.href}`);
           e.preventDefault();
           e.stopPropagation();
-          
-          // Método robusto de navegação com múltiplos fallbacks
-          console.log(`Navegação para: ${item.href} iniciada via utilitário`);
-          navigateTo(item.href);
-          
+          window.history.pushState(null, "", item.href);
+          window.dispatchEvent(new PopStateEvent("popstate"));
           onClose();
         }}
         className={`flex items-center px-4 py-3 rounded-md group transition-all duration-200 cursor-pointer ${
@@ -200,17 +192,17 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText },
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
-    // Item de menu separado para Cartão de Abastecimento
-    { name: 'Cartão', href: '#', icon: CreditCard, showInMenu: true, subItems: [
-      { name: 'Operações', href: '/fuel-card', icon: CreditCard, showInMenu: true },
-      { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList, showInMenu: true }
+    // Modificado para apontar para a página principal em vez de submenu
+    { name: 'Abastecimentos', href: '/abastecimentos', icon: Fuel },
+    { name: 'Histórico Abastecimento', href: '/refueling', icon: ClipboardList },
+    // Alterado para usar o ícone de posto de gasolina (Droplets) em vez de Warehouse para Postos Externos
+    { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
+      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
     ]},
-    // Abastecimentos com submenu incluindo os postos
-    { name: 'Abastecimentos', href: '#', icon: Droplets, showInMenu: true, subItems: [
-      { name: 'Histórico', href: '/refueling', icon: ClipboardList, showInMenu: true },
-      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel, showInMenu: true },
-      { name: 'Posto Murici', href: '/posto-murici', icon: Fuel, showInMenu: true },
-      { name: 'Posto Murici Links', href: '/posto-murici/links', icon: Fuel, showInMenu: true }
+    // Item de menu separado para Cartão de Abastecimento
+    { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
+      { name: 'Operações', href: '/fuel-card', icon: CreditCard },
+      { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList }
     ]},
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
     { name: 'Line Hall', href: '/line-hall-shopee', icon: Map },
@@ -226,17 +218,17 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Oficinas Credenciadas', href: '/fleet-management/workshops', icon: ClipboardList },
     { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package },
-    // Item de menu separado para Cartão de Abastecimento
-    { name: 'Cartão', href: '#', icon: CreditCard, showInMenu: true, subItems: [
-      { name: 'Operações', href: '/fuel-card', icon: CreditCard, showInMenu: true },
-      { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList, showInMenu: true }
+    // Modificado para apontar para a página principal em vez de submenu
+    { name: 'Abastecimentos', href: '/abastecimentos', icon: Fuel },
+    { name: 'Histórico Abastecimento', href: '/refueling', icon: ClipboardList },
+    // Corrigido para usar o mesmo ícone e estrutura em ambas as listas de navegação
+    { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
+      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
     ]},
-    // Abastecimentos com submenu incluindo os postos
-    { name: 'Abastecimentos', href: '#', icon: Droplets, showInMenu: true, subItems: [
-      { name: 'Histórico', href: '/refueling', icon: ClipboardList, showInMenu: true },
-      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel, showInMenu: true },
-      { name: 'Posto Murici', href: '/posto-murici', icon: Fuel, showInMenu: true },
-      { name: 'Posto Murici Links', href: '/posto-murici/links', icon: Fuel, showInMenu: true }
+    // Item de menu separado para Cartão de Abastecimento
+    { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
+      { name: 'Operações', href: '/fuel-card', icon: CreditCard },
+      { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList }
     ]},
     { name: 'Line Hall', href: '/line-hall-shopee', icon: Map },
     { name: 'Análise da Operação', href: '/fleet-management/operational-analysis', icon: BarChart4 },
@@ -248,61 +240,11 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   // Verifique se o usuário é da gestão de frotas
   const isFleetUser = user.basename === "Gestão de Frotas" || user.baseId === 12;
   
-  // Criando menu Posto Externos que será adicionado diretamente
-  const postoExternosItem: NavItem = {
-    name: 'Postos Externos',
-    href: '#',
-    icon: Droplets,
-    subItems: [
-      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
-      { name: 'Posto Murici', href: '/posto-murici', icon: Fuel },
-      { name: 'Posto Murici Links', href: '/posto-murici/links', icon: Fuel }
-    ]
-  };
-  
   // Selecionando os itens de navegação apropriados
-  let navItemsBase = isFleetUser ? fleetManagementItems : allNavItems;
+  const navItemsBase = isFleetUser ? fleetManagementItems : allNavItems;
   
-  // LOG DOS ITENS DE NAVEGAÇÃO ANTES DA MANIPULAÇÃO
-  console.log("ANTES da manipulação, itens de menu:", navItemsBase.map(item => item.name));
-  
-  // ADICIONANDO EXPLICITAMENTE O MENU POSTOS EXTERNOS
-  // Verificando se já existe um menu com este nome para não duplicar
-  const hasPostosExternos = navItemsBase.some(item => item.name === 'Postos Externos');
-  if (!hasPostosExternos) {
-    console.log("ADICIONANDO menu Postos Externos DIRETAMENTE");
-    // Adicionar após o item "Cartão"
-    const cartaoIndex = navItemsBase.findIndex(item => item.name === 'Cartão');
-    if (cartaoIndex !== -1) {
-      navItemsBase = [
-        ...navItemsBase.slice(0, cartaoIndex + 1),
-        postoExternosItem,
-        ...navItemsBase.slice(cartaoIndex + 1)
-      ];
-    } else {
-      // Adicionar no início caso não encontre "Cartão"
-      navItemsBase = [postoExternosItem, ...navItemsBase];
-    }
-  }
-  
-  console.log("DEPOIS da manipulação, itens de menu:", navItemsBase.map(item => item.name));
-  
-  // Filtrando itens de navegação com base nas permissões do usuário, mas garantindo Postos Externos
+  // Filtrando itens de navegação com base nas permissões do usuário
   const navItems = navItemsBase.filter(item => {
-    // FORÇAR MOSTRAR POSTO EXTERNOS com alta prioridade
-    if (item.name === 'Postos Externos') {
-      console.log(`Menu Postos Externos FORÇADO a ser exibido sem verificações`);
-      item.showInMenu = true; // Garantir que seja mostrado
-      item.className = 'bg-primary-600/50'; // Garantir destaque visual
-      return true;
-    }
-    
-    // Verificação para showInMenu (valor explícito para exibir o item)
-    if (item.showInMenu === true) {
-      console.log(`Menu "${item.name}" exibido devido ao showInMenu=true`);
-      return true;
-    }
-    
     // Sempre incluir menu Cartão para todos os usuários
     if (item.name === 'Cartão') {
       console.log(`Menu Cartão incluído independente de permissões`);
@@ -312,46 +254,6 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     // Sempre incluir menus com submenus (href='#')
     if (item.href === '#') {
       // Verificar se pelo menos um submenu é permitido
-      console.log(`Verificando permissões para submenu "${item.name}" com ${item.subItems?.length || 0} itens`);
-      
-      if (item.name === "Postos Externos") {
-        console.log("\n\n===== DEBUGGING POSTOS EXTERNOS MENU =====");
-        console.log(`Usuário: ${user.name} (${user.email}), Role: ${user.role}, Base: ${user.basename || 'N/A'}, BaseID: ${user.baseId || 'N/A'}`);
-        console.log("Número de subitems:", item.subItems?.length || 0);
-        console.log("SubItems detalhados:", JSON.stringify(item.subItems, null, 2));
-        
-        // FORÇAR EXIBIÇÃO SEM VERIFICAÇÕES PARA POSTO MURICI
-        console.log(`FORÇANDO exibição do menu "Postos Externos" SEM verificações`);
-        return true;
-        
-        /* Código original comentado para substituição pela solução direta
-        // Se for admin, mostrar menu independentemente das verificações
-        if (user.role?.toLowerCase() === 'admin') {
-          console.log(`Usuário é admin, forçando exibição do menu Postos Externos`);
-          return true;
-        }
-        
-        if (item.subItems) {
-          console.log("Verificando permissões para cada submenu:");
-          let temPermissao = false;
-          
-          item.subItems.forEach(subItem => {
-            // Teste explícito para cada submenu
-            const permitido = hasPermission(subItem.href);
-            console.log(`- Submenu ${subItem.name} (${subItem.href}): ${permitido ? 'PERMITIDO ✅' : 'NEGADO ❌'}`);
-            
-            if (permitido) {
-              temPermissao = true;
-            }
-          });
-          
-          console.log(`Menu "Postos Externos" será mostrado: ${temPermissao ? 'SIM ✅' : 'NÃO ❌'}`);
-        }
-        */
-        
-        console.log("===== FIM DEBUG POSTOS EXTERNOS =====\n\n");
-      }
-      
       const hasSubItemPermission = item.subItems?.some(subItem => {
         console.log(`Verificando permissão para submenu ${subItem.name} (${subItem.href}): ${hasPermission(subItem.href) ? 'PERMITIDO' : 'NEGADO'}`);
         return hasPermission(subItem.href);
@@ -363,20 +265,6 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     console.log(`Item de menu "${item.name}" (${item.href}) tem permissão: ${has ? 'SIM' : 'NÃO'}`);
     return has;
   });
-
-  // Menu Postos Externos que será inserido DIRETAMENTE independente do filtro
-  const postoExternosDiretoItem: NavItem = {
-    name: 'Postos Externos',
-    href: '#',
-    icon: Droplets,
-    showInMenu: true, // Garantir que seja exibido
-    className: 'bg-primary-600/50', // Adicionar destaque
-    subItems: [
-      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel, showInMenu: true },
-      { name: 'Posto Murici', href: '/posto-murici', icon: Fuel, showInMenu: true },
-      { name: 'Posto Murici Links', href: '/posto-murici/links', icon: Fuel, showInMenu: true }
-    ]
-  };
 
   return (
     <div
@@ -394,149 +282,33 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
         </div>
 
         {/* Navigation */}
-        <div className="overflow-y-auto h-[calc(100vh-9rem)] min-h-[20rem] overflow-x-visible">
+        <div className="overflow-y-auto">
           <nav className="flex-1 py-4">
             <div className="space-y-1 px-2">
-              {/* Espaço intencional para deixar o menu mais visível */}
-              <div className="mb-6 mt-6 px-1" id="espaco-antes-menu" />
-              {/* Precisamos ordenar manualmente para garantir a posição correta */}
-              
-              {/* Primeiro renderizamos todos os itens até o Cartão */}
-              {navItems
-                .filter(item => item.name !== 'Postos Externos' && item.name !== 'Multas' && item.name !== 'Abastecimentos' && item.name !== 'Line Hall')
-                .map((item) => {
-                  const isActive = location === item.href;
-                  const isSubItemActive = item.subItems?.some(subItem => location === subItem.href);
-                  
-                  return (
-                    <div key={item.name} className="mb-1">
-                      {item.subItems ? (
-                        <NavItemWithSubmenu 
-                          item={item} 
-                          isActive={isActive} 
-                          isSubItemActive={isSubItemActive || false}
-                          onClose={closeSidebar}
-                          currentLocation={location}
-                        />
-                      ) : (
-                        <NavItem 
-                          item={item} 
-                          isActive={isActive}
-                          onClose={closeSidebar}
-                        />
-                      )}
-                    </div>
-                  );
-              })}
-              
-              {/* Inserir Menu Cartão */}
-              {navItems
-                .filter(item => item.name === 'Cartão')
-                .map((item) => {
-                  const isActive = location === item.href;
-                  const isSubItemActive = item.subItems?.some(subItem => location === subItem.href);
-                  
-                  return (
-                    <div key={item.name} className="mb-1">
-                      {item.subItems ? (
-                        <NavItemWithSubmenu 
-                          item={item} 
-                          isActive={isActive} 
-                          isSubItemActive={isSubItemActive || false}
-                          onClose={closeSidebar}
-                          currentLocation={location}
-                        />
-                      ) : (
-                        <NavItem 
-                          item={item} 
-                          isActive={isActive}
-                          onClose={closeSidebar}
-                        />
-                      )}
-                    </div>
-                  );
-              })}
-              
-              {/* Inserir menu Postos Externos usando componente personalizado para garantir visibilidade */}
-              {console.log('RENDERIZANDO MENU POSTOS EXTERNOS FIXO COM DESTAQUE', postoExternosDiretoItem)}
-              <div className="mb-8 mt-8 bg-primary-600/20 border-2 border-primary-500 rounded-md p-2 fixed top-1/3 left-32 -translate-x-1/2 z-10 shadow-lg max-w-[200px]">
-                <div className="text-sm text-white font-bold mx-2 mt-1 mb-2 flex items-center gap-2">
-                  <Droplets className="text-primary-300" size={16} />
-                  <span>Postos Externos</span>
-                </div>
-                <div className="pl-4 space-y-2">
-                  <Link 
-                    href="/posto-remedios"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      navigateTo('/posto-remedios');
-                      closeSidebar();
-                    }}
-                    className="flex items-center px-3 py-2 text-sm rounded-md group transition-all duration-200 cursor-pointer text-primary-100 hover:bg-primary-700 hover:shadow-sm"
-                  >
-                    <Fuel size={16} />
-                    <span className="ml-2">Posto Remédios</span>
-                  </Link>
-                  <Link 
-                    href="/posto-murici"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      navigateTo('/posto-murici');
-                      closeSidebar();
-                    }}
-                    className="flex items-center px-3 py-2 text-sm rounded-md group transition-all duration-200 cursor-pointer text-primary-100 hover:bg-primary-700 hover:shadow-sm"
-                  >
-                    <Fuel size={16} />
-                    <span className="ml-2">Posto Murici</span>
-                  </Link>
-                  <Link 
-                    href="/posto-murici/links"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      navigateTo('/posto-murici/links');
-                      closeSidebar();
-                    }}
-                    className="flex items-center px-3 py-2 text-sm rounded-md group transition-all duration-200 cursor-pointer text-primary-100 hover:bg-primary-700 hover:shadow-sm"
-                  >
-                    <Fuel size={16} />
-                    <span className="ml-2">Posto Murici Links</span>
-                  </Link>
-                </div>
-              </div>
-              
-              {/* Inserir Abastecimento e outros itens restantes */}
-              {navItems
-                .filter(item => item.name === 'Multas' || item.name === 'Abastecimento' || item.name === 'Line Hall' || 
-                              (item.name !== 'Cartão' && item.name !== 'Postos Externos'))
-                .map((item) => {
-                  // Pular o item Postos Externos pois já adicionamos manualmente
-                  if (item.name === 'Postos Externos') return null;
-                  
-                  const isActive = location === item.href;
-                  const isSubItemActive = item.subItems?.some(subItem => location === subItem.href);
-                  
-                  return (
-                    <div key={item.name} className="mb-1">
-                      {item.subItems ? (
-                        <NavItemWithSubmenu 
-                          item={item} 
-                          isActive={isActive} 
-                          isSubItemActive={isSubItemActive || false}
-                          onClose={closeSidebar}
-                          currentLocation={location}
-                        />
-                      ) : (
-                        <NavItem 
-                          item={item} 
-                          isActive={isActive}
-                          onClose={closeSidebar}
-                        />
-                      )}
-                    </div>
-                  );
+              {/* Renderizando itens de menu usando componentes dedicados */}
+              {navItems.map((item) => {
+                const isActive = location === item.href;
+                const isSubItemActive = item.subItems?.some(subItem => location === subItem.href);
+                
+                return (
+                  <div key={item.name} className="mb-1">
+                    {item.subItems ? (
+                      <NavItemWithSubmenu 
+                        item={item} 
+                        isActive={isActive} 
+                        isSubItemActive={isSubItemActive || false}
+                        onClose={closeSidebar}
+                        currentLocation={location}
+                      />
+                    ) : (
+                      <NavItem 
+                        item={item} 
+                        isActive={isActive}
+                        onClose={closeSidebar}
+                      />
+                    )}
+                  </div>
+                );
               })}
             </div>
           </nav>

@@ -12,19 +12,8 @@ import {
   getConsumoPorVeiculoPosto,
   getComparativoCombustiveisPosto,
   checkTabelaPosto,
-  registrarPostoMurici,
-  getRecebimentosPosto,
-  getMovimentacoesPatioPosto
+  registrarAbastecimentoPosto
 } from "./api-direto.js";
-// Importar API para checklists de motoristas
-import {
-  getDriverChecklists,
-  getDriverChecklistById,
-  createDriverChecklist,
-  updateDriverChecklist,
-  deleteDriverChecklist,
-  getDriverChecklistsByPosto
-} from "./api-driver-checklist.js";
 // Importar API para usuários via Supabase
 import userApi from "./api/userApi";
 // Importar APIs híbridas (ambiente Replit e externo)
@@ -109,35 +98,6 @@ app.use((req, res, next) => {
   // Registrar o roteador de API de usuários
   app.use(userApi);
   
-  // Middleware de bypass para API híbrida - para permitir acesso total de admin
-  const bypassHybridAuthMiddleware = (req: any, res: any, next: any) => {
-    // Verificar se a URL inclui /api/hybrid/ para aplicar apenas às rotas híbridas
-    if (req.url && req.url.includes('/api/hybrid/')) {
-      // Se o usuário estiver autenticado pela sessão, adiciona informações ao req
-      if (req.isAuthenticated && req.isAuthenticated() && req.user) {
-        console.log('✅ [BypassHybrid] Usuário já autenticado por sessão:', req.user.email);
-        // Não é necessário fazer nada, pois req.user já está disponível
-      } else {
-        // Adicionar usuário admin simulado
-        console.log('⚠️ [BypassHybrid] Adicionando usuário admin simulado para rota híbrida:', req.url);
-        req.user = {
-          id: 1,
-          name: 'Administrador',
-          email: 'admin@muricionfleet.com',
-          role: 'admin',
-          baseId: null,
-          basename: null,
-          oficinaId: null,
-          isActive: true
-        };
-      }
-    }
-    next();
-  };
-
-  // Registrar o middleware de bypass antes dos roteadores de API híbrida
-  app.use(bypassHybridAuthMiddleware);
-
   // Registrar os roteadores de API híbrida (funcionam dentro e fora do Replit)
   app.use(hybridUserApi);
   app.use(hybridBasesApi);
@@ -152,41 +112,7 @@ app.use((req, res, next) => {
   app.get('/api/consumo-por-veiculo-direto/:posto', getConsumoPorVeiculoPosto);
   app.get('/api/comparativo-combustiveis-direto/:posto', getComparativoCombustiveisPosto);
   app.get('/api/check-tabela-direto/:posto', checkTabelaPosto);
-  app.get('/api/recebimentos-direto/:posto', getRecebimentosPosto);
-  app.get('/api/movimentacoes-patio-direto/:posto', getMovimentacoesPatioPosto);
-  app.post('/api/abastecimento-direto/:posto', registrarPostoMurici);
-  
-  // Rota para recuperar todas as movimentações de pátio - evita interceptação do Vite
-  app.get('/api/movimentacoes-patio-direto', async (req, res) => {
-    try {
-      const { pool } = await import('./db');
-      console.log('Buscando todas as movimentações de pátio (rota direta)');
-      
-      // Consulta SQL para buscar registros
-      const query = `
-        SELECT * FROM movimentacoes_patio 
-        ORDER BY created_at DESC
-        LIMIT 500
-      `;
-      
-      const result = await pool.query(query);
-      
-      console.log(`Total de movimentações encontradas: ${result.rowCount || 0}`);
-      
-      return res.status(200).json({
-        success: true,
-        count: result.rowCount || 0,
-        data: result.rows
-      });
-    } catch (error) {
-      console.error('Erro ao buscar todas as movimentações de pátio:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Erro ao buscar todas as movimentações de pátio',
-        error: String(error)
-      });
-    }
-  });
+  app.post('/api/abastecimento-direto/:posto', registrarAbastecimentoPosto);
   
   // Rotas especiais para Campinas V2, para resolver o problema de nomenclatura
   // Rota de abastecimento
@@ -194,7 +120,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE CAMPINAS V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como campinas_v2
     req.params = { ...req.params, posto: 'campinas_v2' };
-    registrarPostoMurici(req, res);
+    registrarAbastecimentoPosto(req, res);
   });
   
   // Rota de histórico para Campinas V2
@@ -205,25 +131,39 @@ app.use((req, res, next) => {
     getHistoricoPosto(req, res);
   });
   
-  // Rotas especiais para Osasco V2
+  // Rotas especiais para Osasco, seguindo mesmo padrão de Campinas V2
   // Rota de abastecimento
   app.post('/api/abastecimento-direto-osasco', (req, res) => {
-    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE OSASCO V2 ====");
-    // Forçar o parâmetro posto para garantir que seja tratado como osasco_v2
-    req.params = { ...req.params, posto: 'osasco_v2' };
-    registrarPostoMurici(req, res);
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE OSASCO ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como osasco
+    req.params = { ...req.params, posto: 'osasco' };
+    registrarAbastecimentoPosto(req, res);
   });
   
-  // Rota de histórico para Osasco V2
+  // Rota de histórico para Osasco
   app.get('/api/historico-direto-osasco', (req, res) => {
-    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE OSASCO V2 ====");
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE OSASCO ====");
     // Redirecionar para a rota genérica, mas forçando o parâmetro posto
-    req.params = { posto: 'osasco_v2' };
+    req.params = { posto: 'osasco' };
     getHistoricoPosto(req, res);
   });
 
-  // Rotas especiais para ABC V2 - REMOVIDAS (Maio/2025)
-  // As tabelas associadas ao posto ABC_v2 foram excluídas do banco de dados
+  // Rotas especiais para ABC V2
+  // Rota de abastecimento
+  app.post('/api/abastecimento-direto-abc-v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ABC V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como abc_v2
+    req.params = { ...req.params, posto: 'abc_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Rota de histórico para ABC V2
+  app.get('/api/historico-direto-abc-v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE ABC V2 ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'abc_v2' };
+    getHistoricoPosto(req, res);
+  });
 
   // Rotas especiais para Alair V2
   // Rota de abastecimento
@@ -231,7 +171,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ALAIR V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como alair_v2
     req.params = { ...req.params, posto: 'alair_v2' };
-    registrarPostoMurici(req, res);
+    registrarAbastecimentoPosto(req, res);
   });
   
   // Rota de histórico para Alair V2
@@ -248,7 +188,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE SOCORRO V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como socorro_v2
     req.params = { ...req.params, posto: 'socorro_v2' };
-    registrarPostoMurici(req, res);
+    registrarAbastecimentoPosto(req, res);
   });
   
   // Rota de histórico para Socorro V2
@@ -265,7 +205,7 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE SOROCABA V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como sorocaba_v2
     req.params = { ...req.params, posto: 'sorocaba_v2' };
-    registrarPostoMurici(req, res);
+    registrarAbastecimentoPosto(req, res);
   });
   
   // Rota de histórico para Sorocaba V2
@@ -275,14 +215,6 @@ app.use((req, res, next) => {
     req.params = { posto: 'sorocaba_v2' };
     getHistoricoPosto(req, res);
   });
-  
-  // Rotas para API de checklist de motoristas
-  app.get('/api/driver-checklists', getDriverChecklists);
-  app.post('/api/driver-checklists', createDriverChecklist);
-  app.get('/api/driver-checklists/posto/:posto', getDriverChecklistsByPosto);
-  app.get('/api/driver-checklists/:id', getDriverChecklistById);
-  app.put('/api/driver-checklists/:id', updateDriverChecklist);
-  app.delete('/api/driver-checklists/:id', deleteDriverChecklist);
   
   // Rota de diagnóstico específica para autenticação
   app.get('/api/auth-diagnostic', (req, res) => {

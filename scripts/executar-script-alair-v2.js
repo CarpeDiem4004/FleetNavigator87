@@ -23,16 +23,16 @@ async function executarScript() {
     await pool.query(sql);
     
     console.log('Script SQL para Posto Alair V2 executado com sucesso!');
-    console.log('Tabela posto_murici_alair_v2 criada e configuração de tanques inserida.');
+    console.log('Tabela abastecimentos_posto_alair_v2 criada e configuração de tanques inserida.');
     
     // Verifica se a tabela foi criada
-    const result = await pool.query('SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = $1)', ['posto_murici_alair_v2']);
+    const result = await pool.query('SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = $1)', ['abastecimentos_posto_alair_v2']);
     
     if (result.rows[0].exists) {
-      console.log('✅ Tabela posto_murici_alair_v2 confirmada no banco de dados.');
+      console.log('✅ Tabela abastecimentos_posto_alair_v2 confirmada no banco de dados.');
       
       // Conta o número de registros
-      const countResult = await pool.query('SELECT COUNT(*) FROM posto_murici_alair_v2');
+      const countResult = await pool.query('SELECT COUNT(*) FROM abastecimentos_posto_alair_v2');
       console.log(`✅ Número de registros na tabela: ${countResult.rows[0].count}`);
       
       // Verifica a configuração do tanque

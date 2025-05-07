@@ -16,28 +16,26 @@ export function formatarNomePosto(nome: string): string {
   const nomeNormalizado = nome.trim().toLowerCase();
   
   // Mapeamento de variações comuns para o formato padrão
-  // A partir de Maio/2025, apenas o Posto Remédios é mantido
   const mapeamentoNomes: Record<string, string> = {
     'posto remedios': 'remedios',
     'posto remédios': 'remedios',
     'remédios': 'remedios',
-    // Mapeando os outros postos para 'remedios' para redirecionamento automático
-    'posto campinas': 'remedios', // Removido: Maio/2025
-    'posto são paulo': 'remedios', // Removido: Abril/2025
-    'posto sao paulo': 'remedios', // Removido: Abril/2025
-    'são paulo': 'remedios', // Removido: Abril/2025
-    'sao paulo': 'remedios', // Removido: Abril/2025
-    'posto osasco': 'remedios', // Removido: Maio/2025
-    'posto abc': 'remedios', // Removido: Maio/2025
-    'posto socorro': 'remedios', // Removido: Maio/2025
-    'posto sorocaba': 'remedios', // Removido: Maio/2025
-    'posto ipatinga': 'remedios', // Removido: Maio/2025
-    'posto bota fogo': 'remedios', // Removido: Maio/2025
-    'posto botafogo': 'remedios', // Removido: Maio/2025
-    'bota fogo': 'remedios', // Removido: Maio/2025
-    'posto vargem grande': 'remedios', // Removido: Maio/2025
-    'vargem grande': 'remedios', // Removido: Maio/2025
-    'posto guarulhos': 'remedios', // Removido: Maio/2025
+    'posto campinas': 'campinas',
+    'posto são paulo': 'saopaulo',
+    'posto sao paulo': 'saopaulo',
+    'são paulo': 'saopaulo',
+    'sao paulo': 'saopaulo',
+    'posto osasco': 'osasco',
+    'posto abc': 'abc',
+    'posto socorro': 'socorro',
+    'posto sorocaba': 'sorocaba',
+    'posto ipatinga': 'ipatinga',
+    'posto bota fogo': 'botafogo',
+    'posto botafogo': 'botafogo',
+    'bota fogo': 'botafogo',
+    'posto vargem grande': 'vargemgrande',
+    'vargem grande': 'vargemgrande',
+    'posto guarulhos': 'guarulhos',
   };
   
   // Procurar por correspondências exatas
@@ -52,9 +50,8 @@ export function formatarNomePosto(nome: string): string {
     }
   }
   
-  // Se não encontrou, retorna 'remedios' como padrão
-  // Alterado: Maio/2025 - Redirecionando todos os postos desconhecidos para Remédios
-  return 'remedios';
+  // Se não encontrou, retorna o nome original sem espaços e caracteres especiais
+  return nomeNormalizado.replace(/[^a-z0-9]/g, '');
 }
 
 /**
@@ -67,10 +64,18 @@ export function isPostoValido(nome: string): boolean {
   const nomeFormatado = formatarNomePosto(nome);
   
   // Lista de postos válidos no sistema
-  // A partir de Maio/2025, apenas o Posto Remédios é considerado válido
   const postosValidos = [
-    // Todos os outros postos foram removidos em Maio/2025
-    'remedios'
+    'campinas',
+    'osasco',
+    'abc',
+    'socorro',
+    'sorocaba',
+    'saopaulo',
+    'ipatinga',
+    'botafogo',
+    'remedios',
+    'vargemgrande',
+    'guarulhos'
   ];
   
   return postosValidos.includes(nomeFormatado);
@@ -86,24 +91,22 @@ export function obterNomeExibicaoPosto(nome: string): string {
   const nomeFormatado = formatarNomePosto(nome);
   
   // Mapeamento de nomes internos para nomes de exibição
-  // A partir de Maio/2025, todos os postos (exceto Remédios) são redirecionados para o Posto Remédios
   const mapeamentoExibicao: Record<string, string> = {
-    'campinas': 'Posto Campinas (Removido Maio/2025)',
-    'osasco': 'Posto Osasco (Removido Maio/2025)',
-    'abc': 'Posto ABC (Removido Maio/2025)',
-    'socorro': 'Posto Socorro (Removido Maio/2025)',
-    'sorocaba': 'Posto Sorocaba (Removido Maio/2025)',
-    'saopaulo': 'Posto São Paulo (Removido Abril/2025)',
-    'ipatinga': 'Posto Ipatinga (Removido Maio/2025)',
-    'botafogo': 'Posto Bota Fogo (Removido Maio/2025)',
+    'campinas': 'Posto Campinas',
+    'osasco': 'Posto Osasco',
+    'abc': 'Posto ABC',
+    'socorro': 'Posto Socorro',
+    'sorocaba': 'Posto Sorocaba',
+    'saopaulo': 'Posto São Paulo',
+    'ipatinga': 'Posto Ipatinga',
+    'botafogo': 'Posto Bota Fogo',
     'remedios': 'Posto Remédios',
-    'vargemgrande': 'Posto Vargem Grande (Removido Maio/2025)',
-    'guarulhos': 'Posto Guarulhos (Removido Maio/2025)'
+    'vargemgrande': 'Posto Vargem Grande',
+    'guarulhos': 'Posto Guarulhos'
   };
   
-  // Se o posto não for reconhecido, retorna o Posto Remédios
-  // como valor padrão após a remoção dos outros postos
-  return mapeamentoExibicao[nomeFormatado] || 'Posto Remédios';
+  return mapeamentoExibicao[nomeFormatado] || 
+    `Posto ${nome.charAt(0).toUpperCase() + nome.slice(1)}`;
 }
 
 /**
@@ -113,7 +116,7 @@ export function obterNomeExibicaoPosto(nome: string): string {
  * @returns Nome da tabela formatado
  */
 export function formatarNomeTabela(posto: string): string {
-  return `posto_murici_${formatarNomePosto(posto).toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+  return `abastecimentos_posto_${formatarNomePosto(posto).toLowerCase().replace(/[^a-z0-9]/g, '')}`;
 }
 
 /**
@@ -122,8 +125,17 @@ export function formatarNomeTabela(posto: string): string {
  * @returns Array com os nomes internos de todos os postos
  */
 export function listarTodosPosto(): string[] {
-  // A partir de Maio/2025, apenas o Posto Remédios é mantido no sistema
   return [
-    'remedios'
+    'campinas',
+    'osasco',
+    'abc',
+    'socorro',
+    'sorocaba',
+    'saopaulo',
+    'ipatinga',
+    'botafogo',
+    'remedios',
+    'vargemgrande',
+    'guarulhos'
   ];
 }

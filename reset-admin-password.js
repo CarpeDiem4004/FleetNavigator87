@@ -41,7 +41,7 @@ async function resetAdminPassword() {
     console.log('Hash gerado para a nova senha');
     
     // Atualizar senha do usuário admin
-    const adminId = 1; // ID do usuário Administrador
+    const adminId = 12; // ID do usuário Administrador
     const query = 'UPDATE users SET password = $1 WHERE id = $2 RETURNING id, name, email';
     const result = await pool.query(query, [hashedPassword, adminId]);
     

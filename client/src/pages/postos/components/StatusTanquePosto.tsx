@@ -454,8 +454,8 @@ export const StatusTanquePosto = forwardRef<StatusTanqueRef, StatusTanqueProps>(
       const formattedPosto = formatPosto(posto);
       console.log("[FETCH] Buscando recebimentos para o posto:", formattedPosto);
       
-      // Usar a rota direta para evitar problemas de interceptação do Vite
-      const response = await fetch(`/api/recebimentos-direto/${posto}`);
+      // Usar a nova API para obter os recebimentos
+      const response = await fetch(`/api/recebimentos/${posto}`);
       
       if (!response.ok) {
         throw new Error(`Erro ao buscar recebimentos: ${response.status}`);
@@ -464,28 +464,12 @@ export const StatusTanquePosto = forwardRef<StatusTanqueRef, StatusTanqueProps>(
       const result = await response.json();
       
       if (result.success && Array.isArray(result.data)) {
-        console.log(`[FETCH] Recebimentos encontrados: ${result.data.length}`);
         return result.data;
       }
       
       return [];
     } catch (error) {
       console.error('[FETCH] Erro ao buscar recebimentos:', error);
-      
-      // Tentar fallback para localStorage
-      try {
-        const localKey = `recebimentos_combustivel_${posto}`;
-        const storedData = localStorage.getItem(localKey);
-        
-        if (storedData) {
-          const data = JSON.parse(storedData);
-          console.log("[FETCH] Recuperados recebimentos de combustível do localStorage como fallback:", data.length);
-          return data;
-        }
-      } catch (localError) {
-        console.error('[FETCH] Erro ao recuperar recebimentos do localStorage:', localError);
-      }
-      
       return [];
     }
   };

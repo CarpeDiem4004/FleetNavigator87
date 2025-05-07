@@ -55,8 +55,6 @@ interface User {
   base_id?: number | null;
   basename?: string | null;
   is_active?: boolean;
-  // Campo para armazenar o posto específico
-  posto?: string | null;
 }
 
 // Dados mockados para a tabela de usuários
@@ -110,17 +108,6 @@ const formatDateTime = (dateTimeString: string | null): string => {
   }).format(date);
 };
 
-// Lista dos postos V2 disponíveis no sistema
-const postosV2 = [
-  { id: 'osasco_v2', nome: 'Osasco V2' },
-  { id: 'campinas_v2', nome: 'Campinas V2' },
-  { id: 'socorro_v2', nome: 'Socorro V2' },
-  { id: 'sorocaba_v2', nome: 'Sorocaba V2' },
-  { id: 'abc_v2', nome: 'ABC V2' },
-  { id: 'remedios', nome: 'Remédios' },
-  { id: 'alair_v2', nome: 'Alair V2' }
-];
-
 // Função para gerar senha aleatória
 const generateRandomPassword = (length: number = 8): string => {
   const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*";
@@ -152,8 +139,7 @@ const UsersNew: React.FC = () => {
     baseId: null,
     baseName: null,
     lastLogin: null,
-    isActive: true,
-    posto: null
+    isActive: true
   });
   
   // Interface para a resposta da API híbrida
@@ -167,34 +153,7 @@ const UsersNew: React.FC = () => {
   const { data: usersRaw = { success: false, count: 0, users: [] }, isLoading: usersLoading, error: usersError } = useQuery<HybridApiResponse>({
     queryKey: ['/api/hybrid/users'],
     staleTime: 10000, // Considerar stale após 10 segundos para permitir atualizações frequentes
-    queryFn: async () => {
-      // Implementação personalizada com cabeçalhos de autenticação explícitos
-      // Obter o token JWT do armazenamento local
-      const authToken = localStorage.getItem('authToken') || localStorage.getItem('jwt_token');
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
-        console.log('[UsersNew] Adicionando token JWT ao cabeçalho da requisição para /api/hybrid/users');
-      } else {
-        console.warn('[UsersNew] Sem token JWT disponível para requisição de usuários');
-      }
-      
-      try {
-        const response = await fetch('/api/hybrid/users', { headers, credentials: 'include' });
-        if (!response.ok) {
-          if (response.status === 401) {
-            console.error('[UsersNew] Erro de autenticação (401) ao buscar usuários');
-            return { success: false, count: 0, users: [] };
-          }
-          throw new Error(`Erro ao buscar usuários: ${response.statusText}`);
-        }
-        return await response.json();
-      } catch (error) {
-        console.error('[UsersNew] Erro na requisição de usuários:', error);
-        throw error;
-      }
-    }
+    queryFn: getQueryFn({ on401: "returnNull" }), // Adicionado para lidar com erros 401
   });
   
   // Verificar e normalizar os dados de usuário
@@ -215,8 +174,7 @@ const UsersNew: React.FC = () => {
           baseName: user.baseName || user.basename || null,
           lastLogin: user.lastLogin || user.last_login || null,
           isActive: user.isActive !== undefined ? user.isActive : 
-                   user.is_active !== undefined ? user.is_active : true,
-          posto: user.posto || null
+                   user.is_active !== undefined ? user.is_active : true
         }));
       }
     }
@@ -263,34 +221,7 @@ const UsersNew: React.FC = () => {
   // Buscar bases disponíveis usando React Query com a API híbrida
   const { data: basesRaw, isLoading: basesLoading } = useQuery<HybridBasesApiResponse>({
     queryKey: ['/api/hybrid/bases'],
-    queryFn: async () => {
-      // Implementação personalizada com cabeçalhos de autenticação explícitos
-      // Obter o token JWT do armazenamento local
-      const authToken = localStorage.getItem('authToken') || localStorage.getItem('jwt_token');
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
-        console.log('[UsersNew] Adicionando token JWT ao cabeçalho da requisição para /api/hybrid/bases');
-      } else {
-        console.warn('[UsersNew] Sem token JWT disponível para requisição de bases');
-      }
-      
-      try {
-        const response = await fetch('/api/hybrid/bases', { headers, credentials: 'include' });
-        if (!response.ok) {
-          if (response.status === 401) {
-            console.error('[UsersNew] Erro de autenticação (401) ao buscar bases');
-            return { success: false, count: 0, bases: [] };
-          }
-          throw new Error(`Erro ao buscar bases: ${response.statusText}`);
-        }
-        return await response.json();
-      } catch (error) {
-        console.error('[UsersNew] Erro na requisição de bases:', error);
-        throw error;
-      }
-    }
+    queryFn: getQueryFn({ on401: "returnNull" }),
   });
   
   // Log para depuração dos dados das bases
@@ -361,24 +292,8 @@ const UsersNew: React.FC = () => {
     if (!selectedUserId) return;
     
     try {
-      // Chamar API híbrida para excluir o usuário com token JWT explícito
-      const authToken = localStorage.getItem('authToken') || localStorage.getItem('jwt_token');
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
-        console.log('[UsersNew] Adicionando token JWT para excluir usuário');
-      }
-      
-      const response = await fetch(`/api/hybrid/users/${selectedUserId}`, {
-        method: 'DELETE',
-        headers,
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Erro ao excluir usuário: ${response.statusText}`);
-      }
+      // Chamar API híbrida para excluir o usuário
+      await apiRequest('DELETE', `/api/hybrid/users/${selectedUserId}`);
       
       // Fechar o diálogo
       setIsDeleteUserDialogOpen(false);
@@ -403,25 +318,10 @@ const UsersNew: React.FC = () => {
   // Função para alternar o status do usuário (ativo/inativo)
   const handleToggleUserStatus = async (userId: number, currentStatus: boolean) => {
     try {
-      // Chamar API híbrida para atualizar o status do usuário com token JWT explícito
-      const authToken = localStorage.getItem('authToken') || localStorage.getItem('jwt_token');
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
-        console.log('[UsersNew] Adicionando token JWT para atualizar status de usuário');
-      }
-      
-      const response = await fetch(`/api/hybrid/users/${userId}/status`, {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify({ isActive: !currentStatus }),
-        credentials: 'include'
+      // Chamar API híbrida para atualizar o status do usuário
+      await apiRequest('PATCH', `/api/hybrid/users/${userId}/status`, { 
+        isActive: !currentStatus 
       });
-      
-      if (!response.ok) {
-        throw new Error(`Erro ao atualizar status: ${response.statusText}`);
-      }
       
       // Atualizar a lista de usuários
       handleUserDataChanged();
@@ -447,25 +347,10 @@ const UsersNew: React.FC = () => {
     try {
       const newPassword = generateRandomPassword(10);
       
-      // Chamar API híbrida para atualizar a senha do usuário com token JWT explícito
-      const authToken = localStorage.getItem('authToken') || localStorage.getItem('jwt_token');
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
-        console.log('[UsersNew] Adicionando token JWT para redefinir senha');
-      }
-      
-      const response = await fetch(`/api/hybrid/users/${selectedUserId}/reset-password`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ password: newPassword }),
-        credentials: 'include'
+      // Chamar API híbrida para atualizar a senha do usuário
+      await apiRequest('POST', `/api/hybrid/users/${selectedUserId}/reset-password`, { 
+        password: newPassword 
       });
-      
-      if (!response.ok) {
-        throw new Error(`Erro ao redefinir senha: ${response.statusText}`);
-      }
       
       // Fechar o diálogo e mostrar a nova senha
       setIsResetPasswordDialogOpen(false);
@@ -574,29 +459,10 @@ const UsersNew: React.FC = () => {
         userData.baseId = newUser.baseId;
       }
       
-      // Adicionar posto apenas se o perfil for "posto" e um posto foi selecionado
-      if (newUser.role === 'posto' && newUser.posto) {
-        userData.posto = newUser.posto;
-      }
-      
       console.log('Enviando dados de usuário:', { ...userData, password: password ? '***' : '[gerada automaticamente]' });
       
       // Usar a rota híbrida para criação de usuários (para manter a autenticação consistente)
-      // Incluir token JWT explicitamente para garantir autenticação
-      const authToken = localStorage.getItem('authToken') || localStorage.getItem('jwt_token');
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
-        console.log('[UsersNew] Adicionando token JWT para criar usuário');
-      }
-      
-      const response = await fetch('/api/hybrid/users', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(userData),
-        credentials: 'include'
-      });
+      const response = await apiRequest('POST', '/api/hybrid/users', userData);
       const data = await response.json();
       
       // Armazenar a senha gerada e mostrar o diálogo
@@ -621,8 +487,7 @@ const UsersNew: React.FC = () => {
           baseId: null,
           baseName: null,
           lastLogin: null,
-          isActive: true,
-          posto: null
+          isActive: true
         });
         setPassword('');
         setConfirmPassword('');
@@ -717,33 +582,6 @@ const UsersNew: React.FC = () => {
                     />
                   </div>
                 </div>
-                {/* Campo de Posto - exibido apenas quando o perfil é "posto" */}
-                {newUser.role === 'posto' && (
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="posto" className="text-right">
-                      Posto
-                    </Label>
-                    <div className="col-span-3">
-                      <NativeSelect
-                        id="posto"
-                        value={newUser.posto || ''}
-                        onChange={(e) => setNewUser({...newUser, posto: e.target.value})}
-                        options={[
-                          { value: '', label: 'Selecione um posto...' },
-                          ...postosV2.map(posto => ({
-                            value: posto.id,
-                            label: posto.nome
-                          }))
-                        ]}
-                        placeholder="Selecione o posto"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Este usuário terá acesso específico a este posto.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="base" className="text-right">
                     Base
@@ -997,15 +835,6 @@ const UsersNew: React.FC = () => {
                     </span>
                   </div>
                 </div>
-                {/* Exibir posto quando o usuário for do tipo posto */}
-                {selectedUser.role === 'posto' && selectedUser.posto && (
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="font-medium">Posto:</div>
-                    <div className="col-span-2">
-                      {postosV2.find(p => p.id === selectedUser.posto)?.nome || selectedUser.posto}
-                    </div>
-                  </div>
-                )}
                 <div className="grid grid-cols-3 gap-2">
                   <div className="font-medium">Base:</div>
                   <div className="col-span-2">{selectedUser.baseName || 'Global'}</div>
@@ -1074,8 +903,7 @@ const UsersNew: React.FC = () => {
                 baseId: null,
                 baseName: null,
                 lastLogin: null,
-                isActive: true,
-                posto: null
+                isActive: true
               });
               setPassword('');
               setConfirmPassword('');

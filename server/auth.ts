@@ -238,27 +238,14 @@ export function setupAuth(app: Express) {
       }
       
       console.log(`Login bem-sucedido para: ${user.email} (ID: ${user.id})`);
-      
-      // Importar a função para gerar token JWT
-      const { generateJwtToken } = require('./utils/auth');
-      
-      // Gerar token JWT para o usuário autenticado
-      const jwtToken = generateJwtToken(user);
-      
       req.login(user, (err) => {
         if (err) {
           console.error('Erro ao iniciar sessão:', err);
           return next(err);
         }
-        
         // Não enviar a senha para o cliente
         const userWithoutPassword = { ...user, password: undefined };
-        
-        // Retornar o token JWT junto com os dados do usuário
-        res.json({
-          ...userWithoutPassword,
-          token: jwtToken
-        });
+        res.json(userWithoutPassword);
       });
     })(req, res, next);
   });

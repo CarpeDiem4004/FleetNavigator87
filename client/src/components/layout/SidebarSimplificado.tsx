@@ -195,29 +195,35 @@ const SidebarSimplificado: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Motoristas', href: '/drivers', icon: Users },
     { name: 'Manutenção', href: '/manutencao', icon: Wrench },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
-    { name: 'Posto Murici', href: '/refueling', icon: Fuel },
+    { name: 'Abastecimento', href: '/refueling', icon: Fuel },
     
     // Nova seção para Postos
     {
-      name: 'Postos Murici', 
+      name: 'Postos de Abastecimento', 
       href: '#', 
       icon: Fuel,
       subItems: [
         { name: 'Acesso Direto', href: '/acesso-posto', icon: Link2, className: 'bg-green-800/20 text-green-400 hover:bg-green-800/30 hover:text-green-300' },
         { name: 'Visão Geral', href: '/postos/visao-geral', icon: Gauge },
+        { name: 'Posto Osasco V2', href: '/posto/osasco_v2', icon: Fuel },
+        { name: 'Posto Alair V2', href: '/posto/alair_v2', icon: Fuel },
+        { name: 'Posto Campinas V2', href: '/posto/campinas_v2', icon: Fuel },
+        { name: 'Posto ABC V2', href: '/posto/abc_v2', icon: Fuel },
+        { name: 'Posto Socorro', href: '/posto/socorro', icon: Fuel },
+        { name: 'Posto Sorocaba', href: '/posto/sorocaba', icon: Fuel },
       ]
     },
     
     { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
     
-    // Item de menu para Cartão do Posto Murici - sempre visível
+    // Item de menu para Cartão de Abastecimento - sempre visível
     { name: 'Cartão', href: '/fuel-card', icon: CreditCard },
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
     { name: 'Usuários', href: '/users', icon: Users },
     
     // Adicionando acesso rápido na lista principal também para maior visibilidade
     { 
-      name: 'Acesso Direto ao Posto Murici', 
+      name: 'Acesso Direto a Postos', 
       href: '/acesso-posto', 
       icon: Link2, 
       className: 'bg-green-800/20 text-green-400 hover:bg-green-800/30 hover:text-green-300 mt-4 font-medium' 
