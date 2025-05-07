@@ -372,18 +372,27 @@ export default function MaintenancePage() {
 
   // Função para encontrar nome da base pelo ID
   const getBaseName = (baseId: number) => {
+    if (!Array.isArray(bases) || bases.length === 0) {
+      return 'Base Desconhecida';
+    }
     const base = bases.find(b => b.id === baseId);
     return base ? base.name : 'Base Desconhecida';
   };
 
   // Função para encontrar nome da oficina pelo ID
   const getWorkshopName = (workshopId: number) => {
+    if (!Array.isArray(workshops) || workshops.length === 0) {
+      return 'Oficina Desconhecida';
+    }
     const workshop = workshops.find(w => w.id === workshopId);
     return workshop ? workshop.name : 'Oficina Desconhecida';
   };
 
   // Função para encontrar detalhes do veículo pela placa
   const getVehicleDetails = (plate: string) => {
+    if (!Array.isArray(vehicles) || vehicles.length === 0) {
+      return plate || "Placa não disponível";
+    }
     const vehicle = vehicles.find((v: Vehicle) => v.plate === plate);
     return vehicle ? `${plate} - ${vehicle.model}` : plate;
   };
@@ -479,7 +488,7 @@ export default function MaintenancePage() {
                       >
                         Todas as bases
                       </Button>
-                      {bases.map((base) => (
+                      {Array.isArray(bases) ? bases.map((base) => (
                         <Button
                           key={base.id}
                           variant={filterBaseId === base.id ? "default" : "outline"}
@@ -488,7 +497,7 @@ export default function MaintenancePage() {
                         >
                           {base.name}
                         </Button>
-                      ))}
+                      )) : null}
                     </div>
                   </div>
                 )}
@@ -643,7 +652,7 @@ export default function MaintenancePage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="default">Selecione um veículo</SelectItem>
-                      {vehicles.length === 0 ? (
+                      {!Array.isArray(vehicles) || vehicles.length === 0 ? (
                         <SelectItem value="loading">Carregando veículos...</SelectItem>
                       ) : (
                         vehicles.map((vehicle) => (
