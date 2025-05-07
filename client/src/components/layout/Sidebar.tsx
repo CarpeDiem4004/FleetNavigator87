@@ -192,13 +192,11 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText },
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
-    // Modificado para apontar para a página principal em vez de submenu
-    { name: 'Posto Murici', href: '/abastecimentos', icon: Fuel },
-    { name: 'Histórico Posto Murici', href: '/refueling', icon: ClipboardList },
     // Postos Externos com submenu atualizado
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
-      { name: 'Posto Murici', href: '/posto-murici', icon: Fuel }
+      { name: 'Posto Murici', href: '/posto-murici', icon: Fuel },
+      { name: 'Posto Murici Links', href: '/posto-murici/links', icon: Fuel }
     ]},
     // Item de menu separado para Cartão de Abastecimento
     { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
@@ -219,13 +217,13 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Oficinas Credenciadas', href: '/fleet-management/workshops', icon: ClipboardList },
     { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package },
-    // Modificado para apontar para a página principal em vez de submenu
-    { name: 'Posto Murici', href: '/abastecimentos', icon: Fuel },
+    // Operações de combustível e abastecimento
     { name: 'Histórico Posto Murici', href: '/refueling', icon: ClipboardList },
-    // Corrigido para usar o mesmo ícone e estrutura em ambas as listas de navegação
+    // Postos Externos com submenu consistente
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel },
-      { name: 'Posto Murici', href: '/posto-murici', icon: Fuel }
+      { name: 'Posto Murici', href: '/posto-murici', icon: Fuel },
+      { name: 'Posto Murici Links', href: '/posto-murici/links', icon: Fuel }
     ]},
     // Item de menu separado para Cartão de Abastecimento
     { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
