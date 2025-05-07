@@ -4741,6 +4741,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Deletar um registro de abastecimento (SOMENTE ADMIN)
+  app.delete("/api/posto-remedios/abastecimentos/:id", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          message: "ID inválido"
+        });
+      }
+      
+      // Verificar se o registro existe antes de tentar excluir
+      const checkResult = await pool.query("SELECT id FROM posto_remedios_abastecimentos WHERE id = $1", [id]);
+      
+      if (checkResult.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Registro não encontrado"
+        });
+      }
+      
+      // Registrar a operação de exclusão em um log
+      const logQuery = `
+        INSERT INTO logs_operacoes (
+          user_id, 
+          user_email, 
+          user_role, 
+          tipo_operacao, 
+          tabela, 
+          registro_id, 
+          detalhes
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `;
+      
+      await pool.query(logQuery, [
+        req.user.id,
+        req.user.email,
+        req.user.role,
+        'exclusão',
+        'posto_remedios_abastecimentos',
+        id,
+        `Excluído pelo administrador em ${new Date().toISOString()}`
+      ]).catch(err => {
+        console.error("Erro ao registrar log de exclusão:", err);
+        // Continuamos a operação mesmo se falhar o log
+      });
+      
+      // Executar a exclusão
+      const result = await pool.query("DELETE FROM posto_remedios_abastecimentos WHERE id = $1", [id]);
+      
+      return res.status(200).json({
+        success: true,
+        message: "Registro excluído com sucesso"
+      });
+    } catch (error) {
+      console.error("Erro ao excluir registro do posto Remédios:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Erro ao excluir registro do posto Remédios"
+      });
+    }
+  });
+  
   // ======= ROTAS PARA CHAT DE NEGOCIAÇÃO DE ORÇAMENTO =======
   
   // Obter chat por ID da manutenção
