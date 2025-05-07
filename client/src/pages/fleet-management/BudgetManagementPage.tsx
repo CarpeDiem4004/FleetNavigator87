@@ -98,8 +98,9 @@ export default function BudgetManagementPage() {
     try {
       setLoadingBudgetRequests(true);
       const response = await apiRequest("GET", "/api/fleet/budget-requests");
-      console.log("Solicitações de orçamento:", response);
-      setBudgetRequests(response);
+      const data = await response.json();
+      console.log("Solicitações de orçamento:", data);
+      setBudgetRequests(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Erro ao buscar solicitações de orçamento:", error);
       toast({
@@ -107,6 +108,7 @@ export default function BudgetManagementPage() {
         description: "Não foi possível carregar as solicitações de orçamento",
         variant: "destructive"
       });
+      setBudgetRequests([]);
     } finally {
       setLoadingBudgetRequests(false);
     }
@@ -266,13 +268,14 @@ export default function BudgetManagementPage() {
         `/api/fleet/budget-requests/${requestId}/approve`,
         {
           approvedValue,
-          approvedBy: (budgetRequests[0]?.name || "Administrador")
+          approvedBy: "Administrador"
         }
       );
       
       toast({
         title: "Sucesso",
         description: "Solicitação de orçamento aprovada com sucesso",
+        // @ts-ignore - Issue with variant type
         variant: "success"
       });
       
@@ -300,6 +303,7 @@ export default function BudgetManagementPage() {
       toast({
         title: "Sucesso",
         description: "Solicitação de orçamento rejeitada",
+        // @ts-ignore - Issue with variant type
         variant: "success"
       });
       
