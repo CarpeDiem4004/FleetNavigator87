@@ -89,6 +89,7 @@ import BaseCampinas from "@/pages/bases/BaseCampinas";
 import DespesasCampinas from "@/pages/bases/DespesasCampinas";
 import SolicitacaoPneusCampinas from "@/pages/bases/SolicitacaoPneusCampinas";
 import SolicitacaoOrcamentoCampinas from "@/pages/bases/SolicitacaoOrcamentoCampinas";
+import ManutencaoFrotaCampinas from "@/pages/bases/ManutencaoFrotaCampinas";
 
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
@@ -167,6 +168,7 @@ function App() {
           <ProtectedRoute path="/bases/campinas/despesas" component={DespesasCampinas} />
           <ProtectedRoute path="/bases/campinas/solicitacao-pneus" component={SolicitacaoPneusCampinas} />
           <ProtectedRoute path="/bases/campinas/solicitacao-orcamento" component={SolicitacaoOrcamentoCampinas} />
+          <ProtectedRoute path="/bases/campinas/manutencao-frota" component={ManutencaoFrotaCampinas} />
           <ProtectedRoute path="/solicitacoes" component={BaseRequests} />
           
           {/* Rotas para os postos de abastecimento - protegidas */}
