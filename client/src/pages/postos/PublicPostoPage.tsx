@@ -1,6 +1,7 @@
 import React from 'react';
 import PublicPostoLayout from './PublicPostoLayout';
 import PublicPostoAuth from '@/components/auth/PublicPostoAuth';
+import { useAuth } from '@/context/AuthContext';
 
 interface PublicPostoPageProps {
   id: string;
@@ -8,9 +9,12 @@ interface PublicPostoPageProps {
 }
 
 const PublicPostoPage: React.FC<PublicPostoPageProps> = ({ id, nomePosto }) => {
+  const { logout } = useAuth();
+  
   const handleLogout = async () => {
     try {
       await logout();
+      console.log('Logout realizado com sucesso');
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
     }
