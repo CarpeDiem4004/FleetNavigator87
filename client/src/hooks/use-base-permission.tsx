@@ -39,6 +39,7 @@ const allRoutes = [
   '/fuel-card',                        // Cartão de Combustível
   '/fuel-card-requests',               // Painel de Solicitações Fuel Card
   '/posto-remedios',                   // Posto Remédios
+  '/posto-murici',                     // Posto Murici
   '/cartao-abastecimento',            // Cartão de Abastecimento
   '/fines',                            // Multas
   '/multas',                           // Alias para Multas
@@ -137,6 +138,7 @@ const basicRoutes = [
   '/fuel-card',              // Cartão de Combustível
   '/fuel-card-requests',     // Painel de Solicitações Fuel Card
   '/posto-remedios',         // Posto Remédios
+  '/posto-murici',           // Posto Murici
   '/cartao-abastecimento',  // Cartão de Abastecimento
   '/work-safety',            // Informar acidentes de trabalho
   '/seguranca-trabalho',     // Alias para segurança do trabalho
@@ -249,6 +251,7 @@ export const useBasePermission = (): BasePermissionHook => {
         '/fuel-card',                                 // Cartão de Combustível
         '/fuel-card-requests',                        // Painel de Solicitações Fuel Card
         '/posto-remedios',                            // Posto Remédios
+        '/posto-murici',                              // Posto Murici
         '/cartao-abastecimento',                     // Cartão de Abastecimento
         '/tires',                                     // Pneus
         '/fines',                                     // Multas
