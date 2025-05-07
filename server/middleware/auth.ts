@@ -54,33 +54,65 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
   try {
     // Verificar se existe header de autorização com token JWT
     const authHeader = req.headers.authorization;
+    
     if (authHeader && authHeader.startsWith('Bearer ')) {
       try {
         // Extrair e validar token JWT
         const token = extractJwtToken(authHeader);
-        const user = await validateSupabaseToken(token);
         
-        // Usuário autenticado via JWT, anexá-lo à requisição
-        (req as any).supabaseUser = user;
+        // Tentativa 1: Verificar com o Supabase
+        try {
+          const supabaseUser = await validateSupabaseToken(token);
+          if (supabaseUser) {
+            // Usuário autenticado via JWT Supabase, anexá-lo à requisição
+            (req as any).supabaseUser = supabaseUser;
+            console.log(`[isAdmin] Token JWT Supabase validado para usuário: ${supabaseUser.email}`);
+          }
+        } catch (supabaseError) {
+          console.log('[isAdmin] Token não é do Supabase, tentando verificar token hybrid...');
+        }
         
-        console.log(`[isAdmin] Token JWT validado para usuário: ${user.email}`);
-      } catch (error) {
-        console.error('[isAdmin] Erro ao validar token JWT:', error);
+        // Tentativa 2: Verificar com o serviço híbrido se o Supabase falhou
+        if (!(req as any).supabaseUser) {
+          try {
+            // Importar getHybridUserService para verificar token
+            const { getHybridUserService } = require('../hybrid-user-service');
+            const hybridService = getHybridUserService();
+            
+            // Verificar token com o serviço híbrido
+            const verifyResult = await hybridService.verifyToken(token, true);
+            if (verifyResult && verifyResult.user) {
+              // Usuário autenticado via JWT híbrido, anexá-lo à requisição
+              (req as any).hybridUser = verifyResult.user;
+              console.log(`[isAdmin] Token JWT híbrido validado para usuário: ${verifyResult.user.email}`);
+            }
+          } catch (hybridError) {
+            console.error('[isAdmin] Erro ao validar token JWT híbrido:', hybridError);
+          }
+        }
+      } catch (jwtError) {
+        console.error('[isAdmin] Erro ao extrair ou processar token JWT:', jwtError);
       }
     }
     
-    // Verificar autenticação 
-    if (!req.isAuthenticated() && !(req as any).supabaseUser) {
-      console.log('[isAdmin] Usuário não autenticado:', {
+    // Verificar autenticação por qualquer método disponível
+    const isUserAuthenticatedByAnyMethod = req.isAuthenticated() || 
+                                          !!(req as any).supabaseUser || 
+                                          !!(req as any).hybridUser;
+    
+    if (!isUserAuthenticatedByAnyMethod) {
+      console.log('[isAdmin] Usuário não autenticado por nenhum método:', {
         authHeader: !!authHeader,
         sessionAuth: req.isAuthenticated(),
-        jwtAuth: !!(req as any).supabaseUser
+        supabaseAuth: !!(req as any).supabaseUser,
+        hybridAuth: !!(req as any).hybridUser
       });
       return res.status(401).json({ message: "Usuário não autenticado" });
     }
     
-    // Verificar se o usuário é administrador
-    const user = req.user || (req as any).supabaseUser;
+    // Verificar se o usuário é administrador - usar o primeiro disponível
+    const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
+    
     if (user && isUserAdmin(user)) {
       console.log(`[isAdmin] Acesso autorizado para admin: ${user.email}, role: ${user.role}`);
       return next();
@@ -106,12 +138,12 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
  */
 export const hasMaintenanceAccess = (req: Request, res: Response, next: NextFunction) => {
   // Verificar autenticação primeiro
-  if (!req.isAuthenticated() && !(req as any).supabaseUser) {
+  if (!req.isAuthenticated() && !(req as any).supabaseUser && !(req as any).hybridUser) {
     return res.status(401).json({ message: "Usuário não autenticado" });
   }
   
   // Verifica se o usuário está autenticado e tem permissão de acesso a manutenção
-  const user = req.user || (req as any).supabaseUser;
+  const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
   if (user && (
       isUserAdmin(user) ||
       user.role === 'gestor' || 
@@ -138,11 +170,11 @@ export const hasMaintenanceAccess = (req: Request, res: Response, next: NextFunc
  */
 export const hasTiresAccess = (req: Request, res: Response, next: NextFunction) => {
   // Verificar autenticação primeiro
-  if (!req.isAuthenticated() && !(req as any).supabaseUser) {
+  if (!req.isAuthenticated() && !(req as any).supabaseUser && !(req as any).hybridUser) {
     return res.status(401).json({ message: "Usuário não autenticado" });
   }
   
-  const user = req.user || (req as any).supabaseUser;
+  const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
   if (user && (
     isUserAdmin(user) ||
     user.baseId === FLEET_MANAGEMENT_BASE_ID || 

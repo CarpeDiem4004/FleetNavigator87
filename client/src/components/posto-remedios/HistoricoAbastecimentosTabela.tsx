@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 interface Abastecimento {
   id: number;
@@ -333,10 +334,10 @@ export default function HistoricoAbastecimentosTabela({
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              <div className="flex items-center gap-2 text-amber-500 mb-2">
+              <span className="flex items-center gap-2 text-amber-500 mb-2">
                 <AlertTriangle className="h-5 w-5" />
-                <span>Esta ação não pode ser desfeita.</span>
-              </div>
+                Esta ação não pode ser desfeita.
+              </span>
               Você tem certeza que deseja excluir o registro #{deletingId}?
             </AlertDialogDescription>
           </AlertDialogHeader>
