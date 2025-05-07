@@ -414,17 +414,15 @@ export default function BudgetManagementPage() {
                             className="ml-2 h-6 px-2 py-1"
                             onClick={() => {
                               toast({
-                                title: "Informação",
-                                description: "Baixando arquivo de orçamento. Aguarde...",
+                                title: "Informação sobre o anexo",
+                                description: `O arquivo "${request.budget_file_name}" está disponível apenas na base de origem. Para visualizá-lo, acesse o sistema na base ${request.base_name}.`,
+                                duration: 8000,
                                 // @ts-ignore
                                 variant: "info"
                               });
-                              
-                              // Adicionar código para visualizar/baixar anexo via API
-                              window.open(`/api/fleet/budget-requests/${request.id}/download-attachment`, "_blank");
                             }}
                           >
-                            Ver
+                            Info
                           </Button>
                         </span>
                       ) : (
