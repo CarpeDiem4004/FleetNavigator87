@@ -10,7 +10,7 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -194,11 +194,24 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
 
   // Função para criar nova solicitação de orçamento
   const onSubmit = async (data: BudgetRequestForm) => {
+    if (!budgetFile) {
+      toast({
+        title: "Arquivo necessário",
+        description: "É necessário anexar um documento de orçamento para enviar a solicitação.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsLoading(true);
     try {
       // Simulando uma chamada para a API
       // Substituir por uma chamada real quando a API estiver disponível
       console.log("Enviando solicitação:", data);
+      console.log("Enviando arquivo:", budgetFile);
+      
+      // Em uma implementação real, aqui você enviaria os dados do formulário
+      // junto com o arquivo para o servidor, provavelmente usando FormData
       
       setTimeout(() => {
         // Adicionar a nova solicitação à lista
@@ -213,11 +226,15 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           estimated_value: data.estimated_value,
-          department: data.department
+          department: data.department,
+          budget_file_name: budgetFile.name,
+          budget_file_url: URL.createObjectURL(budgetFile) // Simulando URL
         };
         
         setRequests([newRequest, ...requests]);
         form.reset();
+        setBudgetFile(null);
+        setBudgetFileName('');
         
         toast({
           title: "Sucesso",
@@ -255,7 +272,8 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
               approved_by: user?.name || "Usuário",
               approved_at: new Date().toISOString(),
               comments: approvalComments,
-              updated_at: new Date().toISOString()
+              updated_at: new Date().toISOString(),
+              pending_invoice: true // Marca como pendente de NF após aprovação
             };
           }
           return req;
@@ -269,7 +287,7 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
         
         toast({
           title: "Aprovada",
-          description: "Solicitação de orçamento aprovada com sucesso.",
+          description: "Solicitação de orçamento aprovada com sucesso. Aguardando nota fiscal.",
           variant: "default"
         });
         
@@ -605,10 +623,31 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
                   )}
                 />
                 
+                <div>
+                  <FormLabel>Arquivo de Orçamento</FormLabel>
+                  <div className="mt-1">
+                    <Input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={handleBudgetFileChange}
+                      className="cursor-pointer"
+                    />
+                    <FormDescription className="mt-1 text-xs">
+                      Anexe um documento com o orçamento (PDF, JPG ou PNG). Máximo 5MB.
+                    </FormDescription>
+                  </div>
+                  {budgetFileName && (
+                    <div className="flex items-center mt-2 text-sm text-muted-foreground">
+                      <FileText className="h-4 w-4 mr-1" />
+                      {budgetFileName}
+                    </div>
+                  )}
+                </div>
+                
                 <Button 
                   type="submit" 
                   className="w-full"
-                  disabled={isLoading}
+                  disabled={isLoading || !budgetFile}
                 >
                   {isLoading ? (
                     <>
@@ -724,6 +763,23 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
                 <p className="text-sm whitespace-pre-line">{selectedRequest.description}</p>
               </div>
               
+              {selectedRequest.budget_file_url && (
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Arquivo de Orçamento</h4>
+                  <div className="flex items-center mt-1">
+                    <FileText className="h-4 w-4 mr-1 text-blue-600" />
+                    <a 
+                      href={selectedRequest.budget_file_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      {selectedRequest.budget_file_name}
+                    </a>
+                  </div>
+                </div>
+              )}
+              
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground">Departamento</h4>
@@ -758,6 +814,42 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
                       <p className="text-sm">{selectedRequest.approved_value ? formatCurrency(selectedRequest.approved_value) : '-'}</p>
                     </div>
                   </div>
+                  
+                  {selectedRequest.pending_invoice && (
+                    <div className="mt-4 flex flex-col">
+                      <div className="flex items-center text-sm text-amber-600 font-medium mb-2">
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                        Pendente: Envio de Nota Fiscal
+                      </div>
+                      <Button 
+                        size="sm"
+                        onClick={() => {
+                          setIsDialogOpen(false);
+                          setIsInvoiceUploadDialogOpen(true);
+                        }}
+                        className="bg-amber-600 hover:bg-amber-700"
+                      >
+                        Anexar Nota Fiscal
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {selectedRequest.invoice_file_url && (
+                    <div className="mt-3">
+                      <h4 className="text-sm font-medium text-muted-foreground">Nota Fiscal</h4>
+                      <div className="flex items-center mt-1">
+                        <FileText className="h-4 w-4 mr-1 text-green-600" />
+                        <a 
+                          href={selectedRequest.invoice_file_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:underline"
+                        >
+                          {selectedRequest.invoice_file_name}
+                        </a>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
               
@@ -902,6 +994,62 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+      )}
+
+      {/* Modal para envio de nota fiscal */}
+      {selectedRequest && (
+        <Dialog open={isInvoiceUploadDialogOpen} onOpenChange={setIsInvoiceUploadDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Anexar Nota Fiscal</DialogTitle>
+              <DialogDescription>
+                Anexe a nota fiscal para a solicitação de orçamento aprovada.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div>
+                <FormLabel>Nota Fiscal (PDF/Imagem)</FormLabel>
+                <div className="mt-1">
+                  <Input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleInvoiceFileChange}
+                    className="cursor-pointer"
+                  />
+                  <FormDescription className="mt-1 text-xs">
+                    Anexe o arquivo da nota fiscal (PDF, JPG ou PNG). Máximo 5MB.
+                  </FormDescription>
+                </div>
+                {invoiceFileName && (
+                  <div className="flex items-center mt-2 text-sm text-muted-foreground">
+                    <FileText className="h-4 w-4 mr-1" />
+                    {invoiceFileName}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsInvoiceUploadDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={saveInvoiceFile}
+                disabled={isLoading || !invoiceFile}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  "Enviar Nota Fiscal"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
