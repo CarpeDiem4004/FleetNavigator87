@@ -6578,8 +6578,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Integração com o sistema principal de gestão de orçamentos
   // Rota para listar todas as solicitações de orçamento para o painel principal
-  app.get("/api/fleet/budget-requests", async (req, res) => {
+  app.get("/api/fleet/budget-requests", hasMaintenanceAccess, async (req, res) => {
     try {
+      // O middleware hasMaintenanceAccess já verificou a autenticação
+
+      console.log('Buscando solicitações de orçamento da Base Campinas para o painel...');
+      
       const query = `
         SELECT 
           id,
@@ -6606,6 +6610,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             WHEN status = 'aprovado' AND invoice_file_url IS NULL THEN true
             ELSE false
           END as pending_invoice,
+          base_id,
+          base_name,
           'campinas' as source
         FROM 
           campinas_budget_requests
@@ -6614,6 +6620,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       `;
       
       const result = await pool.query(query);
+      console.log(`Encontradas ${result.rows.length} solicitações de orçamento`);
       res.json(result.rows);
     } catch (error) {
       console.error('Erro ao buscar solicitações de orçamento para o painel:', error);
