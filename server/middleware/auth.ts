@@ -6,7 +6,6 @@ import { validateSupabaseToken, extractJwtToken, AuthError } from '../utils/auth
  * Middleware para verificar se o usuário está autenticado
  * Retorna 401 se o usuário não estiver autenticado
  */
-
 export const isAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
   // Se o usuário está autenticado via sessão, continuar
   if (req.isAuthenticated()) {
@@ -48,12 +47,13 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
     
     // Tentativa 2: Verificar com o serviço híbrido
     try {
-      // Importar getHybridUserService para verificar token (usando dynamic import)
+      // Importar o módulo dinamicamente para evitar dependência circular
       const hybridModule = await import('../../hybrid-user-service');
       const hybridService = hybridModule.getHybridUserService();
       
       // Verificar token com o serviço híbrido
-      const verifyResult = await hybridService.verifyToken(token, true);
+      const verifyResult = await hybridService.verifyToken(token);
+      
       if (verifyResult && verifyResult.user) {
         // Usuário autenticado via JWT híbrido, anexá-lo à requisição
         (req as any).hybridUser = verifyResult.user;
@@ -61,42 +61,145 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
         return next();
       }
     } catch (hybridError) {
-      console.error('[isAuthenticated] Erro ao validar token JWT híbrido:', hybridError);
+      console.error('[isAuthenticated] Erro ao verificar token JWT híbrido:', hybridError);
     }
     
-    // Se chegou aqui, o token não é válido em nenhum dos sistemas
-    console.log('[isAuthenticated] Token JWT inválido');
-    return res.status(401).json({ message: "Não autenticado" });
+    // Se chegou aqui, nenhum método de verificação do token funcionou
+    console.log('[isAuthenticated] Token JWT inválido ou expirado');
+    return res.status(401).json({ message: "Token de autenticação inválido ou expirado" });
+    
   } catch (error) {
     console.error('[isAuthenticated] Erro ao processar autenticação:', error);
+    return res.status(500).json({ message: "Erro no servidor durante autenticação" });
+  }
+};
+
+/**
+ * Middleware para verificar se o usuário tem permissão para acessar funcionalidades de manutenção
+ * Permite acesso para admin, baseId=12 (Gestão de Frotas), role='gestor' ou role='oficina'
+ */
+export const hasMaintenanceAccess = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Verificar autenticação primeiro
+    console.log('[hasMaintenanceAccess] Verificando acesso para rota:', req.originalUrl, {
+      isAuthenticated: req.isAuthenticated(),
+      hasSession: !!req.session,
+      hasSupabaseUser: !!(req as any).supabaseUser,
+      hasHybridUser: !!(req as any).hybridUser,
+      authHeader: !!req.headers.authorization
+    });
+    
+    // Se não houver autenticação por sessão, Supabase ou híbrida, verificar token JWT no header
+    if (!req.isAuthenticated() && !(req as any).supabaseUser && !(req as any).hybridUser) {
+      if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+        console.log('[hasMaintenanceAccess] Verificando token JWT do cabeçalho Authorization');
+        
+        try {
+          // Extrair token do header Authorization
+          const token = extractJwtToken(req.headers.authorization);
+          
+          // Primeiro tentar validar com Supabase
+          try {
+            const supabaseUser = await validateSupabaseToken(token);
+            if (supabaseUser) {
+              (req as any).supabaseUser = supabaseUser;
+              console.log(`[hasMaintenanceAccess] Token JWT Supabase validado para ${supabaseUser.email}`);
+            }
+          } catch (supabaseError) {
+            console.log('[hasMaintenanceAccess] Token não é do Supabase:', supabaseError.message);
+          }
+          
+          // Se ainda não temos usuário autenticado, tentar com o serviço híbrido
+          if (!(req as any).supabaseUser) {
+            try {
+              // Importar o serviço híbrido para verificar o token JWT
+              const hybridModule = await import('../../hybrid-user-service');
+              const hybridService = hybridModule.getHybridUserService();
+              
+              // Verificar token com o serviço híbrido
+              const tokenVerification = await hybridService.verifyToken(token);
+              
+              if (tokenVerification && tokenVerification.user) {
+                // Anexar usuário verificado à requisição
+                (req as any).hybridUser = tokenVerification.user;
+                console.log(`[hasMaintenanceAccess] Token JWT híbrido validado para ${tokenVerification.user.email}`);
+              } else {
+                console.log('[hasMaintenanceAccess] Token JWT híbrido inválido ou expirado');
+              }
+            } catch (hybridError) {
+              console.error('[hasMaintenanceAccess] Erro ao verificar token JWT híbrido:', hybridError);
+            }
+          }
+        } catch (jwtError) {
+          console.error('[hasMaintenanceAccess] Erro ao extrair token JWT:', jwtError);
+        }
+      }
+    }
+    
+    // Verificar se alguma autenticação foi bem-sucedida
+    if (!req.isAuthenticated() && !(req as any).supabaseUser && !(req as any).hybridUser) {
+      console.log('[hasMaintenanceAccess] Acesso negado - usuário não autenticado');
+      return res.status(401).json({ message: "Usuário não autenticado" });
+    }
+    
+    // Obter usuário autenticado de qualquer fonte disponível
+    const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
+    
+    console.log('[hasMaintenanceAccess] Usuário autenticado:', {
+      id: user?.id,
+      email: user?.email,
+      role: user?.role,
+      baseId: user?.baseId
+    });
+    
+    // Verificar permissões
+    if (user && (
+        isUserAdmin(user) ||
+        (user.role && user.role.toLowerCase() === 'gestor') || 
+        (user.role && user.role.toLowerCase() === 'admin') || 
+        user.baseId === FLEET_MANAGEMENT_BASE_ID || 
+        (user.role && user.role.toLowerCase() === 'oficina')
+      )) {
+      console.log('[hasMaintenanceAccess] Acesso concedido para usuário:', user.email);
+      return next();
+    }
+    
+    console.log("[hasMaintenanceAccess] Acesso negado a recurso de manutenção (permissões insuficientes):", {
+      url: req.originalUrl,
+      method: req.method,
+      role: user?.role,
+      baseId: user?.baseId,
+      email: user?.email
+    });
+    
+    return res.status(403).json({ message: "Acesso negado. Permissão de gestão de frotas, admin, gestor ou oficina necessária." });
+  } catch (error) {
+    console.error('[hasMaintenanceAccess] Erro inesperado:', error);
     return res.status(500).json({ message: "Erro interno do servidor" });
   }
 };
 
 /**
  * Middleware para verificar se o usuário é administrador
- * Permite acesso para usuários com role='admin' ou emails específicos
+ * Verifica se o usuário tem papel de administrador (role=admin) ou email listado em ADMIN_EMAILS
  */
 export const isAdmin = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Verificar se existe header de autorização com token JWT
-    const authHeader = req.headers.authorization;
-    
-    if (authHeader && authHeader.startsWith('Bearer ')) {
+    // Verificar se o token JWT está presente e é válido
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
       try {
-        // Extrair e validar token JWT
-        const token = extractJwtToken(authHeader);
+        const token = extractJwtToken(req.headers.authorization);
         
         // Tentativa 1: Verificar com o Supabase
         try {
           const supabaseUser = await validateSupabaseToken(token);
           if (supabaseUser) {
-            // Usuário autenticado via JWT Supabase, anexá-lo à requisição
+            // Anexar usuário ao request
             (req as any).supabaseUser = supabaseUser;
             console.log(`[isAdmin] Token JWT Supabase validado para usuário: ${supabaseUser.email}`);
           }
         } catch (supabaseError) {
-          console.log('[isAdmin] Token não é do Supabase, tentando verificar token hybrid...');
+          console.log('[isAdmin] Token não é do Supabase, tentando verificar token híbrido...');
         }
         
         // Tentativa 2: Verificar com o serviço híbrido se o Supabase falhou
@@ -129,7 +232,7 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
     
     if (!isUserAuthenticatedByAnyMethod) {
       console.log('[isAdmin] Usuário não autenticado por nenhum método:', {
-        authHeader: !!authHeader,
+        authHeader: !!req.headers.authorization,
         sessionAuth: req.isAuthenticated(),
         supabaseAuth: !!(req as any).supabaseUser,
         hybridAuth: !!(req as any).hybridUser
@@ -148,122 +251,13 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
     console.log("[isAdmin] Acesso negado - Permissão de administrador necessária:", {
       url: req.originalUrl,
       method: req.method,
-      userEmail: user?.email,
-      userRole: user?.role
+      role: user?.role,
+      email: user?.email
     });
     
     return res.status(403).json({ message: "Acesso negado. Permissão de administrador necessária." });
   } catch (error) {
-    console.error('[isAdmin] Erro no middleware:', error);
-    return res.status(500).json({ message: "Erro interno no servidor" });
-  }
-};
-
-/**
- * Middleware para verificar se o usuário tem permissão para acessar funcionalidades de manutenção
- * Permite acesso para admin, gestor, oficina ou baseId=12 (Gestão de Frotas)
- */
-export const hasMaintenanceAccess = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    // Adicionar logs para diagnóstico
-    console.log('[hasMaintenanceAccess] Verificando acesso para rota:', req.originalUrl, {
-      isAuthenticated: req.isAuthenticated(),
-      hasSession: !!req.session,
-      hasSupabaseUser: !!(req as any).supabaseUser,
-      hasHybridUser: !!(req as any).hybridUser,
-      authHeader: !!req.headers.authorization
-    });
-    
-    // Se temos um cabeçalho de autorização, temos que verificar o token JWT
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      console.log('[hasMaintenanceAccess] Verificando token JWT do cabeçalho Authorization');
-      const token = authHeader.substring(7); // Remover 'Bearer ' do início
-      
-      try {
-        // Verificar o token JWT diretamente usando o serviço híbrido
-        // Importar getHybridUserService para verificar token (usando dynamic import)
-        const hybridModule = await import('../../hybrid-user-service');
-        const hybridService = hybridModule.getHybridUserService();
-        
-        // Usar o serviço híbrido para verificar o token
-        const verifyResult = await hybridService.verifyToken(token, true);
-        console.log('[hasMaintenanceAccess] Token JWT verificado:', verifyResult);
-        
-        if (verifyResult && verifyResult.user) {
-          // Usuário autenticado via JWT, anexar à requisição
-          (req as any).hybridUser = verifyResult.user;
-          
-          // Verificar permissões
-          const user = verifyResult.user;
-          console.log('[hasMaintenanceAccess] Usuário autenticado via JWT:', {
-            id: user.id,
-            email: user.email,
-            role: user.role,
-            baseId: user.baseId
-          });
-          
-          if (user && (
-            isUserAdmin(user) ||
-            user.role === 'gestor' || 
-            user.baseId === FLEET_MANAGEMENT_BASE_ID || 
-            user.role === 'oficina'
-          )) {
-            console.log('[hasMaintenanceAccess] Acesso concedido para usuário JWT:', user.email);
-            return next();
-          }
-          
-          console.log("[hasMaintenanceAccess] Acesso negado a recurso de manutenção (permissões insuficientes):", {
-            url: req.originalUrl,
-            method: req.method,
-            role: user.role,
-            baseId: user.baseId,
-            email: user.email
-          });
-          
-          return res.status(403).json({ message: "Acesso negado. Permissão de gestão de frotas, admin, gestor ou oficina necessária." });
-        }
-      } catch (jwtError) {
-        console.error('[hasMaintenanceAccess] Erro ao verificar token JWT:', jwtError);
-      }
-    }
-    
-    // Se não temos token JWT ou ele falhou, verificar autenticação normal
-    if (!req.isAuthenticated() && !(req as any).supabaseUser && !(req as any).hybridUser) {
-      console.log('[hasMaintenanceAccess] Acesso negado - usuário não autenticado');
-      return res.status(401).json({ message: "Usuário não autenticado" });
-    }
-    
-    // Verifica se o usuário está autenticado e tem permissão de acesso a manutenção
-    const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
-    console.log('[hasMaintenanceAccess] Usuário autenticado (sessão):', {
-      id: user?.id,
-      email: user?.email,
-      role: user?.role,
-      baseId: user?.baseId
-    });
-    
-    if (user && (
-        isUserAdmin(user) ||
-        user.role === 'gestor' || 
-        user.baseId === FLEET_MANAGEMENT_BASE_ID || 
-        user.role === 'oficina'
-      )) {
-      console.log('[hasMaintenanceAccess] Acesso concedido para usuário:', user.email);
-      return next();
-    }
-    
-    console.log("[hasMaintenanceAccess] Acesso negado a recurso de manutenção:", {
-      url: req.originalUrl,
-      method: req.method,
-      role: user?.role,
-      baseId: user?.baseId,
-      email: user?.email
-    });
-    
-    return res.status(403).json({ message: "Acesso negado. Permissão de gestão de frotas, admin, gestor ou oficina necessária." });
-  } catch (error) {
-    console.error('[hasMaintenanceAccess] Erro inesperado:', error);
+    console.error('[isAdmin] Erro inesperado:', error);
     return res.status(500).json({ message: "Erro interno do servidor" });
   }
 };
@@ -299,8 +293,8 @@ export const hasTiresAccess = (req: Request, res: Response, next: NextFunction) 
 };
 
 /**
- * Middleware para verificar se o usuário tem perfil de oficina
- * Permite acesso para oficina ou admin
+ * Middleware para verificar se o usuário é uma oficina
+ * Verifica se o usuário tem papel de oficina (role=oficina)
  */
 export const isWorkshop = (req: Request, res: Response, next: NextFunction) => {
   // Verificar autenticação primeiro
@@ -309,26 +303,23 @@ export const isWorkshop = (req: Request, res: Response, next: NextFunction) => {
   }
   
   const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
-  if (user && (
-    user.role === 'oficina' || 
-    isUserAdmin(user)
-  )) {
+  if (user && (isUserAdmin(user) || user.role === 'oficina')) {
     return next();
   }
   
   console.log("Acesso negado a recurso de oficina:", {
     url: req.originalUrl,
     method: req.method,
-    role: req.user?.role,
-    email: req.user?.email
+    role: user?.role,
+    email: user?.email
   });
   
-  return res.status(403).json({ message: "Acesso negado. Apenas oficinas podem acessar este recurso." });
+  return res.status(403).json({ message: "Acesso negado. Permissão de oficina ou administrador necessária." });
 };
 
 /**
- * Middleware para verificar se o usuário tem acesso à base especificada
- * Permite acesso para admin ou se a baseId do usuário corresponde à solicitada
+ * Middleware para verificar se o usuário tem permissão para acessar uma base específica
+ * Verifica se o usuário tem baseId igual ao parâmetro da rota ou é admin
  */
 export const hasBaseAccess = (req: Request, res: Response, next: NextFunction) => {
   // Verificar autenticação primeiro
@@ -337,33 +328,20 @@ export const hasBaseAccess = (req: Request, res: Response, next: NextFunction) =
   }
   
   const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
+  const baseId = parseInt(req.params.baseId, 10);
   
-  // Se o usuário for admin, permite acesso a todas as bases
-  if (user && isUserAdmin(user)) {
+  if (user && (isUserAdmin(user) || user.baseId === baseId)) {
     return next();
   }
   
-  // Verificar se o usuário tem uma base associada e se corresponde à base solicitada
-  const requestedBaseId = req.params.baseId || req.query.baseId;
-  
-  if (requestedBaseId && user && user.baseId !== undefined) {
-    // Se estiver solicitando uma base específica, verificar se corresponde à do usuário
-    if (parseInt(requestedBaseId as string) === user.baseId) {
-      return next();
-    }
-  } else if (user && user.baseId !== undefined) {
-    // Se não estiver solicitando uma base específica, continuar mas será filtrado depois
-    return next();
-  }
-  
-  console.log("Acesso negado à base:", {
+  console.log("Acesso negado a recurso da base:", {
     url: req.originalUrl,
     method: req.method,
-    userEmail: req.user?.email,
-    userRole: req.user?.role,
-    userBaseId: req.user?.baseId,
-    requestedBaseId
+    role: user?.role,
+    userBaseId: user?.baseId,
+    requestedBaseId: baseId,
+    email: user?.email
   });
   
-  return res.status(403).json({ message: "Acesso negado. Você não tem permissão para acessar esta base." });
+  return res.status(403).json({ message: "Acesso negado. Permissão para acessar esta base não concedida." });
 };
