@@ -18,7 +18,7 @@ import {
   Droplet,
   Truck,
   AlertCircle,
-  GasPump,
+  Fuel,
   CarFront,
   Home,
   TrendingUp,
@@ -354,7 +354,7 @@ export default function PostoMuriciOperador() {
         <Tabs defaultValue="abastecimento" className="space-y-4">
           <TabsList className="grid grid-cols-2">
             <TabsTrigger value="abastecimento" className="flex items-center space-x-2">
-              <GasPump className="h-4 w-4" />
+              <Fuel className="h-4 w-4" />
               <span>Abastecimento</span>
             </TabsTrigger>
             <TabsTrigger value="movimentacao" className="flex items-center space-x-2">
