@@ -52,14 +52,17 @@ const NavItemWithSubmenu: React.FC<{
 }> = ({ item, isActive, isSubItemActive, onClose, currentLocation }) => {
   // Se isSubItemActive for undefined, defina como false
   const subItemActive = isSubItemActive === true;
-  const [expanded, setExpanded] = useState(isActive || subItemActive);
+  // Forçar a expansão do menu Bases durante a montagem inicial
+  const forceExpanded = item.name === 'Bases';
+  const [expanded, setExpanded] = useState(isActive || subItemActive || forceExpanded);
   
-  // Garantir que o submenu seja expandido quando um subitem estiver ativo
+  // Garantir que o submenu seja expandido quando um subitem estiver ativo ou quando for o menu Bases
   useEffect(() => {
-    if (subItemActive && !expanded) {
+    if ((subItemActive && !expanded) || (item.name === 'Bases' && !expanded)) {
+      console.log(`Expandindo menu ${item.name} automaticamente: subItemActive=${subItemActive}, forceExpanded=${forceExpanded}`);
       setExpanded(true);
     }
-  }, [subItemActive, expanded]);
+  }, [subItemActive, expanded, item.name, forceExpanded]);
   
   const Icon = item.icon;
 
@@ -71,13 +74,20 @@ const NavItemWithSubmenu: React.FC<{
 
   // Renderização segura dos subitens condicionalmente
   const renderSubItems = () => {
-    if (!expanded || !item.subItems) return null;
+    if (!expanded || !item.subItems) {
+      console.log(`Subitens para ${item.name} não serão renderizados: expanded=${expanded}, subItems=${!!item.subItems}`);
+      return null;
+    }
+    
+    console.log(`Renderizando ${item.subItems.length} subitens para ${item.name}: ${JSON.stringify(item.subItems.map(si => si.name))}`);
     
     return (
       <div className="ml-8 mt-1 space-y-1">
         {item.subItems.map(subItem => {
           const SubIcon = subItem.icon;
           const isSubActive = currentLocation === subItem.href;
+          
+          console.log(`Renderizando subitem: ${subItem.name} (${subItem.href}), active: ${isSubActive}`);
           
           return (
             <div key={subItem.name}>
@@ -86,6 +96,7 @@ const NavItemWithSubmenu: React.FC<{
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
+                  console.log(`Clicou no subitem: ${subItem.name} (${subItem.href})`);
                   // Usar wouter para navegação em vez de manipular history diretamente
                   window.history.pushState(null, "", subItem.href);
                   window.dispatchEvent(new PopStateEvent("popstate"));
@@ -271,6 +282,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     // Sempre incluir o menu Bases para todos (especialmente para admin)
     if (item.name === 'Bases') {
       console.log(`Menu Bases incluído independente de permissões`);
+      console.log(`Subitens de Bases: ${JSON.stringify(item.subItems?.map(si => si.name))}`);
       return true;
     }
     
