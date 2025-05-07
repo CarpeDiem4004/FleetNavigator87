@@ -572,6 +572,13 @@ const FormularioAbastecimento: React.FC<
           endpoint = `/api/abastecimento-direto-campinas-v2`;
           usarRotaDireta = true;
           console.log(">>> Usando rota específica para Campinas V2");
+        } else if (postId.toLowerCase() === "osasco_v2" || 
+            postId.toLowerCase().includes("osasco_v2") || 
+            postId.toLowerCase().includes("osasco v2")) {
+          // Usar a rota direta para Osasco V2
+          endpoint = `/api/abastecimento-direto/osasco_v2`;
+          usarRotaDireta = true;
+          console.log(">>> Usando rota específica para Osasco V2");
         } else if (postId.toLowerCase().includes("remedios")) {
           endpoint = "/api/posto-remedios-standalone/abastecimentos";
         } else {
