@@ -129,58 +129,20 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
   const fetchBudgetRequests = async () => {
     setIsLoading(true);
     try {
-      // Chamada para a API - dados simulados por enquanto
-      // Quando a API for implementada, substituir por fetch real
-      setTimeout(() => {
-        const mockData: BudgetRequest[] = [
-          {
-            id: 1,
-            title: "Compra de equipamentos para manutenção",
-            description: "Necessário adquirir ferramentas especializadas para a oficina de Campinas",
-            priority: "alta",
-            status: "pendente",
-            requester_id: 1,
-            requester_name: "Administrador",
-            created_at: "2025-05-07T10:30:00",
-            updated_at: "2025-05-07T10:30:00",
-            estimated_value: "5000.00",
-            department: "Manutenção"
-          },
-          {
-            id: 2,
-            title: "Reforma do espaço de lazer",
-            description: "Reforma da área de descanso dos motoristas na base Campinas",
-            priority: "média",
-            status: "aprovado",
-            requester_id: 1,
-            requester_name: "Administrador",
-            created_at: "2025-05-05T14:20:00",
-            updated_at: "2025-05-06T09:15:00",
-            estimated_value: "8500.00",
-            department: "Infraestrutura",
-            approved_value: "8000.00",
-            approved_by: "João Silva",
-            approved_at: "2025-05-06T09:15:00",
-            comments: "Aprovado com valor reduzido"
-          },
-          {
-            id: 3,
-            title: "Material de escritório",
-            description: "Suprimentos para o departamento administrativo",
-            priority: "baixa",
-            status: "rejeitado",
-            requester_id: 3,
-            requester_name: "Maria Oliveira",
-            created_at: "2025-05-04T11:45:00",
-            updated_at: "2025-05-04T16:30:00",
-            estimated_value: "1200.00",
-            department: "Administração",
-            comments: "Solicitar novamente no próximo mês"
-          }
-        ];
-        setRequests(mockData);
-        setIsLoading(false);
-      }, 800);
+      // Usar a API real para buscar os dados
+      const response = await fetch('/api/bases/campinas/solicitacao-orcamento', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar solicitações: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      setRequests(data);
+      setIsLoading(false);
     } catch (error) {
       console.error("Erro ao buscar solicitações:", error);
       toast({
@@ -205,45 +167,48 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
     
     setIsLoading(true);
     try {
-      // Simulando uma chamada para a API
-      // Substituir por uma chamada real quando a API estiver disponível
-      console.log("Enviando solicitação:", data);
-      console.log("Enviando arquivo:", budgetFile);
+      // TODO: Implementar upload de arquivo para servidor
+      // Por enquanto, usamos apenas uma simulação
+      const budgetFileUrl = URL.createObjectURL(budgetFile);
       
-      // Em uma implementação real, aqui você enviaria os dados do formulário
-      // junto com o arquivo para o servidor, provavelmente usando FormData
+      // Preparar os dados para o envio
+      const requestData = {
+        title: data.title,
+        description: data.description,
+        priority: data.priority,
+        estimated_value: data.estimated_value,
+        department: data.department,
+        budget_file_url: budgetFileUrl,
+        budget_file_name: budgetFile.name
+      };
       
-      setTimeout(() => {
-        // Adicionar a nova solicitação à lista
-        const newRequest: BudgetRequest = {
-          id: Math.floor(Math.random() * 1000),
-          title: data.title,
-          description: data.description,
-          priority: data.priority,
-          status: "pendente",
-          requester_id: user?.id || 0,
-          requester_name: user?.name || "Usuário",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          estimated_value: data.estimated_value,
-          department: data.department,
-          budget_file_name: budgetFile.name,
-          budget_file_url: URL.createObjectURL(budgetFile) // Simulando URL
-        };
-        
-        setRequests([newRequest, ...requests]);
-        form.reset();
-        setBudgetFile(null);
-        setBudgetFileName('');
-        
-        toast({
-          title: "Sucesso",
-          description: "Solicitação de orçamento criada com sucesso.",
-          variant: "default"
-        });
-        
-        setIsLoading(false);
-      }, 800);
+      // Enviar a solicitação para a API
+      const response = await fetch('/api/bases/campinas/solicitacao-orcamento', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(requestData)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erro ao criar solicitação: ${response.statusText}`);
+      }
+      
+      const newRequest = await response.json();
+      
+      // Atualizar a interface
+      setRequests([newRequest, ...requests]);
+      form.reset();
+      setBudgetFile(null);
+      setBudgetFileName('');
+      
+      toast({
+        title: "Sucesso",
+        description: "Solicitação de orçamento criada com sucesso.",
+        variant: "default"
+      });
     } catch (error) {
       console.error("Erro ao criar solicitação:", error);
       toast({
@@ -251,6 +216,7 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
         description: "Não foi possível criar a solicitação de orçamento.",
         variant: "destructive"
       });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -261,38 +227,46 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
     
     setIsLoading(true);
     try {
-      // Simulando a chamada para a API
-      setTimeout(() => {
-        const updatedRequests = requests.map(req => {
-          if (req.id === selectedRequest.id) {
-            return {
-              ...req,
-              status: "aprovado",
-              approved_value: approvedValue,
-              approved_by: user?.name || "Usuário",
-              approved_at: new Date().toISOString(),
-              comments: approvalComments,
-              updated_at: new Date().toISOString(),
-              pending_invoice: true // Marca como pendente de NF após aprovação
-            };
-          }
-          return req;
-        });
-        
-        setRequests(updatedRequests);
-        setIsApproveDialogOpen(false);
-        setSelectedRequest(null);
-        setApprovalComments('');
-        setApprovedValue('');
-        
-        toast({
-          title: "Aprovada",
-          description: "Solicitação de orçamento aprovada com sucesso. Aguardando nota fiscal.",
-          variant: "default"
-        });
-        
-        setIsLoading(false);
-      }, 800);
+      // Preparar os dados para aprovação
+      const updateData = {
+        status: "aprovado",
+        approved_value: approvedValue,
+        comments: approvalComments
+      };
+      
+      // Chamar a API para atualizar a solicitação
+      const response = await fetch(`/api/bases/campinas/solicitacao-orcamento/${selectedRequest.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(updateData)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erro ao aprovar solicitação: ${response.statusText}`);
+      }
+      
+      // Obter a solicitação atualizada
+      const updatedRequest = await response.json();
+      
+      // Atualizar a lista de solicitações
+      const updatedRequests = requests.map(req => 
+        req.id === selectedRequest.id ? updatedRequest : req
+      );
+      
+      setRequests(updatedRequests);
+      setIsApproveDialogOpen(false);
+      setSelectedRequest(null);
+      setApprovalComments('');
+      setApprovedValue('');
+      
+      toast({
+        title: "Aprovada",
+        description: "Solicitação de orçamento aprovada com sucesso. Aguardando nota fiscal.",
+        variant: "default"
+      });
     } catch (error) {
       console.error("Erro ao aprovar solicitação:", error);
       toast({
@@ -300,6 +274,7 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
         description: "Não foi possível aprovar a solicitação.",
         variant: "destructive"
       });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -310,33 +285,44 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
     
     setIsLoading(true);
     try {
-      // Simulando a chamada para a API
-      setTimeout(() => {
-        const updatedRequests = requests.map(req => {
-          if (req.id === selectedRequest.id) {
-            return {
-              ...req,
-              status: "rejeitado",
-              comments: rejectionReason,
-              updated_at: new Date().toISOString()
-            };
-          }
-          return req;
-        });
-        
-        setRequests(updatedRequests);
-        setIsRejectDialogOpen(false);
-        setSelectedRequest(null);
-        setRejectionReason('');
-        
-        toast({
-          title: "Rejeitada",
-          description: "Solicitação de orçamento rejeitada.",
-          variant: "default"
-        });
-        
-        setIsLoading(false);
-      }, 800);
+      // Preparar os dados para rejeição
+      const updateData = {
+        status: "rejeitado",
+        comments: rejectionReason
+      };
+      
+      // Chamar a API para atualizar a solicitação
+      const response = await fetch(`/api/bases/campinas/solicitacao-orcamento/${selectedRequest.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(updateData)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erro ao rejeitar solicitação: ${response.statusText}`);
+      }
+      
+      // Obter a solicitação atualizada
+      const updatedRequest = await response.json();
+      
+      // Atualizar a lista de solicitações
+      const updatedRequests = requests.map(req => 
+        req.id === selectedRequest.id ? updatedRequest : req
+      );
+      
+      setRequests(updatedRequests);
+      setIsRejectDialogOpen(false);
+      setSelectedRequest(null);
+      setRejectionReason('');
+      
+      toast({
+        title: "Rejeitada",
+        description: "Solicitação de orçamento rejeitada.",
+        variant: "default"
+      });
     } catch (error) {
       console.error("Erro ao rejeitar solicitação:", error);
       toast({
@@ -344,6 +330,7 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
         description: "Não foi possível rejeitar a solicitação.",
         variant: "destructive"
       });
+    } finally {
       setIsLoading(false);
     }
   };

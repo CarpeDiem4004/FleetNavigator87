@@ -172,65 +172,16 @@ export default function BudgetsPage() {
   
   // Carregar solicitações de orçamento da Base Campinas
   const { data: campinasRequests = [], isLoading: isLoadingCampinasRequests } = useQuery<CampinasBudgetRequest[]>({
-    queryKey: ['/api/campinas/budget-requests'],
+    queryKey: ['/api/fleet/budget-requests'],
     queryFn: async () => {
       try {
-        // Simulação temporária de dados - Em produção, isso deve fazer uma chamada real à API
-        // Quando a API estiver disponível, substituir este código por uma chamada fetch real
-        return [
-          {
-            id: 1,
-            title: "Compra de equipamentos para manutenção",
-            description: "Necessário adquirir ferramentas especializadas para a oficina de Campinas",
-            priority: "alta",
-            status: "aprovado",
-            requester_id: 1,
-            requester_name: "Administrador",
-            created_at: "2025-05-07T10:30:00",
-            updated_at: "2025-05-07T15:30:00",
-            estimated_value: "5000.00",
-            department: "Manutenção",
-            approved_value: "4800.00",
-            approved_by: "João Silva",
-            approved_at: "2025-05-07T15:30:00",
-            comments: "Aprovado com pequeno ajuste de valor",
-            budget_file_name: "orcamento_equipamentos.pdf",
-            budget_file_url: "#",
-            base_id: 2,
-            base_name: "Base Campinas",
-            pending_invoice: true
-          },
-          {
-            id: 2,
-            title: "Reforma do espaço de lazer",
-            description: "Reforma da área de descanso dos motoristas na base Campinas",
-            priority: "média",
-            status: "aprovado",
-            requester_id: 1,
-            requester_name: "Administrador",
-            created_at: "2025-05-05T14:20:00",
-            updated_at: "2025-05-06T09:15:00",
-            estimated_value: "8500.00",
-            department: "Infraestrutura",
-            approved_value: "8000.00",
-            approved_by: "João Silva",
-            approved_at: "2025-05-06T09:15:00",
-            comments: "Aprovado com valor reduzido",
-            budget_file_name: "orcamento_reforma.pdf",
-            budget_file_url: "#",
-            invoice_file_name: "nota_fiscal_reforma.pdf",
-            invoice_file_url: "#",
-            base_id: 2,
-            base_name: "Base Campinas",
-            pending_invoice: false
-          }
-        ];
-        
-        // Código para a implementação real
-        /*
-        const response = await apiRequest('GET', '/api/campinas/budget-requests');
+        // Usar a nova API que consolidada no backend para buscar os dados
+        const response = await apiRequest('GET', '/api/fleet/budget-requests');
+        if (!response.ok) {
+          console.error(`Erro ao buscar solicitações de orçamento: ${response.status} ${response.statusText}`);
+          return [];
+        }
         return await response.json();
-        */
       } catch (error) {
         console.error("Erro ao buscar solicitações de orçamento da Base Campinas:", error);
         return [];
