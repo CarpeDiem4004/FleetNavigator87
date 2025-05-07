@@ -3,8 +3,20 @@ import { useToast } from '@/hooks/use-toast';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileDown, Search, RefreshCw } from 'lucide-react';
+import { Loader2, FileDown, Search, RefreshCw, Trash2, AlertTriangle } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { useAuth } from '@/context/AuthContext';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Abastecimento {
   id: number;
@@ -42,10 +54,17 @@ export default function HistoricoAbastecimentosTabela({
   onRefresh
 }: HistoricoAbastecimentosTabelaProps) {
   const { toast } = useToast();
+  const { user } = useAuth(); // Para verificar se o usuário é admin
   const [internalRegistros, setInternalRegistros] = useState<Abastecimento[]>([]);
   const [filtroPlaca, setFiltroPlaca] = useState('');
   const [internalLoading, setInternalLoading] = useState(false);
   const [carregado, setCarregado] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  
+  // Verificar se o usuário é administrador
+  const isAdmin = user?.role === 'admin';
 
   // Usar registros externos se fornecidos, caso contrário, usar internos
   const registros = externalRegistros || internalRegistros;
@@ -207,9 +226,100 @@ export default function HistoricoAbastecimentosTabela({
     const data = new Date(dataString);
     return data.toLocaleString('pt-BR');
   };
+  
+  // Função para excluir registro
+  const excluirRegistro = async () => {
+    if (!deletingId) return;
+    
+    setDeleteLoading(true);
+    try {
+      // Obter token JWT do localStorage para autenticação
+      const authToken = localStorage.getItem('authToken');
+      
+      if (!authToken) {
+        toast({
+          title: 'Erro',
+          description: 'Autenticação necessária para excluir registros',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      const response = await fetch(`/api/posto-remedios/abastecimentos/${deletingId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        toast({
+          title: 'Sucesso',
+          description: 'Registro excluído com sucesso',
+          variant: 'default',
+        });
+        
+        // Atualizar a lista de registros
+        carregarRegistros();
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao excluir registro');
+      }
+    } catch (error: any) {
+      console.error('Erro ao excluir registro:', error);
+      toast({
+        title: 'Erro',
+        description: error.message || 'Falha ao excluir registro',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setDeletingId(null);
+      setDeleteLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
+      {/* Diálogo de confirmação para exclusão */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              <div className="flex items-center gap-2 text-amber-500">
+                <AlertTriangle className="h-5 w-5" />
+                <span>Esta ação não pode ser desfeita.</span>
+              </div>
+              <p className="mt-2">
+                Você tem certeza que deseja excluir o registro #{deletingId}?
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteLoading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                excluirRegistro();
+              }}
+              disabled={deleteLoading}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              {deleteLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Excluindo...
+                </>
+              ) : (
+                "Sim, excluir registro"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold">{titulo} - {posto}</h2>
         <div className="flex gap-2">
@@ -278,6 +388,7 @@ export default function HistoricoAbastecimentosTabela({
                 <TableHead>Total</TableHead>
                 <TableHead>Lavagem</TableHead>
                 <TableHead>Data</TableHead>
+                {isAdmin && <TableHead className="text-right">Ações</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -304,6 +415,23 @@ export default function HistoricoAbastecimentosTabela({
                     </TableCell>
                     <TableCell>{registro.lavagem ? 'Sim' : 'Não'}</TableCell>
                     <TableCell>{registro.created_at ? formatarData(registro.created_at) : '-'}</TableCell>
+                    {isAdmin && (
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setDeletingId(registro.id);
+                            setDeleteDialogOpen(true);
+                          }}
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-100"
+                          title="Excluir registro"
+                          aria-label="Excluir registro"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               }) : null}
