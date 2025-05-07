@@ -48,9 +48,9 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
     
     // Tentativa 2: Verificar com o serviço híbrido
     try {
-      // Importar getHybridUserService para verificar token
-      const { getHybridUserService } = require('../hybrid-user-service');
-      const hybridService = getHybridUserService();
+      // Importar getHybridUserService para verificar token (usando dynamic import)
+      const hybridModule = await import('../hybrid-user-service');
+      const hybridService = hybridModule.getHybridUserService();
       
       // Verificar token com o serviço híbrido
       const verifyResult = await hybridService.verifyToken(token, true);
@@ -102,9 +102,9 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
         // Tentativa 2: Verificar com o serviço híbrido se o Supabase falhou
         if (!(req as any).supabaseUser) {
           try {
-            // Importar getHybridUserService para verificar token
-            const { getHybridUserService } = require('../hybrid-user-service');
-            const hybridService = getHybridUserService();
+            // Importar getHybridUserService para verificar token (usando dynamic import)
+            const hybridModule = await import('../hybrid-user-service');
+            const hybridService = hybridModule.getHybridUserService();
             
             // Verificar token com o serviço híbrido
             const verifyResult = await hybridService.verifyToken(token, true);
