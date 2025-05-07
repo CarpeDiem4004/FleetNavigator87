@@ -30,11 +30,11 @@ export default function PostoRemediosPage() {
     carregarRegistros();
   }, []);
 
-  // Função para carregar registros do posto Remédios
+  // Função para carregar registros do posto Remédios (usando rota standalone que não requer autenticação)
   const carregarRegistros = async () => {
     setLoadingRegistros(true);
     try {
-      const response = await fetch(`/api/posto-remedios/abastecimentos${filtroPlaca ? `?placa=${filtroPlaca}` : ''}`);
+      const response = await fetch(`/api/posto-remedios-standalone/abastecimentos${filtroPlaca ? `?placa=${filtroPlaca}` : ''}`);
       if (response.ok) {
         const data = await response.json();
         setRegistros(data.data || []);
