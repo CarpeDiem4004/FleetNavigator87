@@ -260,15 +260,25 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       
       if (item.name === "Postos Externos") {
         console.log("\n\n===== DEBUGGING POSTOS EXTERNOS MENU =====");
+        console.log(`Usuário: ${user.name} (${user.email}), Role: ${user.role}, Base: ${user.basename || 'N/A'}, BaseID: ${user.baseId || 'N/A'}`);
         console.log("Número de subitems:", item.subItems?.length || 0);
         console.log("SubItems detalhados:", JSON.stringify(item.subItems, null, 2));
         
         if (item.subItems) {
           console.log("Verificando permissões para cada submenu:");
+          let temPermissao = false;
+          
           item.subItems.forEach(subItem => {
+            // Teste explícito para cada submenu
             const permitido = hasPermission(subItem.href);
             console.log(`- Submenu ${subItem.name} (${subItem.href}): ${permitido ? 'PERMITIDO ✅' : 'NEGADO ❌'}`);
+            
+            if (permitido) {
+              temPermissao = true;
+            }
           });
+          
+          console.log(`Menu "Postos Externos" será mostrado: ${temPermissao ? 'SIM ✅' : 'NÃO ❌'}`);
         }
         
         console.log("===== FIM DEBUG POSTOS EXTERNOS =====\n\n");
