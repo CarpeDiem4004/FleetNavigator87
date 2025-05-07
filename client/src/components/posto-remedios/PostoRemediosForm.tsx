@@ -78,7 +78,7 @@ export default function PostoRemediosForm() {
         valor_total: isNaN(valorTotalCalculado) ? null : valorTotalCalculado
       };
 
-      const response = await fetch('/api/posto-remedios/abastecimentos', {
+      const response = await fetch('/api/posto-remedios-standalone/abastecimentos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
