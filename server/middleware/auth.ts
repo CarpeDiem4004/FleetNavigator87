@@ -10,6 +10,7 @@ import { validateSupabaseToken, extractJwtToken, AuthError } from '../utils/auth
 export const isAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
   // Se o usuário está autenticado via sessão, continuar
   if (req.isAuthenticated()) {
+    console.log(`[isAuthenticated] Sessão válida para usuário: ${req.user?.email}`);
     return next();
   }
   
@@ -28,20 +29,46 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
   }
   
   try {
-    // Extrair e validar token JWT
+    // Extrair token JWT
     const token = extractJwtToken(authHeader);
-    const user = await validateSupabaseToken(token);
+    console.log('[isAuthenticated] Token JWT encontrado, verificando com múltiplos métodos...');
     
-    // Usuário autenticado via JWT, anexá-lo à requisição
-    (req as any).supabaseUser = user;
-    
-    // Continuar
-    return next();
-  } catch (error) {
-    if (error instanceof AuthError) {
-      return res.status(401).json({ message: "Não autenticado" });
+    // Tentativa 1: Verificar com o Supabase
+    try {
+      const supabaseUser = await validateSupabaseToken(token);
+      if (supabaseUser) {
+        // Usuário autenticado via JWT Supabase, anexá-lo à requisição
+        (req as any).supabaseUser = supabaseUser;
+        console.log(`[isAuthenticated] Token JWT Supabase validado para usuário: ${supabaseUser.email}`);
+        return next();
+      }
+    } catch (supabaseError) {
+      console.log('[isAuthenticated] Token não é do Supabase, tentando verificar token hybrid...');
     }
-    console.error('Erro ao processar autenticação:', error);
+    
+    // Tentativa 2: Verificar com o serviço híbrido
+    try {
+      // Importar getHybridUserService para verificar token
+      const { getHybridUserService } = require('../hybrid-user-service');
+      const hybridService = getHybridUserService();
+      
+      // Verificar token com o serviço híbrido
+      const verifyResult = await hybridService.verifyToken(token, true);
+      if (verifyResult && verifyResult.user) {
+        // Usuário autenticado via JWT híbrido, anexá-lo à requisição
+        (req as any).hybridUser = verifyResult.user;
+        console.log(`[isAuthenticated] Token JWT híbrido validado para usuário: ${verifyResult.user.email}`);
+        return next();
+      }
+    } catch (hybridError) {
+      console.error('[isAuthenticated] Erro ao validar token JWT híbrido:', hybridError);
+    }
+    
+    // Se chegou aqui, o token não é válido em nenhum dos sistemas
+    console.log('[isAuthenticated] Token JWT inválido');
+    return res.status(401).json({ message: "Não autenticado" });
+  } catch (error) {
+    console.error('[isAuthenticated] Erro ao processar autenticação:', error);
     return res.status(500).json({ message: "Erro interno do servidor" });
   }
 };
@@ -200,11 +227,11 @@ export const hasTiresAccess = (req: Request, res: Response, next: NextFunction) 
  */
 export const isWorkshop = (req: Request, res: Response, next: NextFunction) => {
   // Verificar autenticação primeiro
-  if (!req.isAuthenticated() && !(req as any).supabaseUser) {
+  if (!req.isAuthenticated() && !(req as any).supabaseUser && !(req as any).hybridUser) {
     return res.status(401).json({ message: "Usuário não autenticado" });
   }
   
-  const user = req.user || (req as any).supabaseUser;
+  const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
   if (user && (
     user.role === 'oficina' || 
     isUserAdmin(user)
@@ -228,11 +255,11 @@ export const isWorkshop = (req: Request, res: Response, next: NextFunction) => {
  */
 export const hasBaseAccess = (req: Request, res: Response, next: NextFunction) => {
   // Verificar autenticação primeiro
-  if (!req.isAuthenticated() && !(req as any).supabaseUser) {
+  if (!req.isAuthenticated() && !(req as any).supabaseUser && !(req as any).hybridUser) {
     return res.status(401).json({ message: "Usuário não autenticado" });
   }
   
-  const user = req.user || (req as any).supabaseUser;
+  const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
   
   // Se o usuário for admin, permite acesso a todas as bases
   if (user && isUserAdmin(user)) {

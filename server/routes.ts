@@ -4755,6 +4755,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: (req as any).supabaseUser.id,
           email: (req as any).supabaseUser.email,
           role: (req as any).supabaseUser.role
+        } : null,
+        hybridUser: (req as any).hybridUser ? {
+          id: (req as any).hybridUser.id,
+          email: (req as any).hybridUser.email,
+          role: (req as any).hybridUser.role
         } : null
       });
       
@@ -4777,8 +4782,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Obter informações do usuário (sessão ou JWT)
-      const user = req.user || (req as any).supabaseUser;
+      // Obter informações do usuário (sessão, Supabase JWT ou hybrid JWT)
+      const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
       
       if (!user) {
         console.error("[DELETE Posto Remédios] Usuário não encontrado na requisição");
