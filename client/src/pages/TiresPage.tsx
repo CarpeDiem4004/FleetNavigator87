@@ -294,10 +294,10 @@ const TiresPage: React.FC = () => {
       setIsAddDialogOpen(false);
       
       toast({
-        title: quantidade > 1 ? "Pneus adicionados" : "Pneu adicionado",
+        title: "Registrado com sucesso!",
         description: quantidade > 1 
-          ? `${quantidade} pneus adicionados com sucesso.` 
-          : `Pneu ${addedPneus[0].codigo} adicionado com sucesso.`,
+          ? `${quantidade} pneus adicionados ao sistema.` 
+          : `Pneu ${addedPneus[0].codigo} adicionado ao sistema.`,
         variant: "default"
       });
       
