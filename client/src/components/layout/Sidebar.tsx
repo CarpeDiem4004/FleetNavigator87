@@ -259,14 +259,19 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       console.log(`Verificando permissões para submenu "${item.name}" com ${item.subItems?.length || 0} itens`);
       
       if (item.name === "Postos Externos") {
-        console.log("DEBUGGING POSTOS EXTERNOS MENU");
-        console.log("SubItems:", item.subItems);
+        console.log("\n\n===== DEBUGGING POSTOS EXTERNOS MENU =====");
+        console.log("Número de subitems:", item.subItems?.length || 0);
+        console.log("SubItems detalhados:", JSON.stringify(item.subItems, null, 2));
         
         if (item.subItems) {
+          console.log("Verificando permissões para cada submenu:");
           item.subItems.forEach(subItem => {
-            console.log(`Submenu ${subItem.name} (${subItem.href}): ${hasPermission(subItem.href) ? 'PERMITIDO' : 'NEGADO'}`);
+            const permitido = hasPermission(subItem.href);
+            console.log(`- Submenu ${subItem.name} (${subItem.href}): ${permitido ? 'PERMITIDO ✅' : 'NEGADO ❌'}`);
           });
         }
+        
+        console.log("===== FIM DEBUG POSTOS EXTERNOS =====\n\n");
       }
       
       const hasSubItemPermission = item.subItems?.some(subItem => {
