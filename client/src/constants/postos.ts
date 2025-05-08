@@ -2,6 +2,7 @@
 export const POSTO_OSASCO = "osasco";
 export const POSTO_OSASCO_V2 = "osasco_v2";
 export const POSTO_GUARULHOS = "guarulhos";
+export const POSTO_GUARULHOS_V2 = "guarulhos_v2";
 export const POSTO_ALAIR_V2 = "alair_v2";
 // São Paulo removido - Abril/2025
 export const POSTO_CAMPINAS = "campinas";
@@ -17,6 +18,7 @@ export const POSTO_SOROCABA_V2 = "sorocaba_v2";
 export const NOME_POSTO_OSASCO = "Posto Osasco";
 export const NOME_POSTO_OSASCO_V2 = "Posto Osasco V2";
 export const NOME_POSTO_GUARULHOS = "Posto Alair";
+export const NOME_POSTO_GUARULHOS_V2 = "Posto Guarulhos V2";
 export const NOME_POSTO_ALAIR_V2 = "Posto Alair V2";
 // São Paulo removido - Abril/2025
 export const NOME_POSTO_CAMPINAS = "Posto Campinas";
@@ -44,6 +46,11 @@ export const POSTOS_INFO = [
     id: POSTO_GUARULHOS, 
     nome: NOME_POSTO_GUARULHOS, 
     descricao: 'Posto de abastecimento Alair' 
+  },
+  { 
+    id: POSTO_GUARULHOS_V2, 
+    nome: NOME_POSTO_GUARULHOS_V2, 
+    descricao: 'Nova versão do posto de abastecimento Guarulhos (V2)' 
   },
   { 
     id: POSTO_ALAIR_V2, 
