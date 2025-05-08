@@ -57,6 +57,7 @@ import {
   uploadFileToSupabase, 
   registerAttachmentMetadata, 
   uploadInvoiceFile,
+  uploadBudgetFile,
   BUDGET_ATTACHMENTS_BUCKET, 
   INVOICE_ATTACHMENTS_BUCKET,
   supabase 
@@ -463,28 +464,29 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
     
     setIsLoading(true);
     try {
-      // Usar abordagem de blob URL temporária
       const baseId = selectedRequest.base_id || 2; // Usar o ID da base da solicitação ou 2 (Campinas) como padrão
       const baseName = selectedRequest.base_name || "Base Campinas";
-      const uniqueId = uuidv4();
-      const fileName = budgetFile.name;
       
-      // Criar blob URL para o arquivo
-      console.log("Criando blob URL temporária para o orçamento...");
+      // Upload do documento de orçamento para o Supabase Storage
+      console.log("Iniciando upload do documento de orçamento para o Supabase Storage...");
       console.log("Arquivo:", budgetFile);
       
-      // Criar uma URL blob temporária para o arquivo
-      const blobUrl = URL.createObjectURL(budgetFile);
-      console.log("Blob URL criada:", blobUrl);
+      // Upload do arquivo para o Storage usando a nova função de upload permanente
+      const uploadResult = await uploadBudgetFile(
+        budgetFile,
+        selectedRequest.id,
+        baseId,
+        baseName, 
+        user?.id || null,
+        user?.name || null
+      );
       
-      // Usar esta URL temporária 
-      const storageUrl = blobUrl;
-      const virtualFilePath = `blob://${baseId}/${selectedRequest.id}/${uniqueId}-${fileName}`;
+      console.log("Upload concluído com sucesso:", uploadResult);
       
-      // Atualizar o registro da solicitação com a nova URL
+      // Atualizar o registro da solicitação com a nova URL permanente
       const updateData = {
-        budget_file_url: storageUrl,
-        budget_file_name: fileName
+        budget_file_url: uploadResult.url,
+        budget_file_name: budgetFile.name
       };
       
       // Chamar a API para atualizar a solicitação
@@ -504,25 +506,8 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
       // Obter a solicitação atualizada
       const updatedRequest = await response.json();
       
-      // Registrar os metadados do anexo no Supabase
-      try {
-        const attachmentMetadata = await registerAttachmentMetadata(
-          selectedRequest.id,
-          baseId,
-          baseName,
-          fileName,
-          virtualFilePath, // Usar o caminho virtual criado acima
-          storageUrl,
-          user?.id || null,
-          user?.name || null,
-          'budget'
-        );
-        
-        console.log("Metadados do anexo registrados:", attachmentMetadata);
-      } catch (metadataError) {
-        console.error("Erro ao registrar metadados do anexo:", metadataError);
-        // Não falha o processo se o registro de metadados falhar
-      }
+      // Os metadados do anexo já foram registrados pela função uploadBudgetFile
+      console.log("Metadados do anexo registrados:", uploadResult.metadata);
       
       // Atualizar a lista de solicitações
       const updatedRequests = requests.map(req => 
@@ -536,7 +521,7 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
       
       toast({
         title: "Orçamento Anexado",
-        description: "O arquivo de orçamento foi anexado com sucesso usando armazenamento temporário. Nota: esta solução é temporária.",
+        description: "O arquivo de orçamento foi anexado com sucesso usando armazenamento permanente no Supabase Storage.",
         variant: "default"
       });
     } catch (error) {
@@ -636,16 +621,17 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Banner de informação sobre armazenamento */}
-      <div className="bg-blue-50 border border-blue-200 rounded-md p-4 text-blue-800 mb-4">
+      <div className="bg-green-50 border border-green-200 rounded-md p-4 text-green-800 mb-4">
         <div className="flex">
-          <AlertTriangle className="h-5 w-5 mr-2 flex-shrink-0" />
+          <CheckCircle className="h-5 w-5 mr-2 flex-shrink-0" />
           <div>
-            <h3 className="font-medium">Informação sobre Armazenamento de Arquivos</h3>
+            <h3 className="font-medium">Armazenamento Permanente Ativado</h3>
             <p className="mt-1 text-sm">
-              Agora estamos utilizando um sistema de armazenamento permanente para notas fiscais 
-              através do Supabase Storage. As notas fiscais anexadas serão armazenadas permanentemente 
-              e estarão disponíveis mesmo após o fechamento do navegador. No entanto, os documentos de 
-              orçamento ainda utilizam armazenamento temporário e serão perdidos ao fechar o navegador.
+              Estamos utilizando um sistema de armazenamento permanente para todos os arquivos 
+              através do Supabase Storage. Tanto as notas fiscais quanto os documentos de orçamento
+              anexados serão armazenados permanentemente e estarão disponíveis em qualquer dispositivo,
+              mesmo após o fechamento do navegador. Isso resolve os problemas anteriores de visualização
+              de orçamentos no painel de gestão.
             </p>
           </div>
         </div>
