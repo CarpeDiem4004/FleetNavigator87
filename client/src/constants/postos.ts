@@ -7,9 +7,10 @@ export const POSTO_ALAIR_V2 = "alair_v2";
 // São Paulo removido - Abril/2025
 export const POSTO_CAMPINAS = "campinas";
 export const POSTO_CAMPINAS_V2 = "campinas_v2";
-// ABC removido - Maio/2025 (mantemos comentado para compatibilidade com código existente)
+// ABC (versão antiga) removido - Maio/2025
 export const POSTO_ABC = "abc"; // Removido em Maio/2025
-export const POSTO_ABC_V2 = "abc_v2"; // Removido em Maio/2025
+// ABC V2 reativado - Maio/2025
+export const POSTO_ABC_V2 = "abc_v2";
 // Socorro (versão antiga) removido - Maio/2025
 export const POSTO_SOCORRO = "socorro"; // Removido em Maio/2025
 // Socorro V2 reativado - Maio/2025
@@ -28,9 +29,10 @@ export const NOME_POSTO_ALAIR_V2 = "Posto Alair V2";
 // São Paulo removido - Abril/2025
 export const NOME_POSTO_CAMPINAS = "Posto Campinas";
 export const NOME_POSTO_CAMPINAS_V2 = "Posto Campinas V2";
-// ABC removido - Maio/2025 (mantemos comentado para compatibilidade com código existente)
+// ABC (versão antiga) removido - Maio/2025
 export const NOME_POSTO_ABC = "Posto ABC"; // Removido em Maio/2025
-export const NOME_POSTO_ABC_V2 = "Posto ABC V2"; // Removido em Maio/2025
+// ABC V2 reativado - Maio/2025
+export const NOME_POSTO_ABC_V2 = "Posto ABC V2";
 // Socorro (versão antiga) removido - Maio/2025
 export const NOME_POSTO_SOCORRO = "Posto Socorro"; // Removido em Maio/2025
 // Socorro V2 reativado - Maio/2025
@@ -78,7 +80,11 @@ export const POSTOS_INFO = [
     nome: NOME_POSTO_CAMPINAS_V2, 
     descricao: 'Nova versão do posto de abastecimento de Campinas (V2)' 
   },
-  /* ABC removido a pedido do cliente - Maio/2025 */
+  { 
+    id: POSTO_ABC_V2, 
+    nome: NOME_POSTO_ABC_V2, 
+    descricao: 'Nova versão do posto de abastecimento de ABC (V2)' 
+  },
   { 
     id: POSTO_SOCORRO_V2, 
     nome: NOME_POSTO_SOCORRO_V2, 
