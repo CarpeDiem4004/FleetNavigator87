@@ -32,8 +32,57 @@ export const supabaseConfig = {
 
 console.log('Configuração Supabase Cliente:', supabaseConfig);
 
-// Nome do bucket para anexos de orçamentos
+// Nome dos buckets para anexos
 export const BUDGET_ATTACHMENTS_BUCKET = 'budget-attachments';
+export const INVOICE_ATTACHMENTS_BUCKET = 'notas-fiscais';
+
+/**
+ * Função para tentar criar um bucket se ele não existir
+ * Essa função é principalmente para uso no servidor, pois requer a chave de serviço
+ * 
+ * @param bucketName - Nome do bucket a ser criado
+ * @returns - true se o bucket foi criado ou já existe, false caso contrário
+ */
+export const ensureBucketExists = async (bucketName: string): Promise<boolean> => {
+  console.log(`Verificando se o bucket ${bucketName} existe...`);
+  
+  try {
+    // Verificar se o bucket já existe
+    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+    
+    if (listError) {
+      console.error("Erro ao listar buckets:", listError);
+      return false;
+    }
+    
+    // Se o bucket já existe, retornar true
+    if (buckets?.some(bucket => bucket.name === bucketName)) {
+      console.log(`Bucket ${bucketName} já existe.`);
+      return true;
+    }
+    
+    // Se o bucket não existe, tentar criá-lo
+    console.log(`Bucket ${bucketName} não encontrado. Tentando criar...`);
+    
+    // Criar o bucket (requer permissões de serviço)
+    const { data, error } = await supabase.storage.createBucket(bucketName, {
+      public: true,
+      fileSizeLimit: 10485760, // 10MB
+      allowedMimeTypes: ['application/pdf', 'image/jpeg', 'image/png']
+    });
+    
+    if (error) {
+      console.error(`Erro ao criar bucket ${bucketName}:`, error);
+      return false;
+    }
+    
+    console.log(`Bucket ${bucketName} criado com sucesso.`);
+    return true;
+  } catch (error) {
+    console.error(`Erro ao verificar/criar bucket ${bucketName}:`, error);
+    return false;
+  }
+};
 
 /**
  * Função para tentar usar um bucket existente ou um alternativo
@@ -88,9 +137,10 @@ export const getBucketName = async (): Promise<string> => {
  * 
  * @param file - O arquivo a ser enviado
  * @param path - O caminho dentro do bucket onde o arquivo será armazenado
+ * @param bucketName - (Opcional) Nome específico do bucket. Se não fornecido, usa o método getBucketName
  * @returns - A URL pública do arquivo armazenado
  */
-export const uploadFileToSupabase = async (file: File, path: string): Promise<string> => {
+export const uploadFileToSupabase = async (file: File, path: string, bucketName?: string): Promise<string> => {
   try {
     // Verificar se o arquivo é válido
     if (!file) {
@@ -98,13 +148,13 @@ export const uploadFileToSupabase = async (file: File, path: string): Promise<st
     }
     
     // Obter o nome do bucket a ser usado
-    const bucketName = await getBucketName();
-    console.log(`Usando bucket para upload: ${bucketName}`);
+    const bucket = bucketName || await getBucketName();
+    console.log(`Usando bucket para upload: ${bucket}`);
     
     // Fazer upload do arquivo para o Supabase Storage
-    console.log(`Tentando fazer upload para ${bucketName}/${path}`);
+    console.log(`Tentando fazer upload para ${bucket}/${path}`);
     const { data, error } = await supabase.storage
-      .from(bucketName)
+      .from(bucket)
       .upload(path, file, {
         cacheControl: '3600',
         upsert: true
@@ -120,11 +170,11 @@ export const uploadFileToSupabase = async (file: File, path: string): Promise<st
       throw new Error('Upload falhou, dados não retornados pelo Supabase');
     }
     
-    console.log(`Upload concluído com sucesso para ${bucketName}/${path}`);
+    console.log(`Upload concluído com sucesso para ${bucket}/${path}`);
 
     // Obter a URL pública do arquivo
     const { data: { publicUrl } } = supabase.storage
-      .from(bucketName)
+      .from(bucket)
       .getPublicUrl(path);
 
     if (!publicUrl) {
@@ -135,6 +185,65 @@ export const uploadFileToSupabase = async (file: File, path: string): Promise<st
     return publicUrl;
   } catch (error) {
     console.error('Erro ao fazer upload para o Supabase Storage:', error);
+    throw error;
+  }
+};
+
+/**
+ * Função específica para upload de notas fiscais
+ * 
+ * @param file - O arquivo da nota fiscal (PDF/JPG/PNG)
+ * @param budgetRequestId - ID da solicitação de orçamento relacionada
+ * @param baseId - ID da base
+ * @param baseName - Nome da base
+ * @param uploaderId - ID do usuário que está fazendo o upload
+ * @param uploaderName - Nome do usuário que está fazendo o upload
+ * @returns - Objeto com a URL da nota fiscal e os metadados registrados
+ */
+export const uploadInvoiceFile = async (
+  file: File,
+  budgetRequestId: number,
+  baseId: number,
+  baseName: string,
+  uploaderId: number | null = null,
+  uploaderName: string | null = null
+): Promise<{ url: string, metadata: any }> => {
+  try {
+    // Verificar se o arquivo é válido
+    if (!file) {
+      throw new Error('Arquivo de nota fiscal inválido');
+    }
+    
+    // Garantir que o bucket de notas fiscais exista
+    await ensureBucketExists(INVOICE_ATTACHMENTS_BUCKET);
+    
+    // Criar um caminho único para o arquivo no Supabase Storage
+    const fileExtension = file.name.split('.').pop() || '';
+    const uniqueId = Date.now().toString();
+    const filePath = `base-${baseId}/request-${budgetRequestId}/${uniqueId}-${file.name}`;
+    
+    // Fazer upload do arquivo para o bucket específico de notas fiscais
+    const storageUrl = await uploadFileToSupabase(file, filePath, INVOICE_ATTACHMENTS_BUCKET);
+    
+    // Registrar os metadados do anexo no banco de dados
+    const metadata = await registerAttachmentMetadata(
+      budgetRequestId,
+      baseId,
+      baseName,
+      file.name,
+      filePath,
+      storageUrl,
+      uploaderId,
+      uploaderName,
+      'invoice'
+    );
+    
+    return {
+      url: storageUrl,
+      metadata
+    };
+  } catch (error) {
+    console.error('Erro ao fazer upload da nota fiscal:', error);
     throw error;
   }
 };
