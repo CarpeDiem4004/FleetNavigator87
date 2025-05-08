@@ -177,21 +177,24 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
     
     setIsLoading(true);
     try {
-      // Fazer upload do arquivo para o Supabase Storage
+      // Usar um método alternativo para lidar com o arquivo
       const baseId = 2; // ID para Base Campinas
       const baseName = "Base Campinas";
       const uniqueId = uuidv4();
       const fileName = budgetFile.name;
-      const filePath = `${baseId}/draft/${uniqueId}-${fileName}`;
       
-      // Upload para o Supabase Storage
-      console.log("Fazendo upload do arquivo para o Supabase Storage...");
+      // Para contornar os problemas de permissão do Storage, vamos usar blob URL temporário
+      // Em vez de tentar fazer upload para o Supabase Storage
+      console.log("Criando blob URL temporário para o arquivo...");
       console.log("Arquivo:", budgetFile);
-      console.log("Caminho:", filePath);
       
-      // A função uploadFileToSupabase já contém a lógica para verificar/criar o bucket
-      const storageUrl = await uploadFileToSupabase(budgetFile, filePath);
-      console.log("Upload concluído. URL:", storageUrl);
+      // Criar uma URL blob temporária para o arquivo (válida durante a sessão do navegador)
+      const blobUrl = URL.createObjectURL(budgetFile);
+      console.log("Blob URL criada:", blobUrl);
+      
+      // Usar esta URL temporária para o formulário
+      // Esta é uma solução temporária até que os problemas de permissão do Supabase sejam resolvidos
+      const storageUrl = blobUrl;
       
       // Preparar os dados para o envio
       const requestData = {
@@ -224,12 +227,16 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
       
       // Registrar os metadados do anexo no Supabase
       try {
+        // Não temos um filePath real, pois estamos usando blob URL
+        // Vamos criar um valor fictício para o metadado
+        const virtualFilePath = `blob://${baseId}/${newRequest.id}/${uniqueId}-${fileName}`;
+        
         const attachmentMetadata = await registerAttachmentMetadata(
           newRequest.id,
           baseId,
           baseName,
           fileName,
-          filePath,
+          virtualFilePath,
           storageUrl,
           user?.id || null,
           user?.name || null,
@@ -250,7 +257,7 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
       
       toast({
         title: "Solicitação Enviada",
-        description: "Solicitação de orçamento enviada para análise. A equipe de gestão de frotas irá responder em breve.",
+        description: "Solicitação de orçamento enviada com armazenamento temporário. A equipe de gestão de frotas irá responder em breve.",
         variant: "default"
       });
     } catch (error) {
@@ -451,20 +458,23 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
     
     setIsLoading(true);
     try {
-      // Fazer upload do arquivo para o Supabase Storage
+      // Usar abordagem de blob URL temporária
       const baseId = selectedRequest.base_id || 2; // Usar o ID da base da solicitação ou 2 (Campinas) como padrão
       const baseName = selectedRequest.base_name || "Base Campinas";
       const uniqueId = uuidv4();
       const fileName = budgetFile.name;
-      const filePath = `${baseId}/${selectedRequest.id}/${uniqueId}-${fileName}`;
       
-      console.log("Fazendo upload do orçamento para o Supabase Storage...");
+      // Criar blob URL para o arquivo
+      console.log("Criando blob URL temporária para o orçamento...");
       console.log("Arquivo:", budgetFile);
-      console.log("Caminho:", filePath);
       
-      // Upload para o Supabase Storage
-      const storageUrl = await uploadFileToSupabase(budgetFile, filePath);
-      console.log("Upload concluído. URL:", storageUrl);
+      // Criar uma URL blob temporária para o arquivo
+      const blobUrl = URL.createObjectURL(budgetFile);
+      console.log("Blob URL criada:", blobUrl);
+      
+      // Usar esta URL temporária 
+      const storageUrl = blobUrl;
+      const virtualFilePath = `blob://${baseId}/${selectedRequest.id}/${uniqueId}-${fileName}`;
       
       // Atualizar o registro da solicitação com a nova URL
       const updateData = {
@@ -496,7 +506,7 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
           baseId,
           baseName,
           fileName,
-          filePath,
+          virtualFilePath, // Usar o caminho virtual criado acima
           storageUrl,
           user?.id || null,
           user?.name || null,
@@ -521,7 +531,7 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
       
       toast({
         title: "Orçamento Anexado",
-        description: "O arquivo de orçamento foi anexado com sucesso e armazenado permanentemente.",
+        description: "O arquivo de orçamento foi anexado com sucesso usando armazenamento temporário. Nota: esta solução é temporária.",
         variant: "default"
       });
     } catch (error) {
@@ -542,20 +552,23 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
     
     setIsLoading(true);
     try {
-      // Fazer upload do arquivo para o Supabase Storage
+      // Usar abordagem de blob URL temporária
       const baseId = selectedRequest.base_id || 2; // Usar o ID da base da solicitação ou 2 (Campinas) como padrão
       const baseName = selectedRequest.base_name || "Base Campinas";
       const uniqueId = uuidv4();
       const fileName = invoiceFile.name;
-      const filePath = `${baseId}/${selectedRequest.id}/invoice-${uniqueId}-${fileName}`;
       
-      console.log("Fazendo upload da nota fiscal para o Supabase Storage...");
+      // Criar blob URL para o arquivo
+      console.log("Criando blob URL temporária para a nota fiscal...");
       console.log("Arquivo:", invoiceFile);
-      console.log("Caminho:", filePath);
       
-      // Upload para o Supabase Storage
-      const storageUrl = await uploadFileToSupabase(invoiceFile, filePath);
-      console.log("Upload concluído. URL:", storageUrl);
+      // Criar uma URL blob temporária para o arquivo
+      const blobUrl = URL.createObjectURL(invoiceFile);
+      console.log("Blob URL criada:", blobUrl);
+      
+      // Usar esta URL temporária 
+      const storageUrl = blobUrl;
+      const virtualFilePath = `blob://${baseId}/${selectedRequest.id}/invoice-${uniqueId}-${fileName}`;
       
       // Atualizar o registro da solicitação com a nova URL
       const updateData = {
@@ -588,7 +601,7 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
           baseId,
           baseName,
           fileName,
-          filePath,
+          virtualFilePath, // Usar o caminho virtual criado acima
           storageUrl,
           user?.id || null,
           user?.name || null,
@@ -613,7 +626,7 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
       
       toast({
         title: "Nota Fiscal Anexada",
-        description: "A nota fiscal foi anexada com sucesso e armazenada permanentemente.",
+        description: "A nota fiscal foi anexada com sucesso usando armazenamento temporário. Nota: esta solução é temporária.",
         variant: "default"
       });
     } catch (error) {
@@ -630,6 +643,22 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
+      {/* Banner de informação sobre armazenamento temporário */}
+      <div className="bg-amber-50 border border-amber-200 rounded-md p-4 text-amber-800 mb-4">
+        <div className="flex">
+          <AlertTriangle className="h-5 w-5 mr-2 flex-shrink-0" />
+          <div>
+            <h3 className="font-medium">Atenção: Armazenamento Temporário de Arquivos</h3>
+            <p className="mt-1 text-sm">
+              Estamos utilizando uma solução temporária para o armazenamento de arquivos.
+              Os arquivos anexados estarão disponíveis apenas durante esta sessão e podem
+              não persistir após o fechamento do navegador. Esta é uma medida temporária
+              enquanto implementamos uma solução de armazenamento permanente.
+            </p>
+          </div>
+        </div>
+      </div>
+      
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Solicitação de Orçamento</h1>
