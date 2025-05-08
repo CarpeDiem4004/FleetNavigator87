@@ -10,7 +10,7 @@ export const POSTO_CAMPINAS_V2 = "campinas_v2";
 export const POSTO_ABC = "abc";
 export const POSTO_ABC_V2 = "abc_v2";
 export const POSTO_SOCORRO = "socorro";
-export const POSTO_SOCORRO_V2 = "socorro_v2";
+export const POSTO_SOCORRO_V2 = "socorro_v2"; // Removido em Maio/2025
 // Posto Sorocaba (versão antiga) desativado
 export const POSTO_SOROCABA = "sorocaba";
 // Posto Sorocaba V2 ativo
@@ -87,11 +87,7 @@ export const POSTOS_INFO = [
     nome: NOME_POSTO_SOCORRO, 
     descricao: 'Posto de abastecimento da região de Socorro' 
   },
-  { 
-    id: POSTO_SOCORRO_V2, 
-    nome: NOME_POSTO_SOCORRO_V2, 
-    descricao: 'Nova versão do posto de abastecimento de Socorro (V2)' 
-  },
+  /* Socorro_V2 removido a pedido do cliente - Maio/2025 */
   /* Sorocaba versão antiga desativada */
   { 
     id: POSTO_SOROCABA_V2, 
