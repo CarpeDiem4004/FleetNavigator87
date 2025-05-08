@@ -6,21 +6,20 @@ import { ptBR } from 'date-fns/locale';
 
 interface PainelPrincipalData {
   id: number;
-  data_referencia: string;
-  manutencoes_pendentes: number;
-  tempo_medio_manutencao: string;
-  veiculos_parados: number;
-  dias_parados_total: number;
-  viagens_concluidas: number;
-  viagens_no_show: number;
-  viagens_canceladas_cliente: number;
-  litros_diesel_total: number;
-  gasto_total_combustivel: number;
-  qtd_sinistros: number;
-  qtd_roubos: number;
-  incidentes_seguranca_trabalho: number;
-  movimentacoes_pneus: number;
+  data: Date | string; // Nome real da coluna no banco de dados
+  total_km_frota: number;
+  total_litros_diesel: number;
+  media_diesel_km: number;
+  total_manutencoes: number;
+  custo_manutencoes: number;
+  tempo_medio_manutencao: number;
+  veiculos_ativos: number;
+  veiculos_manutencao: number;
+  economia_combustivel: number;
+  tendencia_consumo: string;
+  alertas_criticos: number;
   pneus_substituidos: number;
+  base_id: number;
 }
 
 /**
@@ -45,8 +44,8 @@ export async function getDashboardKPIs(req: Request, res: Response) {
     // Tentativa de usar a tabela painel_principal para dados atualizados pelo cron
     const painelResult = await pool.query(
       `SELECT * FROM painel_principal 
-       WHERE data_referencia >= $1
-       ORDER BY data_referencia DESC
+       WHERE data >= $1
+       ORDER BY data DESC
        LIMIT 1`,
       [startOfTargetMonth.toISOString()]
     );
@@ -65,21 +64,20 @@ export async function getDashboardKPIs(req: Request, res: Response) {
       // Normalmente aqui faríamos cálculos baseados em dados reais do banco
       const dashboardData: PainelPrincipalData = {
         id: 0,
-        data_referencia: format(targetDate, 'yyyy-MM-dd'),
-        manutencoes_pendentes: 12,
-        tempo_medio_manutencao: "3.5 dias",
-        veiculos_parados: 8,
-        dias_parados_total: 24,
-        viagens_concluidas: 145,
-        viagens_no_show: 5,
-        viagens_canceladas_cliente: 7,
-        litros_diesel_total: 8500,
-        gasto_total_combustivel: 42500,
-        qtd_sinistros: 3,
-        qtd_roubos: 0,
-        incidentes_seguranca_trabalho: 1,
-        movimentacoes_pneus: 28,
-        pneus_substituidos: 12
+        data: format(targetDate, 'yyyy-MM-dd'),
+        total_km_frota: 85000,
+        total_litros_diesel: 12500,
+        media_diesel_km: 2.8,
+        total_manutencoes: 24,
+        custo_manutencoes: 35000,
+        tempo_medio_manutencao: 3.5,
+        veiculos_ativos: 45,
+        veiculos_manutencao: 5,
+        economia_combustivel: 3200,
+        tendencia_consumo: 'estável',
+        alertas_criticos: 3,
+        pneus_substituidos: 12,
+        base_id: 1
       };
       
       return res.status(200).json({
@@ -117,8 +115,8 @@ export async function getPainelPrincipal(req: Request, res: Response) {
     // Buscar registro mais recente dentro do mês especificado
     const painelResult = await pool.query(
       `SELECT * FROM painel_principal 
-       WHERE data_referencia >= $1 AND data_referencia <= $2
-       ORDER BY data_referencia DESC
+       WHERE data >= $1 AND data <= $2
+       ORDER BY data DESC
        LIMIT 1`,
       [startOfCurrentMonth.toISOString(), endOfCurrentMonth.toISOString()]
     );
@@ -129,7 +127,7 @@ export async function getPainelPrincipal(req: Request, res: Response) {
       // Se não houver dados para o mês especificado, busque o registro mais recente
       const latestResult = await pool.query(
         `SELECT * FROM painel_principal 
-         ORDER BY data_referencia DESC
+         ORDER BY data DESC
          LIMIT 1`
       );
       
