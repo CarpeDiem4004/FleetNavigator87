@@ -53,7 +53,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2, FileText, ClipboardList, CheckCircle, AlertCircle, Clock, AlertTriangle } from 'lucide-react';
-import { uploadFileToSupabase, registerAttachmentMetadata, BUDGET_ATTACHMENTS_BUCKET, supabase } from '@/lib/supabase';
+import { 
+  uploadFileToSupabase, 
+  registerAttachmentMetadata, 
+  uploadInvoiceFile,
+  BUDGET_ATTACHMENTS_BUCKET, 
+  INVOICE_ATTACHMENTS_BUCKET,
+  supabase 
+} from '@/lib/supabase';
 
 // Schema de validação para solicitação de orçamento
 const budgetRequestSchema = z.object({
@@ -552,28 +559,32 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
     
     setIsLoading(true);
     try {
-      // Usar abordagem de blob URL temporária
+      // Usar armazenamento permanente no Supabase 
       const baseId = selectedRequest.base_id || 2; // Usar o ID da base da solicitação ou 2 (Campinas) como padrão
       const baseName = selectedRequest.base_name || "Base Campinas";
-      const uniqueId = uuidv4();
-      const fileName = invoiceFile.name;
       
-      // Criar blob URL para o arquivo
-      console.log("Criando blob URL temporária para a nota fiscal...");
+      // Log para depuração
+      console.log("Iniciando upload de nota fiscal para o Supabase Storage...");
       console.log("Arquivo:", invoiceFile);
       
-      // Criar uma URL blob temporária para o arquivo
-      const blobUrl = URL.createObjectURL(invoiceFile);
-      console.log("Blob URL criada:", blobUrl);
+      // Upload da nota fiscal para o bucket específico no Supabase Storage
+      // Isso usa a nova função uploadInvoiceFile que automaticamente cria o bucket,
+      // faz o upload e registra os metadados
+      const uploadResult = await uploadInvoiceFile(
+        invoiceFile,
+        selectedRequest.id,
+        baseId,
+        baseName, 
+        user?.id || null,
+        user?.name || null
+      );
       
-      // Usar esta URL temporária 
-      const storageUrl = blobUrl;
-      const virtualFilePath = `blob://${baseId}/${selectedRequest.id}/invoice-${uniqueId}-${fileName}`;
+      console.log("Upload concluído com sucesso:", uploadResult);
       
-      // Atualizar o registro da solicitação com a nova URL
+      // Atualizar o registro da solicitação com a nova URL permanente
       const updateData = {
-        invoice_file_url: storageUrl,
-        invoice_file_name: fileName,
+        invoice_file_url: uploadResult.url,
+        invoice_file_name: invoiceFile.name,
         pending_invoice: false // Marca como não pendente após anexar NF
       };
       
@@ -594,25 +605,8 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
       // Obter a solicitação atualizada
       const updatedRequest = await response.json();
       
-      // Registrar os metadados do anexo no Supabase
-      try {
-        const attachmentMetadata = await registerAttachmentMetadata(
-          selectedRequest.id,
-          baseId,
-          baseName,
-          fileName,
-          virtualFilePath, // Usar o caminho virtual criado acima
-          storageUrl,
-          user?.id || null,
-          user?.name || null,
-          'invoice'
-        );
-        
-        console.log("Metadados do anexo registrados:", attachmentMetadata);
-      } catch (metadataError) {
-        console.error("Erro ao registrar metadados do anexo:", metadataError);
-        // Não falha o processo se o registro de metadados falhar
-      }
+      console.log("Solicitação atualizada com sucesso:", updatedRequest);
+      console.log("Metadados do anexo registrados:", uploadResult.metadata);
       
       // Atualizar a lista de solicitações
       const updatedRequests = requests.map(req => 
@@ -626,7 +620,7 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
       
       toast({
         title: "Nota Fiscal Anexada",
-        description: "A nota fiscal foi anexada com sucesso usando armazenamento temporário. Nota: esta solução é temporária.",
+        description: "A nota fiscal foi anexada com sucesso e armazenada permanentemente no Supabase Storage.",
         variant: "default"
       });
     } catch (error) {
@@ -643,17 +637,17 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      {/* Banner de informação sobre armazenamento temporário */}
-      <div className="bg-amber-50 border border-amber-200 rounded-md p-4 text-amber-800 mb-4">
+      {/* Banner de informação sobre armazenamento */}
+      <div className="bg-blue-50 border border-blue-200 rounded-md p-4 text-blue-800 mb-4">
         <div className="flex">
           <AlertTriangle className="h-5 w-5 mr-2 flex-shrink-0" />
           <div>
-            <h3 className="font-medium">Atenção: Armazenamento Temporário de Arquivos</h3>
+            <h3 className="font-medium">Informação sobre Armazenamento de Arquivos</h3>
             <p className="mt-1 text-sm">
-              Estamos utilizando uma solução temporária para o armazenamento de arquivos.
-              Os arquivos anexados estarão disponíveis apenas durante esta sessão e podem
-              não persistir após o fechamento do navegador. Esta é uma medida temporária
-              enquanto implementamos uma solução de armazenamento permanente.
+              Agora estamos utilizando um sistema de armazenamento permanente para notas fiscais 
+              através do Supabase Storage. As notas fiscais anexadas serão armazenadas permanentemente 
+              e estarão disponíveis mesmo após o fechamento do navegador. No entanto, os documentos de 
+              orçamento ainda utilizam armazenamento temporário e serão perdidos ao fechar o navegador.
             </p>
           </div>
         </div>
