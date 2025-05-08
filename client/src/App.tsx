@@ -309,12 +309,7 @@ function App() {
           <Route path="/posto/socorro_v2/public">
             <SocorroV2Public />
           </Route>
-          <Route path="/posto/sorocaba/public">
-            <SorocabaPublic />
-          </Route>
-          <Route path="/posto/sorocaba_v2/public">
-            <SorocabaV2Public />
-          </Route>
+          {/* Posto Sorocaba removido - Maio/2025 */}
           
           {/* Rotas públicas para o Posto Remédios */}
           <Route path="/posto-remedios-standalone">

@@ -11,6 +11,8 @@ export const POSTO_ABC = "abc";
 export const POSTO_ABC_V2 = "abc_v2";
 export const POSTO_SOCORRO = "socorro";
 export const POSTO_SOCORRO_V2 = "socorro_v2";
+// Sorocaba removido - Maio/2025
+// Mantendo constantes para compatibilidade com código existente
 export const POSTO_SOROCABA = "sorocaba";
 export const POSTO_SOROCABA_V2 = "sorocaba_v2";
 
@@ -27,6 +29,8 @@ export const NOME_POSTO_ABC = "Posto ABC";
 export const NOME_POSTO_ABC_V2 = "Posto ABC V2";
 export const NOME_POSTO_SOCORRO = "Posto Socorro";
 export const NOME_POSTO_SOCORRO_V2 = "Posto Socorro V2";
+// Sorocaba removido - Maio/2025
+// Mantendo constantes para compatibilidade com código existente
 export const NOME_POSTO_SOROCABA = "Posto Sorocaba";
 export const NOME_POSTO_SOROCABA_V2 = "Posto Sorocaba V2";
 
@@ -88,14 +92,5 @@ export const POSTOS_INFO = [
     nome: NOME_POSTO_SOCORRO_V2, 
     descricao: 'Nova versão do posto de abastecimento de Socorro (V2)' 
   },
-  { 
-    id: POSTO_SOROCABA, 
-    nome: NOME_POSTO_SOROCABA, 
-    descricao: 'Posto de abastecimento da região de Sorocaba' 
-  },
-  { 
-    id: POSTO_SOROCABA_V2, 
-    nome: NOME_POSTO_SOROCABA_V2, 
-    descricao: 'Nova versão do posto de abastecimento de Sorocaba (V2)' 
-  },
+  /* Sorocaba removido a pedido do cliente - Maio/2025 */
 ];
