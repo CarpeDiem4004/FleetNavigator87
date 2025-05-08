@@ -188,17 +188,19 @@ export default function PartsInventory() {
     refetchOnWindowFocus: false
   });
 
-  // Filtrar peças com base no termo de busca
-  useEffect(() => {
-    if (parts) {
-      setFilteredParts(
-        parts.filter(part => 
-          part.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          part.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (part.categoria && part.categoria.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (part.fabricante && part.fabricante.toLowerCase().includes(searchTerm.toLowerCase()))
-        )
+  // Filtrar peças com base no termo de busca - usando useMemo em vez de useEffect para evitar loops infinitos
+  React.useMemo(() => {
+    if (parts?.length > 0) {
+      const filteredResults = parts.filter(part => 
+        part.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        part.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (part.categoria && part.categoria.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (part.fabricante && part.fabricante.toLowerCase().includes(searchTerm.toLowerCase()))
       );
+      
+      setFilteredParts(filteredResults);
+    } else if (parts?.length === 0) {
+      setFilteredParts([]);
     }
   }, [searchTerm, parts]);
 
