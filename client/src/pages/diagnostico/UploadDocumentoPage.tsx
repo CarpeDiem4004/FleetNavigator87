@@ -39,6 +39,41 @@ const UploadDocumentoPage: React.FC = () => {
     }
   };
 
+  // Função para verificar e criar o bucket se necessário
+  const ensureBucketExists = async (bucketName: string) => {
+    try {
+      // Verificar se o bucket existe
+      const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+      
+      if (listError) {
+        throw new Error(`Erro ao listar buckets: ${listError.message}`);
+      }
+      
+      // Se o bucket não existir, criar
+      const bucketExists = buckets.some(b => b.name === bucketName);
+      
+      if (!bucketExists) {
+        console.log(`Bucket '${bucketName}' não encontrado. Tentando criar...`);
+        const { data, error: createError } = await supabase.storage.createBucket(bucketName, {
+          public: true
+        });
+        
+        if (createError) {
+          throw new Error(`Erro ao criar bucket: ${createError.message}`);
+        }
+        
+        console.log(`Bucket '${bucketName}' criado com sucesso.`);
+      } else {
+        console.log(`Bucket '${bucketName}' encontrado.`);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Erro ao verificar/criar bucket:', error);
+      throw error;
+    }
+  };
+
   const handleUpload = async () => {
     if (!file) {
       setError('Por favor, selecione um arquivo para upload.');
@@ -52,10 +87,14 @@ const UploadDocumentoPage: React.FC = () => {
       // Define o caminho do arquivo no Supabase Storage
       const baseId = '2'; // ID da Base Campinas
       const filePath = `campinas/documentos/${Date.now()}_${file.name}`;
+      const bucketName = 'budget-attachments';
+      
+      // Garantir que o bucket existe
+      await ensureBucketExists(bucketName);
       
       // Upload do arquivo para o bucket no Supabase Storage
       const { data, error: uploadError } = await supabase.storage
-        .from('budget-attachments')
+        .from(bucketName)
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: true

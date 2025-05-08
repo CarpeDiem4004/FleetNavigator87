@@ -7432,6 +7432,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rota para registrar anexos no banco de dados
+  app.post("/api/budget-attachments/register", isAuthenticatedHybrid, async (req, res) => {
+    try {
+      const {
+        budget_request_id,
+        base_id,
+        base_name,
+        file_name,
+        file_type,
+        file_size,
+        file_path,
+        storage_url,
+        attachment_type,
+        description
+      } = req.body;
+      
+      console.log('Registrando anexo:', {
+        budget_request_id,
+        base_id,
+        base_name,
+        file_name,
+        file_path,
+        storage_url,
+        attachment_type
+      });
+      
+      // Verificar se a tabela budget_attachments existe
+      const tableCheck = await pool.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'budget_attachments'
+        ) as exists;
+      `);
+      
+      if (!tableCheck.rows[0].exists) {
+        // Criar a tabela budget_attachments se não existir
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS budget_attachments (
+            id SERIAL PRIMARY KEY,
+            budget_request_id INTEGER,
+            base_id VARCHAR(20),
+            base_name VARCHAR(100),
+            file_name VARCHAR(255) NOT NULL,
+            file_type VARCHAR(100),
+            file_size INTEGER,
+            file_path VARCHAR(255) NOT NULL,
+            storage_url TEXT NOT NULL,
+            attachment_type VARCHAR(50),
+            description TEXT,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            created_by INTEGER,
+            migrated_at TIMESTAMP,
+            migrated_by INTEGER
+          );
+        `);
+        console.log('Tabela budget_attachments criada com sucesso.');
+      }
+      
+      // Inserir registro na tabela budget_attachments
+      const result = await pool.query(`
+        INSERT INTO budget_attachments (
+          budget_request_id, 
+          base_id, 
+          base_name, 
+          file_name, 
+          file_type, 
+          file_size, 
+          file_path, 
+          storage_url, 
+          attachment_type, 
+          description, 
+          created_at, 
+          created_by
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), $11)
+        RETURNING id
+      `, [
+        budget_request_id, 
+        base_id, 
+        base_name, 
+        file_name, 
+        file_type, 
+        file_size, 
+        file_path, 
+        storage_url, 
+        attachment_type, 
+        description,
+        req.user?.id || null
+      ]);
+      
+      if (result.rows && result.rows.length > 0) {
+        res.status(201).json({ 
+          success: true, 
+          message: "Anexo registrado com sucesso", 
+          id: result.rows[0].id 
+        });
+      } else {
+        throw new Error("Erro ao registrar anexo");
+      }
+    } catch (error) {
+      console.error("Erro ao registrar anexo:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "Erro desconhecido ao registrar anexo" 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
