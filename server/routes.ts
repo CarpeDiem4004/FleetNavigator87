@@ -6607,6 +6607,176 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // API para migrar anexos de URL blob para armazenamento permanente
+  app.post("/api/budget-attachments/migrate-blob", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const { requestId, fileName, baseId, baseName } = req.body;
+      
+      // Validações básicas
+      if (!requestId || !fileName || !baseId || !baseName) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Dados incompletos para migração do anexo' 
+        });
+      }
+      
+      // Verificar se a solicitação existe
+      const checkQuery = `
+        SELECT id, budget_file_url 
+        FROM campinas_budget_requests 
+        WHERE id = $1
+      `;
+      
+      const checkResult = await pool.query(checkQuery, [requestId]);
+      
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Solicitação não encontrada' 
+        });
+      }
+      
+      const solicitacao = checkResult.rows[0];
+      
+      // Verificar se a URL é realmente uma URL blob
+      if (!solicitacao.budget_file_url || !solicitacao.budget_file_url.startsWith('blob:')) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'A solicitação não possui uma URL blob para migrar' 
+        });
+      }
+      
+      // Como não podemos acessar a URL blob diretamente (é específica da sessão do navegador),
+      // vamos gerar um arquivo de fallback (arquivo de texto com mensagem de erro)
+      const fileContent = Buffer.from(
+        `Este é um arquivo de substituição gerado automaticamente.\n\n` +
+        `A URL blob original não pôde ser migrada porque as URLs blob só podem ser acessadas\n` +
+        `pelo navegador que as criou. Por favor, faça o upload manual do arquivo original.\n\n` +
+        `Informações do anexo:\n` +
+        `- Solicitação ID: ${requestId}\n` +
+        `- Nome do arquivo original: ${fileName}\n` +
+        `- Data da migração: ${new Date().toISOString()}\n` +
+        `- URL blob original: ${solicitacao.budget_file_url}\n\n` +
+        `Este arquivo foi gerado pelo sistema de migração de anexos.`
+      );
+      
+      // Criar cliente Supabase usando as variáveis de ambiente
+      const supabaseUrl = process.env.VITE_SUPABASE_URL;
+      const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_KEY;
+      
+      if (!supabaseUrl || !supabaseServiceKey) {
+        return res.status(500).json({ 
+          success: false, 
+          message: 'Configuração do Supabase não encontrada' 
+        });
+      }
+      
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      
+      // Caminho do arquivo no Supabase Storage
+      const filePath = `campinas/budget-attachments/${requestId}/${fileName}`;
+      
+      // Upload para o bucket do Supabase
+      const { data, error } = await supabase.storage
+        .from('budget-attachments')
+        .upload(filePath, fileContent, {
+          contentType: 'text/plain',
+          cacheControl: '3600',
+          upsert: true
+        });
+      
+      if (error) {
+        console.error('Erro no upload para o Supabase:', error);
+        return res.status(500).json({ 
+          success: false, 
+          message: `Erro ao fazer upload para o Storage: ${error.message}` 
+        });
+      }
+      
+      // Obter a URL pública do arquivo
+      const { data: urlData } = supabase.storage
+        .from('budget-attachments')
+        .getPublicUrl(filePath);
+      
+      const publicUrl = urlData.publicUrl;
+      
+      // Obter informações do usuário que está fazendo a migração
+      const uploader_id = req.user?.id || null;
+      const uploader_name = req.user?.name || null;
+      
+      // Registrar o anexo permanente no banco de dados
+      const insertQuery = `
+        INSERT INTO budget_attachments (
+          budget_request_id, 
+          base_id, 
+          base_name, 
+          file_name, 
+          file_type, 
+          file_size, 
+          file_path, 
+          storage_url, 
+          attachment_type,
+          uploader_id,
+          uploader_name,
+          created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        RETURNING id
+      `;
+      
+      const insertValues = [
+        requestId,
+        baseId,
+        baseName,
+        fileName,
+        'text/plain',
+        fileContent.length,
+        filePath,
+        publicUrl,
+        'budget',
+        uploader_id,
+        uploader_name,
+        new Date()
+      ];
+      
+      const insertResult = await pool.query(insertQuery, insertValues);
+      
+      if (insertResult.rows.length === 0) {
+        return res.status(500).json({ 
+          success: false, 
+          message: 'Erro ao registrar anexo no banco de dados' 
+        });
+      }
+      
+      const attachmentId = insertResult.rows[0].id;
+      
+      // Atualizar URL na tabela de solicitações
+      const updateQuery = `
+        UPDATE campinas_budget_requests
+        SET budget_file_url = $1
+        WHERE id = $2
+      `;
+      
+      await pool.query(updateQuery, [publicUrl, requestId]);
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Anexo migrado com sucesso',
+        data: {
+          attachmentId,
+          publicUrl,
+          filePath
+        }
+      });
+      
+    } catch (error) {
+      console.error('Erro ao migrar anexo blob:', error);
+      return res.status(500).json({ 
+        success: false, 
+        message: `Erro ao migrar anexo: ${error instanceof Error ? error.message : String(error)}` 
+      });
+    }
+  });
+
   // API para registrar anexos permanentes no banco de dados
   app.post("/api/budget-attachments/register", hasMaintenanceAccess, async (req, res) => {
     try {

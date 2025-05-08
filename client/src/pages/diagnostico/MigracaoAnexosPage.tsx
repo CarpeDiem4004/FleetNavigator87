@@ -89,60 +89,25 @@ const MigracaoAnexosPage: React.FC = () => {
       setMigrating(prev => ({ ...prev, [requestId]: true }));
       setErrors(prev => ({ ...prev, [requestId]: '' }));
       
-      // Tentar obter o arquivo da URL blob
-      const response = await fetch(blobUrl);
-      
-      if (!response.ok) {
-        throw new Error("Não foi possível acessar o arquivo blob");
-      }
-      
-      // Obter o blob do arquivo
-      const fileBlob = await response.blob();
-      
-      // Upload para o bucket do Supabase
-      const filePath = `campinas/budget-attachments/${requestId}/${fileName}`;
-      const { data, error } = await supabase.storage
-        .from('budget-attachments')
-        .upload(filePath, fileBlob, {
-          cacheControl: '3600',
-          upsert: true
-        });
-      
-      if (error) {
-        throw error;
-      }
-      
-      // Obter a URL pública do arquivo
-      const { data: urlData } = supabase.storage
-        .from('budget-attachments')
-        .getPublicUrl(filePath);
-      
-      const publicUrl = urlData.publicUrl;
-      
-      // Registrar o anexo permanente no banco de dados
-      const registerResponse = await apiRequest("POST", `/api/budget-attachments/register`, {
-        budget_request_id: requestId,
-        base_id: 2, // ID base Campinas
-        base_name: "Base Campinas",
-        file_name: fileName,
-        file_type: fileBlob.type,
-        file_size: fileBlob.size,
-        file_path: filePath,
-        storage_url: publicUrl,
-        attachment_type: "budget"
+      // Usamos uma abordagem alternativa via servidor para migrar o anexo
+      // já que as URLs blob não podem ser acessadas diretamente de outra sessão
+      const migrateResponse = await apiRequest("POST", `/api/budget-attachments/migrate-blob`, {
+        requestId,
+        blobUrl,
+        fileName,
+        baseId: 2,
+        baseName: "Base Campinas"
       });
       
-      if (!registerResponse.ok) {
-        throw new Error("Erro ao registrar anexo permanente");
+      if (!migrateResponse.ok) {
+        const errorData = await migrateResponse.json();
+        throw new Error(errorData.message || "Falha ao migrar o anexo");
       }
       
-      // Atualizar URL na tabela de solicitações
-      const updateResponse = await apiRequest("PATCH", `/api/bases/campinas/solicitacao-orcamento/${requestId}`, {
-        budget_file_url: publicUrl
-      });
+      const responseData = await migrateResponse.json();
       
-      if (!updateResponse.ok) {
-        throw new Error("Erro ao atualizar URL do anexo");
+      if (!responseData.success) {
+        throw new Error(responseData.message || "Erro ao processar a migração");
       }
       
       // Atualizar UI
