@@ -414,7 +414,14 @@ export default function BudgetManagementPage() {
                             className="ml-2 h-6 px-2 py-1"
                             onClick={async () => {
                               try {
-                                // Acessar a nova API para obter informações sobre o anexo
+                                // Mostrar status de carregamento
+                                toast({
+                                  title: "Buscando anexo...",
+                                  description: "Verificando disponibilidade do anexo no sistema.",
+                                  duration: 3000,
+                                });
+                                
+                                // Acessar a API para obter informações sobre o anexo
                                 const response = await apiRequest("GET", `/api/fleet/budget-requests/${request.id}/download-attachment`);
                                 
                                 if (!response.ok) {
@@ -422,19 +429,39 @@ export default function BudgetManagementPage() {
                                 }
                                 
                                 const attachmentInfo = await response.json();
+                                console.log("Informações do anexo:", attachmentInfo);
                                 
-                                // Exibir informações detalhadas sobre o anexo
-                                toast({
-                                  title: "Informações do Anexo",
-                                  description: attachmentInfo.message || `O arquivo "${request.budget_file_name}" está disponível apenas na base de origem. Para visualizá-lo, acesse o sistema na base ${request.base_name}.`,
-                                  duration: 8000,
-                                  // @ts-ignore
-                                  variant: "info"
-                                });
-                                
-                                // Se tiver uma URL de download disponível (raro neste caso com blobs)
+                                // Verificar se o anexo tem uma URL de download permanente
                                 if (attachmentInfo.downloadUrl) {
+                                  // Se tiver uma URL permanente, abrir em nova aba
+                                  toast({
+                                    title: "Anexo encontrado",
+                                    description: "O anexo está disponível e será aberto em uma nova aba.",
+                                    // @ts-ignore
+                                    variant: "success",
+                                    duration: 5000
+                                  });
                                   window.open(attachmentInfo.downloadUrl, '_blank');
+                                } else if (attachmentInfo.permanentUrl) {
+                                  // Alternativa para permanentUrl
+                                  toast({
+                                    title: "Anexo encontrado",
+                                    description: "O anexo está disponível e será aberto em uma nova aba.",
+                                    // @ts-ignore
+                                    variant: "success",
+                                    duration: 5000
+                                  });
+                                  window.open(attachmentInfo.permanentUrl, '_blank');
+                                } else {
+                                  // Se não tiver URL de download (caso de blobs temporários)
+                                  toast({
+                                    title: "Anexo temporário",
+                                    description: attachmentInfo.message || 
+                                      `O arquivo "${request.budget_file_name}" foi criado com armazenamento temporário e só está disponível na Base ${request.base_name}. Recomendamos solicitar um novo upload com armazenamento permanente.`,
+                                    duration: 8000,
+                                    // @ts-ignore
+                                    variant: "warning"
+                                  });
                                 }
                               } catch (error) {
                                 console.error("Erro ao obter informações do anexo:", error);
@@ -442,7 +469,7 @@ export default function BudgetManagementPage() {
                                 // Mensagem de erro mais específica
                                 toast({
                                   title: "Não foi possível acessar o anexo",
-                                  description: `O anexo "${request.budget_file_name}" da base ${request.base_name} não pode ser acessado remotamente. Para visualizá-lo, é necessário acessar o sistema diretamente na base de origem.`,
+                                  description: `O anexo "${request.budget_file_name}" da base ${request.base_name || "de origem"} não pode ser acessado. O arquivo pode ter sido excluído ou movido.`,
                                   variant: "destructive",
                                   duration: 8000
                                 });

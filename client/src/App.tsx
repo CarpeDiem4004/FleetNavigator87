@@ -51,6 +51,7 @@ import ComparacaoEsquemas from "@/pages/diagnostico/ComparacaoEsquemas";
 import SincronizarTabelasPage from "@/pages/diagnostico/sincronizar-tabelas";
 import ApiTester from "@/pages/diagnostico/ApiTester";
 import BudgetAttachmentsMigration from "@/pages/diagnostico/BudgetAttachmentsMigration";
+import MigracaoAnexosPage from "@/pages/diagnostico/MigracaoAnexosPage";
 import AdminUtils from "@/pages/AdminUtils";
 import LimparDados from "@/pages/LimparDados";
 
