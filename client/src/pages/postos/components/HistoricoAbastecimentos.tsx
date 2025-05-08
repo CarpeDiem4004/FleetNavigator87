@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import SincronizarSupabaseButton from '@/components/posto-remedios/SincronizarSupabaseButton';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
@@ -377,13 +376,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
               <span>Excel</span>
             </button>
             
-            {/* Botão de sincronização com Supabase */}
-            <div className="inline-block">
-              <SincronizarSupabaseButton 
-                posto={postId} 
-                onSyncComplete={handleAtualizar} 
-              />
-            </div>
+            {/* Botão de sincronização com Supabase removido */}
             
             {showLimparButton && (
               <button 
