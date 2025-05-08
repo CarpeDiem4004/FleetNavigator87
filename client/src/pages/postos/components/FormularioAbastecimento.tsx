@@ -34,6 +34,7 @@ import { useToast } from "@/hooks/use-toast";
 const abastecimentoSchema = z.object({
   placa: z.string().min(7, "A placa deve ter no mínimo 7 caracteres"),
   km: z.string().min(1, "O KM é obrigatório"),
+  hodometro: z.string().optional(), // Adiciona campo hodômetro opcional
   tipo: z.string({
     required_error: "Selecione o tipo de combustível",
   }),
@@ -90,6 +91,7 @@ const FormularioForm = ({
     defaultValues: {
       placa: "",
       km: "",
+      hodometro: "", // Adicionando campo hodômetro opcional
       tipo: "",
       quantidade: "",
       valor_litro: "",
@@ -173,6 +175,30 @@ const FormularioForm = ({
                         style={{ height: "48px" }}
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="hodometro"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hodômetro Atual</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="tel"
+                        inputMode="numeric"
+                        placeholder="12345"
+                        {...field}
+                        className="text-lg font-medium"
+                        style={{ height: "48px" }}
+                      />
+                    </FormControl>
+                    <FormDescription className="text-xs text-muted-foreground">
+                      Valor do hodômetro (opcional)
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -523,6 +549,9 @@ const FormularioAbastecimento: React.FC<
           // Campos de quilometragem com múltiplos nomes
           km_atual: Number(data.km),
           km: Number(data.km),
+          
+          // Campo de hodômetro (novo)
+          hodometro_atual: data.hodometro ? Number(data.hodometro) : null,
           
           // Campos de posto com múltiplos nomes
           posto_id: postId,
