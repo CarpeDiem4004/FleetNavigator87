@@ -12,7 +12,8 @@ const IndexPostos: React.FC = () => {
     { id: 'campinas', nome: 'Campinas', descricao: 'Posto de abastecimento da região de Campinas' },
     { id: 'campinas_v2', nome: 'Campinas V2', descricao: 'Posto de abastecimento da região de Campinas (Nova Versão)' },
     // ABC removido - Maio/2025
-    // Socorro removido - Maio/2025
+    // Socorro versão antiga removida - Maio/2025
+    { id: 'socorro_v2', nome: 'Socorro V2', descricao: 'Posto de abastecimento da região de Socorro (Nova Versão)' },
     { id: 'sorocaba_v2', nome: 'Sorocaba V2', descricao: 'Posto de abastecimento da região de Sorocaba (Nova Versão)' },
   ];
 
