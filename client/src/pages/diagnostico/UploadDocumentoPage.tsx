@@ -174,7 +174,15 @@ const UploadDocumentoPage: React.FC = () => {
       
       // Obter o token JWT para autenticação
       const token = localStorage.getItem('authToken');
-      console.log('Token JWT para autenticação obtido:', !!token);
+      
+      // Debug do token
+      console.log('Token JWT para autenticação:', token ? token.substring(0, 20) + '...' : 'não encontrado');
+      
+      // Também verificar se há token jwt_token (nome antigo)
+      const oldToken = localStorage.getItem('jwt_token');
+      if (oldToken) {
+        console.log('Token JWT antigo encontrado (jwt_token):', oldToken.substring(0, 20) + '...');
+      }
 
       // Registrar o documento no banco de dados com token JWT
       const response = await fetch('/api/budget-attachments/register', {

@@ -6780,7 +6780,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // API para registrar anexos permanentes no banco de dados
-  app.post("/api/budget-attachments/register", hasMaintenanceAccess, async (req, res) => {
+  app.post("/api/budget-attachments/register-old", hasMaintenanceAccess, async (req, res) => {
     try {
       const {
         budget_request_id,
@@ -7435,6 +7435,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rota para registrar anexos no banco de dados
   app.post("/api/budget-attachments/register", async (req, res) => {
     try {
+      // Log detalhado dos cabeçalhos para debug
+      console.log('[Budget-Attachments] Cabeçalhos recebidos:', {
+        authorization: req.headers.authorization ? 'Presente (inicia com: ' + req.headers.authorization.substring(0, 15) + '...)' : 'Ausente',
+        'content-type': req.headers['content-type'],
+        cookie: req.headers.cookie ? 'Presente' : 'Ausente',
+        origin: req.headers.origin,
+        referer: req.headers.referer
+      });
+      
       // Importar o middleware isAuthenticatedHybrid dinamicamente
       const { isAuthenticatedHybrid } = await import('./middleware/isAuthenticatedHybrid');
       
@@ -7442,14 +7451,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await new Promise<void>((resolve, reject) => {
         isAuthenticatedHybrid(req, res, (err?: any) => {
           if (err) {
+            console.error('[Budget-Attachments] Erro no middleware de autenticação:', err);
             reject(err);
           } else {
+            console.log('[Budget-Attachments] Usuário autenticado com sucesso:', {
+              id: (req as any).user?.id || (req as any).hybridUser?.id || (req as any).supabaseUser?.id || 'N/A',
+              role: (req as any).user?.role || (req as any).hybridUser?.role || (req as any).supabaseUser?.role || 'N/A'
+            });
             resolve();
           }
         });
       });
     } catch (authError) {
-      console.error('Erro de autenticação ao registrar anexo:', authError);
+      console.error('[Budget-Attachments] Erro de autenticação detalhado:', authError);
       return res.status(401).json({ 
         success: false, 
         error: 'Acesso negado. Faça login para continuar.' 
