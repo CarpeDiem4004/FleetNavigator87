@@ -6857,6 +6857,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registra as rotas para o sistema de estoque de peças
   app.use('/api/frota', frotaEstoqueRoutes);
   
+  // Registrar rotas para assistente de migração de anexos
+  // Comentado temporariamente devido à incompatibilidade de módulos
+  // Esta funcionalidade será implementada em uma versão futura
+  /*
+  try {
+    // O código para registrar rotas de migração de anexos será implementado aqui
+    console.log('Assistente de migração de anexos registrado com sucesso');
+  } catch (error) {
+    console.error('Erro ao registrar rotas do assistente de migração de anexos:', error);
+  }
+  */
+  
   // Rota para buscar abastecimentos não sincronizados com o Supabase
   app.get("/api/sincronizar-supabase/:posto", async (req, res) => {
     const posto = req.params.posto;
