@@ -36,6 +36,58 @@ console.log('Configuração Supabase Cliente:', supabaseConfig);
 export const BUDGET_ATTACHMENTS_BUCKET = 'budget-attachments';
 
 /**
+ * Função para verificar se o bucket existe e criá-lo se necessário
+ * @returns - true se o bucket existir ou for criado com sucesso
+ */
+export const ensureBucketExists = async (): Promise<boolean> => {
+  try {
+    // Verificar se o bucket existe
+    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+    
+    if (listError) {
+      console.error("Erro ao listar buckets:", listError);
+      return false;
+    }
+    
+    // Verificar se o bucket budget-attachments existe
+    const bucketExists = buckets.some(bucket => bucket.name === BUDGET_ATTACHMENTS_BUCKET);
+    
+    if (!bucketExists) {
+      console.log(`Bucket ${BUDGET_ATTACHMENTS_BUCKET} não encontrado. Criando...`);
+      const { data, error: createError } = await supabase.storage.createBucket(
+        BUDGET_ATTACHMENTS_BUCKET,
+        { public: true }
+      );
+      
+      if (createError) {
+        console.error("Erro ao criar bucket:", createError);
+        return false;
+      }
+      
+      console.log(`Bucket ${BUDGET_ATTACHMENTS_BUCKET} criado com sucesso!`);
+    } else {
+      console.log(`Bucket ${BUDGET_ATTACHMENTS_BUCKET} já existe.`);
+    }
+    
+    // Garantir que o bucket seja público
+    const { error: updateError } = await supabase.storage.updateBucket(
+      BUDGET_ATTACHMENTS_BUCKET,
+      { public: true }
+    );
+    
+    if (updateError) {
+      console.error("Erro ao atualizar visibilidade do bucket:", updateError);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Erro ao verificar/criar bucket:", error);
+    return false;
+  }
+};
+
+/**
  * Função para fazer upload de um arquivo para o Supabase Storage
  * @param file - O arquivo a ser enviado
  * @param path - O caminho dentro do bucket onde o arquivo será armazenado
@@ -47,6 +99,12 @@ export const uploadFileToSupabase = async (file: File, path: string): Promise<st
     if (!file) {
       throw new Error('Arquivo inválido');
     }
+    
+    // Garantir que o bucket exista
+    const bucketReady = await ensureBucketExists();
+    if (!bucketReady) {
+      throw new Error('Não foi possível garantir que o bucket exista');
+    }
 
     // Fazer upload do arquivo para o Supabase Storage
     const { data, error } = await supabase.storage
@@ -57,13 +115,23 @@ export const uploadFileToSupabase = async (file: File, path: string): Promise<st
       });
 
     if (error) {
-      throw error;
+      console.error('Erro detalhado do Supabase Storage:', error);
+      throw new Error(`Falha no upload: ${error.message}`);
+    }
+
+    // Verificar se o upload foi bem-sucedido
+    if (!data || !data.path) {
+      throw new Error('Upload falhou, dados não retornados pelo Supabase');
     }
 
     // Obter a URL pública do arquivo
     const { data: { publicUrl } } = supabase.storage
       .from(BUDGET_ATTACHMENTS_BUCKET)
       .getPublicUrl(path);
+
+    if (!publicUrl) {
+      throw new Error('Não foi possível obter URL pública do arquivo');
+    }
 
     return publicUrl;
   } catch (error) {

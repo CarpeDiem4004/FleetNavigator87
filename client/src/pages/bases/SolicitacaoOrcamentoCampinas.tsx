@@ -53,7 +53,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2, FileText, ClipboardList, CheckCircle, AlertCircle, Clock } from 'lucide-react';
-import { uploadFileToSupabase, registerAttachmentMetadata, BUDGET_ATTACHMENTS_BUCKET } from '@/lib/supabase';
+import { uploadFileToSupabase, registerAttachmentMetadata, BUDGET_ATTACHMENTS_BUCKET, supabase } from '@/lib/supabase';
 
 // Schema de validação para solicitação de orçamento
 const budgetRequestSchema = z.object({
@@ -162,6 +162,8 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
     }
   };
 
+  // Função não mais necessária, pois foi movida para supabase.ts como ensureBucketExists
+
   // Função para criar nova solicitação de orçamento
   const onSubmit = async (data: BudgetRequestForm) => {
     if (!budgetFile) {
@@ -175,6 +177,12 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
     
     setIsLoading(true);
     try {
+      // Verificar e criar o bucket se necessário
+      const bucketReady = await checkAndCreateBucket();
+      if (!bucketReady) {
+        throw new Error("Não foi possível preparar o bucket de armazenamento.");
+      }
+      
       // Fazer upload do arquivo para o Supabase Storage
       const baseId = 2; // ID para Base Campinas
       const baseName = "Base Campinas";
