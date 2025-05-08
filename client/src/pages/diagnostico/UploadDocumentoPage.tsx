@@ -173,7 +173,7 @@ const UploadDocumentoPage: React.FC = () => {
       const publicUrl = urlData.publicUrl;
       
       // Obter o token JWT para autenticação
-      const token = localStorage.getItem('jwt_token');
+      const token = localStorage.getItem('authToken');
       console.log('Token JWT para autenticação obtido:', !!token);
 
       // Registrar o documento no banco de dados com token JWT
