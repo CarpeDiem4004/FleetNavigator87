@@ -1444,6 +1444,22 @@ const TiresPage: React.FC = () => {
                   />
                 </div>
               </div>
+              
+              {/* Valor Unitário (sétima linha) */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-valor_unitario" className="text-xs mb-2">Valor Unitário (R$)</Label>
+                  <Input
+                    id="edit-valor_unitario"
+                    type="number"
+                    step="0.01"
+                    value={currentTire?.valor_unitario || ''}
+                    onChange={(e) => setCurrentTire(current => current ? {...current, valor_unitario: parseFloat(e.target.value)} : null)}
+                    placeholder="Ex: 1200.00"
+                    className="h-9"
+                  />
+                </div>
+              </div>
             </div>
             <DialogFooter className="pt-2">
               <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancelar</Button>
