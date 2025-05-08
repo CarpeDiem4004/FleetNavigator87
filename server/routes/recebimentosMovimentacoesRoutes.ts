@@ -7,12 +7,38 @@
 
 import express, { Request, Response } from 'express';
 import { Pool } from 'pg';
-import { formatPostoName } from '../utils/posto-utils';
 
 const router = express.Router();
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
+
+/**
+ * Formata o nome do posto para um formato padronizado
+ * Aceita variações como "campinas v2", "Campinas_v2", "campinas_v2", etc.
+ * e retorna no formato padronizado, por exemplo "Campinas_v2"
+ */
+const formatPostoName = (postoName: string): string => {
+  if (!postoName) return '';
+  
+  // Remover espaços extras e converter para minúsculas para comparação
+  const normalizedName = postoName.trim().toLowerCase();
+  
+  // Se o nome contiver "v2", garantir que esteja no formato padrão
+  if (normalizedName.includes('v2')) {
+    // Obter a parte base do nome (antes do v2)
+    const baseName = normalizedName.split(/[_\s]+v2/)[0].trim();
+    
+    // Capitalizar a primeira letra
+    const capitalized = baseName.charAt(0).toUpperCase() + baseName.slice(1);
+    
+    // Retornar no formato padronizado
+    return `${capitalized}_v2`;
+  }
+  
+  // Para outros casos, apenas capitalizar a primeira letra
+  return normalizedName.charAt(0).toUpperCase() + normalizedName.slice(1);
+}
 
 // Middleware para garantir que estas rotas sejam tratadas como API e não como HTML
 router.use((req, res, next) => {
@@ -63,11 +89,11 @@ router.get('/recebimentos/:posto', async (req, res) => {
       count: result.rowCount,
       posto: postoName
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Erro ao consultar recebimentos para posto ${req.params.posto}:`, error);
     res.status(500).json({ 
       success: false, 
-      error: `Erro ao consultar recebimentos: ${error.message}` 
+      error: `Erro ao consultar recebimentos: ${error.message || 'Erro desconhecido'}` 
     });
   }
 });
@@ -198,11 +224,11 @@ router.post('/recebimentos/:posto', async (req, res) => {
       message: `Recebimento de ${quantidade_litros} litros de ${tipo_combustivel} registrado com sucesso.`,
       data: result.rows[0]
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Erro ao registrar recebimento para posto ${req.params.posto}:`, error);
     res.status(500).json({ 
       success: false, 
-      error: `Erro ao registrar recebimento: ${error.message}` 
+      error: `Erro ao registrar recebimento: ${error.message || 'Erro desconhecido'}` 
     });
   }
 });
@@ -251,11 +277,11 @@ router.get('/movimentacoes-patio/:posto', async (req, res) => {
       count: result.rowCount,
       posto: postoName
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Erro ao consultar movimentações para posto ${req.params.posto}:`, error);
     res.status(500).json({ 
       success: false, 
-      error: `Erro ao consultar movimentações: ${error.message}` 
+      error: `Erro ao consultar movimentações: ${error.message || 'Erro desconhecido'}` 
     });
   }
 });
