@@ -188,21 +188,24 @@ export default function PartsInventory() {
     refetchOnWindowFocus: false
   });
 
-  // Filtrar peças com base no termo de busca - usando useMemo em vez de useEffect para evitar loops infinitos
-  React.useMemo(() => {
-    if (parts?.length > 0) {
-      const filteredResults = parts.filter(part => 
-        part.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        part.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (part.categoria && part.categoria.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (part.fabricante && part.fabricante.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-      
-      setFilteredParts(filteredResults);
-    } else if (parts?.length === 0) {
-      setFilteredParts([]);
+  // Filtrar peças com base no termo de busca - usando useMemo apenas para calcular o resultado filtrado
+  const calculatedFilteredParts = React.useMemo(() => {
+    if (!parts || parts.length === 0) {
+      return [];
     }
+    
+    return parts.filter(part => 
+      part.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      part.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (part.categoria && part.categoria.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (part.fabricante && part.fabricante.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
   }, [searchTerm, parts]);
+  
+  // Atualiza o estado apenas quando os resultados calculados mudam
+  useEffect(() => {
+    setFilteredParts(calculatedFilteredParts);
+  }, [calculatedFilteredParts]);
 
   // Função para submeter movimentação de estoque
   const onSubmitMovement = async (data: z.infer<typeof movimentacaoEstoqueSchema>) => {
