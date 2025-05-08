@@ -6665,18 +6665,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Como as URLs dos anexos são do tipo blob e pertencem ao cliente original,
-      // não podemos acessá-los diretamente. Em vez disso, fornecemos informações
-      // para que o usuário saiba como proceder.
-      const responseData = {
-        id: budgetRequest.id,
-        title: budgetRequest.title,
-        fileName: budgetRequest.budget_file_name,
-        baseName: budgetRequest.base_name,
-        message: `Para visualizar o anexo "${budgetRequest.budget_file_name}", você deve acessar o sistema na Base ${budgetRequest.base_name} onde ele foi originalmente enviado.`,
-        isLocalFile: budgetRequest.budget_file_url.startsWith('blob:'),
-        requestInfo: `Solicitação #${budgetRequest.id}: ${budgetRequest.title}`
-      };
+      let responseData;
+      
+      // Verificar se é uma URL blob
+      if (budgetRequest.budget_file_url.startsWith('blob:')) {
+        console.log(`Solicitação #${budgetRequest.id} possui URL blob, tentando buscar anexo permanente no Supabase...`);
+        
+        // Tentar buscar um arquivo permanente na tabela budget_attachments
+        const attachmentQuery = `
+          SELECT * FROM budget_attachments
+          WHERE budget_request_id = $1 AND attachment_type = 'budget'
+          ORDER BY created_at DESC
+          LIMIT 1;
+        `;
+        
+        try {
+          const attachmentResult = await pool.query(attachmentQuery, [requestId]);
+          
+          if (attachmentResult.rows.length > 0) {
+            const attachment = attachmentResult.rows[0];
+            console.log("Anexo permanente encontrado:", attachment.storage_url);
+            
+            return res.status(200).json({
+              id: budgetRequest.id,
+              title: budgetRequest.title,
+              fileName: budgetRequest.budget_file_name,
+              baseName: budgetRequest.base_name,
+              permanentUrl: attachment.storage_url,
+              downloadUrl: attachment.storage_url,
+              message: "Arquivo encontrado no armazenamento permanente do Supabase.",
+              isLocalFile: false,
+              requestInfo: `Solicitação #${budgetRequest.id}: ${budgetRequest.title}`
+            });
+          }
+        } catch (attachmentError) {
+          console.error("Erro ao buscar anexo permanente:", attachmentError);
+        }
+        
+        // Se não encontrou na tabela ou se houve erro, retornar mensagem sobre blob URL
+        responseData = {
+          id: budgetRequest.id,
+          title: budgetRequest.title,
+          fileName: budgetRequest.budget_file_name,
+          baseName: budgetRequest.base_name,
+          message: `Para visualizar o anexo "${budgetRequest.budget_file_name}", você deve acessar o sistema na Base ${budgetRequest.base_name} onde ele foi originalmente enviado. Este anexo foi feito usando armazenamento temporário que só existe no navegador original. Recomenda-se anexar um novo arquivo usando o armazenamento permanente.`,
+          isLocalFile: true,
+          requestInfo: `Solicitação #${budgetRequest.id}: ${budgetRequest.title}`
+        };
+      } else {
+        // Para URLs permanentes (que não são blob), retornar a URL diretamente
+        responseData = {
+          id: budgetRequest.id,
+          title: budgetRequest.title,
+          fileName: budgetRequest.budget_file_name,
+          baseName: budgetRequest.base_name,
+          downloadUrl: budgetRequest.budget_file_url,
+          message: `Você pode baixar o arquivo "${budgetRequest.budget_file_name}" diretamente.`,
+          isLocalFile: false,
+          requestInfo: `Solicitação #${budgetRequest.id}: ${budgetRequest.title}`
+        };
+      }
       
       // Definir tipo de conteúdo explicitamente para garantir que seja JSON
       res.setHeader('Content-Type', 'application/json');
