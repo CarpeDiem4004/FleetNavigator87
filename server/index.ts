@@ -253,6 +253,21 @@ app.use((req, res, next) => {
 
   // Rotas especiais para Alair V2
   // Rota de abastecimento (formato novo)
+  app.post('/api/abastecimento-direto/guarulhos_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE GUARULHOS V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como guarulhos_v2
+    req.params = { ...req.params, posto: 'guarulhos_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Rota de histórico para Guarulhos V2 (formato novo)
+  app.get('/api/historico-direto/guarulhos_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE GUARULHOS V2 ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'guarulhos_v2' };
+    getHistoricoPosto(req, res);
+  });
+
   app.post('/api/abastecimento-direto/alair_v2', (req, res) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ALAIR V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como alair_v2
