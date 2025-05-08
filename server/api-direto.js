@@ -122,6 +122,7 @@ export async function getHistoricoPosto(req, res) {
           id,
           placa,
           km_atual as km,
+          hodometro_atual,
           tipo_combustivel,
           litros as quantidade_litros,
           motorista as nome_motorista,
