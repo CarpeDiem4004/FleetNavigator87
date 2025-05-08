@@ -24,7 +24,9 @@ export const POSTOS_CONHECIDOS: string[] = [
   'osasco',
   'osasco_v2',
   'abc',
-  'abc_v2'
+  'abc_v2',
+  'socorro_v2',
+  'sorocaba_v2'
 ];
 
 // Alias para compatibilidade
@@ -117,7 +119,19 @@ export const MAPEAMENTO_POSTOS: Record<string, string> = {
   'abc v2': 'abc_v2',
   'abcv2': 'abc_v2',
   'posto abc v2': 'abc_v2',
-  'posto_abc_v2': 'abc_v2'
+  'posto_abc_v2': 'abc_v2',
+  
+  'socorro_v2': 'socorro_v2',
+  'socorro v2': 'socorro_v2',
+  'socorrov2': 'socorro_v2',
+  'posto socorro v2': 'socorro_v2',
+  'posto_socorro_v2': 'socorro_v2',
+  
+  'sorocaba_v2': 'sorocaba_v2',
+  'sorocaba v2': 'sorocaba_v2',
+  'sorocabav2': 'sorocaba_v2',
+  'posto sorocaba v2': 'sorocaba_v2',
+  'posto_sorocaba_v2': 'sorocaba_v2'
 };
 
 /**
@@ -214,7 +228,9 @@ export function getPostoDisplayName(nomePosto: string | number): string {
     'osasco': 'Posto Osasco',
     'osasco_v2': 'Posto Osasco V2',
     'abc': 'Posto ABC',
-    'abc_v2': 'Posto ABC V2'
+    'abc_v2': 'Posto ABC V2',
+    'socorro_v2': 'Posto Socorro V2',
+    'sorocaba_v2': 'Posto Sorocaba V2'
   };
   
   return displayNames[nomeFormatado] || `Posto ${nomeFormatado.charAt(0).toUpperCase() + nomeFormatado.slice(1)}`;
