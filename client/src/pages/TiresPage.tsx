@@ -1296,32 +1296,13 @@ const TiresPage: React.FC = () => {
                 
                 <div className="space-y-2">
                   <Label htmlFor="edit-modelo">Modelo *</Label>
-                  <Select 
-                    value={currentTire?.modelo || ''} 
-                    onValueChange={(value) => setCurrentTire(current => current ? {...current, modelo: value} : null)}
-                  >
-                    <SelectTrigger id="edit-modelo">
-                      <SelectValue placeholder="Selecione o modelo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {isLoadingModels ? (
-                        <SelectItem value="loading" disabled>Carregando modelos...</SelectItem>
-                      ) : (
-                        <>
-                          {tireModels.map((model, index) => (
-                            <SelectItem key={index} value={model}>
-                              {model}
-                            </SelectItem>
-                          ))}
-                          {currentTire?.modelo && !tireModels.includes(currentTire.modelo) && (
-                            <SelectItem value={currentTire.modelo}>
-                              {currentTire.modelo}
-                            </SelectItem>
-                          )}
-                        </>
-                      )}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    id="edit-modelo"
+                    value={currentTire?.modelo || ''}
+                    onChange={(e) => setCurrentTire(current => current ? {...current, modelo: e.target.value} : null)}
+                    placeholder="Ex: Formula Energy"
+                    required
+                  />
                 </div>
               </div>
               
