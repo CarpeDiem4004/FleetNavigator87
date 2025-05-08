@@ -96,6 +96,16 @@ app.use((req, res, next) => {
   app.use(fixCookieSessionMiddleware);
   app.use(debugAuthMiddleware);
   app.use(recoverSessionMiddleware);
+
+  // Adicionar rota raiz para health checks de deploy
+  app.get('/', (req, res) => {
+    res.status(200).json({
+      status: 'online',
+      message: 'Sistema de Gestão de Frotas Muricion',
+      version: '2.5.0',
+      timestamp: new Date().toISOString()
+    });
+  });
   
   // Registrar o roteador de API de usuários
   app.use(userApi);
