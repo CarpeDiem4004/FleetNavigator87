@@ -412,17 +412,36 @@ export default function BudgetManagementPage() {
                             variant="ghost" 
                             size="sm" 
                             className="ml-2 h-6 px-2 py-1"
-                            onClick={() => {
-                              toast({
-                                title: "Informação sobre o anexo",
-                                description: `O arquivo "${request.budget_file_name}" está disponível apenas na base de origem. Para visualizá-lo, acesse o sistema na base ${request.base_name}.`,
-                                duration: 8000,
-                                // @ts-ignore
-                                variant: "info"
-                              });
+                            onClick={async () => {
+                              try {
+                                // Acessar a nova API para obter informações sobre o anexo
+                                const response = await apiRequest("GET", `/api/fleet/budget-requests/${request.id}/download-attachment`);
+                                const attachmentInfo = await response.json();
+                                
+                                // Exibir informações detalhadas sobre o anexo
+                                toast({
+                                  title: "Informações do Anexo",
+                                  description: attachmentInfo.message || `O arquivo "${request.budget_file_name}" está disponível apenas na base de origem. Para visualizá-lo, acesse o sistema na base ${request.base_name}.`,
+                                  duration: 8000,
+                                  // @ts-ignore
+                                  variant: "info"
+                                });
+                                
+                                // Se o arquivo for local (improvável devido à natureza dos blobs)
+                                if (!attachmentInfo.isLocalFile && attachmentInfo.downloadUrl) {
+                                  window.open(attachmentInfo.downloadUrl, '_blank');
+                                }
+                              } catch (error) {
+                                console.error("Erro ao obter informações do anexo:", error);
+                                toast({
+                                  title: "Erro",
+                                  description: "Não foi possível obter informações sobre o anexo.",
+                                  variant: "destructive"
+                                });
+                              }
                             }}
                           >
-                            Info
+                            Visualizar
                           </Button>
                         </span>
                       ) : (

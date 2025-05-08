@@ -6577,6 +6577,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Integração com o sistema principal de gestão de orçamentos
+  // Rota para baixar ou obter informações sobre anexos de solicitações de orçamento
+  app.get("/api/fleet/budget-requests/:id/download-attachment", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const requestId = parseInt(req.params.id);
+      
+      // Verificar primeiro se a tabela existe
+      const tableCheckQuery = `
+        SELECT EXISTS (
+          SELECT 1 FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'campinas_budget_requests'
+        ) AS "exists";
+      `;
+      
+      const tableCheck = await pool.query(tableCheckQuery);
+      const tableExists = tableCheck.rows[0].exists;
+      
+      if (!tableExists) {
+        return res.status(404).json({ 
+          message: 'Tabela de solicitações não encontrada',
+          error: 'TABLE_NOT_FOUND'
+        });
+      }
+      
+      // Buscar a solicitação com o anexo
+      const query = `
+        SELECT 
+          id,
+          title,
+          budget_file_url,
+          budget_file_name,
+          base_name
+        FROM 
+          campinas_budget_requests
+        WHERE 
+          id = $1;
+      `;
+      
+      const result = await pool.query(query, [requestId]);
+      
+      if (result.rowCount === 0) {
+        return res.status(404).json({ 
+          message: 'Solicitação não encontrada',
+          error: 'NOT_FOUND'
+        });
+      }
+      
+      const budgetRequest = result.rows[0];
+      
+      // Verificar se existe um anexo
+      if (!budgetRequest.budget_file_url) {
+        return res.status(404).json({ 
+          message: 'Esta solicitação não possui anexo',
+          error: 'NO_ATTACHMENT'
+        });
+      }
+      
+      // Como as URLs dos anexos são do tipo blob e pertencem ao cliente original,
+      // não podemos acessá-los diretamente. Em vez disso, fornecemos informações
+      // para que o usuário saiba como proceder.
+      return res.json({
+        id: budgetRequest.id,
+        title: budgetRequest.title,
+        fileName: budgetRequest.budget_file_name,
+        baseName: budgetRequest.base_name,
+        message: `Para visualizar o anexo "${budgetRequest.budget_file_name}", você deve acessar o sistema na Base ${budgetRequest.base_name} onde ele foi originalmente enviado.`,
+        // Informações adicionais para ajudar o usuário a tomar uma decisão
+        isLocalFile: budgetRequest.budget_file_url.startsWith('blob:'),
+        requestInfo: `Solicitação #${budgetRequest.id}: ${budgetRequest.title}`
+      });
+    } catch (error) {
+      console.error('Erro ao acessar anexo:', error);
+      res.status(500).json({ 
+        message: 'Erro ao acessar anexo',
+        error: error.message
+      });
+    }
+  });
+
   // Rota para listar todas as solicitações de orçamento para o painel principal
   app.get("/api/fleet/budget-requests", hasMaintenanceAccess, async (req, res) => {
     try {
