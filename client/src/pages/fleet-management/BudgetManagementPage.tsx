@@ -416,6 +416,11 @@ export default function BudgetManagementPage() {
                               try {
                                 // Acessar a nova API para obter informações sobre o anexo
                                 const response = await apiRequest("GET", `/api/fleet/budget-requests/${request.id}/download-attachment`);
+                                
+                                if (!response.ok) {
+                                  throw new Error(`Erro de servidor: ${response.status}`);
+                                }
+                                
                                 const attachmentInfo = await response.json();
                                 
                                 // Exibir informações detalhadas sobre o anexo
@@ -427,16 +432,19 @@ export default function BudgetManagementPage() {
                                   variant: "info"
                                 });
                                 
-                                // Se o arquivo for local (improvável devido à natureza dos blobs)
-                                if (!attachmentInfo.isLocalFile && attachmentInfo.downloadUrl) {
+                                // Se tiver uma URL de download disponível (raro neste caso com blobs)
+                                if (attachmentInfo.downloadUrl) {
                                   window.open(attachmentInfo.downloadUrl, '_blank');
                                 }
                               } catch (error) {
                                 console.error("Erro ao obter informações do anexo:", error);
+                                
+                                // Mensagem de erro mais específica
                                 toast({
-                                  title: "Erro",
-                                  description: "Não foi possível obter informações sobre o anexo.",
-                                  variant: "destructive"
+                                  title: "Não foi possível acessar o anexo",
+                                  description: `O anexo "${request.budget_file_name}" da base ${request.base_name} não pode ser acessado remotamente. Para visualizá-lo, é necessário acessar o sistema diretamente na base de origem.`,
+                                  variant: "destructive",
+                                  duration: 8000
                                 });
                               }
                             }}

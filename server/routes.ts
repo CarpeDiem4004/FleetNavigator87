@@ -6637,16 +6637,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Como as URLs dos anexos são do tipo blob e pertencem ao cliente original,
       // não podemos acessá-los diretamente. Em vez disso, fornecemos informações
       // para que o usuário saiba como proceder.
-      return res.json({
+      const responseData = {
         id: budgetRequest.id,
         title: budgetRequest.title,
         fileName: budgetRequest.budget_file_name,
         baseName: budgetRequest.base_name,
         message: `Para visualizar o anexo "${budgetRequest.budget_file_name}", você deve acessar o sistema na Base ${budgetRequest.base_name} onde ele foi originalmente enviado.`,
-        // Informações adicionais para ajudar o usuário a tomar uma decisão
         isLocalFile: budgetRequest.budget_file_url.startsWith('blob:'),
         requestInfo: `Solicitação #${budgetRequest.id}: ${budgetRequest.title}`
-      });
+      };
+      
+      // Definir tipo de conteúdo explicitamente para garantir que seja JSON
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(200).json(responseData);
     } catch (error) {
       console.error('Erro ao acessar anexo:', error);
       res.status(500).json({ 
