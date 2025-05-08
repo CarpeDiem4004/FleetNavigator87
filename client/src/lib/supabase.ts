@@ -12,6 +12,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Criar o cliente Supabase com a chave anônima (para uso no navegador)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Criar o cliente Supabase com a chave de serviço (para operações administrativas)
+export const supabaseAdmin = supabaseServiceKey 
+  ? createClient(supabaseUrl, supabaseServiceKey)
+  : null;
+
 // Informações de configuração para debugging
 console.log('Verificando variáveis de ambiente do Supabase:');
 console.log('- VITE_SUPABASE_URL disponível:', Boolean(supabaseUrl));
@@ -35,6 +40,23 @@ console.log('Configuração Supabase Cliente:', supabaseConfig);
 // Nome dos buckets para anexos
 export const BUDGET_ATTACHMENTS_BUCKET = 'budget-attachments';
 export const INVOICE_ATTACHMENTS_BUCKET = 'notas-fiscais';
+
+/**
+ * Função para sanitizar nomes de arquivos para uso seguro no Supabase Storage
+ * Remove caracteres especiais, acentos e espaços
+ * @param filename - Nome do arquivo original
+ * @returns - Nome do arquivo sanitizado
+ */
+export const sanitizeFilename = (filename: string): string => {
+  // Remover acentos e caracteres especiais
+  const normalized = filename.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  
+  // Substituir espaços e caracteres problemáticos por underscores
+  return normalized
+    .replace(/[^a-zA-Z0-9.\-_]/g, '_') // Substitui caracteres não alfanuméricos
+    .replace(/\s+/g, '_')              // Substitui espaços por underscores
+    .replace(/__+/g, '_');             // Evita múltiplos underscores consecutivos
+};
 
 /**
  * Função para tentar criar um bucket se ele não existir
@@ -220,7 +242,10 @@ export const uploadBudgetFile = async (
     // Criar um caminho único para o arquivo no Supabase Storage
     const fileExtension = file.name.split('.').pop() || '';
     const uniqueId = Date.now().toString();
-    const filePath = `base-${baseId}/request-${budgetRequestId || 'new'}/${uniqueId}-${file.name}`;
+    const sanitizedFileName = sanitizeFilename(file.name);
+    console.log(`Nome do arquivo original: ${file.name}`);
+    console.log(`Nome do arquivo sanitizado: ${sanitizedFileName}`);
+    const filePath = `base-${baseId}/request-${budgetRequestId || 'new'}/${uniqueId}-${sanitizedFileName}`;
     
     // Fazer upload do arquivo para o bucket específico de orçamentos
     const storageUrl = await uploadFileToSupabase(file, filePath, BUDGET_ATTACHMENTS_BUCKET);
