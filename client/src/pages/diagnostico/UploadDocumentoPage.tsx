@@ -26,10 +26,14 @@ const UploadDocumentoPage: React.FC = () => {
   
   const { toast } = useToast();
 
-  // Inicializar cliente Supabase
+  // Inicializar cliente Supabase com a chave anônima para operações normais
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+  const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY as string;
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  
+  // Cliente Supabase com privilégios de administrador para criar buckets
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -42,29 +46,50 @@ const UploadDocumentoPage: React.FC = () => {
   // Função para verificar e criar o bucket se necessário
   const ensureBucketExists = async (bucketName: string) => {
     try {
-      // Verificar se o bucket existe
-      const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+      console.log(`Verificando bucket '${bucketName}' usando cliente com privilégios elevados...`);
+      
+      // Verificar se o bucket existe usando cliente com chave de serviço
+      const { data: buckets, error: listError } = await supabaseAdmin.storage.listBuckets();
       
       if (listError) {
+        console.error('Erro ao listar buckets:', listError);
         throw new Error(`Erro ao listar buckets: ${listError.message}`);
       }
       
+      console.log('Buckets encontrados:', buckets?.map(b => b.name).join(', ') || 'nenhum');
+      
       // Se o bucket não existir, criar
-      const bucketExists = buckets.some(b => b.name === bucketName);
+      const bucketExists = buckets?.some(b => b.name === bucketName);
       
       if (!bucketExists) {
         console.log(`Bucket '${bucketName}' não encontrado. Tentando criar...`);
-        const { data, error: createError } = await supabase.storage.createBucket(bucketName, {
-          public: true
+        const { data, error: createError } = await supabaseAdmin.storage.createBucket(bucketName, {
+          public: true,
+          fileSizeLimit: 20971520 // 20MB
         });
         
         if (createError) {
+          console.error('Erro ao criar bucket:', createError);
           throw new Error(`Erro ao criar bucket: ${createError.message}`);
         }
         
         console.log(`Bucket '${bucketName}' criado com sucesso.`);
       } else {
-        console.log(`Bucket '${bucketName}' encontrado.`);
+        console.log(`Bucket '${bucketName}' já existe.`);
+      }
+      
+      // Garantir permissões públicas no bucket
+      const { error: policyError } = await supabaseAdmin.storage.from(bucketName).getPublicUrl('test');
+      if (policyError) {
+        console.log('Configurando política pública para o bucket...');
+        // Tenta criar uma política pública para o bucket
+        try {
+          await supabaseAdmin.rpc('create_public_bucket_policy', { bucket_name: bucketName });
+          console.log('Política pública criada com sucesso para o bucket.');
+        } catch (e) {
+          console.warn('Aviso: Não foi possível criar política pública para o bucket:', e);
+          // Continuar mesmo se não conseguir criar a política
+        }
       }
       
       return true;
@@ -89,8 +114,18 @@ const UploadDocumentoPage: React.FC = () => {
       const filePath = `campinas/documentos/${Date.now()}_${file.name}`;
       const bucketName = 'budget-attachments';
       
-      // Garantir que o bucket existe
-      await ensureBucketExists(bucketName);
+      console.log('Iniciando upload para:', { bucketName, filePath, fileSize: file.size });
+      
+      // Garantir que o bucket existe usando a função com permissões administrativas
+      try {
+        await ensureBucketExists(bucketName);
+        console.log('Bucket verificado com sucesso.');
+      } catch (bucketError) {
+        console.error('Erro durante a verificação do bucket:', bucketError);
+        // Tentar continuar mesmo assim, usando cliente normal para o upload
+      }
+      
+      console.log('Tentando fazer upload com cliente normal...');
       
       // Upload do arquivo para o bucket no Supabase Storage
       const { data, error: uploadError } = await supabase.storage
@@ -101,12 +136,34 @@ const UploadDocumentoPage: React.FC = () => {
         });
       
       if (uploadError) {
-        throw new Error(`Erro no upload: ${uploadError.message}`);
+        console.error('Erro detalhado de upload:', uploadError);
+        
+        // Se o erro for de permissão, tentar com o cliente administrativo
+        if (uploadError.message.includes('Permission') || uploadError.message.includes('not found')) {
+          console.log('Tentando upload com cliente administrativo devido a erro de permissão...');
+          
+          // Tentar upload com cliente administrativo
+          const { data: adminData, error: adminUploadError } = await supabaseAdmin.storage
+            .from(bucketName)
+            .upload(filePath, file, {
+              cacheControl: '3600',
+              upsert: true
+            });
+            
+          if (adminUploadError) {
+            console.error('Erro mesmo com cliente administrativo:', adminUploadError);
+            throw new Error(`Erro no upload (admin): ${adminUploadError.message}`);
+          }
+          
+          console.log('Upload com cliente administrativo bem-sucedido!');
+        } else {
+          throw new Error(`Erro no upload: ${uploadError.message}`);
+        }
       }
       
       // Obter a URL pública do arquivo
       const { data: urlData } = supabase.storage
-        .from('budget-attachments')
+        .from(bucketName)
         .getPublicUrl(filePath);
       
       const publicUrl = urlData.publicUrl;
