@@ -70,7 +70,7 @@ const externosPostos = [
 const LinksExternosPostos: React.FC = () => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
   const [copied, setCopied] = useState<Record<string, boolean>>({});
   const [baseUrl, setBaseUrl] = useState('');
 
@@ -126,7 +126,7 @@ const LinksExternosPostos: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardFooter>
-            <Button onClick={() => navigate('/login')} className="w-full">
+            <Button onClick={() => setLocation('/login')} className="w-full">
               Fazer Login
             </Button>
           </CardFooter>
@@ -149,7 +149,7 @@ const LinksExternosPostos: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardFooter>
-            <Button onClick={() => navigate('/')} className="w-full">
+            <Button onClick={() => setLocation('/')} className="w-full">
               Voltar ao Início
             </Button>
           </CardFooter>
@@ -170,7 +170,7 @@ const LinksExternosPostos: React.FC = () => {
         
         <Button 
           variant="outline" 
-          onClick={() => navigate('/')}
+          onClick={() => setLocation('/')}
           className="flex items-center gap-2"
         >
           <Home className="h-4 w-4" />
