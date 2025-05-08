@@ -46,7 +46,7 @@ interface User {
   id: number;
   name: string;
   email: string;
-  role: 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto';
+  role: 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota';
   baseId: number | null;
   baseName: string | null;
   lastLogin: string | null;
@@ -77,6 +77,7 @@ const translateUserRole = (role: string): string => {
   const roles: Record<string, string> = {
     admin: 'Administrador',
     gestor: 'Gestor',
+    gestor_frota: 'Gestor de Frota',
     operador: 'Operador',
     oficina: 'Oficina',
     pneus: 'Especialista em Pneus',
@@ -90,6 +91,7 @@ const getRoleBadgeClass = (role: string): string => {
   const classes: Record<string, string> = {
     admin: 'bg-purple-100 text-purple-800',
     gestor: 'bg-blue-100 text-blue-800',
+    gestor_frota: 'bg-indigo-100 text-indigo-800',
     operador: 'bg-green-100 text-green-800',
     oficina: 'bg-amber-100 text-amber-800',
     pneus: 'bg-teal-100 text-teal-800',
@@ -169,7 +171,7 @@ const UsersNew: React.FC = () => {
           id: user.id,
           name: user.name,
           email: user.email,
-          role: (user.role || 'operador') as 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto',
+          role: (user.role || 'operador') as 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota',
           baseId: user.baseId || user.base_id || null,
           baseName: user.baseName || user.basename || null,
           lastLogin: user.lastLogin || user.last_login || null,

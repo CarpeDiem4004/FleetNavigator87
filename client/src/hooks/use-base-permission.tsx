@@ -243,7 +243,7 @@ export const useBasePermission = (): BasePermissionHook => {
     }
     
     // Gestão de Frotas - permite acesso a rotas relacionadas à frota, MAS NÃO AO DASHBOARD
-    if (user.basename === "Gestão de Frotas" || user.baseId === 12) {
+    if (user.basename === "Gestão de Frotas" || user.baseId === 12 || user.role === 'gestor_frota') {
       // Rotas acessíveis - removida a rota '/' (dashboard)
       const frotaRoutes = [
         '/gestao-de-frotas', 
@@ -253,6 +253,7 @@ export const useBasePermission = (): BasePermissionHook => {
         '/fleet-management/budgets',                  // Sistema de orçamentos
         '/fleet-management/workshops',                // Oficinas credenciadas
         '/fleet-management/inventory',                // Gestão de estoque
+        '/fleet-management/parts-inventory',          // Estoque de peças
         '/fleet-management/operational-analysis',     // Análise da operação  
         '/fleet-management/fleet-overview',           // Visão geral da frota
         '/fleet-management/downtime-analysis',        // Dias de veículos parados em manutenção
@@ -274,7 +275,8 @@ export const useBasePermission = (): BasePermissionHook => {
         '/accidents',                                 // Acidentes/Roubos
         '/work-safety',                               // Segurança do Trabalho
         '/postos/visao-geral',                        // Visão Geral dos Postos
-        '/postos'                                     // Postos de Abastecimento
+        '/postos',                                    // Postos de Abastecimento
+        '/oficina/murici'                             // Oficina Murici
       ];
       
       const hasAccess = frotaRoutes.includes(route);
