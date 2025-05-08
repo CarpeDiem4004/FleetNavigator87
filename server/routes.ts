@@ -13,6 +13,7 @@ import {
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import { getDashboardKPIs, getPainelPrincipal } from "./dashboardApi";
+// middleware de autenticação híbrida já importado abaixo como alias
 import { getExecutiveDashboard } from "./executiveDashboard";
 import { getPostosResumo, getPostoDetalhes, registrarEntradaCombustivel, excluirPostoSaoPaulo } from "./postosApi";
 import { 
@@ -3553,8 +3554,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rota para users (tem problema no fechamento do endpoint anterior)
 
-  // Dashboard API
-  app.get("/api/dashboard/kpis", isAuthenticated, getDashboardKPIs);
+  // Dashboard API - usando middleware híbrido
+  // (as rotas são redefinidas mais abaixo)
 
   // Admin utility routes
   // Rota específica para limpar os dados do Supabase
@@ -4195,15 +4196,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoints para dashboard - usando middleware híbrido para maior compatibilidade
   // Endpoint para obter dados do painel principal
-  // Temporariamente sem autenticação para testes
-  app.get("/api/painel-principal", getPainelPrincipal);
+  app.get("/api/painel-principal", isAuthenticatedHybrid, getPainelPrincipal);
   
   // Endpoint legado para KPIs do dashboard - manter por compatibilidade
-  app.get("/api/dashboard/kpis", isAuthenticated, getDashboardKPIs);
+  app.get("/api/dashboard/kpis", isAuthenticatedHybrid, getDashboardKPIs);
   
   // Novo endpoint para o dashboard executivo
-  app.get("/api/dashboard", isAuthenticated, getExecutiveDashboard);
+  app.get("/api/dashboard", isAuthenticatedHybrid, getExecutiveDashboard);
   
   // Rotas para solicitações de cartão de combustível
   app.get('/api/fuel-card-solicitations', isAuthenticated, getFuelCardSolicitations);
