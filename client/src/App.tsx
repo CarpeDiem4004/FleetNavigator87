@@ -191,7 +191,7 @@ function App() {
           <ProtectedRoute path="/posto/abc" component={PostoABC} />
           <ProtectedRoute path="/posto/abc_v2" component={PostoABCV2} />
           <ProtectedRoute path="/posto/socorro" component={PostoSocorro} />
-          {/* Posto Socorro_v2 removido em Maio/2025 */}
+          <ProtectedRoute path="/posto/socorro_v2" component={PostoSocorroV2} />
           <ProtectedRoute path="/posto/sorocaba" component={PostoSorocaba} />
           <ProtectedRoute path="/posto/sorocaba_v2" component={PostoSorocabaV2} />
           <ProtectedRoute path="/postos/historico-geral" component={HistoricoGeralPage} />
@@ -308,7 +308,9 @@ function App() {
           <Route path="/posto/socorro/public">
             <SocorroPublic />
           </Route>
-          {/* Posto Socorro_v2/public removido em Maio/2025 */}
+          <Route path="/posto/socorro_v2/public">
+            <SocorroV2Public />
+          </Route>
           <Route path="/posto/sorocaba_v2/public">
             <SorocabaV2Public />
           </Route>

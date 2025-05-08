@@ -53,7 +53,12 @@ const externosPostos = [
     descricao: 'Link externo para operadores do posto do ABC',
     url: '/posto/abc_v2/public'
   },
-  // Posto Socorro_v2 removido em Maio/2025
+  {
+    id: 'socorro_v2',
+    nome: 'Socorro V2',
+    descricao: 'Link externo para operadores do posto de Socorro',
+    url: '/posto/socorro_v2/public'
+  },
   {
     id: 'sorocaba_v2',
     nome: 'Sorocaba V2',

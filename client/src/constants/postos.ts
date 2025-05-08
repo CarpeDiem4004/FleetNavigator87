@@ -87,7 +87,11 @@ export const POSTOS_INFO = [
     nome: NOME_POSTO_SOCORRO, 
     descricao: 'Posto de abastecimento da região de Socorro' 
   },
-  /* Socorro_V2 removido a pedido do cliente - Maio/2025 */
+  { 
+    id: POSTO_SOCORRO_V2, 
+    nome: NOME_POSTO_SOCORRO_V2, 
+    descricao: 'Nova versão do posto de abastecimento de Socorro (V2)' 
+  },
   /* Sorocaba versão antiga desativada */
   { 
     id: POSTO_SOROCABA_V2, 
