@@ -91,6 +91,7 @@ export async function getHistoricoPosto(req, res) {
         postoName.toLowerCase() === 'osasco_v2' || 
         postoName.toLowerCase() === 'abc_v2' || 
         postoName.toLowerCase() === 'alair_v2' ||
+        postoName.toLowerCase() === 'guarulhos_v2' ||
         postoName.toLowerCase() === 'socorro_v2' ||
         postoName.toLowerCase() === 'sorocaba_v2') {
       console.log(`getHistoricoPosto - Usando tabela direta para ${postoName} em vez de view`);
