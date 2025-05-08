@@ -198,6 +198,7 @@ function App() {
           <ProtectedRoute path="/diagnostico/sincronizar-tabelas" component={SincronizarTabelasPage} />
           <ProtectedRoute path="/diagnostico/api-tester" component={ApiTester} />
           <ProtectedRoute path="/diagnostico/budget-attachments-migration" component={BudgetAttachmentsMigration} />
+          <ProtectedRoute path="/diagnostico/migracao-anexos" component={MigracaoAnexosPage} />
           <ProtectedRoute path="/admin/utils" component={AdminUtils} />
           <ProtectedRoute path="/limpar-dados" component={LimparDados} />
           <ProtectedRoute path="/line-hall-shopee" component={LineHallShopeePage} />

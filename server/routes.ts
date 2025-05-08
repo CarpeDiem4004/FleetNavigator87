@@ -6607,6 +6607,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // API para registrar anexos permanentes no banco de dados
+  app.post("/api/budget-attachments/register", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const {
+        budget_request_id,
+        base_id,
+        base_name,
+        file_name,
+        file_type,
+        file_size,
+        file_path,
+        storage_url,
+        attachment_type
+      } = req.body;
+      
+      // Validações básicas
+      if (!budget_request_id || !base_id || !base_name || !file_name || !file_path || !storage_url) {
+        return res.status(400).json({ error: 'Dados incompletos para registrar anexo' });
+      }
+      
+      // Obter informações do usuário que está fazendo upload
+      const uploader_id = req.user?.id || null;
+      const uploader_name = req.user?.name || null;
+      
+      const insertQuery = `
+        INSERT INTO budget_attachments (
+          budget_request_id, 
+          base_id, 
+          base_name, 
+          file_name, 
+          file_type, 
+          file_size, 
+          file_path,
+          storage_url, 
+          uploader_id, 
+          uploader_name, 
+          attachment_type
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        RETURNING *
+      `;
+      
+      const values = [
+        budget_request_id,
+        base_id,
+        base_name,
+        file_name,
+        file_type || '',
+        file_size || 0,
+        file_path,
+        storage_url,
+        uploader_id,
+        uploader_name,
+        attachment_type || 'budget'
+      ];
+      
+      console.log('Registrando anexo permanente:', { 
+        budget_request_id, 
+        base_name, 
+        file_name, 
+        attachment_type 
+      });
+      
+      const result = await pool.query(insertQuery, values);
+      
+      if (result.rowCount === 0) {
+        return res.status(500).json({ error: 'Falha ao registrar anexo permanente' });
+      }
+      
+      return res.status(201).json({
+        success: true,
+        message: 'Anexo registrado com sucesso',
+        attachment: result.rows[0]
+      });
+    } catch (error) {
+      console.error('Erro ao registrar anexo permanente:', error);
+      return res.status(500).json({ error: 'Erro ao registrar anexo permanente no banco de dados' });
+    }
+  });
+  
   // Integração com o sistema principal de gestão de orçamentos
   // Rota para baixar ou obter informações sobre anexos de solicitações de orçamento
   app.get("/api/fleet/budget-requests/:id/download-attachment", hasMaintenanceAccess, async (req, res) => {
