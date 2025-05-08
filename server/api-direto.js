@@ -50,6 +50,13 @@ export async function getHistoricoPosto(req, res) {
       postoName = 'alair_v2';
       console.log("getHistoricoPosto - Identificado como Alair V2");
     }
+    // Caso especial para Guarulhos V2
+    else if (postoName.toLowerCase() === 'guarulhos_v2' || 
+        postoName.toLowerCase().includes('guarulhos_v2') || 
+        postoName.toLowerCase().includes('guarulhos v2')) {
+      postoName = 'guarulhos_v2';
+      console.log("getHistoricoPosto - Identificado como Guarulhos V2");
+    }
     // Caso especial para Socorro V2
     else if (postoName.toLowerCase() === 'socorro_v2' || 
         postoName.toLowerCase().includes('socorro_v2') || 
@@ -213,6 +220,13 @@ export async function getEstatisticasMensaisPosto(req, res) {
       postoName = 'alair_v2';
       console.log("getEstatisticasMensaisPosto - Identificado como Alair V2");
     }
+    // Caso especial para Guarulhos V2
+    else if (postoName.toLowerCase() === 'guarulhos_v2' || 
+        postoName.toLowerCase().includes('guarulhos_v2') || 
+        postoName.toLowerCase().includes('guarulhos v2')) {
+      postoName = 'guarulhos_v2';
+      console.log("getEstatisticasMensaisPosto - Identificado como Guarulhos V2");
+    }
     // Caso especial para Socorro V2
     else if (postoName.toLowerCase() === 'socorro_v2' || 
         postoName.toLowerCase().includes('socorro_v2') || 
@@ -315,6 +329,13 @@ export async function getConsumoPorVeiculoPosto(req, res) {
         postoName.toLowerCase().includes('alair v2')) {
       postoName = 'alair_v2';
       console.log("getConsumoPorVeiculoPosto - Identificado como Alair V2");
+    }
+    // Caso especial para Guarulhos V2
+    else if (postoName.toLowerCase() === 'guarulhos_v2' || 
+        postoName.toLowerCase().includes('guarulhos_v2') || 
+        postoName.toLowerCase().includes('guarulhos v2')) {
+      postoName = 'guarulhos_v2';
+      console.log("getConsumoPorVeiculoPosto - Identificado como Guarulhos V2");
     }
     // Caso especial para Socorro V2
     else if (postoName.toLowerCase() === 'socorro_v2' || 
@@ -419,6 +440,13 @@ export async function getComparativoCombustiveisPosto(req, res) {
       postoName = 'alair_v2';
       console.log("getComparativoCombustiveisPosto - Identificado como Alair V2");
     }
+    // Caso especial para Guarulhos V2
+    else if (postoName.toLowerCase() === 'guarulhos_v2' || 
+        postoName.toLowerCase().includes('guarulhos_v2') || 
+        postoName.toLowerCase().includes('guarulhos v2')) {
+      postoName = 'guarulhos_v2';
+      console.log("getComparativoCombustiveisPosto - Identificado como Guarulhos V2");
+    }
     // Caso especial para Socorro V2
     else if (postoName.toLowerCase() === 'socorro_v2' || 
         postoName.toLowerCase().includes('socorro_v2') || 
@@ -521,6 +549,13 @@ export async function checkTabelaPosto(req, res) {
         postoName.toLowerCase().includes('alair v2')) {
       postoName = 'alair_v2';
       console.log("checkTabelaPosto - Identificado como Alair V2");
+    }
+    // Caso especial para Guarulhos V2
+    else if (postoName.toLowerCase() === 'guarulhos_v2' || 
+        postoName.toLowerCase().includes('guarulhos_v2') || 
+        postoName.toLowerCase().includes('guarulhos v2')) {
+      postoName = 'guarulhos_v2';
+      console.log("checkTabelaPosto - Identificado como Guarulhos V2");
     }
     // Caso especial para Socorro V2
     else if (postoName.toLowerCase() === 'socorro_v2' || 
@@ -711,7 +746,7 @@ export async function registrarAbastecimentoPosto(req, res) {
       : 0);
     
     // Verificar se estamos lidando com postos V2
-    const isV2Posto = ['osasco_v2', 'campinas_v2', 'abc_v2', 'socorro_v2', 'sorocaba_v2', 'alair_v2'].includes(postoName.toLowerCase());
+    const isV2Posto = ['osasco_v2', 'campinas_v2', 'abc_v2', 'socorro_v2', 'sorocaba_v2', 'alair_v2', 'guarulhos_v2'].includes(postoName.toLowerCase());
     
     // Adaptação para os postos V2 - diferentes campos na tabela
     if (isV2Posto) {
