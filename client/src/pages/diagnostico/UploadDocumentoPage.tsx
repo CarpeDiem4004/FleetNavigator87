@@ -99,6 +99,18 @@ const UploadDocumentoPage: React.FC = () => {
     }
   };
 
+  // Função para sanitizar nomes de arquivo para uso seguro no Supabase
+  const sanitizeFileName = (fileName: string): string => {
+    // Remover acentos
+    const withoutAccents = fileName.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    
+    // Substituir espaços por underscores
+    const withoutSpaces = withoutAccents.replace(/\s+/g, '_');
+    
+    // Remover caracteres especiais, mantendo apenas letras, números, underscore, ponto e hífen
+    return withoutSpaces.replace(/[^\w.-]/g, '');
+  };
+
   const handleUpload = async () => {
     if (!file) {
       setError('Por favor, selecione um arquivo para upload.');
@@ -109,12 +121,22 @@ const UploadDocumentoPage: React.FC = () => {
       setLoading(true);
       setError(null);
       
+      // Sanitizar o nome do arquivo para evitar problemas com caracteres especiais
+      const originalFileName = file.name;
+      const sanitizedFileName = sanitizeFileName(file.name);
+      
       // Define o caminho do arquivo no Supabase Storage
       const baseId = '2'; // ID da Base Campinas
-      const filePath = `campinas/documentos/${Date.now()}_${file.name}`;
+      const filePath = `campinas/documentos/${Date.now()}_${sanitizedFileName}`;
       const bucketName = 'budget-attachments';
       
-      console.log('Iniciando upload para:', { bucketName, filePath, fileSize: file.size });
+      console.log('Iniciando upload para:', { 
+        bucketName, 
+        filePath, 
+        fileSize: file.size, 
+        originalFileName,
+        sanitizedFileName 
+      });
       
       // Garantir que o bucket existe usando a função com permissões administrativas
       try {
@@ -138,8 +160,10 @@ const UploadDocumentoPage: React.FC = () => {
       if (uploadError) {
         console.error('Erro detalhado de upload:', uploadError);
         
-        // Se o erro for de permissão, tentar com o cliente administrativo
-        if (uploadError.message.includes('Permission') || uploadError.message.includes('not found')) {
+        // Se o erro for de permissão, bucket não encontrado ou chave inválida, tentar com o cliente administrativo
+        if (uploadError.message.includes('Permission') || 
+            uploadError.message.includes('not found') || 
+            uploadError.message.includes('Invalid key')) {
           console.log('Tentando upload com cliente administrativo devido a erro de permissão...');
           
           // Tentar upload com cliente administrativo
