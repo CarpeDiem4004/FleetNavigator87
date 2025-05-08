@@ -113,6 +113,7 @@ import SorocabaV2Public from "@/pages/postos/public/SorocabaV2Public";
 import RegisterPostoUser from "@/pages/postos/RegisterPostoUser";
 import RedirectToPosto from "@/pages/RedirectToPosto";
 import PostoAcessoDireto from "@/pages/PostoAcessoDireto";
+import LinksExternosPostos from "@/pages/postos/LinksExternosPostos";
 
 function App() {
   return (
@@ -178,6 +179,7 @@ function App() {
           
           {/* Rotas para os postos de abastecimento - protegidas */}
           <ProtectedRoute path="/postos" component={IndexPostos} />
+          <ProtectedRoute path="/postos/links-externos" component={LinksExternosPostos} />
           <ProtectedRoute path="/posto/osasco" component={PostoOsasco} />
           <ProtectedRoute path="/posto/osasco_v2" component={PostoOsascoV2} />
           <ProtectedRoute path="/posto/guarulhos" component={PostoGuarulhos} />
