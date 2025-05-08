@@ -600,6 +600,13 @@ const FormularioAbastecimento: React.FC<
           endpoint = `/api/abastecimento-direto/abc_v2`;
           usarRotaDireta = true;
           console.log(">>> Usando rota específica para ABC V2");
+        } else if (postId.toLowerCase() === "guarulhos_v2" || 
+            postId.toLowerCase().includes("guarulhos_v2") || 
+            postId.toLowerCase().includes("guarulhos v2")) {
+          // Usar a rota direta para Guarulhos V2
+          endpoint = `/api/abastecimento-direto/guarulhos_v2`;
+          usarRotaDireta = true;
+          console.log(">>> Usando rota específica para Guarulhos V2");
         } else if (postId.toLowerCase() === "alair_v2" || 
             postId.toLowerCase().includes("alair_v2") || 
             postId.toLowerCase().includes("alair v2")) {
@@ -762,6 +769,10 @@ const FormularioAbastecimento: React.FC<
               // Tratamento para ABC V2
               else if (postId.toLowerCase().includes("abc_v2") || postId.toLowerCase().includes("abc v2")) {
                 tanquePostoId = "ABC_v2";
+              }
+              // Tratamento para Guarulhos V2
+              else if (postId.toLowerCase().includes("guarulhos_v2") || postId.toLowerCase().includes("guarulhos v2")) {
+                tanquePostoId = "Guarulhos_v2";
               }
               // Tratamento para Alair V2
               else if (postId.toLowerCase().includes("alair_v2") || postId.toLowerCase().includes("alair v2")) {
