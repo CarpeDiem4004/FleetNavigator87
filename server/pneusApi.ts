@@ -8,26 +8,23 @@ export function registerPneusRoutes(app: Express) {
   // Rota para obter estatísticas de estoque (quantidade e valor total)
   app.get('/api/pneus/estatisticas/estoque', async (req, res) => {
     try {
-      // Primeiro, obtemos a quantidade total de pneus em estoque
-      const queryQuantidade = `
+      // Obter a quantidade total e a soma do valor unitário * quantidade
+      const query = `
         SELECT 
-          COUNT(*) as quantidade
+          SUM(quantidade) as quantidade_total,
+          SUM(COALESCE(valor_unitario, 0) * COALESCE(quantidade, 1)) as valor_total
         FROM pneus
-        WHERE status = 'estoque'
+        WHERE status = 'estoque' OR status = 'disponivel' OR status IS NULL
       `;
       
-      // Valor médio aproximado de um pneu para cálculo do valor total do estoque
-      // Isso pode ser substituído por um valor mais preciso posteriormente
-      const VALOR_MEDIO_PNEU = 1500.00; // R$ 1.500,00 por pneu
-      
-      const result = await pool.query(queryQuantidade);
-      const quantidade = parseInt(result.rows[0].quantidade) || 0;
-      const valorTotal = quantidade * VALOR_MEDIO_PNEU;
+      const result = await pool.query(query);
+      const quantidadeTotal = parseInt(result.rows[0].quantidade_total) || 0;
+      const valorTotal = parseFloat(result.rows[0].valor_total) || 0;
       
       return res.status(200).json({
         success: true,
         data: {
-          quantidade: quantidade,
+          quantidade: quantidadeTotal,
           valor_total: valorTotal
         }
       });
