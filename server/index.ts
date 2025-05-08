@@ -27,6 +27,8 @@ import { fixCookieSessionMiddleware } from "./middleware/fixCookieSession";
 import { debugAuthMiddleware, recoverSessionMiddleware } from './middleware/debugAuthMiddleware';
 // Importar rota de diagnóstico para frota
 import frotaDiagnosticoRoute from "./routes/frotaDiagnosticoRoute";
+// Importar rotas de recebimentos e movimentações de pátio
+import recebimentosMovimentacoesRoutes from "./routes/recebimentosMovimentacoesRoutes";
 
 // Configuração das variáveis de ambiente do Supabase
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
