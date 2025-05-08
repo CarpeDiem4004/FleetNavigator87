@@ -248,6 +248,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
       Hora: format(parseISO(item.created_at), 'HH:mm:ss'),
       Veículo: item.placa,
       Quilometragem: item.km_atual,
+      Hodômetro: item.hodometro_atual,
       Combustível: item.tipo_combustivel,
       Litros: item.litros,
       'Valor Unitário': item.preco_litro,
@@ -268,6 +269,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
       { wch: 10 },  // Hora
       { wch: 10 },  // Placa
       { wch: 12 },  // KM
+      { wch: 12 },  // Hodômetro
       { wch: 12 },  // Combustível
       { wch: 8 },   // Litros
       { wch: 14 },  // Valor Unitário
@@ -473,6 +475,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
                     <th className="py-3 px-4 text-left font-medium text-gray-700">Data</th>
                     <th className="py-3 px-4 text-left font-medium text-gray-700">Veículo</th>
                     <th className="py-3 px-4 text-left font-medium text-gray-700">KM</th>
+                    <th className="py-3 px-4 text-left font-medium text-gray-700">Hodômetro</th>
                     <th className="py-3 px-4 text-left font-medium text-gray-700">Combustível</th>
                     <th className="py-3 px-4 text-left font-medium text-gray-700">Litros</th>
                     <th className="py-3 px-4 text-right font-medium text-gray-700">Valor</th>
@@ -488,6 +491,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
                       <td className="py-3 px-4 text-sm">{formatarDataHora(abast.created_at)}</td>
                       <td className="py-3 px-4 font-medium">{abast.placa}</td>
                       <td className="py-3 px-4 text-sm">{formatarNumero(abast.km_atual)}</td>
+                      <td className="py-3 px-4 text-sm">{formatarNumero(abast.hodometro_atual)}</td>
                       <td className="py-3 px-4 text-sm">
                         <span className={`px-2 py-1 rounded-full text-xs ${
                           abast.tipo_combustivel === 'Diesel' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
@@ -547,6 +551,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
                         <th className="py-3 px-4 text-left font-medium text-gray-700">Data</th>
                         <th className="py-3 px-4 text-left font-medium text-gray-700">Veículo</th>
                         <th className="py-3 px-4 text-left font-medium text-gray-700">KM</th>
+                        <th className="py-3 px-4 text-left font-medium text-gray-700">Hodômetro</th>
                         <th className="py-3 px-4 text-left font-medium text-gray-700">Combustível</th>
                         <th className="py-3 px-4 text-left font-medium text-gray-700">Litros</th>
                         <th className="py-3 px-4 text-right font-medium text-gray-700">Valor</th>
@@ -561,6 +566,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
                           <td className="py-3 px-4 text-sm">{formatarDataHora(abast.created_at)}</td>
                           <td className="py-3 px-4 font-medium">{abast.placa}</td>
                           <td className="py-3 px-4 text-sm">{formatarNumero(abast.km_atual)}</td>
+                          <td className="py-3 px-4 text-sm">{formatarNumero(abast.hodometro_atual)}</td>
                           <td className="py-3 px-4 text-sm">
                             <span className={`px-2 py-1 rounded-full text-xs ${
                               abast.tipo_combustivel === 'Diesel' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
