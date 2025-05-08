@@ -97,8 +97,8 @@ app.use((req, res, next) => {
   app.use(debugAuthMiddleware);
   app.use(recoverSessionMiddleware);
 
-  // Adicionar rota raiz para health checks de deploy
-  app.get('/', (req, res) => {
+  // Adicionar rota raiz para health checks de deploy apenas para API
+  app.get('/api/status', (req, res) => {
     res.status(200).json({
       status: 'online',
       message: 'Sistema de Gestão de Frotas Muricion',
