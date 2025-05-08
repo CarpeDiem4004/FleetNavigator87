@@ -173,14 +173,38 @@ export const uploadFileToSupabase = async (file: File, path: string, bucketName?
     const bucket = bucketName || await getBucketName();
     console.log(`Usando bucket para upload: ${bucket}`);
     
+    // Escolher o cliente Supabase para usar (admin se disponível, cliente normal caso contrário)
+    const client = supabaseAdmin || supabase;
+    
     // Fazer upload do arquivo para o Supabase Storage
-    console.log(`Tentando fazer upload para ${bucket}/${path}`);
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .upload(path, file, {
-        cacheControl: '3600',
-        upsert: true
-      });
+    console.log(`Tentando fazer upload para ${bucket}/${path} usando ${supabaseAdmin ? 'chave de serviço' : 'chave anônima'}`);
+    
+    // Primeira tentativa com o cliente escolhido
+    let uploadResult;
+    try {
+      uploadResult = await client.storage
+        .from(bucket)
+        .upload(path, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+    } catch (err) {
+      console.warn('Erro na primeira tentativa de upload, tentando com cliente alternativo:', err);
+      // Se falhar e tivermos um cliente alternativo, tente novamente
+      if (supabaseAdmin && client === supabase) {
+        uploadResult = await supabaseAdmin.storage
+          .from(bucket)
+          .upload(path, file, {
+            cacheControl: '3600',
+            upsert: true
+          });
+      } else {
+        // Se não tivermos um cliente alternativo ou já estivermos usando o admin, propague o erro
+        throw err;
+      }
+    }
+    
+    const { data, error } = uploadResult;
 
     if (error) {
       console.error('Erro detalhado do Supabase Storage:', error);
@@ -195,7 +219,7 @@ export const uploadFileToSupabase = async (file: File, path: string, bucketName?
     console.log(`Upload concluído com sucesso para ${bucket}/${path}`);
 
     // Obter a URL pública do arquivo
-    const { data: { publicUrl } } = supabase.storage
+    const { data: { publicUrl } } = client.storage
       .from(bucket)
       .getPublicUrl(path);
 
@@ -307,7 +331,10 @@ export const uploadInvoiceFile = async (
     // Criar um caminho único para o arquivo no Supabase Storage
     const fileExtension = file.name.split('.').pop() || '';
     const uniqueId = Date.now().toString();
-    const filePath = `base-${baseId}/request-${budgetRequestId}/${uniqueId}-${file.name}`;
+    const sanitizedFileName = sanitizeFilename(file.name);
+    console.log(`Nome do arquivo original: ${file.name}`);
+    console.log(`Nome do arquivo sanitizado: ${sanitizedFileName}`);
+    const filePath = `base-${baseId}/request-${budgetRequestId}/${uniqueId}-${sanitizedFileName}`;
     
     // Fazer upload do arquivo para o bucket específico de notas fiscais
     const storageUrl = await uploadFileToSupabase(file, filePath, INVOICE_ATTACHMENTS_BUCKET);
