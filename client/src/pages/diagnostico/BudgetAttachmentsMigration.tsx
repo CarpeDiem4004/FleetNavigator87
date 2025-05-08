@@ -14,7 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { DownloadCloud, Upload, CheckCircle, RefreshCw, AlertTriangle, ExternalLink } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { supabase, uploadFileToSupabase, registerAttachmentMetadata, BUDGET_ATTACHMENTS_BUCKET } from "@/lib/supabase";
+import { supabase, uploadFileToSupabase, registerAttachmentMetadata, BUDGET_ATTACHMENTS_BUCKET, getBucketName } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 
 interface BlobAttachment {
@@ -47,7 +47,11 @@ const BudgetAttachmentsMigration: React.FC = () => {
   useEffect(() => {
     const init = async () => {
       try {
-        // Check if bucket exists
+        // Usar a nova função getBucketName para verificar buckets disponíveis
+        const bucketName = await getBucketName();
+        console.log(`Bucket disponível para migração: ${bucketName}`);
+        
+        // Verificar se o bucket preferido existe
         const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
         
         if (bucketsError) {
@@ -59,14 +63,15 @@ const BudgetAttachmentsMigration: React.FC = () => {
         
         if (!exists) {
           toast({
-            title: 'Bucket não encontrado',
-            description: `O bucket "${BUDGET_ATTACHMENTS_BUCKET}" não existe no Supabase Storage.`,
-            variant: 'destructive'
+            title: 'Bucket alternativo',
+            description: `O bucket preferido "${BUDGET_ATTACHMENTS_BUCKET}" não existe. Usando bucket: "${bucketName}"`,
+            variant: 'warning'
           });
-        } else {
-          // If bucket exists, fetch blob attachments
-          await fetchBlobAttachments();
         }
+        
+        // Buscar anexos independentemente do bucket
+        await fetchBlobAttachments();
+        
       } catch (error) {
         console.error('Erro na inicialização:', error);
         toast({
