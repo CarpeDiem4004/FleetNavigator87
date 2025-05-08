@@ -5787,9 +5787,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
       
-      // Consulta diretamente na tabela abastecimentos_postos que tem todos os campos necessários
-      // Sem limite de registros para mostrar todo o histórico
-      // Melhorar a correspondência com flexibilidade de capitalização
+      // Verificar se o posto é um dos postos v2 (Campinas_v2, Osasco_v2, etc.)
+      const isV2Posto = posto.toLowerCase().includes('_v2');
+      
+      if (isV2Posto) {
+        // Para postos v2, buscar na tabela específica do posto
+        const tabelaPosto = `abastecimentos_posto_${posto.toLowerCase()}`;
+        
+        // Verificar se a tabela existe
+        const tabelaExisteQuery = `
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = $1
+          ) as "exists";
+        `;
+        
+        const tabelaExisteResult = await pool.query(tabelaExisteQuery, [tabelaPosto]);
+        
+        if (tabelaExisteResult.rows[0].exists) {
+          console.log(`Tabela específica ${tabelaPosto} encontrada. Usando esta tabela.`);
+          
+          // Consulta na tabela específica do posto v2
+          const queryV2 = `
+            SELECT 
+              id,
+              placa,
+              km_atual,
+              hodometro_atual,
+              tipo_combustivel,
+              litros as quantidade_litros,
+              motorista as nome_motorista,
+              motorista_rg as rg_motorista,
+              operador as nome_operador,
+              valor_litro,
+              valor_total,
+              tipo_veiculo,
+              observacoes,
+              lavagem,
+              tipo_lavagem,
+              created_at,
+              updated_at,
+              '${posto}' as posto
+            FROM ${tabelaPosto}
+            ORDER BY created_at DESC
+          `;
+          
+          console.log(`Executando consulta SQL na tabela específica: ${queryV2.replace(/\s+/g, ' ')}`);
+          
+          const resultV2 = await pool.query(queryV2);
+          
+          // Informações adicionais para debug
+          console.log(`Abastecimentos encontrados na tabela específica: ${resultV2.rows.length}`);
+          if (resultV2.rows.length > 0) {
+            const ultimoRegistro = resultV2.rows[0];
+            console.log(`Último abastecimento: ID=${ultimoRegistro.id}, Placa=${ultimoRegistro.placa}, Data=${ultimoRegistro.created_at}`);
+          }
+          
+          return res.status(200).json({
+            success: true,
+            count: resultV2.rows.length,
+            data: resultV2.rows,
+            requestTimestamp: timestamp,
+            source: 'tabela_especifica'
+          });
+        } else {
+          console.log(`Tabela específica ${tabelaPosto} não encontrada. Usando tabela genérica.`);
+        }
+      }
+      
+      // Consulta padrão na tabela abastecimentos_postos (para postos não-v2 ou se a tabela específica não existir)
       const query = `
         SELECT * FROM abastecimentos_postos
         WHERE 
@@ -5799,13 +5866,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ORDER BY created_at DESC
       `;
       
-      console.log(`Executando consulta SQL: ${query.replace(/\s+/g, ' ')} com parâmetro: ${posto}`);
+      console.log(`Executando consulta SQL na tabela genérica: ${query.replace(/\s+/g, ' ')} com parâmetro: ${posto}`);
       
       // Executar a consulta
       const result = await pool.query(query, [posto]);
       
       // Informações adicionais para debug
-      console.log(`Abastecimentos encontrados: ${result.rows.length}`);
+      console.log(`Abastecimentos encontrados na tabela genérica: ${result.rows.length}`);
       if (result.rows.length > 0) {
         const ultimoRegistro = result.rows[0];
         console.log(`Último abastecimento: ID=${ultimoRegistro.id}, Placa=${ultimoRegistro.placa}, Data=${ultimoRegistro.created_at}`);
@@ -5815,7 +5882,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true,
         count: result.rows.length,
         data: result.rows,
-        requestTimestamp: timestamp
+        requestTimestamp: timestamp,
+        source: 'tabela_generica'
       });
     } catch (error: any) {
       console.error("Erro ao buscar abastecimentos:", error);
