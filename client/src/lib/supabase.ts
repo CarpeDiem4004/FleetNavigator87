@@ -190,6 +190,68 @@ export const uploadFileToSupabase = async (file: File, path: string, bucketName?
 };
 
 /**
+ * Função específica para upload de documentos de orçamento
+ * 
+ * @param file - O arquivo do orçamento (PDF/JPG/PNG)
+ * @param budgetRequestId - ID da solicitação de orçamento (0 se for uma nova solicitação)
+ * @param baseId - ID da base
+ * @param baseName - Nome da base
+ * @param uploaderId - ID do usuário que está fazendo o upload
+ * @param uploaderName - Nome do usuário que está fazendo o upload
+ * @returns - Objeto com a URL do documento e os metadados registrados
+ */
+export const uploadBudgetFile = async (
+  file: File,
+  budgetRequestId: number,
+  baseId: number,
+  baseName: string,
+  uploaderId: number | null = null,
+  uploaderName: string | null = null
+): Promise<{ url: string, metadata: any }> => {
+  try {
+    // Verificar se o arquivo é válido
+    if (!file) {
+      throw new Error('Arquivo de orçamento inválido');
+    }
+    
+    // Garantir que o bucket de anexos de orçamento exista
+    await ensureBucketExists(BUDGET_ATTACHMENTS_BUCKET);
+    
+    // Criar um caminho único para o arquivo no Supabase Storage
+    const fileExtension = file.name.split('.').pop() || '';
+    const uniqueId = Date.now().toString();
+    const filePath = `base-${baseId}/request-${budgetRequestId || 'new'}/${uniqueId}-${file.name}`;
+    
+    // Fazer upload do arquivo para o bucket específico de orçamentos
+    const storageUrl = await uploadFileToSupabase(file, filePath, BUDGET_ATTACHMENTS_BUCKET);
+    
+    // Registrar os metadados do anexo no banco de dados (apenas se budgetRequestId > 0)
+    let metadata = null;
+    if (budgetRequestId > 0) {
+      metadata = await registerAttachmentMetadata(
+        budgetRequestId,
+        baseId,
+        baseName,
+        file.name,
+        filePath,
+        storageUrl,
+        uploaderId,
+        uploaderName,
+        'budget'
+      );
+    }
+    
+    return {
+      url: storageUrl,
+      metadata
+    };
+  } catch (error) {
+    console.error('Erro ao fazer upload do documento de orçamento:', error);
+    throw error;
+  }
+};
+
+/**
  * Função específica para upload de notas fiscais
  * 
  * @param file - O arquivo da nota fiscal (PDF/JPG/PNG)

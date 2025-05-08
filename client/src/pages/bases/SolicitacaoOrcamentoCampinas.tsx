@@ -184,34 +184,35 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
     
     setIsLoading(true);
     try {
-      // Usar um método alternativo para lidar com o arquivo
       const baseId = 2; // ID para Base Campinas
       const baseName = "Base Campinas";
-      const uniqueId = uuidv4();
-      const fileName = budgetFile.name;
       
-      // Para contornar os problemas de permissão do Storage, vamos usar blob URL temporário
-      // Em vez de tentar fazer upload para o Supabase Storage
-      console.log("Criando blob URL temporário para o arquivo...");
+      // Upload do documento de orçamento para o Supabase Storage
+      console.log("Iniciando upload do documento de orçamento para o Supabase Storage...");
       console.log("Arquivo:", budgetFile);
       
-      // Criar uma URL blob temporária para o arquivo (válida durante a sessão do navegador)
-      const blobUrl = URL.createObjectURL(budgetFile);
-      console.log("Blob URL criada:", blobUrl);
+      // Upload do arquivo para o Storage usando a nova função
+      // Como ainda não temos o ID da solicitação, passamos 0
+      const uploadResult = await uploadBudgetFile(
+        budgetFile,
+        0, // budgetRequestId será 0 porque a solicitação ainda não existe
+        baseId,
+        baseName, 
+        user?.id || null,
+        user?.name || null
+      );
       
-      // Usar esta URL temporária para o formulário
-      // Esta é uma solução temporária até que os problemas de permissão do Supabase sejam resolvidos
-      const storageUrl = blobUrl;
+      console.log("Upload concluído com sucesso:", uploadResult);
       
-      // Preparar os dados para o envio
+      // Preparar os dados para o envio usando a URL permanente do Supabase Storage
       const requestData = {
         title: data.title,
         description: data.description,
         priority: data.priority,
         estimated_value: data.estimated_value,
         department: data.department,
-        budget_file_url: storageUrl,
-        budget_file_name: fileName,
+        budget_file_url: uploadResult.url,
+        budget_file_name: budgetFile.name,
         base_id: baseId,
         base_name: baseName
       };
@@ -232,19 +233,16 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
       
       const newRequest = await response.json();
       
-      // Registrar os metadados do anexo no Supabase
+      // Registrar os metadados do anexo no Supabase com o ID correto da solicitação
       try {
-        // Não temos um filePath real, pois estamos usando blob URL
-        // Vamos criar um valor fictício para o metadado
-        const virtualFilePath = `blob://${baseId}/${newRequest.id}/${uniqueId}-${fileName}`;
-        
+        // Como o arquivo já foi enviado com ID 0, precisamos registrar novamente com o ID correto
         const attachmentMetadata = await registerAttachmentMetadata(
           newRequest.id,
           baseId,
           baseName,
-          fileName,
-          virtualFilePath,
-          storageUrl,
+          budgetFile.name,
+          uploadResult.url.split('/').pop() || '', // Extrair o nome do arquivo da URL
+          uploadResult.url,
           user?.id || null,
           user?.name || null,
           'budget'
@@ -264,7 +262,7 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
       
       toast({
         title: "Solicitação Enviada",
-        description: "Solicitação de orçamento enviada com armazenamento temporário. A equipe de gestão de frotas irá responder em breve.",
+        description: "Solicitação de orçamento enviada com armazenamento permanente. A equipe de gestão de frotas irá responder em breve.",
         variant: "default"
       });
     } catch (error) {
