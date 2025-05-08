@@ -107,6 +107,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     { href: '/users', label: 'Usuários', icon: Users },
     { href: '/bases', label: 'Bases', icon: Building2 },
     { href: '/solicitacoes', label: 'Solicitações da Base', icon: MessageSquare },
+    { href: '/diagnostico/migracao-anexos', label: 'Migração de Anexos', icon: Package },
   ];
 
   // Expandir automaticamente Abastecimento se estivermos em uma página de posto
