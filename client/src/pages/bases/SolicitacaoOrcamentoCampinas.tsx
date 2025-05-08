@@ -177,12 +177,6 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
     
     setIsLoading(true);
     try {
-      // Verificar e criar o bucket se necessário
-      const bucketReady = await checkAndCreateBucket();
-      if (!bucketReady) {
-        throw new Error("Não foi possível preparar o bucket de armazenamento.");
-      }
-      
       // Fazer upload do arquivo para o Supabase Storage
       const baseId = 2; // ID para Base Campinas
       const baseName = "Base Campinas";
@@ -195,6 +189,7 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
       console.log("Arquivo:", budgetFile);
       console.log("Caminho:", filePath);
       
+      // A função uploadFileToSupabase já contém a lógica para verificar/criar o bucket
       const storageUrl = await uploadFileToSupabase(budgetFile, filePath);
       console.log("Upload concluído. URL:", storageUrl);
       
