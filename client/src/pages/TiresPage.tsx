@@ -384,7 +384,7 @@ const TiresPage: React.FC = () => {
     
     try {
       // Remover campos que possam causar problemas na atualização
-      const { total_movimentacoes, ...tireToUpdate } = currentTire;
+      const { total_movimentacoes, ultima_movimentacao, ...tireToUpdate } = currentTire;
       
       // Atualizando o pneu via API
       const response = await updateTire(currentTire.id, {
