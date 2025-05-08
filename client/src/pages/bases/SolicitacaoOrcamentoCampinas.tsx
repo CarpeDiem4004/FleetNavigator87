@@ -52,7 +52,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from '@/hooks/use-auth';
-import { Loader2, FileText, ClipboardList, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { Loader2, FileText, ClipboardList, CheckCircle, AlertCircle, Clock, AlertTriangle } from 'lucide-react';
 import { uploadFileToSupabase, registerAttachmentMetadata, BUDGET_ATTACHMENTS_BUCKET, supabase } from '@/lib/supabase';
 
 // Schema de validação para solicitação de orçamento
