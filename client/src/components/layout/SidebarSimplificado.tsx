@@ -210,7 +210,7 @@ const SidebarSimplificado: React.FC<SidebarProps> = ({ open, setOpen }) => {
         { name: 'Posto Campinas V2', href: '/posto/campinas_v2', icon: Fuel },
         { name: 'Posto ABC V2', href: '/posto/abc_v2', icon: Fuel },
         { name: 'Posto Socorro', href: '/posto/socorro', icon: Fuel },
-        { name: 'Posto Sorocaba', href: '/posto/sorocaba', icon: Fuel },
+        // Posto Sorocaba removido - Maio/2025
       ]
     },
     
