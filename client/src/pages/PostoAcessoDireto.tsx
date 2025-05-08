@@ -30,7 +30,9 @@ const postosList = [
   { id: 'abc', nome: 'ABC', version: 'v1' },
   { id: 'abc_v2', nome: 'ABC', version: 'v2' },
   { id: 'socorro', nome: 'Socorro', version: 'v1' },
-  { id: 'sorocaba', nome: 'Sorocaba', version: 'v1' }
+  { id: 'socorro_v2', nome: 'Socorro', version: 'v2' },
+  { id: 'sorocaba', nome: 'Sorocaba', version: 'v1' },
+  { id: 'sorocaba_v2', nome: 'Sorocaba', version: 'v2' }
 ];
 
 const PostoAcessoDireto: React.FC = () => {
