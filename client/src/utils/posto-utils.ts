@@ -25,7 +25,6 @@ export const POSTOS_CONHECIDOS: string[] = [
   'osasco_v2',
   'abc',
   'abc_v2',
-  'socorro_v2',
   'sorocaba_v2'
 ];
 
@@ -144,7 +143,8 @@ export function isPostoValido(posto: string): boolean {
   
   // Lista de postos desativados
   const postosDesativados = [
-    'sorocaba' // Mantemos apenas a versão antiga do posto Sorocaba desativada
+    'sorocaba', // Versão antiga do posto Sorocaba
+    'socorro_v2' // Posto Socorro V2 desativado conforme solicitação
   ];
   
   // Normalizando o nome do posto para comparação
