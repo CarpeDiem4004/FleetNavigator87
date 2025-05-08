@@ -665,6 +665,13 @@ export async function registrarAbastecimentoPosto(req, res) {
       postoName = 'alair_v2';
       console.log("Posto identificado como Alair V2");
     }
+    // Verificação explícita para Guarulhos V2
+    else if (postoName.toLowerCase() === 'guarulhos_v2' || 
+        postoName.toLowerCase().includes('guarulhos_v2') || 
+        postoName.toLowerCase().includes('guarulhos v2')) {
+      postoName = 'guarulhos_v2';
+      console.log("Posto identificado como Guarulhos V2");
+    }
     // Verificação explícita para Socorro V2
     else if (postoName.toLowerCase() === 'socorro_v2' || 
         postoName.toLowerCase().includes('socorro_v2') || 
