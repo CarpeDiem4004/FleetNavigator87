@@ -7042,6 +7042,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Rotas para migração de anexos de orçamentos
+  app.get('/api/diagnostics/blob-attachments', isAuthenticated, async (req, res) => {
+    try {
+      // Verificar se o usuário é administrador
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ 
+          error: 'Acesso negado. Apenas administradores podem acessar esta funcionalidade.' 
+        });
+      }
+      
+      // Buscar todos os anexos com URLs blob
+      const result = await pool.query(`
+        SELECT 
+          id, 
+          base_id, 
+          base_name, 
+          title, 
+          budget_file_name, 
+          budget_file_url, 
+          requester_id, 
+          requester_name, 
+          status
+        FROM 
+          campinas_budget_requests
+        WHERE 
+          budget_file_url IS NOT NULL AND 
+          budget_file_url LIKE 'blob:%'
+        ORDER BY 
+          id DESC
+      `);
+      
+      return res.json(result.rows);
+    } catch (error) {
+      console.error('Erro ao buscar anexos blob:', error);
+      return res.status(500).json({ 
+        error: 'Erro interno ao buscar anexos com URLs blob' 
+      });
+    }
+  });
+  
+  app.put('/api/diagnostics/update-attachment-url/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { budget_file_url, budget_file_name } = req.body;
+      
+      // Verificar se o usuário é administrador
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ 
+          error: 'Acesso negado. Apenas administradores podem atualizar anexos.' 
+        });
+      }
+      
+      // Atualizar a URL do anexo
+      const result = await pool.query(`
+        UPDATE campinas_budget_requests
+        SET 
+          budget_file_url = $1,
+          budget_file_name = $2,
+          updated_at = NOW()
+        WHERE id = $3
+        RETURNING id, title, budget_file_url, budget_file_name
+      `, [budget_file_url, budget_file_name, id]);
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({ 
+          error: 'Solicitação de orçamento não encontrada' 
+        });
+      }
+      
+      // Sincronizar com as tabelas existentes
+      try {
+        await pool.query(`CALL sync_budget_attachments_from_campinas()`);
+      } catch (syncError) {
+        console.warn('Aviso: Erro ao sincronizar anexos após atualização:', syncError);
+        // Continuamos mesmo com erro na sincronização
+      }
+      
+      return res.json({
+        success: true,
+        message: 'URL de anexo atualizada com sucesso',
+        attachment: result.rows[0]
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar URL de anexo:', error);
+      return res.status(500).json({ 
+        error: 'Erro interno ao atualizar URL de anexo' 
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
