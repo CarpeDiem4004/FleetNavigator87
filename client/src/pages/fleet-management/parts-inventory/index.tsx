@@ -645,8 +645,8 @@ export default function PartsInventory() {
 
       {/* Dialog para movimentação de estoque */}
       <Dialog open={isMovementDialogOpen} onOpenChange={setIsMovementDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto my-4 p-6">
+          <DialogHeader className="mb-4">
             <DialogTitle>Movimentação de Estoque</DialogTitle>
             <DialogDescription>
               {selectedPart && (
@@ -769,8 +769,8 @@ export default function PartsInventory() {
 
       {/* Dialog para nova peça */}
       <Dialog open={isNewPartDialogOpen} onOpenChange={setIsNewPartDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto my-4 p-6">
+          <DialogHeader className="mb-4">
             <DialogTitle>Cadastrar Nova Peça</DialogTitle>
             <DialogDescription>
               Preencha os campos abaixo para cadastrar uma nova peça no estoque.
