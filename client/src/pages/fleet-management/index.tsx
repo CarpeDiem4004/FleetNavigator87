@@ -68,131 +68,95 @@ export default function FleetManagement() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+            <Card className="flex flex-col">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <Wrench className="h-5 w-5 text-primary" />
                   Sistema de Manutenção
                 </CardTitle>
-                <CardDescription>
-                  Acompanhe todas as manutenções
-                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <p>Gerencie todo o ciclo de manutenções, desde a solicitação até a conclusão. Acompanhe o status, histórico de serviços e custos de manutenção por veículo.</p>
-              </CardContent>
-              <CardFooter>
+              <CardFooter className="mt-auto">
                 <Button variant="outline" className="w-full" asChild>
                   <Link href="/fleet-management/maintenance">
-                    Gerenciar Manutenções <ArrowRight className="ml-2 h-4 w-4" />
+                    Acessar <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
               </CardFooter>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2">
+            <Card className="flex flex-col">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <Building className="h-5 w-5 text-primary" />
                   Oficina Murici
                 </CardTitle>
-                <CardDescription>
-                  Centro de manutenção próprio
-                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <p>Acesse o sistema da Oficina Murici para gerenciar todas as operações de manutenção interna, acompanhar reparos e verificar status de veículos em serviço.</p>
-              </CardContent>
-              <CardFooter>
+              <CardFooter className="mt-auto">
                 <Button variant="outline" className="w-full" asChild>
                   <Link href="/oficina/murici">
-                    Acessar Oficina Murici <ArrowRight className="ml-2 h-4 w-4" />
+                    Acessar <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
               </CardFooter>
             </Card>
             
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2">
+            <Card className="flex flex-col">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <Package className="h-5 w-5 text-primary" />
                   Estoque de Peças
                 </CardTitle>
-                <CardDescription>
-                  Gerenciamento de peças
-                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <p>Controle completo do estoque de peças com geração automática de códigos, histórico de movimentações, importação e exportação via Excel.</p>
-              </CardContent>
-              <CardFooter>
+              <CardFooter className="mt-auto">
                 <Button variant="outline" className="w-full" asChild>
                   <Link href="/fleet-management/parts-inventory">
-                    Gerenciar Estoque <ArrowRight className="ml-2 h-4 w-4" />
+                    Acessar <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
               </CardFooter>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2">
+            <Card className="flex flex-col">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <DollarSign className="h-5 w-5 text-primary" />
                   Negociação de Orçamentos
                 </CardTitle>
-                <CardDescription>
-                  Tratativas com oficinas
-                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <p>Gerencie orçamentos enviados pelas oficinas, responda às propostas e acompanhe as negociações em andamento para aprovar os valores e autorizar serviços.</p>
-              </CardContent>
-              <CardFooter>
+              <CardFooter className="mt-auto">
                 <Button variant="outline" className="w-full" asChild>
                   <Link href="/fleet-management/budgets">
-                    Gerenciar Orçamentos <ArrowRight className="ml-2 h-4 w-4" />
+                    Acessar <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
               </CardFooter>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2">
+            <Card className="flex flex-col">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <Building2 className="h-5 w-5 text-primary" />
                   Oficinas Credenciadas
                 </CardTitle>
-                <CardDescription>
-                  Gerencie oficinas parceiras
-                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <p>Cadastre e gerencie as oficinas parceiras autorizadas para realizar serviços em sua frota. Mantenha um registro de especialidades e qualidade de serviço.</p>
-              </CardContent>
-              <CardFooter>
+              <CardFooter className="mt-auto">
                 <Button variant="outline" className="w-full" asChild>
                   <Link href="/fleet-management/workshops">
-                    Gerenciar Oficinas <ArrowRight className="ml-2 h-4 w-4" />
+                    Acessar <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
               </CardFooter>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2">
+            <Card className="flex flex-col">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <BarChart3 className="h-5 w-5 text-primary" />
                   Análise de Operações
                 </CardTitle>
-                <CardDescription>
-                  Avalie o desempenho operacional
-                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <p>Monitore indicadores de desempenho da sua frota, incluindo custos operacionais, eficiência de combustível e disponibilidade de veículos.</p>
-              </CardContent>
-              <CardFooter>
+              <CardFooter className="mt-auto">
                 <Button variant="outline" className="w-full" disabled>
                   Em breve <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
