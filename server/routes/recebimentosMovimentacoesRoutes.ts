@@ -386,7 +386,7 @@ router.post('/movimentacoes-patio/:posto', async (req, res) => {
       
       const entradaResult = await pool.query(entradaQuery, [placa, data_hora || new Date()]);
       
-      if (entradaResult.rowCount > 0) {
+      if (entradaResult.rowCount && entradaResult.rowCount > 0) {
         const entrada = entradaResult.rows[0];
         
         // Calcular o tempo de permanência
@@ -405,11 +405,11 @@ router.post('/movimentacoes-patio/:posto', async (req, res) => {
       message: `Movimentação de ${tipo_movimentacao} para o veículo ${placa} registrada com sucesso.`,
       data: result.rows[0]
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Erro ao registrar movimentação para posto ${req.params.posto}:`, error);
     res.status(500).json({ 
       success: false, 
-      error: `Erro ao registrar movimentação: ${error.message}` 
+      error: `Erro ao registrar movimentação: ${error.message || 'Erro desconhecido'}` 
     });
   }
 });
