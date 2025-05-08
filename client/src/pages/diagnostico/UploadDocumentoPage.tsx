@@ -172,11 +172,16 @@ const UploadDocumentoPage: React.FC = () => {
       
       const publicUrl = urlData.publicUrl;
       
-      // Registrar o documento no banco de dados
+      // Obter o token JWT para autenticação
+      const token = localStorage.getItem('jwt_token');
+      console.log('Token JWT para autenticação obtido:', !!token);
+
+      // Registrar o documento no banco de dados com token JWT
       const response = await fetch('/api/budget-attachments/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
         },
         body: JSON.stringify({
           budget_request_id: null, // Não está vinculado a uma solicitação específica
