@@ -1445,7 +1445,7 @@ const TiresPage: React.FC = () => {
                 </div>
               </div>
               
-              {/* Valor Unitário (sétima linha) */}
+              {/* Valor Unitário e Quantidade (sétima linha) */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="edit-valor_unitario" className="text-xs mb-2">Valor Unitário (R$)</Label>
@@ -1456,6 +1456,18 @@ const TiresPage: React.FC = () => {
                     value={currentTire?.valor_unitario || ''}
                     onChange={(e) => setCurrentTire(current => current ? {...current, valor_unitario: parseFloat(e.target.value)} : null)}
                     placeholder="Ex: 1200.00"
+                    className="h-9"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="edit-quantidade" className="text-xs mb-2">Quantidade</Label>
+                  <Input
+                    id="edit-quantidade"
+                    type="number"
+                    value={currentTire?.quantidade || ''}
+                    onChange={(e) => setCurrentTire(current => current ? {...current, quantidade: parseInt(e.target.value)} : null)}
+                    placeholder="Ex: 1"
                     className="h-9"
                   />
                 </div>
