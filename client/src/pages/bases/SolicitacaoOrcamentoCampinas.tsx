@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { v4 as uuidv4 } from 'uuid';
 import { 
   Card, 
   CardContent, 
@@ -52,6 +53,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2, FileText, ClipboardList, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { uploadFileToSupabase, registerAttachmentMetadata, BUDGET_ATTACHMENTS_BUCKET } from '@/lib/supabase';
 
 // Schema de validação para solicitação de orçamento
 const budgetRequestSchema = z.object({
@@ -171,9 +173,20 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
     
     setIsLoading(true);
     try {
-      // TODO: Implementar upload de arquivo para servidor
-      // Por enquanto, usamos apenas uma simulação
-      const budgetFileUrl = URL.createObjectURL(budgetFile);
+      // Fazer upload do arquivo para o Supabase Storage
+      const baseId = 2; // ID para Base Campinas
+      const baseName = "Base Campinas";
+      const uniqueId = uuidv4();
+      const fileName = budgetFile.name;
+      const filePath = `${baseId}/draft/${uniqueId}-${fileName}`;
+      
+      // Upload para o Supabase Storage
+      console.log("Fazendo upload do arquivo para o Supabase Storage...");
+      console.log("Arquivo:", budgetFile);
+      console.log("Caminho:", filePath);
+      
+      const storageUrl = await uploadFileToSupabase(budgetFile, filePath);
+      console.log("Upload concluído. URL:", storageUrl);
       
       // Preparar os dados para o envio
       const requestData = {
@@ -182,8 +195,10 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
         priority: data.priority,
         estimated_value: data.estimated_value,
         department: data.department,
-        budget_file_url: budgetFileUrl,
-        budget_file_name: budgetFile.name
+        budget_file_url: storageUrl,
+        budget_file_name: fileName,
+        base_id: baseId,
+        base_name: baseName
       };
       
       // Enviar a solicitação para a API
@@ -202,6 +217,26 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
       
       const newRequest = await response.json();
       
+      // Registrar os metadados do anexo no Supabase
+      try {
+        const attachmentMetadata = await registerAttachmentMetadata(
+          newRequest.id,
+          baseId,
+          baseName,
+          fileName,
+          filePath,
+          storageUrl,
+          user?.id || null,
+          user?.name || null,
+          'budget'
+        );
+        
+        console.log("Metadados do anexo registrados:", attachmentMetadata);
+      } catch (metadataError) {
+        console.error("Erro ao registrar metadados do anexo:", metadataError);
+        // Não falha o processo se o registro de metadados falhar
+      }
+      
       // Atualizar a interface
       setRequests([newRequest, ...requests]);
       form.reset();
@@ -217,7 +252,7 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
       console.error("Erro ao criar solicitação:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível criar a solicitação de orçamento.",
+        description: "Não foi possível criar a solicitação de orçamento. Verifique se o Supabase está configurado corretamente.",
         variant: "destructive"
       });
     } finally {
@@ -411,44 +446,87 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
     
     setIsLoading(true);
     try {
-      // Simulando upload do arquivo
-      // Em uma implementação real, você enviaria o arquivo para o servidor
-      console.log("Enviando arquivo de orçamento:", budgetFile);
+      // Fazer upload do arquivo para o Supabase Storage
+      const baseId = selectedRequest.base_id || 2; // Usar o ID da base da solicitação ou 2 (Campinas) como padrão
+      const baseName = selectedRequest.base_name || "Base Campinas";
+      const uniqueId = uuidv4();
+      const fileName = budgetFile.name;
+      const filePath = `${baseId}/${selectedRequest.id}/${uniqueId}-${fileName}`;
       
-      setTimeout(() => {
-        // Atualizar a solicitação com as informações do arquivo
-        const updatedRequests = requests.map(req => {
-          if (req.id === selectedRequest.id) {
-            return {
-              ...req,
-              budget_file_name: budgetFile.name,
-              budget_file_url: URL.createObjectURL(budgetFile), // Simulando URL
-              updated_at: new Date().toISOString()
-            };
-          }
-          return req;
-        });
+      console.log("Fazendo upload do orçamento para o Supabase Storage...");
+      console.log("Arquivo:", budgetFile);
+      console.log("Caminho:", filePath);
+      
+      // Upload para o Supabase Storage
+      const storageUrl = await uploadFileToSupabase(budgetFile, filePath);
+      console.log("Upload concluído. URL:", storageUrl);
+      
+      // Atualizar o registro da solicitação com a nova URL
+      const updateData = {
+        budget_file_url: storageUrl,
+        budget_file_name: fileName
+      };
+      
+      // Chamar a API para atualizar a solicitação
+      const response = await fetch(`/api/bases/campinas/solicitacao-orcamento/${selectedRequest.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(updateData)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erro ao atualizar solicitação: ${response.statusText}`);
+      }
+      
+      // Obter a solicitação atualizada
+      const updatedRequest = await response.json();
+      
+      // Registrar os metadados do anexo no Supabase
+      try {
+        const attachmentMetadata = await registerAttachmentMetadata(
+          selectedRequest.id,
+          baseId,
+          baseName,
+          fileName,
+          filePath,
+          storageUrl,
+          user?.id || null,
+          user?.name || null,
+          'budget'
+        );
         
-        setRequests(updatedRequests);
-        setBudgetFile(null);
-        setBudgetFileName('');
-        
-        toast({
-          title: "Orçamento Anexado",
-          description: "O arquivo de orçamento foi anexado com sucesso.",
-          variant: "default"
-        });
-        
-        setIsLoading(false);
-        setIsDialogOpen(false);
-      }, 800);
+        console.log("Metadados do anexo registrados:", attachmentMetadata);
+      } catch (metadataError) {
+        console.error("Erro ao registrar metadados do anexo:", metadataError);
+        // Não falha o processo se o registro de metadados falhar
+      }
+      
+      // Atualizar a lista de solicitações
+      const updatedRequests = requests.map(req => 
+        req.id === selectedRequest.id ? updatedRequest : req
+      );
+      
+      setRequests(updatedRequests);
+      setBudgetFile(null);
+      setBudgetFileName('');
+      setIsDialogOpen(false);
+      
+      toast({
+        title: "Orçamento Anexado",
+        description: "O arquivo de orçamento foi anexado com sucesso e armazenado permanentemente.",
+        variant: "default"
+      });
     } catch (error) {
       console.error("Erro ao salvar arquivo:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível anexar o arquivo de orçamento.",
+        description: "Não foi possível anexar o arquivo de orçamento. Verifique se o Supabase está configurado corretamente.",
         variant: "destructive"
       });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -459,44 +537,88 @@ const SolicitacaoOrcamentoCampinas: React.FC = () => {
     
     setIsLoading(true);
     try {
-      // Simulando upload do arquivo
-      console.log("Enviando arquivo de nota fiscal:", invoiceFile);
+      // Fazer upload do arquivo para o Supabase Storage
+      const baseId = selectedRequest.base_id || 2; // Usar o ID da base da solicitação ou 2 (Campinas) como padrão
+      const baseName = selectedRequest.base_name || "Base Campinas";
+      const uniqueId = uuidv4();
+      const fileName = invoiceFile.name;
+      const filePath = `${baseId}/${selectedRequest.id}/invoice-${uniqueId}-${fileName}`;
       
-      setTimeout(() => {
-        // Atualizar a solicitação com as informações do arquivo
-        const updatedRequests = requests.map(req => {
-          if (req.id === selectedRequest.id) {
-            return {
-              ...req,
-              invoice_file_name: invoiceFile.name,
-              invoice_file_url: URL.createObjectURL(invoiceFile), // Simulando URL
-              pending_invoice: false, // Marca como não pendente após anexar NF
-              updated_at: new Date().toISOString()
-            };
-          }
-          return req;
-        });
+      console.log("Fazendo upload da nota fiscal para o Supabase Storage...");
+      console.log("Arquivo:", invoiceFile);
+      console.log("Caminho:", filePath);
+      
+      // Upload para o Supabase Storage
+      const storageUrl = await uploadFileToSupabase(invoiceFile, filePath);
+      console.log("Upload concluído. URL:", storageUrl);
+      
+      // Atualizar o registro da solicitação com a nova URL
+      const updateData = {
+        invoice_file_url: storageUrl,
+        invoice_file_name: fileName,
+        pending_invoice: false // Marca como não pendente após anexar NF
+      };
+      
+      // Chamar a API para atualizar a solicitação
+      const response = await fetch(`/api/bases/campinas/solicitacao-orcamento/${selectedRequest.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(updateData)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erro ao atualizar solicitação: ${response.statusText}`);
+      }
+      
+      // Obter a solicitação atualizada
+      const updatedRequest = await response.json();
+      
+      // Registrar os metadados do anexo no Supabase
+      try {
+        const attachmentMetadata = await registerAttachmentMetadata(
+          selectedRequest.id,
+          baseId,
+          baseName,
+          fileName,
+          filePath,
+          storageUrl,
+          user?.id || null,
+          user?.name || null,
+          'invoice'
+        );
         
-        setRequests(updatedRequests);
-        setInvoiceFile(null);
-        setInvoiceFileName('');
-        
-        toast({
-          title: "Nota Fiscal Anexada",
-          description: "A nota fiscal foi anexada com sucesso.",
-          variant: "default"
-        });
-        
-        setIsLoading(false);
-        setIsInvoiceUploadDialogOpen(false);
-      }, 800);
+        console.log("Metadados do anexo registrados:", attachmentMetadata);
+      } catch (metadataError) {
+        console.error("Erro ao registrar metadados do anexo:", metadataError);
+        // Não falha o processo se o registro de metadados falhar
+      }
+      
+      // Atualizar a lista de solicitações
+      const updatedRequests = requests.map(req => 
+        req.id === selectedRequest.id ? updatedRequest : req
+      );
+      
+      setRequests(updatedRequests);
+      setInvoiceFile(null);
+      setInvoiceFileName('');
+      setIsInvoiceUploadDialogOpen(false);
+      
+      toast({
+        title: "Nota Fiscal Anexada",
+        description: "A nota fiscal foi anexada com sucesso e armazenada permanentemente.",
+        variant: "default"
+      });
     } catch (error) {
       console.error("Erro ao salvar arquivo:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível anexar a nota fiscal.",
+        description: "Não foi possível anexar a nota fiscal. Verifique se o Supabase está configurado corretamente.",
         variant: "destructive"
       });
+    } finally {
       setIsLoading(false);
     }
   };

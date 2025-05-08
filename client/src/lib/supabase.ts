@@ -1,104 +1,130 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';
+// Verificar se as variáveis de ambiente estão definidas
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Variáveis de ambiente do Supabase não configuradas. Certifique-se de que VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY estão definidas.');
+}
 
-// Helper functions for common Supabase queries
+// Criar o cliente Supabase com a chave anônima (para uso no navegador)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Authentication
-export const signIn = async ({ email, password }: { email: string; password: string }) => {
-  return await supabase.auth.signInWithPassword({ email, password });
+// Informações de configuração para debugging
+console.log('Verificando variáveis de ambiente do Supabase:');
+console.log('- VITE_SUPABASE_URL disponível:', Boolean(supabaseUrl));
+console.log('- VITE_SUPABASE_ANON_KEY disponível:', Boolean(supabaseAnonKey));
+console.log('- VITE_SUPABASE_SERVICE_KEY disponível:', Boolean(supabaseServiceKey));
+
+if (supabaseServiceKey) {
+  // Mostrar apenas os primeiros 10 caracteres para debug, mas não exibir a chave completa
+  console.log('Supabase Service Key (primeiros 10 caracteres):', supabaseServiceKey.substring(0, 10) + '...');
+}
+
+// Exportar informações de configuração para debugging
+export const supabaseConfig = {
+  url: supabaseUrl,
+  anonKeyAvailable: Boolean(supabaseAnonKey),
+  serviceKeyAvailable: Boolean(supabaseServiceKey)
 };
 
-export const signUp = async ({ email, password, name }: { email: string; password: string; name: string }) => {
-  // Registra o usuário na autenticação do Supabase
-  const { data, error } = await supabase.auth.signUp({ 
-    email, 
-    password,
-    options: {
-      data: {
-        name
-      }
+console.log('Configuração Supabase Cliente:', supabaseConfig);
+
+// Nome do bucket para anexos de orçamentos
+export const BUDGET_ATTACHMENTS_BUCKET = 'budget-attachments';
+
+/**
+ * Função para fazer upload de um arquivo para o Supabase Storage
+ * @param file - O arquivo a ser enviado
+ * @param path - O caminho dentro do bucket onde o arquivo será armazenado
+ * @returns - A URL pública do arquivo armazenado
+ */
+export const uploadFileToSupabase = async (file: File, path: string): Promise<string> => {
+  try {
+    // Verificar se o arquivo é válido
+    if (!file) {
+      throw new Error('Arquivo inválido');
     }
-  });
-  
-  if (error) {
-    return { data, error };
-  }
-  
-  // Se o registro na autenticação for bem-sucedido, cria o perfil do usuário na tabela users
-  if (data.user) {
-    const newUser = {
-      email: data.user.email,
-      name: name || data.user.email?.split('@')[0] || 'Usuário',
-      role: 'operador', // Papel padrão
-    };
-    
-    const { error: userError } = await supabase
-      .from('users')
-      .insert(newUser);
-      
-    if (userError) {
-      console.error("Erro ao criar perfil do usuário:", userError);
-      // Não retornamos o erro aqui para não impedir o registro,
-      // já que o usuário foi criado com sucesso na autenticação
+
+    // Fazer upload do arquivo para o Supabase Storage
+    const { data, error } = await supabase.storage
+      .from(BUDGET_ATTACHMENTS_BUCKET)
+      .upload(path, file, {
+        cacheControl: '3600',
+        upsert: true
+      });
+
+    if (error) {
+      throw error;
     }
+
+    // Obter a URL pública do arquivo
+    const { data: { publicUrl } } = supabase.storage
+      .from(BUDGET_ATTACHMENTS_BUCKET)
+      .getPublicUrl(path);
+
+    return publicUrl;
+  } catch (error) {
+    console.error('Erro ao fazer upload para o Supabase Storage:', error);
+    throw error;
   }
-  
-  return { data, error };
 };
 
-export const signOut = async () => {
-  return await supabase.auth.signOut();
-};
+/**
+ * Função para registrar um anexo no banco de dados
+ * @param budgetRequestId - ID da solicitação de orçamento
+ * @param baseId - ID da base
+ * @param baseName - Nome da base
+ * @param fileName - Nome do arquivo
+ * @param filePath - Caminho do arquivo no storage
+ * @param storageUrl - URL pública do arquivo
+ * @param uploaderId - ID do usuário que fez o upload
+ * @param uploaderName - Nome do usuário que fez o upload
+ * @param attachmentType - Tipo de anexo ('budget' ou 'invoice')
+ * @returns - O registro do anexo
+ */
+export const registerAttachmentMetadata = async (
+  budgetRequestId: number,
+  baseId: number,
+  baseName: string,
+  fileName: string,
+  filePath: string,
+  storageUrl: string,
+  uploaderId: number | null = null,
+  uploaderName: string | null = null,
+  attachmentType: 'budget' | 'invoice' = 'budget'
+) => {
+  try {
+    // Inserir registro de metadados do anexo no banco de dados
+    const { data, error } = await supabase
+      .from('budget_attachments')
+      .insert([
+        {
+          budget_request_id: budgetRequestId,
+          base_id: baseId,
+          base_name: baseName,
+          file_name: fileName,
+          file_path: filePath,
+          storage_url: storageUrl,
+          uploader_id: uploaderId,
+          uploader_name: uploaderName,
+          attachment_type: attachmentType,
+          file_type: fileName.split('.').pop() || '',
+          file_size: 0, // Não temos essa informação no momento
+          is_active: true
+        }
+      ])
+      .select();
 
-export const getCurrentUser = async () => {
-  return await supabase.auth.getUser();
-};
+    if (error) {
+      throw error;
+    }
 
-export const resetPassword = async (email: string) => {
-  return await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin + '/reset-password',
-  });
-};
-
-// Vehicles
-export const getVehicles = async (baseId?: number) => {
-  let query = supabase.from('vehicles').select('*');
-  
-  // Apply base filter if provided
-  if (baseId) {
-    query = query.eq('base_id', baseId);
+    return data[0];
+  } catch (error) {
+    console.error('Erro ao registrar metadados do anexo:', error);
+    throw error;
   }
-  
-  return await query;
 };
-
-export const getVehicleById = async (id: number) => {
-  return await supabase.from('vehicles').select('*').eq('id', id).single();
-};
-
-export const createVehicle = async (vehicleData: any) => {
-  return await supabase.from('vehicles').insert(vehicleData).select().single();
-};
-
-export const updateVehicle = async (id: number, vehicleData: any) => {
-  return await supabase.from('vehicles').update(vehicleData).eq('id', id).select().single();
-};
-
-export const deleteVehicle = async (id: number) => {
-  return await supabase.from('vehicles').delete().eq('id', id);
-};
-
-// Maintenance
-export const getMaintenance = async () => {
-  return await supabase.from('maintenance').select('*');
-};
-
-export const getMaintenanceByVehicle = async (vehiclePlate: string) => {
-  return await supabase.from('maintenance').select('*').eq('vehicle_plate', vehiclePlate);
-};
-
-// Similar functions for other entities
