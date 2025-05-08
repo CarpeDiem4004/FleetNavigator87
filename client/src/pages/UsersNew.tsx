@@ -569,10 +569,11 @@ const UsersNew: React.FC = () => {
                     <NativeSelect
                       id="role"
                       value={newUser.role}
-                      onChange={(e) => setNewUser({...newUser, role: e.target.value as 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto'})}
+                      onChange={(e) => setNewUser({...newUser, role: e.target.value as 'admin' | 'gestor' | 'operador' | 'oficina' | 'pneus' | 'posto' | 'gestor_frota'})}
                       options={[
                         { value: 'admin', label: 'Administrador' },
                         { value: 'gestor', label: 'Gestor' },
+                        { value: 'gestor_frota', label: 'Gestor de Frota' },
                         { value: 'operador', label: 'Operador' },
                         { value: 'posto', label: 'Posto (Abastecimento)' },
                         { value: 'oficina', label: 'Oficina' },
