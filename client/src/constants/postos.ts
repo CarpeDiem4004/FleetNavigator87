@@ -7,9 +7,11 @@ export const POSTO_ALAIR_V2 = "alair_v2";
 // São Paulo removido - Abril/2025
 export const POSTO_CAMPINAS = "campinas";
 export const POSTO_CAMPINAS_V2 = "campinas_v2";
-export const POSTO_ABC = "abc";
-export const POSTO_ABC_V2 = "abc_v2";
-export const POSTO_SOCORRO = "socorro";
+// ABC removido - Maio/2025 (mantemos comentado para compatibilidade com código existente)
+export const POSTO_ABC = "abc"; // Removido em Maio/2025
+export const POSTO_ABC_V2 = "abc_v2"; // Removido em Maio/2025
+// Socorro removido - Maio/2025 (mantemos comentado para compatibilidade com código existente)
+export const POSTO_SOCORRO = "socorro"; // Removido em Maio/2025
 export const POSTO_SOCORRO_V2 = "socorro_v2"; // Removido em Maio/2025
 // Posto Sorocaba (versão antiga) desativado
 export const POSTO_SOROCABA = "sorocaba";
@@ -25,10 +27,12 @@ export const NOME_POSTO_ALAIR_V2 = "Posto Alair V2";
 // São Paulo removido - Abril/2025
 export const NOME_POSTO_CAMPINAS = "Posto Campinas";
 export const NOME_POSTO_CAMPINAS_V2 = "Posto Campinas V2";
-export const NOME_POSTO_ABC = "Posto ABC";
-export const NOME_POSTO_ABC_V2 = "Posto ABC V2";
-export const NOME_POSTO_SOCORRO = "Posto Socorro";
-export const NOME_POSTO_SOCORRO_V2 = "Posto Socorro V2";
+// ABC removido - Maio/2025 (mantemos comentado para compatibilidade com código existente)
+export const NOME_POSTO_ABC = "Posto ABC"; // Removido em Maio/2025
+export const NOME_POSTO_ABC_V2 = "Posto ABC V2"; // Removido em Maio/2025
+// Socorro removido - Maio/2025 (mantemos comentado para compatibilidade com código existente)
+export const NOME_POSTO_SOCORRO = "Posto Socorro"; // Removido em Maio/2025
+export const NOME_POSTO_SOCORRO_V2 = "Posto Socorro V2"; // Removido em Maio/2025
 // Posto Sorocaba (versão antiga) desativado
 export const NOME_POSTO_SOROCABA = "Posto Sorocaba";
 // Posto Sorocaba V2 ativo
@@ -72,26 +76,8 @@ export const POSTOS_INFO = [
     nome: NOME_POSTO_CAMPINAS_V2, 
     descricao: 'Nova versão do posto de abastecimento de Campinas (V2)' 
   },
-  { 
-    id: POSTO_ABC, 
-    nome: NOME_POSTO_ABC, 
-    descricao: 'Posto de abastecimento da região do ABC Paulista' 
-  },
-  { 
-    id: POSTO_ABC_V2, 
-    nome: NOME_POSTO_ABC_V2, 
-    descricao: 'Nova versão do posto de abastecimento do ABC Paulista (V2)' 
-  },
-  { 
-    id: POSTO_SOCORRO, 
-    nome: NOME_POSTO_SOCORRO, 
-    descricao: 'Posto de abastecimento da região de Socorro' 
-  },
-  { 
-    id: POSTO_SOCORRO_V2, 
-    nome: NOME_POSTO_SOCORRO_V2, 
-    descricao: 'Nova versão do posto de abastecimento de Socorro (V2)' 
-  },
+  /* ABC removido a pedido do cliente - Maio/2025 */
+  /* Socorro removido a pedido do cliente - Maio/2025 */
   /* Sorocaba versão antiga desativada */
   { 
     id: POSTO_SOROCABA_V2, 
