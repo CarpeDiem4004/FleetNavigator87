@@ -26,6 +26,8 @@ export const POSTOS_CONHECIDOS: string[] = [
   'abc',
   'abc_v2',
   'socorro_v2',
+  // Posto Sorocaba removido - Maio/2025
+  // Mantido na lista para compatibilidade com código existente
   'sorocaba_v2'
 ];
 
@@ -142,6 +144,24 @@ export const MAPEAMENTO_POSTOS: Record<string, string> = {
 export function isPostoValido(posto: string): boolean {
   if (!posto) return false;
   
+  // Lista de postos desativados
+  const postosDesativados = [
+    'sorocaba', 
+    'sorocaba_v2', 
+    'sorocabav2', 
+    'posto sorocaba', 
+    'posto sorocaba v2'
+  ];
+  
+  // Normalizando o nome do posto para comparação
+  const nomeNormalizado = posto.toString().toLowerCase().trim();
+  
+  // Verificar se é um posto desativado
+  if (postosDesativados.includes(nomeNormalizado)) {
+    console.warn(`Posto desativado: ${posto}`);
+    return false;
+  }
+  
   // Consider it valid if it has at least 3 characters
   return posto.trim().length >= 3;
 }
@@ -230,7 +250,8 @@ export function getPostoDisplayName(nomePosto: string | number): string {
     'abc': 'Posto ABC',
     'abc_v2': 'Posto ABC V2',
     'socorro_v2': 'Posto Socorro V2',
-    'sorocaba_v2': 'Posto Sorocaba V2'
+    // Marcando o posto como desativado, mas mantendo a entrada para compatibilidade
+    'sorocaba_v2': 'Posto Sorocaba V2 (Desativado)'
   };
   
   return displayNames[nomeFormatado] || `Posto ${nomeFormatado.charAt(0).toUpperCase() + nomeFormatado.slice(1)}`;
