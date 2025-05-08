@@ -6436,7 +6436,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         estimated_value,
         department,
         budget_file_url,
-        budget_file_name
+        budget_file_name,
+        base_id = 2, // ID padrão para Base Campinas
+        base_name = "Base Campinas" // Nome padrão para Base Campinas
       } = req.body;
       
       // Validar dados
@@ -6444,12 +6446,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Todos os campos obrigatórios devem ser preenchidos' });
       }
       
+      console.log("Criando solicitação de orçamento com URL de arquivo:", budget_file_url);
+      
       const query = `
         INSERT INTO campinas_budget_requests 
           (title, description, priority, status, requester_id, requester_name, 
-          estimated_value, department, budget_file_url, budget_file_name, created_at, updated_at)
+          estimated_value, department, budget_file_url, budget_file_name, 
+          base_id, base_name, created_at, updated_at)
         VALUES 
-          ($1, $2, $3, 'pendente', $4, $5, $6, $7, $8, $9, NOW(), NOW())
+          ($1, $2, $3, 'pendente', $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
         RETURNING *;
       `;
       
@@ -6462,10 +6467,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         estimated_value,
         department,
         budget_file_url || null,
-        budget_file_name || null
+        budget_file_name || null,
+        base_id, 
+        base_name
       ];
       
       const result = await pool.query(query, values);
+      
+      // Logamos o resultado para debug
+      console.log("Solicitação de orçamento criada:", result.rows[0]);
+      
+      // Se tudo ocorrer bem, iniciamos o processo de sincronização com Supabase
+      try {
+        // Verificar se a conexão com Supabase está disponível
+        if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
+          console.log("Supabase configurado, iniciando sincronização...");
+          
+          // Em produção, você pode usar uma fila de tarefas para executar isso em background
+          // Por enquanto, apenas registramos a intenção no log
+          console.log("Metadados para sincronização:", {
+            id: result.rows[0].id,
+            base_id: base_id,
+            file_url: budget_file_url,
+            file_name: budget_file_name
+          });
+        }
+      } catch (syncError) {
+        console.error("Erro na sincronização com Supabase:", syncError);
+        // Não falha a requisição principal se a sincronização falhar
+      }
+      
       res.status(201).json(result.rows[0]);
     } catch (error) {
       console.error('Erro ao criar solicitação:', error);

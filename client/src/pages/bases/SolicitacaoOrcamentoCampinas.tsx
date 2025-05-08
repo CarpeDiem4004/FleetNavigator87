@@ -88,6 +88,8 @@ interface BudgetRequest {
   invoice_file_url?: string; // URL para a nota fiscal (PDF/imagem)
   invoice_file_name?: string; // Nome do arquivo da nota fiscal
   pending_invoice?: boolean; // Indica se está pendente o envio da NF após aprovação
+  base_id?: number; // ID da base
+  base_name?: string; // Nome da base
 }
 
 // Componente principal
