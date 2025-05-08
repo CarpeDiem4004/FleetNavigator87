@@ -7433,7 +7433,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Rota para registrar anexos no banco de dados
-  app.post("/api/budget-attachments/register", isAuthenticatedHybrid, async (req, res) => {
+  app.post("/api/budget-attachments/register", async (req, res) => {
+    try {
+      // Importar o middleware isAuthenticatedHybrid dinamicamente
+      const { isAuthenticatedHybrid } = await import('./middleware/isAuthenticatedHybrid');
+      
+      // Verificar autenticação
+      await new Promise<void>((resolve, reject) => {
+        isAuthenticatedHybrid(req, res, (err?: any) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+    } catch (authError) {
+      console.error('Erro de autenticação ao registrar anexo:', authError);
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Acesso negado. Faça login para continuar.' 
+      });
+    }
+    
     try {
       const {
         budget_request_id,
