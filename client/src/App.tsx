@@ -50,6 +50,7 @@ import SupabaseConsole from "@/pages/diagnostico/SupabaseConsole";
 import ComparacaoEsquemas from "@/pages/diagnostico/ComparacaoEsquemas";
 import SincronizarTabelasPage from "@/pages/diagnostico/sincronizar-tabelas";
 import ApiTester from "@/pages/diagnostico/ApiTester";
+import BudgetAttachmentsMigration from "@/pages/diagnostico/BudgetAttachmentsMigration";
 import AdminUtils from "@/pages/AdminUtils";
 import LimparDados from "@/pages/LimparDados";
 
@@ -195,6 +196,7 @@ function App() {
           <ProtectedRoute path="/diagnostico/comparacao-esquemas" component={ComparacaoEsquemas} />
           <ProtectedRoute path="/diagnostico/sincronizar-tabelas" component={SincronizarTabelasPage} />
           <ProtectedRoute path="/diagnostico/api-tester" component={ApiTester} />
+          <ProtectedRoute path="/diagnostico/budget-attachments-migration" component={BudgetAttachmentsMigration} />
           <ProtectedRoute path="/admin/utils" component={AdminUtils} />
           <ProtectedRoute path="/limpar-dados" component={LimparDados} />
           <ProtectedRoute path="/line-hall-shopee" component={LineHallShopeePage} />
