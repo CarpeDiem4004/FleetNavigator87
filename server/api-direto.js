@@ -761,6 +761,7 @@ export async function registrarAbastecimentoPosto(req, res) {
         INSERT INTO "${tableName}" (
           placa,
           km_atual,
+          hodometro_atual,
           tipo_combustivel,
           litros,
           motorista,
@@ -774,13 +775,14 @@ export async function registrarAbastecimentoPosto(req, res) {
           tipo_lavagem,
           created_at
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW()
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW()
         ) RETURNING *
       `;
       
       const valuesV2 = [
         placa.toUpperCase(),
         km_atual ? parseInt(km_atual, 10) : null,
+        hodometro_atual ? parseInt(hodometro_atual, 10) : null,
         tipo_combustivel,
         litros ? parseFloat(litros) : null,
         motorista,
