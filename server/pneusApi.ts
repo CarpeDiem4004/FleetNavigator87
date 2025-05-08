@@ -242,7 +242,13 @@ export function registerPneusRoutes(app: Express) {
       }
       
       // Montar a query de atualização dinamicamente
-      const fields = Object.keys(pneuData).filter(field => field !== 'id');
+      // Certificar que não temos updated_at no objeto para evitar conflito
+      const pneuDataClean = {...pneuData};
+      if ('updated_at' in pneuDataClean) {
+        delete pneuDataClean.updated_at;
+      }
+      
+      const fields = Object.keys(pneuDataClean).filter(field => field !== 'id');
       const sets = fields.map((field, index) => `${field} = $${index + 2}`).join(', ');
       
       const query = `
@@ -252,7 +258,7 @@ export function registerPneusRoutes(app: Express) {
         RETURNING *
       `;
       
-      const values = [id, ...fields.map(field => pneuData[field])];
+      const values = [id, ...fields.map(field => pneuDataClean[field])];
       
       const result = await pool.query(query, values);
       

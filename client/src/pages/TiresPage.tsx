@@ -384,13 +384,10 @@ const TiresPage: React.FC = () => {
     
     try {
       // Remover campos que possam causar problemas na atualização
-      const { total_movimentacoes, ultima_movimentacao, ...tireToUpdate } = currentTire;
+      const { total_movimentacoes, ultima_movimentacao, updated_at, ...tireToUpdate } = currentTire;
       
-      // Atualizando o pneu via API
-      const response = await updateTire(currentTire.id, {
-        ...tireToUpdate,
-        updated_at: new Date().toISOString()
-      });
+      // Atualizando o pneu via API - não enviar updated_at, o banco de dados vai definir automaticamente
+      const response = await updateTire(currentTire.id, tireToUpdate);
       
       if (response.success && response.data) {
         // Atualizar a lista de pneus
