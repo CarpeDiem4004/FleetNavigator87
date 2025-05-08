@@ -8,6 +8,22 @@ export const api = axios.create({
   },
 });
 
+// Interceptor para adicionar o token de autenticação em todas as requisições
+api.interceptors.request.use(
+  (config) => {
+    // Obter o token JWT do localStorage
+    const token = localStorage.getItem('authToken');
+    
+    // Se tiver token, adiciona ao cabeçalho Authorization
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 // Interceptor para tratamento de erros
 api.interceptors.response.use(
   (response) => response,

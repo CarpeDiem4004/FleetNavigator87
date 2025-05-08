@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { api } from './api';
 
 export interface DashboardKPI {
   title: string;
@@ -76,7 +76,7 @@ export interface DashboardData {
 export const fetchDashboardData = async (dateFilter?: string): Promise<DashboardData> => {
   try {
     const params = dateFilter ? { date: dateFilter } : {};
-    const response = await axios.get('/api/dashboard', { params });
+    const response = await api.get('/dashboard', { params });
     return response.data;
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
@@ -89,7 +89,7 @@ export const fetchDashboardData = async (dateFilter?: string): Promise<Dashboard
  */
 export const fetchComparativeData = async (): Promise<any> => {
   try {
-    const response = await axios.get('/api/dashboard/comparative');
+    const response = await api.get('/dashboard/comparative');
     return response.data;
   } catch (error) {
     console.error('Error fetching comparative data:', error);
@@ -103,7 +103,7 @@ export const fetchComparativeData = async (): Promise<any> => {
 export const fetchKPIs = async (dateFilter?: string): Promise<any> => {
   try {
     const params = dateFilter ? { date: dateFilter } : {};
-    const response = await axios.get('/api/dashboard/kpis', { params });
+    const response = await api.get('/dashboard/kpis', { params });
     return response.data;
   } catch (error) {
     console.error('Error fetching KPIs:', error);
