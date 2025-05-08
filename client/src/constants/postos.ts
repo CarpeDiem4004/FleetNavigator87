@@ -10,9 +10,10 @@ export const POSTO_CAMPINAS_V2 = "campinas_v2";
 // ABC removido - Maio/2025 (mantemos comentado para compatibilidade com código existente)
 export const POSTO_ABC = "abc"; // Removido em Maio/2025
 export const POSTO_ABC_V2 = "abc_v2"; // Removido em Maio/2025
-// Socorro removido - Maio/2025 (mantemos comentado para compatibilidade com código existente)
+// Socorro (versão antiga) removido - Maio/2025
 export const POSTO_SOCORRO = "socorro"; // Removido em Maio/2025
-export const POSTO_SOCORRO_V2 = "socorro_v2"; // Removido em Maio/2025
+// Socorro V2 reativado - Maio/2025
+export const POSTO_SOCORRO_V2 = "socorro_v2";
 // Posto Sorocaba (versão antiga) desativado
 export const POSTO_SOROCABA = "sorocaba";
 // Posto Sorocaba V2 ativo
@@ -30,9 +31,10 @@ export const NOME_POSTO_CAMPINAS_V2 = "Posto Campinas V2";
 // ABC removido - Maio/2025 (mantemos comentado para compatibilidade com código existente)
 export const NOME_POSTO_ABC = "Posto ABC"; // Removido em Maio/2025
 export const NOME_POSTO_ABC_V2 = "Posto ABC V2"; // Removido em Maio/2025
-// Socorro removido - Maio/2025 (mantemos comentado para compatibilidade com código existente)
+// Socorro (versão antiga) removido - Maio/2025
 export const NOME_POSTO_SOCORRO = "Posto Socorro"; // Removido em Maio/2025
-export const NOME_POSTO_SOCORRO_V2 = "Posto Socorro V2"; // Removido em Maio/2025
+// Socorro V2 reativado - Maio/2025
+export const NOME_POSTO_SOCORRO_V2 = "Posto Socorro V2";
 // Posto Sorocaba (versão antiga) desativado
 export const NOME_POSTO_SOROCABA = "Posto Sorocaba";
 // Posto Sorocaba V2 ativo
