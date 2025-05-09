@@ -1315,101 +1315,101 @@ const TiresPage: React.FC = () => {
 
         {/* Dialog para editar pneu */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="max-w-[465px]">
-            <DialogHeader>
+          <DialogContent className="max-w-[465px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="pb-2">
               <DialogTitle className="text-left text-base font-semibold">Editar Pneu</DialogTitle>
               <DialogDescription className="text-left text-sm text-gray-500">
                 Modifique os detalhes do pneu abaixo
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-2 py-1">
               {/* Código e Data de Aquisição (primeira linha) */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="edit-codigo" className="text-xs mb-2">Código/Nº de Série *</Label>
+                  <Label htmlFor="edit-codigo" className="text-xs mb-1">Código/Nº de Série *</Label>
                   <Input
                     id="edit-codigo"
                     value={currentTire?.codigo || ''}
                     onChange={(e) => setCurrentTire(current => current ? {...current, codigo: e.target.value} : null)}
                     placeholder="Ex: P001"
-                    className="h-9"
+                    className="h-8 text-sm"
                     required
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="edit-data_aquisicao" className="text-xs mb-2">Data de Aquisição</Label>
+                  <Label htmlFor="edit-data_aquisicao" className="text-xs mb-1">Data de Aquisição</Label>
                   <Input
                     id="edit-data_aquisicao"
                     type="date"
                     value={currentTire?.data_aquisicao ? currentTire.data_aquisicao.toString().slice(0, 10) : ''}
                     onChange={(e) => setCurrentTire(current => current ? {...current, data_aquisicao: e.target.value} : null)}
-                    className="h-9"
+                    className="h-8 text-sm"
                   />
                 </div>
               </div>
               
               {/* Marca e Modelo (segunda linha) */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="edit-marca" className="text-xs mb-2">Marca *</Label>
+                  <Label htmlFor="edit-marca" className="text-xs mb-1">Marca *</Label>
                   <Input
                     id="edit-marca"
                     value={currentTire?.marca || ''}
                     onChange={(e) => setCurrentTire(current => current ? {...current, marca: e.target.value} : null)}
                     placeholder="Ex: Pirelli"
-                    className="h-9"
+                    className="h-8 text-sm"
                     required
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="edit-modelo" className="text-xs mb-2">Modelo *</Label>
+                  <Label htmlFor="edit-modelo" className="text-xs mb-1">Modelo *</Label>
                   <Input
                     id="edit-modelo"
                     value={currentTire?.modelo || ''}
                     onChange={(e) => setCurrentTire(current => current ? {...current, modelo: e.target.value} : null)}
                     placeholder="Ex: Formula Energy"
-                    className="h-9"
+                    className="h-8 text-sm"
                     required
                   />
                 </div>
               </div>
               
               {/* Medida e Aro (terceira linha) */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="edit-medida" className="text-xs mb-2">Medida</Label>
+                  <Label htmlFor="edit-medida" className="text-xs mb-1">Medida</Label>
                   <Input
                     id="edit-medida"
                     value={currentTire?.medida || ''}
                     onChange={(e) => setCurrentTire(current => current ? {...current, medida: e.target.value} : null)}
                     placeholder="Ex: 295/80R22.5"
-                    className="h-9"
+                    className="h-8 text-sm"
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="edit-aro" className="text-xs mb-2">Aro</Label>
+                  <Label htmlFor="edit-aro" className="text-xs mb-1">Aro</Label>
                   <Input
                     id="edit-aro"
                     value={currentTire?.aro || ''}
                     onChange={(e) => setCurrentTire(current => current ? {...current, aro: e.target.value} : null)}
                     placeholder="Ex: 22.5"
-                    className="h-9"
+                    className="h-8 text-sm"
                   />
                 </div>
               </div>
               
               {/* Tipo e Origem (quarta linha) */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="edit-tipo" className="text-xs mb-2">Tipo</Label>
+                  <Label htmlFor="edit-tipo" className="text-xs mb-1">Tipo</Label>
                   <Select 
                     value={currentTire?.tipo || ''} 
                     onValueChange={(value) => setCurrentTire(current => current ? {...current, tipo: value} : null)}
                   >
-                    <SelectTrigger id="edit-tipo" className="h-9">
+                    <SelectTrigger id="edit-tipo" className="h-8 text-sm">
                       <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1423,12 +1423,12 @@ const TiresPage: React.FC = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="edit-origem" className="text-xs mb-2">Origem</Label>
+                  <Label htmlFor="edit-origem" className="text-xs mb-1">Origem</Label>
                   <Select 
                     value={currentTire?.origem || ''} 
                     onValueChange={(value) => setCurrentTire(current => current ? {...current, origem: value} : null)}
                   >
-                    <SelectTrigger id="edit-origem" className="h-9">
+                    <SelectTrigger id="edit-origem" className="h-8 text-sm">
                       <SelectValue placeholder="Selecione a origem" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1443,14 +1443,14 @@ const TiresPage: React.FC = () => {
               </div>
               
               {/* Localização e Status (quinta linha) */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="edit-localizacao" className="text-xs mb-2">Localização</Label>
+                  <Label htmlFor="edit-localizacao" className="text-xs mb-1">Localização</Label>
                   <Select 
                     value={currentTire?.localizacao || ''} 
                     onValueChange={(value) => setCurrentTire(current => current ? {...current, localizacao: value} : null)}
                   >
-                    <SelectTrigger id="edit-localizacao" className="h-9">
+                    <SelectTrigger id="edit-localizacao" className="h-8 text-sm">
                       <SelectValue placeholder="Localização atual" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1464,12 +1464,12 @@ const TiresPage: React.FC = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="edit-status" className="text-xs mb-2">Status</Label>
+                  <Label htmlFor="edit-status" className="text-xs mb-1">Status</Label>
                   <Select 
                     value={currentTire?.status || ''} 
                     onValueChange={(value) => setCurrentTire(current => current ? {...current, status: value} : null)}
                   >
-                    <SelectTrigger id="edit-status" className="h-9">
+                    <SelectTrigger id="edit-status" className="h-8 text-sm">
                       <SelectValue placeholder="Status atual" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1484,34 +1484,34 @@ const TiresPage: React.FC = () => {
               </div>
               
               {/* Veículo e Posição (sexta linha) */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="edit-veiculo_placa" className="text-xs mb-2">Veículo (Placa)</Label>
+                  <Label htmlFor="edit-veiculo_placa" className="text-xs mb-1">Veículo (Placa)</Label>
                   <Input
                     id="edit-veiculo_placa"
                     value={currentTire?.veiculo_placa || ''}
                     onChange={(e) => setCurrentTire(current => current ? {...current, veiculo_placa: e.target.value} : null)}
                     placeholder="Ex: ABC1234"
-                    className="h-9"
+                    className="h-8 text-sm"
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="edit-posicao" className="text-xs mb-2">Posição no Veículo</Label>
+                  <Label htmlFor="edit-posicao" className="text-xs mb-1">Posição no Veículo</Label>
                   <Input
                     id="edit-posicao"
                     value={currentTire?.posicao || ''}
                     onChange={(e) => setCurrentTire(current => current ? {...current, posicao: e.target.value} : null)}
                     placeholder="Ex: Dianteiro Esquerdo"
-                    className="h-9"
+                    className="h-8 text-sm"
                   />
                 </div>
               </div>
               
               {/* Valor Unitário e Quantidade (sétima linha) */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="edit-valor_unitario" className="text-xs mb-2">Valor Unitário (R$)</Label>
+                  <Label htmlFor="edit-valor_unitario" className="text-xs mb-1">Valor Unitário (R$)</Label>
                   <Input
                     id="edit-valor_unitario"
                     type="number"
@@ -1519,26 +1519,26 @@ const TiresPage: React.FC = () => {
                     value={currentTire?.valor_unitario || ''}
                     onChange={(e) => setCurrentTire(current => current ? {...current, valor_unitario: parseFloat(e.target.value)} : null)}
                     placeholder="Ex: 1200.00"
-                    className="h-9"
+                    className="h-8 text-sm"
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="edit-quantidade" className="text-xs mb-2">Quantidade</Label>
+                  <Label htmlFor="edit-quantidade" className="text-xs mb-1">Quantidade</Label>
                   <Input
                     id="edit-quantidade"
                     type="number"
                     value={currentTire?.quantidade || ''}
                     onChange={(e) => setCurrentTire(current => current ? {...current, quantidade: parseInt(e.target.value)} : null)}
                     placeholder="Ex: 1"
-                    className="h-9"
+                    className="h-8 text-sm"
                   />
                 </div>
               </div>
             </div>
-            <DialogFooter className="pt-2">
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancelar</Button>
-              <Button onClick={handleUpdateTire}>Salvar Alterações</Button>
+            <DialogFooter className="pt-1 mt-0">
+              <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(false)}>Cancelar</Button>
+              <Button size="sm" onClick={handleUpdateTire}>Salvar Alterações</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
