@@ -6687,6 +6687,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Rota para listar solicitações de pneus do módulo central
+  app.get("/api/solicitacoes-pneus", async (req, res) => {
+    try {
+      // Extrair parâmetros de consulta
+      const baseId = req.query.base_id ? parseInt(req.query.base_id as string) : null;
+      const status = req.query.status as string || null;
+      
+      // Construir a consulta SQL com filtros opcionais
+      let query = `
+        SELECT * FROM solicitacoes_pneus
+        WHERE 1=1
+      `;
+      
+      const params = [];
+      let paramIndex = 1;
+      
+      if (baseId) {
+        query += ` AND base_id = $${paramIndex}`;
+        params.push(baseId);
+        paramIndex++;
+      }
+      
+      if (status && status !== 'todos') {
+        query += ` AND status = $${paramIndex}`;
+        params.push(status);
+        paramIndex++;
+      }
+      
+      query += ` ORDER BY data_solicitacao DESC`;
+      
+      const result = await pool.query(query, params);
+      console.log(`[Pneus] Encontradas ${result.rows.length} solicitações de pneus`);
+      
+      // Retornar os resultados
+      res.json({
+        success: true,
+        count: result.rows.length,
+        data: result.rows
+      });
+    } catch (error) {
+      console.error("[Pneus] Erro ao buscar solicitações de pneus:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Erro ao buscar solicitações de pneus" 
+      });
+    }
+  });
+
   // Rota para a equipe de gestão de pneus responder às solicitações (informar prazo)
   app.put("/api/pneus/solicitacoes/:id/responder", async (req, res) => {
     try {
@@ -6710,7 +6758,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           aprovador_nome = CASE WHEN $1 IN ('aprovado', 'negado') THEN $3 ELSE aprovador_nome END,
           data_previsao = $4,
           observacoes_aprovacao = $5,
-          data_atualizacao = NOW()
+          updated_at = NOW()
         WHERE id = $6
         RETURNING *
       `;
