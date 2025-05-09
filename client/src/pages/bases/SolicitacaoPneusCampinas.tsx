@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from '@/hooks/use-toast';
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
@@ -129,8 +130,7 @@ const SolicitacaoPneusCampinas: React.FC = () => {
     verifyToken();
   }, [navigate, toast]);
 
-  // Importar o cliente de API
-  import { apiRequest } from "@/lib/queryClient";
+  // Consulta usando cliente de API com JWT
   
   // Consulta para obter as solicitações de pneus
   const { data: tireRequests, isLoading, error } = useQuery({
@@ -177,30 +177,13 @@ const SolicitacaoPneusCampinas: React.FC = () => {
         motivo: values.motivo,
         observacoes: values.observacoes || null,
       };
-
-      // Obter o token de autenticação do localStorage
-      const authToken = localStorage.getItem('authToken');
       
       console.log("Enviando POST para /api/bases/campinas/solicitacao-pneus");
-      console.log("Token JWT disponível:", !!authToken);
       
-      // Opções da requisição com cabeçalho de autorização e corpo JSON
-      const response = await fetch('/api/bases/campinas/solicitacao-pneus', {
-        method: 'POST',
-        body: JSON.stringify(requestData),
-        headers: {
-          'Content-Type': 'application/json',
-          // Adicionar token JWT ao cabeçalho se estiver disponível
-          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        console.error("Erro na resposta da API:", errorData);
-        throw new Error(errorData?.message || "Erro ao enviar solicitação");
-      }
+      // Usar apiRequest para garantir que o token JWT seja incluído automaticamente
+      const response = await apiRequest('POST', '/api/bases/campinas/solicitacao-pneus', requestData);
       
+      // Retornar a resposta convertida para JSON
       return await response.json();
     },
     onSuccess: () => {
