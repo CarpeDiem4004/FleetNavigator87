@@ -818,14 +818,77 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createMaintenance(maintenanceData: InsertMaintenance): Promise<Maintenance> {
-    const [newMaintenance] = await db.insert(maintenance).values(maintenanceData).returning();
-    
-    // Atualizar o status do veículo para em_manutencao
-    await db.update(veiculos)
-      .set({ status: 'em_manutencao' })
-      .where(eq(veiculos.plate, maintenanceData.vehiclePlate));
+    try {
+      console.log("Criando manutenção com dados:", JSON.stringify(maintenanceData, null, 2));
       
-    return newMaintenance;
+      // Usar SQL direto para garantir compatibilidade com a estrutura atual da tabela
+      const query = `
+        INSERT INTO manutencao (
+          vehicle_plate, description, status, priority, 
+          maintenance_type, workshop_id, request_base_id, 
+          entry_date, estimated_completion, responsible_person,
+          cost, initial_budget
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+        ) RETURNING *
+      `;
+      
+      const values = [
+        maintenanceData.vehiclePlate,
+        maintenanceData.description,
+        maintenanceData.status,
+        maintenanceData.priority || "média",
+        maintenanceData.maintenanceType,
+        maintenanceData.workshopId,
+        maintenanceData.requestBaseId,
+        maintenanceData.entryDate,
+        maintenanceData.estimatedCompletion,
+        maintenanceData.responsiblePerson || "Técnico responsável",
+        maintenanceData.cost,
+        maintenanceData.initialBudget
+      ];
+      
+      const result = await pool.query(query, values);
+      const newMaintenance = result.rows[0];
+      
+      console.log("Manutenção criada com sucesso:", newMaintenance);
+      
+      // Atualizar o status do veículo para em_manutencao
+      try {
+        const updateVehicleQuery = `
+          UPDATE veiculos 
+          SET status = 'em_manutencao' 
+          WHERE plate = $1
+        `;
+        await pool.query(updateVehicleQuery, [maintenanceData.vehiclePlate]);
+        console.log(`Status do veículo ${maintenanceData.vehiclePlate} atualizado para em_manutencao`);
+      } catch (vehicleError) {
+        // Não falhar a operação principal se não conseguir atualizar o veículo
+        console.error("Erro ao atualizar status do veículo:", vehicleError);
+      }
+      
+      // Converter o objeto retornado pelo banco para o formato esperado
+      return {
+        id: newMaintenance.id,
+        vehiclePlate: newMaintenance.vehicle_plate,
+        description: newMaintenance.description,
+        status: newMaintenance.status,
+        priority: newMaintenance.priority,
+        maintenanceType: newMaintenance.maintenance_type,
+        workshopId: newMaintenance.workshop_id,
+        requestBaseId: newMaintenance.request_base_id,
+        entryDate: newMaintenance.entry_date,
+        estimatedCompletion: newMaintenance.estimated_completion,
+        responsiblePerson: newMaintenance.responsible_person,
+        cost: newMaintenance.cost,
+        initialBudget: newMaintenance.initial_budget,
+        created_at: newMaintenance.created_at,
+        updated_at: newMaintenance.updated_at
+      };
+    } catch (error) {
+      console.error("Erro ao criar manutenção:", error);
+      throw error;
+    }
   }
 
   async updateMaintenanceStatus(id: number, status: string): Promise<Maintenance | undefined> {

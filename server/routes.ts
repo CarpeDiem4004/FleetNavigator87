@@ -3372,12 +3372,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Create maintenance record
-      const newMaintenance = await storage.createMaintenance(result.data);
-      return res.status(201).json(newMaintenance);
+      // Create maintenance record with validated data
+      try {
+        console.log("Criando registro de manutenção com dados:", JSON.stringify(result.data, null, 2));
+        
+        // Garantindo que todos os campos necessários estejam presentes
+        const maintenanceData = {
+          ...result.data,
+          // Garantir que campos obrigatórios estejam presentes
+          entryDate: result.data.entryDate || new Date().toISOString().split('T')[0],
+          status: result.data.status || "pendente",
+          // Garantir que os tipos estejam corretos
+          priority: result.data.priority || "média",
+          maintenanceType: result.data.maintenanceType
+        };
+        
+        const newMaintenance = await storage.createMaintenance(maintenanceData);
+        console.log("Manutenção criada com sucesso:", newMaintenance);
+        
+        return res.status(201).json(newMaintenance);
+      } catch (maintenanceError) {
+        console.error("Erro ao criar registro de manutenção:", maintenanceError);
+        return res.status(500).json({ 
+          message: "Erro ao criar registro de manutenção", 
+          error: maintenanceError instanceof Error ? maintenanceError.message : "Erro desconhecido" 
+        });
+      }
     } catch (error) {
       console.error("Error creating maintenance:", error);
-      return res.status(500).json({ message: "Server error" });
+      return res.status(500).json({ 
+        message: "Server error", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
     }
   });
   

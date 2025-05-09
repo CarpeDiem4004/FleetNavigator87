@@ -368,26 +368,35 @@ const ManutencaoFrotaCampinas: React.FC = () => {
       console.log("Resposta bruta da API de criação:", newMaintenance);
       
       // Formatar a resposta para o formato esperado pelo componente
-      // usando o mesmo padrão de mapeamento de campos para consistência
+      // Criando um objeto de mapeamento mais claro com tratamento de nulos e conversões de tipo
+      console.log("Mapeando resposta da API:", newMaintenance);
+      
       const newRequest: MaintenanceRequest = {
-        id: typeof newMaintenance.id === 'number' ? newMaintenance.id : parseInt(newMaintenance.id),
+        id: typeof newMaintenance.id === 'number' ? newMaintenance.id : parseInt(newMaintenance.id || '0'),
         vehiclePlate: newMaintenance.vehiclePlate || newMaintenance.vehicle_plate || data.vehiclePlate.toUpperCase(),
         description: newMaintenance.description || data.description,
-        priority: data.priority,
-        maintenanceType: data.maintenanceType,
+        priority: newMaintenance.priority || data.priority || "média",
+        maintenanceType: newMaintenance.maintenanceType || newMaintenance.maintenance_type || data.maintenanceType,
         status: newMaintenance.status || "pendente",
         requesterId: user?.id || 0,
         requesterName: user?.name || "Usuário",
         createdAt: newMaintenance.created_at || newMaintenance.createdAt || new Date().toISOString(),
         updatedAt: newMaintenance.updated_at || newMaintenance.updatedAt || new Date().toISOString(),
-        // Mapear campos que podem ter diferentes nomes
-        estimatedCompletion: newMaintenance.expectedExitDate || newMaintenance.expected_exit_date || null,
+        
+        // Campos de data específicos
+        estimatedCompletion: newMaintenance.estimatedCompletion || newMaintenance.estimated_completion || null,
         assignedTo: newMaintenance.responsiblePerson || newMaintenance.responsible_person || "",
-        workshopId: newMaintenance.workshopId || newMaintenance.workshop_id || 1,
+        
+        // Campos de relacionamento
+        workshopId: typeof newMaintenance.workshopId === 'number' ? 
+          newMaintenance.workshopId : 
+          (typeof newMaintenance.workshop_id === 'number' ? newMaintenance.workshop_id : 1),
         workshopName: newMaintenance.workshopName || "Oficina Central",
+        
+        // Outros campos importantes
         entryDate: newMaintenance.entryDate || newMaintenance.entry_date || new Date().toISOString(),
-        exitDate: newMaintenance.actualExitDate || newMaintenance.actual_exit_date || null,
-        comments: newMaintenance.comments || data.description,
+        exitDate: newMaintenance.completionDate || newMaintenance.completion_date || null,
+        comments: data.description,
         vehicleType: vehicle?.vehicleType || "desconhecido",
         vehicleMileage: data.km ? parseInt(data.km) : 0
       };
