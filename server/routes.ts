@@ -6738,7 +6738,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rota para a equipe de gestão de pneus responder às solicitações (informar prazo)
   app.put("/api/pneus/solicitacoes/:id/responder", async (req, res) => {
     try {
-      const id = req.params.id;
+      // Converter para número explicitamente
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: 'ID da solicitação inválido' });
+      }
+      
+      console.log('[Pneus] Respondendo à solicitação:', { id, tipo: typeof id });
       const { status, data_previsao, observacoes_aprovacao } = req.body;
       
       if (!['aprovado', 'negado', 'em_analise', 'concluido'].includes(status)) {
