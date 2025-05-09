@@ -174,10 +174,13 @@ export default function MaintenanceDetailDialog({
   const updateMutation = useMutation({
     mutationFn: async (data: any) => {
       if (!maintenance) return null;
-      return apiRequest(`/api/maintenance/${maintenance.id}`, {
-        method: 'PUT',
-        data
-      });
+      try {
+        const response = await apiRequest('PUT', `/api/maintenance/${maintenance.id}`, data);
+        return await response.json();
+      } catch (error) {
+        console.error('Erro ao atualizar manutenção:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({

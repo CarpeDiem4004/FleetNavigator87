@@ -3409,6 +3409,194 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Endpoint para atualizar todos os detalhes de uma manutenção
+  app.put("/api/maintenance/:id", hasMaintenanceAccess, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Usuário não autenticado" });
+      }
+
+      // Verificar permissões (admin, gestor_frota ou gestor da base)
+      const hasPermission = 
+        req.user.role === 'admin' || 
+        req.user.role === 'gestor_frota' || 
+        (req.user.role === 'gestor' && req.user.base_id);
+      
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Sem permissão para atualizar manutenção" });
+      }
+
+      const maintenanceId = parseInt(req.params.id);
+      if (isNaN(maintenanceId)) {
+        return res.status(400).json({ message: "ID de manutenção inválido" });
+      }
+
+      const { 
+        status, 
+        workshopId, 
+        servicePerformed, 
+        estimatedCompletion, 
+        completionDate, 
+        cost, 
+        replacedParts 
+      } = req.body;
+
+      // Validar status
+      const validStatuses = ['pendente', 'aguardando_orcamento', 'em_andamento', 'concluida', 'cancelada'];
+      if (status && !validStatuses.includes(status)) {
+        return res.status(400).json({ 
+          message: "Status inválido", 
+          validValues: validStatuses 
+        });
+      }
+
+      // Verificar se a manutenção existe
+      const checkQuery = `SELECT * FROM manutencao WHERE id = $1`;
+      const checkResult = await pool.query(checkQuery, [maintenanceId]);
+      
+      if (!checkResult.rows.length) {
+        return res.status(404).json({ message: "Manutenção não encontrada" });
+      }
+
+      const maintenance = checkResult.rows[0];
+      
+      // Se usuário for gestor (não admin), verificar se tem acesso a esta base
+      if (req.user.role === 'gestor' && maintenance.request_base_id !== req.user.base_id) {
+        return res.status(403).json({ 
+          message: "Acesso negado. Você só pode atualizar manutenções da sua própria base."
+        });
+      }
+
+      // Construir query dinâmica baseada nos campos fornecidos
+      let setClause = [];
+      let params = [];
+      let paramIndex = 1;
+
+      if (status) {
+        setClause.push(`status = $${paramIndex}`);
+        params.push(status);
+        paramIndex++;
+      }
+
+      if (workshopId) {
+        setClause.push(`workshop_id = $${paramIndex}`);
+        params.push(workshopId);
+        paramIndex++;
+      }
+
+      if (servicePerformed !== undefined) {
+        setClause.push(`service_performed = $${paramIndex}`);
+        params.push(servicePerformed);
+        paramIndex++;
+      }
+
+      if (estimatedCompletion) {
+        setClause.push(`estimated_completion = $${paramIndex}`);
+        params.push(estimatedCompletion);
+        paramIndex++;
+      }
+
+      if (completionDate) {
+        setClause.push(`completion_date = $${paramIndex}`);
+        params.push(completionDate);
+        paramIndex++;
+      }
+
+      if (cost !== undefined) {
+        setClause.push(`cost = $${paramIndex}`);
+        params.push(cost);
+        paramIndex++;
+      }
+
+      // Adicionar updated_at
+      setClause.push(`updated_at = CURRENT_TIMESTAMP`);
+      
+      // Adicionar id no final dos parâmetros
+      params.push(maintenanceId);
+
+      if (setClause.length === 0) {
+        return res.status(400).json({ message: "Nenhum campo para atualizar" });
+      }
+
+      const updateQuery = `
+        UPDATE manutencao 
+        SET ${setClause.join(', ')} 
+        WHERE id = $${paramIndex}
+        RETURNING *
+      `;
+      
+      const result = await pool.query(updateQuery, params);
+      
+      if (result.rowCount === 0) {
+        return res.status(404).json({ message: "Falha ao atualizar manutenção" });
+      }
+
+      // Atualizar tabela de peças trocadas, se fornecido
+      if (replacedParts && Array.isArray(replacedParts) && replacedParts.length > 0) {
+        // Primeiro, apagar peças existentes para esta manutenção
+        await pool.query(
+          `DELETE FROM maintenance_replaced_parts WHERE maintenance_id = $1`,
+          [maintenanceId]
+        );
+
+        // Depois, inserir as novas peças
+        for (const part of replacedParts) {
+          if (part.name && part.quantity && part.unitPrice) {
+            await pool.query(
+              `INSERT INTO maintenance_replaced_parts 
+               (maintenance_id, name, quantity, unit_price, created_at)
+               VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)`,
+              [maintenanceId, part.name, part.quantity, part.unitPrice]
+            );
+          }
+        }
+      }
+
+      // Se status for "concluida", atualizar também o veículo
+      if (status === 'concluida') {
+        try {
+          // Atualizar o status do veículo para em_operacao
+          await pool.query(
+            `UPDATE veiculos SET status = 'em_operacao' WHERE plate = $1`,
+            [maintenance.vehicle_plate]
+          );
+        } catch (vehicleError) {
+          console.error("Erro ao atualizar status do veículo:", vehicleError);
+          // Continuar mesmo com erro na atualização do veículo
+        }
+      }
+
+      // Registrar a atualização no histórico de manutenção, se existir a tabela
+      try {
+        const historyQuery = `
+          INSERT INTO maintenance_lifecycle 
+          (maintenance_id, status, user_id, created_at, action, details)
+          VALUES ($1, $2, $3, CURRENT_TIMESTAMP, 'atualização', $4)
+        `;
+        const historyDetails = JSON.stringify({
+          updatedFields: Object.keys(req.body).filter(k => k !== 'replacedParts'),
+          updatedBy: req.user.email,
+          userRole: req.user.role
+        });
+        await pool.query(historyQuery, [maintenanceId, status || maintenance.status, req.user.id, historyDetails]);
+      } catch (historyError) {
+        // Registrar erro mas continuar com a resposta
+        console.error("Erro ao registrar histórico de manutenção (não crítico):", historyError);
+      }
+      
+      return res.status(200).json({
+        message: "Manutenção atualizada com sucesso",
+        maintenance: result.rows[0]
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar manutenção:", error);
+      return res.status(500).json({ 
+        message: "Erro ao atualizar manutenção",
+        error: error instanceof Error ? error.message : "Erro desconhecido" 
+      });
+    }
+  });
+
   // Endpoint para atualizar as datas de uma manutenção
   app.patch("/api/maintenance/:id/dates", hasMaintenanceAccess, async (req, res) => {
     try {
@@ -3516,6 +3704,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!maintenanceRecord) {
         return res.status(404).json({ message: "Maintenance record not found" });
+      }
+      
+      // Buscar peças trocadas relacionadas a esta manutenção
+      try {
+        const replacedPartsQuery = `
+          SELECT id, name, quantity, unit_price as "unitPrice", created_at
+          FROM maintenance_replaced_parts
+          WHERE maintenance_id = $1
+          ORDER BY created_at
+        `;
+        const replacedPartsResult = await pool.query(replacedPartsQuery, [maintenanceId]);
+        
+        // Adicionar as peças ao registro de manutenção
+        if (replacedPartsResult.rows.length > 0) {
+          maintenanceRecord.replacedParts = replacedPartsResult.rows;
+        } else {
+          maintenanceRecord.replacedParts = [];
+        }
+      } catch (partsError) {
+        console.error("Erro ao buscar peças trocadas:", partsError);
+        // Continuar mesmo com erro na busca de peças
+        maintenanceRecord.replacedParts = [];
       }
       
       return res.status(200).json(maintenanceRecord);
