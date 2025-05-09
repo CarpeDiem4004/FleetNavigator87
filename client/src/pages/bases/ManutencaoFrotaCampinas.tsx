@@ -47,10 +47,14 @@ import {
   AlertCircle, 
   Clock, 
   Calendar, 
+  CalendarDays,
   Truck,
-  Wrench,
-  Tag,
+  Car, 
+  Wrench, 
   User,
+  LogIn,
+  LogOut,
+  Tag,
   AlertTriangle,
   Search
 } from 'lucide-react';
@@ -128,8 +132,13 @@ const ManutencaoFrotaCampinas: React.FC = () => {
 
   // Buscar solicitações e veículos ao carregar a página
   useEffect(() => {
-    fetchMaintenanceRequests();
-    fetchVehicles();
+    console.log("Componente ManutencaoFrotaCampinas inicializado");
+    // Adicionando um pequeno atraso para garantir que a autenticação esteja pronta
+    setTimeout(() => {
+      fetchMaintenanceRequests();
+      fetchVehicles();
+      console.log("Requisições iniciadas após timeout");
+    }, 500);
   }, []);
 
   // Função para atualizar o status de uma solicitação
@@ -366,24 +375,34 @@ const ManutencaoFrotaCampinas: React.FC = () => {
       const newMaintenance = await apiRequest('POST', '/api/maintenance', maintenanceData);
       console.log("Resposta da API:", newMaintenance);
       
+      console.log("Resposta bruta da API de criação:", newMaintenance);
+      
       // Formatar a resposta para o formato esperado pelo componente
+      // usando o mesmo padrão de mapeamento de campos para consistência
       const newRequest: MaintenanceRequest = {
-        id: newMaintenance.id,
-        vehiclePlate: newMaintenance.vehiclePlate,
-        description: newMaintenance.description,
+        id: typeof newMaintenance.id === 'number' ? newMaintenance.id : parseInt(newMaintenance.id),
+        vehiclePlate: newMaintenance.vehiclePlate || newMaintenance.vehicle_plate || data.vehiclePlate.toUpperCase(),
+        description: newMaintenance.description || data.description,
         priority: data.priority,
         maintenanceType: data.maintenanceType,
-        status: newMaintenance.status,
+        status: newMaintenance.status || "pendente",
         requesterId: user?.id || 0,
         requesterName: user?.name || "Usuário",
-        createdAt: newMaintenance.created_at || new Date().toISOString(),
-        updatedAt: newMaintenance.updated_at || new Date().toISOString(),
-        estimatedCompletion: newMaintenance.expectedExitDate,
-        workshopId: newMaintenance.workshopId || 1,
+        createdAt: newMaintenance.created_at || newMaintenance.createdAt || new Date().toISOString(),
+        updatedAt: newMaintenance.updated_at || newMaintenance.updatedAt || new Date().toISOString(),
+        // Mapear campos que podem ter diferentes nomes
+        estimatedCompletion: newMaintenance.expectedExitDate || newMaintenance.expected_exit_date || null,
+        assignedTo: newMaintenance.responsiblePerson || newMaintenance.responsible_person || "",
+        workshopId: newMaintenance.workshopId || newMaintenance.workshop_id || 1,
         workshopName: newMaintenance.workshopName || "Oficina Central",
+        entryDate: newMaintenance.entryDate || newMaintenance.entry_date || new Date().toISOString(),
+        exitDate: newMaintenance.actualExitDate || newMaintenance.actual_exit_date || null,
+        comments: newMaintenance.comments || data.description,
         vehicleType: vehicle?.vehicleType || "desconhecido",
-        vehicleMileage: parseInt(data.km) // Adicionando o campo de quilometragem
+        vehicleMileage: data.km ? parseInt(data.km) : 0
       };
+      
+      console.log("Item formatado para exibição:", newRequest);
       
       // Atualizar a interface com a nova solicitação
       setRequests([newRequest, ...requests]);
@@ -750,93 +769,129 @@ const ManutencaoFrotaCampinas: React.FC = () => {
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Detalhes da Manutenção</DialogTitle>
+              <DialogTitle className="flex items-center gap-2">
+                <Wrench className="h-5 w-5" />
+                Detalhes da Manutenção
+              </DialogTitle>
               <DialogDescription>
                 Informações completas sobre a solicitação de manutenção
               </DialogDescription>
             </DialogHeader>
             
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 gap-4 items-center">
+              {/* Cabeçalho com informações principais */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
                 <div className="col-span-1">
                   <h4 className="text-sm font-medium text-muted-foreground">Veículo</h4>
-                  <p className="text-sm font-medium">{selectedRequest.vehiclePlate}</p>
+                  <div className="flex items-center gap-2">
+                    <Car className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-sm font-medium">{selectedRequest.vehiclePlate || 'N/A'}</p>
+                  </div>
                 </div>
                 <div className="col-span-1">
                   <h4 className="text-sm font-medium text-muted-foreground">Tipo</h4>
-                  <p className="text-sm">{getVehicleTypeText(selectedRequest.vehicleType)}</p>
+                  <p className="text-sm">{getVehicleTypeText(selectedRequest.vehicleType || 'desconhecido')}</p>
                 </div>
                 <div className="col-span-1">
                   <h4 className="text-sm font-medium text-muted-foreground">Status</h4>
-                  <div className="mt-1">{renderStatusBadge(selectedRequest.status)}</div>
+                  <div className="mt-1">{renderStatusBadge(selectedRequest.status || 'pendente')}</div>
                 </div>
                 <div className="col-span-1">
                   <h4 className="text-sm font-medium text-muted-foreground">Prioridade</h4>
-                  <div className="mt-1">{renderPriorityBadge(selectedRequest.priority)}</div>
+                  <div className="mt-1">{renderPriorityBadge(selectedRequest.priority || 'média')}</div>
                 </div>
               </div>
               
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Tipo de Manutenção</h4>
-                <div className="mt-1">{renderMaintenanceTypeBadge(selectedRequest.maintenanceType)}</div>
-              </div>
-              
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Descrição</h4>
-                <p className="text-sm whitespace-pre-line">{selectedRequest.description}</p>
-              </div>
-              
-              {selectedRequest.vehicleMileage && (
+              {/* Tipo de manutenção e quilometragem */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">Quilometragem</h4>
-                  <p className="text-sm">{selectedRequest.vehicleMileage.toLocaleString('pt-BR')} km</p>
+                  <h4 className="text-sm font-medium text-muted-foreground">Tipo de Manutenção</h4>
+                  <div className="mt-1">{renderMaintenanceTypeBadge(selectedRequest.maintenanceType || 'corretiva')}</div>
                 </div>
-              )}
+                
+                {selectedRequest.vehicleMileage && (
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Quilometragem</h4>
+                    <div className="flex items-center gap-2">
+                      <Tag className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-sm">{selectedRequest.vehicleMileage.toLocaleString('pt-BR')} km</p>
+                    </div>
+                  </div>
+                )}
+              </div>
               
-              <div className="grid grid-cols-2 gap-4">
+              {/* Descrição do problema */}
+              <div className="bg-muted/30 p-3 rounded-md">
+                <h4 className="text-sm font-medium text-muted-foreground">Descrição</h4>
+                <p className="text-sm whitespace-pre-line mt-2">{selectedRequest.description || 'Sem descrição'}</p>
+              </div>
+              
+              {/* Informações do solicitante e datas */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground">Solicitante</h4>
-                  <p className="text-sm">{selectedRequest.requesterName}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-sm">{selectedRequest.requesterName || 'Não informado'}</p>
+                  </div>
                 </div>
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground">Data da Solicitação</h4>
-                  <p className="text-sm">{formatDate(selectedRequest.createdAt)}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-sm">{formatDate(selectedRequest.createdAt)}</p>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Oficina</h4>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Wrench className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-sm">{selectedRequest.workshopName || 'Não definida'}</p>
+                  </div>
                 </div>
               </div>
               
-              {selectedRequest.estimatedCompletion && (
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">Previsão de Conclusão</h4>
-                  <p className="text-sm">{formatDate(selectedRequest.estimatedCompletion)}</p>
-                </div>
-              )}
-              
-              {selectedRequest.assignedTo && (
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">Responsável</h4>
-                  <p className="text-sm">{selectedRequest.assignedTo}</p>
-                </div>
-              )}
-              
-              {selectedRequest.workshopName && (
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">Oficina</h4>
-                  <p className="text-sm">{selectedRequest.workshopName}</p>
-                </div>
-              )}
-              
-              {selectedRequest.entryDate && (
-                <div className="grid grid-cols-2 gap-4">
+              {/* Datas importantes */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {selectedRequest.entryDate && (
                   <div>
                     <h4 className="text-sm font-medium text-muted-foreground">Data de Entrada</h4>
-                    <p className="text-sm">{formatDate(selectedRequest.entryDate)}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <LogIn className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-sm">{formatDate(selectedRequest.entryDate)}</p>
+                    </div>
                   </div>
-                  {selectedRequest.exitDate && (
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground">Data de Saída</h4>
+                )}
+                
+                {selectedRequest.estimatedCompletion && (
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Previsão de Conclusão</h4>
+                    <div className="flex items-center gap-2 mt-1">
+                      <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-sm">{formatDate(selectedRequest.estimatedCompletion)}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {selectedRequest.exitDate && (
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Data de Saída</h4>
+                    <div className="flex items-center gap-2 mt-1">
+                      <LogOut className="h-4 w-4 text-muted-foreground" />
                       <p className="text-sm">{formatDate(selectedRequest.exitDate)}</p>
                     </div>
-                  )}
+                  </div>
+                )}
+              </div>
+              
+              {/* Responsável técnico */}
+              {selectedRequest.assignedTo && (
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Responsável Técnico</h4>
+                  <div className="flex items-center gap-2 mt-1">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-sm">{selectedRequest.assignedTo}</p>
+                  </div>
                 </div>
               )}
               
