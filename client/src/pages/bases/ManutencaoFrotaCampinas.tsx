@@ -135,76 +135,86 @@ const ManutencaoFrotaCampinas: React.FC = () => {
   const fetchMaintenanceRequests = async () => {
     setIsLoading(true);
     try {
-      // Chamada para a API - dados simulados por enquanto
-      // Quando a API for implementada, substituir por fetch real
-      setTimeout(() => {
-        const mockData: MaintenanceRequest[] = [
-          {
-            id: 1,
-            vehiclePlate: "ABC1234",
-            description: "Problema no sistema de freios, veículo fazendo barulho ao frear.",
-            priority: "alta",
-            maintenanceType: "corretiva",
-            status: "pendente",
-            requesterId: 1,
-            requesterName: "Administrador",
-            createdAt: "2025-05-07T10:30:00",
-            updatedAt: "2025-05-07T10:30:00",
-            vehicleType: "van",
-            vehicleMileage: 45000
-          },
-          {
-            id: 2,
-            vehiclePlate: "DEF5678",
-            description: "Troca de óleo e filtros programada.",
-            priority: "média",
-            maintenanceType: "preventiva",
-            status: "em_andamento",
-            requesterId: 1,
-            requesterName: "Administrador",
-            createdAt: "2025-05-05T14:20:00",
-            updatedAt: "2025-05-06T09:15:00",
-            estimatedCompletion: "2025-05-08T17:00:00",
-            assignedTo: "Carlos Mecânico",
-            workshopId: 2,
-            workshopName: "Oficina Central",
-            entryDate: "2025-05-06T09:00:00",
-            vehicleType: "truck",
-            vehicleMileage: 75000
-          },
-          {
-            id: 3,
-            vehiclePlate: "GHI9012",
-            description: "Revisão completa dos 60.000 km.",
-            priority: "baixa",
-            maintenanceType: "preventiva",
-            status: "concluida",
-            requesterId: 3,
-            requesterName: "Maria Oliveira",
-            createdAt: "2025-05-01T11:45:00",
-            updatedAt: "2025-05-04T16:30:00",
-            assignedTo: "José Técnico",
-            workshopId: 1,
-            workshopName: "Oficina Matriz",
-            entryDate: "2025-05-02T08:00:00",
-            exitDate: "2025-05-04T16:00:00",
-            comments: "Veículo liberado dentro do prazo",
-            resolutionNotes: "Troca de óleo, filtros, pastilhas de freio e verificação geral.",
-            cost: 2500.00,
-            vehicleType: "fiorino",
-            vehicleMileage: 60000
-          }
-        ];
-        setRequests(mockData);
-        setIsLoading(false);
-      }, 800);
+      // Chamada real para a API usando a base de Campinas (ID: 2)
+      const response = await fetch('/api/maintenance/base/2');
+      
+      if (!response.ok) {
+        throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log("Dados de manutenção da Base Campinas:", data);
+      
+      // Mapear os dados recebidos para o formato esperado pelo componente
+      const formattedRequests: MaintenanceRequest[] = Array.isArray(data) ? data.map((item: any) => ({
+        id: item.id,
+        vehiclePlate: item.vehiclePlate,
+        description: item.description,
+        priority: item.priority || "média",
+        maintenanceType: item.type || "corretiva",
+        status: item.status,
+        requesterId: item.requesterId || user?.id || 0,
+        requesterName: item.requesterName || user?.name || "Usuário",
+        createdAt: item.created_at || new Date().toISOString(),
+        updatedAt: item.updated_at || new Date().toISOString(),
+        estimatedCompletion: item.expectedExitDate,
+        assignedTo: item.responsiblePerson,
+        workshopId: item.workshopId,
+        workshopName: item.workshopName,
+        entryDate: item.entryDate,
+        exitDate: item.actualExitDate,
+        comments: item.comments,
+        vehicleType: item.vehicleType,
+        vehicleMileage: item.vehicleMileage
+      })) : [];
+      
+      setRequests(formattedRequests);
     } catch (error) {
       console.error("Erro ao buscar solicitações:", error);
+      // Dados simulados para testes quando a API falhar
+      const mockData: MaintenanceRequest[] = [
+        {
+          id: 1,
+          vehiclePlate: "ABC1234",
+          description: "Problema no sistema de freios, veículo fazendo barulho ao frear.",
+          priority: "alta",
+          maintenanceType: "corretiva",
+          status: "pendente",
+          requesterId: 1,
+          requesterName: "Administrador",
+          createdAt: "2025-05-07T10:30:00",
+          updatedAt: "2025-05-07T10:30:00",
+          vehicleType: "van",
+          vehicleMileage: 45000
+        },
+        {
+          id: 2,
+          vehiclePlate: "DEF5678",
+          description: "Troca de óleo e filtros programada.",
+          priority: "média",
+          maintenanceType: "preventiva",
+          status: "em_andamento",
+          requesterId: 1,
+          requesterName: "Administrador",
+          createdAt: "2025-05-05T14:20:00",
+          updatedAt: "2025-05-06T09:15:00",
+          estimatedCompletion: "2025-05-08T17:00:00",
+          assignedTo: "Carlos Mecânico",
+          workshopId: 2,
+          workshopName: "Oficina Central",
+          entryDate: "2025-05-06T09:00:00",
+          vehicleType: "truck",
+          vehicleMileage: 75000
+        }
+      ];
+      setRequests(mockData);
+      
       toast({
         title: "Erro",
         description: "Não foi possível carregar as solicitações de manutenção.",
         variant: "destructive"
       });
+    } finally {
       setIsLoading(false);
     }
   };
