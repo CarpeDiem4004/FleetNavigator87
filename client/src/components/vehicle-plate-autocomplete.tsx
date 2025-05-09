@@ -48,7 +48,7 @@ export function VehiclePlateAutocomplete<
   // Gerencia a exibição de valor personalizado
   const handleChange = (value: string) => {
     // Atualiza o valor no formulário
-    form.setValue(name, value, { shouldValidate: true })
+    form.setValue(name, value as any, { shouldValidate: true })
     
     // Se for um valor personalizado (não existe nas opções), armazenamos
     if (!vehicleOptions.some(option => option.value === value) && value) {

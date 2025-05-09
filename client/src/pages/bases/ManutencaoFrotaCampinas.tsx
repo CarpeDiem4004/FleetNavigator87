@@ -346,8 +346,10 @@ const ManutencaoFrotaCampinas: React.FC = () => {
         maintenanceType: data.maintenanceType as "preventiva" | "corretiva",
         status: "pendente",
         priority: data.priority || "média", 
-        requestBaseId: 2, // Base Campinas
-        workshopId: 1, // Oficina padrão
+        requestBaseId: 2, // Base Campinas é ID 2
+        workshopId: 1, // Oficina padrão é ID 1
+        vehicleMileage: parseInt(data.km) || 0, // Converter km para número
+        requesterId: user?.id || 1, // ID do solicitante
         
         // Datas
         entryDate: new Date().toISOString().split('T')[0], // Data atual
