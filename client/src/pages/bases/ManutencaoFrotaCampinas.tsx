@@ -62,8 +62,7 @@ const maintenanceRequestSchema = z.object({
   vehiclePlate: z.string().min(7, { message: "A placa do veículo é obrigatória" }).max(8),
   description: z.string().min(10, { message: "A descrição deve ter pelo menos 10 caracteres" }),
   priority: z.string({ required_error: "Selecione uma prioridade" }),
-  maintenanceType: z.string({ required_error: "Selecione o tipo de manutenção" }),
-  estimatedCompletion: z.string().optional()
+  maintenanceType: z.string({ required_error: "Selecione o tipo de manutenção" })
 });
 
 type MaintenanceRequestForm = z.infer<typeof maintenanceRequestSchema>;
@@ -120,8 +119,7 @@ const ManutencaoFrotaCampinas: React.FC = () => {
       vehiclePlate: '',
       description: '',
       priority: '',
-      maintenanceType: '',
-      estimatedCompletion: ''
+      maintenanceType: ''
     }
   });
 
@@ -294,8 +292,7 @@ const ManutencaoFrotaCampinas: React.FC = () => {
         requestBaseId: 2, // Base Campinas
         workshopId: 1, // Oficina padrão
         entryDate: new Date().toISOString().split('T')[0], // Data atual
-        expectedExitDate: data.estimatedCompletion || 
-          new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 dias após a data atual, se não foi informado
+        expectedExitDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 dias após a data atual
         responsiblePerson: "Técnico responsável"
       };
       
@@ -327,7 +324,7 @@ const ManutencaoFrotaCampinas: React.FC = () => {
         requesterName: user?.name || "Usuário",
         createdAt: newMaintenance.created_at || new Date().toISOString(),
         updatedAt: newMaintenance.updated_at || new Date().toISOString(),
-        estimatedCompletion: newMaintenance.expectedExitDate || data.estimatedCompletion,
+        estimatedCompletion: newMaintenance.expectedExitDate,
         workshopId: newMaintenance.workshopId || 1,
         workshopName: newMaintenance.workshopName || "Oficina Central",
         vehicleType: vehicle?.vehicleType || "desconhecido"
@@ -361,7 +358,7 @@ const ManutencaoFrotaCampinas: React.FC = () => {
         requesterName: user?.name || "Usuário",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        estimatedCompletion: data.estimatedCompletion,
+        estimatedCompletion: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         vehicleType: vehicle?.vehicleType || "desconhecido"
       };
       
@@ -575,19 +572,7 @@ const ManutencaoFrotaCampinas: React.FC = () => {
                   />
                 </div>
                 
-                <FormField
-                  control={form.control}
-                  name="estimatedCompletion"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Data Estimada para Conclusão</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Campo de data estimada para conclusão removido conforme solicitado */}
                 
                 <Button 
                   type="submit" 
