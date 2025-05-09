@@ -199,11 +199,11 @@ export default function MaintenancePage() {
       let url = '/api/maintenance';
       const params = new URLSearchParams();
       
-      // Se o usuário não for admin e tiver uma baseId, filtrar por essa base
-      if (user && user.role !== 'admin' && user.baseId) {
+      // Se o usuário não for admin ou gestor_frota e tiver uma baseId, filtrar por essa base
+      if (user && user.role !== 'admin' && user.role !== 'gestor_frota' && user.baseId) {
         params.append('baseId', user.baseId.toString());
       } else if (filterBaseId) {
-        // Se houver um filtro de base selecionado, aplicar esse filtro (apenas para admin)
+        // Se houver um filtro de base selecionado, aplicar esse filtro (apenas para admin ou gestor_frota)
         params.append('baseId', filterBaseId.toString());
       }
       
@@ -297,10 +297,10 @@ export default function MaintenancePage() {
 
     const dataToSubmit = {...formData};
     
-    // Para usuários não-admin, forçar o uso da sua própria base
-    if (user && user.role !== 'admin' && user.baseId) {
+    // Para usuários que não são nem admin nem gestor_frota, forçar o uso da sua própria base
+    if (user && user.role !== 'admin' && user.role !== 'gestor_frota' && user.baseId) {
       dataToSubmit.requestBaseId = user.baseId;
-      console.log(`Usuário não-admin: usando baseId ${user.baseId} para a manutenção`);
+      console.log(`Usuário regular: usando baseId ${user.baseId} para a manutenção`);
     } else if (!dataToSubmit.requestBaseId && user?.baseId) {
       // Adicionar requestBaseId se não estiver definido
       dataToSubmit.requestBaseId = user.baseId;
@@ -477,8 +477,8 @@ export default function MaintenancePage() {
                     Histórico e status de manutenções de veículos
                   </CardDescription>
                 </div>
-                {/* Mostrar o filtro de bases apenas para administradores */}
-                {user && user.role === 'admin' && (
+                {/* Mostrar o filtro de bases para administradores e gestores de frota */}
+                {user && (user.role === 'admin' || user.role === 'gestor_frota') && (
                   <div className="flex flex-col sm:flex-row gap-2">
                     <div className="flex flex-wrap gap-2">
                       <Button 
@@ -501,8 +501,8 @@ export default function MaintenancePage() {
                     </div>
                   </div>
                 )}
-                {/* Para usuários não admin, mostrar um badge indicando sua base */}
-                {user && user.role !== 'admin' && user.baseId && (
+                {/* Para usuários que não são nem admin nem gestor_frota, mostrar um badge indicando sua base */}
+                {user && user.role !== 'admin' && user.role !== 'gestor_frota' && user.baseId && (
                   <div className="flex items-center">
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 h-9 px-3">
                       <Building2 className="mr-1 h-4 w-4" />
@@ -694,14 +694,14 @@ export default function MaintenancePage() {
                     <Label htmlFor="requestBaseId">
                       Base Solicitante <span className="text-red-500">*</span>
                     </Label>
-                    {user && user.role !== 'admin' && user.baseId ? (
-                      // Para usuários não-admin, mostrar um campo desabilitado com sua própria base
+                    {user && user.role !== 'admin' && user.role !== 'gestor_frota' && user.baseId ? (
+                      // Para usuários que não são admin nem gestor_frota, mostrar um campo desabilitado com sua própria base
                       <div className="flex items-center h-10 px-3 border rounded-md border-input bg-muted/50">
                         <Building2 className="mr-2 h-4 w-4 text-muted-foreground" />
                         <span>{user.basename || getBaseName(user.baseId)}</span>
                       </div>
                     ) : (
-                      // Para administradores, mostrar o dropdown de seleção
+                      // Para administradores e gestores de frota, mostrar o dropdown de seleção
                       <Select 
                         value={formData.requestBaseId ? formData.requestBaseId.toString() : "0"} 
                         onValueChange={(value) => handleSelectChange('requestBaseId', value)}
