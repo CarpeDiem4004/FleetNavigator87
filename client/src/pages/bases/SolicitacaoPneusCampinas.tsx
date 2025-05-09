@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
@@ -93,7 +92,14 @@ const SolicitacaoPneusCampinas: React.FC = () => {
         }
       };
       
-      const response = await apiRequest('/api/bases/campinas/solicitacao-pneus', options);
+      const response = await fetch('/api/bases/campinas/solicitacao-pneus', options);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        console.error("Erro na resposta da API:", errorData);
+        throw new Error(errorData?.message || "Erro ao obter solicitações");
+      }
+      
       const data = await response.json();
       return data as TireRequest[];
     },
@@ -134,7 +140,7 @@ const SolicitacaoPneusCampinas: React.FC = () => {
       console.log("Token JWT disponível:", !!authToken);
       
       // Opções da requisição com cabeçalho de autorização e corpo JSON
-      const response = await apiRequest('/api/bases/campinas/solicitacao-pneus', {
+      const response = await fetch('/api/bases/campinas/solicitacao-pneus', {
         method: 'POST',
         body: JSON.stringify(requestData),
         headers: {
@@ -144,7 +150,13 @@ const SolicitacaoPneusCampinas: React.FC = () => {
         }
       });
 
-      return response;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        console.error("Erro na resposta da API:", errorData);
+        throw new Error(errorData?.message || "Erro ao enviar solicitação");
+      }
+      
+      return await response.json();
     },
     onSuccess: () => {
       toast({
