@@ -39,6 +39,13 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -59,7 +66,10 @@ import {
   XCircle,
   AlertCircle,
   User,
-  FileBarChart as FileSpreadsheet
+  FileBarChart as FileSpreadsheet,
+  MoreHorizontal,
+  Calendar,
+  CircleCheck
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { apiRequest } from '@/lib/queryClient';
@@ -345,6 +355,11 @@ export default function MaintenancePage() {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value ? parseFloat(value) : undefined }));
   };
+  
+  const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setDateFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -460,11 +475,6 @@ export default function MaintenancePage() {
         variant: 'destructive'
       });
     }
-  };
-  
-  const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setDateFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const closeDialog = () => {
@@ -755,9 +765,9 @@ export default function MaintenancePage() {
                               user?.role === 'admin' || user?.role === 'gestor_frota') && (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm">
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                                     <MoreHorizontal className="h-4 w-4" />
-                                    Ações
+                                    <span className="sr-only">Abrir menu</span>
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
@@ -772,9 +782,19 @@ export default function MaintenancePage() {
                                     Atualizar Datas
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
-                                  <DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => window.open(`/files/maintenance/${maintenance.id}`, '_blank')}
+                                    disabled={true} // Implementação futura
+                                  >
+                                    <FileText className="h-4 w-4 mr-2" />
+                                    Ver Documentos
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => window.open(`/maintenance/${maintenance.id}/report`, '_blank')}
+                                    disabled={true} // Implementação futura
+                                  >
                                     <FileSpreadsheet className="h-4 w-4 mr-2" />
-                                    Exportar Dados
+                                    Exportar Relatório
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -1107,6 +1127,81 @@ export default function MaintenancePage() {
                 </span>
               ) : (
                 <span>Atualizar Status</span>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Diálogo para atualizar datas */}
+      <Dialog open={datesDialogOpen} onOpenChange={setDatesDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Atualizar Datas da Manutenção</DialogTitle>
+            <DialogDescription>
+              {selectedMaintenance && (
+                <div className="mt-2">
+                  <span className="font-medium">Veículo:</span> {getVehicleDetails(selectedMaintenance.vehiclePlate)}
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="space-y-4">
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="entryDate">Data de Entrada</Label>
+                <Input
+                  id="entryDate"
+                  name="entryDate"
+                  type="date"
+                  value={dateFormData.entryDate}
+                  onChange={handleDateInputChange}
+                />
+              </div>
+              
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="estimatedCompletion">Previsão de Conclusão</Label>
+                <Input
+                  id="estimatedCompletion"
+                  name="estimatedCompletion"
+                  type="date"
+                  value={dateFormData.estimatedCompletion}
+                  onChange={handleDateInputChange}
+                />
+              </div>
+              
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="completionDate">Data de Conclusão</Label>
+                <Input
+                  id="completionDate"
+                  name="completionDate"
+                  type="date"
+                  value={dateFormData.completionDate}
+                  onChange={handleDateInputChange}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Apenas para manutenções concluídas ou em fase final
+                </p>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 flex-wrap">
+            <Button type="button" variant="outline" onClick={() => setDatesDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              type="button" 
+              onClick={handleDateUpdate}
+              disabled={updateMaintenanceDatesMutation.isPending}
+              className="min-w-[150px]"
+            >
+              {updateMaintenanceDatesMutation.isPending ? (
+                <span className="flex items-center justify-center">
+                  <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-white rounded-full"></span>
+                  Processando...
+                </span>
+              ) : (
+                <span>Atualizar Datas</span>
               )}
             </Button>
           </DialogFooter>
