@@ -1,5 +1,5 @@
 import { 
-  users, vehicles, maintenance, tires, refueling, fines, bases, workshops, painelPrincipal, operations,
+  users, vehicles as veiculos, maintenance, tires, refueling, fines, bases, workshops, painelPrincipal, operations,
   maintenanceChat, chatMessages, baseRequests, baseRequestUpdates,
   type User, type InsertUser, type Vehicle, type InsertVehicle,
   type Maintenance, type InsertMaintenance, type Tire, type InsertTire,
@@ -753,9 +753,9 @@ export class DatabaseStorage implements IStorage {
     const [newMaintenance] = await db.insert(maintenance).values(maintenanceData).returning();
     
     // Atualizar o status do veículo para em_manutencao
-    await db.update(vehicles)
+    await db.update(veiculos)
       .set({ status: 'em_manutencao' })
-      .where(eq(vehicles.plate, maintenanceData.vehiclePlate));
+      .where(eq(veiculos.plate, maintenanceData.vehiclePlate));
       
     return newMaintenance;
   }
@@ -867,9 +867,9 @@ export class DatabaseStorage implements IStorage {
     
     if (maintenanceRecord) {
       // Se o veículo estiver em manutenção, retornar para operação
-      await db.update(vehicles)
+      await db.update(veiculos)
         .set({ status: 'em_operacao' })
-        .where(eq(vehicles.plate, maintenanceRecord.vehiclePlate));
+        .where(eq(veiculos.plate, maintenanceRecord.vehiclePlate));
     }
     
     const [deleted] = await db
