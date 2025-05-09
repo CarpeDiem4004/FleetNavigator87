@@ -6543,8 +6543,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await pool.query(updateCentralQuery, [
             status,
             observacoes,
-            req.user ? req.user.id : null,
-            req.user ? req.user.name : 'Administrador',
+            usuario ? usuario.id : null,
+            usuario ? usuario.name : 'Administrador',
             centralId
           ]);
           
@@ -6679,12 +6679,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         RETURNING *;
       `;
       
+      // Obter o usuário da requisição - pode estar em req.user (sessão) ou req.hybridUser (token JWT)
+      const usuario = req.user || (req as any).hybridUser;
+      console.log("[SolicitacaoOrcamento] Usuário na requisição:", usuario);
+      
       const values = [
         title,
         description,
         priority,
-        req.user?.id || 0,
-        req.user?.name || 'Usuário',
+        usuario?.id || 0,
+        usuario?.name || 'Usuário',
         estimated_value,
         department,
         budget_file_url || null,
@@ -6765,8 +6769,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Se estiver aprovando, adicionar quem aprovou e quando
         if (status === 'aprovado') {
+          // Obter o usuário da requisição - pode estar em req.user (sessão) ou req.hybridUser (token JWT)
+          const usuario = req.user || (req as any).hybridUser;
+          console.log("[SolicitacaoOrcamento] Usuário na aprovação:", usuario);
+          
           updateFields.push(`approved_by = $${paramCount}`);
-          values.push(req.user?.name || 'Administrador');
+          values.push(usuario?.name || 'Administrador');
           paramCount++;
           
           updateFields.push(`approved_at = $${paramCount}`);
@@ -6921,9 +6929,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const publicUrl = urlData.publicUrl;
       
+      // Obter o usuário da requisição - pode estar em req.user (sessão) ou req.hybridUser (token JWT)
+      const usuario = req.user || (req as any).hybridUser;
+      console.log("[Anexos] Usuário na requisição de migração:", usuario);
+      
       // Obter informações do usuário que está fazendo a migração
-      const uploader_id = req.user?.id || null;
-      const uploader_name = req.user?.name || null;
+      const uploader_id = usuario?.id || null;
+      const uploader_name = usuario?.name || null;
       
       // Registrar o anexo permanente no banco de dados
       const insertQuery = `
@@ -7018,9 +7030,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Dados incompletos para registrar anexo' });
       }
       
+      // Obter o usuário da requisição - pode estar em req.user (sessão) ou req.hybridUser (token JWT)
+      const usuario = req.user || (req as any).hybridUser;
+      console.log("[Anexos] Usuário na requisição de registro:", usuario);
+      
       // Obter informações do usuário que está fazendo upload
-      const uploader_id = req.user?.id || null;
-      const uploader_name = req.user?.name || null;
+      const uploader_id = usuario?.id || null;
+      const uploader_name = usuario?.name || null;
       
       const insertQuery = `
         INSERT INTO budget_attachments (
