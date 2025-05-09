@@ -6493,9 +6493,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           INSERT INTO solicitacoes_pneus (
             base_id, base_nome, usuario_id, usuario_nome, quantidade, 
             placa_veiculo, km_veiculo, medida, motivo, observacoes, 
-            status, data_solicitacao, origem, data_previsao, observacoes_aprovacao
+            status, data_solicitacao, origem, data_previsao, observacoes_aprovacao,
+            marca, modelo, tipo, created_at, updated_at
           ) 
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), $12, NULL, NULL)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), $12, NULL, NULL, $13, $14, $15, NOW(), NOW())
           RETURNING id
         `;
         
@@ -6511,7 +6512,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           motivo,
           observacoes || null,
           'pendente', // Status inicial
-          'campinas' // Origem da solicitação
+          'campinas', // Origem da solicitação
+          'Genérico', // Marca padrão para solicitações da base
+          'Padrão', // Modelo padrão para solicitações da base
+          'Pneu comum' // Tipo padrão para solicitações da base
         ]);
         
         console.log('[Campinas] Solicitação encaminhada para módulo central de pneus com ID:', centralResult.rows[0].id);
