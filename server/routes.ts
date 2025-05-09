@@ -6819,8 +6819,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   status = $1::varchar,
                   approved_at = CASE WHEN $1::varchar IN ('aprovado', 'negado') THEN NOW() ELSE approved_at END,
                   approved_by = $2,
-                  estimated_date = $3,
-                  approval_comments = $4,
+                  data_previsao = $3,
+                  observacoes_aprovacao = $4,
                   updated_at = NOW()
                 WHERE id = $5
               `;
