@@ -1032,8 +1032,8 @@ const TiresPage: React.FC = () => {
                             .filter(req => req.status === 'pendente')
                             .map(request => (
                               <div key={request.id} className="border rounded-lg p-3 bg-white hover:bg-gray-50 transition-colors">
-                                <div className="flex justify-between items-start mb-3">
-                                  <div>
+                                <div className="flex justify-between items-center mb-2">
+                                  <div className="flex flex-col">
                                     <h4 className="font-semibold text-gray-800">{request.marca} {request.modelo}</h4>
                                     <div className="flex items-center gap-2 mt-1">
                                       <Badge variant="outline" className="bg-gray-100 px-2 py-0 h-5 text-xs">
@@ -1046,38 +1046,38 @@ const TiresPage: React.FC = () => {
                                       )}
                                     </div>
                                   </div>
-                                  <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-300">
+                                  <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-300 whitespace-nowrap">
                                     Pendente
                                   </Badge>
                                 </div>
                                 
-                                <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm mb-3 bg-gray-50 p-2 rounded">
+                                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm mb-2 bg-gray-50 p-2 rounded">
                                   <div className="flex items-center">
-                                    <span className="text-gray-500 w-24">Base:</span> 
-                                    <span className="font-medium">{request.base_nome}</span>
+                                    <span className="text-gray-500 inline-block w-[100px]">Base:</span> 
+                                    <span className="font-medium truncate">{request.base_nome}</span>
                                   </div>
                                   <div className="flex items-center">
-                                    <span className="text-gray-500 w-24">Quantidade:</span> 
-                                    <span className="font-medium">{request.quantidade}</span>
+                                    <span className="text-gray-500 inline-block w-[100px]">Quantidade:</span> 
+                                    <span className="font-medium truncate">{request.quantidade}</span>
                                   </div>
                                   <div className="flex items-center">
-                                    <span className="text-gray-500 w-24">Solicitante:</span> 
-                                    <span className="font-medium">{request.usuario_nome}</span>
+                                    <span className="text-gray-500 inline-block w-[100px]">Solicitante:</span> 
+                                    <span className="font-medium truncate">{request.usuario_nome}</span>
                                   </div>
                                   <div className="flex items-center">
-                                    <span className="text-gray-500 w-24">Data:</span> 
-                                    <span className="font-medium">{formatDate(request.data_solicitacao)}</span>
+                                    <span className="text-gray-500 inline-block w-[100px]">Data:</span> 
+                                    <span className="font-medium truncate">{formatDate(request.data_solicitacao)}</span>
                                   </div>
                                   {request.placa_veiculo && (
                                     <div className="flex items-center">
-                                      <span className="text-gray-500 w-24">Veículo:</span> 
-                                      <span className="font-medium">{request.placa_veiculo}</span>
+                                      <span className="text-gray-500 inline-block w-[100px]">Veículo:</span> 
+                                      <span className="font-medium truncate">{request.placa_veiculo}</span>
                                     </div>
                                   )}
                                   {request.km_veiculo && (
                                     <div className="flex items-center">
-                                      <span className="text-gray-500 w-24">Hodômetro:</span> 
-                                      <span className="font-medium">{request.km_veiculo?.toLocaleString('pt-BR')} km</span>
+                                      <span className="text-gray-500 inline-block w-[100px]">Hodômetro:</span> 
+                                      <span className="font-medium truncate">{request.km_veiculo?.toLocaleString('pt-BR')} km</span>
                                     </div>
                                   )}
                                 </div>
@@ -1156,8 +1156,8 @@ const TiresPage: React.FC = () => {
                             .filter(req => req.status === 'aprovado')
                             .map(request => (
                               <div key={request.id} className="border rounded-lg p-3 bg-white hover:bg-gray-50 transition-colors">
-                                <div className="flex justify-between items-start mb-3">
-                                  <div>
+                                <div className="flex justify-between items-center mb-2">
+                                  <div className="flex flex-col">
                                     <h4 className="font-semibold text-gray-800">{request.marca} {request.modelo}</h4>
                                     <div className="flex items-center gap-2 mt-1">
                                       <Badge variant="outline" className="bg-gray-100 px-2 py-0 h-5 text-xs">
@@ -1170,38 +1170,38 @@ const TiresPage: React.FC = () => {
                                       )}
                                     </div>
                                   </div>
-                                  <Badge variant="outline" className="bg-green-50 text-green-800 border-green-300">
+                                  <Badge variant="outline" className="bg-green-50 text-green-800 border-green-300 whitespace-nowrap">
                                     Aprovado
                                   </Badge>
                                 </div>
                                 
-                                <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm mb-3 bg-gray-50 p-2 rounded">
+                                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm mb-2 bg-gray-50 p-2 rounded">
                                   <div className="flex items-center">
-                                    <span className="text-gray-500 w-24">Base:</span> 
-                                    <span className="font-medium">{request.base_nome}</span>
+                                    <span className="text-gray-500 inline-block w-[100px]">Base:</span> 
+                                    <span className="font-medium truncate">{request.base_nome}</span>
                                   </div>
                                   <div className="flex items-center">
-                                    <span className="text-gray-500 w-24">Quantidade:</span> 
-                                    <span className="font-medium">{request.quantidade}</span>
+                                    <span className="text-gray-500 inline-block w-[100px]">Quantidade:</span> 
+                                    <span className="font-medium truncate">{request.quantidade}</span>
                                   </div>
                                   <div className="flex items-center">
-                                    <span className="text-gray-500 w-24">Solicitante:</span> 
-                                    <span className="font-medium">{request.usuario_nome}</span>
+                                    <span className="text-gray-500 inline-block w-[100px]">Solicitante:</span> 
+                                    <span className="font-medium truncate">{request.usuario_nome}</span>
                                   </div>
                                   <div className="flex items-center">
-                                    <span className="text-gray-500 w-24">Aprovado por:</span> 
-                                    <span className="font-medium">{request.aprovador_nome || '-'}</span>
+                                    <span className="text-gray-500 inline-block w-[100px]">Aprovado por:</span> 
+                                    <span className="font-medium truncate">{request.aprovador_nome || '-'}</span>
                                   </div>
                                   {request.placa_veiculo && (
                                     <div className="flex items-center">
-                                      <span className="text-gray-500 w-24">Veículo:</span> 
-                                      <span className="font-medium">{request.placa_veiculo}</span>
+                                      <span className="text-gray-500 inline-block w-[100px]">Veículo:</span> 
+                                      <span className="font-medium truncate">{request.placa_veiculo}</span>
                                     </div>
                                   )}
                                   {request.km_veiculo && (
                                     <div className="flex items-center">
-                                      <span className="text-gray-500 w-24">Hodômetro:</span> 
-                                      <span className="font-medium">{request.km_veiculo?.toLocaleString('pt-BR')} km</span>
+                                      <span className="text-gray-500 inline-block w-[100px]">Hodômetro:</span> 
+                                      <span className="font-medium truncate">{request.km_veiculo?.toLocaleString('pt-BR')} km</span>
                                     </div>
                                   )}
                                 </div>
@@ -1248,8 +1248,8 @@ const TiresPage: React.FC = () => {
                             .filter(req => req.status === 'negado')
                             .map(request => (
                               <div key={request.id} className="border rounded-lg p-3 bg-white hover:bg-gray-50 transition-colors">
-                                <div className="flex justify-between items-start mb-3">
-                                  <div>
+                                <div className="flex justify-between items-center mb-2">
+                                  <div className="flex flex-col">
                                     <h4 className="font-semibold text-gray-800">{request.marca} {request.modelo}</h4>
                                     <div className="flex items-center gap-2 mt-1">
                                       <Badge variant="outline" className="bg-gray-100 px-2 py-0 h-5 text-xs">
@@ -1262,38 +1262,38 @@ const TiresPage: React.FC = () => {
                                       )}
                                     </div>
                                   </div>
-                                  <Badge variant="outline" className="bg-red-50 text-red-800 border-red-300">
-                                    Rejeitado
+                                  <Badge variant="outline" className="bg-red-50 text-red-800 border-red-300 whitespace-nowrap">
+                                    Negado
                                   </Badge>
                                 </div>
                                 
-                                <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm mb-3 bg-gray-50 p-2 rounded">
+                                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm mb-2 bg-gray-50 p-2 rounded">
                                   <div className="flex items-center">
-                                    <span className="text-gray-500 w-24">Base:</span> 
-                                    <span className="font-medium">{request.base_nome}</span>
+                                    <span className="text-gray-500 inline-block w-[100px]">Base:</span> 
+                                    <span className="font-medium truncate">{request.base_nome}</span>
                                   </div>
                                   <div className="flex items-center">
-                                    <span className="text-gray-500 w-24">Quantidade:</span> 
-                                    <span className="font-medium">{request.quantidade}</span>
+                                    <span className="text-gray-500 inline-block w-[100px]">Quantidade:</span> 
+                                    <span className="font-medium truncate">{request.quantidade}</span>
                                   </div>
                                   <div className="flex items-center">
-                                    <span className="text-gray-500 w-24">Solicitante:</span> 
-                                    <span className="font-medium">{request.usuario_nome}</span>
+                                    <span className="text-gray-500 inline-block w-[100px]">Solicitante:</span> 
+                                    <span className="font-medium truncate">{request.usuario_nome}</span>
                                   </div>
                                   <div className="flex items-center">
-                                    <span className="text-gray-500 w-24">Rejeitado por:</span> 
-                                    <span className="font-medium">{request.aprovador_nome || '-'}</span>
+                                    <span className="text-gray-500 inline-block w-[100px]">Negado por:</span> 
+                                    <span className="font-medium truncate">{request.aprovador_nome || '-'}</span>
                                   </div>
                                   {request.placa_veiculo && (
                                     <div className="flex items-center">
-                                      <span className="text-gray-500 w-24">Veículo:</span> 
-                                      <span className="font-medium">{request.placa_veiculo}</span>
+                                      <span className="text-gray-500 inline-block w-[100px]">Veículo:</span> 
+                                      <span className="font-medium truncate">{request.placa_veiculo}</span>
                                     </div>
                                   )}
                                   {request.km_veiculo && (
                                     <div className="flex items-center">
-                                      <span className="text-gray-500 w-24">Hodômetro:</span> 
-                                      <span className="font-medium">{request.km_veiculo?.toLocaleString('pt-BR')} km</span>
+                                      <span className="text-gray-500 inline-block w-[100px]">Hodômetro:</span> 
+                                      <span className="font-medium truncate">{request.km_veiculo?.toLocaleString('pt-BR')} km</span>
                                     </div>
                                   )}
                                 </div>
