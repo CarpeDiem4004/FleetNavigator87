@@ -353,7 +353,7 @@ const ManutencaoFrotaCampinas: React.FC = () => {
         
         // Campos opcionais
         expectedExitDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 dias
-        maintenanceStartDate: null,
+        // Removendo o campo maintenanceStartDate que não existe na tabela
         actualExitDate: null,
         responsiblePerson: "Técnico responsável",
         kmAtual: data.km,
