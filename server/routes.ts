@@ -6398,7 +6398,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         console.log('[SolicitacaoPneus] Sincronizando solicitação de Base Campinas com módulo central de pneus:', localRequest.id);
         
-        // Mapear os dados para o formato do sistema central
+        // Mapear os dados para o formato do sistema central (somente campos existentes)
         const centralRequestData = {
           base_id: base_id,
           base_nome: 'Base Campinas', // Poderia ser obtido de um lookup, mas sabemos que é a base Campinas
@@ -6412,19 +6412,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           motivo: motivo,
           status: 'pendente',
           data_solicitacao: new Date(),
-          observacoes: observacoes,
-          origem: 'base_campinas', // Para identificar que veio da Base Campinas
-          id_origem: localRequest.id, // ID na tabela original
+          observacoes: observacoes
+          // Colunas origem e id_origem foram removidas pois não existem na tabela central
         };
         
-        // Inserir na tabela central
+        // Inserir na tabela central (removido campos inexistentes)
         const centralInsertQuery = `
           INSERT INTO solicitacoes_pneus (
             base_id, base_nome, usuario_id, usuario_nome, marca, 
             modelo, medida, tipo, quantidade, motivo,
-            status, data_solicitacao, observacoes, origem, id_origem
+            status, data_solicitacao, observacoes
           ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
           ) RETURNING *
         `;
         
@@ -6441,9 +6440,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           centralRequestData.motivo,
           centralRequestData.status,
           centralRequestData.data_solicitacao,
-          centralRequestData.observacoes,
-          centralRequestData.origem,
-          centralRequestData.id_origem
+          centralRequestData.observacoes
         ]);
         
         console.log('[SolicitacaoPneus] Sincronização com módulo central concluída:', centralResult.rows[0].id);
