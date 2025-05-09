@@ -124,9 +124,10 @@ const SolicitacoesPneus: React.FC = () => {
         const filters = statusFilter && statusFilter !== 'todos' ? { status: statusFilter } : undefined;
         const response = await getAllTireRequests(filters);
         
-        if (response.success) {
+        if (response.success && response.data) {
           setTireRequests(response.data);
         } else {
+          setTireRequests([]);
           toast({
             title: "Erro ao carregar solicitações",
             description: "Não foi possível carregar a lista de solicitações de pneus.",

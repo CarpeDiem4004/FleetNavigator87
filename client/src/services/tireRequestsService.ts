@@ -50,7 +50,7 @@ export async function getAllTireRequests(filters?: { base_id?: number, status?: 
     const response = await api.get(url);
     return {
       success: true,
-      data: response.data.data
+      data: response.data && response.data.data ? response.data.data : []
     };
   } catch (error) {
     console.error('Erro ao buscar solicitações de pneus:', error);
