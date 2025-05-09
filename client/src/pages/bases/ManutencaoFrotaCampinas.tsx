@@ -175,28 +175,40 @@ const ManutencaoFrotaCampinas: React.FC = () => {
       const data = await apiRequest('GET', '/api/maintenance/base/2');
       console.log("Dados de manutenção da Base Campinas:", data);
       
+      console.log("Dados brutos da API:", data);
+      
       // Mapear os dados recebidos para o formato esperado pelo componente
-      const formattedRequests: MaintenanceRequest[] = Array.isArray(data) ? data.map((item: any) => ({
-        id: item.id,
-        vehiclePlate: item.vehiclePlate,
-        description: item.description,
-        priority: item.priority || "média",
-        maintenanceType: item.type || "corretiva",
-        status: item.status,
-        requesterId: item.requesterId || user?.id || 0,
-        requesterName: item.requesterName || user?.name || "Usuário",
-        createdAt: item.created_at || new Date().toISOString(),
-        updatedAt: item.updated_at || new Date().toISOString(),
-        estimatedCompletion: item.expectedExitDate,
-        assignedTo: item.responsiblePerson,
-        workshopId: item.workshopId,
-        workshopName: item.workshopName,
-        entryDate: item.entryDate,
-        exitDate: item.actualExitDate,
-        comments: item.comments,
-        vehicleType: item.vehicleType,
-        vehicleMileage: item.vehicleMileage
-      })) : [];
+      // com tratamento explícito de campos faltantes ou alternativos
+      const formattedRequests: MaintenanceRequest[] = Array.isArray(data) ? data.map((item: any) => {
+        console.log("Processando item de manutenção:", item);
+        
+        // Extrair valores com fallbacks seguros
+        const formattedItem = {
+          id: item.id,
+          vehiclePlate: item.vehiclePlate || item.vehicle_plate || "",
+          description: item.description || "",
+          priority: item.priority || "média",
+          maintenanceType: item.type || item.maintenanceType || item.maintenance_type || "corretiva",
+          status: item.status || "pendente",
+          requesterId: item.requesterId || user?.id || 0,
+          requesterName: item.requesterName || user?.name || "Usuário",
+          createdAt: item.created_at || item.createdAt || new Date().toISOString(),
+          updatedAt: item.updated_at || item.updatedAt || new Date().toISOString(),
+          // Diferentes nomes de campos de datas com fallbacks
+          estimatedCompletion: item.expectedExitDate || item.expected_exit_date || item.estimated_completion || null,
+          assignedTo: item.responsiblePerson || item.responsible_person || "",
+          workshopId: item.workshopId || item.workshop_id || 1,
+          workshopName: item.workshopName || "Oficina Central",
+          entryDate: item.entryDate || item.entry_date || null,
+          exitDate: item.actualExitDate || item.actual_exit_date || item.completion_date || null,
+          comments: item.comments || item.description || "",
+          vehicleType: item.vehicleType || "desconhecido",
+          vehicleMileage: item.vehicleMileage || item.km_atual ? parseInt(item.km_atual) : 0
+        };
+        
+        console.log("Item formatado:", formattedItem);
+        return formattedItem;
+      }) : [];
       
       setRequests(formattedRequests);
     } catch (error) {
