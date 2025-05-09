@@ -3409,6 +3409,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Endpoint para atualizar as datas de uma manutenção
+  app.patch("/api/maintenance/:id/dates", hasMaintenanceAccess, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Usuário não autenticado" });
+      }
+
+      // Apenas admin e gestor_frota podem atualizar datas
+      if (req.user.role !== 'admin' && req.user.role !== 'gestor_frota') {
+        return res.status(403).json({ message: "Sem permissão para atualizar datas" });
+      }
+
+      const maintenanceId = parseInt(req.params.id);
+      const { entryDate, estimatedCompletion, completionDate } = req.body;
+      
+      if (!maintenanceId) {
+        return res.status(400).json({ message: "ID de manutenção inválido" });
+      }
+
+      // Validar se pelo menos uma data foi fornecida
+      if (!entryDate && !estimatedCompletion && !completionDate) {
+        return res.status(400).json({ message: "Pelo menos uma data deve ser fornecida" });
+      }
+
+      // Construir query dinâmica baseada nas datas fornecidas
+      let setClause = [];
+      let params = [];
+      let paramIndex = 1;
+
+      if (entryDate) {
+        setClause.push(`entry_date = $${paramIndex}`);
+        params.push(entryDate);
+        paramIndex++;
+      }
+
+      if (estimatedCompletion) {
+        setClause.push(`estimated_completion = $${paramIndex}`);
+        params.push(estimatedCompletion);
+        paramIndex++;
+      }
+
+      if (completionDate) {
+        setClause.push(`completion_date = $${paramIndex}`);
+        params.push(completionDate);
+        paramIndex++;
+      }
+
+      // Adicionar updated_at e id no final
+      setClause.push(`updated_at = CURRENT_TIMESTAMP`);
+      params.push(maintenanceId);
+
+      const updateQuery = `
+        UPDATE manutencao 
+        SET ${setClause.join(', ')} 
+        WHERE id = $${paramIndex}
+        RETURNING *
+      `;
+      
+      const result = await pool.query(updateQuery, params);
+      
+      if (result.rowCount === 0) {
+        return res.status(404).json({ message: "Manutenção não encontrada" });
+      }
+      
+      // Registrar a atualização no histórico de manutenção, se existir a tabela
+      try {
+        const historyQuery = `
+          INSERT INTO maintenance_lifecycle 
+          (maintenance_id, status, user_id, created_at, action, details)
+          VALUES ($1, $2, $3, CURRENT_TIMESTAMP, 'update_dates', $4)
+        `;
+        const row = result.rows[0];
+        const details = JSON.stringify({
+          entryDate: row.entry_date,
+          estimatedCompletion: row.estimated_completion,
+          completionDate: row.completion_date
+        });
+        await pool.query(historyQuery, [maintenanceId, row.status, req.user.id, details]);
+        console.log(`Histórico de atualização de datas registrado para manutenção ${maintenanceId}`);
+      } catch (historyError) {
+        // Registrar erro mas continuar com o fluxo
+        console.error("Erro ao registrar histórico de datas (não crítico):", historyError);
+      }
+      
+      return res.status(200).json({
+        message: "Datas atualizadas com sucesso",
+        maintenance: {
+          id: result.rows[0].id,
+          entryDate: result.rows[0].entry_date,
+          estimatedCompletion: result.rows[0].estimated_completion,
+          completionDate: result.rows[0].completion_date,
+          updatedAt: result.rows[0].updated_at
+        }
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar datas da manutenção:", error);
+      return res.status(500).json({ message: "Erro ao atualizar datas da manutenção" });
+    }
+  });
+
   app.get("/api/maintenance/:id", hasMaintenanceAccess, async (req, res) => {
     try {
       const maintenanceId = parseInt(req.params.id);
