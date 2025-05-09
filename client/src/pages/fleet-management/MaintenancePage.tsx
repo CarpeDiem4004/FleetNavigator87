@@ -86,16 +86,18 @@ interface Maintenance {
   vehicleModel?: string;
   workshopId: number;
   workshopName?: string; 
-  type: 'preventiva' | 'corretiva';
+  maintenanceType: 'preventiva' | 'corretiva'; // Campo corrigido
   description: string;
   entryDate: string;
-  expectedExitDate: string;
-  actualExitDate?: string;
+  estimatedCompletion?: string; // Campo alinhado
+  completionDate?: string; // Campo alinhado
   status: 'pendente' | 'aguardando_orcamento' | 'em_andamento' | 'concluida' | 'cancelada';
   cost?: number;
+  initialBudget?: number; // Campo adicionado
   requestBaseId: number;
   requestBaseName?: string;
-  responsiblePerson?: string; // Campo para o responsável pela manutenção
+  responsiblePerson?: string;
+  priority?: string; // Campo adicionado
   created_at: string;
   updated_at: string;
 }
@@ -163,14 +165,16 @@ export default function MaintenancePage() {
   const [formData, setFormData] = useState<Partial<Maintenance>>({
     vehiclePlate: '',
     workshopId: 0,
-    type: 'corretiva',
+    maintenanceType: 'corretiva',
     description: '',
     entryDate: new Date().toISOString().split('T')[0],
-    expectedExitDate: '',
+    estimatedCompletion: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     status: 'pendente',
+    priority: 'média',
     cost: undefined,
+    initialBudget: undefined,
     requestBaseId: user?.baseId || 0,
-    responsiblePerson: '' // Inicializar o campo de responsável
+    responsiblePerson: 'Técnico responsável'
   });
 
   // Carregar bases
@@ -286,7 +290,7 @@ export default function MaintenancePage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.vehiclePlate || !formData.workshopId || !formData.entryDate || !formData.expectedExitDate || !formData.responsiblePerson) {
+    if (!formData.vehiclePlate || !formData.workshopId || !formData.entryDate || !formData.estimatedCompletion || !formData.responsiblePerson) {
       toast({
         title: 'Dados incompletos',
         description: 'Por favor, preencha todos os campos obrigatórios',
@@ -332,14 +336,16 @@ export default function MaintenancePage() {
     setFormData({
       vehiclePlate: '',
       workshopId: 0,
-      type: 'corretiva',
+      maintenanceType: 'corretiva',
       description: '',
       entryDate: new Date().toISOString().split('T')[0],
-      expectedExitDate: '',
+      estimatedCompletion: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       status: 'pendente',
+      priority: 'média',
       cost: undefined,
+      initialBudget: undefined,
       requestBaseId: user?.baseId || 0,
-      responsiblePerson: '' // Inicializar o campo de responsável
+      responsiblePerson: 'Técnico responsável'
     });
     setIsOpen(true);
   };
@@ -573,7 +579,7 @@ export default function MaintenancePage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            {maintenance.type === 'preventiva' ? (
+                            {maintenance.maintenanceType === 'preventiva' ? (
                               <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                                 Preventiva
                               </Badge>
@@ -590,7 +596,7 @@ export default function MaintenancePage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            {formatDate(maintenance.expectedExitDate)}
+                            {formatDate(maintenance.estimatedCompletion)}
                           </TableCell>
                           <TableCell>
                             <StatusBadge status={maintenance.status} />
@@ -725,12 +731,12 @@ export default function MaintenancePage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Tipo de Manutenção */}
                   <div className="flex flex-col space-y-1.5">
-                    <Label htmlFor="type">
+                    <Label htmlFor="maintenanceType">
                       Tipo de Manutenção <span className="text-red-500">*</span>
                     </Label>
                     <Select 
-                      value={formData.type || "corretiva"} 
-                      onValueChange={(value) => handleSelectChange('type', value)}
+                      value={formData.maintenanceType || "corretiva"} 
+                      onValueChange={(value) => handleSelectChange('maintenanceType', value)}
                     >
                       <SelectTrigger className="h-10">
                         <SelectValue />
@@ -760,14 +766,14 @@ export default function MaintenancePage() {
 
                   {/* Previsão de Saída */}
                   <div className="flex flex-col space-y-1.5">
-                    <Label htmlFor="expectedExitDate">
+                    <Label htmlFor="estimatedCompletion">
                       Previsão de Saída <span className="text-red-500">*</span>
                     </Label>
                     <Input
-                      id="expectedExitDate"
-                      name="expectedExitDate"
+                      id="estimatedCompletion"
+                      name="estimatedCompletion"
                       type="date"
-                      value={formData.expectedExitDate}
+                      value={formData.estimatedCompletion}
                       onChange={handleInputChange}
                       className="h-10"
                       required
