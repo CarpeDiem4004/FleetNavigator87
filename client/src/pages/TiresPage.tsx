@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Plus, FileEdit, Trash2, ArrowUpCircle, ShoppingBag, CheckCircle, XCircle, AlertCircle, Package, DollarSign } from 'lucide-react';
+import { Search, Plus, FileEdit, Trash2, ArrowUpCircle, ShoppingBag, CheckCircle, XCircle, AlertCircle, Package, DollarSign, MessageCircle } from 'lucide-react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
@@ -880,6 +880,16 @@ const TiresPage: React.FC = () => {
                   />
                 </div>
               </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  onClick={() => navigate("/tires/solicitacoes")}
+                  className="flex items-center gap-1"
+                  variant="outline"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Gestão de Solicitações
+                </Button>
+              </div>
             </div>
 
             {isLoading ? (
@@ -957,6 +967,14 @@ const TiresPage: React.FC = () => {
                 <p className="text-gray-500 text-sm">Gerencie todas as solicitações de pneus no sistema</p>
               </div>
               <div className="flex gap-3">
+                <Button 
+                  onClick={() => navigate("/tires/solicitacoes")}
+                  variant="outline"
+                  className="flex items-center"
+                >
+                  <MessageCircle className="mr-2 h-4 w-4" />
+                  Painel de Gestão
+                </Button>
                 <Button 
                   onClick={() => setIsRequestDialogOpen(true)}
                   className="bg-green-600 hover:bg-green-700 text-white"
