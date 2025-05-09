@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { queryClient } from '@/lib/queryClient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -94,7 +95,9 @@ const translateRequestStatus = (status: string): string => {
   const statuses: Record<string, string> = {
     pendente: 'Pendente',
     aprovado: 'Aprovado',
-    rejeitado: 'Rejeitado'
+    negado: 'Rejeitado',
+    em_analise: 'Em Análise',
+    concluido: 'Concluído'
   };
   return statuses[status] || status;
 };
@@ -104,7 +107,9 @@ const getRequestStatusBadgeClass = (status: string): string => {
   const classes: Record<string, string> = {
     pendente: 'bg-yellow-100 text-yellow-800',
     aprovado: 'bg-green-100 text-green-800',
-    rejeitado: 'bg-red-100 text-red-800'
+    negado: 'bg-red-100 text-red-800',
+    em_analise: 'bg-blue-100 text-blue-800',
+    concluido: 'bg-purple-100 text-purple-800'
   };
   return classes[status] || 'bg-gray-100 text-gray-800';
 };
@@ -176,24 +181,25 @@ const TiresPage: React.FC = () => {
     loadTires();
   }, [toast]);
   
-  // Carregar estatísticas de estoque
-  useEffect(() => {
-    const loadStockStats = async () => {
-      setIsLoadingStats(true);
-      try {
-        const response = await getTireStockStats();
-        if (response && response.success) {
-          setStockStats(response.data);
-        } else {
-          console.error("Falha ao carregar estatísticas de estoque");
-        }
-      } catch (error) {
-        console.error("Erro ao buscar estatísticas de estoque:", error);
-      } finally {
-        setIsLoadingStats(false);
+  // Função para carregar estatísticas de estoque (definida fora do useEffect para poder ser chamada de outros lugares)
+  const loadStockStats = async () => {
+    setIsLoadingStats(true);
+    try {
+      const response = await getTireStockStats();
+      if (response && response.success) {
+        setStockStats(response.data);
+      } else {
+        console.error("Falha ao carregar estatísticas de estoque");
       }
-    };
-    
+    } catch (error) {
+      console.error("Erro ao buscar estatísticas de estoque:", error);
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
+
+  // Carregar estatísticas de estoque quando a lista de pneus mudar
+  useEffect(() => {
     loadStockStats();
   }, [tires]); // Recarregar quando a lista de pneus mudar
 
@@ -318,6 +324,12 @@ const TiresPage: React.FC = () => {
       // Atualiza a lista de pneus
       setTires([...tires, ...addedPneus]);
       setIsAddDialogOpen(false);
+      
+      // Invalida o cache das estatísticas e força recarregamento
+      queryClient.invalidateQueries({ queryKey: ['/api/pneus/estatisticas/estoque'] });
+      
+      // Força atualização das estatísticas
+      loadStockStats();
       
       toast({
         title: "Registrado com sucesso!",
@@ -500,7 +512,7 @@ const TiresPage: React.FC = () => {
       
       const response = await updateTireRequestStatus(
         requestId,
-        'rejeitado',
+        'negado',
         currentUser.id,
         currentUser.name
       );
