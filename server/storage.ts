@@ -738,14 +738,43 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getMaintenanceByBaseAndStatus(baseId: number, status: string): Promise<Maintenance[]> {
-    return await db.select().from(maintenance)
-      .where(
-        and(
-          eq(maintenance.requestBaseId, baseId),
-          sql`${maintenance.status}::text = ${status}`
-        )
-      )
-      .orderBy(desc(maintenance.entryDate));
+    try {
+      console.log(`Buscando manutenções com baseId=${baseId} e status=${status}`);
+      
+      // Usar SQL direto para evitar problemas com os campos
+      const query = `
+        SELECT * FROM manutencao
+        WHERE request_base_id = $1 
+        AND status = $2
+        ORDER BY entry_date DESC
+      `;
+      
+      const result = await pool.query(query, [baseId, status]);
+      console.log(`Encontradas ${result.rows.length} manutenções com baseId=${baseId} e status=${status}`);
+      
+      // Mapear os resultados para o formato esperado pelo frontend
+      return result.rows.map(row => ({
+        id: row.id,
+        vehiclePlate: row.vehicle_plate,
+        description: row.description,
+        status: row.status,
+        priority: row.priority || "média",
+        maintenanceType: row.maintenance_type,
+        workshopId: row.workshop_id,
+        requestBaseId: row.request_base_id,
+        entryDate: row.entry_date,
+        estimatedCompletion: row.estimated_completion,
+        completionDate: row.completion_date,
+        responsiblePerson: row.responsible_person,
+        cost: row.cost,
+        initialBudget: row.initial_budget,
+        created_at: row.created_at,
+        updated_at: row.updated_at
+      }));
+    } catch (error) {
+      console.error("Erro ao buscar manutenções por base e status:", error);
+      return [];
+    }
   }
   
   async getMaintenanceByWorkshop(workshopId: number): Promise<Maintenance[]> {

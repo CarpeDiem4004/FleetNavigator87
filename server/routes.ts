@@ -2943,12 +2943,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Unauthorized" });
       }
       
+      console.log("Requisição GET /api/maintenance recebida.");
+      console.log("Usuário:", req.user.email, "Papel:", req.user.role, "BaseID:", req.user.baseId);
+      
       // Check if filtering by base and status
       const baseId = req.query.baseId ? parseInt(req.query.baseId as string) : null;
       const status = req.query.status as string | null;
       
-      // Para usuários não-admin, forçar filtragem pela base do próprio usuário
-      if (req.user.role !== 'admin' && req.user.baseId) {
+      console.log("Parâmetros de busca:", { baseId, status });
+      
+      // gestor_frota tem acesso completo como admin
+      // Para usuários não-admin/não-gestor_frota, forçar filtragem pela base do próprio usuário
+      if (req.user.role !== 'admin' && req.user.role !== 'gestor_frota' && req.user.baseId) {
         console.log(`Usuário não-admin id=${req.user.id}. Forçando filtro por baseId=${req.user.baseId}`);
         
         // Se pediu filtragem por base, verificar se coincide com a do usuário
@@ -2960,40 +2966,161 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Buscar manutenções com filtro por status (se existir) e pela base do usuário
         let maintenanceRecords;
-        if (status) {
-          maintenanceRecords = await storage.getMaintenanceByBaseAndStatus(req.user.baseId, status);
-        } else {
-          // Buscar todas e filtrar manualmente para a base do usuário
-          const allRecords = await storage.getAllMaintenance();
-          maintenanceRecords = allRecords.filter(m => m.requestBaseId === req.user!.baseId);
+        try {
+          if (status) {
+            maintenanceRecords = await storage.getMaintenanceByBaseAndStatus(req.user.baseId, status);
+          } else {
+            // Usar SQL direto para garantir compatibilidade com a estrutura
+            const query = `
+              SELECT * FROM manutencao
+              WHERE request_base_id = $1
+              ORDER BY entry_date DESC
+            `;
+            
+            const result = await pool.query(query, [req.user.baseId]);
+            console.log(`Encontradas ${result.rows.length} manutenções para baseId=${req.user.baseId}`);
+            
+            // Mapear os resultados para o formato esperado pelo frontend
+            maintenanceRecords = result.rows.map(row => ({
+              id: row.id,
+              vehiclePlate: row.vehicle_plate,
+              description: row.description,
+              status: row.status,
+              priority: row.priority || "média",
+              maintenanceType: row.maintenance_type,
+              workshopId: row.workshop_id,
+              requestBaseId: row.request_base_id,
+              entryDate: row.entry_date,
+              estimatedCompletion: row.estimated_completion,
+              completionDate: row.completion_date,
+              responsiblePerson: row.responsible_person,
+              cost: row.cost,
+              initialBudget: row.initial_budget,
+              created_at: row.created_at,
+              updated_at: row.updated_at
+            }));
+          }
+        } catch (dbError) {
+          console.error("Erro ao buscar manutenções:", dbError);
+          maintenanceRecords = [];
         }
         
         return res.status(200).json(maintenanceRecords);
       }
       
-      // Administradores podem filtrar como quiserem
-      if (req.user.role === 'admin') {
+      // Administradores e gestores de frota podem filtrar como quiserem
+      if (req.user.role === 'admin' || req.user.role === 'gestor_frota') {
+        console.log(`Usuário ${req.user.role} id=${req.user.id} tem acesso total às manutenções`);
+        
         // Se baseId e status fornecidos, filtrar por ambos
         if (baseId && status) {
+          console.log(`Buscando manutenções com baseId=${baseId} e status=${status}`);
           const maintenance = await storage.getMaintenanceByBaseAndStatus(baseId, status);
           return res.status(200).json(maintenance);
         } 
         // Se só baseId fornecido
         else if (baseId) {
-          const allRecords = await storage.getAllMaintenance();
-          const filtered = allRecords.filter(m => m.requestBaseId === baseId);
-          return res.status(200).json(filtered);
+          console.log(`Buscando manutenções para baseId=${baseId}`);
+          // Usar SQL direto para garantir compatibilidade
+          const query = `
+            SELECT * FROM manutencao
+            WHERE request_base_id = $1
+            ORDER BY entry_date DESC
+          `;
+          
+          const result = await pool.query(query, [baseId]);
+          console.log(`Encontradas ${result.rows.length} manutenções para baseId=${baseId}`);
+          
+          // Mapear os resultados para o formato esperado pelo frontend
+          const maintenanceRecords = result.rows.map(row => ({
+            id: row.id,
+            vehiclePlate: row.vehicle_plate,
+            description: row.description,
+            status: row.status,
+            priority: row.priority || "média",
+            maintenanceType: row.maintenance_type,
+            workshopId: row.workshop_id,
+            requestBaseId: row.request_base_id,
+            entryDate: row.entry_date,
+            estimatedCompletion: row.estimated_completion,
+            completionDate: row.completion_date,
+            responsiblePerson: row.responsible_person,
+            cost: row.cost,
+            initialBudget: row.initial_budget,
+            created_at: row.created_at,
+            updated_at: row.updated_at
+          }));
+          
+          return res.status(200).json(maintenanceRecords);
         }
         // Se só status fornecido
         else if (status) {
-          const allRecords = await storage.getAllMaintenance();
-          const filtered = allRecords.filter(m => m.status === status);
-          return res.status(200).json(filtered);
+          console.log(`Buscando manutenções com status=${status}`);
+          // Usar SQL direto para garantir compatibilidade
+          const query = `
+            SELECT * FROM manutencao
+            WHERE status = $1
+            ORDER BY entry_date DESC
+          `;
+          
+          const result = await pool.query(query, [status]);
+          console.log(`Encontradas ${result.rows.length} manutenções com status=${status}`);
+          
+          // Mapear os resultados para o formato esperado pelo frontend
+          const maintenanceRecords = result.rows.map(row => ({
+            id: row.id,
+            vehiclePlate: row.vehicle_plate,
+            description: row.description,
+            status: row.status,
+            priority: row.priority || "média",
+            maintenanceType: row.maintenance_type,
+            workshopId: row.workshop_id,
+            requestBaseId: row.request_base_id,
+            entryDate: row.entry_date,
+            estimatedCompletion: row.estimated_completion,
+            completionDate: row.completion_date,
+            responsiblePerson: row.responsible_person,
+            cost: row.cost,
+            initialBudget: row.initial_budget,
+            created_at: row.created_at,
+            updated_at: row.updated_at
+          }));
+          
+          return res.status(200).json(maintenanceRecords);
         }
         // Sem filtros, retornar todos
         else {
-          const maintenance = await storage.getAllMaintenance();
-          return res.status(200).json(maintenance);
+          console.log("Buscando todas as manutenções");
+          // Usar SQL direto para garantir compatibilidade
+          const query = `
+            SELECT * FROM manutencao
+            ORDER BY entry_date DESC
+          `;
+          
+          const result = await pool.query(query);
+          console.log(`Encontradas ${result.rows.length} manutenções no total`);
+          
+          // Mapear os resultados para o formato esperado pelo frontend
+          const maintenanceRecords = result.rows.map(row => ({
+            id: row.id,
+            vehiclePlate: row.vehicle_plate,
+            description: row.description,
+            status: row.status,
+            priority: row.priority || "média",
+            maintenanceType: row.maintenance_type,
+            workshopId: row.workshop_id,
+            requestBaseId: row.request_base_id,
+            entryDate: row.entry_date,
+            estimatedCompletion: row.estimated_completion,
+            completionDate: row.completion_date,
+            responsiblePerson: row.responsible_person,
+            cost: row.cost,
+            initialBudget: row.initial_budget,
+            created_at: row.created_at,
+            updated_at: row.updated_at
+          }));
+          
+          return res.status(200).json(maintenanceRecords);
         }
       }
       
@@ -3002,7 +3129,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(200).json([]);
     } catch (error) {
       console.error("Error fetching maintenance:", error);
-      return res.status(500).json({ message: "Server error" });
+      return res.status(500).json({ 
+        message: "Server error",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
   
