@@ -222,8 +222,30 @@ const ManutencaoFrotaCampinas: React.FC = () => {
   // Função para buscar os veículos
   const fetchVehicles = async () => {
     try {
-      // Chamada para a API - dados simulados por enquanto
-      setTimeout(() => {
+      // Realizar chamada real à API
+      const response = await fetch('/api/vehicles');
+      
+      if (!response.ok) {
+        throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log("Veículos obtidos da API:", data);
+      
+      // Mapear para o formato esperado pelo componente
+      const formattedVehicles: Vehicle[] = Array.isArray(data) ? data.map((vehicle: any) => ({
+        id: vehicle.id,
+        plate: vehicle.plate,
+        model: vehicle.model,
+        vehicleType: vehicle.vehicleType,
+        status: vehicle.status
+      })) : [];
+      
+      if (formattedVehicles.length > 0) {
+        setVehicles(formattedVehicles);
+      } else {
+        // Dados simulados para demonstração quando a API retornar vazio
+        console.log("Usando veículos simulados para demonstração");
         const mockVehicles: Vehicle[] = [
           { id: 1, plate: "ABC1234", model: "Sprinter 415", vehicleType: "van", status: "em_operacao" },
           { id: 2, plate: "DEF5678", model: "VW 24.280", vehicleType: "truck", status: "em_operacao" },
@@ -232,12 +254,23 @@ const ManutencaoFrotaCampinas: React.FC = () => {
           { id: 5, plate: "MNO7890", model: "Scania R450", vehicleType: "cavalo_mecanico", status: "em_operacao" }
         ];
         setVehicles(mockVehicles);
-      }, 500);
+      }
     } catch (error) {
       console.error("Erro ao buscar veículos:", error);
+      
+      // Dados simulados para demonstração quando ocorrer erro
+      const mockVehicles: Vehicle[] = [
+        { id: 1, plate: "ABC1234", model: "Sprinter 415", vehicleType: "van", status: "em_operacao" },
+        { id: 2, plate: "DEF5678", model: "VW 24.280", vehicleType: "truck", status: "em_operacao" },
+        { id: 3, plate: "GHI9012", model: "Fiorino Furgão", vehicleType: "fiorino", status: "em_operacao" },
+        { id: 4, plate: "JKL3456", model: "Sprinter 515", vehicleType: "van", status: "em_manutencao" },
+        { id: 5, plate: "MNO7890", model: "Scania R450", vehicleType: "cavalo_mecanico", status: "em_operacao" }
+      ];
+      setVehicles(mockVehicles);
+      
       toast({
         title: "Erro",
-        description: "Não foi possível carregar a lista de veículos.",
+        description: "Não foi possível carregar a lista de veículos do servidor.",
         variant: "destructive"
       });
     }
@@ -247,46 +280,100 @@ const ManutencaoFrotaCampinas: React.FC = () => {
   const onSubmit = async (data: MaintenanceRequestForm) => {
     setIsLoading(true);
     try {
-      // Simulando uma chamada para a API
       console.log("Enviando solicitação:", data);
       
-      setTimeout(() => {
-        // Adicionar a nova solicitação à lista
-        const vehicle = vehicles.find(v => v.plate === data.vehiclePlate);
-        
-        const newRequest: MaintenanceRequest = {
-          id: Math.floor(Math.random() * 1000),
-          vehiclePlate: data.vehiclePlate,
-          description: data.description,
-          priority: data.priority,
-          maintenanceType: data.maintenanceType,
-          status: "pendente",
-          requesterId: user?.id || 0,
-          requesterName: user?.name || "Usuário",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          estimatedCompletion: data.estimatedCompletion,
-          vehicleType: vehicle?.vehicleType || "desconhecido"
-        };
-        
-        setRequests([newRequest, ...requests]);
-        form.reset();
-        
-        toast({
-          title: "Sucesso",
-          description: "Solicitação de manutenção criada com sucesso.",
-          variant: "default"
-        });
-        
-        setIsLoading(false);
-      }, 800);
+      // Preparar dados para envio à API central
+      const vehicle = vehicles.find(v => v.plate === data.vehiclePlate);
+      
+      const maintenanceData = {
+        vehiclePlate: data.vehiclePlate,
+        description: data.description,
+        maintenanceType: data.maintenanceType,
+        status: "pendente",
+        priority: data.priority,
+        requestBaseId: 2, // Base Campinas
+        workshopId: 1, // Oficina padrão
+        entryDate: new Date().toISOString().split('T')[0], // Data atual
+        expectedExitDate: data.estimatedCompletion || 
+          new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 dias após a data atual, se não foi informado
+        responsiblePerson: "Técnico responsável"
+      };
+      
+      // Realizar chamada real à API
+      const response = await fetch('/api/maintenance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(maintenanceData),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
+      }
+      
+      const newMaintenance = await response.json();
+      console.log("Resposta da API:", newMaintenance);
+      
+      // Formatar a resposta para o formato esperado pelo componente
+      const newRequest: MaintenanceRequest = {
+        id: newMaintenance.id,
+        vehiclePlate: newMaintenance.vehiclePlate,
+        description: newMaintenance.description,
+        priority: data.priority,
+        maintenanceType: data.maintenanceType,
+        status: newMaintenance.status,
+        requesterId: user?.id || 0,
+        requesterName: user?.name || "Usuário",
+        createdAt: newMaintenance.created_at || new Date().toISOString(),
+        updatedAt: newMaintenance.updated_at || new Date().toISOString(),
+        estimatedCompletion: newMaintenance.expectedExitDate || data.estimatedCompletion,
+        workshopId: newMaintenance.workshopId || 1,
+        workshopName: newMaintenance.workshopName || "Oficina Central",
+        vehicleType: vehicle?.vehicleType || "desconhecido"
+      };
+      
+      // Atualizar a interface com a nova solicitação
+      setRequests([newRequest, ...requests]);
+      form.reset();
+      
+      toast({
+        title: "Sucesso",
+        description: "Solicitação de manutenção criada com sucesso.",
+        variant: "default"
+      });
+      
     } catch (error) {
       console.error("Erro ao criar solicitação:", error);
+      
+      // Modo de fallback para testes quando a API falhar
+      // Adiciona localmente apenas para demonstração
+      const vehicle = vehicles.find(v => v.plate === data.vehiclePlate);
+      
+      const newRequest: MaintenanceRequest = {
+        id: Math.floor(Math.random() * 1000),
+        vehiclePlate: data.vehiclePlate,
+        description: data.description,
+        priority: data.priority,
+        maintenanceType: data.maintenanceType,
+        status: "pendente",
+        requesterId: user?.id || 0,
+        requesterName: user?.name || "Usuário",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        estimatedCompletion: data.estimatedCompletion,
+        vehicleType: vehicle?.vehicleType || "desconhecido"
+      };
+      
+      setRequests([newRequest, ...requests]);
+      form.reset();
+      
       toast({
         title: "Erro",
-        description: "Não foi possível criar a solicitação de manutenção.",
+        description: "Não foi possível criar a solicitação de manutenção no servidor central. Uma versão local foi criada para demonstração.",
         variant: "destructive"
       });
+    } finally {
       setIsLoading(false);
     }
   };

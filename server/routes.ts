@@ -3094,6 +3094,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Rota específica para buscar manutenções de uma base específica
+  app.get("/api/maintenance/base/:baseId", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const baseId = parseInt(req.params.baseId);
+      
+      if (isNaN(baseId)) {
+        return res.status(400).json({ message: "ID de base inválido" });
+      }
+      
+      console.log(`Buscando manutenções da base ${baseId}`);
+      
+      // Verificar se a base existe
+      const baseQuery = `SELECT id, name FROM bases WHERE id = $1`;
+      const baseResult = await pool.query(baseQuery, [baseId]);
+      
+      if (baseResult.rowCount === 0) {
+        return res.status(404).json({ message: "Base não encontrada" });
+      }
+      
+      const baseName = baseResult.rows[0].name;
+      console.log(`Base encontrada: ${baseName} (ID: ${baseId})`);
+      
+      // Buscar todas as manutenções da base, independentemente do status
+      let maintenanceRecords;
+      try {
+        const query = `
+          SELECT * FROM manutencao
+          WHERE request_base_id = $1
+          ORDER BY entry_date DESC
+        `;
+        
+        const result = await pool.query(query, [baseId]);
+        
+        // Mapear os resultados para o formato correto do objeto Maintenance
+        maintenanceRecords = result.rows.map(row => ({
+          id: row.id,
+          vehiclePlate: row.vehicle_plate,
+          description: row.description,
+          status: row.status,
+          workshopId: row.workshop_id,
+          workshopName: null, // Será preenchido abaixo
+          requestBaseId: row.request_base_id,
+          requestBaseName: baseName,
+          entryDate: row.entry_date,
+          expectedExitDate: row.expected_exit_date,
+          actualExitDate: row.actual_exit_date,
+          maintenanceType: row.maintenance_type,
+          type: row.maintenance_type, // Para compatibilidade com a interface do frontend
+          initialCost: row.initial_cost,
+          finalCost: row.final_cost,
+          responsiblePerson: row.responsible_person,
+          priority: row.priority || "média",
+          created_at: row.created_at,
+          updated_at: row.updated_at
+        }));
+        
+        // Buscar os nomes das oficinas
+        if (maintenanceRecords.length > 0) {
+          const workshopIds = [...new Set(maintenanceRecords.filter(m => m.workshopId).map(m => m.workshopId))];
+          
+          if (workshopIds.length > 0) {
+            const workshopsQuery = `
+              SELECT id, name FROM oficinas
+              WHERE id = ANY($1::int[])
+            `;
+            
+            const workshopsResult = await pool.query(workshopsQuery, [workshopIds]);
+            const workshopsMap = new Map();
+            
+            workshopsResult.rows.forEach(row => {
+              workshopsMap.set(row.id, row.name);
+            });
+            
+            // Atualizar os registros com os nomes das oficinas
+            maintenanceRecords = maintenanceRecords.map(record => ({
+              ...record,
+              workshopName: record.workshopId ? workshopsMap.get(record.workshopId) || "Oficina não encontrada" : null
+            }));
+          }
+        }
+        
+        console.log(`Encontradas ${maintenanceRecords.length} manutenções para a base ${baseName}`);
+      } catch (dbError) {
+        console.error("Erro ao buscar manutenções:", dbError);
+        maintenanceRecords = [];
+      }
+      
+      // Se não houver manutenções, retornar um array vazio
+      if (!maintenanceRecords || maintenanceRecords.length === 0) {
+        console.log(`Nenhuma manutenção encontrada para a base ${baseName}`);
+        return res.status(200).json([]);
+      }
+      
+      return res.status(200).json(maintenanceRecords);
+    } catch (error) {
+      console.error("Erro ao buscar manutenções da base:", error);
+      return res.status(500).json({ message: "Erro ao buscar manutenções da base" });
+    }
+  });
+  
   app.get("/api/maintenance/:id", hasMaintenanceAccess, async (req, res) => {
     try {
       const maintenanceId = parseInt(req.params.id);
