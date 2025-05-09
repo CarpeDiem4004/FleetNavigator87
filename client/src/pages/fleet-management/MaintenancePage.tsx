@@ -441,7 +441,7 @@ export default function MaintenancePage() {
             </Button>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-4">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg">Pendentes</CardTitle>
@@ -471,6 +471,41 @@ export default function MaintenancePage() {
                   {maintenances && Array.isArray(maintenances) ? maintenances.filter(m => m.status === 'concluida').length : 0}
                 </div>
               </CardContent>
+            </Card>
+            <Card className="bg-blue-50 border-blue-200">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center">
+                  <Building2 className="h-4 w-4 mr-2 text-blue-600" />
+                  Solicitações das Bases
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">
+                  {maintenances && Array.isArray(maintenances) 
+                    ? maintenances.filter(m => 
+                        m.status === 'pendente' && 
+                        m.requestBaseId === 2 // ID da Base Campinas
+                      ).length 
+                    : 0
+                  }
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Novas solicitações da Base Campinas
+                </p>
+              </CardContent>
+              <CardFooter className="pt-0">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => {
+                    setFilterBaseId(2); // Filtrar por Base Campinas
+                    setActiveTab('pendente'); // Mostrar pendentes
+                  }}
+                >
+                  Ver solicitações
+                </Button>
+              </CardFooter>
             </Card>
           </div>
 
