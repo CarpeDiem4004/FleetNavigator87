@@ -114,8 +114,8 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
             Históricos
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Usar componente otimizado para ABC_v2 */}
-            {id === 'abc_v2' ? (
+            {/* Usar componente otimizado para ABC_v2 e Socorro_v2 */}
+            {id === 'abc_v2' || id === 'socorro_v2' ? (
               <HistoricoAbastecimentosOptimized
                 postId={id}
                 showLimparButton={false}
