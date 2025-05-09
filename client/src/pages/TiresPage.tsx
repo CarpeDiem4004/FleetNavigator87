@@ -1223,7 +1223,7 @@ const TiresPage: React.FC = () => {
                       Solicitações Rejeitadas
                     </CardTitle>
                     <Badge variant="outline" className="bg-red-50 text-red-800 border-red-300">
-                      {tireRequests && tireRequests.length > 0 ? tireRequests.filter(req => req.status === 'rejeitado').length : 0}
+                      {tireRequests && tireRequests.length > 0 ? tireRequests.filter(req => req.status === 'negado').length : 0}
                     </Badge>
                   </div>
                   <CardDescription className="text-xs">
@@ -1237,7 +1237,7 @@ const TiresPage: React.FC = () => {
                     </div>
                   ) : (
                     <div className="max-h-[350px] overflow-y-auto py-2 px-3">
-                      {!tireRequests || tireRequests.length === 0 || tireRequests.filter(req => req.status === 'rejeitado').length === 0 ? (
+                      {!tireRequests || tireRequests.length === 0 || tireRequests.filter(req => req.status === 'negado').length === 0 ? (
                         <div className="text-center text-gray-500 my-8 flex flex-col items-center">
                           <XCircle className="h-10 w-10 text-gray-300 mb-2" />
                           <p>Não há solicitações rejeitadas</p>
@@ -1245,7 +1245,7 @@ const TiresPage: React.FC = () => {
                       ) : (
                         <div className="space-y-4">
                           {tireRequests
-                            .filter(req => req.status === 'rejeitado')
+                            .filter(req => req.status === 'negado')
                             .map(request => (
                               <div key={request.id} className="border rounded-lg p-3 bg-white hover:bg-gray-50 transition-colors">
                                 <div className="flex justify-between items-start mb-3">
