@@ -6372,9 +6372,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         RETURNING *
       `;
       
+      // Obter o usuário da requisição - pode estar em req.user (sessão) ou req.hybridUser (token JWT)
+      const usuario = req.user || (req as any).hybridUser;
+      console.log("[SolicitacaoPneus] Usuário na requisição:", usuario);
+      
       const result = await pool.query(insertQuery, [
         base_id, 
-        req.user ? req.user.id : null,
+        usuario ? usuario.id : null,
         quantidade, 
         marca, 
         modelo, 
@@ -6395,8 +6399,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const centralRequestData = {
           base_id: base_id,
           base_nome: 'Base Campinas', // Poderia ser obtido de um lookup, mas sabemos que é a base Campinas
-          usuario_id: req.user ? req.user.id : null,
-          usuario_nome: req.user ? req.user.name : 'Usuário Base Campinas',
+          usuario_id: usuario ? usuario.id : null,
+          usuario_nome: usuario ? usuario.name : 'Usuário Base Campinas',
           marca: marca,
           modelo: modelo,
           medida: medida,
@@ -6507,10 +6511,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         RETURNING *
       `;
       
+      // Obter o usuário da requisição - pode estar em req.user (sessão) ou req.hybridUser (token JWT)
+      const usuario = req.user || (req as any).hybridUser;
+      console.log("[SolicitacaoPneus] Usuário na requisição de atualização:", usuario);
+      
       const result = await pool.query(updateQuery, [
         status, 
         observacoes, 
-        req.user ? req.user.id : null,
+        usuario ? usuario.id : null,
         id
       ]);
       

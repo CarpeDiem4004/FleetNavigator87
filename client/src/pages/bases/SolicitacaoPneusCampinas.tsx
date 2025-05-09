@@ -93,18 +93,24 @@ const SolicitacaoPneusCampinas: React.FC = () => {
       return;
     }
     
-    // Verificamos se o token é válido fazendo uma chamada para verificação
+    // Verificamos se o token é válido usando apiRequest (que adiciona o token automaticamente)
     const verifyToken = async () => {
       try {
-        console.log("Verificando token JWT...");
-        const response = await fetch('/api/hybrid/auth/verify', {
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
+        console.log("Verificando token JWT através do apiRequest...");
+        const response = await apiRequest('GET', '/api/hybrid/auth/verify');
         
-        if (!response.ok) {
+        // Se chegou aqui, o token é válido (apiRequest lança erro em caso de 401)
+        console.log("Token JWT verificado com sucesso via apiRequest");
+        
+        // Log do conteúdo para depuração
+        const verifyResult = await response.json();
+        console.log("Resposta da verificação:", verifyResult);
+        
+      } catch (error) {
+        console.error("Erro ao verificar token via apiRequest:", error);
+        
+        // Se o erro for de autenticação (401), redirecionar para login
+        if (error instanceof Error && error.message.includes('401')) {
           console.error("Token inválido ou expirado");
           // Remove o token inválido
           localStorage.removeItem('authToken');
@@ -119,11 +125,7 @@ const SolicitacaoPneusCampinas: React.FC = () => {
           setTimeout(() => {
             navigate('/login');
           }, 1500);
-        } else {
-          console.log("Token JWT verificado com sucesso");
         }
-      } catch (error) {
-        console.error("Erro ao verificar token:", error);
       }
     };
     
