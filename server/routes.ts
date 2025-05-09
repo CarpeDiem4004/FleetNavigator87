@@ -3268,10 +3268,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           requestBaseId: row.request_base_id,
           requestBaseName: baseName,
           entryDate: row.entry_date,
-          expectedExitDate: row.expected_exit_date,
-          actualExitDate: row.actual_exit_date,
+          estimatedCompletion: row.estimated_completion || row.expected_exit_date,
+          completionDate: row.completion_date || row.actual_exit_date,
           maintenanceType: row.maintenance_type,
-          type: row.maintenance_type, // Para compatibilidade com a interface do frontend
           initialCost: row.initial_cost,
           finalCost: row.final_cost,
           responsiblePerson: row.responsible_person,

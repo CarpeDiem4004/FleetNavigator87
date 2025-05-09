@@ -290,7 +290,7 @@ export default function MaintenancePage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.vehiclePlate || !formData.workshopId || !formData.entryDate || !formData.estimatedCompletion || !formData.responsiblePerson) {
+    if (!formData.vehiclePlate || !formData.workshopId || !formData.maintenanceType || !formData.entryDate || !formData.estimatedCompletion || !formData.responsiblePerson) {
       toast({
         title: 'Dados incompletos',
         description: 'Por favor, preencha todos os campos obrigatórios',
