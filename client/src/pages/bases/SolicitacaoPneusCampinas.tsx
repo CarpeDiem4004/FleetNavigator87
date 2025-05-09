@@ -143,9 +143,15 @@ const SolicitacaoPneusCampinas: React.FC = () => {
   };
 
   // Função para formatar o status da solicitação
-  const formatStatus = (status: string) => {
+  const formatStatus = (status: string, observacoes_aprovacao?: string | null) => {
+    // Se o status for pendente mas tiver observacoes_aprovacao e não tiver data_previsao, 
+    // provavelmente foi negado no sistema central
+    const isRejected = status === 'pendente' && observacoes_aprovacao && observacoes_aprovacao.includes('negado');
+    
     const statusMap = {
-      pendente: { color: 'bg-yellow-100 text-yellow-800', text: 'Pendente', icon: <Clock className="w-3 h-3 mr-1" /> },
+      pendente: isRejected 
+        ? { color: 'bg-red-100 text-red-800', text: 'Negado', icon: <Trash className="w-3 h-3 mr-1" /> }
+        : { color: 'bg-yellow-100 text-yellow-800', text: 'Pendente', icon: <Clock className="w-3 h-3 mr-1" /> },
       em_analise: { color: 'bg-blue-100 text-blue-800', text: 'Em Análise', icon: <Repeat className="w-3 h-3 mr-1" /> },
       aprovado: { color: 'bg-green-100 text-green-800', text: 'Aprovado', icon: <Check className="w-3 h-3 mr-1" /> },
       negado: { color: 'bg-red-100 text-red-800', text: 'Negado', icon: <Trash className="w-3 h-3 mr-1" /> },
@@ -400,7 +406,7 @@ const SolicitacaoPneusCampinas: React.FC = () => {
                       <TableCell>{request.medida}</TableCell>
                       <TableCell className="text-center">{request.quantidade}</TableCell>
                       <TableCell>{request.usuario_nome}</TableCell>
-                      <TableCell>{formatStatus(request.status)}</TableCell>
+                      <TableCell>{formatStatus(request.status, request.observacoes_aprovacao)}</TableCell>
                       <TableCell>
                         {request.data_previsao ? (
                           <div className="flex items-center">
@@ -448,7 +454,7 @@ const SolicitacaoPneusCampinas: React.FC = () => {
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
                                   <h4 className="text-sm font-medium mb-1">Status</h4>
-                                  <div>{formatStatus(request.status)}</div>
+                                  <div>{formatStatus(request.status, request.observacoes_aprovacao)}</div>
                                 </div>
                                 <div>
                                   <h4 className="text-sm font-medium mb-1">Data da Solicitação</h4>
