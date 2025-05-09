@@ -53,7 +53,7 @@ import { createClient } from '@supabase/supabase-js';
 import { 
   isAuthenticated as authMiddleware, 
   isAdmin as adminMiddleware, 
-  hasMaintenanceAccess as maintenanceAccessMiddleware, 
+  hasMaintenanceAccessV2 as maintenanceAccessMiddleware, 
   hasTiresAccess as tiresAccessMiddleware, 
   isWorkshop as workshopMiddleware, 
   hasBaseAccess as baseAccessMiddleware

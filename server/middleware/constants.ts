@@ -31,6 +31,8 @@ export function isUserInFleetManagement(user: any): boolean {
   return (
     // Usuário é admin
     isUserAdmin(user) ||
+    // Usuário tem papel de gestor de frota
+    (user.role && typeof user.role === 'string' && user.role === 'gestor_frota') ||
     // Usuário pertence à base de gestão de frotas
     (user.baseId === FLEET_MANAGEMENT_BASE_ID)
   );

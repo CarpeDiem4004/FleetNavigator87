@@ -362,3 +362,88 @@ export const hasBaseAccess = (req: Request, res: Response, next: NextFunction) =
   
   return res.status(403).json({ message: "Acesso negado. Permissão para acessar esta base não concedida." });
 };
+
+/**
+ * Middleware para verificar se o usuário tem permissão para acessar recursos de manutenção
+ * Permite acesso para admin, gestores de frota (role='gestor_frota') ou usuários da base específica
+ * 
+ * Essa função substitui a implementação anterior, implementando controle de acesso mais específico
+ * para gestão de frota e manutenções.
+ */
+export const hasMaintenanceAccessV2 = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Verificar autenticação por sessão
+    if (req.isAuthenticated() && req.user) {
+      console.log(`[hasMaintenanceAccessV2] Usuário autenticado por sessão: ${req.user.email}`);
+      const user = {
+        id: req.user.id,
+        email: req.user.email,
+        role: req.user.role,
+        baseId: req.user.base_id // Mapear base_id para baseId para consistência
+      };
+      
+      // Anexar dados normalizados do usuário à requisição para uso posterior
+      (req as any).user = user;
+      
+      // Verificar se o usuário é admin, gestor_frota, ou usuário da gestão de frotas
+      if (isUserAdmin(user) || (user.role && user.role === 'gestor_frota') || isUserInFleetManagement(user)) {
+        console.log(`[hasMaintenanceAccessV2] Acesso concedido para usuário: ${user.email}`);
+        return next();
+      }
+      
+      // Verificar se tem acesso à base específica quando é uma requisição para base específica
+      const baseIdParam = req.params.baseId ? parseInt(req.params.baseId, 10) : null;
+      if (baseIdParam && user.baseId === baseIdParam) {
+        console.log(`[hasMaintenanceAccessV2] Acesso à base ${baseIdParam} concedido para usuário: ${user.email}`);
+        return next();
+      }
+    }
+    
+    // Verificar JWT token se não estiver autenticado por sessão
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        // Extrair token
+        const token = extractJwtToken(authHeader);
+        
+        // Tentar verificar token JWT híbrido
+        const hybridModule = await import('../../hybrid-user-service');
+        const hybridService = hybridModule.getHybridUserService();
+        const verifyResult = await hybridService.verifyToken(token, true);
+        
+        if (verifyResult) {
+          console.log(`[hasMaintenanceAccessV2] Token JWT híbrido validado para ${verifyResult.user?.email || verifyResult.email}`);
+          
+          // Normalizar dados do usuário
+          const user = verifyResult.user || verifyResult;
+          
+          // Anexar dados do usuário à requisição para uso posterior
+          (req as any).user = user;
+          
+          // Verificar permissões
+          if (isUserAdmin(user) || (user.role && user.role === 'gestor_frota') || isUserInFleetManagement(user)) {
+            console.log(`[hasMaintenanceAccessV2] Acesso concedido para usuário: ${user.email}`);
+            return next();
+          }
+          
+          // Verificar acesso à base específica
+          const baseIdParam = req.params.baseId ? parseInt(req.params.baseId, 10) : null;
+          if (baseIdParam && user.baseId === baseIdParam) {
+            console.log(`[hasMaintenanceAccessV2] Acesso à base ${baseIdParam} concedido para usuário: ${user.email}`);
+            return next();
+          }
+        }
+      } catch (error) {
+        console.error('[hasMaintenanceAccessV2] Erro ao verificar token JWT:', error);
+      }
+    }
+    
+    // Se chegou até aqui, o acesso deve ser negado
+    console.log('[hasMaintenanceAccessV2] Nenhum método de autenticação encontrado');
+    return res.status(401).json({ message: "Usuário não autenticado" });
+    
+  } catch (error) {
+    console.error('[hasMaintenanceAccessV2] Erro inesperado:', error);
+    return res.status(500).json({ message: "Erro interno do servidor" });
+  }
+};
