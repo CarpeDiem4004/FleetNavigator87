@@ -174,6 +174,11 @@ export default function MaintenancePage() {
   // Estado para busca por placa
   const [searchPlate, setSearchPlate] = useState('');
   const [filteredMaintenances, setFilteredMaintenances] = useState<Maintenance[]>([]);
+  
+  // Função para lidar com a busca por placa
+  const handlePlateSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchPlate(e.target.value.toUpperCase());
+  };
   // Estado para formulário de datas
   const [dateFormData, setDateFormData] = useState({
     entryDate: '',
@@ -522,11 +527,7 @@ export default function MaintenancePage() {
     return vehicle ? `${plate} - ${vehicle.model}` : plate;
   };
   
-  // Função para filtrar manutenções pela placa do veículo
-  const handlePlateSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const searchTerm = e.target.value.toUpperCase();
-    setSearchPlate(searchTerm);
-  };
+  // Comentário: removemos a função duplicada handlePlateSearch
   
   // useEffect para filtrar as manutenções com base no termo de busca
   useEffect(() => {
@@ -649,11 +650,35 @@ export default function MaintenancePage() {
               </Tabs>
             </CardHeader>
             <CardContent>
+              {/* Campo de busca por placa */}
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Buscar por placa de veículo..."
+                    value={searchPlate}
+                    onChange={(e) => setSearchPlate(e.target.value.toUpperCase())}
+                    className="pl-9 w-full"
+                  />
+                </div>
+                {searchPlate && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setSearchPlate('')}
+                    className="h-10"
+                  >
+                    Limpar
+                  </Button>
+                )}
+              </div>
+              
               {isLoading ? (
                 <div className="flex justify-center p-4">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
-              ) : !maintenances || !Array.isArray(maintenances) || maintenances.length === 0 ? (
+              ) : !filteredMaintenances || !Array.isArray(filteredMaintenances) || filteredMaintenances.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-8 text-center">
                   <Wrench className="h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium">Nenhuma manutenção encontrada</h3>
@@ -685,7 +710,7 @@ export default function MaintenancePage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {maintenances && Array.isArray(maintenances) ? maintenances.map((maintenance) => (
+                      {filteredMaintenances && Array.isArray(filteredMaintenances) ? filteredMaintenances.map((maintenance) => (
                         <TableRow key={maintenance.id}>
                           <TableCell className="font-medium">
                             <div className="flex items-center">
