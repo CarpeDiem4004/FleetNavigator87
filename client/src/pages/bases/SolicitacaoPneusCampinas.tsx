@@ -129,36 +129,24 @@ const SolicitacaoPneusCampinas: React.FC = () => {
     verifyToken();
   }, [navigate, toast]);
 
+  // Importar o cliente de API
+  import { apiRequest } from "@/lib/queryClient";
+  
   // Consulta para obter as solicitações de pneus
   const { data: tireRequests, isLoading, error } = useQuery({
     queryKey: ['/api/bases/campinas/solicitacao-pneus'],
     queryFn: async () => {
-      // Obter o token de autenticação do localStorage
-      const authToken = localStorage.getItem('authToken');
-      
-      console.log("Enviando requisição para /api/bases/campinas/solicitacao-pneus");
-      console.log("Token JWT disponível:", !!authToken);
-      
-      // Opções da requisição com cabeçalho de autorização
-      const options = {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          // Adicionar token JWT ao cabeçalho se estiver disponível
-          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
-        }
-      };
-      
-      const response = await fetch('/api/bases/campinas/solicitacao-pneus', options);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        console.error("Erro na resposta da API:", errorData);
-        throw new Error(errorData?.message || "Erro ao obter solicitações");
+      try {
+        // Usar apiRequest para garantir que o token JWT seja incluído automaticamente
+        console.log("Enviando requisição para /api/bases/campinas/solicitacao-pneus");
+        
+        const response = await apiRequest('GET', '/api/bases/campinas/solicitacao-pneus');
+        const data = await response.json();
+        return data as TireRequest[];
+      } catch (err) {
+        console.error("Erro ao buscar solicitações de pneus:", err);
+        throw err;
       }
-      
-      const data = await response.json();
-      return data as TireRequest[];
     },
   });
 
