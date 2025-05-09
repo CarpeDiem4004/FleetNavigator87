@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
@@ -69,7 +69,8 @@ import {
   FileBarChart as FileSpreadsheet,
   MoreHorizontal,
   Calendar,
-  CircleCheck
+  CircleCheck,
+  Search
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { apiRequest } from '@/lib/queryClient';
@@ -170,6 +171,9 @@ export default function MaintenancePage() {
   const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null);
   const [activeTab, setActiveTab] = useState('all');
   const [filterBaseId, setFilterBaseId] = useState<number | null>(null);
+  // Estado para busca por placa
+  const [searchPlate, setSearchPlate] = useState('');
+  const [filteredMaintenances, setFilteredMaintenances] = useState<Maintenance[]>([]);
   // Estado para formulário de datas
   const [dateFormData, setDateFormData] = useState({
     entryDate: '',
@@ -517,6 +521,30 @@ export default function MaintenancePage() {
     const vehicle = vehicles.find((v: Vehicle) => v.plate === plate);
     return vehicle ? `${plate} - ${vehicle.model}` : plate;
   };
+  
+  // Função para filtrar manutenções pela placa do veículo
+  const handlePlateSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const searchTerm = e.target.value.toUpperCase();
+    setSearchPlate(searchTerm);
+  };
+  
+  // useEffect para filtrar as manutenções com base no termo de busca
+  useEffect(() => {
+    if (!maintenances || !Array.isArray(maintenances)) {
+      setFilteredMaintenances([]);
+      return;
+    }
+    
+    if (!searchPlate) {
+      setFilteredMaintenances(maintenances);
+      return;
+    }
+    
+    const filtered = maintenances.filter(maintenance => 
+      maintenance.vehiclePlate.toUpperCase().includes(searchPlate)
+    );
+    setFilteredMaintenances(filtered);
+  }, [maintenances, searchPlate]);
 
   // Próximos status disponíveis com base no status atual
   const getNextAvailableStatuses = (currentStatus: Maintenance['status']): Maintenance['status'][] => {
