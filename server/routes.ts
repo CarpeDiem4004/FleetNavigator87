@@ -6493,9 +6493,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           INSERT INTO solicitacoes_pneus (
             base_id, base_nome, usuario_id, usuario_nome, quantidade, 
             placa_veiculo, km_veiculo, medida, motivo, observacoes, 
-            status, data_solicitacao, origem
+            status, data_solicitacao, origem, data_previsao, observacoes_aprovacao
           ) 
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), $12)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), $12, NULL, NULL)
           RETURNING id
         `;
         
@@ -6548,31 +6548,175 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Rota para aprovar/rejeitar solicitação de pneus
+  // Rota para aprovar/rejeitar solicitação de pneus da Base Campinas
   app.put("/api/bases/campinas/solicitacao-pneus/:id", async (req, res) => {
     try {
       const id = req.params.id;
-      const { status, observacoes } = req.body;
+      const { status, observacoes, data_previsao, observacoes_aprovacao } = req.body;
       
       if (!['aprovado', 'negado', 'concluido'].includes(status)) {
         return res.status(400).json({ error: 'Status inválido' });
       }
       
+      // Verificamos primeiro se a tabela campinas_tire_requests existe
+      const checkTableQuery = `
+        SELECT EXISTS (
+          SELECT 1 FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'campinas_tire_requests'
+        ) AS "exists";
+      `;
+      
+      const tableCheck = await pool.query(checkTableQuery);
+      const tableExists = tableCheck.rows[0].exists;
+      let result;
+      
+      if (tableExists) {
+        console.log('[Campinas] Atualizando na tabela específica campinas_tire_requests');
+        
+        // Se a tabela específica existir, atualizamos nela
+        const specificUpdateQuery = `
+          UPDATE campinas_tire_requests 
+          SET 
+            status = $1,
+            comments = COALESCE($2, comments),
+            approved_at = NOW(),
+            approved_by = $3,
+            estimated_date = $4,
+            approval_comments = $5
+          WHERE id = $6
+          RETURNING *
+        `;
+        
+        result = await pool.query(specificUpdateQuery, [
+          status, 
+          observacoes, 
+          req.user ? req.user.name : 'Administrador',
+          data_previsao ? new Date(data_previsao) : null,
+          observacoes_aprovacao || null,
+          id
+        ]);
+      } else {
+        console.log('[Campinas] Tabela específica não existe, atualizando na tabela genérica');
+        
+        // Se a tabela específica não existir, atualizamos na tabela genérica
+        const updateQuery = `
+          UPDATE tire_requests 
+          SET 
+            status = $1,
+            observacoes = COALESCE($2, observacoes),
+            data_aprovacao = NOW(),
+            aprovador_id = $3,
+            data_previsao = $4,
+            observacoes_aprovacao = $5
+          WHERE id = $6
+          RETURNING *
+        `;
+        
+        result = await pool.query(updateQuery, [
+          status, 
+          observacoes, 
+          req.user ? req.user.id : null,
+          data_previsao ? new Date(data_previsao) : null,
+          observacoes_aprovacao || null,
+          id
+        ]);
+      }
+      
+      if (result.rowCount === 0) {
+        return res.status(404).json({ error: 'Solicitação não encontrada' });
+      }
+      
+      // Atualizamos também a solicitação no módulo central de pneus
+      try {
+        console.log('[Campinas] Sincronizando resposta com o módulo central de pneus');
+        
+        // Buscar ID da solicitação central correspondente
+        const syncQuery = `
+          SELECT item_id FROM sync_control
+          WHERE item_id_origem = $1 AND tipo_item = 'solicitacao_pneu'
+          LIMIT 1
+        `;
+        
+        const syncResult = await pool.query(syncQuery, [id]);
+        
+        if (syncResult.rowCount > 0) {
+          const centralId = syncResult.rows[0].item_id;
+          
+          const centralUpdateQuery = `
+            UPDATE solicitacoes_pneus 
+            SET 
+              status = $1,
+              observacoes = COALESCE($2, observacoes),
+              data_aprovacao = NOW(),
+              aprovador_id = $3,
+              aprovador_nome = $4,
+              data_previsao = $5,
+              observacoes_aprovacao = $6
+            WHERE id = $7
+            RETURNING *
+          `;
+          
+          await pool.query(centralUpdateQuery, [
+            status, 
+            observacoes, 
+            req.user ? req.user.id : null,
+            req.user ? req.user.name : 'Administrador',
+            data_previsao ? new Date(data_previsao) : null,
+            observacoes_aprovacao || null,
+            centralId
+          ]);
+          
+          console.log(`[Campinas] Solicitação central ID ${centralId} atualizada com sucesso`);
+        } else {
+          console.log('[Campinas] Não foi encontrado registro de sincronização para esta solicitação');
+        }
+      } catch (syncError) {
+        console.error('[Campinas] Erro ao sincronizar com módulo central:', syncError);
+        // Não falha a operação principal se a sincronização falhar
+      }
+      
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('[Campinas] Erro ao atualizar solicitação de pneus:', error);
+      res.status(500).json({ error: 'Erro ao atualizar solicitação de pneus' });
+    }
+  });
+  
+  // Rota para a equipe de gestão de pneus responder às solicitações (informar prazo)
+  app.put("/api/pneus/solicitacoes/:id/responder", async (req, res) => {
+    try {
+      const id = req.params.id;
+      const { status, data_previsao, observacoes_aprovacao } = req.body;
+      
+      if (!['aprovado', 'negado', 'em_analise', 'concluido'].includes(status)) {
+        return res.status(400).json({ error: 'Status inválido' });
+      }
+      
+      if (status === 'aprovado' && !data_previsao) {
+        return res.status(400).json({ error: 'Data de previsão é obrigatória para aprovação' });
+      }
+      
       const updateQuery = `
-        UPDATE tire_requests 
+        UPDATE solicitacoes_pneus 
         SET 
           status = $1,
-          observacoes = COALESCE($2, observacoes),
-          data_aprovacao = NOW(),
-          aprovador_id = $3
-        WHERE id = $4
+          data_aprovacao = CASE WHEN $1 IN ('aprovado', 'negado') THEN NOW() ELSE data_aprovacao END,
+          aprovador_id = CASE WHEN $1 IN ('aprovado', 'negado') THEN $2 ELSE aprovador_id END,
+          aprovador_nome = CASE WHEN $1 IN ('aprovado', 'negado') THEN $3 ELSE aprovador_nome END,
+          data_previsao = $4,
+          observacoes_aprovacao = $5,
+          data_atualizacao = NOW()
+        WHERE id = $6
         RETURNING *
       `;
       
       const result = await pool.query(updateQuery, [
         status, 
-        observacoes, 
         req.user ? req.user.id : null,
+        req.user ? req.user.name : 'Administrador',
+        data_previsao ? new Date(data_previsao) : null,
+        observacoes_aprovacao || null,
         id
       ]);
       
@@ -6580,9 +6724,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Solicitação não encontrada' });
       }
       
+      // Verificamos se esta solicitação veio de uma base específica para sincronizar de volta
+      try {
+        console.log('[Pneus] Verificando se a solicitação veio de uma base específica');
+        
+        const syncQuery = `
+          SELECT item_id_origem, origem FROM sync_control
+          WHERE item_id = $1 AND tipo_item = 'solicitacao_pneu'
+          LIMIT 1
+        `;
+        
+        const syncResult = await pool.query(syncQuery, [id]);
+        
+        if (syncResult.rowCount > 0) {
+          const { item_id_origem, origem } = syncResult.rows[0];
+          
+          console.log(`[Pneus] Solicitação veio da origem ${origem} com ID ${item_id_origem}`);
+          
+          if (origem === 'campinas') {
+            // Verificamos se é para atualizar na tabela campinas_tire_requests ou tire_requests
+            const checkTableQuery = `
+              SELECT EXISTS (
+                SELECT 1 FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = 'campinas_tire_requests'
+              ) AS "exists";
+            `;
+            
+            const tableCheck = await pool.query(checkTableQuery);
+            const tableExists = tableCheck.rows[0].exists;
+            
+            if (tableExists) {
+              const specificUpdateQuery = `
+                UPDATE campinas_tire_requests 
+                SET 
+                  status = $1,
+                  approved_at = CASE WHEN $1 IN ('aprovado', 'negado') THEN NOW() ELSE approved_at END,
+                  approved_by = $2,
+                  estimated_date = $3,
+                  approval_comments = $4,
+                  updated_at = NOW()
+                WHERE id = $5
+              `;
+              
+              await pool.query(specificUpdateQuery, [
+                status,
+                req.user ? req.user.name : 'Administrador',
+                data_previsao ? new Date(data_previsao) : null,
+                observacoes_aprovacao || null,
+                item_id_origem
+              ]);
+              
+              console.log(`[Pneus] Atualizada solicitação na tabela campinas_tire_requests com ID ${item_id_origem}`);
+            } else {
+              const updateOriginQuery = `
+                UPDATE tire_requests 
+                SET 
+                  status = $1,
+                  data_aprovacao = CASE WHEN $1 IN ('aprovado', 'negado') THEN NOW() ELSE data_aprovacao END,
+                  aprovador_id = $2,
+                  data_previsao = $3,
+                  observacoes_aprovacao = $4
+                WHERE id = $5
+              `;
+              
+              await pool.query(updateOriginQuery, [
+                status,
+                req.user ? req.user.id : null,
+                data_previsao ? new Date(data_previsao) : null,
+                observacoes_aprovacao || null,
+                item_id_origem
+              ]);
+              
+              console.log(`[Pneus] Atualizada solicitação na tabela tire_requests com ID ${item_id_origem}`);
+            }
+          }
+        }
+      } catch (syncError) {
+        console.error('[Pneus] Erro ao sincronizar com a base de origem:', syncError);
+        // Não falha a operação principal se a sincronização falhar
+      }
+      
       res.json(result.rows[0]);
     } catch (error) {
-      console.error('Erro ao atualizar solicitação de pneus:', error);
+      console.error('[Pneus] Erro ao atualizar solicitação de pneus:', error);
       res.status(500).json({ error: 'Erro ao atualizar solicitação de pneus' });
     }
   });

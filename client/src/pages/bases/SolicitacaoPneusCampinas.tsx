@@ -21,12 +21,16 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, 
   DialogHeader, DialogTitle, DialogTrigger 
 } from '@/components/ui/dialog';
+import {
+  HoverCard, HoverCardContent, HoverCardTrigger
+} from '@/components/ui/hover-card';
 import { Badge } from '@/components/ui/badge';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { 
-  AlertCircle, ArrowLeft, Check, CircleDot, Clock, Trash
+  AlertCircle, ArrowLeft, Check, CircleDot, Clock, Trash, 
+  Eye, Info as InfoIcon, RefreshCcw as Repeat, CheckCheck
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 
@@ -46,11 +50,13 @@ interface TireRequest {
   medida: string;
   motivo: string;
   observacoes: string | null;
-  status: 'pendente' | 'aprovado' | 'negado' | 'concluido';
+  status: 'pendente' | 'aprovado' | 'negado' | 'em_analise' | 'concluido';
   data_solicitacao: string;
   data_aprovacao: string | null;
   aprovador_id: number | null;
   aprovador_nome: string | null;
+  data_previsao: string | null;
+  observacoes_aprovacao: string | null;
 }
 
 // Schema de validação para o formulário de solicitação de pneus
@@ -141,9 +147,10 @@ const SolicitacaoPneusCampinas: React.FC = () => {
   const formatStatus = (status: string) => {
     const statusMap = {
       pendente: { color: 'bg-yellow-100 text-yellow-800', text: 'Pendente', icon: <Clock className="w-3 h-3 mr-1" /> },
+      em_analise: { color: 'bg-blue-100 text-blue-800', text: 'Em Análise', icon: <Repeat className="w-3 h-3 mr-1" /> },
       aprovado: { color: 'bg-green-100 text-green-800', text: 'Aprovado', icon: <Check className="w-3 h-3 mr-1" /> },
       negado: { color: 'bg-red-100 text-red-800', text: 'Negado', icon: <Trash className="w-3 h-3 mr-1" /> },
-      concluido: { color: 'bg-blue-100 text-blue-800', text: 'Concluído', icon: <Check className="w-3 h-3 mr-1" /> }
+      concluido: { color: 'bg-indigo-100 text-indigo-800', text: 'Concluído', icon: <CheckCheck className="w-3 h-3 mr-1" /> }
     };
 
     const { color, text, icon } = statusMap[status as keyof typeof statusMap] || statusMap.pendente;
@@ -378,12 +385,13 @@ const SolicitacaoPneusCampinas: React.FC = () => {
                     <TableHead>Qtd</TableHead>
                     <TableHead>Solicitante</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Aprovação</TableHead>
+                    <TableHead>Previsão</TableHead>
+                    <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {tireRequests.map((request) => (
-                    <TableRow key={request.id}>
+                    <TableRow key={request.id} className="group">
                       <TableCell className="font-medium">{request.id}</TableCell>
                       <TableCell>
                         {new Date(request.data_solicitacao).toLocaleDateString('pt-BR')}
@@ -395,18 +403,159 @@ const SolicitacaoPneusCampinas: React.FC = () => {
                       <TableCell>{request.usuario_nome}</TableCell>
                       <TableCell>{formatStatus(request.status)}</TableCell>
                       <TableCell>
-                        {request.data_aprovacao ? (
-                          <div>
-                            <div className="text-xs text-gray-500">
-                              {new Date(request.data_aprovacao).toLocaleDateString('pt-BR')}
-                            </div>
-                            <div className="text-xs font-medium">
-                              {request.aprovador_nome}
-                            </div>
+                        {request.data_previsao ? (
+                          <div className="flex items-center">
+                            <span className="text-green-600 font-medium">
+                              {new Date(request.data_previsao).toLocaleDateString('pt-BR')}
+                            </span>
+                            {request.observacoes_aprovacao && (
+                              <HoverCard>
+                                <HoverCardTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 ml-1">
+                                    <InfoIcon className="h-4 w-4 text-blue-600" />
+                                  </Button>
+                                </HoverCardTrigger>
+                                <HoverCardContent className="w-80 p-4">
+                                  <div className="space-y-2">
+                                    <h4 className="text-sm font-semibold">Observações da gestão de pneus:</h4>
+                                    <p className="text-sm">{request.observacoes_aprovacao}</p>
+                                  </div>
+                                </HoverCardContent>
+                              </HoverCard>
+                            )}
                           </div>
                         ) : (
-                          <span className="text-xs text-gray-400">Pendente</span>
+                          <span className="text-xs text-gray-400">
+                            {request.status === 'aprovado' ? 'Não definida' : 'Aguardando'}
+                          </span>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Eye className="h-4 w-4 mr-1" />
+                              Detalhes
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[600px]">
+                            <DialogHeader>
+                              <DialogTitle>Detalhes da Solicitação #{request.id}</DialogTitle>
+                              <DialogDescription>
+                                Informações completas sobre esta solicitação de pneus
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <h4 className="text-sm font-medium mb-1">Status</h4>
+                                  <div>{formatStatus(request.status)}</div>
+                                </div>
+                                <div>
+                                  <h4 className="text-sm font-medium mb-1">Data da Solicitação</h4>
+                                  <div className="text-sm">
+                                    {new Date(request.data_solicitacao).toLocaleDateString('pt-BR', { 
+                                      day: '2-digit', 
+                                      month: '2-digit', 
+                                      year: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <h4 className="text-sm font-medium mb-1">Placa do Veículo</h4>
+                                  <div className="text-sm uppercase font-medium">{request.placa_veiculo}</div>
+                                </div>
+                                <div>
+                                  <h4 className="text-sm font-medium mb-1">Quilometragem</h4>
+                                  <div className="text-sm">{request.km_veiculo?.toLocaleString('pt-BR') || '-'} km</div>
+                                </div>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <h4 className="text-sm font-medium mb-1">Medida do Pneu</h4>
+                                  <div className="text-sm">{request.medida}</div>
+                                </div>
+                                <div>
+                                  <h4 className="text-sm font-medium mb-1">Quantidade</h4>
+                                  <div className="text-sm">{request.quantidade} unidades</div>
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <h4 className="text-sm font-medium mb-1">Solicitante</h4>
+                                <div className="text-sm">{request.usuario_nome}</div>
+                              </div>
+                              
+                              <div>
+                                <h4 className="text-sm font-medium mb-1">Motivo da Solicitação</h4>
+                                <div className="text-sm border rounded-md p-3 bg-gray-50">{request.motivo}</div>
+                              </div>
+                              
+                              {request.observacoes && (
+                                <div>
+                                  <h4 className="text-sm font-medium mb-1">Observações</h4>
+                                  <div className="text-sm border rounded-md p-3 bg-gray-50">{request.observacoes}</div>
+                                </div>
+                              )}
+                              
+                              {request.status !== 'pendente' && (
+                                <div className="border-t pt-4 mt-4">
+                                  <h4 className="text-sm font-medium mb-2">Informações da Resposta</h4>
+                                  
+                                  <div className="grid grid-cols-2 gap-4">
+                                    {request.data_aprovacao && (
+                                      <div>
+                                        <h5 className="text-xs text-gray-500 mb-1">Data da Resposta</h5>
+                                        <div className="text-sm">
+                                          {new Date(request.data_aprovacao).toLocaleDateString('pt-BR', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: 'numeric'
+                                          })}
+                                        </div>
+                                      </div>
+                                    )}
+                                    
+                                    {request.aprovador_nome && (
+                                      <div>
+                                        <h5 className="text-xs text-gray-500 mb-1">Responsável</h5>
+                                        <div className="text-sm">{request.aprovador_nome}</div>
+                                      </div>
+                                    )}
+                                  </div>
+                                  
+                                  {request.data_previsao && (
+                                    <div className="mt-3">
+                                      <h5 className="text-xs text-gray-500 mb-1">Previsão de Entrega/Troca</h5>
+                                      <div className="text-sm font-medium text-green-600">
+                                        {new Date(request.data_previsao).toLocaleDateString('pt-BR', {
+                                          day: '2-digit',
+                                          month: '2-digit',
+                                          year: 'numeric'
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {request.observacoes_aprovacao && (
+                                    <div className="mt-3">
+                                      <h5 className="text-xs text-gray-500 mb-1">Observações da Gestão de Pneus</h5>
+                                      <div className="text-sm border rounded-md p-3 bg-blue-50 text-blue-800">
+                                        {request.observacoes_aprovacao}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                       </TableCell>
                     </TableRow>
                   ))}
