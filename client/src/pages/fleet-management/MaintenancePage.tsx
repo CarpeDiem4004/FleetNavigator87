@@ -587,41 +587,7 @@ export default function MaintenancePage() {
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-blue-50 border-blue-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
-                  <Building2 className="h-4 w-4 mr-2 text-blue-600" />
-                  Solicitações das Bases
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">
-                  {campinasRequests && Array.isArray(campinasRequests) ? campinasRequests.length : 0}
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Novas solicitações da Base Campinas
-                </p>
-                {campinasRequests && campinasRequests.length > 0 && (
-                  <div className="mt-2 text-xs text-blue-600">
-                    Última solicitação: {formatDate(campinasRequests[0]?.entryDate)}
-                  </div>
-                )}
-              </CardContent>
-              <CardFooter className="pt-0">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full"
-                  onClick={() => {
-                    setFilterBaseId(2); // Filtrar por Base Campinas
-                    setActiveTab('pendente'); // Mostrar pendentes
-                    refetchMaintenances(); // Forçar atualização da lista de manutenções
-                  }}
-                >
-                  Ver solicitações
-                </Button>
-              </CardFooter>
-            </Card>
+            {/* Card de solicitações ocultado conforme solicitado */}
           </div>
 
           <Card>
@@ -633,30 +599,7 @@ export default function MaintenancePage() {
                     Histórico e status de manutenções de veículos
                   </CardDescription>
                 </div>
-                {/* Mostrar o filtro de bases para administradores e gestores de frota */}
-                {user && (user.role === 'admin' || user.role === 'gestor_frota') && (
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <div className="flex flex-wrap gap-2">
-                      <Button 
-                        variant={filterBaseId === null ? "default" : "outline"}
-                        onClick={() => setFilterBaseId(null)}
-                        className="h-9"
-                      >
-                        Todas as bases
-                      </Button>
-                      {Array.isArray(bases) ? bases.map((base) => (
-                        <Button
-                          key={base.id}
-                          variant={filterBaseId === base.id ? "default" : "outline"}
-                          onClick={() => setFilterBaseId(base.id)}
-                          className="h-9"
-                        >
-                          {base.name}
-                        </Button>
-                      )) : null}
-                    </div>
-                  </div>
-                )}
+                {/* Filtro de bases ocultado conforme solicitado */}
                 {/* Para usuários que não são nem admin nem gestor_frota, mostrar um badge indicando sua base */}
                 {user && user.role !== 'admin' && user.role !== 'gestor_frota' && user.baseId && (
                   <div className="flex items-center">
