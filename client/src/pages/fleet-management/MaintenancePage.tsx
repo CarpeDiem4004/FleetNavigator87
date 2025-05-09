@@ -777,6 +777,10 @@ export default function MaintenancePage() {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => openDetailDialog(maintenance)}>
+                                    <Wrench className="h-4 w-4 mr-2" />
+                                    Detalhes da Manutenção
+                                  </DropdownMenuItem>
                                   {['pendente', 'aguardando_orcamento', 'em_andamento'].includes(maintenance.status) && (
                                     <DropdownMenuItem onClick={() => openStatusDialog(maintenance)}>
                                       <CircleCheck className="h-4 w-4 mr-2" />
@@ -1213,6 +1217,20 @@ export default function MaintenancePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Diálogo para detalhes da manutenção */}
+      {selectedMaintenance && (
+        <MaintenanceDetailDialog
+          isOpen={detailDialogOpen}
+          onClose={() => setDetailDialogOpen(false)}
+          maintenance={selectedMaintenance}
+          workshops={workshops}
+          onUpdate={() => {
+            setDetailDialogOpen(false);
+            queryClient.invalidateQueries({ queryKey: ['/api/maintenance'] });
+          }}
+        />
+      )}
     </AppLayout>
   );
 }
