@@ -80,10 +80,7 @@ const SolicitacaoPneusCampinas: React.FC = () => {
   // Consulta para obter as solicitações de pneus
   const { data: tireRequests, isLoading, error } = useQuery({
     queryKey: ['/api/bases/campinas/solicitacao-pneus'],
-    queryFn: async () => {
-      const response = await apiRequest<TireRequest[]>('/api/bases/campinas/solicitacao-pneus');
-      return response;
-    },
+    // Utilizando o queryFn padrão do TanStack Query que está configurado no queryClient
   });
 
   // Formulário para solicitação de pneus
@@ -112,10 +109,12 @@ const SolicitacaoPneusCampinas: React.FC = () => {
         observacoes: values.observacoes || null,
       };
 
-      const response = await apiRequest('/api/bases/campinas/solicitacao-pneus', {
-        method: 'POST',
-        body: JSON.stringify(requestData),
-      });
+      // Usar a função apiRequest com os parâmetros corretos
+      const response = await apiRequest(
+        'POST',
+        '/api/bases/campinas/solicitacao-pneus',
+        requestData
+      );
 
       return response;
     },
@@ -363,7 +362,7 @@ const SolicitacaoPneusCampinas: React.FC = () => {
                 Verifique sua conexão e tente novamente.
               </p>
             </div>
-          ) : !tireRequests || tireRequests.length === 0 ? (
+          ) : !tireRequests || !Array.isArray(tireRequests) || tireRequests.length === 0 ? (
             <div className="p-8 text-center">
               <p className="text-gray-500">
                 Nenhuma solicitação de pneus encontrada para a Base Campinas.
@@ -390,7 +389,7 @@ const SolicitacaoPneusCampinas: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {tireRequests.map((request) => (
+                  {Array.isArray(tireRequests) && tireRequests.map((request) => (
                     <TableRow key={request.id} className="group">
                       <TableCell className="font-medium">{request.id}</TableCell>
                       <TableCell>
