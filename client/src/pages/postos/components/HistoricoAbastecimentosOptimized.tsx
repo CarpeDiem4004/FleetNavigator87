@@ -317,7 +317,7 @@ const HistoricoAbastecimentosOptimized: React.FC<HistoricoAbastecimentosOptimize
     if (!filteredData.length) return null;
     
     const totalLitros = filteredData.reduce((sum, item) => 
-      sum + (Number(item.litros) || 0), 0);
+      sum + (Number(item.litros || item.quantidade_litros || item.quantity_litros) || 0), 0);
     
     const totalValor = filteredData.reduce((sum, item) => 
       sum + (Number(item.valor_total) || 0), 0);
@@ -542,7 +542,7 @@ const HistoricoAbastecimentosOptimized: React.FC<HistoricoAbastecimentosOptimize
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        {formatarNumero(item.litros)}
+                        {formatarNumero(item.litros || item.quantidade_litros || item.quantity_litros)}
                       </TableCell>
                       <TableCell className="text-right">
                         {formatarPreco(item.valor_total)}
