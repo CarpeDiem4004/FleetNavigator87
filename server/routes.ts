@@ -6385,6 +6385,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status,
           created_at as data_solicitacao,
           approved_at as data_aprovacao,
+          data_previsao,
+          observacoes_aprovacao,
           CAST(NULL AS INTEGER) as aprovador_id,
           approved_by as aprovador_nome
         FROM 
