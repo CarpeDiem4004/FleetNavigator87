@@ -154,11 +154,18 @@ export default function MaintenancePage() {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [datesDialogOpen, setDatesDialogOpen] = useState(false);
   // Adicionar valor padrão necessário para evitar problemas com SelectItem
   const [selectedStatus, setSelectedStatus] = useState<Maintenance['status']>('pendente');
   const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null);
   const [activeTab, setActiveTab] = useState('all');
   const [filterBaseId, setFilterBaseId] = useState<number | null>(null);
+  // Estado para formulário de datas
+  const [dateFormData, setDateFormData] = useState({
+    entryDate: '',
+    estimatedCompletion: '',
+    completionDate: ''
+  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -300,6 +307,29 @@ export default function MaintenancePage() {
       });
     }
   });
+  
+  // Mutation para atualizar datas da manutenção
+  const updateMaintenanceDatesMutation = useMutation({
+    mutationFn: async ({ id, dates }: { id: number; dates: Partial<typeof dateFormData> }) => {
+      const response = await apiRequest('PATCH', `/api/maintenance/${id}/dates`, dates);
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Datas atualizadas com sucesso',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/maintenance'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
+      setDatesDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro ao atualizar datas',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
 
   // Manipuladores de eventos
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -389,6 +419,52 @@ export default function MaintenancePage() {
       setSelectedStatus('pendente');
     }
     setStatusDialogOpen(true);
+  };
+  
+  const openDatesDialog = (maintenance: Maintenance) => {
+    setSelectedMaintenance(maintenance);
+    // Preencher o formulário com as datas atuais da manutenção
+    setDateFormData({
+      entryDate: maintenance.entryDate || '',
+      estimatedCompletion: maintenance.estimatedCompletion || '',
+      completionDate: maintenance.completionDate || ''
+    });
+    setDatesDialogOpen(true);
+  };
+  
+  const handleDateUpdate = () => {
+    if (!selectedMaintenance) return;
+    
+    // Verificar quais datas foram alteradas
+    const datesToUpdate: Partial<typeof dateFormData> = {};
+    if (dateFormData.entryDate) {
+      datesToUpdate.entryDate = dateFormData.entryDate;
+    }
+    if (dateFormData.estimatedCompletion) {
+      datesToUpdate.estimatedCompletion = dateFormData.estimatedCompletion;
+    }
+    if (dateFormData.completionDate) {
+      datesToUpdate.completionDate = dateFormData.completionDate;
+    }
+    
+    // Enviar apenas datas válidas
+    if (Object.keys(datesToUpdate).length > 0) {
+      updateMaintenanceDatesMutation.mutate({
+        id: selectedMaintenance.id,
+        dates: datesToUpdate
+      });
+    } else {
+      toast({
+        title: 'Nenhuma data para atualizar',
+        description: 'Por favor, informe pelo menos uma data para atualizar.',
+        variant: 'destructive'
+      });
+    }
+  };
+  
+  const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setDateFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const closeDialog = () => {
@@ -675,14 +751,33 @@ export default function MaintenancePage() {
                             {getBaseName(maintenance.requestBaseId)}
                           </TableCell>
                           <TableCell className="text-right">
-                            {['pendente', 'aguardando_orcamento', 'em_andamento'].includes(maintenance.status) && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => openStatusDialog(maintenance)}
-                              >
-                                Atualizar
-                              </Button>
+                            {(['pendente', 'aguardando_orcamento', 'em_andamento'].includes(maintenance.status) || 
+                              user?.role === 'admin' || user?.role === 'gestor_frota') && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    Ações
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  {['pendente', 'aguardando_orcamento', 'em_andamento'].includes(maintenance.status) && (
+                                    <DropdownMenuItem onClick={() => openStatusDialog(maintenance)}>
+                                      <CircleCheck className="h-4 w-4 mr-2" />
+                                      Atualizar Status
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuItem onClick={() => openDatesDialog(maintenance)}>
+                                    <Calendar className="h-4 w-4 mr-2" />
+                                    Atualizar Datas
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem>
+                                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                                    Exportar Dados
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             )}
                           </TableCell>
                         </TableRow>
