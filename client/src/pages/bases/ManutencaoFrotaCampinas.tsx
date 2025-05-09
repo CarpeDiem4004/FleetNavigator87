@@ -487,20 +487,15 @@ const ManutencaoFrotaCampinas: React.FC = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Placa do Veículo</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o veículo" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {vehicles.map(vehicle => (
-                            <SelectItem key={vehicle.id} value={vehicle.plate}>
-                              {vehicle.plate} - {vehicle.model} ({getVehicleTypeText(vehicle.vehicleType)})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <Input
+                          placeholder="Digite a placa do veículo (AAA0A00)"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Digite a placa completa do veículo
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
