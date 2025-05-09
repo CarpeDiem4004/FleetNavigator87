@@ -220,11 +220,16 @@ export default function MaintenancePage() {
       }
       
       console.log(`Buscando manutenções com os parâmetros: ${params.toString()}`);
-      const res = await fetch(url);
+      // Usar apiRequest para garantir que o token JWT seja incluído
+      const res = await apiRequest('GET', url);
+      if (!res.ok) {
+        throw new Error(`Erro ao buscar manutenções: ${res.status}`);
+      }
       return res.json();
     },
     refetchOnWindowFocus: true, // Atualiza ao focar a janela
-    refetchInterval: 10000 // Atualiza a cada 10 segundos
+    refetchInterval: 10000, // Atualiza a cada 10 segundos
+    retry: 3 // Tenta novamente em caso de falha
   });
   
   // Consulta específica para solicitações pendentes da Base Campinas
@@ -233,11 +238,16 @@ export default function MaintenancePage() {
     queryFn: async () => {
       const url = '/api/maintenance?baseId=2&status=pendente';
       console.log(`Buscando manutenções com os parâmetros: baseId=2&status=pendente`);
-      const res = await fetch(url);
+      // Usar apiRequest para garantir que o token JWT seja incluído
+      const res = await apiRequest('GET', url);
+      if (!res.ok) {
+        throw new Error(`Erro ao buscar manutenções: ${res.status}`);
+      }
       return res.json();
     },
     refetchOnWindowFocus: true,
-    refetchInterval: 5000 // Atualiza a cada 5 segundos
+    refetchInterval: 5000, // Atualiza a cada 5 segundos
+    retry: 3 // Tenta novamente em caso de falha
   });
 
   // Mutation para criar manutenção
