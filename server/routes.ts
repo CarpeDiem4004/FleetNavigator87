@@ -6313,7 +6313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Rotas para solicitações de pneus da base Campinas
-  app.get("/api/bases/campinas/solicitacao-pneus", async (req, res) => {
+  app.get("/api/bases/campinas/solicitacao-pneus", isAuthenticated, async (req, res) => {
     try {
       const query = `
         SELECT 
@@ -6356,7 +6356,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/bases/campinas/solicitacao-pneus", async (req, res) => {
+  app.post("/api/bases/campinas/solicitacao-pneus", isAuthenticated, async (req, res) => {
     try {
       const { 
         base_id, quantidade, marca, modelo, medida, tipo, motivo, observacoes
@@ -6472,7 +6472,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Rota para aprovar/rejeitar solicitação de pneus
-  app.put("/api/bases/campinas/solicitacao-pneus/:id", async (req, res) => {
+  app.put("/api/bases/campinas/solicitacao-pneus/:id", isAuthenticated, async (req, res) => {
     try {
       const id = req.params.id;
       const { status, observacoes } = req.body;
