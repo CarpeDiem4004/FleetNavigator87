@@ -19,6 +19,7 @@ import userApi from "./api/userApi";
 // Importar APIs híbridas (ambiente Replit e externo)
 import hybridUserApi from "../hybrid-user-api.js";
 import hybridBasesApi from "../hybrid-bases-api.js";
+import hybridPneusApi from "../hybrid-pneus-api.js";
 // Importar middleware de CORS personalizado
 import { corsMiddleware } from "./middleware/cors";
 // Importar middleware para corrigir cookies de sessão

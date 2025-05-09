@@ -55,6 +55,14 @@ function getDbConnection() {
 }
 
 /**
+ * Função para obter a conexão direta com o PostgreSQL
+ * Usada para sincronização com tabelas específicas
+ */
+function getPgPool() {
+  return PG_POOL;
+}
+
+/**
  * Rota para listar todos os pneus
  * GET /api/hybrid/pneus
  */
