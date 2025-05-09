@@ -117,6 +117,7 @@ const ManutencaoFrotaCampinas: React.FC = () => {
   const [selectedRequest, setSelectedRequest] = useState<MaintenanceRequest | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards');
 
   // Configuração do formulário
   const form = useForm<MaintenanceRequestForm>({
@@ -696,8 +697,8 @@ const ManutencaoFrotaCampinas: React.FC = () => {
             <CardDescription>
               Visualize e gerencie todas as solicitações de manutenção de veículos
             </CardDescription>
-            <div className="flex items-center w-full mt-2">
-              <div className="relative w-full">
+            <div className="flex flex-col md:flex-row gap-2 items-start md:items-center w-full mt-2">
+              <div className="relative flex-1">
                 <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Buscar solicitações..."
@@ -705,6 +706,26 @@ const ManutencaoFrotaCampinas: React.FC = () => {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                  className="w-24"
+                >
+                  <ClipboardList className="mr-2 h-4 w-4" />
+                  Tabela
+                </Button>
+                <Button
+                  variant={viewMode === 'cards' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('cards')}
+                  className="w-24"
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Cartões
+                </Button>
               </div>
             </div>
           </CardHeader>
@@ -714,43 +735,182 @@ const ManutencaoFrotaCampinas: React.FC = () => {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : filteredRequests.length > 0 ? (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Veículo</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Prioridade</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredRequests.map((request) => (
-                      <TableRow key={request.id}>
-                        <TableCell className="font-medium">{request.vehiclePlate}</TableCell>
-                        <TableCell>{renderMaintenanceTypeBadge(request.maintenanceType)}</TableCell>
-                        <TableCell>{renderPriorityBadge(request.priority)}</TableCell>
-                        <TableCell>{renderStatusBadge(request.status)}</TableCell>
-                        <TableCell>{formatDate(request.createdAt)}</TableCell>
-                        <TableCell>
+              viewMode === 'table' ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Veículo</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Prioridade</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredRequests.map((request) => (
+                        <TableRow key={request.id}>
+                          <TableCell className="font-medium">{request.vehiclePlate}</TableCell>
+                          <TableCell>{renderMaintenanceTypeBadge(request.maintenanceType)}</TableCell>
+                          <TableCell>{renderPriorityBadge(request.priority)}</TableCell>
+                          <TableCell>{renderStatusBadge(request.status)}</TableCell>
+                          <TableCell>{formatDate(request.createdAt)}</TableCell>
+                          <TableCell>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                setSelectedRequest(request);
+                                setIsDialogOpen(true);
+                              }}
+                            >
+                              <ClipboardList className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredRequests.map((request) => (
+                    <Card key={request.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                      <CardHeader className="pb-2 border-b">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div className="mr-2">
+                              {getVehicleTypeIcon(request.vehicleType)}
+                            </div>
+                            <CardTitle className="text-lg">{request.vehiclePlate}</CardTitle>
+                          </div>
+                          <div className="flex space-x-2">
+                            {renderPriorityBadge(request.priority)}
+                            {renderStatusBadge(request.status)}
+                          </div>
+                        </div>
+                        <CardDescription className="pt-1 flex flex-wrap items-center gap-2">
+                          {renderMaintenanceTypeBadge(request.maintenanceType)}
+                          <span className="inline-flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {formatDate(request.createdAt)}
+                          </span>
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="pt-4">
+                        <div className="bg-muted/30 p-3 rounded-md mb-4">
+                          <p className="text-sm line-clamp-2">
+                            {request.description}
+                          </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 gap-2 mb-4">
+                          <div className="flex flex-col">
+                            <span className="text-xs text-muted-foreground mb-1">Informações</span>
+                            <div className="flex flex-col space-y-1 text-sm">
+                              <div className="flex items-center gap-2">
+                                <User className="h-3 w-3 text-muted-foreground" />
+                                <span>{request.requesterName || 'Não informado'}</span>
+                              </div>
+                              {request.vehicleMileage && (
+                                <div className="flex items-center gap-2">
+                                  <Tag className="h-3 w-3 text-muted-foreground" />
+                                  <span>{request.vehicleMileage.toLocaleString('pt-BR')} km</span>
+                                </div>
+                              )}
+                              {request.workshopName && (
+                                <div className="flex items-center gap-2">
+                                  <Wrench className="h-3 w-3 text-muted-foreground" />
+                                  <span>{request.workshopName}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {(request.entryDate || request.estimatedCompletion || request.exitDate) && (
+                            <div className="flex flex-col mt-2">
+                              <span className="text-xs text-muted-foreground mb-1">Datas</span>
+                              <div className="grid grid-cols-1 gap-1 text-sm">
+                                {request.entryDate && (
+                                  <div className="flex items-center gap-2">
+                                    <LogIn className="h-3 w-3 text-muted-foreground" />
+                                    <span className="truncate">Entrada: {formatDate(request.entryDate)}</span>
+                                  </div>
+                                )}
+                                {request.estimatedCompletion && (
+                                  <div className="flex items-center gap-2">
+                                    <CalendarDays className="h-3 w-3 text-muted-foreground" />
+                                    <span className="truncate">Previsão: {formatDate(request.estimatedCompletion)}</span>
+                                  </div>
+                                )}
+                                {request.exitDate && (
+                                  <div className="flex items-center gap-2">
+                                    <LogOut className="h-3 w-3 text-muted-foreground" />
+                                    <span className="truncate">Saída: {formatDate(request.exitDate)}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex flex-col space-y-3">
+                          <div className="flex flex-wrap gap-1">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => updateRequestStatus(request.id, "pendente")}
+                              className="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 border-yellow-300 text-xs h-7 px-2"
+                              disabled={request.status === "pendente"}
+                            >
+                              <Clock className="mr-1 h-3 w-3" /> Pendente
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => updateRequestStatus(request.id, "em_andamento")}
+                              className="bg-blue-100 hover:bg-blue-200 text-blue-800 border-blue-300 text-xs h-7 px-2"
+                              disabled={request.status === "em_andamento"}
+                            >
+                              <Wrench className="mr-1 h-3 w-3" /> Em Andamento
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => updateRequestStatus(request.id, "aguardando_pecas")}
+                              className="bg-purple-100 hover:bg-purple-200 text-purple-800 border-purple-300 text-xs h-7 px-2"
+                              disabled={request.status === "aguardando_pecas"}
+                            >
+                              <AlertCircle className="mr-1 h-3 w-3" /> Aguardando Peças
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => updateRequestStatus(request.id, "concluida")}
+                              className="bg-green-100 hover:bg-green-200 text-green-800 border-green-300 text-xs h-7 px-2"
+                              disabled={request.status === "concluida"}
+                            >
+                              <CheckCircle className="mr-1 h-3 w-3" /> Concluída
+                            </Button>
+                          </div>
+                          
                           <Button 
                             variant="outline" 
-                            size="sm"
+                            className="w-full text-sm"
                             onClick={() => {
                               setSelectedRequest(request);
                               setIsDialogOpen(true);
                             }}
                           >
-                            <ClipboardList className="h-4 w-4" />
+                            <FileText className="mr-2 h-4 w-4" /> Ver Detalhes
                           </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Truck className="h-12 w-12 text-muted-foreground mb-4" />
