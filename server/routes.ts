@@ -6362,6 +6362,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         base_id, quantidade, marca, modelo, medida, tipo, motivo, observacoes
       } = req.body;
       
+      // 1. Inserir na tabela local de tire_requests
       const insertQuery = `
         INSERT INTO tire_requests (
           base_id, usuario_id, quantidade, marca, modelo, medida, tipo, 
@@ -6384,7 +6385,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'pendente' // Status inicial
       ]);
       
-      res.json(result.rows[0]);
+      const localRequest = result.rows[0];
+      
+      // 2. Sincronizar com o sistema central de pneus - através da tabela principal solicitacoes_pneus
+      try {
+        console.log('[SolicitacaoPneus] Sincronizando solicitação de Base Campinas com módulo central de pneus:', localRequest.id);
+        
+        // Mapear os dados para o formato do sistema central
+        const centralRequestData = {
+          base_id: base_id,
+          base_nome: 'Base Campinas', // Poderia ser obtido de um lookup, mas sabemos que é a base Campinas
+          usuario_id: req.user ? req.user.id : null,
+          usuario_nome: req.user ? req.user.name : 'Usuário Base Campinas',
+          marca: marca,
+          modelo: modelo,
+          medida: medida,
+          tipo: tipo,
+          quantidade: quantidade,
+          motivo: motivo,
+          status: 'pendente',
+          data_solicitacao: new Date(),
+          observacoes: observacoes,
+          origem: 'base_campinas', // Para identificar que veio da Base Campinas
+          id_origem: localRequest.id, // ID na tabela original
+        };
+        
+        // Inserir na tabela central
+        const centralInsertQuery = `
+          INSERT INTO solicitacoes_pneus (
+            base_id, base_nome, usuario_id, usuario_nome, marca, 
+            modelo, medida, tipo, quantidade, motivo,
+            status, data_solicitacao, observacoes, origem, id_origem
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
+          ) RETURNING *
+        `;
+        
+        const centralResult = await pool.query(centralInsertQuery, [
+          centralRequestData.base_id,
+          centralRequestData.base_nome,
+          centralRequestData.usuario_id,
+          centralRequestData.usuario_nome,
+          centralRequestData.marca,
+          centralRequestData.modelo,
+          centralRequestData.medida,
+          centralRequestData.tipo,
+          centralRequestData.quantidade,
+          centralRequestData.motivo,
+          centralRequestData.status,
+          centralRequestData.data_solicitacao,
+          centralRequestData.observacoes,
+          centralRequestData.origem,
+          centralRequestData.id_origem
+        ]);
+        
+        console.log('[SolicitacaoPneus] Sincronização com módulo central concluída:', centralResult.rows[0].id);
+        
+        // Atualizar o registro local com a referência do registro central
+        await pool.query(
+          `UPDATE tire_requests SET id_central = $1 WHERE id = $2`,
+          [centralResult.rows[0].id, localRequest.id]
+        );
+        
+        // Adicionar à tabela de sincronização se existir
+        try {
+          await pool.query(
+            `INSERT INTO sync_control (tipo_item, item_id, destino_id, direcao, status)
+             VALUES ('solicitacao_pneu', $1, $2, 'local_para_central', 'concluido')`,
+            [localRequest.id, centralResult.rows[0].id]
+          );
+        } catch (syncError) {
+          console.log('[SolicitacaoPneus] Aviso: tabela de controle de sincronização pode não existir:', syncError.message);
+          // Não falhar se a tabela de sincronização não existir
+        }
+      } catch (syncError) {
+        console.error('[SolicitacaoPneus] Erro ao sincronizar com módulo central:', syncError);
+        // Não falhar a requisição principal se a sincronização falhar
+        // Podemos implementar uma rotina de retry posteriormente
+      }
+      
+      res.json(localRequest);
     } catch (error) {
       console.error('Erro ao registrar solicitação de pneus:', error);
       res.status(500).json({ error: 'Erro ao registrar solicitação de pneus' });
@@ -6401,6 +6481,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Status inválido' });
       }
       
+      // 1. Recuperar a solicitação antes de atualizar para verificar o ID central
+      const getRequestQuery = `
+        SELECT id, id_central FROM tire_requests WHERE id = $1
+      `;
+      
+      const requestResult = await pool.query(getRequestQuery, [id]);
+      
+      if (requestResult.rowCount === 0) {
+        return res.status(404).json({ error: 'Solicitação não encontrada' });
+      }
+      
+      const requestData = requestResult.rows[0];
+      const centralId = requestData.id_central;
+      
+      // 2. Atualizar na tabela local
       const updateQuery = `
         UPDATE tire_requests 
         SET 
@@ -6419,11 +6514,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id
       ]);
       
-      if (result.rowCount === 0) {
-        return res.status(404).json({ error: 'Solicitação não encontrada' });
+      const updatedRequest = result.rows[0];
+      
+      // 3. Sincronizar com o sistema central se tiver ID central
+      if (centralId) {
+        try {
+          console.log(`[SolicitacaoPneus] Sincronizando atualização de status para central (ID local: ${id}, ID central: ${centralId})`);
+          
+          const updateCentralQuery = `
+            UPDATE solicitacoes_pneus
+            SET 
+              status = $1,
+              observacoes = COALESCE($2, observacoes),
+              data_aprovacao = NOW(),
+              aprovador_id = $3,
+              aprovador_nome = $4
+            WHERE id = $5
+          `;
+          
+          await pool.query(updateCentralQuery, [
+            status,
+            observacoes,
+            req.user ? req.user.id : null,
+            req.user ? req.user.name : 'Administrador',
+            centralId
+          ]);
+          
+          console.log(`[SolicitacaoPneus] Atualização de status sincronizada com central (ID: ${centralId})`);
+          
+          // Registrar na tabela de sincronização, se existir
+          try {
+            await pool.query(
+              `INSERT INTO sync_control (tipo_item, item_id, destino_id, direcao, status, operacao)
+               VALUES ('solicitacao_pneu_status', $1, $2, 'local_para_central', 'concluido', 'update')
+               ON CONFLICT (tipo_item, item_id, operacao)
+               DO UPDATE SET 
+                 status = 'concluido',
+                 updated_at = NOW()`,
+              [id, centralId]
+            );
+          } catch (syncError) {
+            console.log('[SolicitacaoPneus] Aviso: Erro ao registrar na tabela de sincronização:', syncError.message);
+            // Não falhar se a tabela de sincronização não existir
+          }
+        } catch (syncError) {
+          console.error('[SolicitacaoPneus] Erro ao sincronizar atualização de status com central:', syncError);
+          // Não falhar a requisição principal se a sincronização falhar
+        }
+      } else {
+        console.log(`[SolicitacaoPneus] Solicitação sem ID central, não é possível sincronizar (ID local: ${id})`);
       }
       
-      res.json(result.rows[0]);
+      res.json(updatedRequest);
     } catch (error) {
       console.error('Erro ao atualizar solicitação de pneus:', error);
       res.status(500).json({ error: 'Erro ao atualizar solicitação de pneus' });
