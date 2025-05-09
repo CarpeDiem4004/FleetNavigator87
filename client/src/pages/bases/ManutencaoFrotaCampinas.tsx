@@ -493,9 +493,9 @@ const ManutencaoFrotaCampinas: React.FC = () => {
                           {...field}
                         />
                       </FormControl>
-                      <FormDescription>
+                      <FormMessage className="text-muted-foreground text-xs">
                         Digite a placa completa do veículo
-                      </FormDescription>
+                      </FormMessage>
                       <FormMessage />
                     </FormItem>
                   )}

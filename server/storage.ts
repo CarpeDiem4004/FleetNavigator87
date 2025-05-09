@@ -487,7 +487,7 @@ export class DatabaseStorage implements IStorage {
         SELECT id, plate, model, vehicle_type as "vehicleType", 
                status, base_id as "baseId", ownership,
                rental_company as "rentalCompany"
-        FROM vehicles
+        FROM veiculos
         WHERE base_id = ${baseId}
       `);
       return result.rows as Vehicle[];
@@ -504,7 +504,7 @@ export class DatabaseStorage implements IStorage {
         SELECT id, plate, model, vehicle_type as "vehicleType", 
                status, base_id as "baseId", ownership,
                rental_company as "rentalCompany"
-        FROM vehicles
+        FROM veiculos
       `);
       return result.rows as Vehicle[];
     } catch (error) {
@@ -530,7 +530,7 @@ export class DatabaseStorage implements IStorage {
       // Usar SQL bruto para evitar problemas com mapeamento de campos
       // Transformar os nomes de campo do modelo para os nomes usados no banco de dados
       const result = await db.execute(sql`
-        INSERT INTO vehicles 
+        INSERT INTO veiculos 
         (plate, model, vehicle_type, status, base_id, ownership, rental_company)
         VALUES 
         (${vehicle.plate}, ${vehicle.model}, ${vehicle.vehicleType}, ${vehicle.status}, 
@@ -571,7 +571,7 @@ export class DatabaseStorage implements IStorage {
       
       // Usar SQL bruto para evitar problemas com mapeamento de campos
       const result = await db.execute(sql`
-        UPDATE vehicles
+        UPDATE veiculos
         SET ${sql.join(
           Object.entries(updateData).map(
             ([key, value]) => sql`${sql.identifier(key)} = ${value}`
@@ -595,7 +595,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Usar SQL bruto para evitar problemas com mapeamento de campos
       const result = await db.execute(sql`
-        DELETE FROM vehicles
+        DELETE FROM veiculos
         WHERE id = ${id}
         RETURNING id
       `);
@@ -686,7 +686,7 @@ export class DatabaseStorage implements IStorage {
       const query = `
         SELECT m.*, v.model as "vehicleModel"
         FROM manutencao m
-        LEFT JOIN vehicles v ON m.vehicle_plate = v.plate
+        LEFT JOIN veiculos v ON m.vehicle_plate = v.plate
         WHERE m.workshop_id = $1
         ORDER BY m.entry_date DESC
       `;
@@ -793,7 +793,7 @@ export class DatabaseStorage implements IStorage {
         
         // Atualizar o status do veículo para em_operacao
         await pool.query(
-          `UPDATE vehicles SET status = 'em_operacao' WHERE plate = $1`,
+          `UPDATE veiculos SET status = 'em_operacao' WHERE plate = $1`,
           [currentMaintenance.vehiclePlate]
         );
       }
