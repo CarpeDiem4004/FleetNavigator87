@@ -152,29 +152,18 @@ export const users = pgTable("users", {
 export const maintenance = pgTable("manutencao", {
   id: serial("id").primaryKey(),
   vehiclePlate: text("vehicle_plate").notNull().references(() => vehicles.plate),
-  workshopId: integer("workshop_id").notNull().references(() => workshops.id),
-  requestBaseId: integer("request_base_id").notNull().references(() => bases.id),
-  entryDate: date("entry_date").notNull(),
-  maintenanceStartDate: date("maintenance_start_date"),  // Data de início efetivo da manutenção
-  expectedExitDate: date("expected_exit_date"),
-  actualExitDate: date("actual_exit_date"),
-  
-  // Informações de retirada do veículo
-  vehiclePickupDate: timestamp("vehicle_pickup_date"),  // Data e hora da retirada do veículo
-  pickupPersonName: text("pickup_person_name"),  // Nome da pessoa que retirou o veículo
-  pickupPersonCPF: text("pickup_person_cpf"),  // CPF da pessoa que retirou o veículo
-  pickupComments: text("pickup_comments"),  // Observações sobre a retirada
-
-  // Dados gerais
-  status: maintenanceStatusEnum("status").notNull(),
-  maintenanceType: maintenanceTypeEnum("maintenance_type").notNull(),
-  initialCost: decimal("initial_cost", { precision: 10, scale: 2 }),
-  finalCost: decimal("final_cost", { precision: 10, scale: 2 }),
-  costApprovedBy: text("cost_approved_by"),
-  costApprovalDate: timestamp("cost_approval_date"),
   description: text("description").notNull(),
-  responsiblePerson: text("responsible_person"),  // Campo para quem está cuidando da manutenção
-  kmAtual: text("km_atual"),  // Quilometragem atual do veículo no momento da manutenção
+  status: text("status").notNull(),
+  priority: text("priority"),
+  maintenanceType: text("maintenance_type").notNull(),
+  workshopId: integer("workshop_id"),
+  requestBaseId: integer("request_base_id"),
+  estimatedCompletion: date("estimated_completion"), // equivalente ao expectedExitDate
+  entryDate: date("entry_date").notNull(),
+  completionDate: date("completion_date"), // equivalente ao actualExitDate
+  cost: decimal("cost", { precision: 10, scale: 2 }),
+  responsiblePerson: text("responsible_person"),
+  initialBudget: decimal("initial_budget", { precision: 10, scale: 2 }),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
