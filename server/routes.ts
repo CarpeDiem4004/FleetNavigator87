@@ -6752,10 +6752,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updateQuery = `
         UPDATE solicitacoes_pneus 
         SET 
-          status = $1,
-          data_aprovacao = CASE WHEN $1 IN ('aprovado', 'negado') THEN NOW() ELSE data_aprovacao END,
-          aprovador_id = CASE WHEN $1 IN ('aprovado', 'negado') THEN $2 ELSE aprovador_id END,
-          aprovador_nome = CASE WHEN $1 IN ('aprovado', 'negado') THEN $3 ELSE aprovador_nome END,
+          status = $1::varchar,
+          data_aprovacao = CASE WHEN $1::varchar IN ('aprovado', 'negado') THEN NOW() ELSE data_aprovacao END,
+          aprovador_id = CASE WHEN $1::varchar IN ('aprovado', 'negado') THEN $2 ELSE aprovador_id END,
+          aprovador_nome = CASE WHEN $1::varchar IN ('aprovado', 'negado') THEN $3 ELSE aprovador_nome END,
           data_previsao = $4,
           observacoes_aprovacao = $5,
           updated_at = NOW()
@@ -6810,8 +6810,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const specificUpdateQuery = `
                 UPDATE campinas_tire_requests 
                 SET 
-                  status = $1,
-                  approved_at = CASE WHEN $1 IN ('aprovado', 'negado') THEN NOW() ELSE approved_at END,
+                  status = $1::varchar,
+                  approved_at = CASE WHEN $1::varchar IN ('aprovado', 'negado') THEN NOW() ELSE approved_at END,
                   approved_by = $2,
                   estimated_date = $3,
                   approval_comments = $4,
@@ -6832,8 +6832,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const updateOriginQuery = `
                 UPDATE tire_requests 
                 SET 
-                  status = $1,
-                  data_aprovacao = CASE WHEN $1 IN ('aprovado', 'negado') THEN NOW() ELSE data_aprovacao END,
+                  status = $1::varchar,
+                  data_aprovacao = CASE WHEN $1::varchar IN ('aprovado', 'negado') THEN NOW() ELSE data_aprovacao END,
                   aprovador_id = $2,
                   data_previsao = $3,
                   observacoes_aprovacao = $4
