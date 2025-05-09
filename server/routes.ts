@@ -5330,6 +5330,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             maintenanceType: "preventiva",
             workshopId: req.user.oficina_id,
             requestBaseId: vehicle.baseId || 1, // Usar a base do veículo ou uma padrão
+            entryDate: new Date().toISOString().split('T')[0], // Data de entrada é obrigatória
             estimatedCompletion: new Date(Date.now() + (parseInt(req.body.prazoEstimado) || 5) * 24 * 60 * 60 * 1000).toISOString()
           };
           
