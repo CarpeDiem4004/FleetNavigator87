@@ -2,10 +2,20 @@
  * API para gerenciamento de pneus híbrida
  * Funciona tanto no ambiente Replit quanto externamente
  */
-const express = require('express');
-const { getHybridUserService } = require('./hybrid-user-service');
-const { PG_POOL, isEnvironmentSupabase } = require('./utils/db-connection');
-const { getSupabaseClient } = require('./utils/supabase-client');
+import express from 'express';
+import { getHybridUserService } from './hybrid-user-service.js';
+import { createClient } from '@supabase/supabase-js';
+import { pool as PG_POOL } from './server/db.js';
+
+// Configuração do Supabase
+const supabaseUrl = process.env.SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+// Função para verificar o ambiente (Replit ou externo)
+function isEnvironmentSupabase() {
+  return process.env.ENVIRONMENT === 'external' || !process.env.DATABASE_URL;
+}
 
 const router = express.Router();
 const userService = getHybridUserService();
@@ -597,4 +607,4 @@ router.get('/:id/historico', authenticateMiddleware, async (req, res) => {
 });
 
 // Exportar o router para usar em server/index.js
-module.exports = router;
+export default router;
