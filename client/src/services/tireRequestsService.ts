@@ -6,18 +6,23 @@ export interface TireRequest {
   base_nome: string;
   usuario_id: number;
   usuario_nome: string;
-  marca: string;
-  modelo: string;
+  placa_veiculo?: string;
+  km_veiculo?: number;
+  marca?: string;
+  modelo?: string;
   medida: string;
-  tipo: string;
+  tipo?: string;
   quantidade: number;
   motivo: string;
-  status: 'pendente' | 'aprovado' | 'rejeitado';
+  status: 'pendente' | 'aprovado' | 'negado' | 'em_analise' | 'concluido';
   data_solicitacao: string;
   data_aprovacao?: string;
   aprovador_id?: number;
   aprovador_nome?: string;
+  data_previsao?: string;
   observacoes?: string;
+  observacoes_aprovacao?: string;
+  origem?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -80,7 +85,7 @@ export async function createTireRequest(request: TireRequest) {
  */
 export async function updateTireRequestStatus(
   id: number, 
-  status: 'aprovado' | 'rejeitado' | 'pendente',
+  status: 'aprovado' | 'negado' | 'pendente' | 'em_analise' | 'concluido',
   aprovador_id?: number,
   aprovador_nome?: string
 ) {
@@ -97,6 +102,39 @@ export async function updateTireRequestStatus(
     };
   } catch (error) {
     console.error('Erro ao atualizar status da solicitação de pneus:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erro desconhecido'
+    };
+  }
+}
+
+/**
+ * Responde a uma solicitação de pneus com data de previsão e observações
+ */
+export async function respondTireRequest(
+  id: number,
+  status: 'aprovado' | 'negado' | 'em_analise' | 'concluido',
+  data_previsao?: string,
+  observacoes_aprovacao?: string,
+  aprovador_id?: number,
+  aprovador_nome?: string
+) {
+  try {
+    const response = await api.put(`/api/pneus/solicitacoes/${id}/responder`, {
+      status,
+      data_previsao,
+      observacoes_aprovacao,
+      aprovador_id,
+      aprovador_nome
+    });
+    
+    return {
+      success: true,
+      data: response.data
+    };
+  } catch (error) {
+    console.error('Erro ao responder à solicitação de pneus:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro desconhecido'
