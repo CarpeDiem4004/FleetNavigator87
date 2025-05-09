@@ -565,7 +565,7 @@ const SolicitacaoPneusCampinas: React.FC = () => {
         </CardContent>
         <CardFooter className="bg-gray-50 border-t p-4">
           <p className="text-sm text-gray-500">
-            Total: {tireRequests?.length || 0} solicitações
+            Total: {Array.isArray(tireRequests) ? tireRequests.length : 0} solicitações
           </p>
         </CardFooter>
       </Card>
