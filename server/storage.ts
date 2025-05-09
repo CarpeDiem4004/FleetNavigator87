@@ -468,12 +468,30 @@ export class DatabaseStorage implements IStorage {
       // Usar SQL bruto para evitar problemas com mapeamento de campos
       const result = await db.execute(sql`
         SELECT id, plate, model, vehicletype as "vehicleType", 
-               status, baseid as "baseId", ownership,
-               rental_company as "rentalCompany"
+               status, baseid as "baseId", fueltype,
+               year, mileage, color
         FROM veiculos
         WHERE plate = ${plate}
       `);
-      return result.rows[0] as Vehicle || undefined;
+      
+      if (!result.rows[0]) return undefined;
+      
+      // Map the result to match the Vehicle interface
+      return {
+        id: result.rows[0].id,
+        plate: result.rows[0].plate,
+        model: result.rows[0].model,
+        vehicleType: result.rows[0].vehicleType,
+        status: result.rows[0].status,
+        baseId: result.rows[0].baseId,
+        fuelType: result.rows[0].fueltype,
+        year: result.rows[0].year,
+        mileage: result.rows[0].mileage,
+        color: result.rows[0].color,
+        // Add default/null values for any fields expected by Vehicle interface but not in DB
+        ownership: 'murici',
+        rentalCompany: null
+      };
     } catch (error) {
       console.error("Erro ao buscar veículo pela placa:", error);
       return undefined;
@@ -484,13 +502,29 @@ export class DatabaseStorage implements IStorage {
     try {
       // Usar SQL bruto para evitar problemas com mapeamento de campos
       const result = await db.execute(sql`
-        SELECT id, plate, model, vehicle_type as "vehicleType", 
-               status, base_id as "baseId", ownership,
-               rental_company as "rentalCompany"
+        SELECT id, plate, model, vehicletype as "vehicleType", 
+               status, baseid as "baseId", fueltype,
+               year, mileage, color
         FROM veiculos
-        WHERE base_id = ${baseId}
+        WHERE baseid = ${baseId}
       `);
-      return result.rows as Vehicle[];
+      
+      // Map the result to match the Vehicle interface
+      return result.rows.map(row => ({
+        id: row.id,
+        plate: row.plate,
+        model: row.model,
+        vehicleType: row.vehicleType,
+        status: row.status,
+        baseId: row.baseId,
+        fuelType: row.fueltype,
+        year: row.year,
+        mileage: row.mileage,
+        color: row.color,
+        // Add default/null values for any fields expected by Vehicle interface but not in DB
+        ownership: 'murici',
+        rentalCompany: null
+      }));
     } catch (error) {
       console.error("Erro ao buscar veículos da base:", error);
       return [];
@@ -502,11 +536,27 @@ export class DatabaseStorage implements IStorage {
       // Usar SQL bruto para evitar problemas com mapeamento de campos
       const result = await db.execute(sql`
         SELECT id, plate, model, vehicletype as "vehicleType", 
-               status, baseid as "baseId", ownership,
-               rental_company as "rentalCompany"
+               status, baseid as "baseId", fueltype,
+               year, mileage, color
         FROM veiculos
       `);
-      return result.rows as Vehicle[];
+      
+      // Map the result to match the Vehicle interface
+      return result.rows.map(row => ({
+        id: row.id,
+        plate: row.plate,
+        model: row.model,
+        vehicleType: row.vehicleType,
+        status: row.status,
+        baseId: row.baseId,
+        fuelType: row.fueltype,
+        year: row.year,
+        mileage: row.mileage,
+        color: row.color,
+        // Add default/null values for any fields expected by Vehicle interface but not in DB
+        ownership: 'murici',
+        rentalCompany: null
+      }));
     } catch (error) {
       console.error("Erro ao buscar veículos:", error);
       return [];
@@ -531,13 +581,13 @@ export class DatabaseStorage implements IStorage {
       // Transformar os nomes de campo do modelo para os nomes usados no banco de dados
       const result = await db.execute(sql`
         INSERT INTO veiculos 
-        (plate, model, vehicle_type, status, base_id, ownership, rental_company)
+        (plate, model, vehicletype, status, baseid, fueltype, year, mileage, color)
         VALUES 
         (${vehicle.plate}, ${vehicle.model}, ${vehicle.vehicleType}, ${vehicle.status}, 
-         ${vehicle.baseId}, ${vehicle.ownership || 'murici'}, 
-         ${vehicle.ownership === 'locado' ? vehicle.rentalCompany : null})
-        RETURNING id, plate, model, vehicle_type as "vehicleType", 
-                 status, base_id as "baseId", ownership, rental_company as "rentalCompany"
+         ${vehicle.baseId}, ${vehicle.fuelType || 'diesel'}, 
+         ${vehicle.year || new Date().getFullYear()}, ${vehicle.mileage || 0}, ${vehicle.color || 'branco'})
+        RETURNING id, plate, model, vehicletype as "vehicleType", 
+                 status, baseid as "baseId", fueltype, year, mileage, color
       `);
       
       console.log("Veículo inserido com sucesso:", JSON.stringify(result.rows[0], null, 2));
@@ -563,11 +613,13 @@ export class DatabaseStorage implements IStorage {
       
       if (vehicle.plate !== undefined) updateData.plate = vehicle.plate;
       if (vehicle.model !== undefined) updateData.model = vehicle.model;
-      if (vehicle.vehicleType !== undefined) updateData['vehicle_type'] = vehicle.vehicleType;
+      if (vehicle.vehicleType !== undefined) updateData.vehicletype = vehicle.vehicleType;
       if (vehicle.status !== undefined) updateData.status = vehicle.status;
-      if (vehicle.baseId !== undefined) updateData['base_id'] = vehicle.baseId;
-      if (vehicle.ownership !== undefined) updateData.ownership = vehicle.ownership;
-      if (vehicle.rentalCompany !== undefined) updateData['rental_company'] = vehicle.rentalCompany;
+      if (vehicle.baseId !== undefined) updateData.baseid = vehicle.baseId;
+      if (vehicle.fuelType !== undefined) updateData.fueltype = vehicle.fuelType;
+      if (vehicle.year !== undefined) updateData.year = vehicle.year;
+      if (vehicle.mileage !== undefined) updateData.mileage = vehicle.mileage;
+      if (vehicle.color !== undefined) updateData.color = vehicle.color;
       
       // Usar SQL bruto para evitar problemas com mapeamento de campos
       const result = await db.execute(sql`
@@ -579,12 +631,28 @@ export class DatabaseStorage implements IStorage {
           sql`, `
         )}
         WHERE id = ${id}
-        RETURNING id, plate, model, vehicle_type as "vehicleType", 
-                 status, base_id as "baseId", ownership,
-                 rental_company as "rentalCompany"
+        RETURNING id, plate, model, vehicletype as "vehicleType", 
+                 status, baseid as "baseId", fueltype, year, mileage, color
       `);
       
-      return result.rows[0] as Vehicle || undefined;
+      if (!result.rows[0]) return undefined;
+      
+      // Map the result to match the Vehicle interface
+      return {
+        id: result.rows[0].id,
+        plate: result.rows[0].plate,
+        model: result.rows[0].model,
+        vehicleType: result.rows[0].vehicleType,
+        status: result.rows[0].status,
+        baseId: result.rows[0].baseId,
+        fuelType: result.rows[0].fueltype,
+        year: result.rows[0].year,
+        mileage: result.rows[0].mileage,
+        color: result.rows[0].color,
+        // Add default values for fields expected by Vehicle interface but not in DB
+        ownership: 'murici',
+        rentalCompany: null
+      };
     } catch (error) {
       console.error("Erro ao atualizar veículo:", error);
       return undefined;
