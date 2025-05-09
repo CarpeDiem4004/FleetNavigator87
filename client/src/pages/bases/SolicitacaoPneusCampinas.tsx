@@ -188,15 +188,15 @@ const SolicitacaoPneusCampinas: React.FC = () => {
               Nova Solicitação
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto pt-6 pb-6">
+            <DialogHeader className="mb-4">
               <DialogTitle>Nova Solicitação de Pneus</DialogTitle>
               <DialogDescription>
                 Preencha os detalhes dos pneus que você precisa solicitar.
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                 <FormField
                   control={form.control}
                   name="quantidade"
@@ -303,7 +303,7 @@ const SolicitacaoPneusCampinas: React.FC = () => {
                   )}
                 />
 
-                <DialogFooter>
+                <DialogFooter className="mt-6 pt-4">
                   <Button
                     type="reset"
                     variant="outline"
@@ -315,6 +315,7 @@ const SolicitacaoPneusCampinas: React.FC = () => {
                   <Button 
                     type="submit"
                     disabled={saveMutation.isPending}
+                    className="bg-green-600 hover:bg-green-700"
                   >
                     {saveMutation.isPending ? (
                       <>Enviando...</>
