@@ -107,7 +107,7 @@ const SolicitacoesPneus: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRequest, setSelectedRequest] = useState<TireRequest | null>(null);
   const [responseDialogOpen, setResponseDialogOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('todos');
   
   // Form state
   const [responseStatus, setResponseStatus] = useState<string>('');
@@ -120,8 +120,8 @@ const SolicitacoesPneus: React.FC = () => {
     const loadTireRequests = async () => {
       setIsLoading(true);
       try {
-        // Filtrar por status se necessário
-        const filters = statusFilter ? { status: statusFilter } : undefined;
+        // Filtrar por status se necessário, exceto quando for "todos"
+        const filters = statusFilter && statusFilter !== 'todos' ? { status: statusFilter } : undefined;
         const response = await getAllTireRequests(filters);
         
         if (response.success) {
@@ -259,7 +259,7 @@ const SolicitacoesPneus: React.FC = () => {
                   <SelectValue placeholder="Filtrar por status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os status</SelectItem>
+                  <SelectItem value="todos">Todos os status</SelectItem>
                   <SelectItem value="pendente">Pendentes</SelectItem>
                   <SelectItem value="em_analise">Em Análise</SelectItem>
                   <SelectItem value="aprovado">Aprovados</SelectItem>
