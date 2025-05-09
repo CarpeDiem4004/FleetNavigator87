@@ -62,7 +62,9 @@ const maintenanceRequestSchema = z.object({
   vehiclePlate: z.string().min(7, { message: "A placa do veículo é obrigatória" }).max(8),
   description: z.string().min(10, { message: "A descrição deve ter pelo menos 10 caracteres" }),
   priority: z.string({ required_error: "Selecione uma prioridade" }),
-  maintenanceType: z.string({ required_error: "Selecione o tipo de manutenção" })
+  maintenanceType: z.string({ required_error: "Selecione o tipo de manutenção" }),
+  km: z.string().min(1, { message: "O hodômetro atual é obrigatório" })
+    .refine(val => !isNaN(Number(val)), { message: "O hodômetro deve ser um número válido" })
 });
 
 type MaintenanceRequestForm = z.infer<typeof maintenanceRequestSchema>;
