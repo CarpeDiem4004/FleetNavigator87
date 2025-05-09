@@ -200,7 +200,7 @@ const SolicitacoesPneus: React.FC = () => {
         // Atualizar a lista de solicitações
         setTireRequests(tireRequests.map(req => 
           req.id === selectedRequest.id ? {...req, 
-            status: responseStatus,
+            status: responseStatus as "pendente" | "aprovado" | "negado" | "em_analise" | "concluido",
             data_previsao: responseDate,
             observacoes_aprovacao: responseComments
           } : req
