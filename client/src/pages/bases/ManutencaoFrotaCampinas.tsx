@@ -337,32 +337,32 @@ const ManutencaoFrotaCampinas: React.FC = () => {
       // Preparar dados para envio à API central
       const vehicle = vehicles.find(v => v.plate === vehiclePlate);
       
-      // Garantir que todos os campos obrigatórios estejam presentes
-      // e no formato correto esperado pelo schema de validação
+      // Mapear os dados para o formato correto conforme os campos requeridos no schema de validação
+      // Observe que estamos usando os nomes dos campos exatamente como definidos na tabela manutencao
       const maintenanceData = {
         vehiclePlate: vehiclePlate,
         description: data.description,
-        maintenanceType: data.maintenanceType as "preventiva" | "corretiva", // Usar tipagem correta para o enum
-        status: "pendente" as "pendente", // Usar tipagem correta para o enum
+        maintenanceType: data.maintenanceType as "preventiva" | "corretiva",
+        status: "pendente" as "pendente",
         priority: data.priority,
         requestBaseId: 2, // Base Campinas
         workshopId: 1, // Oficina padrão
         
-        // Campos de data obrigatórios
-        entryDate: new Date().toISOString().split('T')[0], // Data atual - campo obrigatório
-        expectedExitDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 dias após a data atual
+        // Campos obrigatórios de data
+        entryDate: new Date().toISOString().split('T')[0], // Data atual
         
         // Campos opcionais
-        maintenanceStartDate: null, // Pode ficar nulo inicialmente
-        actualExitDate: null, // Pode ficar nulo inicialmente
+        expectedExitDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 dias
+        maintenanceStartDate: null,
+        actualExitDate: null,
         responsiblePerson: "Técnico responsável",
-        kmAtual: data.km, // Hodômetro atual
+        kmAtual: data.km,
         
-        // Zerando os custos iniciais
+        // Custos
         initialCost: null,
         finalCost: null,
         
-        // Informações de retirada do veículo - podem ficar nulas inicialmente
+        // Informações de retirada do veículo
         vehiclePickupDate: null,
         pickupPersonName: null,
         pickupPersonCPF: null,
