@@ -3308,9 +3308,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if vehicle exists
-      const vehicle = await storage.getVehicleByPlate(result.data.vehiclePlate);
-      if (!vehicle) {
-        return res.status(404).json({ message: "Vehicle not found" });
+      let vehicle = await storage.getVehicleByPlate(result.data.vehiclePlate);
+      
+      // Se o veículo não existir, mas a placa for válida, criar um veículo temporário
+      if (!vehicle && /^[A-Z]{3}\d{4}$|^[A-Z]{3}\d[A-Z]\d{2}$/.test(result.data.vehiclePlate)) {
+        console.log(`Veículo com placa ${result.data.vehiclePlate} não encontrado. Criando veículo temporário para a base ${result.data.requestBaseId}.`);
+        
+        try {
+          // Criando o objeto com tipos corretos
+          const newVehicleData = {
+            plate: result.data.vehiclePlate,
+            model: "Veículo registrado via manutenção",
+            vehicleType: "van" as "van" | "truck" | "fiorino" | "cavalo_mecanico" | "vuc" | "toco" | "carreta",
+            status: "em_operacao" as "em_operacao" | "em_manutencao" | "parado",
+            baseId: result.data.requestBaseId,
+            ownership: "murici" as "murici" | "locado",
+            crlvUrl: null,
+            anttUrl: null
+          };
+          
+          // Criar o veículo usando a interface de armazenamento
+          vehicle = await storage.createVehicle(newVehicleData);
+          console.log(`Veículo temporário criado com ID ${vehicle.id}`);
+        } catch (vehicleError) {
+          console.error("Erro ao criar veículo temporário:", vehicleError);
+          // Continuar mesmo sem o veículo - não bloquear a criação da manutenção
+        }
       }
       
       // Check if workshop exists, if not, create a default one

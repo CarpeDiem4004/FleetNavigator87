@@ -309,11 +309,14 @@ const ManutencaoFrotaCampinas: React.FC = () => {
     try {
       console.log("Enviando solicitação:", data);
       
+      // Garantir que a placa esteja em maiúsculas para corresponder ao formato do banco de dados
+      const vehiclePlate = data.vehiclePlate.toUpperCase();
+      
       // Preparar dados para envio à API central
-      const vehicle = vehicles.find(v => v.plate === data.vehiclePlate);
+      const vehicle = vehicles.find(v => v.plate === vehiclePlate);
       
       const maintenanceData = {
-        vehiclePlate: data.vehiclePlate,
+        vehiclePlate: vehiclePlate,
         description: data.description,
         maintenanceType: data.maintenanceType,
         status: "pendente",
@@ -367,11 +370,12 @@ const ManutencaoFrotaCampinas: React.FC = () => {
       
       // Modo de fallback para testes quando a API falhar
       // Adiciona localmente apenas para demonstração
-      const vehicle = vehicles.find(v => v.plate === data.vehiclePlate);
+      const vehiclePlate = data.vehiclePlate.toUpperCase();
+      const vehicle = vehicles.find(v => v.plate === vehiclePlate);
       
       const newRequest: MaintenanceRequest = {
         id: Math.floor(Math.random() * 1000),
-        vehiclePlate: data.vehiclePlate,
+        vehiclePlate: vehiclePlate,
         description: data.description,
         priority: data.priority,
         maintenanceType: data.maintenanceType,
