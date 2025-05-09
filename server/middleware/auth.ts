@@ -386,7 +386,7 @@ export const hasMaintenanceAccessV2 = async (req: Request, res: Response, next: 
       (req as any).user = user;
       
       // Verificar se o usuário é admin, gestor_frota, ou usuário da gestão de frotas
-      if (isUserAdmin(user) || (user.role && user.role === 'gestor_frota') || isUserInFleetManagement(user)) {
+      if (isUserAdmin(user) || isUserInFleetManagement(user)) {
         console.log(`[hasMaintenanceAccessV2] Acesso concedido para usuário: ${user.email}`);
         return next();
       }
@@ -421,7 +421,7 @@ export const hasMaintenanceAccessV2 = async (req: Request, res: Response, next: 
           (req as any).user = user;
           
           // Verificar permissões
-          if (isUserAdmin(user) || (user.role && user.role === 'gestor_frota') || isUserInFleetManagement(user)) {
+          if (isUserAdmin(user) || isUserInFleetManagement(user)) {
             console.log(`[hasMaintenanceAccessV2] Acesso concedido para usuário: ${user.email}`);
             return next();
           }

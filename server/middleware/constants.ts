@@ -48,6 +48,8 @@ export function canUserAccessBase(user: any, baseId: number | string): boolean {
   return (
     // Usuário é admin (pode acessar qualquer base)
     isUserAdmin(user) ||
+    // Usuário é gestor_frota (pode acessar qualquer base)
+    (user.role && user.role === 'gestor_frota') ||
     // Usuário pertence à base solicitada
     (user.baseId === numericBaseId)
   );
