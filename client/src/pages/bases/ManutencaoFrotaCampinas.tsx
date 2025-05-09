@@ -136,14 +136,11 @@ const ManutencaoFrotaCampinas: React.FC = () => {
   const fetchMaintenanceRequests = async () => {
     setIsLoading(true);
     try {
+      // Importar apiRequest para incluir o token JWT nos cabeçalhos
+      const { apiRequest } = await import('../../lib/queryClient');
+      
       // Chamada real para a API usando a base de Campinas (ID: 2)
-      const response = await fetch('/api/maintenance/base/2');
-      
-      if (!response.ok) {
-        throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
-      }
-      
-      const data = await response.json();
+      const data = await apiRequest('/api/maintenance/base/2', 'GET');
       console.log("Dados de manutenção da Base Campinas:", data);
       
       // Mapear os dados recebidos para o formato esperado pelo componente
