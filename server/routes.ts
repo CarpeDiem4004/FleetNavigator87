@@ -6586,8 +6586,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             comments = COALESCE($2, comments),
             approved_at = NOW(),
             approved_by = $3,
-            estimated_date = $4,
-            approval_comments = $5
+            data_previsao = $4,
+            observacoes_aprovacao = $5
           WHERE id = $6
           RETURNING *
         `;
