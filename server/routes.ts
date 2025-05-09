@@ -6578,6 +6578,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (tableExists) {
         console.log('[Campinas] Atualizando na tabela específica campinas_tire_requests');
         
+        // Mapear status do sistema central para status compatível com a tabela campinas_tire_requests
+        let campinasStatus = status;
+        if (status === 'em_analise') {
+          campinasStatus = 'pendente'; // Status "em_analise" é tratado como "pendente" na tabela Campinas
+        }
+        
         // Se a tabela específica existir, atualizamos nela
         const specificUpdateQuery = `
           UPDATE campinas_tire_requests 
@@ -6593,7 +6599,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `;
         
         result = await pool.query(specificUpdateQuery, [
-          status, 
+          campinasStatus, 
           observacoes, 
           req.user ? req.user.name : 'Administrador',
           data_previsao ? new Date(data_previsao) : null,
@@ -6813,6 +6819,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const tableExists = tableCheck.rows[0].exists;
             
             if (tableExists) {
+              // Mapear status do sistema central para status compatível com a tabela campinas_tire_requests
+              let campinasStatus = status;
+              if (status === 'em_analise') {
+                campinasStatus = 'pendente'; // Status "em_analise" é tratado como "pendente" na tabela Campinas
+              }
+              
               const specificUpdateQuery = `
                 UPDATE campinas_tire_requests 
                 SET 
@@ -6826,7 +6838,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               `;
               
               await pool.query(specificUpdateQuery, [
-                status,
+                campinasStatus,
                 req.user ? req.user.name : 'Administrador',
                 data_previsao ? new Date(data_previsao) : null,
                 observacoes_aprovacao || null,
