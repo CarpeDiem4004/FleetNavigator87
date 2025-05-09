@@ -121,7 +121,8 @@ const ManutencaoFrotaCampinas: React.FC = () => {
       vehiclePlate: '',
       description: '',
       priority: '',
-      maintenanceType: ''
+      maintenanceType: '',
+      km: ''
     }
   });
 
@@ -295,7 +296,8 @@ const ManutencaoFrotaCampinas: React.FC = () => {
         workshopId: 1, // Oficina padrão
         entryDate: new Date().toISOString().split('T')[0], // Data atual
         expectedExitDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 dias após a data atual
-        responsiblePerson: "Técnico responsável"
+        responsiblePerson: "Técnico responsável",
+        kmAtual: data.km // Adicionando o campo de quilometragem
       };
       
       // Realizar chamada real à API
@@ -329,7 +331,8 @@ const ManutencaoFrotaCampinas: React.FC = () => {
         estimatedCompletion: newMaintenance.expectedExitDate,
         workshopId: newMaintenance.workshopId || 1,
         workshopName: newMaintenance.workshopName || "Oficina Central",
-        vehicleType: vehicle?.vehicleType || "desconhecido"
+        vehicleType: vehicle?.vehicleType || "desconhecido",
+        vehicleMileage: parseInt(data.km) // Adicionando o campo de quilometragem
       };
       
       // Atualizar a interface com a nova solicitação
@@ -361,7 +364,8 @@ const ManutencaoFrotaCampinas: React.FC = () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         estimatedCompletion: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        vehicleType: vehicle?.vehicleType || "desconhecido"
+        vehicleType: vehicle?.vehicleType || "desconhecido",
+        vehicleMileage: parseInt(data.km) // Adicionando o campo de quilometragem
       };
       
       setRequests([newRequest, ...requests]);
@@ -568,6 +572,27 @@ const ManutencaoFrotaCampinas: React.FC = () => {
                     )}
                   />
                 </div>
+                
+                <FormField
+                  control={form.control}
+                  name="km"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hodômetro Atual (km)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="Digite o valor atual do hodômetro"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-muted-foreground text-xs">
+                        Informe o valor atual do hodômetro em quilômetros
+                      </FormMessage>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
                 {/* Campo de data estimada para conclusão removido conforme solicitado */}
                 
