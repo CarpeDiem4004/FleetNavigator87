@@ -453,7 +453,7 @@ export class DatabaseStorage implements IStorage {
         SELECT id, plate, model, vehicle_type as "vehicleType", 
                status, base_id as "baseId", ownership,
                rental_company as "rentalCompany"
-        FROM vehicles
+        FROM veiculos
         WHERE id = ${id}
       `);
       return result.rows[0] as Vehicle || undefined;
@@ -470,7 +470,7 @@ export class DatabaseStorage implements IStorage {
         SELECT id, plate, model, vehicle_type as "vehicleType", 
                status, base_id as "baseId", ownership,
                rental_company as "rentalCompany"
-        FROM vehicles
+        FROM veiculos
         WHERE plate = ${plate}
       `);
       return result.rows[0] as Vehicle || undefined;
@@ -546,7 +546,7 @@ export class DatabaseStorage implements IStorage {
       console.error("Erro ao inserir veículo no banco de dados:", error);
       
       // Verificar se é um erro de violação de constraint unique
-      if ((error as any)?.code === '23505' && (error as any)?.constraint === 'vehicles_plate_unique') {
+      if ((error as any)?.code === '23505' && (error as any)?.constraint === 'veiculos_plate_unique') {
         const duplicateError = new Error(`Veículo com placa ${vehicle.plate} já existe no sistema`);
         duplicateError.name = "DuplicatePlateError";
         throw duplicateError;
