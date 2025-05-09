@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -71,6 +71,63 @@ const SolicitacaoPneusCampinas: React.FC = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Verificar autenticação ao carregar a página
+  useEffect(() => {
+    // Verificamos se tem um token de autenticação no localStorage
+    const authToken = localStorage.getItem('authToken');
+    
+    if (!authToken) {
+      console.error("Token de autenticação não encontrado no localStorage");
+      toast({
+        title: "Acesso negado",
+        description: "Você precisa estar autenticado para acessar esta página. Redirecionando para login...",
+        variant: "destructive",
+      });
+      
+      // Adicionar pequeno atraso para exibir a mensagem antes de redirecionar
+      setTimeout(() => {
+        navigate('/login');
+      }, 1500);
+      return;
+    }
+    
+    // Verificamos se o token é válido fazendo uma chamada para verificação
+    const verifyToken = async () => {
+      try {
+        console.log("Verificando token JWT...");
+        const response = await fetch('/api/hybrid/auth/verify', {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          console.error("Token inválido ou expirado");
+          // Remove o token inválido
+          localStorage.removeItem('authToken');
+          
+          toast({
+            title: "Sessão expirada",
+            description: "Sua sessão expirou. Redirecionando para login...",
+            variant: "destructive",
+          });
+          
+          // Adicionar pequeno atraso para exibir a mensagem antes de redirecionar
+          setTimeout(() => {
+            navigate('/login');
+          }, 1500);
+        } else {
+          console.log("Token JWT verificado com sucesso");
+        }
+      } catch (error) {
+        console.error("Erro ao verificar token:", error);
+      }
+    };
+    
+    verifyToken();
+  }, [navigate, toast]);
 
   // Consulta para obter as solicitações de pneus
   const { data: tireRequests, isLoading, error } = useQuery({
