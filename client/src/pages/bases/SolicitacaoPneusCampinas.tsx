@@ -77,8 +77,25 @@ const SolicitacaoPneusCampinas: React.FC = () => {
   const { data: tireRequests, isLoading, error } = useQuery({
     queryKey: ['/api/bases/campinas/solicitacao-pneus'],
     queryFn: async () => {
-      const response = await apiRequest<TireRequest[]>('/api/bases/campinas/solicitacao-pneus');
-      return response;
+      // Obter o token de autenticação do localStorage
+      const authToken = localStorage.getItem('authToken');
+      
+      console.log("Enviando requisição para /api/bases/campinas/solicitacao-pneus");
+      console.log("Token JWT disponível:", !!authToken);
+      
+      // Opções da requisição com cabeçalho de autorização
+      const options = {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          // Adicionar token JWT ao cabeçalho se estiver disponível
+          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+        }
+      };
+      
+      const response = await apiRequest('/api/bases/campinas/solicitacao-pneus', options);
+      const data = await response.json();
+      return data as TireRequest[];
     },
   });
 
@@ -110,9 +127,21 @@ const SolicitacaoPneusCampinas: React.FC = () => {
         observacoes: values.observacoes || null,
       };
 
+      // Obter o token de autenticação do localStorage
+      const authToken = localStorage.getItem('authToken');
+      
+      console.log("Enviando POST para /api/bases/campinas/solicitacao-pneus");
+      console.log("Token JWT disponível:", !!authToken);
+      
+      // Opções da requisição com cabeçalho de autorização e corpo JSON
       const response = await apiRequest('/api/bases/campinas/solicitacao-pneus', {
         method: 'POST',
         body: JSON.stringify(requestData),
+        headers: {
+          'Content-Type': 'application/json',
+          // Adicionar token JWT ao cabeçalho se estiver disponível
+          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+        }
       });
 
       return response;
