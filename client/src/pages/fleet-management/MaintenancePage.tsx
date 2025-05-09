@@ -48,6 +48,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
+import MaintenanceDetailDialog from '@/components/maintenance/MaintenanceDetailDialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -166,6 +168,8 @@ export default function MaintenancePage() {
   const [isOpen, setIsOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [datesDialogOpen, setDatesDialogOpen] = useState(false);
+  // Diálogo de detalhes da manutenção
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   // Adicionar valor padrão necessário para evitar problemas com SelectItem
   const [selectedStatus, setSelectedStatus] = useState<Maintenance['status']>('pendente');
   const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null);
@@ -454,6 +458,12 @@ export default function MaintenancePage() {
       completionDate: maintenance.completionDate || ''
     });
     setDatesDialogOpen(true);
+  };
+  
+  // Função para abrir o diálogo de detalhes da manutenção
+  const openDetailDialog = (maintenance: Maintenance) => {
+    setSelectedMaintenance(maintenance);
+    setDetailDialogOpen(true);
   };
   
   const handleDateUpdate = () => {
