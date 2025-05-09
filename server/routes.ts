@@ -6580,8 +6580,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Mapear status do sistema central para status compatível com a tabela campinas_tire_requests
         let campinasStatus = status;
-        if (status === 'em_analise') {
-          campinasStatus = 'pendente'; // Status "em_analise" é tratado como "pendente" na tabela Campinas
+        if (status === 'em_analise' || status === 'negado') {
+          campinasStatus = 'pendente'; // Status "em_analise" e "negado" são tratados como "pendente" na tabela Campinas
         }
         
         // Se a tabela específica existir, atualizamos nela
@@ -6821,8 +6821,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (tableExists) {
               // Mapear status do sistema central para status compatível com a tabela campinas_tire_requests
               let campinasStatus = status;
-              if (status === 'em_analise') {
-                campinasStatus = 'pendente'; // Status "em_analise" é tratado como "pendente" na tabela Campinas
+              if (status === 'em_analise' || status === 'negado') {
+                campinasStatus = 'pendente'; // Status "em_analise" e "negado" são tratados como "pendente" na tabela Campinas
               }
               
               const specificUpdateQuery = `
