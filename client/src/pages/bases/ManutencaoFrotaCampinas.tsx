@@ -535,6 +535,28 @@ const ManutencaoFrotaCampinas: React.FC = () => {
       default: return 'Desconhecido';
     }
   };
+  
+  // Função para retornar o ícone do tipo de veículo
+  const getVehicleTypeIcon = (type?: string) => {
+    switch (type) {
+      case 'van':
+        return <Car className="h-4 w-4 text-blue-600" />;
+      case 'truck':
+        return <Truck className="h-4 w-4 text-green-600" />;
+      case 'fiorino':
+        return <Car className="h-4 w-4 text-cyan-600" />;
+      case 'cavalo_mecanico':
+        return <Truck className="h-4 w-4 text-red-600" />;
+      case 'vuc':
+        return <Truck className="h-4 w-4 text-purple-600" />;
+      case 'toco':
+        return <Truck className="h-4 w-4 text-amber-600" />;
+      case 'carreta':
+        return <Truck className="h-4 w-4 text-gray-600" />;
+      default:
+        return <Car className="h-4 w-4 text-gray-400" />;
+    }
+  };
 
   return (
     <div className="container mx-auto py-6 space-y-6">
