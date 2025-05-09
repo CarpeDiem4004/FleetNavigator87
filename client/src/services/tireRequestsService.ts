@@ -32,7 +32,7 @@ export interface TireRequest {
  */
 export async function getAllTireRequests(filters?: { base_id?: number, status?: string }) {
   try {
-    let url = '/api/solicitacoes-pneus';
+    let url = '/solicitacoes-pneus';
     const params = new URLSearchParams();
     
     if (filters?.base_id) {
@@ -47,6 +47,7 @@ export async function getAllTireRequests(filters?: { base_id?: number, status?: 
       url += `?${params.toString()}`;
     }
     
+    console.log("Chamando API:", url);
     const response = await api.get(url);
     return {
       success: true,
@@ -66,7 +67,7 @@ export async function getAllTireRequests(filters?: { base_id?: number, status?: 
  */
 export async function createTireRequest(request: TireRequest) {
   try {
-    const response = await api.post('/api/solicitacoes-pneus', request);
+    const response = await api.post('/solicitacoes-pneus', request);
     return {
       success: true,
       data: response.data.data
@@ -90,7 +91,7 @@ export async function updateTireRequestStatus(
   aprovador_nome?: string
 ) {
   try {
-    const response = await api.put(`/api/solicitacoes-pneus/${id}/status`, {
+    const response = await api.put(`/solicitacoes-pneus/${id}/status`, {
       status,
       aprovador_id,
       aprovador_nome
@@ -121,7 +122,7 @@ export async function respondTireRequest(
   aprovador_nome?: string
 ) {
   try {
-    const response = await api.put(`/api/pneus/solicitacoes/${id}/responder`, {
+    const response = await api.put(`/pneus/solicitacoes/${id}/responder`, {
       status,
       data_previsao,
       observacoes_aprovacao,
