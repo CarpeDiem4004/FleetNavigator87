@@ -434,6 +434,40 @@ const ManutencaoFrotaCampinas: React.FC = () => {
         return <Badge variant="outline">{type}</Badge>;
     }
   };
+  
+  // Função para atualizar o status de uma solicitação
+  const updateRequestStatus = async (requestId: number, newStatus: string) => {
+    try {
+      setIsLoading(true);
+      
+      // Importar apiRequest para incluir o token JWT nos cabeçalhos
+      const { apiRequest } = await import('../../lib/queryClient');
+      
+      // Chamada à API para atualizar o status
+      await apiRequest('PATCH', `/api/maintenance/${requestId}/status`, { status: newStatus });
+      
+      // Atualizar o estado local
+      setRequests(requests.map(req => 
+        req.id === requestId ? { ...req, status: newStatus } : req
+      ));
+      
+      toast({
+        title: "Status atualizado",
+        description: "O status da solicitação foi atualizado com sucesso.",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar status:", error);
+      
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o status da solicitação.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Obter o tipo de veículo em texto
   const getVehicleTypeText = (type?: string) => {
@@ -804,10 +838,64 @@ const ManutencaoFrotaCampinas: React.FC = () => {
               )}
             </div>
             
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Fechar
-              </Button>
+            <DialogFooter className="flex-col space-y-4">
+              <div className="flex flex-wrap gap-2 justify-start mb-2">
+                <h4 className="text-sm font-medium w-full mb-2">Atualizar status:</h4>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    updateRequestStatus(selectedRequest.id, "pendente");
+                    setIsDialogOpen(false);
+                  }}
+                  className="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 border-yellow-300"
+                  disabled={selectedRequest.status === "pendente"}
+                >
+                  <Clock className="mr-1 h-3 w-3" /> Pendente
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    updateRequestStatus(selectedRequest.id, "em_andamento");
+                    setIsDialogOpen(false);
+                  }}
+                  className="bg-blue-100 hover:bg-blue-200 text-blue-800 border-blue-300"
+                  disabled={selectedRequest.status === "em_andamento"}
+                >
+                  <Wrench className="mr-1 h-3 w-3" /> Em Andamento
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    updateRequestStatus(selectedRequest.id, "aguardando_pecas");
+                    setIsDialogOpen(false);
+                  }}
+                  className="bg-purple-100 hover:bg-purple-200 text-purple-800 border-purple-300"
+                  disabled={selectedRequest.status === "aguardando_pecas"}
+                >
+                  <AlertCircle className="mr-1 h-3 w-3" /> Aguardando Peças
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    updateRequestStatus(selectedRequest.id, "concluida");
+                    setIsDialogOpen(false);
+                  }}
+                  className="bg-green-100 hover:bg-green-200 text-green-800 border-green-300"
+                  disabled={selectedRequest.status === "concluida"}
+                >
+                  <CheckCircle className="mr-1 h-3 w-3" /> Concluída
+                </Button>
+              </div>
+              
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Fechar
+                </Button>
+              </div>
             </DialogFooter>
           </DialogContent>
         </Dialog>
