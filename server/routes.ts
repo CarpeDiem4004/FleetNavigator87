@@ -6315,40 +6315,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rotas para solicitações de pneus da base Campinas
   app.get("/api/bases/campinas/solicitacao-pneus", async (req, res) => {
     try {
+      // Verificamos primeiro se a tabela campinas_tire_requests existe
+      const checkTableQuery = `
+        SELECT EXISTS (
+          SELECT 1 FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'campinas_tire_requests'
+        ) AS "exists";
+      `;
+      
+      const tableCheck = await pool.query(checkTableQuery);
+      const tableExists = tableCheck.rows[0].exists;
+      
+      if (!tableExists) {
+        console.log('Tabela campinas_tire_requests não existe, buscando em tabela genérica');
+        
+        // Se a tabela específica não existir, buscamos na tabela genérica de solicitações
+        const query = `
+          SELECT 
+            s.id, 
+            s.base_id,
+            COALESCE(b.nome, 'Base Campinas') as base_nome,
+            s.usuario_id,
+            COALESCE(u.name, s.usuario_nome) as usuario_nome,
+            s.quantidade, 
+            s.placa_veiculo,
+            s.km_veiculo,
+            s.medida, 
+            s.motivo, 
+            s.observacoes, 
+            s.status, 
+            s.data_solicitacao,
+            s.data_aprovacao,
+            s.aprovador_id,
+            a.name as aprovador_nome
+          FROM 
+            solicitacoes_pneus s
+          LEFT JOIN 
+            bases b ON s.base_id = b.id
+          LEFT JOIN 
+            users u ON s.usuario_id = u.id
+          LEFT JOIN 
+            users a ON s.aprovador_id = a.id
+          WHERE 
+            s.base_id = 9
+          ORDER BY 
+            s.data_solicitacao DESC
+        `;
+        
+        const result = await pool.query(query);
+        res.json(result.rows);
+        return;
+      }
+      
+      // Se a tabela específica existir, usamos ela
       const query = `
         SELECT 
-          s.id, 
-          s.base_id,
-          b.nome as base_nome,
-          s.usuario_id,
-          u.name as usuario_nome,
-          s.quantidade, 
-          s.marca, 
-          s.modelo, 
-          s.medida, 
-          s.tipo, 
-          s.motivo, 
-          s.observacoes, 
-          s.status, 
-          s.data_solicitacao,
-          s.data_aprovacao,
-          s.aprovador_id,
-          a.name as aprovador_nome
+          id,
+          base_id,
+          base_name as base_nome,
+          requester_id as usuario_id,
+          requester_name as usuario_nome,
+          quantity as quantidade,
+          vehicle_plate as placa_veiculo,
+          km_veiculo,
+          tire_size as medida,
+          reason as motivo,
+          comments as observacoes,
+          status,
+          created_at as data_solicitacao,
+          approved_at as data_aprovacao,
+          CAST(NULL AS INTEGER) as aprovador_id,
+          approved_by as aprovador_nome
         FROM 
-          tire_requests s
-        LEFT JOIN 
-          bases b ON s.base_id = b.id
-        LEFT JOIN 
-          users u ON s.usuario_id = u.id
-        LEFT JOIN 
-          users a ON s.aprovador_id = a.id
-        WHERE 
-          s.base_id = 9
+          campinas_tire_requests
         ORDER BY 
-          s.data_solicitacao DESC
+          created_at DESC
       `;
       
       const result = await pool.query(query);
+      console.log(`[Campinas] Encontradas ${result.rowCount} solicitações de pneus`);
       res.json(result.rows);
     } catch (error) {
       console.error('Erro ao buscar solicitações de pneus:', error);
@@ -6359,34 +6405,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/bases/campinas/solicitacao-pneus", async (req, res) => {
     try {
       const { 
-        base_id, quantidade, marca, modelo, medida, tipo, motivo, observacoes
+        base_id, quantidade, placa_veiculo, km_veiculo, medida, motivo, observacoes
       } = req.body;
       
-      const insertQuery = `
-        INSERT INTO tire_requests (
-          base_id, usuario_id, quantidade, marca, modelo, medida, tipo, 
-          motivo, observacoes, status, data_solicitacao
-        ) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
-        RETURNING *
+      console.log('[Campinas] Recebida solicitação de pneus:', {
+        base_id, quantidade, placa_veiculo, km_veiculo, medida, motivo, observacoes
+      });
+      
+      // Verificamos primeiro se a tabela campinas_tire_requests existe
+      const checkTableQuery = `
+        SELECT EXISTS (
+          SELECT 1 FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'campinas_tire_requests'
+        ) AS "exists";
       `;
       
-      const result = await pool.query(insertQuery, [
-        base_id, 
-        req.user ? req.user.id : null,
-        quantidade, 
-        marca, 
-        modelo, 
-        medida, 
-        tipo, 
-        motivo, 
-        observacoes,
-        'pendente' // Status inicial
-      ]);
+      const tableCheck = await pool.query(checkTableQuery);
+      const tableExists = tableCheck.rows[0].exists;
+      let result;
+      
+      if (tableExists) {
+        console.log('[Campinas] Inserindo na tabela específica campinas_tire_requests');
+        
+        // Se a tabela específica existir, inserimos nela
+        const specificInsertQuery = `
+          INSERT INTO campinas_tire_requests (
+            quantity, vehicle_plate, km_veiculo, tire_size, reason, 
+            comments, status, requester_id, requester_name, 
+            base_id, base_name, priority, created_at, updated_at
+          ) 
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
+          RETURNING *
+        `;
+        
+        result = await pool.query(specificInsertQuery, [
+          quantidade,
+          placa_veiculo.toUpperCase(),
+          km_veiculo,
+          medida,
+          motivo,
+          observacoes || null,
+          'pendente', // Status inicial
+          req.user ? req.user.id : null,
+          req.user ? req.user.name : 'Usuário',
+          base_id || 9,
+          'Base Campinas',
+          'média' // Prioridade padrão
+        ]);
+        
+        console.log('[Campinas] Solicitação cadastrada na tabela específica:', result.rows[0]);
+      } else {
+        console.log('[Campinas] Tabela específica não existe, inserindo na tabela genérica');
+        
+        // Se a tabela específica não existir, inserimos na tabela genérica
+        const insertQuery = `
+          INSERT INTO solicitacoes_pneus (
+            base_id, usuario_id, usuario_nome, quantidade, placa_veiculo, km_veiculo, 
+            medida, motivo, observacoes, status, data_solicitacao
+          ) 
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+          RETURNING *
+        `;
+        
+        result = await pool.query(insertQuery, [
+          base_id || 9, 
+          req.user ? req.user.id : null,
+          req.user ? req.user.name : 'Usuário',
+          quantidade,
+          placa_veiculo.toUpperCase(),
+          km_veiculo,
+          medida,
+          motivo,
+          observacoes || null,
+          'pendente' // Status inicial
+        ]);
+        
+        console.log('[Campinas] Solicitação cadastrada na tabela genérica:', result.rows[0]);
+      }
+      
+      // Independentemente de onde a solicitação foi salva, também inserimos no módulo central de pneus
+      try {
+        console.log('[Campinas] Tentando encaminhar solicitação para o módulo central de pneus');
+        
+        // Encaminhar a solicitação para o módulo central de pneus
+        const centralPneusQuery = `
+          INSERT INTO solicitacoes_pneus (
+            base_id, base_nome, usuario_id, usuario_nome, quantidade, 
+            placa_veiculo, km_veiculo, medida, motivo, observacoes, 
+            status, data_solicitacao, origem
+          ) 
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), $12)
+          RETURNING id
+        `;
+        
+        const centralResult = await pool.query(centralPneusQuery, [
+          base_id || 9,
+          'Base Campinas',
+          req.user ? req.user.id : null,
+          req.user ? req.user.name : 'Usuário',
+          quantidade,
+          placa_veiculo.toUpperCase(),
+          km_veiculo,
+          medida, 
+          motivo,
+          observacoes || null,
+          'pendente', // Status inicial
+          'campinas' // Origem da solicitação
+        ]);
+        
+        console.log('[Campinas] Solicitação encaminhada para módulo central de pneus com ID:', centralResult.rows[0].id);
+        
+        // Registrar no log de sincronização
+        const syncLogQuery = `
+          INSERT INTO sync_control (
+            tipo_item, item_id, item_id_origem, origem, destino, 
+            direcao, status, data_sincronizacao
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+        `;
+        
+        await pool.query(syncLogQuery, [
+          'solicitacao_pneu',
+          centralResult.rows[0].id,
+          result.rows[0].id,
+          'campinas',
+          'central',
+          'origem_para_central',
+          'concluido'
+        ]);
+        
+        console.log('[Campinas] Registro de sincronização criado com sucesso');
+      } catch (centralError) {
+        console.error('[Campinas] Erro ao encaminhar para módulo central:', centralError);
+        // Não falha a operação principal se o encaminhamento falhar
+      }
       
       res.json(result.rows[0]);
     } catch (error) {
-      console.error('Erro ao registrar solicitação de pneus:', error);
+      console.error('[Campinas] Erro ao registrar solicitação de pneus:', error);
       res.status(500).json({ error: 'Erro ao registrar solicitação de pneus' });
     }
   });

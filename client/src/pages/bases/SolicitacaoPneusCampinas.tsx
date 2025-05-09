@@ -41,10 +41,9 @@ interface TireRequest {
   usuario_id: number;
   usuario_nome: string;
   quantidade: number;
-  marca: string;
-  modelo: string;
+  placa_veiculo: string;
+  km_veiculo: number;
   medida: string;
-  tipo: string;
   motivo: string;
   observacoes: string | null;
   status: 'pendente' | 'aprovado' | 'negado' | 'concluido';
@@ -57,10 +56,9 @@ interface TireRequest {
 // Schema de validação para o formulário de solicitação de pneus
 const tireRequestSchema = z.object({
   quantidade: z.string().min(1, "Quantidade é obrigatória"),
-  marca: z.string().min(1, "Marca é obrigatória"),
-  modelo: z.string().min(1, "Modelo é obrigatório"),
+  placa_veiculo: z.string().min(1, "Placa do veículo é obrigatória"),
+  km_veiculo: z.string().min(1, "Quilometragem do veículo é obrigatória"),
   medida: z.string().min(1, "Medida é obrigatória"),
-  tipo: z.string().min(1, "Tipo é obrigatório"),
   motivo: z.string().min(5, "Motivo é obrigatório e deve ter pelo menos 5 caracteres"),
   observacoes: z.string().optional(),
 });
@@ -87,10 +85,9 @@ const SolicitacaoPneusCampinas: React.FC = () => {
     resolver: zodResolver(tireRequestSchema),
     defaultValues: {
       quantidade: "1",
-      marca: "",
-      modelo: "",
+      placa_veiculo: "",
+      km_veiculo: "",
       medida: "",
-      tipo: "",
       motivo: "",
       observacoes: "",
     },
@@ -102,10 +99,9 @@ const SolicitacaoPneusCampinas: React.FC = () => {
       const requestData = {
         base_id: CAMPINAS_BASE_ID,
         quantidade: parseInt(values.quantidade),
-        marca: values.marca,
-        modelo: values.modelo,
+        placa_veiculo: values.placa_veiculo.toUpperCase(),
+        km_veiculo: parseInt(values.km_veiculo),
         medida: values.medida,
-        tipo: values.tipo,
         motivo: values.motivo,
         observacoes: values.observacoes || null,
       };
@@ -182,7 +178,7 @@ const SolicitacaoPneusCampinas: React.FC = () => {
             Solicite pneus para a equipe de gestão de pneus.
           </p>
           <p className="text-gray-500 text-sm mt-1">
-            Informe detalhes como marca, modelo, medida e a justificativa para a solicitação.
+            Informe detalhes como placa e quilometragem do veículo, medida do pneu e a justificativa para a solicitação.
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -223,41 +219,33 @@ const SolicitacaoPneusCampinas: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="marca"
+                    name="placa_veiculo"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Marca</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione a marca" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Pirelli">Pirelli</SelectItem>
-                            <SelectItem value="Michelin">Michelin</SelectItem>
-                            <SelectItem value="Goodyear">Goodyear</SelectItem>
-                            <SelectItem value="Bridgestone">Bridgestone</SelectItem>
-                            <SelectItem value="Continental">Continental</SelectItem>
-                            <SelectItem value="Firestone">Firestone</SelectItem>
-                            <SelectItem value="Dunlop">Dunlop</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormLabel>Placa do Veículo</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Ex: ABC1234" 
+                            {...field} 
+                            onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <FormField
                     control={form.control}
-                    name="modelo"
+                    name="km_veiculo"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Modelo</FormLabel>
+                        <FormLabel>KM do Veículo</FormLabel>
                         <FormControl>
-                          <Input placeholder="Modelo do pneu" {...field} />
+                          <Input 
+                            type="number" 
+                            placeholder="Quilometragem atual" 
+                            {...field} 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -265,48 +253,19 @@ const SolicitacaoPneusCampinas: React.FC = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="medida"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Medida</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Ex: 275/80R22.5" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="tipo"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tipo</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione o tipo" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="direcional">Direcional</SelectItem>
-                            <SelectItem value="tracao">Tração</SelectItem>
-                            <SelectItem value="misto">Misto</SelectItem>
-                            <SelectItem value="liso">Liso</SelectItem>
-                            <SelectItem value="borrachudo">Borrachudo</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="medida"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Medida do Pneu</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: 275/80R22.5" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <FormField
                   control={form.control}
@@ -412,9 +371,9 @@ const SolicitacaoPneusCampinas: React.FC = () => {
                   <TableRow>
                     <TableHead className="w-[50px]">ID</TableHead>
                     <TableHead>Data</TableHead>
-                    <TableHead>Marca/Modelo</TableHead>
+                    <TableHead>Placa</TableHead>
+                    <TableHead>KM</TableHead>
                     <TableHead>Medida</TableHead>
-                    <TableHead>Tipo</TableHead>
                     <TableHead>Qtd</TableHead>
                     <TableHead>Solicitante</TableHead>
                     <TableHead>Status</TableHead>
@@ -428,12 +387,9 @@ const SolicitacaoPneusCampinas: React.FC = () => {
                       <TableCell>
                         {new Date(request.data_solicitacao).toLocaleDateString('pt-BR')}
                       </TableCell>
-                      <TableCell>
-                        <div className="font-medium">{request.marca}</div>
-                        <div className="text-sm text-gray-500">{request.modelo}</div>
-                      </TableCell>
+                      <TableCell className="uppercase font-medium">{request.placa_veiculo}</TableCell>
+                      <TableCell>{request.km_veiculo?.toLocaleString('pt-BR') || '-'}</TableCell>
                       <TableCell>{request.medida}</TableCell>
-                      <TableCell className="capitalize">{request.tipo}</TableCell>
                       <TableCell className="text-center">{request.quantidade}</TableCell>
                       <TableCell>{request.usuario_nome}</TableCell>
                       <TableCell>{formatStatus(request.status)}</TableCell>
