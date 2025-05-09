@@ -197,7 +197,7 @@ export default function MaintenancePage() {
   const { vehicles = [] } = useVehicles();
 
   // Carregar manutenções com base no filtro e na base do usuário
-  const { data: maintenances = [], isLoading } = useQuery<Maintenance[]>({
+  const { data: maintenances = [], isLoading, refetch: refetchMaintenances } = useQuery<Maintenance[]>({
     queryKey: ['/api/maintenance', { baseId: filterBaseId, status: activeTab !== 'all' ? activeTab : null }],
     queryFn: async () => {
       let url = '/api/maintenance';
@@ -223,7 +223,21 @@ export default function MaintenancePage() {
       const res = await fetch(url);
       return res.json();
     },
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: true, // Atualiza ao focar a janela
+    refetchInterval: 10000 // Atualiza a cada 10 segundos
+  });
+  
+  // Consulta específica para solicitações pendentes da Base Campinas
+  const { data: campinasRequests = [] } = useQuery<Maintenance[]>({
+    queryKey: ['/api/maintenance', { baseId: 2, status: 'pendente' }],
+    queryFn: async () => {
+      const url = '/api/maintenance?baseId=2&status=pendente';
+      console.log(`Buscando manutenções com os parâmetros: baseId=2&status=pendente`);
+      const res = await fetch(url);
+      return res.json();
+    },
+    refetchOnWindowFocus: true,
+    refetchInterval: 5000 // Atualiza a cada 5 segundos
   });
 
   // Mutation para criar manutenção
@@ -236,8 +250,13 @@ export default function MaintenancePage() {
       toast({
         title: 'Manutenção registrada com sucesso',
       });
+      // Invalidar todas as consultas relacionadas à manutenção para forçar a atualização dos dados
       queryClient.invalidateQueries({ queryKey: ['/api/maintenance'] });
       queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
+      
+      // Forçar atualizações específicas para o card de solicitações das bases
+      refetchMaintenances(); 
+      
       closeDialog();
     },
     onError: (error: Error) => {
@@ -481,17 +500,16 @@ export default function MaintenancePage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">
-                  {maintenances && Array.isArray(maintenances) 
-                    ? maintenances.filter(m => 
-                        m.status === 'pendente' && 
-                        m.requestBaseId === 2 // ID da Base Campinas
-                      ).length 
-                    : 0
-                  }
+                  {campinasRequests && Array.isArray(campinasRequests) ? campinasRequests.length : 0}
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
                   Novas solicitações da Base Campinas
                 </p>
+                {campinasRequests && campinasRequests.length > 0 && (
+                  <div className="mt-2 text-xs text-blue-600">
+                    Última solicitação: {formatDate(campinasRequests[0]?.entryDate)}
+                  </div>
+                )}
               </CardContent>
               <CardFooter className="pt-0">
                 <Button 
@@ -501,6 +519,7 @@ export default function MaintenancePage() {
                   onClick={() => {
                     setFilterBaseId(2); // Filtrar por Base Campinas
                     setActiveTab('pendente'); // Mostrar pendentes
+                    refetchMaintenances(); // Forçar atualização da lista de manutenções
                   }}
                 >
                   Ver solicitações
