@@ -140,7 +140,7 @@ const ManutencaoFrotaCampinas: React.FC = () => {
       const { apiRequest } = await import('../../lib/queryClient');
       
       // Chamada real para a API usando a base de Campinas (ID: 2)
-      const data = await apiRequest('/api/maintenance/base/2', 'GET');
+      const data = await apiRequest('GET', '/api/maintenance/base/2');
       console.log("Dados de manutenção da Base Campinas:", data);
       
       // Mapear os dados recebidos para o formato esperado pelo componente
@@ -220,14 +220,11 @@ const ManutencaoFrotaCampinas: React.FC = () => {
   // Função para buscar os veículos
   const fetchVehicles = async () => {
     try {
+      // Importar apiRequest para incluir o token JWT nos cabeçalhos
+      const { apiRequest } = await import('../../lib/queryClient');
+      
       // Realizar chamada real à API
-      const response = await fetch('/api/vehicles');
-      
-      if (!response.ok) {
-        throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
-      }
-      
-      const data = await response.json();
+      const data = await apiRequest('GET', '/api/vehicles');
       console.log("Veículos obtidos da API:", data);
       
       // Mapear para o formato esperado pelo componente
@@ -297,20 +294,11 @@ const ManutencaoFrotaCampinas: React.FC = () => {
         kmAtual: data.km // Adicionando o campo de quilometragem
       };
       
-      // Realizar chamada real à API
-      const response = await fetch('/api/maintenance', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(maintenanceData),
-      });
+      // Importar apiRequest para incluir o token JWT nos cabeçalhos
+      const { apiRequest } = await import('../../lib/queryClient');
       
-      if (!response.ok) {
-        throw new Error(`Erro na requisição: ${response.status} - ${response.statusText}`);
-      }
-      
-      const newMaintenance = await response.json();
+      // Realizar chamada real à API com autenticação
+      const newMaintenance = await apiRequest('POST', '/api/maintenance', maintenanceData);
       console.log("Resposta da API:", newMaintenance);
       
       // Formatar a resposta para o formato esperado pelo componente
