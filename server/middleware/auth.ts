@@ -54,21 +54,11 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
       // Verificar token com o serviço híbrido
       const verifyResult = await hybridService.verifyToken(token);
       
-      console.log('[isAuthenticated] Resultado da verificação do token híbrido:', verifyResult);
-      
-      // Verificar se o resultado é um objeto de usuário diretamente
-      if (verifyResult && typeof verifyResult === 'object') {
-        if (verifyResult.user) {
-          // Se retornou { user: {...} }
-          (req as any).hybridUser = verifyResult.user;
-          console.log(`[isAuthenticated] Token JWT híbrido validado para usuário: ${verifyResult.user.email || verifyResult.user.id}`);
-          return next();
-        } else if (verifyResult.id) {
-          // Se retornou o usuário diretamente
-          (req as any).hybridUser = verifyResult;
-          console.log(`[isAuthenticated] Token JWT híbrido validado para usuário: ${verifyResult.email || verifyResult.id}`);
-          return next();
-        }
+      if (verifyResult && verifyResult.user) {
+        // Usuário autenticado via JWT híbrido, anexá-lo à requisição
+        (req as any).hybridUser = verifyResult.user;
+        console.log(`[isAuthenticated] Token JWT híbrido validado para usuário: ${verifyResult.user.email}`);
+        return next();
       }
     } catch (hybridError) {
       console.error('[isAuthenticated] Erro ao verificar token JWT híbrido:', hybridError);

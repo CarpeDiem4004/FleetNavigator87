@@ -2,20 +2,10 @@
  * API para gerenciamento de pneus híbrida
  * Funciona tanto no ambiente Replit quanto externamente
  */
-import express from 'express';
-import { getHybridUserService } from './hybrid-user-service.js';
-import { createClient } from '@supabase/supabase-js';
-import { pool as PG_POOL } from './server/db.js';
-
-// Configuração do Supabase
-const supabaseUrl = process.env.SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-// Função para verificar o ambiente (Replit ou externo)
-function isEnvironmentSupabase() {
-  return process.env.ENVIRONMENT === 'external' || !process.env.DATABASE_URL;
-}
+const express = require('express');
+const { getHybridUserService } = require('./hybrid-user-service');
+const { PG_POOL, isEnvironmentSupabase } = require('./utils/db-connection');
+const { getSupabaseClient } = require('./utils/supabase-client');
 
 const router = express.Router();
 const userService = getHybridUserService();
@@ -62,14 +52,6 @@ function getDbConnection() {
   } else {
     return PG_POOL;
   }
-}
-
-/**
- * Função para obter a conexão direta com o PostgreSQL
- * Usada para sincronização com tabelas específicas
- */
-function getPgPool() {
-  return PG_POOL;
 }
 
 /**
@@ -453,125 +435,6 @@ router.get('/solicitacoes', authenticateMiddleware, async (req, res) => {
 });
 
 /**
- * Rota para atualizar o status de uma solicitação de pneus
- * PUT /api/hybrid/pneus/solicitacoes/:id
- */
-router.put('/solicitacoes/:id', authenticateMiddleware, async (req, res) => {
-  try {
-    const solicitacaoId = req.params.id;
-    const { status, observacoes } = req.body;
-    
-    if (!['pendente', 'aprovado', 'negado', 'concluido', 'em_processamento'].includes(status)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Status inválido. Valores aceitos: pendente, aprovado, negado, concluido, em_processamento' 
-      });
-    }
-    
-    const conn = getDbConnection();
-    let result;
-    
-    console.log(`[HybridPneusAPI] Atualizando status da solicitação ${solicitacaoId} para ${status}`);
-    
-    // Atualizar conforme o ambiente
-    if (isEnvironmentSupabase()) {
-      const { data, error } = await conn
-        .from('solicitacoes_pneus')
-        .update({
-          status: status,
-          observacoes: observacoes || null,
-          data_aprovacao: status === 'aprovado' ? new Date() : null,
-          aprovador_id: status === 'aprovado' ? req.user.id : null,
-          aprovador_nome: status === 'aprovado' ? req.user.name : null
-        })
-        .eq('id', solicitacaoId)
-        .select();
-        
-      if (error) throw error;
-      result = data[0];
-    } else {
-      const updateQuery = `
-        UPDATE solicitacoes_pneus
-        SET 
-          status = $1,
-          observacoes = COALESCE($2, observacoes),
-          data_aprovacao = $3,
-          aprovador_id = $4,
-          aprovador_nome = $5
-        WHERE id = $6
-        RETURNING *
-      `;
-      
-      const updateValues = [
-        status,
-        observacoes,
-        status === 'aprovado' ? new Date() : null,
-        status === 'aprovado' ? req.user.id : null,
-        status === 'aprovado' ? req.user.name : null,
-        solicitacaoId
-      ];
-      
-      const queryResult = await conn.query(updateQuery, updateValues);
-      result = queryResult.rows[0];
-    }
-    
-    if (!result) {
-      return res.status(404).json({
-        success: false,
-        message: 'Solicitação não encontrada'
-      });
-    }
-    
-    // Verificar se é uma solicitação originada da Base Campinas e sincronizar de volta
-    try {
-      if (result.origem === 'base_campinas' && result.id_origem) {
-        console.log(`[HybridPneusAPI] Sincronizando status com Base Campinas (ID origem: ${result.id_origem})`);
-        
-        // Tentar atualizar a tabela local tire_requests da base Campinas
-        const updateOriginQuery = `
-          UPDATE tire_requests 
-          SET 
-            status = $1,
-            observacoes = COALESCE($2, observacoes),
-            data_aprovacao = $3,
-            aprovador_id = $4
-          WHERE id = $5
-        `;
-        
-        const pgPool = getPgPool(); // Função que retorna a conexão direta com PostgreSQL
-        if (pgPool) {
-          await pgPool.query(updateOriginQuery, [
-            status,
-            observacoes,
-            status === 'aprovado' ? new Date() : null,
-            status === 'aprovado' ? req.user.id : null,
-            result.id_origem
-          ]);
-          
-          console.log(`[HybridPneusAPI] Sincronização com Base Campinas concluída (ID: ${result.id_origem})`);
-        }
-      }
-    } catch (syncError) {
-      console.error('[HybridPneusAPI] Erro ao sincronizar com Base Campinas:', syncError);
-      // Não falhar a operação principal se a sincronização falhar
-    }
-    
-    res.json({
-      success: true,
-      message: `Status da solicitação atualizado para ${status}`,
-      data: result
-    });
-  } catch (error) {
-    console.error('Erro ao atualizar solicitação de pneus:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Erro ao atualizar solicitação', 
-      error: error.message 
-    });
-  }
-});
-
-/**
  * Rota para obter histórico de movimentações de um pneu
  * GET /api/hybrid/pneus/:id/historico
  */
@@ -607,4 +470,4 @@ router.get('/:id/historico', authenticateMiddleware, async (req, res) => {
 });
 
 // Exportar o router para usar em server/index.js
-export default router;
+module.exports = router;

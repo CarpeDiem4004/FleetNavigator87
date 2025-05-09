@@ -19,12 +19,6 @@ import userApi from "./api/userApi";
 // Importar APIs híbridas (ambiente Replit e externo)
 import hybridUserApi from "../hybrid-user-api.js";
 import hybridBasesApi from "../hybrid-bases-api.js";
-// Importação dinâmica para hybridPneusApi (será carregado como variável global)
-let hybridPneusApi: any;
-// Carregamos assíncronamente mas usamos depois em um contexto onde já estará disponível
-import("../hybrid-pneus-api.js").then(module => {
-  hybridPneusApi = module.default || module;
-});
 // Importar middleware de CORS personalizado
 import { corsMiddleware } from "./middleware/cors";
 // Importar middleware para corrigir cookies de sessão
@@ -119,21 +113,6 @@ app.use((req, res, next) => {
   // Registrar os roteadores de API híbrida (funcionam dentro e fora do Replit)
   app.use(hybridUserApi);
   app.use(hybridBasesApi);
-  // Verificamos se hybridPneusApi foi carregado antes de usar
-  if (hybridPneusApi) {
-    app.use(hybridPneusApi);
-    console.log("[API] Híbrida de Pneus registrada com sucesso");
-  } else {
-    console.log("[API] Aguardando carregamento da API Híbrida de Pneus...");
-    // Podemos aguardar o carregamento com uma verificação periódica
-    const checkInterval = setInterval(() => {
-      if (hybridPneusApi) {
-        app.use(hybridPneusApi);
-        console.log("[API] Híbrida de Pneus registrada com sucesso");
-        clearInterval(checkInterval);
-      }
-    }, 1000); // verificar a cada segundo
-  }
   
   // Registrar rota de diagnóstico para verificar autenticação no módulo de frota
   app.use('/api/frota', frotaDiagnosticoRoute);

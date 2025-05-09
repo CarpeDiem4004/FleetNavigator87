@@ -6313,7 +6313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Rotas para solicitações de pneus da base Campinas
-  app.get("/api/bases/campinas/solicitacao-pneus", isAuthenticated, async (req, res) => {
+  app.get("/api/bases/campinas/solicitacao-pneus", async (req, res) => {
     try {
       const query = `
         SELECT 
@@ -6356,16 +6356,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/bases/campinas/solicitacao-pneus", isAuthenticated, async (req, res) => {
+  app.post("/api/bases/campinas/solicitacao-pneus", async (req, res) => {
     try {
       const { 
-        quantidade, marca, modelo, medida, tipo, motivo, observacoes
+        base_id, quantidade, marca, modelo, medida, tipo, motivo, observacoes
       } = req.body;
       
-      // ID fixo para a Base Campinas conforme usado nas consultas
-      const base_id = 9;
-      
-      // 1. Inserir na tabela local de tire_requests
       const insertQuery = `
         INSERT INTO tire_requests (
           base_id, usuario_id, quantidade, marca, modelo, medida, tipo, 
@@ -6375,13 +6371,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         RETURNING *
       `;
       
-      // Obter o usuário da requisição - pode estar em req.user (sessão) ou req.hybridUser (token JWT)
-      const usuario = req.user || (req as any).hybridUser;
-      console.log("[SolicitacaoPneus] Usuário na requisição:", usuario);
-      
       const result = await pool.query(insertQuery, [
         base_id, 
-        usuario ? usuario.id : null,
+        req.user ? req.user.id : null,
         quantidade, 
         marca, 
         modelo, 
@@ -6392,83 +6384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'pendente' // Status inicial
       ]);
       
-      const localRequest = result.rows[0];
-      
-      // 2. Sincronizar com o sistema central de pneus - através da tabela principal solicitacoes_pneus
-      try {
-        console.log('[SolicitacaoPneus] Sincronizando solicitação de Base Campinas com módulo central de pneus:', localRequest.id);
-        
-        // Mapear os dados para o formato do sistema central (somente campos existentes)
-        const centralRequestData = {
-          base_id: base_id,
-          base_nome: 'Base Campinas', // Poderia ser obtido de um lookup, mas sabemos que é a base Campinas
-          usuario_id: usuario ? usuario.id : null,
-          usuario_nome: usuario ? usuario.name : 'Usuário Base Campinas',
-          marca: marca,
-          modelo: modelo,
-          medida: medida,
-          tipo: tipo,
-          quantidade: quantidade,
-          motivo: motivo,
-          status: 'pendente',
-          data_solicitacao: new Date(),
-          observacoes: observacoes
-          // Colunas origem e id_origem foram removidas pois não existem na tabela central
-        };
-        
-        // Inserir na tabela central (removido campos inexistentes)
-        const centralInsertQuery = `
-          INSERT INTO solicitacoes_pneus (
-            base_id, base_nome, usuario_id, usuario_nome, marca, 
-            modelo, medida, tipo, quantidade, motivo,
-            status, data_solicitacao, observacoes
-          ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
-          ) RETURNING *
-        `;
-        
-        const centralResult = await pool.query(centralInsertQuery, [
-          centralRequestData.base_id,
-          centralRequestData.base_nome,
-          centralRequestData.usuario_id,
-          centralRequestData.usuario_nome,
-          centralRequestData.marca,
-          centralRequestData.modelo,
-          centralRequestData.medida,
-          centralRequestData.tipo,
-          centralRequestData.quantidade,
-          centralRequestData.motivo,
-          centralRequestData.status,
-          centralRequestData.data_solicitacao,
-          centralRequestData.observacoes
-        ]);
-        
-        console.log('[SolicitacaoPneus] Sincronização com módulo central concluída:', centralResult.rows[0].id);
-        
-        // Atualizar o registro local com a referência do registro central
-        await pool.query(
-          `UPDATE tire_requests SET id_central = $1 WHERE id = $2`,
-          [centralResult.rows[0].id, localRequest.id]
-        );
-        
-        // Adicionar à tabela de sincronização se existir
-        try {
-          await pool.query(
-            `INSERT INTO sync_control (tipo_item, item_id, destino_id, direcao, status)
-             VALUES ('solicitacao_pneu', $1, $2, 'local_para_central', 'concluido')`,
-            [localRequest.id, centralResult.rows[0].id]
-          );
-        } catch (syncError) {
-          console.log('[SolicitacaoPneus] Aviso: tabela de controle de sincronização pode não existir:', syncError.message);
-          // Não falhar se a tabela de sincronização não existir
-        }
-      } catch (syncError) {
-        console.error('[SolicitacaoPneus] Erro ao sincronizar com módulo central:', syncError);
-        // Não falhar a requisição principal se a sincronização falhar
-        // Podemos implementar uma rotina de retry posteriormente
-      }
-      
-      res.json(localRequest);
+      res.json(result.rows[0]);
     } catch (error) {
       console.error('Erro ao registrar solicitação de pneus:', error);
       res.status(500).json({ error: 'Erro ao registrar solicitação de pneus' });
@@ -6476,7 +6392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Rota para aprovar/rejeitar solicitação de pneus
-  app.put("/api/bases/campinas/solicitacao-pneus/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/bases/campinas/solicitacao-pneus/:id", async (req, res) => {
     try {
       const id = req.params.id;
       const { status, observacoes } = req.body;
@@ -6485,21 +6401,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Status inválido' });
       }
       
-      // 1. Recuperar a solicitação antes de atualizar para verificar o ID central
-      const getRequestQuery = `
-        SELECT id, id_central FROM tire_requests WHERE id = $1
-      `;
-      
-      const requestResult = await pool.query(getRequestQuery, [id]);
-      
-      if (requestResult.rowCount === 0) {
-        return res.status(404).json({ error: 'Solicitação não encontrada' });
-      }
-      
-      const requestData = requestResult.rows[0];
-      const centralId = requestData.id_central;
-      
-      // 2. Atualizar na tabela local
       const updateQuery = `
         UPDATE tire_requests 
         SET 
@@ -6511,69 +6412,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         RETURNING *
       `;
       
-      // Obter o usuário da requisição - pode estar em req.user (sessão) ou req.hybridUser (token JWT)
-      const usuario = req.user || (req as any).hybridUser;
-      console.log("[SolicitacaoPneus] Usuário na requisição de atualização:", usuario);
-      
       const result = await pool.query(updateQuery, [
         status, 
         observacoes, 
-        usuario ? usuario.id : null,
+        req.user ? req.user.id : null,
         id
       ]);
       
-      const updatedRequest = result.rows[0];
-      
-      // 3. Sincronizar com o sistema central se tiver ID central
-      if (centralId) {
-        try {
-          console.log(`[SolicitacaoPneus] Sincronizando atualização de status para central (ID local: ${id}, ID central: ${centralId})`);
-          
-          const updateCentralQuery = `
-            UPDATE solicitacoes_pneus
-            SET 
-              status = $1,
-              observacoes = COALESCE($2, observacoes),
-              data_aprovacao = NOW(),
-              aprovador_id = $3,
-              aprovador_nome = $4
-            WHERE id = $5
-          `;
-          
-          await pool.query(updateCentralQuery, [
-            status,
-            observacoes,
-            usuario ? usuario.id : null,
-            usuario ? usuario.name : 'Administrador',
-            centralId
-          ]);
-          
-          console.log(`[SolicitacaoPneus] Atualização de status sincronizada com central (ID: ${centralId})`);
-          
-          // Registrar na tabela de sincronização, se existir
-          try {
-            await pool.query(
-              `INSERT INTO sync_control (tipo_item, item_id, destino_id, direcao, status, operacao)
-               VALUES ('solicitacao_pneu_status', $1, $2, 'local_para_central', 'concluido', 'update')
-               ON CONFLICT (tipo_item, item_id, operacao)
-               DO UPDATE SET 
-                 status = 'concluido',
-                 updated_at = NOW()`,
-              [id, centralId]
-            );
-          } catch (syncError) {
-            console.log('[SolicitacaoPneus] Aviso: Erro ao registrar na tabela de sincronização:', syncError.message);
-            // Não falhar se a tabela de sincronização não existir
-          }
-        } catch (syncError) {
-          console.error('[SolicitacaoPneus] Erro ao sincronizar atualização de status com central:', syncError);
-          // Não falhar a requisição principal se a sincronização falhar
-        }
-      } else {
-        console.log(`[SolicitacaoPneus] Solicitação sem ID central, não é possível sincronizar (ID local: ${id})`);
+      if (result.rowCount === 0) {
+        return res.status(404).json({ error: 'Solicitação não encontrada' });
       }
       
-      res.json(updatedRequest);
+      res.json(result.rows[0]);
     } catch (error) {
       console.error('Erro ao atualizar solicitação de pneus:', error);
       res.status(500).json({ error: 'Erro ao atualizar solicitação de pneus' });
@@ -6679,16 +6529,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         RETURNING *;
       `;
       
-      // Obter o usuário da requisição - pode estar em req.user (sessão) ou req.hybridUser (token JWT)
-      const usuario = req.user || (req as any).hybridUser;
-      console.log("[SolicitacaoOrcamento] Usuário na requisição:", usuario);
-      
       const values = [
         title,
         description,
         priority,
-        usuario?.id || 0,
-        usuario?.name || 'Usuário',
+        req.user?.id || 0,
+        req.user?.name || 'Usuário',
         estimated_value,
         department,
         budget_file_url || null,
@@ -6769,12 +6615,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Se estiver aprovando, adicionar quem aprovou e quando
         if (status === 'aprovado') {
-          // Obter o usuário da requisição - pode estar em req.user (sessão) ou req.hybridUser (token JWT)
-          const usuario = req.user || (req as any).hybridUser;
-          console.log("[SolicitacaoOrcamento] Usuário na aprovação:", usuario);
-          
           updateFields.push(`approved_by = $${paramCount}`);
-          values.push(usuario?.name || 'Administrador');
+          values.push(req.user?.name || 'Administrador');
           paramCount++;
           
           updateFields.push(`approved_at = $${paramCount}`);
@@ -6929,13 +6771,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const publicUrl = urlData.publicUrl;
       
-      // Obter o usuário da requisição - pode estar em req.user (sessão) ou req.hybridUser (token JWT)
-      const usuario = req.user || (req as any).hybridUser;
-      console.log("[Anexos] Usuário na requisição de migração:", usuario);
-      
       // Obter informações do usuário que está fazendo a migração
-      const uploader_id = usuario?.id || null;
-      const uploader_name = usuario?.name || null;
+      const uploader_id = req.user?.id || null;
+      const uploader_name = req.user?.name || null;
       
       // Registrar o anexo permanente no banco de dados
       const insertQuery = `
@@ -7030,13 +6868,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Dados incompletos para registrar anexo' });
       }
       
-      // Obter o usuário da requisição - pode estar em req.user (sessão) ou req.hybridUser (token JWT)
-      const usuario = req.user || (req as any).hybridUser;
-      console.log("[Anexos] Usuário na requisição de registro:", usuario);
-      
       // Obter informações do usuário que está fazendo upload
-      const uploader_id = usuario?.id || null;
-      const uploader_name = usuario?.name || null;
+      const uploader_id = req.user?.id || null;
+      const uploader_name = req.user?.name || null;
       
       const insertQuery = `
         INSERT INTO budget_attachments (

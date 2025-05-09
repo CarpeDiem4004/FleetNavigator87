@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
@@ -72,83 +72,13 @@ const SolicitacaoPneusCampinas: React.FC = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  // Verificar autenticação ao carregar a página
-  useEffect(() => {
-    // Verificamos se tem um token de autenticação no localStorage
-    const authToken = localStorage.getItem('authToken');
-    
-    if (!authToken) {
-      console.error("Token de autenticação não encontrado no localStorage");
-      toast({
-        title: "Acesso negado",
-        description: "Você precisa estar autenticado para acessar esta página. Redirecionando para login...",
-        variant: "destructive",
-      });
-      
-      // Adicionar pequeno atraso para exibir a mensagem antes de redirecionar
-      setTimeout(() => {
-        navigate('/login');
-      }, 1500);
-      return;
-    }
-    
-    // Verificamos se o token é válido usando apiRequest (que adiciona o token automaticamente)
-    const verifyToken = async () => {
-      try {
-        console.log("Verificando token JWT através do apiRequest...");
-        const response = await apiRequest('GET', '/api/hybrid/auth/verify');
-        
-        // Se chegou aqui, o token é válido (apiRequest lança erro em caso de 401)
-        console.log("Token JWT verificado com sucesso via apiRequest");
-        
-        // Log do conteúdo para depuração
-        const verifyResult = await response.json();
-        console.log("Resposta da verificação:", verifyResult);
-        
-      } catch (error) {
-        console.error("Erro ao verificar token via apiRequest:", error);
-        
-        // Se o erro for de autenticação (401), redirecionar para login
-        if (error instanceof Error && error.message.includes('401')) {
-          console.error("Token inválido ou expirado");
-          // Remove o token inválido
-          localStorage.removeItem('authToken');
-          
-          toast({
-            title: "Sessão expirada",
-            description: "Sua sessão expirou. Redirecionando para login...",
-            variant: "destructive",
-          });
-          
-          // Adicionar pequeno atraso para exibir a mensagem antes de redirecionar
-          setTimeout(() => {
-            navigate('/login');
-          }, 1500);
-        }
-      }
-    };
-    
-    verifyToken();
-  }, [navigate, toast]);
 
-  // Consulta usando cliente de API com JWT
-  
   // Consulta para obter as solicitações de pneus
   const { data: tireRequests, isLoading, error } = useQuery({
     queryKey: ['/api/bases/campinas/solicitacao-pneus'],
     queryFn: async () => {
-      try {
-        // Usar apiRequest para garantir que o token JWT seja incluído automaticamente
-        console.log("Enviando requisição para /api/bases/campinas/solicitacao-pneus");
-        
-        const response = await apiRequest('GET', '/api/bases/campinas/solicitacao-pneus');
-        const data = await response.json();
-        return data as TireRequest[];
-      } catch (err) {
-        console.error("Erro ao buscar solicitações de pneus:", err);
-        throw err;
-      }
+      const response = await apiRequest<TireRequest[]>('/api/bases/campinas/solicitacao-pneus');
+      return response;
     },
   });
 
@@ -179,14 +109,13 @@ const SolicitacaoPneusCampinas: React.FC = () => {
         motivo: values.motivo,
         observacoes: values.observacoes || null,
       };
-      
-      console.log("Enviando POST para /api/bases/campinas/solicitacao-pneus");
-      
-      // Usar apiRequest para garantir que o token JWT seja incluído automaticamente
-      const response = await apiRequest('POST', '/api/bases/campinas/solicitacao-pneus', requestData);
-      
-      // Retornar a resposta convertida para JSON
-      return await response.json();
+
+      const response = await apiRequest('/api/bases/campinas/solicitacao-pneus', {
+        method: 'POST',
+        body: JSON.stringify(requestData),
+      });
+
+      return response;
     },
     onSuccess: () => {
       toast({
