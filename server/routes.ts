@@ -5220,7 +5220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             priority: "normal",
             maintenanceType: "preventiva",
             workshopId: req.user.oficina_id,
-            requestBaseId: vehicle.base_id || 1, // Usar a base do veículo ou uma padrão
+            requestBaseId: vehicle.baseId || 1, // Usar a base do veículo ou uma padrão
             estimatedCompletion: new Date(Date.now() + (parseInt(req.body.prazoEstimado) || 5) * 24 * 60 * 60 * 1000).toISOString()
           };
           

@@ -467,8 +467,8 @@ export class DatabaseStorage implements IStorage {
     try {
       // Usar SQL bruto para evitar problemas com mapeamento de campos
       const result = await db.execute(sql`
-        SELECT id, plate, model, vehicle_type as "vehicleType", 
-               status, base_id as "baseId", ownership,
+        SELECT id, plate, model, vehicletype as "vehicleType", 
+               status, baseid as "baseId", ownership,
                rental_company as "rentalCompany"
         FROM veiculos
         WHERE plate = ${plate}
@@ -501,8 +501,8 @@ export class DatabaseStorage implements IStorage {
     try {
       // Usar SQL bruto para evitar problemas com mapeamento de campos
       const result = await db.execute(sql`
-        SELECT id, plate, model, vehicle_type as "vehicleType", 
-               status, base_id as "baseId", ownership,
+        SELECT id, plate, model, vehicletype as "vehicleType", 
+               status, baseid as "baseId", ownership,
                rental_company as "rentalCompany"
         FROM veiculos
       `);
