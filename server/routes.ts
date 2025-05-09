@@ -3193,6 +3193,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Erro ao buscar manutenções da base" });
     }
   });
+
+  // Rota para atualizar o status de uma manutenção para uma base específica
+  app.patch("/api/maintenance/base/:baseId/:id/status", hasMaintenanceAccess, async (req, res) => {
+    try {
+      // Verificar autenticação
+      if (!req.user) {
+        return res.status(401).json({ message: "Usuário não autenticado" });
+      }
+      
+      const baseId = parseInt(req.params.baseId);
+      const maintenanceId = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      if (isNaN(baseId) || isNaN(maintenanceId)) {
+        return res.status(400).json({ message: "IDs inválidos" });
+      }
+      
+      if (!status) {
+        return res.status(400).json({ message: "Status não fornecido" });
+      }
+      
+      console.log(`Atualizando status da manutenção ${maintenanceId} da base ${baseId} para ${status}`);
+      
+      // Verificar se o usuário tem permissão para atualizar esta manutenção
+      // Admins ou usuários da mesma base podem atualizar
+      if (req.user.role !== 'admin' && req.user.baseId !== baseId) {
+        return res.status(403).json({ 
+          message: "Acesso negado. Você só pode atualizar manutenções da sua própria base."
+        });
+      }
+      
+      // Verificar se a manutenção existe e pertence à base especificada
+      const checkQuery = `
+        SELECT * FROM manutencao 
+        WHERE id = $1 AND request_base_id = $2
+      `;
+      
+      const checkResult = await pool.query(checkQuery, [maintenanceId, baseId]);
+      
+      if (!checkResult.rowCount || checkResult.rowCount === 0) {
+        return res.status(404).json({ 
+          message: "Manutenção não encontrada ou não pertence à base especificada" 
+        });
+      }
+      
+      // Atualizar o status da manutenção
+      const updateQuery = `
+        UPDATE manutencao 
+        SET status = $1, updated_at = CURRENT_TIMESTAMP 
+        WHERE id = $2 AND request_base_id = $3
+        RETURNING *
+      `;
+      
+      const result = await pool.query(updateQuery, [status, maintenanceId, baseId]);
+      
+      if (result.rowCount === 0) {
+        return res.status(500).json({ message: "Falha ao atualizar o status da manutenção" });
+      }
+      
+      // Registrar a atualização no histórico de manutenção, se existir a tabela
+      try {
+        const historyQuery = `
+          INSERT INTO maintenance_lifecycle 
+          (maintenance_id, status, user_id, created_at)
+          VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+        `;
+        await pool.query(historyQuery, [maintenanceId, status, req.user.id]);
+        console.log(`Histórico de status registrado para manutenção ${maintenanceId}`);
+      } catch (historyError) {
+        // Registrar erro mas continuar com o fluxo
+        console.error("Erro ao registrar histórico de status (não crítico):", historyError);
+      }
+      
+      return res.status(200).json({
+        message: "Status atualizado com sucesso",
+        maintenance: {
+          id: result.rows[0].id,
+          status: result.rows[0].status,
+          updatedAt: result.rows[0].updated_at
+        }
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar status da manutenção:", error);
+      return res.status(500).json({ message: "Erro ao atualizar status da manutenção" });
+    }
+  });
   
   app.get("/api/maintenance/:id", hasMaintenanceAccess, async (req, res) => {
     try {

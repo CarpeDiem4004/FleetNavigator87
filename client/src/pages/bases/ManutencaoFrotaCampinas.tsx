@@ -132,6 +132,38 @@ const ManutencaoFrotaCampinas: React.FC = () => {
     fetchVehicles();
   }, []);
 
+  // Função para atualizar o status de uma solicitação
+  const updateRequestStatus = async (requestId: number, newStatus: string) => {
+    try {
+      // Importar apiRequest para incluir o token JWT nos cabeçalhos
+      const { apiRequest } = await import('../../lib/queryClient');
+      
+      // Chamada para a API para atualizar o status (usando a rota específica da base Campinas ID=2)
+      await apiRequest('PATCH', `/api/maintenance/base/2/${requestId}/status`, { status: newStatus });
+      
+      // Atualizar o estado localmente para refletir a mudança
+      setRequests(requests.map(req => 
+        req.id === requestId 
+          ? { ...req, status: newStatus, updatedAt: new Date().toISOString() } 
+          : req
+      ));
+      
+      toast({
+        title: "Status atualizado",
+        description: "O status da solicitação foi atualizado com sucesso.",
+        variant: "default"
+      });
+      
+    } catch (error) {
+      console.error("Erro ao atualizar status:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o status da solicitação.",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Função para buscar as solicitações de manutenção
   const fetchMaintenanceRequests = async () => {
     setIsLoading(true);
@@ -434,40 +466,7 @@ const ManutencaoFrotaCampinas: React.FC = () => {
         return <Badge variant="outline">{type}</Badge>;
     }
   };
-  
-  // Função para atualizar o status de uma solicitação
-  const updateRequestStatus = async (requestId: number, newStatus: string) => {
-    try {
-      setIsLoading(true);
-      
-      // Importar apiRequest para incluir o token JWT nos cabeçalhos
-      const { apiRequest } = await import('../../lib/queryClient');
-      
-      // Chamada à API para atualizar o status
-      await apiRequest('PATCH', `/api/maintenance/${requestId}/status`, { status: newStatus });
-      
-      // Atualizar o estado local
-      setRequests(requests.map(req => 
-        req.id === requestId ? { ...req, status: newStatus } : req
-      ));
-      
-      toast({
-        title: "Status atualizado",
-        description: "O status da solicitação foi atualizado com sucesso.",
-        variant: "default"
-      });
-    } catch (error) {
-      console.error("Erro ao atualizar status:", error);
-      
-      toast({
-        title: "Erro",
-        description: "Não foi possível atualizar o status da solicitação.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
 
   // Obter o tipo de veículo em texto
   const getVehicleTypeText = (type?: string) => {
