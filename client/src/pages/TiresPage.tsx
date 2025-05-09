@@ -1056,6 +1056,18 @@ const TiresPage: React.FC = () => {
                                     <span className="text-gray-500 w-24">Data:</span> 
                                     <span className="font-medium">{formatDate(request.data_solicitacao)}</span>
                                   </div>
+                                  {request.placa_veiculo && (
+                                    <div className="flex items-center">
+                                      <span className="text-gray-500 w-24">Veículo:</span> 
+                                      <span className="font-medium">{request.placa_veiculo}</span>
+                                    </div>
+                                  )}
+                                  {request.km_veiculo && (
+                                    <div className="flex items-center">
+                                      <span className="text-gray-500 w-24">Hodômetro:</span> 
+                                      <span className="font-medium">{request.km_veiculo?.toLocaleString('pt-BR')} km</span>
+                                    </div>
+                                  )}
                                 </div>
                                 
                                 <div className="text-sm mb-3 p-2 bg-gray-50 rounded">

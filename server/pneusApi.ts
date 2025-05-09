@@ -376,11 +376,13 @@ export function registerPneusRoutes(app: Express) {
           base_id, base_nome, usuario_id, usuario_nome, marca, 
           modelo, medida, tipo, quantidade, motivo,
           status, data_solicitacao, observacoes,
+          placa_veiculo, km_veiculo,
           created_at, updated_at
         ) VALUES (
           $1, $2, $3, $4, $5, 
           $6, $7, $8, $9, $10,
           $11, $12, $13,
+          $14, $15,
           NOW(), NOW()
         ) RETURNING *
       `;
@@ -398,7 +400,9 @@ export function registerPneusRoutes(app: Express) {
         novaSolicitacao.motivo,
         'pendente',
         new Date(),
-        novaSolicitacao.observacoes || null
+        novaSolicitacao.observacoes || null,
+        novaSolicitacao.placa_veiculo || null,
+        novaSolicitacao.km_veiculo || null
       ];
       
       const result = await pool.query(query, values);
