@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from '@/hooks/use-auth';
+import { VehiclePlateAutocomplete } from "@/components/vehicle-plate-autocomplete";
 import { 
   Loader2, 
   FileText, 
@@ -583,19 +584,14 @@ const ManutencaoFrotaCampinas: React.FC = () => {
                   control={form.control}
                   name="vehiclePlate"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Placa do Veículo</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Digite a placa do veículo (AAA0A00)"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-muted-foreground text-xs">
-                        Digite a placa completa do veículo
-                      </FormMessage>
-                      <FormMessage />
-                    </FormItem>
+                    <VehiclePlateAutocomplete
+                      form={form}
+                      name="vehiclePlate"
+                      label="Placa do Veículo"
+                      helpText="Digite ou selecione a placa do veículo"
+                      placeholder="Selecione ou digite a placa do veículo"
+                      vehicles={vehicles}
+                    />
                   )}
                 />
                 
