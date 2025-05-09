@@ -174,6 +174,7 @@ export const maintenance = pgTable("manutencao", {
   costApprovalDate: timestamp("cost_approval_date"),
   description: text("description").notNull(),
   responsiblePerson: text("responsible_person"),  // Campo para quem está cuidando da manutenção
+  kmAtual: text("km_atual"),  // Quilometragem atual do veículo no momento da manutenção
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
