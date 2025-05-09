@@ -315,18 +315,36 @@ const ManutencaoFrotaCampinas: React.FC = () => {
       // Preparar dados para envio à API central
       const vehicle = vehicles.find(v => v.plate === vehiclePlate);
       
+      // Garantir que todos os campos obrigatórios estejam presentes
+      // e no formato correto esperado pelo schema de validação
       const maintenanceData = {
         vehiclePlate: vehiclePlate,
         description: data.description,
-        maintenanceType: data.maintenanceType,
-        status: "pendente",
+        maintenanceType: data.maintenanceType as "preventiva" | "corretiva", // Usar tipagem correta para o enum
+        status: "pendente" as "pendente", // Usar tipagem correta para o enum
         priority: data.priority,
         requestBaseId: 2, // Base Campinas
         workshopId: 1, // Oficina padrão
-        entryDate: new Date().toISOString().split('T')[0], // Data atual
+        
+        // Campos de data obrigatórios
+        entryDate: new Date().toISOString().split('T')[0], // Data atual - campo obrigatório
         expectedExitDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 dias após a data atual
+        
+        // Campos opcionais
+        maintenanceStartDate: null, // Pode ficar nulo inicialmente
+        actualExitDate: null, // Pode ficar nulo inicialmente
         responsiblePerson: "Técnico responsável",
-        kmAtual: data.km // Adicionando o campo de quilometragem
+        kmAtual: data.km, // Hodômetro atual
+        
+        // Zerando os custos iniciais
+        initialCost: null,
+        finalCost: null,
+        
+        // Informações de retirada do veículo - podem ficar nulas inicialmente
+        vehiclePickupDate: null,
+        pickupPersonName: null,
+        pickupPersonCPF: null,
+        pickupComments: null
       };
       
       // Importar apiRequest para incluir o token JWT nos cabeçalhos
