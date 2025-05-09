@@ -6359,8 +6359,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/bases/campinas/solicitacao-pneus", isAuthenticated, async (req, res) => {
     try {
       const { 
-        base_id, quantidade, marca, modelo, medida, tipo, motivo, observacoes
+        quantidade, marca, modelo, medida, tipo, motivo, observacoes
       } = req.body;
+      
+      // ID fixo para a Base Campinas conforme usado nas consultas
+      const base_id = 9;
       
       // 1. Inserir na tabela local de tire_requests
       const insertQuery = `
