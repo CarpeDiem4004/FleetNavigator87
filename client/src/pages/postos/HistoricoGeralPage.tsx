@@ -11,7 +11,8 @@ interface Abastecimento {
   placa: string;
   km_atual: number;
   tipo_combustivel: string;
-  litros: number;
+  litros?: number;
+  quantidade_litros?: number; // Campo adicionado para compatibilidade com postos_v2
   preco_litro?: number;
   valor_total?: number;
   nome_motorista: string;
@@ -332,7 +333,7 @@ const HistoricoGeralPage: React.FC = () => {
 
   // Cálculos para os mostradores
   const calcularConsolidado = () => {
-    const totalLitros = filteredData.reduce((sum, item) => sum + (item.litros || 0), 0);
+    const totalLitros = filteredData.reduce((sum, item) => sum + (item.quantidade_litros || item.litros || 0), 0);
     const totalValor = filteredData.reduce((sum, item) => sum + (item.valor_total || 0), 0);
     
     // Contar postos distintos
@@ -363,11 +364,11 @@ const HistoricoGeralPage: React.FC = () => {
     const abastecimentosAlcool = filteredData.filter(item => ehTipoCombustivel(item, alcoolVariations));
     const abastecimentosArla = filteredData.filter(item => ehTipoCombustivel(item, arlaVariations));
     
-    // Somas totais de litros
-    const litrosDiesel = abastecimentosDiesel.reduce((sum, item) => sum + (item.litros || 0), 0);
-    const litrosGasolina = abastecimentosGasolina.reduce((sum, item) => sum + (item.litros || 0), 0);
-    const litrosAlcool = abastecimentosAlcool.reduce((sum, item) => sum + (item.litros || 0), 0);
-    const litrosArla = abastecimentosArla.reduce((sum, item) => sum + (item.litros || 0), 0);
+    // Somas totais de litros (considerando quantidade_litros ou litros, conforme disponível)
+    const litrosDiesel = abastecimentosDiesel.reduce((sum, item) => sum + (item.quantidade_litros || item.litros || 0), 0);
+    const litrosGasolina = abastecimentosGasolina.reduce((sum, item) => sum + (item.quantidade_litros || item.litros || 0), 0);
+    const litrosAlcool = abastecimentosAlcool.reduce((sum, item) => sum + (item.quantidade_litros || item.litros || 0), 0);
+    const litrosArla = abastecimentosArla.reduce((sum, item) => sum + (item.quantidade_litros || item.litros || 0), 0);
       
     // Valores por tipo de combustível  
     const valorDiesel = abastecimentosDiesel.reduce((sum, item) => sum + (item.valor_total || 0), 0);
@@ -384,7 +385,7 @@ const HistoricoGeralPage: React.FC = () => {
     // Calcular consumo por tipo de combustível
     const consumoPorTipo = filteredData.reduce((acc, item) => {
       const tipo = item.tipo_combustivel || 'Não especificado';
-      acc[tipo] = (acc[tipo] || 0) + (item.litros || 0);
+      acc[tipo] = (acc[tipo] || 0) + (item.quantidade_litros || item.litros || 0);
       return acc;
     }, {} as Record<string, number>);
     
@@ -697,7 +698,7 @@ const HistoricoGeralPage: React.FC = () => {
                       <td className="py-3 px-4 font-medium">{abast.placa}</td>
                       <td className="py-3 px-4">{formatarNumero(abast.km_atual)}</td>
                       <td className="py-3 px-4">{abast.tipo_combustivel}</td>
-                      <td className="py-3 px-4">{formatarNumero(abast.litros)}</td>
+                      <td className="py-3 px-4">{formatarNumero(abast.quantidade_litros || abast.litros || 0)}</td>
                       <td className="py-3 px-4">{abast.project || '-'}</td>
                       <td className="py-3 px-4">{abast.nome_motorista}</td>
                       <td className="py-3 px-4">{abast.valor_total ? formatarPreco(abast.valor_total) : '-'}</td>
