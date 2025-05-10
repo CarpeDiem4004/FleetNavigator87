@@ -81,22 +81,25 @@ const HistoricoConsolidadoView: React.FC = () => {
     try {
       // Adicionar timestamp para evitar cache
       const timestamp = new Date().getTime();
-      const response = await apiRequest(`/api/historico/historico-consolidado?t=${timestamp}`);
+      const response = await apiRequest('GET', `/api/historico/historico-consolidado?t=${timestamp}`);
       
-      console.log('Resposta do histórico consolidado:', response);
+      // Converter a resposta para JSON
+      const jsonData = await response.json();
+      console.log('Resposta do histórico consolidado:', jsonData);
       
-      if (response && response.success) {
-        const dados = response.data || [];
+      if (jsonData && jsonData.success === true) {
+        const dados = jsonData.data || [];
         setHistorico(dados);
         
         // Extrair lista única de postos
-        const listaPosto = [...new Set(dados.map((item: HistoricoAbastecimentoGlobal) => item.nome_posto))];
-        setPostos(listaPosto.sort());
+        const listaPostos = Array.from(new Set(dados.map((item: HistoricoAbastecimentoGlobal) => item.nome_posto)));
+        setPostos(listaPostos.sort());
         
         setLastRefreshTime(new Date());
       } else {
-        setError(response.data?.error || 'Erro ao carregar o histórico consolidado');
-        console.error('Erro na resposta:', response.data);
+        const errorMsg = jsonData?.error || 'Erro ao carregar o histórico consolidado';
+        setError(errorMsg);
+        console.error('Erro na resposta:', jsonData);
       }
     } catch (err: any) {
       console.error('Erro ao carregar histórico consolidado:', err);
