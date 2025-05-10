@@ -33,7 +33,7 @@ function createSupabaseClient(): SupabaseClient {
 // Tabelas que esperamos encontrar no Supabase
 export const expectedTables = [
   'status_tanques',
-  'abastecimentos_postos',
+  'abastecimentos',
   'recebimentos_combustivel',
   'controle_patio'
 ];
