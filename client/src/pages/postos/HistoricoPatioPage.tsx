@@ -13,6 +13,9 @@ interface MovimentacaoPatio {
   observacoes: string;
   posto: string;
   created_at: string;
+  nome_motorista?: string;
+  nome_operador?: string;
+  tipo_movimento?: string;
 }
 
 const HistoricoPatioPage: React.FC = () => {
@@ -27,12 +30,11 @@ const HistoricoPatioPage: React.FC = () => {
       setIsLoading(true);
       console.log("[FETCH] Buscando todas as movimentações de pátio");
       
-      let resultados: MovimentacaoPatio[] = [];
-      
-      // Buscar todas as movimentações da tabela principal usando SQL direto
+      // Primeiro tenta usar o endpoint consolidado da API
       try {
-        // Usamos o endpoint de API para evitar problemas com o Supabase
+        // Usar com cookie de sessão para autenticação
         const response = await fetch('/api/patio/movimentacoes');
+        
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -40,119 +42,91 @@ const HistoricoPatioPage: React.FC = () => {
         const data = await response.json();
         
         if (data && data.success && Array.isArray(data.data)) {
-          console.log("[FETCH] Dados recuperados da API principal:", data.data.length);
-          resultados = [...data.data];
+          console.log("[FETCH] Dados recuperados da API consolidada:", data.data.length);
+          setMovimentacoes(data.data);
+          setIsLoading(false);
+          return; // Sucesso, não precisa continuar com o plano B
         } else {
-          console.error("[FETCH] Dados inválidos recebidos da API principal:", data);
+          console.error("[FETCH] Dados inválidos recebidos da API:", data);
+          // Continuar com o plano B em caso de resposta mal formada
         }
-      } catch (error) {
-        console.error("[FETCH] Erro ao buscar via API principal:", error);
-        
-        // Plano B: Tentar consultar diretamente com Supabase, ignorando o campo problemático
-        try {
-          const responsePrincipal = await fetchRecords('movimentacoes_patio', {
-            limit: 500, // Aumentamos o limite para trazer mais registros
-            order: { column: 'created_at', ascending: false } // Ordenar pela data de criação em vez de data_entrada
-          });
-          
-          if (responsePrincipal && responsePrincipal.success && Array.isArray(responsePrincipal.data)) {
-            console.log("[FETCH] Dados recuperados da tabela principal (plano B):", responsePrincipal.data.length);
-            resultados = [...responsePrincipal.data];
-          }
-        } catch (supabaseError) {
-          console.error("[FETCH] Erro no plano B:", supabaseError);
-        }
+      } catch (apiError) {
+        console.error("[FETCH] Erro ao buscar da API consolidada:", apiError);
+        // Continuar com o plano B em caso de erro
       }
       
-      // Tentar buscar as tabelas específicas dos postos também
+      // Plano B: Buscar diretamente das tabelas usando o client Supabase
+      let resultados: MovimentacaoPatio[] = [];
+      
       try {
-        // Lista de tabelas específicas dos postos (removemos posto_murici_movimentacoes_patio que não existe)
+        // Buscar da tabela principal
+        const responsePrincipal = await fetchRecords('movimentacoes_patio', {
+          limit: 500,
+          order: { column: 'created_at', ascending: false }
+        });
+        
+        if (responsePrincipal && responsePrincipal.success && Array.isArray(responsePrincipal.data)) {
+          console.log("[FETCH] Dados recuperados da tabela principal:", responsePrincipal.data.length);
+          resultados = [...responsePrincipal.data];
+        }
+      } catch (principalError) {
+        console.error("[FETCH] Erro ao buscar da tabela principal:", principalError);
+      }
+      
+      // Buscar das tabelas específicas dos postos
+      try {
         const tabelasPostos = [
           'movimentacoes_patio_alair_v2',
           'movimentacoes_patio_campinas_v2',
           'movimentacoes_patio_guarulhos_v2'
         ];
         
-        // Buscar dados de cada tabela específica
         for (const tabela of tabelasPostos) {
           try {
             const responseEspecifica = await fetchRecords(tabela, {
-              limit: 200, // Limite menor para cada tabela específica
-              order: { column: 'created_at', ascending: false } // Ordenar pela data de criação
+              limit: 200,
+              order: { column: 'created_at', ascending: false }
             });
             
             if (responseEspecifica && responseEspecifica.success && Array.isArray(responseEspecifica.data)) {
               console.log(`[FETCH] Dados recuperados da tabela ${tabela}:`, responseEspecifica.data.length);
               
-              // Mapear os dados para o formato padrão caso a estrutura seja diferente
+              // Mapear os dados para o formato padrão
               const dadosFormatados = responseEspecifica.data.map(item => {
-                // Adaptar o formato dos dados conforme a tabela de origem
-                if (tabela === 'movimentacoes_patio_alair_v2') {
-                  return {
-                    id: item.id,
-                    placa: item.placa || '',
-                    tipo_veiculo: item.tipo_veiculo || '',
-                    motorista: item.motorista || '',
-                    nome_motorista: item.motorista || '',
-                    nome_operador: item.usuario_operador || '',
-                    data_entrada: item.data_hora || '',
-                    data_saida: null, // Não temos este campo na tabela específica
-                    motivo: item.tipo_movimentacao || '',
-                    observacoes: item.observacoes || '',
-                    posto: 'Alair_v2',
-                    created_at: item.created_at || item.data_hora || new Date().toISOString(),
-                    tipo_movimento: item.tipo_movimentacao || ''
-                  };
-                } else if (tabela === 'movimentacoes_patio_campinas_v2') {
-                  return {
-                    id: item.id,
-                    placa: item.placa || '',
-                    tipo_veiculo: item.tipo_veiculo || '',
-                    motorista: item.motorista || '',
-                    nome_motorista: item.nome_motorista || item.motorista || '',
-                    nome_operador: item.nome_operador || item.usuario_operador || '',
-                    data_entrada: item.data_hora || '',
-                    data_saida: null, // Não temos este campo na tabela específica
-                    motivo: item.tipo_movimentacao || '',
-                    observacoes: item.observacoes || '',
-                    posto: 'Campinas_v2',
-                    created_at: item.created_at || item.data_hora || new Date().toISOString(),
-                    tipo_movimento: item.tipo_movimentacao || ''
-                  };
-                } else {
-                  // Para outras tabelas, tentar usar os campos diretamente ou valores padrão
-                  return {
-                    id: item.id,
-                    placa: item.placa || '',
-                    tipo_veiculo: item.tipo_veiculo || '',
-                    motorista: item.motorista || '',
-                    nome_motorista: item.nome_motorista || item.motorista || '',
-                    nome_operador: item.nome_operador || item.usuario_operador || '',
-                    data_entrada: item.data_entrada || item.data_hora || '',
-                    data_saida: item.data_saida || null,
-                    motivo: item.motivo || item.tipo_movimentacao || '',
-                    observacoes: item.observacoes || '',
-                    posto: tabela.replace('movimentacoes_patio_', ''),
-                    created_at: item.created_at || item.data_hora || new Date().toISOString(),
-                    tipo_movimento: item.tipo_movimento || item.tipo_movimentacao || ''
-                  };
-                }
+                // Adaptar conforme a estrutura de cada tabela
+                const formatado: MovimentacaoPatio = {
+                  id: item.id,
+                  placa: item.placa || '',
+                  tipo_veiculo: item.tipo_veiculo || '',
+                  motorista: item.motorista || '',
+                  nome_motorista: item.nome_motorista || item.motorista || '',
+                  nome_operador: item.nome_operador || item.usuario_operador || '',
+                  data_entrada: item.data_entrada || item.data_hora || '',
+                  data_saida: item.data_saida || null,
+                  motivo: item.motivo || item.tipo_movimentacao || '',
+                  observacoes: item.observacoes || '',
+                  posto: tabela.includes('alair') ? 'Alair_v2' : 
+                         tabela.includes('campinas') ? 'Campinas_v2' :
+                         tabela.includes('guarulhos') ? 'Guarulhos_v2' : 
+                         tabela.replace('movimentacoes_patio_', ''),
+                  created_at: item.created_at || item.data_hora || new Date().toISOString(),
+                  tipo_movimento: item.tipo_movimento || item.tipo_movimentacao || ''
+                };
+                
+                return formatado;
               });
               
-              // Adicionar os dados formatados ao resultado
               resultados = [...resultados, ...dadosFormatados];
             }
-          } catch (error) {
-            console.error(`[FETCH] Erro ao buscar dados da tabela ${tabela}:`, error);
-            // Continuar com as outras tabelas mesmo se uma der erro
+          } catch (tabelaError) {
+            console.error(`[FETCH] Erro ao buscar dados da tabela ${tabela}:`, tabelaError);
           }
         }
-      } catch (error) {
-        console.error('[FETCH] Erro ao buscar tabelas específicas:', error);
-        // Continuar com os dados da tabela principal
+      } catch (tabelasError) {
+        console.error('[FETCH] Erro ao buscar tabelas específicas:', tabelasError);
       }
       
-      console.log("[FETCH] Total de dados recuperados após consolidação:", resultados.length);
+      console.log("[FETCH] Total de dados recuperados após plano B:", resultados.length);
       setMovimentacoes(resultados);
     } catch (error) {
       console.error('Erro ao buscar histórico de movimentações de pátio:', error);
