@@ -160,63 +160,12 @@ const HistoricoGeralPage: React.FC = () => {
       
       console.log("[FETCH] Total de abastecimentos combinados:", todosAbastecimentos.length);
       
-      // Se não temos dados, usar dados de teste para fins de diagnóstico
-      if (todosAbastecimentos.length === 0) {
-        const dadosTeste = [
-          {
-            id: 1,
-            placa: 'ABC1234',
-            km_atual: 10000,
-            tipo_combustivel: 'Diesel',
-            litros: 100,
-            preco_litro: 3.5,
-            valor_total: 350,
-            nome_motorista: 'João Silva',
-            nome_operador: 'Carlos Operador',
-            project: 'Entrega SP',
-            posto: 'Posto 1',
-            created_at: new Date().toISOString()
-          },
-          {
-            id: 2,
-            placa: 'XYZ5678',
-            km_atual: 15000,
-            tipo_combustivel: 'Gasolina',
-            litros: 50,
-            preco_litro: 5.2,
-            valor_total: 260,
-            nome_motorista: 'Maria Oliveira',
-            nome_operador: 'Ana Operador',
-            project: 'Coleta RJ',
-            posto: 'Posto 2',
-            created_at: new Date().toISOString()
-          },
-          {
-            id: 3,
-            placa: 'DEF5678',
-            km_atual: 25000,
-            tipo_combustivel: 'Diesel S10',
-            litros: 80,
-            preco_litro: 3.8,
-            valor_total: 304,
-            nome_motorista: 'Pedro Santos',
-            nome_operador: 'José Operador',
-            project: 'Frete MG',
-            posto: 'Posto Próprio',
-            created_at: new Date().toISOString()
-          }
-        ];
-        
-        console.log("[FETCH] Nenhum dado encontrado, usando dados de teste para diagnóstico");
-        setAbastecimentos(dadosTeste);
-      } else {
-        // Ordenar por data (mais recentes primeiro)
-        todosAbastecimentos.sort((a, b) => {
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        });
-        
-        setAbastecimentos(todosAbastecimentos);
-      }
+      // Ordenar por data (mais recentes primeiro)
+      todosAbastecimentos.sort((a, b) => {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      
+      setAbastecimentos(todosAbastecimentos);
     } catch (error) {
       console.error('Erro geral ao buscar histórico de abastecimentos:', error);
       setAbastecimentos([]);
@@ -481,95 +430,7 @@ const HistoricoGeralPage: React.FC = () => {
         </div>
         
         
-        {/* Card Consolidado */}
-        {!isLoading && filteredData.length > 0 && (
-          <div className="bg-blue-50 rounded-lg p-4 mb-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-blue-800 mb-3">Resumo Consolidado</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              <div className="bg-white p-3 rounded-md shadow-sm">
-                <p className="text-sm text-gray-500">Registros</p>
-                <p className="text-xl font-bold text-blue-700">{dadosConsolidados.registros}</p>
-              </div>
-              
-              <div className="bg-white p-3 rounded-md shadow-sm">
-                <p className="text-sm text-gray-500">Total Litros</p>
-                <p className="text-xl font-bold text-blue-700">{formatarNumero(dadosConsolidados.totalLitros)}</p>
-              </div>
-              
-              <div className="bg-white p-3 rounded-md shadow-sm">
-                <p className="text-sm text-gray-500">Valor Total</p>
-                <p className="text-xl font-bold text-blue-700">{formatarPreco(dadosConsolidados.totalValor)}</p>
-              </div>
-              
-              <div className="bg-white p-3 rounded-md shadow-sm">
-                <p className="text-sm text-gray-500">Postos</p>
-                <p className="text-xl font-bold text-blue-700">{dadosConsolidados.postos}</p>
-              </div>
-              
-              <div className="bg-white p-3 rounded-md shadow-sm">
-                <p className="text-sm text-gray-500">Motoristas</p>
-                <p className="text-xl font-bold text-blue-700">{dadosConsolidados.motoristas}</p>
-              </div>
-              
-              <div className="bg-white p-3 rounded-md shadow-sm">
-                <p className="text-sm text-gray-500">Veículos</p>
-                <p className="text-xl font-bold text-blue-700">{dadosConsolidados.veiculos}</p>
-              </div>
-            </div>
-            
-            {/* Lista de postos */}
-            <div className="mt-4">
-              <p className="text-sm font-medium text-blue-800 mb-2">Postos Disponíveis</p>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-                <div className="bg-white p-2 rounded-md shadow-sm text-center hover:bg-blue-100 transition-colors">
-                  <a href="/posto/osasco_v2/public" className="block text-blue-700 hover:text-blue-900 font-medium">
-                    Posto Osasco V2
-                  </a>
-                </div>
-                <div className="bg-white p-2 rounded-md shadow-sm text-center hover:bg-blue-100 transition-colors">
-                  <a href="/posto/alair_v2/public" className="block text-blue-700 hover:text-blue-900 font-medium">
-                    Posto Alair V2
-                  </a>
-                </div>
-                <div className="bg-white p-2 rounded-md shadow-sm text-center hover:bg-blue-100 transition-colors">
-                  <a href="/posto/campinas_v2/public" className="block text-blue-700 hover:text-blue-900 font-medium">
-                    Posto Campinas V2
-                  </a>
-                </div>
-                <div className="bg-white p-2 rounded-md shadow-sm text-center hover:bg-blue-100 transition-colors">
-                  <a href="/posto/abc_v2/public" className="block text-blue-700 hover:text-blue-900 font-medium">
-                    Posto ABC V2
-                  </a>
-                </div>
-                <div className="bg-white p-2 rounded-md shadow-sm text-center hover:bg-blue-100 transition-colors">
-                  <a href="/posto/socorro_v2/public" className="block text-blue-700 hover:text-blue-900 font-medium">
-                    Posto Socorro V2
-                  </a>
-                </div>
-                <div className="bg-white p-2 rounded-md shadow-sm text-center hover:bg-blue-100 transition-colors">
-                  <a href="/posto/sorocaba_v2/public" className="block text-blue-700 hover:text-blue-900 font-medium">
-                    Posto Sorocaba V2
-                  </a>
-                </div>
-              </div>
-            </div>
-            
-            {Object.keys(dadosConsolidados.consumoPorTipo).length > 0 && (
-              <div className="mt-4">
-                <p className="text-sm font-medium text-blue-800 mb-2">Consumo por Tipo de Combustível</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {Object.entries(dadosConsolidados.consumoPorTipo).map(([tipo, litros]) => (
-                    <div key={tipo} className="bg-white p-2 rounded-md shadow-sm flex justify-between items-center">
-                      <span className="text-gray-700">{tipo}</span>
-                      <span className="font-medium">{formatarNumero(litros)} L</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Card de Postos Disponíveis foi removido conforme solicitado */}
         
         {isLoading ? (
           <div className="text-center py-8">
