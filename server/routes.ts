@@ -37,6 +37,7 @@ import { supabaseInsertHandler } from "./routes/supabaseInsertRoute";
 import postoSupabaseRoutes from "./routes/postoSupabaseRoutes";
 import frotaEstoqueRoutes from "./routes/frotaEstoqueRoutes";
 import historicoConsolidadoRoutes from "./routes/historicoConsolidadoRoutes";
+import patioRoutes from "./routes/patioRoutes";
 import { db, pool } from "./db";
 import authHybridRoutes from "./routes/authHybridRoutes";
 import * as userHandler from "./handlers/userHandler";
@@ -8780,6 +8781,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registrar rotas para histórico consolidado de abastecimentos
   app.use('/api/historico', historicoConsolidadoRoutes);
+  
+  // Registrar rotas para o histórico de pátio
+  app.use('/api/patio', patioRoutes);
 
   const httpServer = createServer(app);
   return httpServer;
