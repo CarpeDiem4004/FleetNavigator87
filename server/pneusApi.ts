@@ -5,6 +5,60 @@ import { pool } from './db';
  * Registra as rotas da API para gerenciamento de pneus
  */
 export function registerPneusRoutes(app: Express) {
+  // Rota para obter histórico de estatísticas de estoque
+  app.get('/api/pneus/estatisticas/historico', async (req, res) => {
+    try {
+      // Parâmetros opcionais para filtragem
+      const { limit = '30', offset = '0', data_inicio, data_fim } = req.query;
+      
+      let query = `
+        SELECT * FROM pneus_historico_valores
+      `;
+      
+      const values: any[] = [];
+      let whereClause = '';
+      
+      if (data_inicio) {
+        whereClause = 'data_registro >= $1';
+        values.push(data_inicio);
+      }
+      
+      if (data_fim) {
+        if (whereClause) {
+          whereClause += ' AND data_registro <= $' + (values.length + 1);
+        } else {
+          whereClause = 'data_registro <= $1';
+        }
+        values.push(data_fim);
+      }
+      
+      if (whereClause) {
+        query += ' WHERE ' + whereClause;
+      }
+      
+      query += ' ORDER BY data_registro DESC';
+      query += ` LIMIT $${values.length + 1} OFFSET $${values.length + 2}`;
+      
+      values.push(parseInt(limit as string));
+      values.push(parseInt(offset as string));
+      
+      const result = await pool.query(query, values);
+      
+      return res.status(200).json({
+        success: true,
+        count: result.rowCount,
+        data: result.rows
+      });
+    } catch (error) {
+      console.error('Erro ao obter histórico de estatísticas de pneus:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao obter histórico de estatísticas',
+        error: String(error)
+      });
+    }
+  });
+
   // Rota para obter estatísticas de estoque (quantidade e valor total)
   app.get('/api/pneus/estatisticas/estoque', async (req, res) => {
     try {
@@ -23,6 +77,18 @@ export function registerPneusRoutes(app: Express) {
       
       const quantidadeTotal = parseInt(result.rows[0].quantidade_total) || 0;
       const valorTotal = parseFloat(result.rows[0].valor_total) || 0;
+      
+      // Registrar no histórico as estatísticas atuais
+      try {
+        await pool.query(
+          'INSERT INTO pneus_historico_valores (quantidade_total, valor_total, observacao) VALUES ($1, $2, $3)',
+          [quantidadeTotal, valorTotal, 'Consulta automática de estatísticas']
+        );
+        console.log('[API Pneus] Histórico de valores registrado com sucesso');
+      } catch (histErr) {
+        console.error('[API Pneus] Erro ao registrar histórico:', histErr);
+        // Não interromper o fluxo mesmo se o registro de histórico falhar
+      }
       
       return res.status(200).json({
         success: true,
@@ -104,6 +170,30 @@ export function registerPneusRoutes(app: Express) {
       
       const result = await pool.query(query, values);
       console.log('Pneu cadastrado com sucesso:', result.rows[0]);
+      
+      // Atualizar histórico após adicionar novo pneu
+      try {
+        // Obter estatísticas atualizadas
+        const statsQuery = `
+          SELECT 
+            COUNT(*) as quantidade_total,
+            SUM(COALESCE(valor_unitario, 0) * COALESCE(quantidade, 1)) as valor_total
+          FROM pneus
+        `;
+        
+        const statsResult = await pool.query(statsQuery);
+        const quantidadeTotal = parseInt(statsResult.rows[0].quantidade_total) || 0;
+        const valorTotal = parseFloat(statsResult.rows[0].valor_total) || 0;
+        
+        // Registrar no histórico
+        await pool.query(
+          'INSERT INTO pneus_historico_valores (quantidade_total, valor_total, observacao) VALUES ($1, $2, $3)',
+          [quantidadeTotal, valorTotal, `Novo pneu adicionado: ${novoPneu.codigo}`]
+        );
+        console.log('[API Pneus] Histórico atualizado após adicionar pneu');
+      } catch (histErr) {
+        console.error('[API Pneus] Erro ao atualizar histórico após adicionar pneu:', histErr);
+      }
       
       return res.status(201).json({
         success: true,
@@ -293,9 +383,36 @@ export function registerPneusRoutes(app: Express) {
         });
       }
       
+      // Salvar o código do pneu antes de excluir
+      const pneuDeletado = checkResult.rows[0];
+      
       // Deletar o pneu
       const query = 'DELETE FROM pneus WHERE id = $1 RETURNING *';
       const result = await pool.query(query, [id]);
+      
+      // Atualizar histórico após excluir pneu
+      try {
+        // Obter estatísticas atualizadas
+        const statsQuery = `
+          SELECT 
+            COUNT(*) as quantidade_total,
+            SUM(COALESCE(valor_unitario, 0) * COALESCE(quantidade, 1)) as valor_total
+          FROM pneus
+        `;
+        
+        const statsResult = await pool.query(statsQuery);
+        const quantidadeTotal = parseInt(statsResult.rows[0].quantidade_total) || 0;
+        const valorTotal = parseFloat(statsResult.rows[0].valor_total) || 0;
+        
+        // Registrar no histórico
+        await pool.query(
+          'INSERT INTO pneus_historico_valores (quantidade_total, valor_total, observacao) VALUES ($1, $2, $3)',
+          [quantidadeTotal, valorTotal, `Pneu excluído: ${pneuDeletado.codigo || 'ID ' + id}`]
+        );
+        console.log('[API Pneus] Histórico atualizado após excluir pneu');
+      } catch (histErr) {
+        console.error('[API Pneus] Erro ao atualizar histórico após excluir pneu:', histErr);
+      }
       
       return res.status(200).json({
         success: true,
