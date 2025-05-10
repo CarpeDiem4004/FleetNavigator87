@@ -56,7 +56,8 @@ interface HistoricoAbastecimentoGlobal {
   observacoes?: string;
   lavagem?: boolean;
   tipo_lavagem?: string;
-  nome_posto: string;
+  nome_posto: string; // Nome do posto no banco
+  posto?: string; // Compatibilidade com código antigo
   data_hora: string;
   created_at: string;
 }
@@ -83,7 +84,8 @@ const HistoricoConsolidadoView: React.FC = () => {
       const response = await axios.get(`/api/historico/historico-consolidado?t=${timestamp}`, {
         headers: {
           'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
+          'X-Requested-With': 'XMLHttpRequest',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
       });
       
@@ -94,7 +96,7 @@ const HistoricoConsolidadoView: React.FC = () => {
         setHistorico(dados);
         
         // Extrair lista única de postos
-        const listaPosto = [...new Set(dados.map((item: HistoricoAbastecimentoGlobal) => item.posto))];
+        const listaPosto = [...new Set(dados.map((item: HistoricoAbastecimentoGlobal) => item.nome_posto))];
         setPostos(listaPosto.sort());
         
         setLastRefreshTime(new Date());
@@ -167,7 +169,7 @@ const HistoricoConsolidadoView: React.FC = () => {
     // Filtrar por posto
     if (postoFiltro) {
       resultados = resultados.filter(item => 
-        item.posto === postoFiltro
+        item.nome_posto === postoFiltro
       );
     }
     
@@ -197,9 +199,9 @@ const HistoricoConsolidadoView: React.FC = () => {
     const workbookData = historicoFiltrado.map(item => ({
       'ID': item.id,
       'Data/Hora': item.data_hora,
-      'Posto': item.posto,
+      'Posto': item.nome_posto,
       'Placa': item.placa,
-      'KM': item.km_atual,
+      'KM': item.km,
       'Tipo de Combustível': item.tipo_combustivel,
       'Quantidade (L)': item.quantidade_litros,
       'Motorista': item.nome_motorista,
@@ -252,11 +254,12 @@ const HistoricoConsolidadoView: React.FC = () => {
       totalValor += valor;
       
       // Acumular por posto
-      if (!litrosPorPosto[item.posto]) litrosPorPosto[item.posto] = 0;
-      if (!valorPorPosto[item.posto]) valorPorPosto[item.posto] = 0;
+      const nomePosto = item.nome_posto;
+      if (!litrosPorPosto[nomePosto]) litrosPorPosto[nomePosto] = 0;
+      if (!valorPorPosto[nomePosto]) valorPorPosto[nomePosto] = 0;
       
-      litrosPorPosto[item.posto] += litros;
-      valorPorPosto[item.posto] += valor;
+      litrosPorPosto[nomePosto] += litros;
+      valorPorPosto[nomePosto] += valor;
     });
     
     const mediaLitrosPorAbastecimento = totalLitros / totalRegistros;
