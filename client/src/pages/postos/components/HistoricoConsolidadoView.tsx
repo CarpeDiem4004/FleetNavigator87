@@ -543,7 +543,7 @@ const HistoricoConsolidadoView: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="bg-blue-50">
-                          {item.posto.toUpperCase()}
+                          {item.nome_posto.toUpperCase()}
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium">{item.placa}</TableCell>
