@@ -18,12 +18,31 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, Download, Info, Search, X } from "lucide-react";
+import { 
+  Loader2, 
+  RefreshCw, 
+  Download, 
+  Info, 
+  Search, 
+  X, 
+  Trash2, 
+  AlertTriangle
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
@@ -66,6 +85,11 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
   const [dataFim, setDataFim] = useState<string>('');
   const [placaFiltro, setPlacaFiltro] = useState<string>('');
   const [historicoFiltrado, setHistoricoFiltrado] = useState<HistoricoAbastecimento[]>([]);
+  
+  // Estados para controle de exclusão
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<boolean>(false);
+  const [deleteItemId, setDeleteItemId] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   const loadHistorico = async () => {
     setIsLoading(true);
@@ -179,6 +203,52 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
       style: 'currency',
       currency: 'BRL'
     }).format(numValue);
+  };
+
+  // Função para iniciar exclusão de registro
+  const handleDeleteClick = (id: number) => {
+    setDeleteItemId(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  // Função para confirmar e executar a exclusão de registro
+  const handleConfirmDelete = async () => {
+    if (!deleteItemId) return;
+    
+    setIsDeleting(true);
+    
+    try {
+      // Fazer a chamada para excluir o registro
+      const response = await axios.delete(`/api/abastecimento/${posto.toLowerCase()}/${deleteItemId}`, {
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      
+      if (response.data && response.data.success) {
+        // Atualizar a lista após exclusão bem-sucedida
+        setHistorico(prev => prev.filter(item => item.id !== deleteItemId));
+        setIsDeleteDialogOpen(false);
+        setDeleteItemId(null);
+        
+        // Exibir mensagem de sucesso
+        console.log(`Registro #${deleteItemId} excluído com sucesso`);
+      } else {
+        setError(response.data?.error || 'Erro ao excluir o registro');
+      }
+    } catch (err: any) {
+      console.error('Erro ao excluir abastecimento:', err);
+      setError(`Erro ao excluir: ${err.message}`);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Função para cancelar a exclusão
+  const handleCancelDelete = () => {
+    setIsDeleteDialogOpen(false);
+    setDeleteItemId(null);
   };
 
   // Função para exportar histórico para Excel
@@ -353,11 +423,12 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
             <Table>
               <TableHeader className="sticky top-0 bg-background z-10">
                 <TableRow>
-                  <TableHead className="w-[140px]">Data/Hora</TableHead>
+                  <TableHead className="w-[100px]">Data/Hora</TableHead>
                   <TableHead>Placa</TableHead>
                   <TableHead>Combustível</TableHead>
                   <TableHead className="text-right">Litros</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
+                  <TableHead className="w-[50px] text-center">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -423,6 +494,25 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
                           ? item.valor_total 
                           : parseFloat(item.valor_total))}
                       </TableCell>
+                      <TableCell className="text-center">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleDeleteClick(item.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Excluir registro</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -446,6 +536,40 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
           Última atualização: {format(lastRefreshTime, 'dd/MM/yyyy HH:mm:ss')}
         </span>
       </CardFooter>
+
+      {/* Diálogo de confirmação de exclusão */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Confirmar exclusão
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este registro de abastecimento?
+              <br /><br />
+              <span className="font-semibold text-foreground">Esta ação não poderá ser desfeita.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                'Sim, excluir'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };

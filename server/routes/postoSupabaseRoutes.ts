@@ -281,8 +281,52 @@ router.get('/resumo-todos-postos-supabase', async (req, res) => {
 });
 
 /**
- * Rota para registrar um novo abastecimento
+ * Rota para excluir um abastecimento específico
  */
+router.delete('/abastecimento/:posto/:id', async (req, res) => {
+  try {
+    const { posto, id } = req.params;
+    
+    // Verificar se a tabela existe
+    const tabelaExiste = await verificarTabelaExiste(posto);
+    if (!tabelaExiste) {
+      return res.status(404).json({ 
+        success: false, 
+        error: `Tabela para o posto ${posto} não encontrada` 
+      });
+    }
+    
+    // Construir a query de exclusão
+    const nomeTabela = formatarNomeTabela(posto);
+    const query = `
+      DELETE FROM "${nomeTabela}"
+      WHERE id = $1
+      RETURNING id
+    `;
+    
+    console.log(`Excluindo abastecimento ${id} do posto ${posto}`);
+    const result = await pool.query(query, [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: `Abastecimento com ID ${id} não encontrado`
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      message: `Abastecimento ${id} do posto ${posto} excluído com sucesso`
+    });
+  } catch (error) {
+    console.error('Erro ao excluir abastecimento:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Erro ao excluir abastecimento'
+    });
+  }
+});
+
 router.post('/registrar-abastecimento-supabase/:posto', async (req, res) => {
   try {
     const { posto } = req.params;
