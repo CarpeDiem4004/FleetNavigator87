@@ -293,16 +293,34 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   ];
   
   // Verifique se o usuário é da gestão de frotas
-  const isFleetUser = user.basename === "Gestão de Frotas" || user.baseId === 12;
+  const isFleetUser = user.basename === "Gestão de Frotas" || user.baseId === 12 || user.role === 'gestor_frota';
+  
+  // Para debugging - exiba o tipo de usuário e os menus disponíveis
+  console.log(`Tipo de usuário: ${isFleetUser ? 'Gestão de Frotas' : 'Normal'} (${user.role})`);
+  console.log(`Menu principal: ${isFleetUser ? 'fleetManagementItems' : 'allNavItems'}`);
   
   // Selecionando os itens de navegação apropriados
   const navItemsBase = isFleetUser ? fleetManagementItems : allNavItems;
   
+  // Adicionamos explicitamente o item de Histórico Consolidado em ambos os menus para garantir que seja visível
+  // Ele foi adicionado em ambos os conjuntos de itens, mas vamos garantir
+  console.log(`Verificando se Histórico Consolidado está nos menus:`);
+  console.log(`- allNavItems: ${allNavItems.some(item => item.name === 'Histórico Consolidado' || item.href === '/postos/historico-consolidado')}`);
+  console.log(`- fleetManagementItems: ${fleetManagementItems.some(item => item.name === 'Histórico Consolidado' || item.href === '/postos/historico-consolidado')}`);
+  console.log(`- navItemsBase: ${navItemsBase.some(item => item.name === 'Histórico Consolidado' || item.href === '/postos/historico-consolidado')}`);
+  
+  // Garantimos que o item de Histórico Consolidado está presente, independente do menu selecionado
+  const historicoItem = { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 };
+  if (!navItemsBase.some(item => item.href === '/postos/historico-consolidado')) {
+    console.log('Adicionando item de Histórico Consolidado que estava faltando');
+    navItemsBase.push(historicoItem);
+  }
+  
   // Filtrando itens de navegação com base nas permissões do usuário
   const navItems = navItemsBase.filter(item => {
-    // Sempre incluir menu Cartão para todos os usuários
-    if (item.name === 'Cartão') {
-      console.log(`Menu Cartão incluído independente de permissões`);
+    // Sempre incluir menu Cartão e Histórico Consolidado para todos os usuários
+    if (item.name === 'Cartão' || item.name === 'Histórico Consolidado') {
+      console.log(`Menu "${item.name}" incluído independente de permissões`);
       return true;
     }
     
