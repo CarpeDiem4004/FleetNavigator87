@@ -166,16 +166,16 @@ async function criarTabelaAbastecimentosSupabase() {
   }
 }
 
-// Função para criar tabela de abastecimentos_postos_supabase
-async function criarTabelaAbastecimentosPostosSupabase() {
+// Função para criar tabela de abastecimentos_supabase_alt
+async function criarTabelaAbastecimentosSupabaseAlt() {
   try {
-    console.log("Verificando se a tabela abastecimentos_postos_supabase existe...");
+    console.log("Verificando se a tabela abastecimentos_supabase existe...");
     
     // Verificar se a tabela já existe
     const checkQuery = `
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
-        WHERE table_name = 'abastecimentos_postos_supabase'
+        WHERE table_name = 'abastecimentos_supabase'
       );
     `;
     
@@ -183,7 +183,7 @@ async function criarTabelaAbastecimentosPostosSupabase() {
     const tabelaExiste = checkResult.rows[0].exists;
     
     if (tabelaExiste) {
-      console.log("Tabela abastecimentos_postos_supabase já existe, pulando criação.");
+      console.log("Tabela abastecimentos_supabase já existe, pulando criação.");
       return;
     }
     
@@ -203,11 +203,11 @@ async function criarTabelaAbastecimentosPostosSupabase() {
       await criarTabelaAbastecimentosSupabase();
     }
     
-    console.log("Criando tabela abastecimentos_postos_supabase...");
+    console.log("Criando tabela abastecimentos_supabase...");
     
     // Criar tabela sem a restrição de chave estrangeira para evitar problemas
     const createTableQuery = `
-      CREATE TABLE abastecimentos_postos_supabase (
+      CREATE TABLE abastecimentos_supabase (
         id SERIAL PRIMARY KEY,
         abastecimento_id INTEGER NOT NULL,
         posto_id TEXT NOT NULL,
@@ -221,7 +221,7 @@ async function criarTabelaAbastecimentosPostosSupabase() {
     // Adicionar a restrição de chave estrangeira separadamente
     try {
       const addForeignKeyQuery = `
-        ALTER TABLE abastecimentos_postos_supabase
+        ALTER TABLE abastecimentos_supabase
         ADD CONSTRAINT fk_abastecimento
         FOREIGN KEY (abastecimento_id) REFERENCES abastecimentos(id);
       `;
@@ -233,10 +233,10 @@ async function criarTabelaAbastecimentosPostosSupabase() {
       console.log("A tabela foi criada sem a restrição de chave estrangeira.");
     }
     
-    console.log("Tabela abastecimentos_postos_supabase criada com sucesso!");
+    console.log("Tabela abastecimentos_supabase criada com sucesso!");
     
   } catch (error) {
-    console.error("Erro ao criar tabela abastecimentos_postos_supabase:", error);
+    console.error("Erro ao criar tabela abastecimentos_supabase:", error);
   }
 }
 
@@ -845,7 +845,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await criarTabelaDriverChecklists();
   await criarTabelaConfiguracaoTanques();
   await criarTabelaAbastecimentosSupabase();
-  await criarTabelaAbastecimentosPostosSupabase();
+  await criarTabelaAbastecimentosSupabaseAlt();
   await criarTabelaSolicitacoesFuelCard();
   await criarTabelaPostoRemediosAbastecimentos();
   await criarTabelaMovimentacaoPneu();
@@ -6737,9 +6737,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const abastecimentoId = abastecimentoResult.rows[0].id;
       
-      // 2. Criar registro na tabela abastecimentos_postos_supabase
+      // 2. Criar registro na tabela abastecimentos_supabase
       const insertAbastecimentoPostoQuery = `
-        INSERT INTO abastecimentos_postos_supabase (
+        INSERT INTO abastecimentos_supabase (
           abastecimento_id,
           posto_id,
           quantidade_litros
