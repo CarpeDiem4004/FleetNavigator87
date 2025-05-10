@@ -6504,7 +6504,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               observacoes,
               lavagem,
               tipo_lavagem,
-              COALESCE(project, '') as project,
+              'COCA-COLA' as project,
               created_at,
               updated_at,
               '${posto}' as posto
