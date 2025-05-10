@@ -158,7 +158,8 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
   };
 
   // Ordenar histórico (mais recente primeiro)
-  const historicoOrdenado = [...historico].sort((a, b) => {
+  const historicoParaExibir = historicoFiltrado.length > 0 ? historicoFiltrado : historico;
+  const historicoOrdenado = [...historicoParaExibir].sort((a, b) => {
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   }).slice(0, 10); // Mostrar apenas os 10 mais recentes
 
@@ -172,7 +173,12 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
       <div className="mb-2 flex justify-between items-center">
         <div>
           <h3 className="text-sm font-medium">Histórico de Abastecimentos</h3>
-          <p className="text-xs text-gray-600">Últimos registros do posto {formatarNomePosto(posto)}</p>
+          <p className="text-xs text-gray-600">
+            {historicoFiltrado.length > 0 
+              ? `${historicoFiltrado.length} registro(s) encontrado(s) - ${formatarNomePosto(posto)}`
+              : `Últimos registros do posto ${formatarNomePosto(posto)}`
+            }
+          </p>
         </div>
         <div className="flex gap-1">
           <button 
@@ -189,6 +195,38 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
           >
             <Download className="h-4 w-4 text-blue-700" />
           </button>
+        </div>
+      </div>
+      
+      {/* Filtros de busca */}
+      <div className="mb-2 grid grid-cols-3 gap-2 bg-blue-50 p-2 rounded">
+        <div>
+          <label className="block text-xs text-gray-600 mb-1">Data Inicial</label>
+          <input 
+            type="date" 
+            value={dataInicio}
+            onChange={(e) => setDataInicio(e.target.value)}
+            className="w-full p-1 text-xs border border-blue-200 rounded"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-gray-600 mb-1">Data Final</label>
+          <input 
+            type="date" 
+            value={dataFim}
+            onChange={(e) => setDataFim(e.target.value)}
+            className="w-full p-1 text-xs border border-blue-200 rounded"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-gray-600 mb-1">Placa</label>
+          <input 
+            type="text" 
+            value={placaFiltro}
+            onChange={(e) => setPlacaFiltro(e.target.value)}
+            placeholder="Buscar por placa..."
+            className="w-full p-1 text-xs border border-blue-200 rounded"
+          />
         </div>
       </div>
       
