@@ -344,39 +344,42 @@ const HistoricoGeralPage: React.FC = () => {
     // Contar veículos distintos
     const veiculos = new Set(filteredData.map(item => item.placa));
     
-    // Cálculos específicos por tipo de combustível
-    const litrosDiesel = filteredData
-      .filter(item => item.tipo_combustivel?.toLowerCase().includes('diesel'))
-      .reduce((sum, item) => sum + (item.litros || 0), 0);
-      
-    const litrosGasolina = filteredData
-      .filter(item => item.tipo_combustivel?.toLowerCase().includes('gasolina'))
-      .reduce((sum, item) => sum + (item.litros || 0), 0);
-      
-    const litrosAlcool = filteredData
-      .filter(item => item.tipo_combustivel?.toLowerCase().includes('alcool') || item.tipo_combustivel?.toLowerCase().includes('álcool') || item.tipo_combustivel?.toLowerCase().includes('etanol'))
-      .reduce((sum, item) => sum + (item.litros || 0), 0);
-      
-    const litrosArla = filteredData
-      .filter(item => item.tipo_combustivel?.toLowerCase().includes('arla'))
-      .reduce((sum, item) => sum + (item.litros || 0), 0);
+    // Lista de tipos de combustível possíveis para verificação abrangente
+    const dieselVariations = ['diesel', 's10', 's500', 'comum'];
+    const gasolinaVariations = ['gasolina', 'gasol'];
+    const alcoolVariations = ['alcool', 'álcool', 'etanol'];
+    const arlaVariations = ['arla', 'arl', 'ar32'];
+    
+    // Função para verificar se o item tem o tipo de combustível específico
+    const ehTipoCombustivel = (item: any, variations: string[]) => {
+      if (!item.tipo_combustivel) return false;
+      const tipo = item.tipo_combustivel.toLowerCase();
+      return variations.some((v: string) => tipo.includes(v));
+    };
+    
+    // Cálculos específicos por tipo de combustível com verificação melhorada
+    const abastecimentosDiesel = filteredData.filter(item => ehTipoCombustivel(item, dieselVariations));
+    const abastecimentosGasolina = filteredData.filter(item => ehTipoCombustivel(item, gasolinaVariations));
+    const abastecimentosAlcool = filteredData.filter(item => ehTipoCombustivel(item, alcoolVariations));
+    const abastecimentosArla = filteredData.filter(item => ehTipoCombustivel(item, arlaVariations));
+    
+    // Somas totais de litros
+    const litrosDiesel = abastecimentosDiesel.reduce((sum, item) => sum + (item.litros || 0), 0);
+    const litrosGasolina = abastecimentosGasolina.reduce((sum, item) => sum + (item.litros || 0), 0);
+    const litrosAlcool = abastecimentosAlcool.reduce((sum, item) => sum + (item.litros || 0), 0);
+    const litrosArla = abastecimentosArla.reduce((sum, item) => sum + (item.litros || 0), 0);
       
     // Valores por tipo de combustível  
-    const valorDiesel = filteredData
-      .filter(item => item.tipo_combustivel?.toLowerCase().includes('diesel'))
-      .reduce((sum, item) => sum + (item.valor_total || 0), 0);
-      
-    const valorGasolina = filteredData
-      .filter(item => item.tipo_combustivel?.toLowerCase().includes('gasolina'))
-      .reduce((sum, item) => sum + (item.valor_total || 0), 0);
-      
-    const valorAlcool = filteredData
-      .filter(item => item.tipo_combustivel?.toLowerCase().includes('alcool') || item.tipo_combustivel?.toLowerCase().includes('álcool') || item.tipo_combustivel?.toLowerCase().includes('etanol'))
-      .reduce((sum, item) => sum + (item.valor_total || 0), 0);
-      
-    const valorArla = filteredData
-      .filter(item => item.tipo_combustivel?.toLowerCase().includes('arla'))
-      .reduce((sum, item) => sum + (item.valor_total || 0), 0);
+    const valorDiesel = abastecimentosDiesel.reduce((sum, item) => sum + (item.valor_total || 0), 0);
+    const valorGasolina = abastecimentosGasolina.reduce((sum, item) => sum + (item.valor_total || 0), 0);
+    const valorAlcool = abastecimentosAlcool.reduce((sum, item) => sum + (item.valor_total || 0), 0);
+    const valorArla = abastecimentosArla.reduce((sum, item) => sum + (item.valor_total || 0), 0);
+    
+    // Contagem de veículos por tipo de combustível
+    const veiculosDiesel = new Set(abastecimentosDiesel.map(item => item.placa)).size;
+    const veiculosGasolina = new Set(abastecimentosGasolina.map(item => item.placa)).size;
+    const veiculosAlcool = new Set(abastecimentosAlcool.map(item => item.placa)).size;
+    const veiculosArla = new Set(abastecimentosArla.map(item => item.placa)).size;
     
     // Calcular consumo por tipo de combustível
     const consumoPorTipo = filteredData.reduce((acc, item) => {
@@ -393,14 +396,26 @@ const HistoricoGeralPage: React.FC = () => {
       motoristas: motoristas.size,
       veiculos: veiculos.size,
       consumoPorTipo,
+      // Estatísticas de diesel
       litrosDiesel,
-      litrosGasolina,
-      litrosAlcool,
-      litrosArla,
       valorDiesel,
+      veiculosDiesel,
+      abastecimentosDiesel: abastecimentosDiesel.length,
+      // Estatísticas de gasolina
+      litrosGasolina,
       valorGasolina,
+      veiculosGasolina,
+      abastecimentosGasolina: abastecimentosGasolina.length,
+      // Estatísticas de álcool
+      litrosAlcool,
       valorAlcool,
-      valorArla
+      veiculosAlcool,
+      abastecimentosAlcool: abastecimentosAlcool.length,
+      // Estatísticas de arla
+      litrosArla,
+      valorArla,
+      veiculosArla,
+      abastecimentosArla: abastecimentosArla.length
     };
   };
   
@@ -549,9 +564,13 @@ const HistoricoGeralPage: React.FC = () => {
                     <span className="text-gray-500 text-sm">Litros:</span>
                     <span className="font-bold text-blue-700">{formatarNumero(dadosConsolidados.litrosDiesel)}</span>
                   </div>
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center mb-1">
                     <span className="text-gray-500 text-sm">Valor:</span>
                     <span className="font-bold text-blue-700">{formatarPreco(dadosConsolidados.valorDiesel)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-500 text-sm">Veículos:</span>
+                    <span className="font-bold text-blue-700">{dadosConsolidados.veiculosDiesel}</span>
                   </div>
                 </div>
               </div>
@@ -569,9 +588,13 @@ const HistoricoGeralPage: React.FC = () => {
                     <span className="text-gray-500 text-sm">Litros:</span>
                     <span className="font-bold text-blue-700">{formatarNumero(dadosConsolidados.litrosGasolina)}</span>
                   </div>
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center mb-1">
                     <span className="text-gray-500 text-sm">Valor:</span>
                     <span className="font-bold text-blue-700">{formatarPreco(dadosConsolidados.valorGasolina)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-500 text-sm">Veículos:</span>
+                    <span className="font-bold text-blue-700">{dadosConsolidados.veiculosGasolina}</span>
                   </div>
                 </div>
               </div>
@@ -589,9 +612,13 @@ const HistoricoGeralPage: React.FC = () => {
                     <span className="text-gray-500 text-sm">Litros:</span>
                     <span className="font-bold text-blue-700">{formatarNumero(dadosConsolidados.litrosAlcool)}</span>
                   </div>
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center mb-1">
                     <span className="text-gray-500 text-sm">Valor:</span>
                     <span className="font-bold text-blue-700">{formatarPreco(dadosConsolidados.valorAlcool)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-500 text-sm">Veículos:</span>
+                    <span className="font-bold text-blue-700">{dadosConsolidados.veiculosAlcool}</span>
                   </div>
                 </div>
               </div>
@@ -609,9 +636,13 @@ const HistoricoGeralPage: React.FC = () => {
                     <span className="text-gray-500 text-sm">Litros:</span>
                     <span className="font-bold text-blue-700">{formatarNumero(dadosConsolidados.litrosArla)}</span>
                   </div>
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center mb-1">
                     <span className="text-gray-500 text-sm">Valor:</span>
                     <span className="font-bold text-blue-700">{formatarPreco(dadosConsolidados.valorArla)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-500 text-sm">Veículos:</span>
+                    <span className="font-bold text-blue-700">{dadosConsolidados.veiculosArla}</span>
                   </div>
                 </div>
               </div>
