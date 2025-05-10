@@ -15,6 +15,7 @@ import { setupAuth } from "./auth";
 import { getDashboardKPIs, getPainelPrincipal } from "./dashboardApi";
 // middleware de autenticação híbrida já importado abaixo como alias
 import { getExecutiveDashboard } from "./executiveDashboard";
+import { registerDashboardKpiRoutes } from "./dashboardKpiApi";
 import { getPostosResumo, getPostoDetalhes, registrarEntradaCombustivel, excluirPostoSaoPaulo } from "./postosApi";
 import { 
   getFuelCardSolicitations, 
