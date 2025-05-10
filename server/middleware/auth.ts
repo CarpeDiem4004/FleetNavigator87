@@ -48,20 +48,20 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
     // Tentativa 2: Verificar com o serviço híbrido
     try {
       // Importar o módulo dinamicamente para evitar dependência circular
-      const hybridModule = await import('../../hybrid-user-service');
-      const hybridService = hybridModule.getHybridUserService();
+      const hybridModule = await import('../utils/jwt');
       
-      // Verificar token com o serviço híbrido
-      const verifyResult = await hybridService.verifyToken(token);
+      // Verificar token JWT com a biblioteca jsonwebtoken
+      const secret = process.env.JWT_SECRET || 'muricion-fleet-secret-key';
+      const decoded = hybridModule.verifyToken(token, secret);
       
-      if (verifyResult && verifyResult.user) {
-        // Usuário autenticado via JWT híbrido, anexá-lo à requisição
-        (req as any).hybridUser = verifyResult.user;
-        console.log(`[isAuthenticated] Token JWT híbrido validado para usuário: ${verifyResult.user.email}`);
+      if (decoded) {
+        // Anexar o usuário decodificado à requisição
+        req.user = decoded;
+        console.log(`[isAuthenticated] Token JWT validado para usuário: ${decoded.email}`);
         return next();
       }
-    } catch (hybridError) {
-      console.error('[isAuthenticated] Erro ao verificar token JWT híbrido:', hybridError);
+    } catch (jwtError) {
+      console.error('[isAuthenticated] Erro ao verificar token JWT:', jwtError);
     }
     
     // Se chegou aqui, nenhum método de verificação do token funcionou
