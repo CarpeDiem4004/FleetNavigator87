@@ -335,6 +335,40 @@ const HistoricoGeralPage: React.FC = () => {
     return passesSearch && passesDateFilter;
   });
 
+  // Cálculos para o card de consolidado
+  const calcularConsolidado = () => {
+    const totalLitros = filteredData.reduce((sum, item) => sum + (item.litros || 0), 0);
+    const totalValor = filteredData.reduce((sum, item) => sum + (item.valor_total || 0), 0);
+    
+    // Contar postos distintos
+    const postos = new Set(filteredData.map(item => item.posto));
+    
+    // Contar motoristas distintos
+    const motoristas = new Set(filteredData.map(item => item.nome_motorista));
+    
+    // Contar veículos distintos
+    const veiculos = new Set(filteredData.map(item => item.placa));
+    
+    // Calcular consumo por tipo de combustível
+    const consumoPorTipo = filteredData.reduce((acc, item) => {
+      const tipo = item.tipo_combustivel || 'Não especificado';
+      acc[tipo] = (acc[tipo] || 0) + (item.litros || 0);
+      return acc;
+    }, {} as Record<string, number>);
+    
+    return {
+      registros: filteredData.length,
+      totalLitros,
+      totalValor,
+      postos: postos.size,
+      motoristas: motoristas.size,
+      veiculos: veiculos.size,
+      consumoPorTipo
+    };
+  };
+  
+  const dadosConsolidados = calcularConsolidado();
+
   return (
     <div className="container mx-auto p-4">
       <div className="bg-white rounded-lg shadow-md p-6">
@@ -404,6 +438,60 @@ const HistoricoGeralPage: React.FC = () => {
             />
           </div>
         </div>
+        
+        
+        {/* Card Consolidado */}
+        {!isLoading && filteredData.length > 0 && (
+          <div className="bg-blue-50 rounded-lg p-4 mb-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-blue-800 mb-3">Resumo Consolidado</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div className="bg-white p-3 rounded-md shadow-sm">
+                <p className="text-sm text-gray-500">Registros</p>
+                <p className="text-xl font-bold text-blue-700">{dadosConsolidados.registros}</p>
+              </div>
+              
+              <div className="bg-white p-3 rounded-md shadow-sm">
+                <p className="text-sm text-gray-500">Total Litros</p>
+                <p className="text-xl font-bold text-blue-700">{formatarNumero(dadosConsolidados.totalLitros)}</p>
+              </div>
+              
+              <div className="bg-white p-3 rounded-md shadow-sm">
+                <p className="text-sm text-gray-500">Valor Total</p>
+                <p className="text-xl font-bold text-blue-700">{formatarPreco(dadosConsolidados.totalValor)}</p>
+              </div>
+              
+              <div className="bg-white p-3 rounded-md shadow-sm">
+                <p className="text-sm text-gray-500">Postos</p>
+                <p className="text-xl font-bold text-blue-700">{dadosConsolidados.postos}</p>
+              </div>
+              
+              <div className="bg-white p-3 rounded-md shadow-sm">
+                <p className="text-sm text-gray-500">Motoristas</p>
+                <p className="text-xl font-bold text-blue-700">{dadosConsolidados.motoristas}</p>
+              </div>
+              
+              <div className="bg-white p-3 rounded-md shadow-sm">
+                <p className="text-sm text-gray-500">Veículos</p>
+                <p className="text-xl font-bold text-blue-700">{dadosConsolidados.veiculos}</p>
+              </div>
+            </div>
+            
+            {Object.keys(dadosConsolidados.consumoPorTipo).length > 0 && (
+              <div className="mt-4">
+                <p className="text-sm font-medium text-blue-800 mb-2">Consumo por Tipo de Combustível</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {Object.entries(dadosConsolidados.consumoPorTipo).map(([tipo, litros]) => (
+                    <div key={tipo} className="bg-white p-2 rounded-md shadow-sm flex justify-between items-center">
+                      <span className="text-gray-700">{tipo}</span>
+                      <span className="font-medium">{formatarNumero(litros)} L</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         
         {isLoading ? (
           <div className="text-center py-8">
