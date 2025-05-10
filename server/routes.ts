@@ -6516,7 +6516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               observacoes,
               lavagem,
               tipo_lavagem,
-              ${hasProjetoColumn ? 'projeto as project' : "'COCA-COLA' as project"},
+              ${hasProjetoColumn ? 'projeto as project' : "NULL as project"},
               created_at,
               updated_at,
               '${posto}' as posto
