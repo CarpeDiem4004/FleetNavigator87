@@ -222,10 +222,12 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText },
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Pneus', href: '/tires', icon: CircleDot },
-    // Modificado para apontar para a página principal em vez de submenu
-    { name: 'Abastecimentos', href: '/abastecimentos', icon: Fuel },
-    { name: 'Histórico Abastecimento', href: '/refueling', icon: ClipboardList },
-    { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 },
+    // Menu de Abastecimentos com submenu
+    { name: 'Abastecimentos', href: '#', icon: Fuel, subItems: [
+      { name: 'Dashboard', href: '/abastecimentos', icon: Gauge },
+      { name: 'Histórico Abastecimento', href: '/refueling', icon: ClipboardList },
+      { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 }
+    ]},
     // Alterado para usar o ícone de posto de gasolina (Droplets) em vez de Warehouse para Postos Externos
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
@@ -250,10 +252,12 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Oficinas Credenciadas', href: '/fleet-management/workshops', icon: ClipboardList },
     { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package },
-    // Modificado para apontar para a página principal em vez de submenu
-    { name: 'Abastecimentos', href: '/abastecimentos', icon: Fuel },
-    { name: 'Histórico Abastecimento', href: '/refueling', icon: ClipboardList },
-    { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 },
+    // Menu de Abastecimentos com submenu
+    { name: 'Abastecimentos', href: '#', icon: Fuel, subItems: [
+      { name: 'Dashboard', href: '/abastecimentos', icon: Gauge },
+      { name: 'Histórico Abastecimento', href: '/refueling', icon: ClipboardList },
+      { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 }
+    ]},
     // Corrigido para usar o mesmo ícone e estrutura em ambas as listas de navegação
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
