@@ -177,19 +177,31 @@ const HistoricoPatioPage: React.FC = () => {
       // Filtrar dados de acordo com a data e busca
       let dadosFiltrados = [...filteredData];
       
-      // Preparar os dados para Excel
-      const excelData = dadosFiltrados.map(item => ({
-        'Placa': item.placa,
-        'Tipo Veículo': item.tipo_veiculo || '-',
-        'Motorista': item.motorista,
-        'Posto': item.posto,
-        'Data Entrada': formatarData(item.data_entrada),
-        'Data Saída': formatarData(item.data_saida),
-        'Dias no Pátio': calcularDiasParado(item.data_entrada, item.data_saida),
-        'Status': item.data_saida ? 'Veículo Liberado' : 'No Pátio',
-        'Motivo': item.motivo || '-',
-        'Observações': item.observacoes || '-'
-      }));
+      // Preparar os dados para Excel com tratamento de exceções e novos campos
+      const excelData = dadosFiltrados.map(item => {
+        // Tratamento seguro para evitar erros ao calcular dias parado
+        let diasNoPatioValue = 0;
+        try {
+          diasNoPatioValue = calcularDiasParado(item.data_entrada, item.data_saida);
+        } catch (e) {
+          console.warn('Erro ao calcular dias parado para placa', item.placa, e);
+        }
+        
+        return {
+          'Placa': item.placa || 'N/A',
+          'Tipo Veículo': item.tipo_veiculo || 'N/A',
+          'Motorista': item.nome_motorista || item.motorista || 'N/A',
+          'Operador': item.nome_operador || 'N/A',  // Novo campo
+          'Posto': item.posto || 'N/A',
+          'Data Entrada': formatarData(item.data_entrada),
+          'Data Saída': formatarData(item.data_saida),
+          'Dias no Pátio': diasNoPatioValue,
+          'Status': item.data_saida ? 'Veículo Liberado' : 'No Pátio',
+          'Motivo': item.motivo || 'N/A',
+          'Observações': item.observacoes || 'N/A',
+          'Tipo Movimento': item.tipo_movimento || 'N/A'  // Novo campo
+        };
+      });
       
       // Criar uma nova planilha
       const worksheet = XLSX.utils.json_to_sheet(excelData);
@@ -199,13 +211,15 @@ const HistoricoPatioPage: React.FC = () => {
         { wch: 10 }, // Placa
         { wch: 12 }, // Tipo Veículo
         { wch: 20 }, // Motorista
+        { wch: 20 }, // Operador
         { wch: 15 }, // Posto
         { wch: 12 }, // Data Entrada
         { wch: 12 }, // Data Saída
         { wch: 12 }, // Dias no Pátio
         { wch: 15 }, // Status
         { wch: 20 }, // Motivo
-        { wch: 30 }  // Observações
+        { wch: 30 }, // Observações
+        { wch: 15 }  // Tipo Movimento
       ];
       worksheet['!cols'] = wscols;
       
@@ -232,29 +246,57 @@ const HistoricoPatioPage: React.FC = () => {
     
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      const placaMatch = item.placa.toLowerCase().includes(term);
+      // Busca em vários campos com verificação de null/undefined
+      const placaMatch = item.placa?.toLowerCase().includes(term) || false;
       const motoristaMatch = item.motorista?.toLowerCase().includes(term) || false;
+      const nomeMotoristaMatch = item.nome_motorista?.toLowerCase().includes(term) || false;
       const postoMatch = item.posto?.toLowerCase().includes(term) || false;
       const motivoMatch = item.motivo?.toLowerCase().includes(term) || false;
+      const observacoesMatch = item.observacoes?.toLowerCase().includes(term) || false;
+      const tipoVeiculoMatch = item.tipo_veiculo?.toLowerCase().includes(term) || false;
       
-      passesSearch = placaMatch || motoristaMatch || postoMatch || motivoMatch;
+      passesSearch = placaMatch || motoristaMatch || nomeMotoristaMatch || 
+                    postoMatch || motivoMatch || observacoesMatch || tipoVeiculoMatch;
     }
+    
+    // Conversão segura de datas
+    const getValidDate = (dateStr) => {
+      if (!dateStr) return null;
+      try {
+        const date = new Date(dateStr);
+        return isNaN(date.getTime()) ? null : date;
+      } catch (e) {
+        console.warn("Data inválida:", dateStr);
+        return null;
+      }
+    };
+    
+    const dataEntrada = getValidDate(item.data_entrada);
+    const dataSaida = getValidDate(item.data_saida);
     
     if (dateStart) {
       const startDate = new Date(dateStart);
-      passesDateFilter = passesDateFilter && new Date(item.data_entrada) >= startDate;
+      // Se não temos data de entrada válida, não passa no filtro de data de início
+      if (!dataEntrada) {
+        passesDateFilter = false;
+      } else {
+        passesDateFilter = passesDateFilter && dataEntrada >= startDate;
+      }
     }
     
     if (dateEnd) {
       const endDate = new Date(dateEnd);
       endDate.setHours(23, 59, 59, 999);
       
-      // Se tem data de saída, verificamos se está dentro do período
+      // Se tem data de saída válida, verificamos se está dentro do período
       // Se não tem data de saída (ainda está no pátio), verificamos se a entrada foi antes do fim do período
-      if (item.data_saida) {
-        passesDateFilter = passesDateFilter && new Date(item.data_saida) <= endDate;
+      if (dataSaida) {
+        passesDateFilter = passesDateFilter && dataSaida <= endDate;
+      } else if (dataEntrada) {
+        passesDateFilter = passesDateFilter && dataEntrada <= endDate;
       } else {
-        passesDateFilter = passesDateFilter && new Date(item.data_entrada) <= endDate;
+        // Se não temos nem data de entrada nem saída válidas, não passa no filtro
+        passesDateFilter = false;
       }
     }
     
