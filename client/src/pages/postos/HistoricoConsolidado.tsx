@@ -19,24 +19,8 @@ const HistoricoConsolidado: React.FC = () => {
     );
   }
 
-  // Se não for admin, mostrar mensagem de acesso restrito
-  if (user.role !== 'admin') {
-    return (
-      <div className="container mx-auto p-8">
-        <Card className="mx-auto max-w-2xl">
-          <CardContent className="pt-6">
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Acesso Restrito</AlertTitle>
-              <AlertDescription>
-                Apenas administradores podem acessar a visualização consolidada de postos.
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // Permitimos que qualquer usuário acesse o histórico consolidado
+  // Não é mais restrito apenas para administradores
 
   return (
     <div className="min-h-screen bg-background">
