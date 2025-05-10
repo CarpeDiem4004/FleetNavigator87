@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format, differenceInDays } from 'date-fns';
 import { fetchRecords } from '@/lib/supabase-client';
+import * as XLSX from 'xlsx';
 import { useQuery } from '@tanstack/react-query';
 
 interface MovimentacaoPatio {
@@ -30,120 +31,33 @@ const HistoricoPatioPage: React.FC = () => {
     queryFn: async () => {
       console.log("[FETCH] Buscando todas as movimentações de pátio");
       
-      // Estratégia 1: Usar endpoint da API (prioridade)
       try {
-        const { queryClient } = await import('@/lib/queryClient');
-        
-        // Buscar dados usando TanStack Query
-        const data = await queryClient.fetchQuery({
-          queryKey: ['/api/patio/movimentacoes'],
-          queryFn: async ({ queryKey }) => {
-            const [url] = queryKey;
-            const response = await fetch(url as string, {
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`,
-              },
-              credentials: 'include',
-            });
-            
-            if (!response.ok) {
-              throw new Error(`Erro HTTP: ${response.status}`);
-            }
-            
-            const result = await response.json();
-            
-            if (result && result.success && Array.isArray(result.data)) {
-              console.log("[FETCH] Dados recuperados da API consolidada:", result.data.length);
-              return result.data;
-            }
-            
-            throw new Error("Formato de resposta inválido da API");
+        const response = await fetch('/api/patio/movimentacoes', {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`,
           },
+          credentials: 'include',
         });
         
-        return data;
+        if (!response.ok) {
+          console.error("[FETCH] Erro na resposta:", response.status);
+          return [];
+        }
+        
+        const result = await response.json();
+        
+        if (result && result.success && Array.isArray(result.data)) {
+          console.log("[FETCH] Dados recuperados da API consolidada:", result.data.length);
+          return result.data;
+        } else {
+          console.error("[FETCH] Formato de resposta inválido:", result);
+          return [];
+        }
       } catch (apiError) {
         console.error("[FETCH] Erro ao buscar da API consolidada:", apiError);
+        return [];
       }
-      
-      // Estratégia 2: Buscar diretamente das tabelas usando o client Supabase
-      let resultados: MovimentacaoPatio[] = [];
-      
-      try {
-        // Buscar da tabela principal
-        const responsePrincipal = await fetchRecords('movimentacoes_patio', {
-          limit: 500,
-          order: { column: 'created_at', ascending: false }
-        });
-        
-        if (responsePrincipal && responsePrincipal.success && Array.isArray(responsePrincipal.data)) {
-          console.log("[FETCH] Dados recuperados da tabela principal:", responsePrincipal.data.length);
-          resultados = [...responsePrincipal.data];
-        }
-      } catch (principalError) {
-        console.error("[FETCH] Erro ao buscar da tabela principal:", principalError);
-      }
-      
-      // Buscar das tabelas específicas dos postos
-      try {
-        const tabelasPostos = [
-          'movimentacoes_patio_alair_v2',
-          'movimentacoes_patio_campinas_v2',
-          'movimentacoes_patio_guarulhos_v2',
-          'movimentacoes_patio_abc_v2',
-          'movimentacoes_patio_socorro_v2'
-        ];
-        
-        for (const tabela of tabelasPostos) {
-          try {
-            const responseEspecifica = await fetchRecords(tabela, {
-              limit: 200,
-              order: { column: 'created_at', ascending: false }
-            });
-            
-            if (responseEspecifica && responseEspecifica.success && Array.isArray(responseEspecifica.data)) {
-              console.log(`[FETCH] Dados recuperados da tabela ${tabela}:`, responseEspecifica.data.length);
-              
-              // Mapear os dados para o formato padrão
-              const dadosFormatados = responseEspecifica.data.map(item => {
-                // Adaptar conforme a estrutura de cada tabela
-                const formatado: MovimentacaoPatio = {
-                  id: item.id,
-                  placa: item.placa || '',
-                  tipo_veiculo: item.tipo_veiculo || '',
-                  motorista: item.motorista || '',
-                  nome_motorista: item.nome_motorista || item.motorista || '',
-                  nome_operador: item.nome_operador || item.usuario_operador || '',
-                  data_entrada: item.data_entrada || item.data_hora || '',
-                  data_saida: item.data_saida || null,
-                  motivo: item.motivo || item.tipo_movimentacao || '',
-                  observacoes: item.observacoes || '',
-                  posto: tabela.includes('alair') ? 'Alair_v2' : 
-                         tabela.includes('campinas') ? 'Campinas_v2' :
-                         tabela.includes('guarulhos') ? 'Guarulhos_v2' :
-                         tabela.includes('abc') ? 'ABC_v2' :
-                         tabela.includes('socorro') ? 'Socorro_v2' : 
-                         tabela.replace('movimentacoes_patio_', ''),
-                  created_at: item.created_at || item.data_hora || new Date().toISOString(),
-                  tipo_movimento: item.tipo_movimento || item.tipo_movimentacao || ''
-                };
-                
-                return formatado;
-              });
-              
-              resultados = [...resultados, ...dadosFormatados];
-            }
-          } catch (tabelaError) {
-            console.error(`[FETCH] Erro ao buscar dados da tabela ${tabela}:`, tabelaError);
-          }
-        }
-      } catch (tabelasError) {
-        console.error('[FETCH] Erro ao buscar tabelas específicas:', tabelasError);
-      }
-      
-      console.log("[FETCH] Total de dados recuperados após plano B:", resultados.length);
-      return resultados;
     },
     refetchInterval: 300000, // Refetch a cada 5 minutos
     staleTime: 60000, // Considerar dados "frescos" por 1 minuto
@@ -153,80 +67,68 @@ const HistoricoPatioPage: React.FC = () => {
     if (!dataString) return '-';
     try {
       const data = new Date(dataString);
-      return format(data, 'dd/MM/yyyy');
-    } catch (error) {
-      console.error('Erro ao formatar data:', error);
+      if (isNaN(data.getTime())) return '-';
+      return format(data, 'dd/MM/yyyy HH:mm');
+    } catch (e) {
+      console.error("Erro ao formatar data:", e);
       return '-';
     }
   };
 
+  // Função para obter uma data válida ou undefined
+  const getValidDate = (dateString: string): Date | undefined => {
+    try {
+      if (!dateString) return undefined;
+      const date = new Date(dateString);
+      return isNaN(date.getTime()) ? undefined : date;
+    } catch (error) {
+      console.error("Erro ao converter data:", error);
+      return undefined;
+    }
+  };
+  
+  // Calcula dias parado
   const calcularDiasParado = (dataEntrada: string, dataSaida: string | null) => {
     try {
       const entrada = new Date(dataEntrada);
       const saida = dataSaida ? new Date(dataSaida) : new Date();
-      return differenceInDays(saida, entrada);
+      
+      if (isNaN(entrada.getTime())) return '-';
+      if (isNaN(saida.getTime())) return '-';
+      
+      const dias = Math.ceil(differenceInDays(saida, entrada));
+      return dias;
     } catch (error) {
-      console.error('Erro ao calcular dias parado:', error);
-      return 0;
+      console.error("Erro ao calcular dias parado:", error);
+      return '-';
     }
   };
 
-  const handleExportarExcel = async () => {
+  // Exportar para Excel
+  const handleExportarExcel = () => {
     try {
-      // Importar a biblioteca xlsx dinamicamente
-      const XLSX = await import('xlsx');
+      console.log("Iniciando exportação para Excel...");
       
-      // Filtrar dados de acordo com a data e busca
-      let dadosFiltrados = [...filteredData];
-      
-      // Preparar os dados para Excel com tratamento de exceções e novos campos
-      const excelData = dadosFiltrados.map(item => {
-        // Tratamento seguro para evitar erros ao calcular dias parado
-        let diasNoPatioValue = 0;
-        try {
-          diasNoPatioValue = calcularDiasParado(item.data_entrada, item.data_saida);
-        } catch (e) {
-          console.warn('Erro ao calcular dias parado para placa', item.placa, e);
-        }
-        
-        return {
-          'Placa': item.placa || 'N/A',
-          'Tipo Veículo': item.tipo_veiculo || 'N/A',
-          'Motorista': item.nome_motorista || item.motorista || 'N/A',
-          'Operador': item.nome_operador || 'N/A',  // Novo campo
-          'Posto': item.posto || 'N/A',
-          'Data Entrada': formatarData(item.data_entrada),
-          'Data Saída': formatarData(item.data_saida),
-          'Dias no Pátio': diasNoPatioValue,
-          'Status': item.data_saida ? 'Veículo Liberado' : 'No Pátio',
-          'Motivo': item.motivo || 'N/A',
-          'Observações': item.observacoes || 'N/A',
-          'Tipo Movimento': item.tipo_movimento || 'N/A'  // Novo campo
-        };
-      });
-      
-      // Criar uma nova planilha
-      const worksheet = XLSX.utils.json_to_sheet(excelData);
-      
-      // Definir larguras de colunas para melhor visualização
-      const wscols = [
-        { wch: 10 }, // Placa
-        { wch: 12 }, // Tipo Veículo
-        { wch: 20 }, // Motorista
-        { wch: 20 }, // Operador
-        { wch: 15 }, // Posto
-        { wch: 12 }, // Data Entrada
-        { wch: 12 }, // Data Saída
-        { wch: 12 }, // Dias no Pátio
-        { wch: 15 }, // Status
-        { wch: 20 }, // Motivo
-        { wch: 30 }, // Observações
-        { wch: 15 }  // Tipo Movimento
-      ];
-      worksheet['!cols'] = wscols;
-      
-      // Criar um novo livro
+      // Criar uma planilha do Excel
       const workbook = XLSX.utils.book_new();
+      
+      // Convertemos os dados para um formato adequado para Excel
+      const dadosParaExcel = filteredData.map(item => ({
+        Placa: item.placa || '',
+        'Tipo de Veículo': item.tipo_veiculo || '',
+        Motorista: item.nome_motorista || item.motorista || '',
+        Operador: item.nome_operador || '',
+        Posto: item.posto || '',
+        'Data Entrada': formatarData(item.data_entrada),
+        'Data Saída': formatarData(item.data_saida),
+        'Dias no Pátio': calcularDiasParado(item.data_entrada, item.data_saida),
+        Motivo: item.motivo || '',
+        'Tipo Movimento': item.tipo_movimento || '',
+        Observações: item.observacoes || ''
+      }));
+      
+      // Criar uma planilha com os dados
+      const worksheet = XLSX.utils.json_to_sheet(dadosParaExcel);
       
       // Adicionar a planilha ao livro
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Histórico Pátio');
@@ -243,61 +145,42 @@ const HistoricoPatioPage: React.FC = () => {
     }
   };
 
-  // Filtragem de dados
-  const filteredData = movimentacoes.filter(item => {
-    let passesSearch = true;
+  // Filtrar dados com base na pesquisa e datas
+  const filteredData = Array.isArray(movimentacoes) ? movimentacoes.filter(item => {
+    // 1. Filtro por texto
+    const searchFields = [
+      item.placa, 
+      item.motorista, 
+      item.nome_motorista,
+      item.posto, 
+      item.motivo, 
+      item.tipo_veiculo,
+      item.observacoes,
+      item.tipo_movimento
+    ].filter(Boolean).map(s => s?.toLowerCase() || '');
+    
+    const searchLower = searchTerm.toLowerCase();
+    const passesSearch = searchTerm === '' || searchFields.some(field => field.includes(searchLower));
+    
+    // 2. Filtro por intervalo de datas
     let passesDateFilter = true;
     
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      // Busca em vários campos com verificação de null/undefined
-      const placaMatch = item.placa?.toLowerCase().includes(term) || false;
-      const motoristaMatch = item.motorista?.toLowerCase().includes(term) || false;
-      const nomeMotoristaMatch = item.nome_motorista?.toLowerCase().includes(term) || false;
-      const postoMatch = item.posto?.toLowerCase().includes(term) || false;
-      const motivoMatch = item.motivo?.toLowerCase().includes(term) || false;
-      const observacoesMatch = item.observacoes?.toLowerCase().includes(term) || false;
-      const tipoVeiculoMatch = item.tipo_veiculo?.toLowerCase().includes(term) || false;
+    if (dateStart || dateEnd) {
+      const startDate = getValidDate(dateStart);
+      const endDate = getValidDate(dateEnd);
       
-      passesSearch = placaMatch || motoristaMatch || nomeMotoristaMatch || 
-                    postoMatch || motivoMatch || observacoesMatch || tipoVeiculoMatch;
-    }
-    
-    // Conversão segura de datas
-    const getValidDate = (dateStr: string | null): Date | null => {
-      if (!dateStr) return null;
-      try {
-        const date = new Date(dateStr);
-        return isNaN(date.getTime()) ? null : date;
-      } catch (e) {
-        console.warn("Data inválida:", dateStr);
-        return null;
-      }
-    };
-    
-    const dataEntrada = getValidDate(item.data_entrada);
-    const dataSaida = getValidDate(item.data_saida);
-    
-    if (dateStart) {
-      const startDate = new Date(dateStart);
-      // Se não temos data de entrada válida, não passa no filtro de data de início
-      if (!dataEntrada) {
-        passesDateFilter = false;
-      } else {
-        passesDateFilter = passesDateFilter && dataEntrada >= startDate;
-      }
-    }
-    
-    if (dateEnd) {
-      const endDate = new Date(dateEnd);
-      endDate.setHours(23, 59, 59, 999);
+      const dataEntrada = getValidDate(item.data_entrada);
+      const dataSaida = getValidDate(item.data_saida || '');
       
-      // Se tem data de saída válida, verificamos se está dentro do período
-      // Se não tem data de saída (ainda está no pátio), verificamos se a entrada foi antes do fim do período
-      if (dataSaida) {
-        passesDateFilter = passesDateFilter && dataSaida <= endDate;
-      } else if (dataEntrada) {
-        passesDateFilter = passesDateFilter && dataEntrada <= endDate;
+      if (dataEntrada) {
+        // Filtro por data de entrada
+        if (startDate) {
+          passesDateFilter = passesDateFilter && dataEntrada >= startDate;
+        }
+        
+        if (endDate) {
+          passesDateFilter = passesDateFilter && dataEntrada <= endDate;
+        }
       } else {
         // Se não temos nem data de entrada nem saída válidas, não passa no filtro
         passesDateFilter = false;
@@ -305,11 +188,19 @@ const HistoricoPatioPage: React.FC = () => {
     }
     
     return passesSearch && passesDateFilter;
-  });
+  }) : [];
 
+  // Debugging dos dados
+  console.log('[Debug Histórico] Total de movimentações recebidas:', movimentacoes?.length || 0);
+  console.log('[Debug Histórico] Amostra dos dados:', movimentacoes?.slice(0, 2));
+  console.log('[Debug Histórico] Total após filtragem:', filteredData.length);
+  
   // Separando veículos que ainda estão no pátio (data_saida é null) dos que já saíram
   const veiculosNoPatio = filteredData.filter(item => !item.data_saida);
   const veiculosQueJaSairam = filteredData.filter(item => item.data_saida);
+  
+  console.log('[Debug Histórico] Veículos no pátio:', veiculosNoPatio.length);
+  console.log('[Debug Histórico] Veículos que já saíram:', veiculosQueJaSairam.length);
 
   return (
     <div className="container mx-auto p-4">
@@ -351,7 +242,7 @@ const HistoricoPatioPage: React.FC = () => {
           </div>
           
           <div className="flex-1 min-w-[280px]">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Data inicial</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Data Início</label>
             <input
               type="date"
               className="w-full px-4 py-2 border rounded-lg"
@@ -361,7 +252,7 @@ const HistoricoPatioPage: React.FC = () => {
           </div>
           
           <div className="flex-1 min-w-[280px]">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Data final</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Data Fim</label>
             <input
               type="date"
               className="w-full px-4 py-2 border rounded-lg"
@@ -370,114 +261,124 @@ const HistoricoPatioPage: React.FC = () => {
             />
           </div>
         </div>
-
+        
         {isLoading ? (
-          <div className="text-center py-8">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-            <p className="mt-2 text-gray-500">Carregando dados...</p>
-          </div>
-        ) : filteredData.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="text-lg mt-4">Nenhum veículo no pátio encontrado.</p>
-            {(searchTerm || dateStart || dateEnd) && (
-              <p className="text-sm mt-2">Tente ajustar os filtros de busca.</p>
-            )}
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Carregando histórico...</p>
           </div>
         ) : (
           <>
-            {/* Seção de veículos atualmente no pátio */}
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Veículos Atualmente no Pátio ({veiculosNoPatio.length})</h2>
-              {veiculosNoPatio.length === 0 ? (
-                <p className="text-gray-500 py-4">Não há veículos no pátio atualmente.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="bg-gray-50">
-                        <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Placa</th>
-                        <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Tipo</th>
-                        <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Motorista</th>
-                        <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Posto</th>
-                        <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Data Entrada</th>
-                        <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Dias Parado</th>
-                        <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Motivo</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {veiculosNoPatio.map((veiculo) => (
-                        <tr key={veiculo.id} className="border-b border-gray-200 hover:bg-gray-50">
-                          <td className="py-3 px-4 font-medium">{veiculo.placa}</td>
-                          <td className="py-3 px-4">{veiculo.tipo_veiculo || '-'}</td>
-                          <td className="py-3 px-4">{veiculo.motorista}</td>
-                          <td className="py-3 px-4">
-                            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium">
-                              {veiculo.posto}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">{formatarData(veiculo.data_entrada)}</td>
-                          <td className="py-3 px-4">
-                            <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-md text-xs font-medium">
-                              {calcularDiasParado(veiculo.data_entrada, veiculo.data_saida)} dias
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">{veiculo.motivo || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+            {/* Dados recebidos */}
+            {!movimentacoes || movimentacoes.length === 0 ? (
+              <div className="text-center py-8">
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">Nenhum dado encontrado</h3>
+                <p className="text-gray-600">
+                  Não foram encontrados registros de movimentações de pátio no sistema.
+                </p>
+                <div className="mt-4 p-4 bg-yellow-50 text-yellow-800 rounded-md inline-block">
+                  <p>Status da API: {movimentacoes ? 'Dados recebidos (vazios)' : 'Nenhum dado recebido'}</p>
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <>
+                {/* Veículos atuais no pátio */}
+                <div className="mb-10">
+                  <h2 className="text-xl font-semibold text-gray-800 mb-4">Veículos Atualmente no Pátio ({veiculosNoPatio.length})</h2>
+                  {veiculosNoPatio.length === 0 ? (
+                    <p className="text-gray-500 py-4">Não há veículos no pátio que correspondam aos critérios de filtro.</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Placa</th>
+                            <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Tipo</th>
+                            <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Motorista</th>
+                            <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Posto</th>
+                            <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Data Entrada</th>
+                            <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Dias Parado</th>
+                            <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Motivo</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {veiculosNoPatio.map((veiculo, index) => (
+                            <tr key={`${veiculo.id}-${index}`} className="border-b border-gray-200 hover:bg-gray-50">
+                              <td className="py-3 px-4 font-medium">{veiculo.placa || 'Sem placa'}</td>
+                              <td className="py-3 px-4">{veiculo.tipo_veiculo || '-'}</td>
+                              <td className="py-3 px-4">{veiculo.motorista || veiculo.nome_motorista || '-'}</td>
+                              <td className="py-3 px-4">
+                                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium">
+                                  {veiculo.posto || 'Indeterminado'}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4">{formatarData(veiculo.data_entrada)}</td>
+                              <td className="py-3 px-4">
+                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-md text-xs font-medium">
+                                  {calcularDiasParado(veiculo.data_entrada, veiculo.data_saida)} dias
+                                </span>
+                              </td>
+                              <td className="py-3 px-4">{veiculo.motivo || veiculo.tipo_movimento || '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
 
-            {/* Histórico (veículos que já saíram) */}
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Histórico de Saídas ({veiculosQueJaSairam.length})</h2>
-              {veiculosQueJaSairam.length === 0 ? (
-                <p className="text-gray-500 py-4">Não há histórico de saídas no período filtrado.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="bg-gray-50">
-                        <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Placa</th>
-                        <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Tipo</th>
-                        <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Motorista</th>
-                        <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Posto</th>
-                        <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Entrada</th>
-                        <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Saída</th>
-                        <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Dias no Pátio</th>
-                        <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Motivo</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {veiculosQueJaSairam.map((veiculo) => (
-                        <tr key={veiculo.id} className="border-b border-gray-200 hover:bg-gray-50">
-                          <td className="py-3 px-4 font-medium">{veiculo.placa}</td>
-                          <td className="py-3 px-4">{veiculo.tipo_veiculo || '-'}</td>
-                          <td className="py-3 px-4">{veiculo.motorista}</td>
-                          <td className="py-3 px-4">
-                            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium">
-                              {veiculo.posto}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">{formatarData(veiculo.data_entrada)}</td>
-                          <td className="py-3 px-4">{formatarData(veiculo.data_saida)}</td>
-                          <td className="py-3 px-4">
-                            <span className="px-2 py-1 bg-green-100 text-green-800 rounded-md text-xs font-medium">
-                              {calcularDiasParado(veiculo.data_entrada, veiculo.data_saida)} dias
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">{veiculo.motivo || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                {/* Histórico (veículos que já saíram) */}
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-800 mb-4">Histórico de Saídas ({veiculosQueJaSairam.length})</h2>
+                  {veiculosQueJaSairam.length === 0 ? (
+                    <p className="text-gray-500 py-4">Não há histórico de saídas no período filtrado.</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Placa</th>
+                            <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Tipo</th>
+                            <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Motorista</th>
+                            <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Posto</th>
+                            <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Entrada</th>
+                            <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Saída</th>
+                            <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Dias no Pátio</th>
+                            <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Motivo</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {veiculosQueJaSairam.map((veiculo, index) => (
+                            <tr key={`${veiculo.id}-${index}`} className="border-b border-gray-200 hover:bg-gray-50">
+                              <td className="py-3 px-4 font-medium">{veiculo.placa || 'Sem placa'}</td>
+                              <td className="py-3 px-4">{veiculo.tipo_veiculo || '-'}</td>
+                              <td className="py-3 px-4">{veiculo.motorista || veiculo.nome_motorista || '-'}</td>
+                              <td className="py-3 px-4">
+                                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium">
+                                  {veiculo.posto || 'Indeterminado'}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4">{formatarData(veiculo.data_entrada)}</td>
+                              <td className="py-3 px-4">{formatarData(veiculo.data_saida)}</td>
+                              <td className="py-3 px-4">
+                                <span className="px-2 py-1 bg-green-100 text-green-800 rounded-md text-xs font-medium">
+                                  {calcularDiasParado(veiculo.data_entrada, veiculo.data_saida)} dias
+                                </span>
+                              </td>
+                              <td className="py-3 px-4">{veiculo.motivo || veiculo.tipo_movimento || '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
-              )}
+              </>
+            )}
+            
+            {/* Status da requisição no footer */}
+            <div className="mt-6 text-xs text-gray-500">
+              Status: {isLoading ? 'Carregando...' : movimentacoes ? `${movimentacoes.length} registros carregados` : 'Nenhum dado carregado'}
             </div>
           </>
         )}
