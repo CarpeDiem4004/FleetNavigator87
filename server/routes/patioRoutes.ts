@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { isAuthenticated, isHybridAuthenticated } from "../middleware/auth";
+import { isAuthenticated } from "../middleware/auth";
 import { db, pool } from "../db";
 
 const router = Router();
@@ -205,7 +205,14 @@ router.get("/movimentacoes", async (req: Request, res: Response) => {
  * Rota para buscar movimentações por placa
  * GET /api/patio/veiculos/:placa
  */
-router.get("/veiculos/:placa", isAuthenticated, async (req: Request, res: Response) => {
+router.get("/veiculos/:placa", async (req: Request, res: Response) => {
+  // Logging das informações para diagnóstico
+  console.log('[API Pátio/Veículos] Headers autenticação:', {
+    authorization: req.headers.authorization ? 'Present (redacted)' : 'Not present',
+    cookie: req.headers.cookie ? 'Present (redacted)' : 'Not present',
+    hasSession: !!req.session,
+    sessionID: req.sessionID
+  });
   try {
     const { placa } = req.params;
     console.log(`[API Pátio] Buscando movimentações para o veículo: ${placa}`);

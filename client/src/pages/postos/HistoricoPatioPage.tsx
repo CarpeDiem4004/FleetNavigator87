@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format, differenceInDays } from 'date-fns';
 import { fetchRecords } from '@/lib/supabase-client';
+import { useQuery } from '@tanstack/react-query';
 
 interface MovimentacaoPatio {
   id: number;
@@ -19,41 +20,54 @@ interface MovimentacaoPatio {
 }
 
 const HistoricoPatioPage: React.FC = () => {
-  const [movimentacoes, setMovimentacoes] = useState<MovimentacaoPatio[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateStart, setDateStart] = useState<string>('');
   const [dateEnd, setDateEnd] = useState<string>('');
 
-  const fetchAllMovimentacoes = async () => {
-    try {
-      setIsLoading(true);
+  // Usar React Query para buscar movimentações de pátio
+  const { data: movimentacoes = [], isLoading, refetch } = useQuery<MovimentacaoPatio[]>({
+    queryKey: ['/api/patio/movimentacoes'],
+    queryFn: async () => {
       console.log("[FETCH] Buscando todas as movimentações de pátio");
       
-      // Primeiro tenta usar o endpoint consolidado da API usando apiRequest para incluir tokens JWT
+      // Estratégia 1: Usar endpoint da API (prioridade)
       try {
-        // Importar dinamicamente o cliente para evitar ciclos de dependência
-        const { apiRequest } = await import('@/lib/queryClient');
+        const { queryClient } = await import('@/lib/queryClient');
         
-        // Usar apiRequest que automaticamente inclui tokens de autenticação
-        const response = await apiRequest('GET', '/api/patio/movimentacoes');
-        const data = await response.json();
+        // Buscar dados usando TanStack Query
+        const data = await queryClient.fetchQuery({
+          queryKey: ['/api/patio/movimentacoes'],
+          queryFn: async ({ queryKey }) => {
+            const [url] = queryKey;
+            const response = await fetch(url as string, {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`,
+              },
+              credentials: 'include',
+            });
+            
+            if (!response.ok) {
+              throw new Error(`Erro HTTP: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            
+            if (result && result.success && Array.isArray(result.data)) {
+              console.log("[FETCH] Dados recuperados da API consolidada:", result.data.length);
+              return result.data;
+            }
+            
+            throw new Error("Formato de resposta inválido da API");
+          },
+        });
         
-        if (data && data.success && Array.isArray(data.data)) {
-          console.log("[FETCH] Dados recuperados da API consolidada:", data.data.length);
-          setMovimentacoes(data.data);
-          setIsLoading(false);
-          return; // Sucesso, não precisa continuar com o plano B
-        } else {
-          console.error("[FETCH] Dados inválidos recebidos da API:", data);
-          // Continuar com o plano B em caso de resposta mal formada
-        }
+        return data;
       } catch (apiError) {
         console.error("[FETCH] Erro ao buscar da API consolidada:", apiError);
-        // Continuar com o plano B em caso de erro
       }
       
-      // Plano B: Buscar diretamente das tabelas usando o client Supabase
+      // Estratégia 2: Buscar diretamente das tabelas usando o client Supabase
       let resultados: MovimentacaoPatio[] = [];
       
       try {
@@ -76,7 +90,9 @@ const HistoricoPatioPage: React.FC = () => {
         const tabelasPostos = [
           'movimentacoes_patio_alair_v2',
           'movimentacoes_patio_campinas_v2',
-          'movimentacoes_patio_guarulhos_v2'
+          'movimentacoes_patio_guarulhos_v2',
+          'movimentacoes_patio_abc_v2',
+          'movimentacoes_patio_socorro_v2'
         ];
         
         for (const tabela of tabelasPostos) {
@@ -105,7 +121,9 @@ const HistoricoPatioPage: React.FC = () => {
                   observacoes: item.observacoes || '',
                   posto: tabela.includes('alair') ? 'Alair_v2' : 
                          tabela.includes('campinas') ? 'Campinas_v2' :
-                         tabela.includes('guarulhos') ? 'Guarulhos_v2' : 
+                         tabela.includes('guarulhos') ? 'Guarulhos_v2' :
+                         tabela.includes('abc') ? 'ABC_v2' :
+                         tabela.includes('socorro') ? 'Socorro_v2' : 
                          tabela.replace('movimentacoes_patio_', ''),
                   created_at: item.created_at || item.data_hora || new Date().toISOString(),
                   tipo_movimento: item.tipo_movimento || item.tipo_movimentacao || ''
@@ -125,25 +143,11 @@ const HistoricoPatioPage: React.FC = () => {
       }
       
       console.log("[FETCH] Total de dados recuperados após plano B:", resultados.length);
-      setMovimentacoes(resultados);
-    } catch (error) {
-      console.error('Erro ao buscar histórico de movimentações de pátio:', error);
-      setMovimentacoes([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAllMovimentacoes();
-    
-    // Atualiza os dados a cada 5 minutos
-    const interval = setInterval(() => {
-      fetchAllMovimentacoes();
-    }, 300000);
-    
-    return () => clearInterval(interval);
-  }, []);
+      return resultados;
+    },
+    refetchInterval: 300000, // Refetch a cada 5 minutos
+    staleTime: 60000, // Considerar dados "frescos" por 1 minuto
+  });
 
   const formatarData = (dataString: string | null) => {
     if (!dataString) return '-';
