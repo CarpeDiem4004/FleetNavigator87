@@ -6486,6 +6486,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (tabelaExisteResult.rows[0].exists) {
           console.log(`Tabela específica ${tabelaPosto} encontrada. Usando esta tabela.`);
           
+          // Primeiro, verificamos se a tabela tem uma coluna 'project'
+          const checkProjectColumn = `
+            SELECT EXISTS (
+              SELECT FROM information_schema.columns 
+              WHERE table_name = '${tabelaPosto}' 
+              AND column_name = 'project'
+            );
+          `;
+          
+          const projectColumnExists = await pool.query(checkProjectColumn);
+          const hasProjectColumn = projectColumnExists.rows[0].exists;
+          
           // Consulta na tabela específica do posto v2
           const queryV2 = `
             SELECT 
@@ -6504,7 +6516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               observacoes,
               lavagem,
               tipo_lavagem,
-              'COCA-COLA' as project,
+              ${hasProjectColumn ? 'project' : "'COCA-COLA' as project"},
               created_at,
               updated_at,
               '${posto}' as posto
