@@ -211,7 +211,8 @@ const HistoricoGeralPage: React.FC = () => {
 
   const formatarNumero = (valor: number) => {
     try {
-      return new Intl.NumberFormat('pt-BR').format(Math.round(valor));
+      // Corrigir arredondamento para exibir uma casa decimal para litros
+      return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(valor || 0);
     } catch (error) {
       console.error('Erro ao formatar número:', error);
       return '0';
