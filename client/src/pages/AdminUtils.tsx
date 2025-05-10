@@ -38,7 +38,7 @@ const AdminUtils = () => {
     { name: 'abastecimentos', label: 'Abastecimentos' },
     { name: 'multas', label: 'Multas' },
     { name: 'linha_corredor', label: 'Line Hall' },
-    { name: 'abastecimentos_postos', label: 'Abastecimentos em Postos' },
+    // Tabela 'abastecimentos_postos' foi unificada com 'abastecimentos'
     { name: 'movimentacoes_patio', label: 'Movimentações de Pátio' },
     { name: 'entradas_combustivel', label: 'Entradas de Combustível' },
     { name: 'status_tanques', label: 'Status de Tanques' },
