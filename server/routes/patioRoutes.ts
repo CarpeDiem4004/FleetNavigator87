@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { isAuthenticated } from "../middleware/auth";
+import { isAuthenticated, isHybridAuthenticated } from "../middleware/auth";
 import { db, pool } from "../db";
 
 const router = Router();
@@ -169,7 +169,16 @@ async function getConsolidatedPatioData() {
  * Rota para obter todas as movimentações de pátio consolidadas
  * GET /api/patio/movimentacoes
  */
-router.get("/movimentacoes", isAuthenticated, async (req: Request, res: Response) => {
+router.get("/movimentacoes", async (req: Request, res: Response) => {
+  // Logging das informações de autenticação para diagnóstico
+  console.log('[API Pátio] Headers autenticação:', {
+    authorization: req.headers.authorization ? 'Present (redacted)' : 'Not present',
+    cookie: req.headers.cookie ? 'Present (redacted)' : 'Not present',
+    hasSession: !!req.session,
+    sessionID: req.sessionID,
+    isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+    user: req.user ? { id: req.user.id, email: req.user.email } : null
+  });
   try {
     console.log("[API Pátio] Iniciando busca de movimentações de pátio consolidadas");
     

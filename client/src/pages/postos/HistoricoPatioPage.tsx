@@ -30,15 +30,13 @@ const HistoricoPatioPage: React.FC = () => {
       setIsLoading(true);
       console.log("[FETCH] Buscando todas as movimentações de pátio");
       
-      // Primeiro tenta usar o endpoint consolidado da API
+      // Primeiro tenta usar o endpoint consolidado da API usando apiRequest para incluir tokens JWT
       try {
-        // Usar com cookie de sessão para autenticação
-        const response = await fetch('/api/patio/movimentacoes');
+        // Importar dinamicamente o cliente para evitar ciclos de dependência
+        const { apiRequest } = await import('@/lib/queryClient');
         
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
+        // Usar apiRequest que automaticamente inclui tokens de autenticação
+        const response = await apiRequest('GET', '/api/patio/movimentacoes');
         const data = await response.json();
         
         if (data && data.success && Array.isArray(data.data)) {
@@ -229,10 +227,12 @@ const HistoricoPatioPage: React.FC = () => {
       // Adicionar a planilha ao livro
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Histórico Pátio');
       
-      // Gerar arquivo e fazer download
-      XLSX.writeFile(workbook, `historico_patio_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      // Gerar arquivo e fazer download com data e hora para melhor identificação
+      const dataHoraExportacao = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
+      const fileName = `historico_patio_${dataHoraExportacao}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
       
-      console.log('Exportação concluída com sucesso');
+      console.log('Exportação concluída com sucesso:', fileName);
     } catch (error) {
       console.error('Erro ao exportar para Excel:', error);
       alert('Erro ao exportar dados. Por favor, tente novamente.');
@@ -260,7 +260,7 @@ const HistoricoPatioPage: React.FC = () => {
     }
     
     // Conversão segura de datas
-    const getValidDate = (dateStr) => {
+    const getValidDate = (dateStr: string | null): Date | null => {
       if (!dateStr) return null;
       try {
         const date = new Date(dateStr);
