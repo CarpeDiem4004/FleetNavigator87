@@ -27,19 +27,95 @@ const HistoricoPatioPage: React.FC = () => {
       setIsLoading(true);
       console.log("[FETCH] Buscando todas as movimentações de pátio");
       
-      // Buscar todas as movimentações sem filtro de posto
-      const response = await fetchRecords('movimentacoes_patio', {
-        limit: 500 // Aumentamos o limite para trazer mais registros
+      // Buscar todas as movimentações da tabela principal
+      const responsePrincipal = await fetchRecords('movimentacoes_patio', {
+        limit: 500, // Aumentamos o limite para trazer mais registros
+        order: { column: 'data_entrada', ascending: false } // Ordenar por data de entrada (mais recente primeiro)
       });
       
-      // Verificar se os dados são válidos e um array
-      if (response && response.success && Array.isArray(response.data)) {
-        console.log("[FETCH] Dados recuperados:", response.data.length);
-        setMovimentacoes(response.data);
-      } else {
-        console.error("[FETCH] Dados inválidos recebidos:", response);
-        setMovimentacoes([]);
+      let resultados: MovimentacaoPatio[] = [];
+      
+      // Verificar se os dados são válidos e um array para a tabela principal
+      if (responsePrincipal && responsePrincipal.success && Array.isArray(responsePrincipal.data)) {
+        console.log("[FETCH] Dados recuperados da tabela principal:", responsePrincipal.data.length);
+        resultados = [...responsePrincipal.data];
       }
+      
+      // Tentar buscar as tabelas específicas dos postos também
+      try {
+        // Lista de tabelas específicas dos postos
+        const tabelasPostos = [
+          'movimentacoes_patio_alair_v2',
+          'movimentacoes_patio_campinas_v2',
+          'movimentacoes_patio_guarulhos_v2',
+          'posto_murici_movimentacoes_patio'
+        ];
+        
+        // Buscar dados de cada tabela específica
+        for (const tabela of tabelasPostos) {
+          try {
+            const responseEspecifica = await fetchRecords(tabela, {
+              limit: 200, // Limite menor para cada tabela específica
+              order: { column: 'created_at', ascending: false } // Ordenar pela data de criação
+            });
+            
+            if (responseEspecifica && responseEspecifica.success && Array.isArray(responseEspecifica.data)) {
+              console.log(`[FETCH] Dados recuperados da tabela ${tabela}:`, responseEspecifica.data.length);
+              
+              // Mapear os dados para o formato padrão caso a estrutura seja diferente
+              const dadosFormatados = responseEspecifica.data.map(item => {
+                // Adaptar o formato dos dados conforme a tabela de origem
+                if (tabela === 'movimentacoes_patio_alair_v2') {
+                  return {
+                    id: item.id,
+                    placa: item.placa || '',
+                    tipo_veiculo: item.tipo_veiculo || '',
+                    motorista: item.motorista || '',
+                    nome_motorista: item.motorista || '',
+                    nome_operador: item.usuario_operador || '',
+                    data_entrada: item.data_hora || '',
+                    data_saida: null, // Não temos este campo na tabela específica
+                    motivo: item.tipo_movimentacao || '',
+                    observacoes: item.observacoes || '',
+                    posto: 'Alair_v2',
+                    created_at: item.created_at || item.data_hora || new Date().toISOString(),
+                    tipo_movimento: item.tipo_movimentacao || ''
+                  };
+                } else {
+                  // Para outras tabelas, tentar usar os campos diretamente ou valores padrão
+                  return {
+                    id: item.id,
+                    placa: item.placa || '',
+                    tipo_veiculo: item.tipo_veiculo || '',
+                    motorista: item.motorista || '',
+                    nome_motorista: item.nome_motorista || item.motorista || '',
+                    nome_operador: item.nome_operador || item.usuario_operador || '',
+                    data_entrada: item.data_entrada || item.data_hora || '',
+                    data_saida: item.data_saida || null,
+                    motivo: item.motivo || item.tipo_movimentacao || '',
+                    observacoes: item.observacoes || '',
+                    posto: tabela.replace('movimentacoes_patio_', '').replace('posto_murici_movimentacoes_patio', 'Murici'),
+                    created_at: item.created_at || item.data_hora || new Date().toISOString(),
+                    tipo_movimento: item.tipo_movimento || item.tipo_movimentacao || ''
+                  };
+                }
+              });
+              
+              // Adicionar os dados formatados ao resultado
+              resultados = [...resultados, ...dadosFormatados];
+            }
+          } catch (error) {
+            console.error(`[FETCH] Erro ao buscar dados da tabela ${tabela}:`, error);
+            // Continuar com as outras tabelas mesmo se uma der erro
+          }
+        }
+      } catch (error) {
+        console.error('[FETCH] Erro ao buscar tabelas específicas:', error);
+        // Continuar com os dados da tabela principal
+      }
+      
+      console.log("[FETCH] Total de dados recuperados após consolidação:", resultados.length);
+      setMovimentacoes(resultados);
     } catch (error) {
       console.error('Erro ao buscar histórico de movimentações de pátio:', error);
       setMovimentacoes([]);
