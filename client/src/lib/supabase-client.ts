@@ -46,11 +46,11 @@ export async function checkSupabaseConnection(): Promise<boolean> {
     // Usamos uma tabela simples para verificar a conexão que é menos provável de ter problemas de permissão
     const client = createSupabaseClient();
     
-    // Tentamos primeiro com uma tabela comum com baixa chance de erro de permissão
+    // Tentamos primeiro com a tabela de abastecimentos
     try {
-      const { data, error } = await client.from('abastecimentos_postos').select('count()', { count: 'exact' });
+      const { data, error } = await client.from('abastecimentos').select('count()', { count: 'exact' });
       if (!error) {
-        console.log('Conexão com Supabase estabelecida com sucesso (abastecimentos_postos)');
+        console.log('Conexão com Supabase estabelecida com sucesso (abastecimentos)');
         return true;
       }
     } catch (firstError) {
@@ -346,7 +346,7 @@ export async function limparTodosOsDados(
     // Primeiro tabelas dependentes
     'multas', 'fines',
     'abastecimentos', 'refueling',
-    'abastecimentos_postos',
+    // 'abastecimentos_postos' removido (tabela inexistente)
     'movimentacoes_patio',
     'recebimentos_combustivel',
     'manutencao', 'maintenance',

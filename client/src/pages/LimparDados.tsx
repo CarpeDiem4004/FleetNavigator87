@@ -26,7 +26,7 @@ export default function LimparDados() {
     { name: 'refueling', label: 'Abastecimentos' },
     { name: 'fines', label: 'Multas' },
     { name: 'line_hall', label: 'Line Hall' },
-    { name: 'abastecimentos_postos', label: 'Abastecimentos em Postos' },
+    { name: 'abastecimentos', label: 'Abastecimentos em Postos' },
     { name: 'movimentacoes_patio', label: 'Movimentações de Pátio' },
     { name: 'entradas_combustivel', label: 'Entradas de Combustível' },
     { name: 'status_tanques', label: 'Status de Tanques' },
