@@ -32,6 +32,10 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
   const [historico, setHistorico] = useState<AbastecimentoItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dataInicio, setDataInicio] = useState('');
+  const [dataFim, setDataFim] = useState('');
+  const [placaFiltro, setPlacaFiltro] = useState('');
+  const [historicoFiltrado, setHistoricoFiltrado] = useState<AbastecimentoItem[]>([]);
   
   const loadHistorico = async () => {
     setIsLoading(true);
@@ -79,12 +83,60 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
     
     return () => clearInterval(intervalId);
   }, [posto, refreshTrigger]);
+  
+  // Aplicar filtros quando os parâmetros mudarem
+  useEffect(() => {
+    if (!historico.length) {
+      setHistoricoFiltrado([]);
+      return;
+    }
+    
+    let resultados = [...historico];
+    
+    // Filtrar por data inicial
+    if (dataInicio) {
+      const dataInicioObj = new Date(dataInicio);
+      dataInicioObj.setHours(0, 0, 0, 0);
+      
+      resultados = resultados.filter(item => {
+        const itemDate = new Date(item.created_at);
+        return itemDate >= dataInicioObj;
+      });
+    }
+    
+    // Filtrar por data final
+    if (dataFim) {
+      const dataFimObj = new Date(dataFim);
+      dataFimObj.setHours(23, 59, 59, 999);
+      
+      resultados = resultados.filter(item => {
+        const itemDate = new Date(item.created_at);
+        return itemDate <= dataFimObj;
+      });
+    }
+    
+    // Filtrar por placa
+    if (placaFiltro) {
+      const placaLower = placaFiltro.toLowerCase();
+      resultados = resultados.filter(item => 
+        item.placa.toLowerCase().includes(placaLower)
+      );
+    }
+    
+    // Ordenar por data (mais recente primeiro)
+    resultados.sort((a, b) => {
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+    
+    setHistoricoFiltrado(resultados);
+  }, [historico, dataInicio, dataFim, placaFiltro]);
 
   // Exportar para Excel
   const exportToExcel = () => {
-    if (historico.length === 0) return;
+    const dadosParaExportar = historicoFiltrado.length > 0 ? historicoFiltrado : historico;
+    if (dadosParaExportar.length === 0) return;
     
-    const workbookData = historico.map(item => ({
+    const workbookData = dadosParaExportar.map(item => ({
       'Data/Hora': item.data_hora,
       'Placa': item.placa,
       'Combustível': item.tipo_combustivel,
