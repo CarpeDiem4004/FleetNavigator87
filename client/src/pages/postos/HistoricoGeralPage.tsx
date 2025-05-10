@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { fetchRecords } from '@/lib/supabase-client';
 import { format } from 'date-fns';
+import { FaGasPump, FaMoneyBillWave, FaCar, FaWater } from 'react-icons/fa';
+import { BsFillFuelPumpFill } from 'react-icons/bs';
+import { RiOilFill, RiGasStationFill } from 'react-icons/ri';
+import { GiGasPump, GiWaterTank } from 'react-icons/gi';
 
 interface Abastecimento {
   id: number;
@@ -325,7 +329,7 @@ const HistoricoGeralPage: React.FC = () => {
     return passesSearch && passesDateFilter;
   });
 
-  // Cálculos para o card de consolidado
+  // Cálculos para os mostradores
   const calcularConsolidado = () => {
     const totalLitros = filteredData.reduce((sum, item) => sum + (item.litros || 0), 0);
     const totalValor = filteredData.reduce((sum, item) => sum + (item.valor_total || 0), 0);
@@ -338,6 +342,40 @@ const HistoricoGeralPage: React.FC = () => {
     
     // Contar veículos distintos
     const veiculos = new Set(filteredData.map(item => item.placa));
+    
+    // Cálculos específicos por tipo de combustível
+    const litrosDiesel = filteredData
+      .filter(item => item.tipo_combustivel?.toLowerCase().includes('diesel'))
+      .reduce((sum, item) => sum + (item.litros || 0), 0);
+      
+    const litrosGasolina = filteredData
+      .filter(item => item.tipo_combustivel?.toLowerCase().includes('gasolina'))
+      .reduce((sum, item) => sum + (item.litros || 0), 0);
+      
+    const litrosAlcool = filteredData
+      .filter(item => item.tipo_combustivel?.toLowerCase().includes('alcool') || item.tipo_combustivel?.toLowerCase().includes('álcool') || item.tipo_combustivel?.toLowerCase().includes('etanol'))
+      .reduce((sum, item) => sum + (item.litros || 0), 0);
+      
+    const litrosArla = filteredData
+      .filter(item => item.tipo_combustivel?.toLowerCase().includes('arla'))
+      .reduce((sum, item) => sum + (item.litros || 0), 0);
+      
+    // Valores por tipo de combustível  
+    const valorDiesel = filteredData
+      .filter(item => item.tipo_combustivel?.toLowerCase().includes('diesel'))
+      .reduce((sum, item) => sum + (item.valor_total || 0), 0);
+      
+    const valorGasolina = filteredData
+      .filter(item => item.tipo_combustivel?.toLowerCase().includes('gasolina'))
+      .reduce((sum, item) => sum + (item.valor_total || 0), 0);
+      
+    const valorAlcool = filteredData
+      .filter(item => item.tipo_combustivel?.toLowerCase().includes('alcool') || item.tipo_combustivel?.toLowerCase().includes('álcool') || item.tipo_combustivel?.toLowerCase().includes('etanol'))
+      .reduce((sum, item) => sum + (item.valor_total || 0), 0);
+      
+    const valorArla = filteredData
+      .filter(item => item.tipo_combustivel?.toLowerCase().includes('arla'))
+      .reduce((sum, item) => sum + (item.valor_total || 0), 0);
     
     // Calcular consumo por tipo de combustível
     const consumoPorTipo = filteredData.reduce((acc, item) => {
@@ -353,7 +391,15 @@ const HistoricoGeralPage: React.FC = () => {
       postos: postos.size,
       motoristas: motoristas.size,
       veiculos: veiculos.size,
-      consumoPorTipo
+      consumoPorTipo,
+      litrosDiesel,
+      litrosGasolina,
+      litrosAlcool,
+      litrosArla,
+      valorDiesel,
+      valorGasolina,
+      valorAlcool,
+      valorArla
     };
   };
   
@@ -430,7 +476,147 @@ const HistoricoGeralPage: React.FC = () => {
         </div>
         
         
-        {/* Card de Postos Disponíveis foi removido conforme solicitado */}
+        {!isLoading && filteredData.length > 0 && (
+          <div className="my-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              {/* Card de total de litros abastecidos */}
+              <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
+                <div className="flex items-center">
+                  <div className="mr-4 bg-blue-100 p-3 rounded-full">
+                    <FaGasPump className="h-6 w-6 text-blue-700" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Total de Litros</h3>
+                    <p className="text-xl font-bold text-blue-700">{formatarNumero(dadosConsolidados.totalLitros)}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Card de veículos abastecidos */}
+              <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
+                <div className="flex items-center">
+                  <div className="mr-4 bg-blue-100 p-3 rounded-full">
+                    <FaCar className="h-6 w-6 text-blue-700" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Veículos Abastecidos</h3>
+                    <p className="text-xl font-bold text-blue-700">{dadosConsolidados.veiculos}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Card de valor total dos abastecimentos */}
+              <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
+                <div className="flex items-center">
+                  <div className="mr-4 bg-blue-100 p-3 rounded-full">
+                    <FaMoneyBillWave className="h-6 w-6 text-blue-700" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Valor Total</h3>
+                    <p className="text-xl font-bold text-blue-700">{formatarPreco(dadosConsolidados.totalValor)}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Card de registros */}
+              <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
+                <div className="flex items-center">
+                  <div className="mr-4 bg-blue-100 p-3 rounded-full">
+                    <BsFillFuelPumpFill className="h-6 w-6 text-blue-700" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Abastecimentos</h3>
+                    <p className="text-xl font-bold text-blue-700">{dadosConsolidados.registros}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <h2 className="text-lg font-semibold text-gray-700 mb-3">Detalhes por Tipo de Combustível</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              {/* Card de diesel */}
+              <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
+                <div className="flex items-center mb-2">
+                  <div className="mr-3 bg-blue-100 p-2 rounded-full">
+                    <GiGasPump className="h-5 w-5 text-blue-700" />
+                  </div>
+                  <h3 className="font-medium text-gray-700">Diesel</h3>
+                </div>
+                <div className="flex flex-col">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-gray-500 text-sm">Litros:</span>
+                    <span className="font-bold text-blue-700">{formatarNumero(dadosConsolidados.litrosDiesel)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-500 text-sm">Valor:</span>
+                    <span className="font-bold text-blue-700">{formatarPreco(dadosConsolidados.valorDiesel)}</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Card de gasolina */}
+              <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
+                <div className="flex items-center mb-2">
+                  <div className="mr-3 bg-blue-100 p-2 rounded-full">
+                    <RiGasStationFill className="h-5 w-5 text-blue-700" />
+                  </div>
+                  <h3 className="font-medium text-gray-700">Gasolina</h3>
+                </div>
+                <div className="flex flex-col">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-gray-500 text-sm">Litros:</span>
+                    <span className="font-bold text-blue-700">{formatarNumero(dadosConsolidados.litrosGasolina)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-500 text-sm">Valor:</span>
+                    <span className="font-bold text-blue-700">{formatarPreco(dadosConsolidados.valorGasolina)}</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Card de álcool */}
+              <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
+                <div className="flex items-center mb-2">
+                  <div className="mr-3 bg-blue-100 p-2 rounded-full">
+                    <RiOilFill className="h-5 w-5 text-blue-700" />
+                  </div>
+                  <h3 className="font-medium text-gray-700">Álcool</h3>
+                </div>
+                <div className="flex flex-col">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-gray-500 text-sm">Litros:</span>
+                    <span className="font-bold text-blue-700">{formatarNumero(dadosConsolidados.litrosAlcool)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-500 text-sm">Valor:</span>
+                    <span className="font-bold text-blue-700">{formatarPreco(dadosConsolidados.valorAlcool)}</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Card de ARLA */}
+              <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
+                <div className="flex items-center mb-2">
+                  <div className="mr-3 bg-blue-100 p-2 rounded-full">
+                    <GiWaterTank className="h-5 w-5 text-blue-700" />
+                  </div>
+                  <h3 className="font-medium text-gray-700">ARLA</h3>
+                </div>
+                <div className="flex flex-col">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-gray-500 text-sm">Litros:</span>
+                    <span className="font-bold text-blue-700">{formatarNumero(dadosConsolidados.litrosArla)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-500 text-sm">Valor:</span>
+                    <span className="font-bold text-blue-700">{formatarPreco(dadosConsolidados.valorArla)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         
         {isLoading ? (
           <div className="text-center py-8">
