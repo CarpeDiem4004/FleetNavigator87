@@ -67,8 +67,9 @@ const HistoricoGeralPage: React.FC = () => {
       }
       
       try {
-        // 2. Buscar abastecimentos externos do Supabase
-        const response = await fetchRecords('abastecimentos_postos', {
+        // 2. Buscar abastecimentos diretos do Supabase usando a tabela correta 'abastecimentos'
+        // (não 'abastecimentos_postos' que não existe)
+        const response = await fetchRecords('abastecimentos', {
           limit: 500 // Aumentamos o limite para trazer mais registros
         });
         

@@ -62,7 +62,7 @@ export default function ApiTester() {
         // Se for API de limpeza específica, adicionar tabelas sugeridas
         if (apiPath === '/api/admin/clear-supabase-data') {
           body.tables = [
-            'abastecimentos_postos',
+            'abastecimentos',
             'movimentacoes_patio',
             'entradas_combustivel', 
             'status_tanques',

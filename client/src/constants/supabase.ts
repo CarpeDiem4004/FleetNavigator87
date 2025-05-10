@@ -157,7 +157,7 @@ export async function buscarDadosSupabase(endpoint: string, queryParams: string 
 
 // Endpoints disponíveis
 export const ENDPOINTS = {
-  ABASTECIMENTOS: "abastecimentos_postos",
+  ABASTECIMENTOS: "abastecimentos", // Corrigindo para o nome real da tabela no Supabase
   RECEBIMENTOS: "recebimentos_tanques",
   MOVIMENTACOES: "movimentacoes_patio",
   CONFIG_TANQUES: "controle_tanques" // Alterando para um nome que pode ser diferente na API
