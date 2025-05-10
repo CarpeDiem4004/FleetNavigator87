@@ -573,6 +573,7 @@ const HistoricoConsolidadoView: React.FC = () => {
                   <TableHead className="w-[100px]">Data/Hora</TableHead>
                   <TableHead className="w-[100px]">Posto</TableHead>
                   <TableHead>Placa</TableHead>
+                  <TableHead>Projeto</TableHead>
                   <TableHead>Combustível</TableHead>
                   <TableHead className="text-right">Litros</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
@@ -625,6 +626,9 @@ const HistoricoConsolidadoView: React.FC = () => {
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium">{item.placa}</TableCell>
+                      <TableCell>
+                        {item.project || 'N/A'}
+                      </TableCell>
                       <TableCell>
                         {item.tipo_combustivel === 'ARLA' ? (
                           <span className="text-blue-600">ARLA</span>
