@@ -3,12 +3,16 @@
  * Esta view é necessária para a página de histórico consolidado funcionar
  */
 
-const { Pool } = require('pg');
-const fs = require('fs');
-const path = require('path');
+import pg from 'pg';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
 // Carregar variáveis de ambiente
-require('dotenv').config();
+dotenv.config();
+
+const { Pool } = pg;
 
 // Verificar se temos a variável DATABASE_URL
 if (!process.env.DATABASE_URL) {
@@ -115,43 +119,223 @@ SELECT
     a.created_at
 FROM (`;
     
-    // Adicionar cada tabela existente à view
+    // Adicionar cada tabela existente à view, selecionando apenas as colunas necessárias
     const partes = [];
     
     if (tabelasExistentes.includes('abastecimentos_posto_osasco_v2')) {
-      partes.push("SELECT *, 'Osasco_v2' AS posto FROM abastecimentos_posto_osasco_v2");
+      partes.push(`
+        SELECT 
+          id, 
+          placa, 
+          COALESCE(hodometro_atual, km_atual, km) AS km,
+          tipo_combustivel,
+          COALESCE(litros, quantidade_litros) AS quantidade_litros,
+          motorista AS nome_motorista,
+          rg_motorista,
+          operador AS nome_operador,
+          valor_litro,
+          valor_total,
+          tipo_veiculo,
+          observacoes,
+          lavagem,
+          tipo_lavagem,
+          'Osasco_v2' AS nome_posto,
+          data_hora,
+          created_at
+        FROM abastecimentos_posto_osasco_v2
+      `);
     }
     
     if (tabelasExistentes.includes('abastecimentos_posto_abc_v2')) {
-      partes.push("SELECT *, 'ABC_v2' AS posto FROM abastecimentos_posto_abc_v2");
+      partes.push(`
+        SELECT 
+          id, 
+          placa, 
+          COALESCE(hodometro_atual, km_atual, km) AS km,
+          tipo_combustivel,
+          COALESCE(litros, quantidade_litros) AS quantidade_litros,
+          motorista AS nome_motorista,
+          rg_motorista,
+          operador AS nome_operador,
+          valor_litro,
+          valor_total,
+          tipo_veiculo,
+          observacoes,
+          lavagem,
+          tipo_lavagem,
+          'ABC_v2' AS nome_posto,
+          data_hora,
+          created_at
+        FROM abastecimentos_posto_abc_v2
+      `);
     }
     
     if (tabelasExistentes.includes('abastecimentos_posto_socorro_v2')) {
-      partes.push("SELECT *, 'Socorro_v2' AS posto FROM abastecimentos_posto_socorro_v2");
+      partes.push(`
+        SELECT 
+          id, 
+          placa, 
+          COALESCE(hodometro_atual, km_atual, km) AS km,
+          tipo_combustivel,
+          COALESCE(litros, quantidade_litros) AS quantidade_litros,
+          motorista AS nome_motorista,
+          rg_motorista,
+          operador AS nome_operador,
+          valor_litro,
+          valor_total,
+          tipo_veiculo,
+          observacoes,
+          lavagem,
+          tipo_lavagem,
+          'Socorro_v2' AS nome_posto,
+          data_hora,
+          created_at
+        FROM abastecimentos_posto_socorro_v2
+      `);
     }
     
     if (tabelasExistentes.includes('abastecimentos_posto_sorocaba_v2')) {
-      partes.push("SELECT *, 'Sorocaba_v2' AS posto FROM abastecimentos_posto_sorocaba_v2");
+      partes.push(`
+        SELECT 
+          id, 
+          placa, 
+          COALESCE(hodometro_atual, km_atual, km) AS km,
+          tipo_combustivel,
+          COALESCE(litros, quantidade_litros) AS quantidade_litros,
+          motorista AS nome_motorista,
+          rg_motorista,
+          operador AS nome_operador,
+          valor_litro,
+          valor_total,
+          tipo_veiculo,
+          observacoes,
+          lavagem,
+          tipo_lavagem,
+          'Sorocaba_v2' AS nome_posto,
+          data_hora,
+          created_at
+        FROM abastecimentos_posto_sorocaba_v2
+      `);
     }
     
     if (tabelasExistentes.includes('abastecimentos_posto_campinas_v2')) {
-      partes.push("SELECT *, 'Campinas_v2' AS posto FROM abastecimentos_posto_campinas_v2");
+      partes.push(`
+        SELECT 
+          id, 
+          placa, 
+          COALESCE(hodometro_atual, km_atual, km) AS km,
+          tipo_combustivel,
+          COALESCE(litros, quantidade_litros) AS quantidade_litros,
+          motorista AS nome_motorista,
+          rg_motorista,
+          operador AS nome_operador,
+          valor_litro,
+          valor_total,
+          tipo_veiculo,
+          observacoes,
+          lavagem,
+          tipo_lavagem,
+          'Campinas_v2' AS nome_posto,
+          data_hora,
+          created_at
+        FROM abastecimentos_posto_campinas_v2
+      `);
     }
     
     if (tabelasExistentes.includes('posto_remedios_abastecimentos')) {
-      partes.push("SELECT *, 'Remedios' AS posto FROM posto_remedios_abastecimentos");
+      partes.push(`
+        SELECT 
+          id, 
+          placa, 
+          COALESCE(hodometro_atual, km_atual, km) AS km,
+          tipo_combustivel,
+          COALESCE(litros, quantidade_litros) AS quantidade_litros,
+          motorista AS nome_motorista,
+          rg_motorista,
+          operador AS nome_operador,
+          valor_litro,
+          valor_total,
+          tipo_veiculo,
+          observacoes,
+          lavagem,
+          tipo_lavagem,
+          'Remedios' AS nome_posto,
+          data_hora,
+          created_at
+        FROM posto_remedios_abastecimentos
+      `);
     }
     
     if (tabelasExistentes.includes('abastecimentos_posto_ipatinga_v2')) {
-      partes.push("SELECT *, 'Ipatinga' AS posto FROM abastecimentos_posto_ipatinga_v2");
+      partes.push(`
+        SELECT 
+          id, 
+          placa, 
+          COALESCE(hodometro_atual, km_atual, km) AS km,
+          tipo_combustivel,
+          COALESCE(litros, quantidade_litros) AS quantidade_litros,
+          motorista AS nome_motorista,
+          rg_motorista,
+          operador AS nome_operador,
+          valor_litro,
+          valor_total,
+          tipo_veiculo,
+          observacoes,
+          lavagem,
+          tipo_lavagem,
+          'Ipatinga_v2' AS nome_posto,
+          data_hora,
+          created_at
+        FROM abastecimentos_posto_ipatinga_v2
+      `);
     }
     
     if (tabelasExistentes.includes('abastecimentos_posto_guarulhos')) {
-      partes.push("SELECT *, 'Guarulhos' AS posto FROM abastecimentos_posto_guarulhos");
+      partes.push(`
+        SELECT 
+          id, 
+          placa, 
+          COALESCE(hodometro_atual, km_atual, km) AS km,
+          tipo_combustivel,
+          COALESCE(litros, quantidade_litros) AS quantidade_litros,
+          motorista AS nome_motorista,
+          rg_motorista,
+          operador AS nome_operador,
+          valor_litro,
+          valor_total,
+          tipo_veiculo,
+          observacoes,
+          lavagem,
+          tipo_lavagem,
+          'Guarulhos' AS nome_posto,
+          data_hora,
+          created_at
+        FROM abastecimentos_posto_guarulhos
+      `);
     }
     
     if (tabelasExistentes.includes('abastecimentos_posto_vargemgrande')) {
-      partes.push("SELECT *, 'VargemGrande' AS posto FROM abastecimentos_posto_vargemgrande");
+      partes.push(`
+        SELECT 
+          id, 
+          placa, 
+          COALESCE(hodometro_atual, km_atual, km) AS km,
+          tipo_combustivel,
+          COALESCE(litros, quantidade_litros) AS quantidade_litros,
+          motorista AS nome_motorista,
+          rg_motorista,
+          operador AS nome_operador,
+          valor_litro,
+          valor_total,
+          tipo_veiculo,
+          observacoes,
+          lavagem,
+          tipo_lavagem,
+          'VargemGrande' AS nome_posto,
+          data_hora,
+          created_at
+        FROM abastecimentos_posto_vargemgrande
+      `);
     }
     
     viewSql += partes.join('\nUNION ALL\n');
