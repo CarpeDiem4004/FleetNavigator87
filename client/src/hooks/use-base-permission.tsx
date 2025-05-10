@@ -279,6 +279,7 @@ export const useBasePermission = (): BasePermissionHook => {
         '/work-safety',                               // Segurança do Trabalho
         '/postos/visao-geral',                        // Visão Geral dos Postos
         '/postos',                                    // Postos de Abastecimento
+        '/postos/historico-consolidado',              // Histórico Consolidado de Abastecimentos
         '/oficina/murici'                             // Oficina Murici
       ];
       
