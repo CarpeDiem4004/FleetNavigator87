@@ -8777,6 +8777,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Registrar rotas para os KPIs do dashboard
   registerDashboardKpiRoutes(app);
+  
+  // Registrar rotas para histórico consolidado de abastecimentos
+  app.use('/api/historico', historicoConsolidadoRoutes);
 
   const httpServer = createServer(app);
   return httpServer;
