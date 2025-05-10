@@ -70,7 +70,7 @@ const HistoricoConsolidadoView: React.FC = () => {
   const [dataInicio, setDataInicio] = useState<string>('');
   const [dataFim, setDataFim] = useState<string>('');
   const [placaFiltro, setPlacaFiltro] = useState<string>('');
-  const [postoFiltro, setPostoFiltro] = useState<string>('');
+  const [postoFiltro, setPostoFiltro] = useState<string>('todos');
   const [historicoFiltrado, setHistoricoFiltrado] = useState<HistoricoAbastecimentoGlobal[]>([]);
   const [postos, setPostos] = useState<string[]>([]);
 
@@ -167,7 +167,7 @@ const HistoricoConsolidadoView: React.FC = () => {
     }
     
     // Filtrar por posto
-    if (postoFiltro) {
+    if (postoFiltro && postoFiltro !== 'todos') {
       resultados = resultados.filter(item => 
         item.nome_posto === postoFiltro
       );
@@ -394,7 +394,7 @@ const HistoricoConsolidadoView: React.FC = () => {
                       <SelectValue placeholder="Selecione o posto" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todos os Postos</SelectItem>
+                      <SelectItem value="todos">Todos os Postos</SelectItem>
                       {postos.map(posto => (
                         <SelectItem key={posto} value={posto}>
                           {posto.toUpperCase()}
@@ -413,9 +413,9 @@ const HistoricoConsolidadoView: React.FC = () => {
                   setDataInicio('');
                   setDataFim('');
                   setPlacaFiltro('');
-                  setPostoFiltro('');
+                  setPostoFiltro('todos');
                 }}
-                disabled={!dataInicio && !dataFim && !placaFiltro && !postoFiltro}
+                disabled={!dataInicio && !dataFim && !placaFiltro && (postoFiltro === 'todos' || !postoFiltro)}
                 className="h-8"
               >
                 <Filter className="h-3.5 w-3.5 mr-1" />
