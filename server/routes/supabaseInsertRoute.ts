@@ -16,7 +16,7 @@ export async function supabaseInsertHandler(req: Request, res: Response) {
     
     // Verifica se é uma solicitação relacionada a postos ou Posto Remédios
     const posto = req.body.posto;
-    const isPostoRequest = table === 'abastecimentos_postos' || 
+    const isPostoRequest = table === 'abastecimentos' || 
                           table === 'abastecimentos_supabase' || 
                           posto === 'POSTO REMÉDIOS';
     
