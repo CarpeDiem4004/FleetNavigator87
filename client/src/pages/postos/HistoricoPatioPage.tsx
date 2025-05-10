@@ -27,28 +27,50 @@ const HistoricoPatioPage: React.FC = () => {
       setIsLoading(true);
       console.log("[FETCH] Buscando todas as movimentações de pátio");
       
-      // Buscar todas as movimentações da tabela principal
-      const responsePrincipal = await fetchRecords('movimentacoes_patio', {
-        limit: 500, // Aumentamos o limite para trazer mais registros
-        order: { column: 'data_entrada', ascending: false } // Ordenar por data de entrada (mais recente primeiro)
-      });
-      
       let resultados: MovimentacaoPatio[] = [];
       
-      // Verificar se os dados são válidos e um array para a tabela principal
-      if (responsePrincipal && responsePrincipal.success && Array.isArray(responsePrincipal.data)) {
-        console.log("[FETCH] Dados recuperados da tabela principal:", responsePrincipal.data.length);
-        resultados = [...responsePrincipal.data];
+      // Buscar todas as movimentações da tabela principal usando SQL direto
+      try {
+        // Usamos o endpoint de API para evitar problemas com o Supabase
+        const response = await fetch('/api/patio/movimentacoes');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data && data.success && Array.isArray(data.data)) {
+          console.log("[FETCH] Dados recuperados da API principal:", data.data.length);
+          resultados = [...data.data];
+        } else {
+          console.error("[FETCH] Dados inválidos recebidos da API principal:", data);
+        }
+      } catch (error) {
+        console.error("[FETCH] Erro ao buscar via API principal:", error);
+        
+        // Plano B: Tentar consultar diretamente com Supabase, ignorando o campo problemático
+        try {
+          const responsePrincipal = await fetchRecords('movimentacoes_patio', {
+            limit: 500, // Aumentamos o limite para trazer mais registros
+            order: { column: 'created_at', ascending: false } // Ordenar pela data de criação em vez de data_entrada
+          });
+          
+          if (responsePrincipal && responsePrincipal.success && Array.isArray(responsePrincipal.data)) {
+            console.log("[FETCH] Dados recuperados da tabela principal (plano B):", responsePrincipal.data.length);
+            resultados = [...responsePrincipal.data];
+          }
+        } catch (supabaseError) {
+          console.error("[FETCH] Erro no plano B:", supabaseError);
+        }
       }
       
       // Tentar buscar as tabelas específicas dos postos também
       try {
-        // Lista de tabelas específicas dos postos
+        // Lista de tabelas específicas dos postos (removemos posto_murici_movimentacoes_patio que não existe)
         const tabelasPostos = [
           'movimentacoes_patio_alair_v2',
           'movimentacoes_patio_campinas_v2',
-          'movimentacoes_patio_guarulhos_v2',
-          'posto_murici_movimentacoes_patio'
+          'movimentacoes_patio_guarulhos_v2'
         ];
         
         // Buscar dados de cada tabela específica
@@ -81,6 +103,22 @@ const HistoricoPatioPage: React.FC = () => {
                     created_at: item.created_at || item.data_hora || new Date().toISOString(),
                     tipo_movimento: item.tipo_movimentacao || ''
                   };
+                } else if (tabela === 'movimentacoes_patio_campinas_v2') {
+                  return {
+                    id: item.id,
+                    placa: item.placa || '',
+                    tipo_veiculo: item.tipo_veiculo || '',
+                    motorista: item.motorista || '',
+                    nome_motorista: item.nome_motorista || item.motorista || '',
+                    nome_operador: item.nome_operador || item.usuario_operador || '',
+                    data_entrada: item.data_hora || '',
+                    data_saida: null, // Não temos este campo na tabela específica
+                    motivo: item.tipo_movimentacao || '',
+                    observacoes: item.observacoes || '',
+                    posto: 'Campinas_v2',
+                    created_at: item.created_at || item.data_hora || new Date().toISOString(),
+                    tipo_movimento: item.tipo_movimentacao || ''
+                  };
                 } else {
                   // Para outras tabelas, tentar usar os campos diretamente ou valores padrão
                   return {
@@ -94,7 +132,7 @@ const HistoricoPatioPage: React.FC = () => {
                     data_saida: item.data_saida || null,
                     motivo: item.motivo || item.tipo_movimentacao || '',
                     observacoes: item.observacoes || '',
-                    posto: tabela.replace('movimentacoes_patio_', '').replace('posto_murici_movimentacoes_patio', 'Murici'),
+                    posto: tabela.replace('movimentacoes_patio_', ''),
                     created_at: item.created_at || item.data_hora || new Date().toISOString(),
                     tipo_movimento: item.tipo_movimento || item.tipo_movimentacao || ''
                   };
