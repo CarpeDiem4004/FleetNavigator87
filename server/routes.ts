@@ -36,6 +36,7 @@ import { registerUsuariosSupabaseRoutes } from "./routes/usuariosSupabaseRoutes"
 import { supabaseInsertHandler } from "./routes/supabaseInsertRoute";
 import postoSupabaseRoutes from "./routes/postoSupabaseRoutes";
 import frotaEstoqueRoutes from "./routes/frotaEstoqueRoutes";
+import historicoConsolidadoRoutes from "./routes/historicoConsolidadoRoutes";
 import { db, pool } from "./db";
 import authHybridRoutes from "./routes/authHybridRoutes";
 import * as userHandler from "./handlers/userHandler";
