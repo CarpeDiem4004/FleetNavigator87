@@ -225,6 +225,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     // Modificado para apontar para a página principal em vez de submenu
     { name: 'Abastecimentos', href: '/abastecimentos', icon: Fuel },
     { name: 'Histórico Abastecimento', href: '/refueling', icon: ClipboardList },
+    { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 },
     // Alterado para usar o ícone de posto de gasolina (Droplets) em vez de Warehouse para Postos Externos
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
@@ -252,6 +253,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     // Modificado para apontar para a página principal em vez de submenu
     { name: 'Abastecimentos', href: '/abastecimentos', icon: Fuel },
     { name: 'Histórico Abastecimento', href: '/refueling', icon: ClipboardList },
+    { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 },
     // Corrigido para usar o mesmo ícone e estrutura em ambas as listas de navegação
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
