@@ -224,8 +224,15 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Pneus', href: '/tires', icon: CircleDot },
     // Menu de Abastecimentos com submenu
     { name: 'Abastecimentos', href: '#', icon: Fuel, subItems: [
-      { name: 'Dashboard', href: '/abastecimentos', icon: Gauge },
-      { name: 'Histórico Abastecimento', href: '/refueling', icon: ClipboardList },
+      { name: 'Posto Osasco V2', href: '/posto/osasco_v2', icon: Fuel },
+      { name: 'Posto Alair V2', href: '/posto/alair_v2', icon: Fuel },
+      { name: 'Posto Campinas V2', href: '/posto/campinas_v2', icon: Fuel },
+      { name: 'Posto ABC V2', href: '/posto/abc_v2', icon: Fuel },
+      { name: 'Posto Socorro V2', href: '/posto/socorro_v2', icon: Fuel },
+      { name: 'Posto Sorocaba V2', href: '/posto/sorocaba_v2', icon: Fuel },
+      { name: 'Histórico Geral', href: '/refueling', icon: ClipboardList },
+      { name: 'Histórico Pátio', href: '/abastecimentos', icon: Gauge },
+      { name: 'Visão Geral dos Postos', href: '/postos/visao-geral', icon: BarChart2 },
       { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 }
     ]},
     // Alterado para usar o ícone de posto de gasolina (Droplets) em vez de Warehouse para Postos Externos
@@ -254,8 +261,15 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package },
     // Menu de Abastecimentos com submenu
     { name: 'Abastecimentos', href: '#', icon: Fuel, subItems: [
-      { name: 'Dashboard', href: '/abastecimentos', icon: Gauge },
-      { name: 'Histórico Abastecimento', href: '/refueling', icon: ClipboardList },
+      { name: 'Posto Osasco V2', href: '/posto/osasco_v2', icon: Fuel },
+      { name: 'Posto Alair V2', href: '/posto/alair_v2', icon: Fuel },
+      { name: 'Posto Campinas V2', href: '/posto/campinas_v2', icon: Fuel },
+      { name: 'Posto ABC V2', href: '/posto/abc_v2', icon: Fuel },
+      { name: 'Posto Socorro V2', href: '/posto/socorro_v2', icon: Fuel },
+      { name: 'Posto Sorocaba V2', href: '/posto/sorocaba_v2', icon: Fuel },
+      { name: 'Histórico Geral', href: '/refueling', icon: ClipboardList },
+      { name: 'Histórico Pátio', href: '/abastecimentos', icon: Gauge },
+      { name: 'Visão Geral dos Postos', href: '/postos/visao-geral', icon: BarChart2 },
       { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 }
     ]},
     // Corrigido para usar o mesmo ícone e estrutura em ambas as listas de navegação
