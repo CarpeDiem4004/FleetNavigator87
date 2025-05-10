@@ -31,7 +31,7 @@ export async function synchronizeSupabaseTables() {
     const tableMapping = {
       'status_tanques': 'tanques',                // Tabela existente que precisa ser mapeada
       'controle_patio': 'controle_patio',         // Tabela que precisa ser criada
-      'abastecimentos_postos': 'abastecimentos',  // Tabela existente que precisa ser mapeada
+      'abastecimentos': 'abastecimentos',  // Tabela existente que precisa ser mapeada
       'recebimentos_combustivel': 'recebimentos_combustivel', // Tabela que precisa ser criada
       'tires': 'pneus'                           // Mapeamento entre tabela tires do schema e pneus do Supabase
     };
@@ -108,7 +108,7 @@ export async function synchronizeSupabaseTables() {
           { name: 'updated_at', type: 'TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP' }
         ]
       },
-      'abastecimentos_postos': {
+      'abastecimentos': {
         columns: [
           { name: 'id', type: 'SERIAL PRIMARY KEY' },
           { name: 'posto', type: 'TEXT NOT NULL' },
@@ -188,11 +188,11 @@ export async function synchronizeSupabaseTables() {
       ]);
     }
 
-    // Verificar a tabela abastecimentos_postos
-    if (!existingTables.includes('abastecimentos_postos')) {
+    // Verificar a tabela abastecimentos
+    if (!existingTables.includes('abastecimentos')) {
       if (existingTables.includes('abastecimentos')) {
-        console.log("A tabela 'abastecimentos' existe no Supabase e será usada como 'abastecimentos_postos'");
-        checkedTables.push('abastecimentos_postos');
+        console.log("A tabela 'abastecimentos' existe no Supabase e será usada como 'abastecimentos'");
+        checkedTables.push('abastecimentos');
         
         // Verificar se a tabela 'abastecimentos' tem todas as colunas necessárias
         await ensureColumnsExist(supabase, 'abastecimentos', [
@@ -204,18 +204,18 @@ export async function synchronizeSupabaseTables() {
           { name: 'km', type: 'numeric', isNullable: true }
         ]);
       } else {
-        // A tabela abastecimentos_postos não existe e precisa ser criada
-        console.log("A tabela 'abastecimentos_postos' não foi encontrada no Supabase.");
-        missingTables.push('abastecimentos_postos');
+        // A tabela abastecimentos não existe e precisa ser criada
+        console.log("A tabela 'abastecimentos' não foi encontrada no Supabase.");
+        missingTables.push('abastecimentos');
         
         // Gerar SQL para criar a tabela
-        let sql = `CREATE TABLE IF NOT EXISTS abastecimentos_postos (`;
-        sql += tableDefinitions.abastecimentos_postos.columns.map(col => `${col.name} ${col.type}`).join(', ');
+        let sql = `CREATE TABLE IF NOT EXISTS abastecimentos (`;
+        sql += tableDefinitions.abastecimentos.columns.map(col => `${col.name} ${col.type}`).join(', ');
         sql += `);`;
         sqlCommands.push(sql);
       }
     } else {
-      checkedTables.push('abastecimentos_postos');
+      checkedTables.push('abastecimentos');
     }
 
     // Verificar a tabela recebimentos_combustivel
@@ -316,7 +316,7 @@ async function getExistingTablesAlternative(supabase: SupabaseClient): Promise<s
       'status_tanques', 
       'controle_patio', 
       'abastecimentos', 
-      'abastecimentos_postos',
+      'abastecimentos',
       'recebimentos_combustivel',
       'pneus'
     ];
