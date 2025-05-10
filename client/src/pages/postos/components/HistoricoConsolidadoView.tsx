@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { apiRequest } from '@/lib/queryClient';
 import { 
   Card, 
   CardContent, 
@@ -81,18 +81,12 @@ const HistoricoConsolidadoView: React.FC = () => {
     try {
       // Adicionar timestamp para evitar cache
       const timestamp = new Date().getTime();
-      const response = await axios.get(`/api/historico/historico-consolidado?t=${timestamp}`, {
-        headers: {
-          'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
+      const response = await apiRequest(`/api/historico/historico-consolidado?t=${timestamp}`);
       
       console.log('Resposta do histórico consolidado:', response);
       
-      if (response.data && response.data.success) {
-        const dados = response.data.data || [];
+      if (response && response.success) {
+        const dados = response.data || [];
         setHistorico(dados);
         
         // Extrair lista única de postos

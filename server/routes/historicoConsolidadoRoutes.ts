@@ -8,31 +8,18 @@ const router = Router();
  * Rota para buscar o histórico consolidado de abastecimentos de todos os postos
  * Requer autenticação de admin
  */
-router.get('/historico-consolidado', async (req, res) => {
+router.get('/historico-consolidado', isAuthenticated, async (req, res) => {
   try {
-    // Verificar autenticação básica via sessão ou token
-    const isAuth = req.isAuthenticated() || (req.headers.authorization && req.headers.authorization.startsWith('Bearer '));
-    
-    if (!isAuth) {
-      console.log('Tentativa de acesso não autenticado ao histórico consolidado:', {
-        hasSession: !!req.session,
-        sessionID: req.sessionID,
-        hasAuthHeader: !!req.headers.authorization,
-        origin: req.headers.origin,
-        referer: req.headers.referer
-      });
-      
-      return res.status(401).json({
-        success: false,
-        message: 'Não autenticado. Faça login para acessar esta funcionalidade.'
-      });
-    }
-    
-    // Para simplificar, não vamos verificar se é admin nesta versão
-    // Assumimos que qualquer usuário autenticado pode ver o histórico
+    // Com o middleware isAuthenticated, sabemos que o usuário está autenticado
+    // Seja por sessão, token JWT ou Supabase
     console.log('Acesso ao histórico consolidado:', {
       isAuthenticated: req.isAuthenticated(),
-      hasAuthHeader: !!req.headers.authorization
+      hasAuthHeader: !!req.headers.authorization,
+      user: req.user ? {
+        id: req.user.id,
+        email: req.user.email,
+        role: req.user.role
+      } : 'Sem informações do usuário'
     });
 
     // Obter parâmetros de paginação e filtros
