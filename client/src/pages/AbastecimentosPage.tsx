@@ -309,6 +309,41 @@ export default function AbastecimentosPage() {
             <EstatisticasResumo totalPostos={postos.length} />
           </div>
 
+          {/* Card de acesso rápido ao Histórico Consolidado */}
+          <Card className="border-0 shadow-md bg-gradient-to-br from-blue-600 to-blue-800 text-white">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart className="h-6 w-6" />
+                Histórico Consolidado de Abastecimentos
+              </CardTitle>
+              <CardDescription className="text-blue-100">
+                Visualize todos os abastecimentos de todos os postos em um único lugar.
+                Filtre por data, posto, tipo de combustível e veículo.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col">
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="bg-white/10 p-3 rounded-lg">
+                    <h3 className="text-sm font-medium mb-1">Total de Registros</h3>
+                    <p className="text-2xl font-bold">98</p>
+                  </div>
+                  <div className="bg-white/10 p-3 rounded-lg">
+                    <h3 className="text-sm font-medium mb-1">Último Registro</h3>
+                    <p className="text-lg font-medium">10/05/2025</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button asChild variant="secondary" className="gap-2 w-full">
+                <Link href="/postos/historico-consolidado">
+                  Acessar Histórico Consolidado <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </CardFooter>
+          </Card>
+
           {/* Grid de cards de postos */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {postos.map(posto => (
