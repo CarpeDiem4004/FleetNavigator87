@@ -11,12 +11,12 @@ SELECT
   placa,
   km_atual,
   tipo_combustivel,
-  COALESCE(quantidade_litros, litros) AS litros,
+  litros,
   motorista AS nome_motorista,
   operador AS nome_operador,
   valor_litro,
   valor_total,
-  COALESCE(projeto, '') AS project, -- Usamos o campo projeto se existir
+  COALESCE(projeto, '') AS project,
   'campinas_v2' AS posto,
   created_at
 FROM abastecimentos_posto_campinas_v2
@@ -29,7 +29,7 @@ SELECT
   placa,
   km_atual,
   tipo_combustivel,
-  COALESCE(quantidade_litros, litros) AS litros,
+  litros,
   motorista AS nome_motorista,
   operador AS nome_operador,
   valor_litro,
@@ -47,7 +47,7 @@ SELECT
   placa,
   km_atual,
   tipo_combustivel,
-  COALESCE(quantidade_litros, litros) AS litros,
+  litros,
   motorista AS nome_motorista,
   operador AS nome_operador,
   valor_litro,
@@ -65,7 +65,7 @@ SELECT
   placa,
   km_atual,
   tipo_combustivel,
-  COALESCE(quantidade_litros, litros) AS litros,
+  litros,
   motorista AS nome_motorista,
   operador AS nome_operador,
   valor_litro,
@@ -83,7 +83,7 @@ SELECT
   placa,
   km_atual,
   tipo_combustivel,
-  COALESCE(quantidade_litros, litros) AS litros,
+  litros,
   motorista AS nome_motorista,
   operador AS nome_operador,
   valor_litro,
@@ -101,7 +101,7 @@ SELECT
   placa,
   km_atual,
   tipo_combustivel,
-  COALESCE(quantidade_litros, litros) AS litros,
+  litros,
   motorista AS nome_motorista,
   operador AS nome_operador,
   valor_litro,
@@ -110,8 +110,3 @@ SELECT
   'sorocaba_v2' AS posto,
   created_at
 FROM abastecimentos_posto_sorocaba_v2;
-
--- Adiciona um índice para melhorar a performance de consultas
--- CREATE INDEX IF NOT EXISTS idx_historico_consolidado_data ON historico_consolidado_abastecimentos(created_at);
--- CREATE INDEX IF NOT EXISTS idx_historico_consolidado_placa ON historico_consolidado_abastecimentos(placa);
--- CREATE INDEX IF NOT EXISTS idx_historico_consolidado_posto ON historico_consolidado_abastecimentos(posto);
