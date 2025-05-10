@@ -8774,6 +8774,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Registrar rotas para os KPIs do dashboard
+  registerDashboardKpiRoutes(app);
+
   const httpServer = createServer(app);
   return httpServer;
 }

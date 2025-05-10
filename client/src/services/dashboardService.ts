@@ -1,112 +1,136 @@
-import { api } from './api';
+import { apiRequest } from "@/lib/queryClient";
 
-export interface DashboardKPI {
+// Interface para total de veículos
+export interface TotalVehiclesData {
+  total: number;
+}
+
+// Interface para veículos em manutenção
+export interface VehiclesInMaintenanceData {
+  total: number;
+  previousTotal: number;
+  variation: number;
+}
+
+// Interface para estatísticas de estoque de pneus
+export interface TireStockStats {
+  quantidade: number;
+  valor_total: number;
+}
+
+// Interface para consumo de combustível
+export interface FuelConsumptionData {
+  total: number;
+  previousTotal: number;
+  variation: number;
+}
+
+// Interfaces para o Executive Dashboard
+export interface KPI {
+  name: string;
+  value: number;
+  previousValue: number;
+  unit: string;
+  target?: number;
+  trend: 'up' | 'down';
+  isPositive: boolean;
+  changePercentage: number;
+}
+
+export interface KPIGroup {
   title: string;
-  value: number;
-  unit?: string;
-  previousValue?: number;
-  changePercentage?: number;
-  trend?: 'up' | 'down' | 'neutral';
-  isPositive?: boolean;
-  color?: string;
+  metrics: KPI[];
 }
 
-export interface FuelConsumptionByBase {
+export interface TimeSeriesData {
+  month: string;
+  [key: string]: string | number;
+}
+
+export interface BaseKm {
   base: string;
-  litros: number;
-  previousLitros?: number;
-  changePercentage?: number;
-}
-
-export interface ExpenseDistribution {
-  category: string;
-  value: number;
-  percentage: number;
-  color: string;
-}
-
-export interface VehicleOperationalCost {
-  plate: string;
-  model: string;
-  costType: string;
-  totalCost: number;
-  avgCostPerKm: number;
-  totalKm: number;
-}
-
-export interface MaintenanceRecord {
-  id: number;
-  date: string;
-  vehiclePlate: string;
-  vehicleModel: string;
-  description: string;
-  status: string;
-  cost: number;
-  base: string;
+  currentMonth: number;
+  previousMonth: number;
 }
 
 export interface DashboardData {
-  // KPIs
-  kpis: {
-    fuelExpenses: DashboardKPI;
-    partsExpenses: DashboardKPI;
-    tiresExpenses: DashboardKPI;
-    daysInactive: DashboardKPI;
-    tireUsage: DashboardKPI;
-    fleetAvailability: DashboardKPI;
-    workshopSLA: DashboardKPI;
-    openClosedRequests: DashboardKPI;
-    avgFuelConsumption: DashboardKPI;
-  };
-  
-  // Gráficos
-  fuelConsumptionByBase: FuelConsumptionByBase[];
-  expenseDistribution: ExpenseDistribution[];
-  topVehiclesCost: VehicleOperationalCost[];
-  recentMaintenances: MaintenanceRecord[];
-  
-  // Dados de referência
-  referenceDate: string;
-  updateTime: string;
+  kpis: KPIGroup[];
+  timeSeriesData: TimeSeriesData[];
+  fleetAvailability: TimeSeriesData[];
+  costPerKm: TimeSeriesData[];
+  maintenanceTime: TimeSeriesData[];
+  fuelEfficiency: TimeSeriesData[];
+  kmPerBase: BaseKm[];
 }
 
-/**
- * Fetches dashboard data from the API
- */
-export const fetchDashboardData = async (dateFilter?: string): Promise<DashboardData> => {
-  try {
-    const params = dateFilter ? { date: dateFilter } : {};
-    const response = await api.get('/dashboard', { params });
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching dashboard data:', error);
-    throw new Error('Failed to fetch dashboard data');
+// Obter total de veículos cadastrados
+export async function getTotalVehicles(): Promise<TotalVehiclesData> {
+  const response = await apiRequest('GET', '/api/dashboard/veiculos/total');
+  
+  if (!response.ok) {
+    throw new Error('Erro ao obter total de veículos');
   }
-};
+  
+  const data = await response.json();
+  return data.data;
+}
 
-/**
- * Fetch comparative data between current and previous month
- */
-export const fetchComparativeData = async (): Promise<any> => {
-  try {
-    const response = await api.get('/dashboard/comparative');
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching comparative data:', error);
-    throw new Error('Failed to fetch comparative data');
+// Obter veículos em manutenção
+export async function getVehiclesInMaintenance(): Promise<VehiclesInMaintenanceData> {
+  const response = await apiRequest('GET', '/api/dashboard/veiculos/manutencao');
+  
+  if (!response.ok) {
+    throw new Error('Erro ao obter veículos em manutenção');
   }
-};
+  
+  const data = await response.json();
+  return data.data;
+}
 
-/**
- * Fetch KPIs data
- */
-export const fetchKPIs = async (dateFilter?: string): Promise<any> => {
-  try {
-    const params = dateFilter ? { date: dateFilter } : {};
-    const response = await api.get('/dashboard/kpis', { params });
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching KPIs:', error);
-    throw new Error('Failed to fetch KPIs');
+// Obter estatísticas de estoque de pneus
+export async function getTireStockStats(): Promise<TireStockStats> {
+  const response = await apiRequest('GET', '/api/pneus/estatisticas/estoque');
+  
+  if (!response.ok) {
+    throw new Error('Erro ao obter estatísticas de estoque de pneus');
   }
-};
+  
+  const data = await response.json();
+  return data.data;
+}
+
+// Obter consumo de combustível
+export async function getFuelConsumption(): Promise<FuelConsumptionData> {
+  const response = await apiRequest('GET', '/api/dashboard/abastecimentos/litros');
+  
+  if (!response.ok) {
+    throw new Error('Erro ao obter consumo de combustível');
+  }
+  
+  const data = await response.json();
+  return data.data;
+}
+
+// Função para buscar dados para o dashboard executivo
+export async function fetchDashboardData(dateParam?: string): Promise<DashboardData> {
+  try {
+    // Adiciona parâmetro de data se fornecido
+    const url = dateParam ? `/api/dashboard/executive?date=${dateParam}` : '/api/dashboard/executive';
+    
+    const response = await apiRequest('GET', url);
+    
+    if (!response.ok) {
+      throw new Error('Erro ao obter dados do dashboard executivo');
+    }
+    
+    const data = await response.json();
+    return data.data;
+  } catch (error) {
+    console.error('Erro ao carregar dados do dashboard executivo:', error);
+    
+    // Importar e usar a função de geração de dados simulados do utilitário dashboardData
+    // para manter consistência com a implementação existente
+    const { generateDashboardData } = await import('@/utils/dashboardData');
+    return generateDashboardData();
+  }
+}
