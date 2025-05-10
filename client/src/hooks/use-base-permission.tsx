@@ -146,6 +146,8 @@ const basicRoutes = [
   '/tires',                              // Solicitações de pneus
   '/pneus',                              // Alias para pneus
   '/refueling',                          // Registros de abastecimento
+  '/abastecimento',                      // Alias para abastecimento
+  '/abastecimentos',                     // Dashboard de Abastecimento
   '/fuel-card',                          // Cartão de Combustível
   '/fuel-card-requests',                 // Painel de Solicitações Fuel Card
   '/posto-remedios',                     // Posto Remédios
