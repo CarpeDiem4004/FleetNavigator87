@@ -45,6 +45,7 @@ import PostoSorocaba from "@/pages/postos/Sorocaba";
 import PostoSorocabaV2 from "@/pages/postos/SorocabaV2";
 import HistoricoGeralPage from "@/pages/postos/HistoricoGeralPage";
 import HistoricoPatioPage from "@/pages/postos/HistoricoPatioPage";
+import HistoricoConsolidado from "@/pages/postos/HistoricoConsolidado";
 import PostosVisaoGeralPage from "@/pages/postos/PostosVisaoGeralPage";
 import PostoDetalhesPage from "@/pages/postos/PostoDetalhesPage";
 import SupabaseDiagnostico from "@/pages/diagnostico/SupabaseDiagnostico";
@@ -198,6 +199,7 @@ function App() {
           <ProtectedRoute path="/posto/sorocaba_v2" component={PostoSorocabaV2} />
           <ProtectedRoute path="/postos/historico-geral" component={HistoricoGeralPage} />
           <ProtectedRoute path="/postos/historico-patio" component={HistoricoPatioPage} />
+          <ProtectedRoute path="/postos/historico-consolidado" component={HistoricoConsolidado} />
           <ProtectedRoute path="/postos/visao-geral" component={PostosVisaoGeralPage} />
           <ProtectedRoute path="/postos/:id" component={PostoDetalhesPage} />
           <ProtectedRoute path="/diagnostico/supabase" component={SupabaseDiagnostico} />

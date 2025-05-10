@@ -1,6 +1,5 @@
 import React from 'react';
-import { useAuth } from '@/context/auth-context';
-import AdminLayout from '@/layouts/AdminLayout';
+import { useAuth } from '@/context/AuthContext';
 import HistoricoConsolidadoView from './components/HistoricoConsolidadoView';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
