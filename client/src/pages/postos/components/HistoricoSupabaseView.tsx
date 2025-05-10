@@ -60,6 +60,10 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefreshTime, setLastRefreshTime] = useState<Date>(new Date());
+  const [dataInicio, setDataInicio] = useState<string>('');
+  const [dataFim, setDataFim] = useState<string>('');
+  const [placaFiltro, setPlacaFiltro] = useState<string>('');
+  const [historicoFiltrado, setHistoricoFiltrado] = useState<HistoricoAbastecimento[]>([]);
 
   const loadHistorico = async () => {
     setIsLoading(true);
@@ -123,6 +127,48 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
     // Limpar o intervalo quando o componente for desmontado
     return () => clearInterval(intervalId);
   }, [posto, refreshTrigger]);
+  
+  // Aplicar filtros quando os parâmetros mudarem
+  useEffect(() => {
+    if (!historico.length) {
+      setHistoricoFiltrado([]);
+      return;
+    }
+    
+    let resultados = [...historico];
+    
+    // Filtrar por data inicial
+    if (dataInicio) {
+      const dataInicioObj = new Date(dataInicio);
+      dataInicioObj.setHours(0, 0, 0, 0);
+      
+      resultados = resultados.filter(item => {
+        const itemDate = new Date(item.created_at);
+        return itemDate >= dataInicioObj;
+      });
+    }
+    
+    // Filtrar por data final
+    if (dataFim) {
+      const dataFimObj = new Date(dataFim);
+      dataFimObj.setHours(23, 59, 59, 999);
+      
+      resultados = resultados.filter(item => {
+        const itemDate = new Date(item.created_at);
+        return itemDate <= dataFimObj;
+      });
+    }
+    
+    // Filtrar por placa
+    if (placaFiltro) {
+      const placaLower = placaFiltro.toLowerCase();
+      resultados = resultados.filter(item => 
+        item.placa.toLowerCase().includes(placaLower)
+      );
+    }
+    
+    setHistoricoFiltrado(resultados);
+  }, [historico, dataInicio, dataFim, placaFiltro]);
 
   // Função para formatar o valor do combustível
   const formatCurrency = (value: number | string): string => {
