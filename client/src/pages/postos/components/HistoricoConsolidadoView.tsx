@@ -44,14 +44,19 @@ import {
 interface HistoricoAbastecimentoGlobal {
   id: number;
   placa: string;
-  km_atual: number;
+  km: number;
   tipo_combustivel: string;
   quantidade_litros: number | string;
   nome_motorista: string;
+  rg_motorista?: string;
   nome_operador: string;
   valor_litro: number | string;
   valor_total: number | string;
-  posto: string;
+  tipo_veiculo?: string;
+  observacoes?: string;
+  lavagem?: boolean;
+  tipo_lavagem?: string;
+  nome_posto: string;
   data_hora: string;
   created_at: string;
 }
