@@ -106,7 +106,8 @@ router.get('/historico-consolidado', isAuthenticated, async (req, res) => {
         tipo_lavagem,
         nome_posto,
         data_hora,
-        created_at
+        created_at,
+        project
       FROM historico_consolidado_abastecimentos
       ${whereClause}
       ORDER BY created_at DESC
