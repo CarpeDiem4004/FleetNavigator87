@@ -9,6 +9,7 @@ import HistoricoMovimentacoes from './components/HistoricoMovimentacoes';
 import HistoricoAbastecimentos from './components/HistoricoAbastecimentos';
 import HistoricoAbastecimentosOptimized from './components/HistoricoAbastecimentosOptimized';
 import HistoricoSupabaseView from './components/HistoricoSupabaseView';
+import AdministrativoPostoView from './components/AdministrativoPostoView';
 import { useSafeDialog } from '@/hooks/use-safe-dialog';
 
 interface PublicPostoLayoutProps {
@@ -114,14 +115,19 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
             Históricos
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Usar componente otimizado para ABC_v2 e Socorro_v2 */}
-            {id === 'abc_v2' || id === 'socorro_v2' ? (
+            {/* Usar componente de visualização simplificada para postos específicos */}
+            {id === 'sorocaba_v2' ? (
+              <AdministrativoPostoView 
+                posto={id} 
+                refreshTrigger={refreshTrigger}
+              />
+            ) : id === 'abc_v2' || id === 'socorro_v2' ? (
               <HistoricoAbastecimentosOptimized
                 postId={id}
                 showLimparButton={false}
                 refreshTrigger={refreshTrigger}
               />
-            ) : id === 'campinas_v2' || id === 'osasco' || id === 'osasco_v2' || id === 'sorocaba_v2' || id === 'sorocaba' ? (
+            ) : id === 'campinas_v2' || id === 'osasco' || id === 'osasco_v2' || id === 'sorocaba' ? (
               <HistoricoSupabaseView 
                 posto={id} 
                 refreshTrigger={refreshTrigger}

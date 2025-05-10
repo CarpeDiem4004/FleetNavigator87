@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
   RefreshCw, 
-  FileDownload,
+  Download,
   Search
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
