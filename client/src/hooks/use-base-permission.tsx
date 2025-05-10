@@ -160,6 +160,7 @@ const basicRoutes = [
   '/acidentes',                          // Alias para acidentes
   '/postos/visao-geral',                 // Visão Geral dos Postos
   '/postos',                             // Postos de Abastecimento
+  '/postos/historico-consolidado',       // Histórico Consolidado de Abastecimentos
   '/bases',                              // Bases
   '/bases/campinas',                     // Base Campinas
   '/bases/campinas/despesas',            // Despesas Campinas
