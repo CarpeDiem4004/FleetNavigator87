@@ -32,6 +32,47 @@ const HistoricoGeralPage: React.FC = () => {
       // Array para armazenar todos os abastecimentos
       let todosAbastecimentos: Abastecimento[] = [];
       
+      // Lista de postos para buscar abastecimentos
+      const postos = [
+        "osasco_v2",
+        "alair_v2",
+        "campinas_v2",
+        "abc_v2",
+        "socorro_v2",
+        "sorocaba_v2"
+      ];
+      
+      // Buscar abastecimentos para cada posto
+      for (const posto of postos) {
+        try {
+          console.log(`[FETCH] Buscando abastecimentos do posto ${posto}`);
+          
+          // Formatar o nome do posto para exibição (ex: "osasco_v2" -> "Posto Osasco V2")
+          const postoFormatado = `Posto ${posto.replace('_v2', '').replace('_', ' ').replace(/^\w/, c => c.toUpperCase())} V2`;
+          
+          // Buscar abastecimentos do posto específico
+          const response = await fetch(`/api/abastecimentos/${posto}`);
+          if (response.ok) {
+            const data = await response.json();
+            
+            if (data.success && Array.isArray(data.data)) {
+              // Adicionar nome do posto a cada registro
+              const abastecimentosDoPosto = data.data.map((item: any) => ({
+                ...item,
+                posto: postoFormatado
+              }));
+              
+              console.log(`[FETCH] Encontrados ${abastecimentosDoPosto.length} abastecimentos para ${postoFormatado}`);
+              todosAbastecimentos = [...todosAbastecimentos, ...abastecimentosDoPosto];
+            }
+          } else {
+            console.warn(`[FETCH] Erro ao buscar abastecimentos do posto ${posto}:`, response.status);
+          }
+        } catch (error) {
+          console.error(`[FETCH] Erro ao processar abastecimentos do posto ${posto}:`, error);
+        }
+      }
+      
       // Verificar se precisamos usar API local ou Supabase
       try {
         // 1. Tentar API local first para abastecimentos próprios
@@ -566,8 +607,8 @@ const HistoricoGeralPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredData.map((abast) => (
-                    <tr key={abast.id} className="border-b border-gray-200 hover:bg-gray-50">
+                  {filteredData.map((abast, index) => (
+                    <tr key={`${abast.posto}-${abast.id}-${index}`} className="border-b border-gray-200 hover:bg-gray-50">
                       <td className="py-3 px-4">{formatarData(abast.created_at)}</td>
                       <td className="py-3 px-4">
                         <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium">
