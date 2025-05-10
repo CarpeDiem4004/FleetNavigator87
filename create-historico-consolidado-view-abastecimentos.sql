@@ -16,7 +16,7 @@ SELECT
   operador AS nome_operador,
   valor_litro,
   valor_total,
-  '' AS project, -- Adicionamos campo vazio para project pois não existe na tabela
+  COALESCE(projeto, '') AS project, -- Usamos o campo projeto se existir
   'campinas_v2' AS posto,
   created_at
 FROM abastecimentos_posto_campinas_v2
@@ -34,7 +34,7 @@ SELECT
   operador AS nome_operador,
   valor_litro,
   valor_total,
-  '' AS project,
+  COALESCE(projeto, '') AS project,
   'osasco_v2' AS posto,
   created_at
 FROM abastecimentos_posto_osasco_v2
@@ -52,7 +52,7 @@ SELECT
   operador AS nome_operador,
   valor_litro,
   valor_total,
-  '' AS project,
+  COALESCE(projeto, '') AS project,
   'alair_v2' AS posto,
   created_at
 FROM abastecimentos_posto_alair_v2

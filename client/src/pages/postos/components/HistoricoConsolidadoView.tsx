@@ -61,6 +61,7 @@ interface HistoricoAbastecimentoGlobal {
   posto?: string; // Compatibilidade com código antigo
   data_hora: string;
   created_at: string;
+  project?: string; // Campo de projeto em inglês
 }
 
 // Exemplo para depuração local caso a API não retorne dados
