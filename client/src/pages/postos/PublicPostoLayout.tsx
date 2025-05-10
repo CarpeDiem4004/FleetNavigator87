@@ -11,6 +11,7 @@ import HistoricoAbastecimentosOptimized from './components/HistoricoAbasteciment
 import HistoricoSupabaseView from './components/HistoricoSupabaseView';
 import AdministrativoPostoView from './components/AdministrativoPostoView';
 import HistoricoPostoNovo from './components/HistoricoPostoNovo';
+import HistoricoAbastecimentosCompacto from './components/HistoricoAbastecimentosCompacto';
 import { useSafeDialog } from '@/hooks/use-safe-dialog';
 
 interface PublicPostoLayoutProps {
@@ -116,8 +117,8 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
             Históricos
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Usar o novo componente de visualização para todos os postos */}
-            <HistoricoPostoNovo
+            {/* Usar o componente simplificado para todos os postos */}
+            <HistoricoAbastecimentosCompacto
               posto={id}
               refreshTrigger={refreshTrigger}
             />
