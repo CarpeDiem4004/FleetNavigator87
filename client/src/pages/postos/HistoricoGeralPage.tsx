@@ -477,6 +477,43 @@ const HistoricoGeralPage: React.FC = () => {
               </div>
             </div>
             
+            {/* Lista de postos */}
+            <div className="mt-4">
+              <p className="text-sm font-medium text-blue-800 mb-2">Postos Disponíveis</p>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+                <div className="bg-white p-2 rounded-md shadow-sm text-center hover:bg-blue-100 transition-colors">
+                  <a href="/posto/osasco_v2/public" className="block text-blue-700 hover:text-blue-900 font-medium">
+                    Posto Osasco V2
+                  </a>
+                </div>
+                <div className="bg-white p-2 rounded-md shadow-sm text-center hover:bg-blue-100 transition-colors">
+                  <a href="/posto/alair_v2/public" className="block text-blue-700 hover:text-blue-900 font-medium">
+                    Posto Alair V2
+                  </a>
+                </div>
+                <div className="bg-white p-2 rounded-md shadow-sm text-center hover:bg-blue-100 transition-colors">
+                  <a href="/posto/campinas_v2/public" className="block text-blue-700 hover:text-blue-900 font-medium">
+                    Posto Campinas V2
+                  </a>
+                </div>
+                <div className="bg-white p-2 rounded-md shadow-sm text-center hover:bg-blue-100 transition-colors">
+                  <a href="/posto/abc_v2/public" className="block text-blue-700 hover:text-blue-900 font-medium">
+                    Posto ABC V2
+                  </a>
+                </div>
+                <div className="bg-white p-2 rounded-md shadow-sm text-center hover:bg-blue-100 transition-colors">
+                  <a href="/posto/socorro_v2/public" className="block text-blue-700 hover:text-blue-900 font-medium">
+                    Posto Socorro V2
+                  </a>
+                </div>
+                <div className="bg-white p-2 rounded-md shadow-sm text-center hover:bg-blue-100 transition-colors">
+                  <a href="/posto/sorocaba_v2/public" className="block text-blue-700 hover:text-blue-900 font-medium">
+                    Posto Sorocaba V2
+                  </a>
+                </div>
+              </div>
+            </div>
+            
             {Object.keys(dadosConsolidados.consumoPorTipo).length > 0 && (
               <div className="mt-4">
                 <p className="text-sm font-medium text-blue-800 mb-2">Consumo por Tipo de Combustível</p>
