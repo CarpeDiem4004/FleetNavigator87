@@ -18,10 +18,12 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, Download, Info } from "lucide-react";
+import { Loader2, RefreshCw, Download, Info, Search, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
@@ -268,6 +270,78 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
           </div>
         </div>
       </CardHeader>
+      
+      {/* Filtros de busca */}
+      <div className="px-6 pb-2 pt-1">
+        <div className="bg-slate-50 p-3 rounded-md border border-slate-100">
+          <div className="flex flex-col md:flex-row md:items-end gap-3">
+            <div className="flex-1">
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <Label htmlFor="dataInicio" className="text-xs mb-1 block">Data inicial</Label>
+                  <Input 
+                    id="dataInicio"
+                    type="date" 
+                    value={dataInicio} 
+                    onChange={(e) => setDataInicio(e.target.value)}
+                    className="h-8"
+                  />
+                </div>
+                <div className="flex-1">
+                  <Label htmlFor="dataFim" className="text-xs mb-1 block">Data final</Label>
+                  <Input 
+                    id="dataFim"
+                    type="date" 
+                    value={dataFim} 
+                    onChange={(e) => setDataFim(e.target.value)}
+                    className="h-8"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex-1">
+              <Label htmlFor="placaFiltro" className="text-xs mb-1 block">Placa do veículo</Label>
+              <div className="relative">
+                <Input 
+                  id="placaFiltro"
+                  type="text" 
+                  placeholder="Buscar por placa..." 
+                  value={placaFiltro} 
+                  onChange={(e) => setPlacaFiltro(e.target.value)}
+                  className="h-8 pl-8"
+                />
+                <Search className="absolute left-2.5 top-1.5 h-4 w-4 text-slate-400" />
+                {placaFiltro && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="absolute right-0 top-0 h-8 w-8 p-0"
+                    onClick={() => setPlacaFiltro('')}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+            <div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  setDataInicio('');
+                  setDataFim('');
+                  setPlacaFiltro('');
+                }}
+                disabled={!dataInicio && !dataFim && !placaFiltro}
+                className="h-8"
+              >
+                Limpar filtros
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <CardContent>
         {error ? (
           <div className="flex items-center gap-2 text-destructive p-4 border border-destructive/20 rounded-md bg-destructive/10">
@@ -300,8 +374,23 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
                       )}
                     </TableCell>
                   </TableRow>
+                ) : historicoFiltrado.length === 0 && (dataInicio || dataFim || placaFiltro) ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center h-24">
+                      <div className="flex flex-col items-center justify-center text-slate-500">
+                        <Search className="h-8 w-8 mb-2 text-slate-400" />
+                        <p>Nenhum registro encontrado com os filtros aplicados</p>
+                        <p className="text-sm mt-1">
+                          {placaFiltro && <span>Placa: <Badge variant="outline">{placaFiltro}</Badge></span>}
+                          {dataInicio && <span className="ml-2">De: <Badge variant="outline">{dataInicio}</Badge></span>}
+                          {dataFim && <span className="ml-2">Até: <Badge variant="outline">{dataFim}</Badge></span>}
+                        </p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 ) : (
-                  historico.map((item) => (
+                  // Mostrar dados filtrados ou todos os dados se não houver filtro
+                  (dataInicio || dataFim || placaFiltro ? historicoFiltrado : historico).map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-mono text-xs">
                         {item.data_hora}
@@ -344,7 +433,14 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
       </CardContent>
       <CardFooter className="flex justify-between pt-0 text-xs text-muted-foreground">
         <span>
-          Mostrando {historico.length} registros
+          {dataInicio || dataFim || placaFiltro ? (
+            <>
+              Mostrando {historicoFiltrado.length} de {historico.length} registros
+              {(dataInicio || dataFim || placaFiltro) && " (filtrados)"}
+            </>
+          ) : (
+            <>Mostrando {historico.length} registros</>
+          )}
         </span>
         <span>
           Última atualização: {format(lastRefreshTime, 'dd/MM/yyyy HH:mm:ss')}
