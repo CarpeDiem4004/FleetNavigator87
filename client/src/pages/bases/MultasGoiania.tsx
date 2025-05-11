@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { DatePicker } from '@/components/ui/date-picker';
+import { DatePickerOptional } from '@/components/ui/date-picker-optional';
 
 // Interface para as multas
 interface Multa {
@@ -71,7 +71,7 @@ const MultasGoiania: React.FC = () => {
         multa.numero.toLowerCase().includes(filtro.toLowerCase());
       
       // Filtro por status
-      const statusMatch = statusFiltro === '' || multa.status === statusFiltro;
+      const statusMatch = statusFiltro === 'todos' || statusFiltro === '' || multa.status === statusFiltro;
       
       // Filtro por intervalo de datas
       let dateMatch = true;
@@ -182,7 +182,7 @@ const MultasGoiania: React.FC = () => {
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os status</SelectItem>
+                  <SelectItem value="todos">Todos os status</SelectItem>
                   <SelectItem value="aguardando_base">Aguardando Base</SelectItem>
                   <SelectItem value="aguardando_assinatura">Aguardando Assinatura</SelectItem>
                   <SelectItem value="assinado">Assinado</SelectItem>
@@ -193,19 +193,21 @@ const MultasGoiania: React.FC = () => {
             
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-500">De:</span>
-              <DatePicker 
+              <DatePickerOptional 
                 date={dateRange.start} 
-                setDate={(date) => setDateRange(prev => ({...prev, start: date || undefined}))} 
+                setDate={(date) => setDateRange(prev => ({...prev, start: date}))} 
                 className="flex-1"
+                placeholder="Data inicial"
               />
             </div>
             
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-500">Até:</span>
-              <DatePicker 
+              <DatePickerOptional 
                 date={dateRange.end} 
-                setDate={(date) => setDateRange(prev => ({...prev, end: date || undefined}))} 
+                setDate={(date) => setDateRange(prev => ({...prev, end: date}))} 
                 className="flex-1"
+                placeholder="Data final"
               />
             </div>
           </div>
