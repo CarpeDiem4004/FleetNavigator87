@@ -53,6 +53,10 @@ interface Fine {
   dueDate: string;
   status: 'pendente' | 'paga' | 'contestada' | 'em_andamento' | 'cancelada';
   description: string;
+  notificationFileUrl?: string; // URL do arquivo de notificação
+  driverSignatureUrl?: string; // URL da assinatura do motorista
+  signatureDate?: string; // Data da assinatura
+  lifecycle?: 'aguardando_base' | 'aguardando_assinatura' | 'assinado' | 'finalizado'; // Ciclo de vida da multa
 }
 
 // Tipo para veículos
@@ -377,7 +381,8 @@ const FinesNew: React.FC = () => {
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Importante</AlertTitle>
                 <AlertDescription>
-                  A multa será registrada agora, mas o motorista responsável será identificado pela base correspondente.
+                  A multa será registrada agora, mas o motorista responsável será identificado pela base correspondente. 
+                  Faça upload da notificação original para que a base possa imprimir e coletar a assinatura do motorista.
                 </AlertDescription>
               </Alert>
               <div className="grid gap-4 py-4">
