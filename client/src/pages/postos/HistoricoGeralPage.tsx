@@ -63,10 +63,22 @@ const HistoricoGeralPage: React.FC = () => {
             
             if (data.success && Array.isArray(data.data)) {
               // Adicionar nome do posto a cada registro
-              const abastecimentosDoPosto = data.data.map((item: any) => ({
-                ...item,
-                posto: postoFormatado
-              }));
+              const abastecimentosDoPosto = data.data.map((item: any, index: number) => {
+                // Log para verificar alguns registros de exemplo (apenas os primeiros 3)
+                if (index < 3) {
+                  console.log(`[DEBUG] Amostra de abastecimento do posto ${posto}:`, {
+                    id: item.id,
+                    placa: item.placa,
+                    project: item.project,
+                    litros: item.quantidade_litros || item.litros
+                  });
+                }
+                
+                return {
+                  ...item,
+                  posto: postoFormatado
+                };
+              });
               
               console.log(`[FETCH] Encontrados ${abastecimentosDoPosto.length} abastecimentos para ${postoFormatado}`);
               todosAbastecimentos = [...todosAbastecimentos, ...abastecimentosDoPosto];
@@ -474,16 +486,54 @@ const HistoricoGeralPage: React.FC = () => {
       return acc;
     }, {} as Record<string, number>);
     
-    // Calcular consumo por projeto
+    // Calcular consumo por projeto com tratamento adequado
     const consumoPorProjeto = filteredData.reduce((acc, item) => {
-      const projeto = item.project || 'Não especificado';
-      // Não contabilizar projetos vazios como "Não especificado"
-      if (projeto === '' || projeto === '-') return acc;
+      let projeto = item.project || 'Não especificado';
       
-      // Adicionar ao acumulador se o projeto não for vazio
-      acc[projeto] = (acc[projeto] || 0) + (item.quantidade_litros || item.litros || 0);
+      // Tratamento especial para valores de projeto
+      // Verificar se o valor parece ser um número (normalmente seria um código ou string)
+      if (projeto && !isNaN(parseFloat(projeto))) {
+        console.log("[DEBUG] Projeto com valor numérico:", projeto);
+        projeto = 'Não especificado';
+      }
+      
+      // Normalizar strings vazias ou com apenas traço
+      if (projeto === '' || projeto === '-' || projeto === null || projeto === undefined) {
+        projeto = 'Não especificado';
+        return acc; // Não contabilizar projetos indefinidos
+      }
+      
+      // Garantir que estamos somando um número
+      const litrosRaw = item.quantidade_litros || item.litros || 0;
+      const litros = typeof litrosRaw === 'string' ? parseFloat(litrosRaw) : litrosRaw;
+      if (isNaN(litros)) {
+        console.log("[DEBUG] Valor de litros inválido:", item.quantidade_litros, item.litros);
+        return acc; // Não adicionar valores inválidos
+      }
+      
+      // Limitar o tamanho da string do projeto para evitar valores muito longos
+      if (typeof projeto === 'string' && projeto.length > 100) {
+        projeto = projeto.substring(0, 100) + '...';
+      }
+      
+      // Remover valores que parecem ser litros concatenados
+      if (typeof projeto === 'string' && projeto.includes('.00')) {
+        console.log("[DEBUG] Projeto com formato suspeito de litros:", projeto);
+        return acc;
+      }
+      
+      // Converter para maiúsculas para padronizar
+      if (typeof projeto === 'string') {
+        projeto = projeto.toUpperCase();
+      }
+      
+      // Adicionar ao acumulador
+      acc[projeto] = (acc[projeto] || 0) + litros;
       return acc;
     }, {} as Record<string, number>);
+    
+    // Adicionar logs para debug
+    console.log("[DEBUG] Consumo por projeto antes de ordenar:", consumoPorProjeto);
     
     // Ordenar projetos por consumo (do maior para o menor)
     const projetosOrdenados = Object.entries(consumoPorProjeto)
@@ -525,6 +575,14 @@ const HistoricoGeralPage: React.FC = () => {
   };
   
   const dadosConsolidados = calcularConsolidado();
+  
+  // Log para debug da exibição de projetos
+  console.log("[DEBUG] Projetos ordenados:", dadosConsolidados.projetosOrdenados);
+  console.log("[DEBUG] Verificando dados dos projetos:", {
+    temProjetos: dadosConsolidados.projetosOrdenados && dadosConsolidados.projetosOrdenados.length > 0,
+    qtdProjetos: dadosConsolidados.projetosOrdenados ? dadosConsolidados.projetosOrdenados.length : 0,
+    tipoVariavel: typeof dadosConsolidados.projetosOrdenados
+  });
 
   return (
     <div className="container mx-auto p-4">
