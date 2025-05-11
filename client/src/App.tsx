@@ -100,6 +100,9 @@ import SolicitacaoPneusCampinas from "@/pages/bases/SolicitacaoPneusCampinas";
 import SolicitacaoOrcamentoCampinas from "@/pages/bases/SolicitacaoOrcamentoCampinas";
 import ManutencaoFrotaCampinas from "@/pages/bases/ManutencaoFrotaCampinas";
 
+// Importação das páginas da Base Goiânia
+import BaseGoiania from "@/pages/bases/BaseGoiania";
+
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
 import OsascoV2Public from "@/pages/postos/public/OsascoV2Public";
@@ -184,6 +187,9 @@ function App() {
           <ProtectedRoute path="/bases/campinas/solicitacao-pneus" component={SolicitacaoPneusCampinas} />
           <ProtectedRoute path="/bases/campinas/solicitacao-orcamento" component={SolicitacaoOrcamentoCampinas} />
           <ProtectedRoute path="/bases/campinas/manutencao-frota" component={ManutencaoFrotaCampinas} />
+          
+          {/* Rotas para a Base Goiânia */}
+          <ProtectedRoute path="/bases/goiania" component={BaseGoiania} />
           <ProtectedRoute path="/solicitacoes" component={BaseRequests} />
           
           {/* Rotas para os postos de abastecimento - protegidas */}
