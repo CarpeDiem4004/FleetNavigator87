@@ -10,7 +10,9 @@ import {
   CircleDot, 
   FileText, 
   Wrench, 
-  ArrowRight 
+  ArrowRight,
+  Car,
+  Truck
 } from 'lucide-react';
 
 const BaseCampinas: React.FC = () => {
@@ -28,6 +30,29 @@ const BaseCampinas: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Card de Cadastro de Veículos */}
+        <Card className="shadow-md hover:shadow-lg transition-shadow">
+          <CardHeader className="bg-emerald-50 pb-2">
+            <CardTitle className="flex items-center text-emerald-700">
+              <Truck className="w-5 h-5 mr-2" />
+              Cadastro de Veículos
+            </CardTitle>
+            <CardDescription>Gerenciamento da frota</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <p className="text-gray-600">
+              Cadastre, atualize e gerencie os veículos da Base Campinas. Registre modelos, placas, status operacional e informações técnicas.
+            </p>
+          </CardContent>
+          <CardFooter className="border-t pt-4 flex justify-end">
+            <Link href="/vehicles?base=2">
+              <Button variant="outline" className="flex items-center text-emerald-600 hover:text-emerald-800">
+                Gerenciar Veículos <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+          </CardFooter>
+        </Card>
+
         {/* Card de Despesas */}
         <Card className="shadow-md hover:shadow-lg transition-shadow">
           <CardHeader className="bg-blue-50 pb-2">
