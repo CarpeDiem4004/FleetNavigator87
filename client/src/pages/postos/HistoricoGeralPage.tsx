@@ -202,10 +202,19 @@ const HistoricoGeralPage: React.FC = () => {
   
   const formatarDataHora = (dataString: string) => {
     try {
+      if (!dataString) return '-';
+      
       const data = new Date(dataString);
+      
+      // Verifica se a data é válida
+      if (isNaN(data.getTime())) {
+        console.warn('Data inválida:', dataString);
+        return '-';
+      }
+      
       return format(data, 'dd/MM/yyyy HH:mm:ss');
     } catch (error) {
-      console.error('Erro ao formatar data e hora:', error);
+      console.error('Erro ao formatar data e hora:', error, 'para valor:', dataString);
       return '-';
     }
   };
@@ -244,8 +253,8 @@ const HistoricoGeralPage: React.FC = () => {
         'Placa': item.placa,
         'KM': item.km_atual,
         'Combustível': item.tipo_combustivel,
-        'Litros': item.litros,
-        'Preço/L': item.preco_litro ? `R$ ${item.preco_litro.toFixed(2)}` : '-',
+        'Litros': formatarNumero(item.quantidade_litros || item.litros || 0),
+        'Preço/L': item.preco_litro ? `R$ ${item.preco_litro.toFixed(2)}` : ((item as any).valor_litro ? `R$ ${((item as any).valor_litro).toFixed(2)}` : '-'),
         'Valor Total': item.valor_total ? `R$ ${item.valor_total.toFixed(2)}` : '-',
         'Motorista': item.nome_motorista,
         'Operador': item.nome_operador,
