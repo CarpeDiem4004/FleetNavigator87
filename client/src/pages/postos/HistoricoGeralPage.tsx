@@ -527,7 +527,8 @@ const HistoricoGeralPage: React.FC = () => {
         'NATURA',
         'OXXO',
         'PETLOVE',
-        'REMÉDIOS'
+        'MANUTENÇÃO',
+        'OPERACIONAL'
       ];
       
       // Verificar se o projeto é similar a algum conhecido
@@ -930,7 +931,8 @@ const HistoricoGeralPage: React.FC = () => {
                       'NATURA',
                       'OXXO',
                       'PETLOVE',
-                      'REMÉDIOS'
+                      'MANUTENÇÃO',
+                      'OPERACIONAL'
                     ];
                     
                     // Projetos que já estão sendo exibidos nos dados
