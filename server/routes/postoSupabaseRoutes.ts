@@ -228,7 +228,8 @@ router.get('/resumo-todos-postos-supabase', async (req, res) => {
       'BotaFogo',
       'Remedios',
       'VargemGrande',
-      'Guarulhos'
+      'Guarulhos',
+      'Goiania'
     ];
     
     // Preparar as consultas para cada posto
