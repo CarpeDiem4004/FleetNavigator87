@@ -272,6 +272,7 @@ const HistoricoAbastecimentosOptimized: React.FC<HistoricoAbastecimentosOptimize
       'Valor Total': item.valor_total,
       Motorista: item.nome_motorista,
       Operador: item.nome_operador,
+      Projeto: item.project || '-',
       Posto: item.posto,
       RG: item.rg_motorista || '',
     }));
@@ -288,11 +289,12 @@ const HistoricoAbastecimentosOptimized: React.FC<HistoricoAbastecimentosOptimize
       { wch: 12 },  // Hodômetro
       { wch: 12 },  // Combustível
       { wch: 8 },   // Litros
-      { wch: 14 },  // Valor Unitário
-      { wch: 14 },  // Valor Total
+      { wch: 12 },  // Valor Unitário
+      { wch: 12 },  // Valor Total
       { wch: 20 },  // Motorista
-      { wch: 20 },  // Operador
-      { wch: 15 },  // Posto
+      { wch: 15 },  // Operador
+      { wch: 15 },  // Projeto
+      { wch: 10 },  // Posto
       { wch: 15 }   // RG
     ];
     ws['!cols'] = wscols;
