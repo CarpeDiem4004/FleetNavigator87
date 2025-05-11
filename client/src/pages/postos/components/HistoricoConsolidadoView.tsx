@@ -285,6 +285,7 @@ const HistoricoConsolidadoView: React.FC = () => {
       'Quantidade (L)': item.quantidade_litros,
       'Motorista': item.nome_motorista,
       'Operador': item.nome_operador,
+      'Projeto': item.project || '-',
       'Valor por Litro': item.valor_litro,
       'Valor Total': item.valor_total
     }));
