@@ -93,6 +93,7 @@ import AbastecimentosPage from "@/pages/AbastecimentosPage";
 // Importação das páginas da Base Campinas
 import BaseCampinas from "@/pages/bases/BaseCampinas";
 import DespesasCampinas from "@/pages/bases/DespesasCampinas";
+import MultasCampinas from "@/pages/bases/MultasCampinas";
 import SolicitacaoPneusCampinas from "@/pages/bases/SolicitacaoPneusCampinas";
 import SolicitacaoOrcamentoCampinas from "@/pages/bases/SolicitacaoOrcamentoCampinas";
 import ManutencaoFrotaCampinas from "@/pages/bases/ManutencaoFrotaCampinas";
@@ -175,6 +176,7 @@ function App() {
           <ProtectedRoute path="/bases" component={Bases} />
           <ProtectedRoute path="/bases/campinas" component={BaseCampinas} />
           <ProtectedRoute path="/bases/campinas/despesas" component={DespesasCampinas} />
+          <ProtectedRoute path="/bases/campinas/multas" component={MultasCampinas} />
           <ProtectedRoute path="/bases/campinas/solicitacao-pneus" component={SolicitacaoPneusCampinas} />
           <ProtectedRoute path="/bases/campinas/solicitacao-orcamento" component={SolicitacaoOrcamentoCampinas} />
           <ProtectedRoute path="/bases/campinas/manutencao-frota" component={ManutencaoFrotaCampinas} />
