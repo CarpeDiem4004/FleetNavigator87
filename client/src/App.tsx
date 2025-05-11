@@ -102,6 +102,7 @@ import ManutencaoFrotaCampinas from "@/pages/bases/ManutencaoFrotaCampinas";
 
 // Importação das páginas da Base Goiânia
 import BaseGoiania from "@/pages/bases/BaseGoiania";
+import MultasGoiania from "@/pages/bases/MultasGoiania";
 
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
@@ -190,6 +191,7 @@ function App() {
           
           {/* Rotas para a Base Goiânia */}
           <ProtectedRoute path="/bases/goiania" component={BaseGoiania} />
+          <ProtectedRoute path="/bases/goiania/multas" component={MultasGoiania} />
           <ProtectedRoute path="/solicitacoes" component={BaseRequests} />
           
           {/* Rotas para os postos de abastecimento - protegidas */}
