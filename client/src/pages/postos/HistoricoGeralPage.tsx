@@ -399,7 +399,11 @@ const HistoricoGeralPage: React.FC = () => {
       const placaMatch = item.placa?.toLowerCase().includes(term) || false;
       const motoristaMatch = item.nome_motorista?.toLowerCase().includes(term) || false;
       const postoMatch = item.posto?.toLowerCase().includes(term) || false;
-      const projectMatch = item.project?.toLowerCase().includes(term) || false;
+      
+      // Amplia busca para incluir mais variações do campo projeto (project/projeto)
+      const projetoRaw = item.project || item.projeto;
+      const projectMatch = projetoRaw ? String(projetoRaw).toLowerCase().includes(term) : false;
+      
       const kmMatch = item.km_atual?.toString().includes(term) || false;
       const tipoMatch = item.tipo_combustivel?.toLowerCase().includes(term) || false;
       
@@ -557,8 +561,8 @@ const HistoricoGeralPage: React.FC = () => {
     // Calcular consumo por projeto com tratamento adequado
     const consumoPorProjeto = filteredData.reduce((acc, item) => {
       // Unificar campo de projeto (pode estar como project ou projeto dependendo do posto)
-      // Melhorar detecção do campo de projeto, que pode estar em diferentes lugares
-      const projetoRaw = item.project || (item as any).projeto || item.Projeto || (item as any).Project;
+      // Detectar apenas os campos que estão definidos na interface Abastecimento
+      const projetoRaw = item.project || item.projeto;
       
       // Usar a função de normalização com debugging adicional
       const projeto = normalizarNomeProjeto(projetoRaw);
