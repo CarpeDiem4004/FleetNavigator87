@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchRecords } from '@/lib/supabase-client';
 import { format } from 'date-fns';
-import { FaGasPump, FaMoneyBillWave, FaCar, FaWater } from 'react-icons/fa';
+import { FaGasPump, FaMoneyBillWave, FaCar, FaWater, FaProjectDiagram } from 'react-icons/fa';
 import { BsFillFuelPumpFill } from 'react-icons/bs';
 import { RiOilFill, RiGasStationFill } from 'react-icons/ri';
 import { GiGasPump, GiWaterTank } from 'react-icons/gi';
@@ -760,6 +760,35 @@ const HistoricoGeralPage: React.FC = () => {
                   </div>
                 </div>
               </div>
+            </div>
+            
+            {/* Card para projetos que mais consumiram combustível */}
+            <div className="mt-6 bg-blue-50 p-4 rounded-lg shadow-sm">
+              <div className="flex items-center mb-3">
+                <div className="mr-3 bg-blue-100 p-3 rounded-full">
+                  <FaProjectDiagram className="h-5 w-5 text-blue-700" />
+                </div>
+                <h3 className="font-medium text-lg text-gray-700">Projetos que mais consumiram combustível</h3>
+              </div>
+              
+              {dadosConsolidados.projetosOrdenados.length > 0 ? (
+                <div className="space-y-3">
+                  {dadosConsolidados.projetosOrdenados.map(([projeto, litros], index) => (
+                    <div key={index} className="flex items-center justify-between border-b border-blue-100 pb-2">
+                      <div className="flex items-center">
+                        <span className="mr-2 font-semibold text-blue-800 w-5 text-center">{index + 1}.</span>
+                        <span className="font-medium text-gray-800">{projeto}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <span className="font-bold text-blue-700 mr-1">{formatarNumero(litros)}</span>
+                        <span className="text-sm text-gray-500">litros</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 italic">Nenhum projeto identificado nos abastecimentos.</p>
+              )}
             </div>
           </div>
         )}
