@@ -818,7 +818,7 @@ export async function registrarAbastecimentoPosto(req, res) {
             SET arla_nivel = GREATEST(0, arla_nivel - $1),
                 arla_consumo_total = COALESCE(arla_consumo_total, 0) + $1,
                 arla_valor_total = COALESCE(arla_valor_total, 0) + $2,
-                updated_at = NOW()
+                updated_at = (NOW() AT TIME ZONE 'America/Sao_Paulo')
             WHERE posto = $3
           `, [parseFloat(litros), calculatedValorTotal, postoName]);
           
@@ -830,7 +830,7 @@ export async function registrarAbastecimentoPosto(req, res) {
             SET diesel_nivel = GREATEST(0, diesel_nivel - $1),
                 diesel_consumo_total = COALESCE(diesel_consumo_total, 0) + $1,
                 diesel_valor_total = COALESCE(diesel_valor_total, 0) + $2,
-                updated_at = NOW()
+                updated_at = (NOW() AT TIME ZONE 'America/Sao_Paulo')
             WHERE posto = $3
           `, [parseFloat(litros), calculatedValorTotal, postoName]);
           
