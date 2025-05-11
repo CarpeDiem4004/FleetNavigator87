@@ -522,9 +522,39 @@ const HistoricoGeralPage: React.FC = () => {
         return acc;
       }
       
-      // Converter para maiúsculas para padronizar
+      // Converter para maiúsculas para padronizar e normalizar nomes de projetos
       if (typeof projeto === 'string') {
         projeto = projeto.toUpperCase();
+        
+        // Lista de projetos conhecidos para normalizar nomes
+        const projetosConhecidos = [
+          'GRUPO PEREIRA',
+          'COCA COLA',
+          'SHOPEE',
+          'MERCADO LIVRE',
+          'LINE HALL SHOPEE',
+          'FULL MELI',
+          'MADEIRA MADEIRA',
+          'MAGALU',
+          'NATURA',
+          'OXXO',
+          'PETLOVE',
+          'REMÉDIOS'
+        ];
+        
+        // Verificar se o projeto é similar a algum conhecido
+        for (const projetoConhecido of projetosConhecidos) {
+          // Verificar similaridade (contém parte do nome ou é muito similar)
+          if (
+            projeto.includes(projetoConhecido) || 
+            projetoConhecido.includes(projeto) ||
+            // Para casos como "SHOP", "COCACOLA" etc.
+            (projetoConhecido.replace(/\s+/g, '').includes(projeto) || projeto.includes(projetoConhecido.replace(/\s+/g, '')))
+          ) {
+            projeto = projetoConhecido;
+            break;
+          }
+        }
       }
       
       // Adicionar ao acumulador
@@ -538,7 +568,7 @@ const HistoricoGeralPage: React.FC = () => {
     // Ordenar projetos por consumo (do maior para o menor)
     const projetosOrdenados = Object.entries(consumoPorProjeto)
       .sort(([, litrosA], [, litrosB]) => litrosB - litrosA)
-      .slice(0, 5); // Top 5 projetos
+      .slice(0, 10); // Top 10 projetos
     
     return {
       registros: filteredData.length,
@@ -821,8 +851,8 @@ const HistoricoGeralPage: React.FC = () => {
             </div>
             
             {/* Card para projetos que mais consumiram combustível */}
-            <div className="mt-6 bg-blue-50 p-4 rounded-lg shadow-sm">
-              <div className="flex items-center mb-3">
+            <div className="mt-6 bg-blue-50 p-5 rounded-lg shadow-sm">
+              <div className="flex items-center mb-4">
                 <div className="mr-3 bg-blue-100 p-3 rounded-full">
                   <FaProjectDiagram className="h-5 w-5 text-blue-700" />
                 </div>
@@ -831,21 +861,67 @@ const HistoricoGeralPage: React.FC = () => {
               
               {dadosConsolidados.projetosOrdenados.length > 0 ? (
                 <div className="space-y-3">
-                  {dadosConsolidados.projetosOrdenados.map(([projeto, litros], index) => (
-                    <div key={index} className="flex items-center justify-between border-b border-blue-100 pb-2">
-                      <div className="flex items-center">
-                        <span className="mr-2 font-semibold text-blue-800 w-5 text-center">{index + 1}.</span>
-                        <span className="font-medium text-gray-800">{projeto}</span>
+                  {/* Cabeçalho */}
+                  <div className="flex items-center text-sm font-medium text-gray-500 pb-2 border-b border-blue-200">
+                    <div className="w-12 text-center">#</div>
+                    <div className="flex-1">Projeto</div>
+                    <div className="w-32 text-right">Litros</div>
+                    <div className="w-24 text-right">% do Total</div>
+                  </div>
+                  
+                  {/* Lista de projetos */}
+                  {dadosConsolidados.projetosOrdenados.map(([projeto, litros], index) => {
+                    // Calcular a porcentagem do total
+                    const porcentagem = (litros / dadosConsolidados.totalLitros) * 100;
+                    
+                    // Determinar a cor com base na posição
+                    const corPosicao = index === 0 
+                      ? 'bg-blue-600' 
+                      : index === 1 
+                        ? 'bg-blue-500' 
+                        : index === 2 
+                          ? 'bg-blue-400' 
+                          : 'bg-blue-300';
+                          
+                    return (
+                      <div key={index} className="flex items-center justify-between py-2 border-b border-blue-100">
+                        <div className="w-12 flex justify-center">
+                          <span className={`${corPosicao} text-white rounded-full w-7 h-7 flex items-center justify-center font-bold`}>
+                            {index + 1}
+                          </span>
+                        </div>
+                        <div className="flex-1">
+                          <span className="font-medium text-gray-800">{projeto}</span>
+                        </div>
+                        <div className="w-32 text-right">
+                          <span className="font-bold text-blue-700">{formatarNumero(litros)}</span>
+                          <span className="text-sm text-gray-500 ml-1">L</span>
+                        </div>
+                        <div className="w-24 text-right">
+                          <span className="font-semibold text-blue-600">{porcentagem.toFixed(1)}%</span>
+                        </div>
                       </div>
-                      <div className="flex items-center">
-                        <span className="font-bold text-blue-700 mr-1">{formatarNumero(litros)}</span>
-                        <span className="text-sm text-gray-500">litros</span>
-                      </div>
+                    );
+                  })}
+                  
+                  {/* Total */}
+                  <div className="flex items-center justify-between pt-2">
+                    <div className="w-12"></div>
+                    <div className="flex-1 font-bold text-gray-700">Total</div>
+                    <div className="w-32 text-right">
+                      <span className="font-bold text-blue-800">{formatarNumero(dadosConsolidados.totalLitros)}</span>
+                      <span className="text-sm text-gray-500 ml-1">L</span>
                     </div>
-                  ))}
+                    <div className="w-24 text-right">
+                      <span className="font-bold text-blue-800">100%</span>
+                    </div>
+                  </div>
                 </div>
               ) : (
-                <p className="text-gray-500 italic">Nenhum projeto identificado nos abastecimentos.</p>
+                <div className="flex flex-col items-center justify-center py-6">
+                  <p className="text-gray-500 italic mb-2">Nenhum projeto identificado nos abastecimentos.</p>
+                  <p className="text-sm text-gray-400">Certifique-se de que os abastecimentos incluem informação de projeto.</p>
+                </div>
               )}
             </div>
           </div>
