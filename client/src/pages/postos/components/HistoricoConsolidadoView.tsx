@@ -151,8 +151,20 @@ const HistoricoConsolidadoView: React.FC = () => {
         console.log('[FETCH] Resposta do histórico consolidado:', jsonData);
         
         if (jsonData && jsonData.success === true) {
-          const dados = jsonData.data || [];
+          let dados = jsonData.data || [];
           console.log('[FETCH] Dados encontrados:', dados.length);
+          
+          // Garantir que todos os registros tenham o campo project
+          dados = dados.map(item => {
+            // Cria uma cópia segura do item
+            const itemProcessado = {...item};
+            
+            // Garantir que o projeto está definido
+            if (itemProcessado.project === undefined || itemProcessado.project === null) {
+              itemProcessado.project = '';
+            }
+            return itemProcessado;
+          });
           
           // Se não houver dados, usar dados de exemplo para visualização
           return dados.length > 0 ? dados : dadosExemplo;
@@ -274,21 +286,46 @@ const HistoricoConsolidadoView: React.FC = () => {
   const exportToExcel = () => {
     if (historicoFiltrado.length === 0) return;
 
+    // Função auxiliar para garantir valores não-nulos
+    const formatarCampo = (valor: any, padraoSeVazio = '-'): string => {
+      if (valor === undefined || valor === null || valor === '') {
+        return padraoSeVazio;
+      }
+      return String(valor);
+    };
+
+    console.log('[EXCEL] Exportando dados com o seguinte número de registros:', historicoFiltrado.length);
+    
+    // Log para verificar quantos registros têm project
+    const comProjeto = historicoFiltrado.filter(item => item.project && item.project.trim() !== '').length;
+    console.log('[EXCEL] Registros com projeto preenchido:', comProjeto);
+    
     // Formatar os dados para o Excel
-    const workbookData = historicoFiltrado.map(item => ({
-      'ID': item.id,
-      'Data/Hora': item.data_hora,
-      'Posto': item.nome_posto,
-      'Placa': item.placa,
-      'KM': item.km,
-      'Tipo de Combustível': item.tipo_combustivel,
-      'Quantidade (L)': item.quantidade_litros,
-      'Motorista': item.nome_motorista,
-      'Operador': item.nome_operador,
-      'Projeto': item.project || '-',
-      'Valor por Litro': item.valor_litro,
-      'Valor Total': item.valor_total
-    }));
+    const workbookData = historicoFiltrado.map(item => {
+      // Log detalhado apenas para um registro de amostra
+      if (item.project) {
+        console.log('[EXCEL] Exemplo de registro com project:', { 
+          id: item.id, 
+          placa: item.placa, 
+          project: item.project 
+        });
+      }
+      
+      return {
+        'ID': item.id,
+        'Data/Hora': formatarCampo(item.data_hora),
+        'Posto': formatarCampo(item.nome_posto),
+        'Placa': formatarCampo(item.placa),
+        'KM': item.km || 0,
+        'Tipo de Combustível': formatarCampo(item.tipo_combustivel),
+        'Quantidade (L)': item.quantidade_litros || 0,
+        'Motorista': formatarCampo(item.nome_motorista),
+        'Operador': formatarCampo(item.nome_operador),
+        'Projeto': formatarCampo(item.project),
+        'Valor por Litro': item.valor_litro || 0,
+        'Valor Total': item.valor_total || 0
+      };
+    });
 
     // Criar planilha
     const worksheet = XLSX.utils.json_to_sheet(workbookData);
