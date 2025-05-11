@@ -155,7 +155,7 @@ const HistoricoConsolidadoView: React.FC = () => {
           console.log('[FETCH] Dados encontrados:', dados.length);
           
           // Garantir que todos os registros tenham o campo project
-          dados = dados.map(item => {
+          dados = dados.map((item: any) => {
             // Cria uma cópia segura do item
             const itemProcessado = {...item};
             
