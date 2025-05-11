@@ -139,7 +139,11 @@ const mockFines: Fine[] = [
     amount: 195.23,
     dueDate: '2025-04-10',
     status: 'paga',
-    description: 'Ultrapassagem em faixa contínua'
+    description: 'Ultrapassagem em faixa contínua',
+    notificationFileUrl: 'https://storage.gestaoonfleet.com.br/multas/notificacao_DEF5678_10032025.pdf',
+    driverSignatureUrl: 'https://storage.gestaoonfleet.com.br/multas/assinatura_DEF5678_15032025.pdf',
+    signatureDate: '2025-03-15',
+    lifecycle: 'finalizado'
   },
   {
     id: 3,
@@ -155,7 +159,9 @@ const mockFines: Fine[] = [
     amount: 88.38,
     dueDate: '2025-04-05',
     status: 'contestada',
-    description: 'Veículo estacionado em local proibido durante carga e descarga'
+    description: 'Veículo estacionado em local proibido durante carga e descarga',
+    notificationFileUrl: 'https://storage.gestaoonfleet.com.br/multas/notificacao_GHI9012_05032025.pdf',
+    lifecycle: 'aguardando_assinatura'
   },
   {
     id: 4,
@@ -171,7 +177,11 @@ const mockFines: Fine[] = [
     amount: 293.47,
     dueDate: '2025-03-30',
     status: 'paga',
-    description: 'Veículo flagrado a 90 km/h em via com limite de 60 km/h'
+    description: 'Veículo flagrado a 90 km/h em via com limite de 60 km/h',
+    notificationFileUrl: 'https://storage.gestaoonfleet.com.br/multas/notificacao_ABC1234_28022025.pdf',
+    driverSignatureUrl: 'https://storage.gestaoonfleet.com.br/multas/assinatura_ABC1234_05032025.pdf',
+    signatureDate: '2025-03-05',
+    lifecycle: 'finalizado'
   },
   {
     id: 5,
@@ -187,7 +197,11 @@ const mockFines: Fine[] = [
     amount: 293.47,
     dueDate: '2025-04-20',
     status: 'pendente',
-    description: 'Veículo flagrado avançando o sinal vermelho em cruzamento'
+    description: 'Veículo flagrado avançando o sinal vermelho em cruzamento',
+    notificationFileUrl: 'https://storage.gestaoonfleet.com.br/multas/notificacao_MNO7890_20032025.pdf',
+    driverSignatureUrl: 'https://storage.gestaoonfleet.com.br/multas/assinatura_MNO7890_26032025.pdf',
+    signatureDate: '2025-03-26',
+    lifecycle: 'assinado'
   }
 ];
 
