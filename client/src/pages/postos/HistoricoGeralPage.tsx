@@ -557,11 +557,27 @@ const HistoricoGeralPage: React.FC = () => {
     // Calcular consumo por projeto com tratamento adequado
     const consumoPorProjeto = filteredData.reduce((acc, item) => {
       // Unificar campo de projeto (pode estar como project ou projeto dependendo do posto)
-      const projetoRaw = item.project || (item as any).projeto;
+      // Melhorar detecção do campo de projeto, que pode estar em diferentes lugares
+      const projetoRaw = item.project || (item as any).projeto || item.Projeto || (item as any).Project;
+      
+      // Usar a função de normalização com debugging adicional
       const projeto = normalizarNomeProjeto(projetoRaw);
+      
+      // Extrair litros com segurança
       const litros = extrairLitros(item);
       
-      // Adicionar ao acumulador apenas se tiver um valor válido
+      // Debug para ver campos de projeto problemáticos
+      if (litros > 0 && !projeto) {
+        console.log("[DEBUG] Item com litros mas sem projeto:", {
+          id: item.id,
+          placa: item.placa,
+          litros,
+          projetoRaw,
+          item
+        });
+      }
+      
+      // Adicionar ao acumulador apenas se tiver um valor válido e um projeto detectado
       if (litros > 0) {
         acc[projeto] = (acc[projeto] || 0) + litros;
       }
