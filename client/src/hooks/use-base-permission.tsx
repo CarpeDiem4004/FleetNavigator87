@@ -65,6 +65,14 @@ const allRoutes = [
   '/bases/campinas/solicitacao-pneus', // Solicitação de Pneus
   '/bases/campinas/solicitacao-orcamento', // Solicitação de Orçamento
   '/bases/campinas/manutencao-frota',  // Manutenção de Frota
+  '/bases/goiania',                    // Base Goiânia
+  '/bases/goiania/despesas',           // Despesas Goiânia
+  '/bases/goiania/multas',             // Multas Goiânia
+  '/bases/goiania/acidentes-trabalho', // Acidentes de Trabalho Goiânia
+  '/bases/goiania/sinistros',          // Sinistros Goiânia
+  '/bases/goiania/solicitacao-pneus',  // Solicitação de Pneus Goiânia
+  '/bases/goiania/solicitacao-orcamento', // Solicitação de Orçamento Goiânia
+  '/bases/goiania/manutencao-frota',   // Manutenção de Frota Goiânia
   '/postos/visao-geral',               // Visão Geral dos Postos
   '/postos'                            // Postos de Abastecimento
 ];
@@ -80,6 +88,16 @@ const baseRouteMapping = {
     '/bases/campinas/solicitacao-pneus',
     '/bases/campinas/solicitacao-orcamento',
     '/bases/campinas/manutencao-frota'
+  ],
+  'goiania': [
+    '/bases/goiania',
+    '/bases/goiania/despesas',
+    '/bases/goiania/multas',
+    '/bases/goiania/acidentes-trabalho',
+    '/bases/goiania/sinistros',
+    '/bases/goiania/solicitacao-pneus',
+    '/bases/goiania/solicitacao-orcamento',
+    '/bases/goiania/manutencao-frota'
   ],
   'gestão de frotas': [
     '/gestao-de-frotas', 
@@ -169,6 +187,14 @@ const basicRoutes = [
   '/bases/campinas/solicitacao-pneus',   // Solicitação de Pneus
   '/bases/campinas/solicitacao-orcamento', // Solicitação de Orçamento
   '/bases/campinas/manutencao-frota',    // Manutenção de Frota
+  '/bases/goiania',                      // Base Goiânia
+  '/bases/goiania/despesas',             // Despesas Goiânia
+  '/bases/goiania/multas',               // Multas Goiânia
+  '/bases/goiania/acidentes-trabalho',   // Acidentes de Trabalho Goiânia
+  '/bases/goiania/sinistros',            // Sinistros Goiânia
+  '/bases/goiania/solicitacao-pneus',    // Solicitação de Pneus Goiânia
+  '/bases/goiania/solicitacao-orcamento', // Solicitação de Orçamento Goiânia
+  '/bases/goiania/manutencao-frota',     // Manutenção de Frota Goiânia
   '/users'                               // Página de Usuários (acesso para todos, verificação adicional feita no hasPermission)
 ];
 
