@@ -254,7 +254,7 @@ router.get('/resumo-todos-postos-supabase', async (req, res) => {
             ROUND(SUM(valor_total)::numeric, 2) AS valor_total,
             ROUND(AVG(COALESCE(valor_litro, preco_litro))::numeric, 2) AS preco_medio_litro
           FROM "${nomeTabela}"
-          WHERE created_at >= NOW() - INTERVAL '${diasNum} days'
+          WHERE created_at >= (NOW() AT TIME ZONE 'America/Sao_Paulo') - INTERVAL '${diasNum} days'
           GROUP BY tipo_combustivel
         `;
         

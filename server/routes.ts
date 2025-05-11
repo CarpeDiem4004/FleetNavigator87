@@ -959,7 +959,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const query = `
         INSERT INTO movimentacoes_patio 
         (placa, motorista, nome_motorista, nome_operador, tipo_movimento, data_entrada, data_saida, motivo, posto, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, (NOW() AT TIME ZONE 'America/Sao_Paulo'))
         RETURNING id
       `;
       
@@ -1315,7 +1315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const query = `
         INSERT INTO abastecimentos_postos 
         (placa, km_atual, tipo_combustivel, litros, quantity_litros, nome_motorista, nome_operador, posto, created_at, project, tipo_veiculo)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9, $10)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, (NOW() AT TIME ZONE 'America/Sao_Paulo'), $9, $10)
         RETURNING id
       `;
       
@@ -6733,7 +6733,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           data, 
           valor
         ) VALUES (
-          NOW(), 
+          (NOW() AT TIME ZONE 'America/Sao_Paulo'), 
           $1
         ) RETURNING id, data, valor
       `;
@@ -6787,7 +6787,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             created_at,
             rg_motorista
           ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), $12
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, (NOW() AT TIME ZONE 'America/Sao_Paulo'), $12
           )
         `;
         
@@ -7801,7 +7801,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Sempre atualizar o timestamp
-      updateFields.push(`updated_at = NOW()`);
+      updateFields.push(`updated_at = (NOW() AT TIME ZONE 'America/Sao_Paulo')`);
       
       // Se não há campos para atualizar, retornar o registro atual
       if (updateFields.length === 1) { // Apenas o update_at foi adicionado
