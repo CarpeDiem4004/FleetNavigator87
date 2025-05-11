@@ -164,7 +164,8 @@ export default function PostoRemediosForm() {
     'NATURA',
     'OXXO',
     'PETLOVE',
-    'REMÉDIOS',
+    'MANUTENÇÃO',
+    'OPERACIONAL',
     'Outro'
   ];
 

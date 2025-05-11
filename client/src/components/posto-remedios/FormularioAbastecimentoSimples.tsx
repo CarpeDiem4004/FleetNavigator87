@@ -109,7 +109,8 @@ export default function FormularioAbastecimentoSimples() {
     'NATURA',
     'OXXO',
     'PETLOVE',
-    'REMÉDIOS',
+    'MANUTENÇÃO',
+    'OPERACIONAL',
     'Outro'
   ];
 
