@@ -253,6 +253,51 @@ const getLifecycleBadgeClass = (lifecycle?: string): string => {
   return classes[lifecycle] || 'bg-gray-100 text-gray-800';
 };
 
+// Função para avançar o ciclo de vida da multa
+const advanceLifecycle = (fine: Fine): string => {
+  const currentLifecycle = fine.lifecycle || 'aguardando_base';
+
+  // Ordem do ciclo de vida
+  const lifecycleOrder = [
+    'aguardando_base',
+    'aguardando_assinatura',
+    'assinado',
+    'finalizado'
+  ];
+
+  const currentIndex = lifecycleOrder.indexOf(currentLifecycle);
+  
+  // Se está no último estágio ou estágio não encontrado, mantém o mesmo
+  if (currentIndex === -1 || currentIndex === lifecycleOrder.length - 1) {
+    return currentLifecycle;
+  }
+
+  // Avança para o próximo estágio
+  return lifecycleOrder[currentIndex + 1];
+};
+
+// Função para verificar se o próximo passo é possível
+const canAdvanceLifecycle = (fine: Fine): boolean => {
+  const currentLifecycle = fine.lifecycle || 'aguardando_base';
+  
+  // Verifica se o ciclo de vida está finalizado
+  if (currentLifecycle === 'finalizado') {
+    return false;
+  }
+  
+  // Verifica se há notificação anexada (necessário para avançar do aguardando_base)
+  if (currentLifecycle === 'aguardando_base' && !fine.notificationFileUrl) {
+    return false;
+  }
+  
+  // Verifica se há assinatura anexada (necessário para avançar de aguardando_assinatura)
+  if (currentLifecycle === 'aguardando_assinatura' && !fine.driverSignatureUrl) {
+    return false;
+  }
+  
+  return true;
+};
+
 // Função para formatar valores monetários
 const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('pt-BR', {
@@ -838,10 +883,49 @@ const FinesNew: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2">
-                        <Button variant="outline" size="icon">
+                        {/* Botão para editar multa */}
+                        <Button variant="outline" size="icon" title="Editar multa">
                           <FileEdit className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="icon">
+
+                        {/* Botão para adicionar documentação */}
+                        {(!fine.notificationFileUrl || !fine.driverSignatureUrl) && (
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            title={!fine.notificationFileUrl ? "Anexar notificação" : "Anexar assinatura do motorista"}
+                            onClick={() => handleOpenAttachmentModal(fine, !fine.notificationFileUrl ? 'notification' : 'signature')}
+                          >
+                            <Upload className="h-4 w-4" />
+                          </Button>
+                        )}
+
+                        {/* Botão para avançar ciclo de vida */}
+                        {canAdvanceLifecycle(fine) && (
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            title={`Avançar para ${translateLifecycleStatus(advanceLifecycle(fine))}`}
+                            onClick={() => handleAdvanceLifecycle(fine)}
+                          >
+                            <Clock className="h-4 w-4" />
+                          </Button>
+                        )}
+
+                        {/* Botão para imprimir notificação */}
+                        {fine.notificationFileUrl && (
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            title="Imprimir notificação"
+                            onClick={() => handlePrintNotification(fine)}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        )}
+
+                        {/* Botão para excluir multa */}
+                        <Button variant="outline" size="icon" title="Excluir multa">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
