@@ -17,7 +17,8 @@ interface Abastecimento {
   valor_total?: number;
   nome_motorista: string;
   nome_operador: string;
-  project?: string;
+  project?: string;  // Nome usado em algumas tabelas
+  projeto?: string;  // Nome usado em outras tabelas
   posto: string;
   created_at: string;
 }
@@ -296,7 +297,8 @@ const HistoricoGeralPage: React.FC = () => {
           const tipoCombustivel = formatarTextoExcel(item.tipo_combustivel);
           const nomeMotorista = formatarTextoExcel(item.nome_motorista);
           const nomeOperador = formatarTextoExcel(item.nome_operador);
-          const projeto = formatarTextoExcel(item.project);
+          // Considerar tanto o campo project quanto o campo projeto
+          const projeto = formatarTextoExcel(item.project || (item as any).projeto || 'NÃO ESPECIFICADO');
           const posto = formatarTextoExcel(item.posto);
           
           // Garantir data válida
@@ -489,7 +491,8 @@ const HistoricoGeralPage: React.FC = () => {
     // Calcular consumo por projeto com tratamento adequado
     const consumoPorProjeto = filteredData.reduce((acc, item) => {
       // Unificar campo de projeto (pode estar como project ou projeto dependendo do posto)
-      let projeto = item.project || item.projeto || 'NÃO ESPECIFICADO';
+      // Usando any para acessar propriedades que podem não estar na interface original
+      let projeto = item.project || (item as any).projeto || 'NÃO ESPECIFICADO';
       
       // Tratamento especial para valores de projeto
       // Verificar se o valor parece ser um número (normalmente seria um código ou string)
