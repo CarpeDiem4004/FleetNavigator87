@@ -80,24 +80,24 @@ const BaseCampinas: React.FC = () => {
           </CardFooter>
         </Card>
         
-        {/* Card para Comunicação de Multas */}
+        {/* Card para Gestão de Multas */}
         <Card className="shadow-md hover:shadow-lg transition-shadow">
           <CardHeader className="bg-indigo-50 pb-2">
             <CardTitle className="flex items-center text-indigo-700">
               <FileWarning className="w-5 h-5 mr-2" />
-              Comunicação de Multas
+              Gestão de Multas
             </CardTitle>
-            <CardDescription>Registro de infrações de trânsito</CardDescription>
+            <CardDescription>Comunicados de infrações de trânsito</CardDescription>
           </CardHeader>
           <CardContent className="pt-4">
             <p className="text-gray-600">
-              Registre multas e infrações de trânsito recebidas. Inclua detalhes do veículo, motorista, data, valor e motivo da infração.
+              Receba comunicados de multas e infrações de trânsito enviados pela Gestão de Multas. Visualize detalhes dos veículos, motoristas, datas e valores das infrações.
             </p>
           </CardContent>
           <CardFooter className="border-t pt-4 flex justify-end">
             <Link href="/bases/campinas/multas">
               <Button variant="outline" className="flex items-center text-indigo-600 hover:text-indigo-800">
-                Registrar Multa <ArrowRight className="w-4 h-4 ml-2" />
+                Ver Multas <Bell className="w-4 h-4 ml-2" />
               </Button>
             </Link>
           </CardFooter>
