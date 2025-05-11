@@ -36,6 +36,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
 
 // Tipo para multas
 interface Fine {
@@ -321,6 +323,15 @@ const FinesNew: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  // Estado para controle do modal de anexos
+  const [showAttachmentModal, setShowAttachmentModal] = useState(false);
+  // Estado para armazenar a multa que está sendo editada/atualizada
+  const [selectedFine, setSelectedFine] = useState<Fine | null>(null);
+  // Estado para armazenar o tipo de anexo que está sendo feito
+  const [attachmentType, setAttachmentType] = useState<'notification' | 'signature'>('notification');
+  
+  // Instância do hook toast
+  const { toast } = useToast();
   
   const [newFine, setNewFine] = useState<Partial<Fine>>({
     vehiclePlate: '',
