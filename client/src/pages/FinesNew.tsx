@@ -314,6 +314,7 @@ const formatDate = (dateString: string): string => {
   return new Intl.DateTimeFormat('pt-BR').format(date);
 };
 
+// Componente principal para a página de multas
 const FinesNew: React.FC = () => {
   const [fines, setFines] = useState<Fine[]>(mockFines);
   const [searchTerm, setSearchTerm] = useState('');
@@ -419,6 +420,131 @@ const FinesNew: React.FC = () => {
         points: infringement.points,
         amount: infringement.amount
       });
+    }
+  };
+  
+  // Funções para manipulação de documentos e ciclo de vida
+  
+  // Função para abrir o modal de anexos
+  const handleOpenAttachmentModal = (fine: Fine, type: 'notification' | 'signature') => {
+    setSelectedFine(fine);
+    setAttachmentType(type);
+    setShowAttachmentModal(true);
+  };
+  
+  // Função para avançar o ciclo de vida de uma multa
+  const handleAdvanceLifecycle = (fine: Fine) => {
+    if (!canAdvanceLifecycle(fine)) {
+      toast({
+        title: "Não é possível avançar",
+        description: "Não é possível avançar o ciclo de vida neste momento. Verifique se todos os documentos necessários estão anexados.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const nextLifecycle = advanceLifecycle(fine);
+    
+    // Em produção, isso seria uma chamada de API real
+    // Simulação da atualização do ciclo de vida
+    const updatedFines = fines.map(f => {
+      if (f.id === fine.id) {
+        return {
+          ...f,
+          lifecycle: nextLifecycle as any,
+          // Se o ciclo de vida está avançando para "assinado", adicionamos a data de assinatura
+          ...(nextLifecycle === 'assinado' && { signatureDate: new Date().toISOString().split('T')[0] })
+        };
+      }
+      return f;
+    });
+    
+    setFines(updatedFines);
+    
+    toast({
+      title: "Ciclo de vida atualizado",
+      description: `Multa avançada para ${translateLifecycleStatus(nextLifecycle)}`,
+      variant: "default"
+    });
+  };
+  
+  // Função para baixar/imprimir a notificação
+  const handlePrintNotification = (fine: Fine) => {
+    if (!fine.notificationFileUrl) {
+      toast({
+        title: "Documento não disponível",
+        description: "Não há notificação disponível para download/impressão.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Abrir o arquivo em nova aba para impressão/download
+    window.open(fine.notificationFileUrl, '_blank');
+  };
+  
+  // Função para upload de arquivos
+  const handleUploadAttachment = async () => {
+    if (!selectedFine || !notificationFile) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao anexar arquivo",
+        description: "Selecione um arquivo para continuar"
+      });
+      return;
+    }
+    
+    try {
+      // Fazer upload do arquivo
+      const fileUrl = await uploadNotificationFile();
+      
+      if (!fileUrl) {
+        toast({
+          variant: "destructive",
+          title: "Erro no upload",
+          description: "Não foi possível fazer o upload do arquivo. Tente novamente."
+        });
+        return;
+      }
+      
+      // Atualizar a multa com o novo arquivo
+      const updatedFines = fines.map(fine => {
+        if (fine.id === selectedFine.id) {
+          if (attachmentType === 'notification') {
+            return {
+              ...fine,
+              notificationFileUrl: fileUrl
+            };
+          } else {
+            return {
+              ...fine,
+              driverSignatureUrl: fileUrl,
+              signatureDate: new Date().toISOString().split('T')[0]
+            };
+          }
+        }
+        return fine;
+      });
+      
+      setFines(updatedFines);
+      setShowAttachmentModal(false);
+      setNotificationFile(null);
+      setUploadProgress(0);
+      
+      toast({
+        title: "Arquivo anexado com sucesso",
+        description: attachmentType === 'notification' 
+          ? "A notificação da multa foi anexada com sucesso."
+          : "A assinatura do motorista foi anexada com sucesso."
+      });
+      
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro no upload",
+        description: "Ocorreu um erro ao fazer o upload do arquivo. Tente novamente."
+      });
+      console.error('Erro no upload:', error);
     }
   };
 
