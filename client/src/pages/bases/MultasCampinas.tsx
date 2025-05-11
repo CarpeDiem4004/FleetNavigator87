@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Card,
@@ -51,7 +51,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -122,7 +121,7 @@ const mockMultas: Multa[] = [
   {
     id: 1,
     placa: 'ABC-1234',
-    motorista: 'João Silva',
+    motorista: 'A identificar pela base',
     data: '2025-04-15',
     valor: 293.47,
     pontos: 4,
@@ -136,11 +135,11 @@ const mockMultas: Multa[] = [
   {
     id: 2,
     placa: 'DEF-5678',
-    motorista: 'Carlos Oliveira',
+    motorista: 'A identificar pela base',
     data: '2025-04-18',
     valor: 130.16,
     pontos: 3,
-    status: 'em_andamento',
+    status: 'pendente',
     tipo: 'Estacionamento irregular',
     local: 'Av. Mofarrej, 346 - Vila Leopoldina',
     prazo_pagamento: '2025-05-25',
@@ -201,35 +200,6 @@ const mockVeiculos: Veiculo[] = [
   { id: 6, placa: 'PQR-0123', motorista: 'Fernanda Dias', base: 'Campinas', baseId: 2 },
   { id: 7, placa: 'STU-4567', motorista: 'Lucas Barbosa', base: 'Campinas', baseId: 2 },
   { id: 8, placa: 'VWX-8901', motorista: 'Amanda Costa', base: 'Campinas', baseId: 2 }
-];
-
-// Lista de códigos de infração
-const codigosInfracao: CodigoInfracao[] = [
-  { codigo: '501-0', descricao: 'Dirigir veículo sem possuir CNH', valor: 880.41, pontos: 7 },
-  { codigo: '502-9', descricao: 'Dirigir veículo com CNH cassada', valor: 880.41, pontos: 7 },
-  { codigo: '503-7', descricao: 'Dirigir veículo com CNH suspensa', valor: 880.41, pontos: 7 },
-  { codigo: '504-5', descricao: 'Dirigir veículo com categoria diferente da sua habilitação', valor: 880.41, pontos: 7 },
-  { codigo: '505-3', descricao: 'Dirigir veículo com CNH vencida há mais de 30 dias', valor: 293.47, pontos: 3 },
-  { codigo: '506-1', descricao: 'Entregar veículo à pessoa sem habilitação', valor: 880.41, pontos: 7 },
-  { codigo: '507-0', descricao: 'Deixar o condutor de usar cinto de segurança', valor: 195.23, pontos: 5 },
-  { codigo: '508-8', descricao: 'Transportar criança sem observar as normas de segurança', valor: 293.47, pontos: 5 },
-  { codigo: '509-6', descricao: 'Dirigir sem atenção (usando celular, comendo, etc.)', valor: 130.16, pontos: 3 },
-  { codigo: '510-0', descricao: 'Excesso de velocidade até 20% acima do permitido', valor: 130.16, pontos: 4 },
-  { codigo: '511-8', descricao: 'Excesso de velocidade entre 20% e 50% acima do permitido', valor: 195.23, pontos: 5 },
-  { codigo: '512-6', descricao: 'Excesso de velocidade acima de 50% do permitido', valor: 880.41, pontos: 7 },
-  { codigo: '513-4', descricao: 'Avançar o sinal vermelho do semáforo', valor: 293.47, pontos: 7 },
-  { codigo: '514-2', descricao: 'Transitar pela contramão', valor: 293.47, pontos: 7 },
-  { codigo: '515-0', descricao: 'Estacionar em local proibido', valor: 130.16, pontos: 3 },
-  { codigo: '516-9', descricao: 'Estacionar sobre faixa de pedestres', valor: 293.47, pontos: 5 },
-  { codigo: '517-7', descricao: 'Parar sobre a faixa de pedestres na mudança de sinal', valor: 293.47, pontos: 4 },
-  { codigo: '518-5', descricao: 'Não dar preferência ao pedestre na faixa', valor: 293.47, pontos: 5 },
-  { codigo: '519-3', descricao: 'Dirigir sob influência de álcool', valor: 2934.70, pontos: 7 },
-  { codigo: '520-7', descricao: 'Não utilizar tacógrafo quando obrigatório', valor: 1250.00, pontos: 5 },
-  { codigo: '521-5', descricao: 'Conduzir veículo sem equipamento obrigatório', valor: 195.23, pontos: 3 },
-  { codigo: '522-3', descricao: 'Transitar em local/horário não permitido para caminhões', valor: 130.16, pontos: 4 },
-  { codigo: '523-1', descricao: 'Derramar/arremessar carga na via pública', valor: 195.23, pontos: 4 },
-  { codigo: '524-0', descricao: 'Transitar com excesso de peso/dimensões', valor: 293.47, pontos: 5 },
-  { codigo: '525-8', descricao: 'Transitar em faixa exclusiva de ônibus', valor: 293.47, pontos: 5 }
 ];
 
 const MultasCampinas: React.FC = () => {
@@ -339,333 +309,197 @@ const MultasCampinas: React.FC = () => {
               Visualize e gerencie as notificações de multas e infrações enviadas pela gestão central.
             </p>
           </div>
-          <Dialog open={isRegistrarMultaOpen} onOpenChange={setIsRegistrarMultaOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-indigo-600 hover:bg-indigo-700">
-                <Plus className="w-4 h-4 mr-2" />
-                Registrar Nova Multa
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
+          
+          {/* Dialog para identificar motorista responsável pela multa */}
+          <Dialog open={isIdentificarMotoristaOpen} onOpenChange={setIsIdentificarMotoristaOpen}>
+            <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
                 <DialogTitle className="flex items-center text-indigo-700">
-                  <FileWarning className="w-5 h-5 mr-2" />
-                  Registrar Nova Multa
+                  <UserCheck className="w-5 h-5 mr-2" />
+                  Identificar Motorista Responsável
                 </DialogTitle>
                 <DialogDescription>
-                  Preencha os detalhes da multa abaixo
+                  Identifique o motorista responsável pela multa abaixo:
                 </DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleSubmit}>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="placa" className="text-right">
-                      Placa do Veículo
+              
+              {multaSelecionada && (
+                <div className="py-4">
+                  <div className="grid grid-cols-4 gap-4 mb-4">
+                    <div className="font-semibold text-right">Placa:</div>
+                    <div className="col-span-3">{multaSelecionada.placa}</div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-4 mb-4">
+                    <div className="font-semibold text-right">Data:</div>
+                    <div className="col-span-3">{formatDate(multaSelecionada.data)}</div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-4 mb-4">
+                    <div className="font-semibold text-right">Infração:</div>
+                    <div className="col-span-3">{multaSelecionada.tipo}</div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-4 mb-4">
+                    <div className="font-semibold text-right">Local:</div>
+                    <div className="col-span-3">{multaSelecionada.local}</div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-4 mb-4">
+                    <div className="font-semibold text-right">Valor:</div>
+                    <div className="col-span-3">{formatCurrency(multaSelecionada.valor)}</div>
+                  </div>
+                  
+                  <div className="grid grid-cols-4 items-center gap-4 mt-6">
+                    <Label htmlFor="motorista-responsavel" className="text-right">
+                      Motorista Responsável
                     </Label>
                     <div className="col-span-3">
                       <Select
-                        value={formData.placa}
-                        onValueChange={handlePlacaChange}
+                        value={motoristaIdentificado}
+                        onValueChange={setMotoristaIdentificado}
                         required
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecione a placa" />
+                          <SelectValue placeholder="Selecione o motorista" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
-                            <SelectLabel>Veículos Cadastrados</SelectLabel>
+                            <SelectLabel>Motoristas da Base</SelectLabel>
                             {isLoadingVeiculos ? (
                               <SelectItem value="carregando" disabled>
-                                Carregando veículos...
+                                Carregando motoristas...
                               </SelectItem>
                             ) : (
-                              veiculos?.map(veiculo => (
-                                <SelectItem key={veiculo.id} value={veiculo.placa}>
-                                  {veiculo.placa} - {veiculo.base}
-                                </SelectItem>
-                              ))
+                              veiculos
+                                ?.filter(v => v.baseId === 2) // Filtrando motoristas da base Campinas
+                                .map(v => (
+                                  <SelectItem key={v.id} value={v.motorista}>
+                                    {v.motorista} - {v.placa}
+                                  </SelectItem>
+                                ))
                             )}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="motorista" className="text-right">
-                      Motorista
-                    </Label>
-                    <div className="col-span-3">
-                      <Input
-                        id="motorista"
-                        value={formData.motorista}
-                        onChange={(e) => setFormData(prev => ({ ...prev, motorista: e.target.value }))}
-                        className="w-full"
-                        placeholder="Nome do motorista"
-                        required
-                        readOnly={!!formData.placa}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="data" className="text-right">
-                      Data da Infração
-                    </Label>
-                    <div className="col-span-3">
-                      <Input
-                        id="data"
-                        type="date"
-                        value={formData.data}
-                        onChange={(e) => setFormData(prev => ({ ...prev, data: e.target.value }))}
-                        className="w-full"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="local" className="text-right">
-                      Local
-                    </Label>
-                    <div className="col-span-3">
-                      <Input
-                        id="local"
-                        value={formData.local}
-                        onChange={(e) => setFormData(prev => ({ ...prev, local: e.target.value }))}
-                        className="w-full"
-                        placeholder="Local da infração"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="codigo" className="text-right">
-                      Código de Infração
-                    </Label>
-                    <div className="col-span-3">
-                      <Select
-                        value={formData.codigo}
-                        onValueChange={handleCodigoChange}
-                        required
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecione o código" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectLabel>Infrações</SelectLabel>
-                            {codigosInfracao.map(infracao => (
-                              <SelectItem key={infracao.codigo} value={infracao.codigo}>
-                                {infracao.codigo} - {infracao.descricao.substring(0, 30)}...
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="pontos" className="text-right">
-                      Pontos
-                    </Label>
-                    <div className="col-span-3">
-                      <Input
-                        id="pontos"
-                        type="number"
-                        value={formData.pontos}
-                        onChange={(e) => setFormData(prev => ({ ...prev, pontos: parseInt(e.target.value) }))}
-                        className="w-full"
-                        readOnly={!!formData.codigo}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="valor" className="text-right">
-                      Valor (R$)
-                    </Label>
-                    <div className="col-span-3">
-                      <Input
-                        id="valor"
-                        type="number"
-                        step="0.01"
-                        value={formData.valor}
-                        onChange={(e) => setFormData(prev => ({ ...prev, valor: parseFloat(e.target.value) }))}
-                        className="w-full"
-                        readOnly={!!formData.codigo}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="vencimento" className="text-right">
-                      Data de Vencimento
-                    </Label>
-                    <div className="col-span-3">
-                      <Input
-                        id="vencimento"
-                        type="date"
-                        value={formData.vencimento}
-                        onChange={(e) => setFormData(prev => ({ ...prev, vencimento: e.target.value }))}
-                        className="w-full"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="status" className="text-right">
-                      Status
-                    </Label>
-                    <div className="col-span-3">
-                      <Select
-                        value={formData.status}
-                        onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
-                        required
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecione o status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectItem value="pendente">Pendente</SelectItem>
-                            <SelectItem value="em_andamento">Em andamento</SelectItem>
-                            <SelectItem value="paga">Paga</SelectItem>
-                            <SelectItem value="contestada">Contestada</SelectItem>
-                            <SelectItem value="cancelada">Cancelada</SelectItem>
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="descricao" className="text-right">
-                      Descrição
-                    </Label>
-                    <div className="col-span-3">
-                      <Textarea
-                        id="descricao"
-                        value={formData.descricao}
-                        onChange={(e) => setFormData(prev => ({ ...prev, descricao: e.target.value }))}
-                        placeholder="Detalhes adicionais da infração"
-                        className="w-full"
-                      />
-                    </div>
-                  </div>
                 </div>
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button type="button" variant="outline">
-                      Cancelar
-                    </Button>
-                  </DialogClose>
-                  <Button type="submit">Registrar</Button>
-                </DialogFooter>
-              </form>
+              )}
+              
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsIdentificarMotoristaOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleSalvarIdentificacao} disabled={!motoristaIdentificado}>
+                  Confirmar Identificação
+                </Button>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
       </div>
 
-      <Tabs defaultValue="todas" className="w-full" onValueChange={(value) => setFiltro(value as any)}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="todas">Todas</TabsTrigger>
-          <TabsTrigger value="pendentes">Pendentes</TabsTrigger>
-          <TabsTrigger value="pagas">Pagas</TabsTrigger>
-          <TabsTrigger value="outras">Outras</TabsTrigger>
-        </TabsList>
+      <div className="mb-6">
+        <Tabs defaultValue="todas" className="w-full">
+          <TabsList className="grid w-full sm:w-auto grid-cols-4 sm:inline-flex">
+            <TabsTrigger value="todas" onClick={() => setFiltro('todas')}>
+              Todas ({data?.length || 0})
+            </TabsTrigger>
+            <TabsTrigger value="pendentes" onClick={() => setFiltro('pendentes')}>
+              Pendentes ({data?.filter(m => m.status === 'pendente' || m.status === 'em_andamento').length || 0})
+            </TabsTrigger>
+            <TabsTrigger value="pagas" onClick={() => setFiltro('pagas')}>
+              Pagas ({data?.filter(m => m.status === 'paga').length || 0})
+            </TabsTrigger>
+            <TabsTrigger value="outras" onClick={() => setFiltro('outras')}>
+              Outras ({data?.filter(m => m.status === 'contestada' || m.status === 'cancelada').length || 0})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
-        <TabsContent value={filtro}>
-          <Card>
-            <CardHeader>
-              <CardTitle>Infrações de Trânsito</CardTitle>
-              <CardDescription>
-                Multas recebidas pelos veículos da Base Campinas
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex flex-col space-y-3">
-                      <Skeleton className="h-8 w-full" />
-                      <Skeleton className="h-8 w-full" />
-                      <Skeleton className="h-8 w-full" />
-                    </div>
-                  ))}
-                </div>
-              ) : error ? (
-                <div className="p-4 border rounded-md bg-red-50 text-red-800">
-                  <AlertCircle className="w-5 h-5 inline-block mr-2" />
-                  Erro ao carregar os dados de multas. Por favor, tente novamente mais tarde.
-                </div>
-              ) : multasFiltradas.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Nenhuma multa encontrada para o filtro selecionado.
-                </div>
-              ) : (
-                <div className="rounded-md border overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Placa</TableHead>
-                        <TableHead>Motorista</TableHead>
-                        <TableHead>Data</TableHead>
-                        <TableHead>Tipo de Infração</TableHead>
-                        <TableHead>Pontos</TableHead>
-                        <TableHead>Valor</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {multasFiltradas.map((multa) => (
-                        <TableRow key={multa.id}>
-                          <TableCell className="font-medium">
-                            <div className="flex items-center">
-                              <Car className="w-4 h-4 mr-2 text-gray-500" />
-                              {multa.placa}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center">
-                              <UserCheck className="w-4 h-4 mr-2 text-gray-500" />
-                              {multa.motorista}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center">
-                              <Calendar className="w-4 h-4 mr-2 text-gray-500" />
-                              {formatDate(multa.data)}
-                            </div>
-                          </TableCell>
-                          <TableCell className="max-w-[250px] truncate" title={multa.tipo}>
-                            {multa.tipo}
-                          </TableCell>
-                          <TableCell className="text-center font-semibold">
-                            {multa.pontos || 0}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center font-semibold">
-                              <DollarSign className="w-4 h-4 mr-1 text-gray-500" />
-                              {formatCurrency(multa.valor)}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={statusColors[multa.status] || 'bg-gray-100'}>
-                              {multa.status === 'pendente' && 'Pendente'}
-                              {multa.status === 'em_andamento' && 'Em andamento'}
-                              {multa.status === 'paga' && 'Paga'}
-                              {multa.status === 'contestada' && 'Contestada'}
-                              {multa.status === 'cancelada' && 'Cancelada'}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle>Multas Registradas</CardTitle>
+          <CardDescription>
+            {isLoading ? 'Carregando multas...' : 
+             error ? 'Erro ao carregar multas' : 
+             `Mostrando ${multasFiltradas.length} ${multasFiltradas.length === 1 ? 'multa' : 'multas'}`}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[120px]">Placa</TableHead>
+                  <TableHead>Motorista</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Infração</TableHead>
+                  <TableHead>Valor</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  Array(5).fill(0).map((_, index) => (
+                    <TableRow key={`skeleton-${index}`}>
+                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                      <TableCell><Skeleton className="h-8 w-20 float-right" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : multasFiltradas.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="h-24 text-center">
+                      Nenhuma multa encontrada.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  multasFiltradas.map(multa => (
+                    <TableRow key={multa.id}>
+                      <TableCell className="font-medium">{multa.placa}</TableCell>
+                      <TableCell>
+                        {multa.motorista === 'A identificar pela base' ? (
+                          <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-200">
+                            A identificar
+                          </Badge>
+                        ) : multa.motorista}
+                      </TableCell>
+                      <TableCell>{formatDate(multa.data)}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">{multa.tipo}</TableCell>
+                      <TableCell>{formatCurrency(multa.valor)}</TableCell>
+                      <TableCell>
+                        <Badge className={statusColors[multa.status]}>
+                          {multa.status.replace('_', ' ')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {multa.motorista === 'A identificar pela base' ? (
+                          <Button 
+                            variant="secondary" 
+                            size="sm"
+                            onClick={() => handleIdentificarMotorista(multa)}
+                          >
+                            <UserCheck className="w-4 h-4 mr-1" />
+                            Identificar
+                          </Button>
+                        ) : (
+                          <Button variant="ghost" size="sm">
+                            Detalhes
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
