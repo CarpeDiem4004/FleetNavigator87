@@ -231,6 +231,12 @@ const FinesNew: React.FC = () => {
   const [fines, setFines] = useState<Fine[]>(mockFines);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  // State para gerenciar upload de arquivos
+  const [notificationFile, setNotificationFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  
   const [newFine, setNewFine] = useState<Partial<Fine>>({
     vehiclePlate: '',
     driver: '',
@@ -244,7 +250,8 @@ const FinesNew: React.FC = () => {
     amount: 0,
     dueDate: new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0], // 30 dias à frente
     status: 'pendente',
-    description: ''
+    description: '',
+    lifecycle: 'aguardando_base' // Estado inicial do ciclo de vida
   });
 
   // Buscar todos os veículos
@@ -319,18 +326,76 @@ const FinesNew: React.FC = () => {
     }
   };
 
+  // Manipular a seleção de arquivos
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setNotificationFile(e.target.files[0]);
+      setUploadError(null);
+    }
+  };
+
+  // Função para fazer upload da notificação
+  const uploadNotificationFile = async (): Promise<string | null> => {
+    if (!notificationFile) return null;
+    
+    try {
+      setIsUploading(true);
+      setUploadProgress(0);
+      
+      // Simular progresso de upload (em produção, isso seria um upload real)
+      const interval = setInterval(() => {
+        setUploadProgress(prev => {
+          const newProgress = prev + 10;
+          if (newProgress >= 100) {
+            clearInterval(interval);
+            return 100;
+          }
+          return newProgress;
+        });
+      }, 300);
+      
+      // Simular upload (em produção, isso seria substituído por uma chamada de API real)
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          clearInterval(interval);
+          setUploadProgress(100);
+          setIsUploading(false);
+          
+          // URL simulada do arquivo no storage
+          const fileUrl = `https://storage.gestaoonfleet.com.br/multas/${Date.now()}_${notificationFile.name.replace(/\s+/g, '_')}`;
+          resolve(fileUrl);
+        }, 3000);
+      });
+    } catch (error) {
+      setUploadError('Erro ao fazer upload do arquivo. Tente novamente.');
+      setIsUploading(false);
+      console.error('Erro no upload:', error);
+      return null;
+    }
+  };
+
   // Adicionar nova multa
-  const handleAddFine = () => {
+  const handleAddFine = async () => {
     if (newFine.vehiclePlate && newFine.type) {
+      let notificationFileUrl = null;
+      
+      if (notificationFile) {
+        notificationFileUrl = await uploadNotificationFile();
+      }
+      
       const fine = {
         ...newFine,
         id: fines.length + 1,
         driver: newFine.driver || 'A identificar pela base',
-        status: 'pendente'
+        status: 'pendente',
+        notificationFileUrl,
+        lifecycle: 'aguardando_base' // O ciclo de vida começa aguardando a base identificar o motorista
       } as Fine;
       
       setFines([...fines, fine]);
       setIsAddDialogOpen(false);
+      
+      // Resetar os states
       setNewFine({
         vehiclePlate: '',
         driver: '',
@@ -344,8 +409,11 @@ const FinesNew: React.FC = () => {
         amount: 0,
         dueDate: new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0],
         status: 'pendente',
-        description: ''
+        description: '',
+        lifecycle: 'aguardando_base'
       });
+      setNotificationFile(null);
+      setUploadProgress(0);
 
       // Em um cenário real, isso enviaria os dados para a API
       console.log('Dados da multa enviados:', fine);
@@ -582,13 +650,51 @@ const FinesNew: React.FC = () => {
                     placeholder="Detalhes da infração"
                   />
                 </div>
+                
+                {/* Upload da notificação de multa */}
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="notificationFile" className="text-right">
+                    Notificação de Multa
+                  </Label>
+                  <div className="col-span-3">
+                    <Input
+                      id="notificationFile"
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={handleFileChange}
+                      disabled={isUploading}
+                      className="mb-2"
+                    />
+                    {notificationFile && (
+                      <div className="text-sm text-gray-500 mb-2">
+                        Arquivo selecionado: {notificationFile.name}
+                      </div>
+                    )}
+                    {isUploading && (
+                      <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                        <div 
+                          className="bg-blue-600 h-2.5 rounded-full" 
+                          style={{ width: `${uploadProgress}%` }}
+                        ></div>
+                      </div>
+                    )}
+                    {uploadError && (
+                      <div className="text-sm text-red-500 mb-2">
+                        {uploadError}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button onClick={handleAddFine}>
-                  Registrar
+                <Button 
+                  onClick={handleAddFine}
+                  disabled={!newFine.vehiclePlate || !newFine.type || isUploading}
+                >
+                  {isUploading ? 'Enviando...' : 'Registrar Multa'}
                 </Button>
               </DialogFooter>
             </DialogContent>
