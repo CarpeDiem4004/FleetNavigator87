@@ -474,6 +474,22 @@ const HistoricoGeralPage: React.FC = () => {
       return acc;
     }, {} as Record<string, number>);
     
+    // Calcular consumo por projeto
+    const consumoPorProjeto = filteredData.reduce((acc, item) => {
+      const projeto = item.project || 'Não especificado';
+      // Não contabilizar projetos vazios como "Não especificado"
+      if (projeto === '' || projeto === '-') return acc;
+      
+      // Adicionar ao acumulador se o projeto não for vazio
+      acc[projeto] = (acc[projeto] || 0) + (item.quantidade_litros || item.litros || 0);
+      return acc;
+    }, {} as Record<string, number>);
+    
+    // Ordenar projetos por consumo (do maior para o menor)
+    const projetosOrdenados = Object.entries(consumoPorProjeto)
+      .sort(([, litrosA], [, litrosB]) => litrosB - litrosA)
+      .slice(0, 5); // Top 5 projetos
+    
     return {
       registros: filteredData.length,
       totalLitros,
@@ -501,7 +517,10 @@ const HistoricoGeralPage: React.FC = () => {
       litrosArla,
       valorArla,
       veiculosArla,
-      abastecimentosArla: abastecimentosArla.length
+      abastecimentosArla: abastecimentosArla.length,
+      // Estatísticas por projeto
+      consumoPorProjeto,
+      projetosOrdenados
     };
   };
   
