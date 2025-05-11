@@ -488,18 +488,19 @@ const HistoricoGeralPage: React.FC = () => {
     
     // Calcular consumo por projeto com tratamento adequado
     const consumoPorProjeto = filteredData.reduce((acc, item) => {
-      let projeto = item.project || 'Não especificado';
+      // Unificar campo de projeto (pode estar como project ou projeto dependendo do posto)
+      let projeto = item.project || item.projeto || 'NÃO ESPECIFICADO';
       
       // Tratamento especial para valores de projeto
       // Verificar se o valor parece ser um número (normalmente seria um código ou string)
       if (projeto && !isNaN(parseFloat(projeto))) {
         console.log("[DEBUG] Projeto com valor numérico:", projeto);
-        projeto = 'Não especificado';
+        projeto = 'NÃO ESPECIFICADO';
       }
       
       // Normalizar strings vazias ou com apenas traço
       if (projeto === '' || projeto === '-' || projeto === null || projeto === undefined) {
-        projeto = 'Não especificado';
+        projeto = 'NÃO ESPECIFICADO';
         return acc; // Não contabilizar projetos indefinidos
       }
       
@@ -523,7 +524,7 @@ const HistoricoGeralPage: React.FC = () => {
       }
       
       // Converter para maiúsculas para padronizar e normalizar nomes de projetos
-      if (typeof projeto === 'string') {
+      if (typeof projeto === 'string' && projeto.trim() !== '') {
         projeto = projeto.toUpperCase();
         
         // Lista de projetos conhecidos para normalizar nomes
@@ -555,6 +556,9 @@ const HistoricoGeralPage: React.FC = () => {
             break;
           }
         }
+      } else {
+        // Se o projeto for null, undefined, ou string vazia, usar um valor padrão
+        projeto = 'NÃO ESPECIFICADO';
       }
       
       // Adicionar ao acumulador
@@ -871,8 +875,10 @@ const HistoricoGeralPage: React.FC = () => {
                   
                   {/* Lista de projetos */}
                   {dadosConsolidados.projetosOrdenados.map(([projeto, litros], index) => {
-                    // Calcular a porcentagem do total
-                    const porcentagem = (litros / dadosConsolidados.totalLitros) * 100;
+                    // Calcular a porcentagem do total, com verificação para evitar NaN
+                    const porcentagem = dadosConsolidados.totalLitros > 0 
+                      ? (litros / dadosConsolidados.totalLitros) * 100
+                      : 0;
                     
                     // Determinar a cor com base na posição
                     const corPosicao = index === 0 
@@ -913,7 +919,7 @@ const HistoricoGeralPage: React.FC = () => {
                       <span className="text-sm text-gray-500 ml-1">L</span>
                     </div>
                     <div className="w-24 text-right">
-                      <span className="font-bold text-blue-800">100%</span>
+                      <span className="font-bold text-blue-800">{dadosConsolidados.totalLitros > 0 ? '100%' : '0%'}</span>
                     </div>
                   </div>
                 </div>
