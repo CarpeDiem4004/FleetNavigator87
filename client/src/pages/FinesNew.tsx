@@ -954,6 +954,60 @@ const FinesNew: React.FC = () => {
             </Table>
           </CardContent>
         </Card>
+        
+        {/* Modal para upload de anexos */}
+        <Dialog open={showAttachmentModal} onOpenChange={setShowAttachmentModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {attachmentType === 'notification' 
+                  ? "Anexar notificação de multa" 
+                  : "Anexar assinatura do motorista"}
+              </DialogTitle>
+              <DialogDescription>
+                {attachmentType === 'notification'
+                  ? "Faça upload da notificação de multa recebida pelos órgãos de trânsito."
+                  : "Faça upload da assinatura do motorista que reconhece o recebimento da multa."}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="grid gap-4 py-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="attachment">Selecionar arquivo</Label>
+                <Input 
+                  id="attachment" 
+                  type="file" 
+                  accept={attachmentType === 'notification' ? ".pdf,.jpg,.png" : ".jpg,.png"} 
+                  onChange={handleFileChange}
+                />
+                
+                {isUploading && (
+                  <div className="mt-2">
+                    <div className="text-sm mb-1">Enviando: {uploadProgress}%</div>
+                    <Progress value={uploadProgress} className="h-2" />
+                  </div>
+                )}
+                
+                {uploadError && (
+                  <div className="text-destructive text-sm mt-1">{uploadError}</div>
+                )}
+              </div>
+            </div>
+            
+            <DialogFooter className="sm:justify-between">
+              <Button variant="outline" onClick={() => setShowAttachmentModal(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                type="button" 
+                disabled={!notificationFile || isUploading}
+                onClick={() => handleUploadAttachment()}
+              >
+                {isUploading ? "Enviando..." : "Enviar arquivo"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayoutSimple>
   );
