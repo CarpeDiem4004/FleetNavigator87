@@ -488,84 +488,83 @@ const HistoricoGeralPage: React.FC = () => {
       return acc;
     }, {} as Record<string, number>);
     
-    // Calcular consumo por projeto com tratamento adequado
-    const consumoPorProjeto = filteredData.reduce((acc, item) => {
-      // Unificar campo de projeto (pode estar como project ou projeto dependendo do posto)
-      // Usando any para acessar propriedades que podem não estar na interface original
-      let projeto = item.project || (item as any).projeto || 'NÃO ESPECIFICADO';
+    // Função para normalizar nomes de projetos
+    const normalizarNomeProjeto = (projetoRaw: string | null | undefined): string => {
+      if (projetoRaw === null || projetoRaw === undefined || projetoRaw === '' || projetoRaw === '-') {
+        return 'NÃO ESPECIFICADO';
+      }
       
-      // Tratamento especial para valores de projeto
+      // Converter para string caso seja outro tipo
+      let projeto = String(projetoRaw).trim().toUpperCase();
+      
       // Verificar se o valor parece ser um número (normalmente seria um código ou string)
       if (projeto && !isNaN(parseFloat(projeto))) {
         console.log("[DEBUG] Projeto com valor numérico:", projeto);
-        projeto = 'NÃO ESPECIFICADO';
-      }
-      
-      // Normalizar strings vazias ou com apenas traço
-      if (projeto === '' || projeto === '-' || projeto === null || projeto === undefined) {
-        projeto = 'NÃO ESPECIFICADO';
-        return acc; // Não contabilizar projetos indefinidos
-      }
-      
-      // Garantir que estamos somando um número
-      const litrosRaw = item.quantidade_litros || item.litros || 0;
-      const litros = typeof litrosRaw === 'string' ? parseFloat(litrosRaw) : litrosRaw;
-      if (isNaN(litros)) {
-        console.log("[DEBUG] Valor de litros inválido:", item.quantidade_litros, item.litros);
-        return acc; // Não adicionar valores inválidos
+        return 'NÃO ESPECIFICADO';
       }
       
       // Limitar o tamanho da string do projeto para evitar valores muito longos
-      if (typeof projeto === 'string' && projeto.length > 100) {
+      if (projeto.length > 100) {
         projeto = projeto.substring(0, 100) + '...';
       }
       
       // Remover valores que parecem ser litros concatenados
-      if (typeof projeto === 'string' && projeto.includes('.00')) {
+      if (projeto.includes('.00')) {
         console.log("[DEBUG] Projeto com formato suspeito de litros:", projeto);
-        return acc;
+        return 'NÃO ESPECIFICADO';
       }
       
-      // Converter para maiúsculas para padronizar e normalizar nomes de projetos
-      if (typeof projeto === 'string' && projeto.trim() !== '') {
-        projeto = projeto.toUpperCase();
-        
-        // Lista de projetos conhecidos para normalizar nomes
-        const projetosConhecidos = [
-          'GRUPO PEREIRA',
-          'COCA COLA',
-          'SHOPEE',
-          'MERCADO LIVRE',
-          'LINE HALL SHOPEE',
-          'FULL MELI',
-          'MADEIRA MADEIRA',
-          'MAGALU',
-          'NATURA',
-          'OXXO',
-          'PETLOVE',
-          'REMÉDIOS'
-        ];
-        
-        // Verificar se o projeto é similar a algum conhecido
-        for (const projetoConhecido of projetosConhecidos) {
-          // Verificar similaridade (contém parte do nome ou é muito similar)
-          if (
-            projeto.includes(projetoConhecido) || 
-            projetoConhecido.includes(projeto) ||
-            // Para casos como "SHOP", "COCACOLA" etc.
-            (projetoConhecido.replace(/\s+/g, '').includes(projeto) || projeto.includes(projetoConhecido.replace(/\s+/g, '')))
-          ) {
-            projeto = projetoConhecido;
-            break;
-          }
+      // Lista de projetos conhecidos para normalizar nomes
+      const projetosConhecidos = [
+        'GRUPO PEREIRA',
+        'COCA COLA',
+        'SHOPEE',
+        'MERCADO LIVRE',
+        'LINE HALL SHOPEE',
+        'FULL MELI',
+        'MADEIRA MADEIRA',
+        'MAGALU',
+        'NATURA',
+        'OXXO',
+        'PETLOVE',
+        'REMÉDIOS'
+      ];
+      
+      // Verificar se o projeto é similar a algum conhecido
+      for (const projetoConhecido of projetosConhecidos) {
+        // Verificar similaridade (contém parte do nome ou é muito similar)
+        if (
+          projeto.includes(projetoConhecido) || 
+          projetoConhecido.includes(projeto) ||
+          // Para casos como "SHOP", "COCACOLA" etc.
+          (projetoConhecido.replace(/\s+/g, '').includes(projeto) || projeto.includes(projetoConhecido.replace(/\s+/g, '')))
+        ) {
+          return projetoConhecido;
         }
-      } else {
-        // Se o projeto for null, undefined, ou string vazia, usar um valor padrão
-        projeto = 'NÃO ESPECIFICADO';
       }
       
-      // Adicionar ao acumulador
-      acc[projeto] = (acc[projeto] || 0) + litros;
+      return projeto;
+    };
+    
+    // Função para extrair litros com segurança
+    const extrairLitros = (item: Abastecimento): number => {
+      const litrosRaw = item.quantidade_litros || item.litros || 0;
+      const litros = typeof litrosRaw === 'string' ? parseFloat(litrosRaw) : litrosRaw;
+      return isNaN(litros) ? 0 : litros;
+    };
+    
+    // Calcular consumo por projeto com tratamento adequado
+    const consumoPorProjeto = filteredData.reduce((acc, item) => {
+      // Unificar campo de projeto (pode estar como project ou projeto dependendo do posto)
+      const projetoRaw = item.project || (item as any).projeto;
+      const projeto = normalizarNomeProjeto(projetoRaw);
+      const litros = extrairLitros(item);
+      
+      // Adicionar ao acumulador apenas se tiver um valor válido
+      if (litros > 0) {
+        acc[projeto] = (acc[projeto] || 0) + litros;
+      }
+      
       return acc;
     }, {} as Record<string, number>);
     
@@ -876,11 +875,14 @@ const HistoricoGeralPage: React.FC = () => {
                     <div className="w-24 text-right">% do Total</div>
                   </div>
                   
-                  {/* Lista de projetos */}
+                  {/* Lista de projetos com dados */}
                   {dadosConsolidados.projetosOrdenados.map(([projeto, litros], index) => {
                     // Calcular a porcentagem do total, com verificação para evitar NaN
-                    const porcentagem = dadosConsolidados.totalLitros > 0 
-                      ? (litros / dadosConsolidados.totalLitros) * 100
+                    // Garantindo que estamos trabalhando com números
+                    const litrosNum = typeof litros === 'string' ? parseFloat(litros) : litros;
+                    const totalLitros = dadosConsolidados.totalLitros;
+                    const porcentagem = totalLitros > 0 
+                      ? (litrosNum / totalLitros) * 100
                       : 0;
                     
                     // Determinar a cor com base na posição
@@ -913,6 +915,54 @@ const HistoricoGeralPage: React.FC = () => {
                     );
                   })}
                   
+                  {/* Lista de projetos conhecidos não utilizados */}
+                  {(() => {
+                    // Lista completa de projetos conhecidos
+                    const projetosConhecidos = [
+                      'GRUPO PEREIRA',
+                      'COCA COLA',
+                      'SHOPEE',
+                      'MERCADO LIVRE',
+                      'LINE HALL SHOPEE',
+                      'FULL MELI',
+                      'MADEIRA MADEIRA',
+                      'MAGALU',
+                      'NATURA',
+                      'OXXO',
+                      'PETLOVE',
+                      'REMÉDIOS'
+                    ];
+                    
+                    // Projetos que já estão sendo exibidos nos dados
+                    const projetosExibidos = dadosConsolidados.projetosOrdenados.map(([projeto]) => projeto);
+                    
+                    // Filtrar projetos que não estão sendo utilizados
+                    const projetosNaoUtilizados = projetosConhecidos.filter(
+                      projeto => !projetosExibidos.includes(projeto)
+                    );
+                    
+                    // Renderizar projetos não utilizados em cinza
+                    return projetosNaoUtilizados.map((projeto, index) => (
+                      <div key={`unused-${index}`} className="flex items-center justify-between py-2 border-b border-blue-100 text-gray-400">
+                        <div className="w-12 flex justify-center">
+                          <span className="bg-gray-300 text-white rounded-full w-7 h-7 flex items-center justify-center font-bold">
+                            -
+                          </span>
+                        </div>
+                        <div className="flex-1">
+                          <span className="font-medium">{projeto}</span>
+                        </div>
+                        <div className="w-32 text-right">
+                          <span className="font-bold">0</span>
+                          <span className="text-sm ml-1">L</span>
+                        </div>
+                        <div className="w-24 text-right">
+                          <span className="font-semibold">0.0%</span>
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                  
                   {/* Total */}
                   <div className="flex items-center justify-between pt-2">
                     <div className="w-12"></div>
@@ -922,7 +972,7 @@ const HistoricoGeralPage: React.FC = () => {
                       <span className="text-sm text-gray-500 ml-1">L</span>
                     </div>
                     <div className="w-24 text-right">
-                      <span className="font-bold text-blue-800">{dadosConsolidados.totalLitros > 0 ? '100%' : '0%'}</span>
+                      <span className="font-bold text-blue-800">100%</span>
                     </div>
                   </div>
                 </div>
