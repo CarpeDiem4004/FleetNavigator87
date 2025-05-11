@@ -317,10 +317,12 @@ const FinesNew: React.FC = () => {
 
   // Adicionar nova multa
   const handleAddFine = () => {
-    if (newFine.vehiclePlate && newFine.driver && newFine.type) {
+    if (newFine.vehiclePlate && newFine.type) {
       const fine = {
         ...newFine,
-        id: fines.length + 1
+        id: fines.length + 1,
+        driver: newFine.driver || 'A identificar pela base',
+        status: 'pendente'
       } as Fine;
       
       setFines([...fines, fine]);
@@ -368,9 +370,16 @@ const FinesNew: React.FC = () => {
               <DialogHeader>
                 <DialogTitle>Registrar Nova Multa</DialogTitle>
                 <DialogDescription>
-                  Preencha os detalhes da multa abaixo
+                  Preencha os detalhes da multa abaixo. O motorista será identificado pela base.
                 </DialogDescription>
               </DialogHeader>
+              <Alert className="mb-4 mt-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Importante</AlertTitle>
+                <AlertDescription>
+                  A multa será registrada agora, mas o motorista responsável será identificado pela base correspondente.
+                </AlertDescription>
+              </Alert>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="vehiclePlate" className="text-right">
@@ -416,8 +425,9 @@ const FinesNew: React.FC = () => {
                     value={newFine.driver || ''}
                     onChange={(e) => setNewFine({...newFine, driver: e.target.value})}
                     className="col-span-3"
-                    placeholder="Nome do motorista"
+                    placeholder="Será identificado pela base"
                     readOnly={!!newFine.vehiclePlate}
+                    disabled
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">

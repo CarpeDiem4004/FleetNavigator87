@@ -234,23 +234,12 @@ const codigosInfracao: CodigoInfracao[] = [
 
 const MultasCampinas: React.FC = () => {
   const [filtro, setFiltro] = useState<'todas' | 'pendentes' | 'pagas' | 'outras'>('todas');
-  const [isRegistrarMultaOpen, setIsRegistrarMultaOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    placa: '',
-    motorista: '',
-    data: '',
-    local: '',
-    tipo: '',
-    codigo: '',
-    pontos: 0,
-    valor: 0,
-    vencimento: '',
-    status: 'pendente',
-    descricao: ''
-  });
+  const [isIdentificarMotoristaOpen, setIsIdentificarMotoristaOpen] = useState(false);
+  const [multaSelecionada, setMultaSelecionada] = useState<Multa | null>(null);
+  const [motoristaIdentificado, setMotoristaIdentificado] = useState('');
   
   // Simulando chamada de API com react-query
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['/api/bases/campinas/multas'],
     queryFn: async () => {
       // Em produção, isso seria substituído por uma chamada real à API
@@ -292,56 +281,41 @@ const MultasCampinas: React.FC = () => {
     }
   };
 
-  const handlePlacaChange = (placa: string) => {
-    const veiculo = veiculos?.find(v => v.placa === placa);
-    if (veiculo) {
-      setFormData(prev => ({
-        ...prev,
-        placa: veiculo.placa,
-        motorista: veiculo.motorista
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        placa,
-        motorista: ''
-      }));
-    }
+  // Função para identificar o motorista responsável por uma multa
+  const handleIdentificarMotorista = (multa: Multa) => {
+    setMultaSelecionada(multa);
+    setMotoristaIdentificado('');
+    setIsIdentificarMotoristaOpen(true);
   };
 
-  const handleCodigoChange = (codigo: string) => {
-    const infracao = codigosInfracao.find(c => c.codigo === codigo);
-    if (infracao) {
-      setFormData(prev => ({
-        ...prev,
-        codigo: infracao.codigo,
-        tipo: infracao.descricao,
-        valor: infracao.valor,
-        pontos: infracao.pontos
-      }));
+  // Função para salvar a identificação do motorista
+  const handleSalvarIdentificacao = async () => {
+    if (multaSelecionada && motoristaIdentificado) {
+      // Aqui seria implementada a chamada à API para atualizar o motorista da multa
+      console.log(`Multa ID ${multaSelecionada.id} - Motorista identificado: ${motoristaIdentificado}`);
+      
+      // Simulando uma atualização no frontend
+      if (data) {
+        const multasAtualizadas = data.map(multa => 
+          multa.id === multaSelecionada.id 
+            ? { ...multa, motorista: motoristaIdentificado, status: 'em_andamento' as const } 
+            : multa
+        );
+        
+        // Em um ambiente real, isso seria feito pela API
+        // Após a chamada à API, faríamos o refetch dos dados
+        setTimeout(() => {
+          refetch();
+        }, 500);
+      }
+      
+      setIsIdentificarMotoristaOpen(false);
+      setMultaSelecionada(null);
+      setMotoristaIdentificado('');
+      
+      // Exibir mensagem de sucesso
+      alert('Motorista identificado com sucesso!');
     }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Em produção, isso enviaria os dados para a API
-    console.log('Dados da multa:', formData);
-    alert('Multa registrada com sucesso!');
-    setIsRegistrarMultaOpen(false);
-    // Resetar formulário
-    setFormData({
-      placa: '',
-      motorista: '',
-      data: '',
-      local: '',
-      tipo: '',
-      codigo: '',
-      pontos: 0,
-      valor: 0,
-      vencimento: '',
-      status: 'pendente',
-      descricao: ''
-    });
   };
 
   const multasFiltradas = filtrarMultas();
