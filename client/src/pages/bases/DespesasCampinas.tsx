@@ -218,15 +218,15 @@ const DespesasCampinas: React.FC = () => {
               Registrar Despesas
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[750px]">
-            <DialogHeader>
+          <DialogContent className="sm:max-w-[750px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="mb-4">
               <DialogTitle>Registrar Despesas Mensais</DialogTitle>
               <DialogDescription>
                 Preencha os valores das despesas do mês para a Base Campinas.
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 bg-blue-100 p-6 rounded-lg">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 bg-blue-100 p-4 rounded-lg">
                 {/* Mês e Ano */}
                 <div className="grid grid-cols-2 gap-6">
                   <div>
@@ -504,12 +504,11 @@ const DespesasCampinas: React.FC = () => {
                   />
                 </div>
 
-                <DialogFooter>
+                <div className="flex justify-end space-x-2 pt-4 pb-2">
                   <Button
                     type="reset"
                     variant="outline"
                     onClick={() => setOpen(false)}
-                    className="mr-2"
                   >
                     Cancelar
                   </Button>
@@ -518,7 +517,10 @@ const DespesasCampinas: React.FC = () => {
                     disabled={saveMutation.isPending}
                   >
                     {saveMutation.isPending ? (
-                      <>Salvando...</>
+                      <>
+                        <div className="w-4 h-4 mr-2 border-2 border-white border-opacity-50 border-t-transparent rounded-full animate-spin" />
+                        Salvando...
+                      </>
                     ) : (
                       <>
                         <Check className="w-4 h-4 mr-2" />
@@ -526,7 +528,7 @@ const DespesasCampinas: React.FC = () => {
                       </>
                     )}
                   </Button>
-                </DialogFooter>
+                </div>
               </form>
             </Form>
           </DialogContent>
