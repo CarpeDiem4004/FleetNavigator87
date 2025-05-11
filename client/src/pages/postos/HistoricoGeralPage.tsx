@@ -25,6 +25,7 @@ interface Abastecimento {
 const HistoricoGeralPage: React.FC = () => {
   const [abastecimentos, setAbastecimentos] = useState<Abastecimento[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateStart, setDateStart] = useState<string>('');
   const [dateEnd, setDateEnd] = useState<string>('');
@@ -240,27 +241,98 @@ const HistoricoGeralPage: React.FC = () => {
   };
 
   const handleExportarExcel = async () => {
+    if (isExporting) return; // Evita cliques múltiplos
+    
     try {
+      setIsExporting(true);
+      
       // Importar a biblioteca xlsx dinamicamente
       const XLSX = await import('xlsx');
       
       // Filtrar dados de acordo com a data e busca
       let dadosFiltrados = [...filteredData];
       
-      // Preparar os dados para Excel
-      const excelData = dadosFiltrados.map(item => ({
-        'Data/Hora': formatarDataHora(item.created_at),
-        'Placa': item.placa,
-        'KM': item.km_atual,
-        'Combustível': item.tipo_combustivel,
-        'Litros': formatarNumero(item.quantidade_litros || item.litros || 0),
-        'Preço/L': item.preco_litro ? `R$ ${item.preco_litro.toFixed(2)}` : ((item as any).valor_litro ? `R$ ${((item as any).valor_litro).toFixed(2)}` : '-'),
-        'Valor Total': item.valor_total ? `R$ ${item.valor_total.toFixed(2)}` : '-',
-        'Motorista': item.nome_motorista,
-        'Operador': item.nome_operador,
-        'Projeto': item.project || '-',
-        'Posto': item.posto
-      }));
+      // Função segura para formatar valores numéricos
+      const formatarValorExcel = (valor: any): number => {
+        if (valor === null || valor === undefined || isNaN(Number(valor))) {
+          return 0;
+        }
+        return Number(valor);
+      };
+      
+      // Função segura para formatar texto
+      const formatarTextoExcel = (texto: any): string => {
+        if (texto === null || texto === undefined) {
+          return '';
+        }
+        return String(texto);
+      };
+      
+      console.log(`Preparando exportação para ${dadosFiltrados.length} registros...`);
+      
+      // Preparar os dados para Excel com tratamento seguro para todos os campos
+      const excelData = dadosFiltrados.map(item => {
+        try {
+          // Garantir valores numéricos válidos
+          const kmAtual = formatarValorExcel(item.km_atual);
+          const quantidadeLitros = formatarValorExcel(item.quantidade_litros || item.litros);
+          const precoLitro = formatarValorExcel(item.preco_litro || (item as any).valor_litro);
+          const valorTotal = formatarValorExcel(item.valor_total);
+          
+          // Garantir valores de texto válidos
+          const placa = formatarTextoExcel(item.placa);
+          const tipoCombustivel = formatarTextoExcel(item.tipo_combustivel);
+          const nomeMotorista = formatarTextoExcel(item.nome_motorista);
+          const nomeOperador = formatarTextoExcel(item.nome_operador);
+          const projeto = formatarTextoExcel(item.project);
+          const posto = formatarTextoExcel(item.posto);
+          
+          // Garantir data válida
+          let dataHora = '-';
+          try {
+            if (item.created_at) {
+              const data = new Date(item.created_at);
+              if (!isNaN(data.getTime())) {
+                dataHora = format(data, 'dd/MM/yyyy HH:mm:ss');
+              }
+            }
+          } catch (e) {
+            console.warn('Erro ao formatar data:', e);
+          }
+          
+          return {
+            'Data/Hora': dataHora,
+            'Placa': placa,
+            'KM': kmAtual,
+            'Combustível': tipoCombustivel,
+            'Litros': quantidadeLitros,
+            'Preço/L': precoLitro ? `R$ ${precoLitro.toFixed(2)}` : '-',
+            'Valor Total': valorTotal ? `R$ ${valorTotal.toFixed(2)}` : '-',
+            'Motorista': nomeMotorista,
+            'Operador': nomeOperador,
+            'Projeto': projeto || '-',
+            'Posto': posto
+          };
+        } catch (itemError) {
+          console.error('Erro ao processar item para Excel:', itemError, item);
+          // Retorna um objeto com valores padrão em caso de erro
+          return {
+            'Data/Hora': '-',
+            'Placa': item.placa || '-',
+            'KM': 0,
+            'Combustível': '-',
+            'Litros': 0,
+            'Preço/L': '-',
+            'Valor Total': '-',
+            'Motorista': '-',
+            'Operador': '-',
+            'Projeto': '-',
+            'Posto': item.posto || '-'
+          };
+        }
+      });
+      
+      console.log('Criando planilha de Excel...');
       
       // Criar uma nova planilha
       const worksheet = XLSX.utils.json_to_sheet(excelData);
@@ -287,6 +359,8 @@ const HistoricoGeralPage: React.FC = () => {
       // Adicionar a planilha ao livro
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Histórico Abastecimentos');
       
+      console.log('Exportando arquivo Excel...');
+      
       // Gerar arquivo e fazer download
       XLSX.writeFile(workbook, `historico_abastecimentos_geral_${new Date().toISOString().slice(0, 10)}.xlsx`);
       
@@ -294,6 +368,8 @@ const HistoricoGeralPage: React.FC = () => {
     } catch (error) {
       console.error('Erro ao exportar para Excel:', error);
       alert('Erro ao exportar dados. Por favor, tente novamente.');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -450,13 +526,22 @@ const HistoricoGeralPage: React.FC = () => {
             </button>
             <button 
               onClick={handleExportarExcel}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center"
-              disabled={isLoading || filteredData.length === 0}
+              className={`px-4 py-2 ${isExporting ? 'bg-gray-500 cursor-wait' : 'bg-green-600 hover:bg-green-700'} text-white rounded-md flex items-center`}
+              disabled={isLoading || isExporting || filteredData.length === 0}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Exportar Excel
+              {isExporting ? (
+                <>
+                  <div className="inline-block h-4 w-4 mr-2 animate-spin rounded-full border-2 border-solid border-current border-r-transparent" />
+                  Exportando...
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Exportar Excel
+                </>
+              )}
             </button>
           </div>
         </div>
