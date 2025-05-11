@@ -21,7 +21,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Search, Plus, FileEdit, Trash2, AlertCircle } from 'lucide-react';
+import { Search, Plus, FileEdit, Trash2, AlertCircle, FileText, Upload, Download, CheckCircle, Clock } from 'lucide-react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { 
   Select,
@@ -121,7 +121,9 @@ const mockFines: Fine[] = [
     amount: 293.47,
     dueDate: '2025-04-15',
     status: 'pendente',
-    description: 'Veículo flagrado a 75 km/h em via com limite de 60 km/h'
+    description: 'Veículo flagrado a 75 km/h em via com limite de 60 km/h',
+    notificationFileUrl: 'https://storage.gestaoonfleet.com.br/multas/notificacao_ABC1234_15032025.pdf',
+    lifecycle: 'aguardando_base'
   },
   {
     id: 2,
@@ -201,6 +203,17 @@ const translateFineStatus = (status: string): string => {
   return statuses[status] || status;
 };
 
+// Função para traduzir os status do ciclo de vida
+const translateLifecycleStatus = (lifecycle?: string): string => {
+  const lifecycles: Record<string, string> = {
+    aguardando_base: 'Aguardando Base',
+    aguardando_assinatura: 'Aguardando Assinatura',
+    assinado: 'Assinado',
+    finalizado: 'Finalizado'
+  };
+  return lifecycle ? lifecycles[lifecycle] || lifecycle : 'N/A';
+};
+
 // Função para obter a classe CSS para o badge de status
 const getStatusBadgeClass = (status: string): string => {
   const classes: Record<string, string> = {
@@ -211,6 +224,19 @@ const getStatusBadgeClass = (status: string): string => {
     cancelada: 'bg-gray-100 text-gray-800'
   };
   return classes[status] || 'bg-gray-100 text-gray-800';
+};
+
+// Função para obter a classe CSS para o badge de ciclo de vida
+const getLifecycleBadgeClass = (lifecycle?: string): string => {
+  if (!lifecycle) return 'bg-gray-100 text-gray-800';
+  
+  const classes: Record<string, string> = {
+    aguardando_base: 'bg-amber-100 text-amber-800',
+    aguardando_assinatura: 'bg-purple-100 text-purple-800',
+    assinado: 'bg-indigo-100 text-indigo-800',
+    finalizado: 'bg-emerald-100 text-emerald-800'
+  };
+  return classes[lifecycle] || 'bg-gray-100 text-gray-800';
 };
 
 // Função para formatar valores monetários
@@ -732,6 +758,8 @@ const FinesNew: React.FC = () => {
                   <TableHead>Valor</TableHead>
                   <TableHead>Vencimento</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Ciclo</TableHead>
+                  <TableHead>Documentos</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -754,6 +782,46 @@ const FinesNew: React.FC = () => {
                         {translateFineStatus(fine.status)}
                       </span>
                     </TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 text-xs rounded-full ${getLifecycleBadgeClass(fine.lifecycle)}`}>
+                        {translateLifecycleStatus(fine.lifecycle)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        {fine.notificationFileUrl ? (
+                          <a 
+                            href={fine.notificationFileUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            title="Visualizar notificação"
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </a>
+                        ) : (
+                          <span className="text-gray-400" title="Sem notificação anexada">
+                            <FileText className="h-4 w-4" />
+                          </span>
+                        )}
+                        
+                        {fine.driverSignatureUrl ? (
+                          <a 
+                            href={fine.driverSignatureUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            title="Visualizar assinatura do motorista"
+                            className="text-green-600 hover:text-green-800"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                          </a>
+                        ) : (
+                          <span className="text-gray-400" title="Assinatura pendente">
+                            <Clock className="h-4 w-4" />
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2">
                         <Button variant="outline" size="icon">
@@ -768,7 +836,7 @@ const FinesNew: React.FC = () => {
                 ))}
                 {filteredFines.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={11} className="h-24 text-center">
+                    <TableCell colSpan={13} className="h-24 text-center">
                       Nenhuma multa encontrada.
                     </TableCell>
                   </TableRow>
