@@ -38,8 +38,46 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
     const setSupabaseSession = async () => {
       try {
         setLoading(true);
+        console.log("[useSupabaseAuth] Verificando sessão Supabase...");
         
-        // Obter a sessão atual do Supabase
+        // Tentar restaurar a sessão do localStorage primeiro
+        const savedSession = localStorage.getItem("supabase.auth.token");
+        if (savedSession) {
+          try {
+            console.log("[useSupabaseAuth] Encontrada sessão salva no localStorage, tentando restaurar...");
+            const session = JSON.parse(savedSession);
+            
+            // Tentar definir a sessão a partir dos dados salvos
+            if (session) {
+              const { data, error } = await supabase.auth.setSession(session);
+              
+              if (error) {
+                console.warn("[useSupabaseAuth] Erro ao restaurar sessão do localStorage:", error.message);
+                // Se falhar, limpar o item para evitar tentativas futuras com dados inválidos
+                localStorage.removeItem("supabase.auth.token");
+              } else if (data?.session) {
+                console.log("[useSupabaseAuth] Sessão restaurada com sucesso do localStorage");
+                setSession(data.session);
+                setSupabaseUser(data.user);
+                
+                // Armazenar também o token em authToken para uso com o sistema de autenticação híbrido
+                if (data.session.access_token) {
+                  localStorage.setItem('authToken', data.session.access_token);
+                  console.log("[useSupabaseAuth] Token JWT copiado para authToken");
+                }
+                
+                setLoading(false);
+                return; // Retorna mais cedo pois já temos uma sessão válida
+              }
+            }
+          } catch (parseError) {
+            console.error("[useSupabaseAuth] Erro ao processar sessão salva:", parseError);
+            localStorage.removeItem("supabase.auth.token");
+          }
+        }
+        
+        // Se não conseguirmos restaurar do localStorage, tentamos obter a sessão atual
+        console.log("[useSupabaseAuth] Tentando obter sessão atual do Supabase...");
         const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -50,9 +88,18 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
         
         if (currentSession?.user) {
           setSupabaseUser(currentSession.user);
+          console.log("[useSupabaseAuth] Sessão atual encontrada para:", currentSession.user.email);
+          
+          // Armazenar o token em authToken para uso com o sistema de autenticação híbrido
+          if (currentSession.access_token) {
+            localStorage.setItem('authToken', currentSession.access_token);
+            console.log("[useSupabaseAuth] Token JWT armazenado em authToken");
+          }
+        } else {
+          console.log("[useSupabaseAuth] Nenhuma sessão atual encontrada");
         }
       } catch (err) {
-        console.error('Erro ao obter sessão do Supabase:', err);
+        console.error('[useSupabaseAuth] Erro ao obter sessão do Supabase:', err);
         setError(err instanceof Error ? err : new Error(String(err)));
       } finally {
         setLoading(false);
@@ -64,9 +111,20 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
 
     // Configurar listener para mudanças na autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event: AuthChangeEvent, newSession: Session | null) => {
+      (event: AuthChangeEvent, newSession: Session | null) => {
+        console.log(`[useSupabaseAuth] Evento de autenticação: ${event}`);
         setSession(newSession);
         setSupabaseUser(newSession?.user || null);
+        
+        // Quando uma nova sessão for criada, também atualizamos o token em authToken
+        if (newSession?.access_token) {
+          localStorage.setItem('authToken', newSession.access_token);
+          console.log("[useSupabaseAuth] Token JWT atualizado em authToken após evento:", event);
+        } else if (event === 'SIGNED_OUT') {
+          localStorage.removeItem('authToken');
+          console.log("[useSupabaseAuth] Token JWT removido após logout");
+        }
+        
         setLoading(false);
       }
     );

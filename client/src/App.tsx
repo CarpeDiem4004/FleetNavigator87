@@ -59,6 +59,7 @@ import BudgetAttachmentsMigration from "@/pages/diagnostico/BudgetAttachmentsMig
 import MigracaoAnexosPage from "@/pages/diagnostico/MigracaoAnexosPage";
 import UploadDocumentoPage from "@/pages/diagnostico/UploadDocumentoPage";
 import AutoSaveDemo from "@/pages/diagnostico/AutoSaveDemo";
+import AutenticacaoDiagnostico from "@/pages/diagnostico/AutenticacaoDiagnostico";
 import AdminUtils from "@/pages/AdminUtils";
 import LimparDados from "@/pages/LimparDados";
 
@@ -225,6 +226,7 @@ function App() {
           <ProtectedRoute path="/diagnostico/comparacao-esquemas" component={ComparacaoEsquemas} />
           <ProtectedRoute path="/diagnostico/sincronizar-tabelas" component={SincronizarTabelasPage} />
           <ProtectedRoute path="/diagnostico/api-tester" component={ApiTester} />
+          <ProtectedRoute path="/diagnostico/autenticacao" component={AutenticacaoDiagnostico} />
           <ProtectedRoute path="/diagnostico/budget-attachments-migration" component={BudgetAttachmentsMigration} />
           <ProtectedRoute path="/diagnostico/migracao-anexos" component={MigracaoAnexosPage} />
           <ProtectedRoute path="/diagnostico/upload-documento" component={UploadDocumentoPage} />

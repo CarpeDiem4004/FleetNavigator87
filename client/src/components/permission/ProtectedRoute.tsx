@@ -2,28 +2,111 @@ import React, { useEffect, useState } from 'react';
 import { Route, Redirect } from 'wouter';
 import { useAuth } from '@/context/AuthContext';
 import { useBasePermission } from '@/hooks/use-base-permission';
-import { Loader2, AlertTriangle, RefreshCcw } from 'lucide-react';
+import { Loader2, AlertTriangle, RefreshCcw, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
+import AuthManager from '@/lib/authManager';
 
 interface ProtectedRouteProps {
   path: string;
   component: React.ComponentType;
 }
 
-const RetryableLoader = ({ message, onRetry }: { message: string, onRetry?: () => void }) => (
+// Componente de carregamento com botão de retry
+const RetryableLoader = ({ 
+  message, 
+  onRetry, 
+  isError = false,
+  subMessage,
+  retryCount = 0
+}: { 
+  message: string, 
+  onRetry?: () => void,
+  isError?: boolean,
+  subMessage?: string,
+  retryCount?: number
+}) => (
   <div className="min-h-screen flex items-center justify-center">
     <div className="flex flex-col items-center space-y-4 max-w-md p-6 bg-background rounded-lg shadow-md">
-      <Loader2 className="h-10 w-10 animate-spin text-primary" />
-      <p className="text-muted-foreground text-center">{message}</p>
+      {isError ? (
+        <AlertCircle className="h-10 w-10 text-destructive" />
+      ) : (
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      )}
+      
+      <p className="text-lg font-medium text-center">{message}</p>
+      
+      {subMessage && (
+        <p className="text-sm text-muted-foreground text-center">{subMessage}</p>
+      )}
+      
+      {retryCount > 0 && (
+        <p className="text-xs text-muted-foreground">Tentativa {retryCount} de 3</p>
+      )}
+      
       {onRetry && (
         <button 
           onClick={onRetry}
           className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-white hover:bg-primary/90 transition-colors"
+          disabled={isError && retryCount >= 3}
         >
           <RefreshCcw className="h-4 w-4" />
-          Tentar novamente
+          {retryCount >= 3 ? "Ir para login" : "Tentar novamente"}
         </button>
       )}
+      
+      {isError && retryCount >= 3 && (
+        <a 
+          href="/login"
+          className="text-sm text-blue-500 hover:underline"
+        >
+          Voltar para a página de login
+        </a>
+      )}
+    </div>
+  </div>
+);
+
+// Componente de diagnóstico para problemas de autenticação
+const AuthDiagnostic = ({ 
+  report, 
+  onClose,
+  onRetry
+}: { 
+  report: string[], 
+  onClose: () => void,
+  onRetry: () => void 
+}) => (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="bg-background rounded-lg shadow-lg max-w-2xl w-full mx-4 p-6 max-h-[80vh] overflow-auto">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold flex items-center">
+          <AlertTriangle className="h-5 w-5 text-amber-500 mr-2" />
+          Diagnóstico de Autenticação
+        </h2>
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          &times;
+        </button>
+      </div>
+      
+      <div className="bg-muted p-4 rounded font-mono text-sm mb-4 whitespace-pre-wrap">
+        {report.join('\n')}
+      </div>
+      
+      <div className="flex justify-end gap-2">
+        <button 
+          onClick={onRetry}
+          className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 flex items-center gap-2"
+        >
+          <RefreshCcw className="h-4 w-4" />
+          Tentar recuperação
+        </button>
+        <button 
+          onClick={onClose}
+          className="px-4 py-2 bg-muted text-foreground rounded-md hover:bg-muted/80"
+        >
+          Fechar
+        </button>
+      </div>
     </div>
   </div>
 );
@@ -34,69 +117,90 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
   const [isVerifyingJWT, setIsVerifyingJWT] = useState(false);
   const [jwtVerified, setJwtVerified] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [showDiagnostic, setShowDiagnostic] = useState(false);
+  const [diagnosticReport, setDiagnosticReport] = useState<string[]>([]);
+  const [authError, setAuthError] = useState<string | null>(null);
   
   // Verificação adicional do token JWT para garantir autenticação correta
   useEffect(() => {
     // Se o usuário está carregando ou não existe, não faz nada
-    if (isLoading || !user) return;
+    if (isLoading) return;
+    
+    // Se não há usuário e já tentamos várias vezes, não continuar tentando
+    if (!user && retryCount > 0) return;
     
     async function verifyJwt() {
       try {
         setIsVerifyingJWT(true);
+        setAuthError(null);
         console.log('[ProtectedRoute] Verificando JWT...');
         
-        // Verificar token JWT no localStorage
-        const storedToken = localStorage.getItem('authToken');
-        if (!storedToken) {
-          console.log('[ProtectedRoute] Sem token JWT armazenado, verificando sessão Supabase...');
-          // Verificar sessão com Supabase
-          const { data } = await supabase.auth.getSession();
+        // Usar AuthManager para verificação e recuperação
+        const savedToken = AuthManager.getLatestToken();
+        
+        if (!savedToken) {
+          console.log('[ProtectedRoute] Nenhum token JWT encontrado, tentando recuperação automática...');
           
-          if (data?.session?.access_token) {
-            console.log('[ProtectedRoute] Sessão Supabase válida, armazenando token...');
-            localStorage.setItem('authToken', data.session.access_token);
-            
-            // Tentar ressincronizar com o servidor Express
-            await ressincronizarSessao(data.session.access_token);
+          const recovered = await AuthManager.attemptAutoRecovery();
+          
+          if (recovered) {
+            console.log('[ProtectedRoute] Recuperação automática bem-sucedida');
             setJwtVerified(true);
           } else {
-            console.warn('[ProtectedRoute] Sem sessão Supabase válida');
+            console.warn('[ProtectedRoute] Recuperação automática falhou');
             setJwtVerified(false);
-          }
-        } else {
-          console.log('[ProtectedRoute] Token JWT armazenado encontrado, verificando validade...');
-          
-          // Verificar token com Supabase
-          const { data: userData, error } = await supabase.auth.getUser(storedToken);
-          
-          if (error || !userData.user) {
-            console.warn('[ProtectedRoute] Token JWT inválido:', error);
-            // Limpar token inválido
-            localStorage.removeItem('authToken');
             
-            // Verificar se podemos recuperar via sessão
+            // Tentar restabelecer sessão do Supabase
             const { data } = await supabase.auth.getSession();
             if (data?.session?.access_token) {
-              console.log('[ProtectedRoute] Recuperou token da sessão Supabase');
+              console.log('[ProtectedRoute] Sessão Supabase válida encontrada');
               localStorage.setItem('authToken', data.session.access_token);
-              
-              // Tentar ressincronizar com o servidor Express
               await ressincronizarSessao(data.session.access_token);
               setJwtVerified(true);
             } else {
+              if (retryCount >= 2) {
+                setAuthError('Não foi possível restaurar sua sessão. Por favor, faça login novamente.');
+              }
+            }
+          }
+        } else {
+          console.log('[ProtectedRoute] Token JWT encontrado, verificando validade...');
+          
+          // Verificar token com Supabase
+          const { data: userData, error } = await supabase.auth.getUser(savedToken);
+          
+          if (error || !userData.user) {
+            console.warn('[ProtectedRoute] Token JWT inválido:', error);
+            
+            // Usar AuthManager para tentativa de recuperação
+            const recovered = await AuthManager.attemptAutoRecovery();
+            
+            if (recovered) {
+              console.log('[ProtectedRoute] Recuperação automática bem-sucedida após token inválido');
+              setJwtVerified(true);
+            } else {
               setJwtVerified(false);
+              if (retryCount >= 2) {
+                setAuthError('Seu token de autenticação expirou. Por favor, faça login novamente.');
+              }
             }
           } else {
             console.log('[ProtectedRoute] Token JWT válido para:', userData.user.email);
             
+            // Sincronizar todos os tokens
+            AuthManager.syncAllTokens();
+            
             // Tentar ressincronizar com o servidor Express para garantir
-            await ressincronizarSessao(storedToken);
+            await ressincronizarSessao(savedToken);
             setJwtVerified(true);
           }
         }
       } catch (error) {
         console.error('[ProtectedRoute] Erro ao verificar JWT:', error);
         setJwtVerified(false);
+        if (retryCount >= 2) {
+          setAuthError('Ocorreu um erro ao verificar sua autenticação. Por favor, faça login novamente.');
+        }
       } finally {
         setIsVerifyingJWT(false);
       }
@@ -106,7 +210,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
     async function ressincronizarSessao(token: string) {
       try {
         console.log('[ProtectedRoute] Ressincronizando sessão com o servidor...');
-        const email = user.email;
+        const email = user?.email;
+        
+        if (!email) {
+          console.warn('[ProtectedRoute] Email do usuário não disponível para ressincronização');
+          return false;
+        }
         
         const response = await fetch('/api/resync-session-jwt', {
           method: 'POST',
@@ -144,6 +253,23 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
             return true;
           }
           
+          // Tentar método de emergência
+          const emergencyResponse = await fetch('/api/force-session', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              email
+            }),
+            credentials: 'include'
+          });
+          
+          if (emergencyResponse.ok) {
+            console.log('[ProtectedRoute] Sessão forçada com método de emergência');
+            return true;
+          }
+          
           return false;
         }
       } catch (error) {
@@ -152,15 +278,50 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
       }
     }
     
+    // Executar verificação
     verifyJwt();
   }, [user, isLoading, retryCount]);
   
-  // Função para tentar novamente
-  const handleRetry = () => {
-    setRetryCount(prev => prev + 1);
+  // Função para executar diagnóstico quando solicitado
+  const runDiagnostic = async () => {
+    try {
+      const result = await AuthManager.diagnoseAuthState();
+      setDiagnosticReport(result.detailedReport);
+      setShowDiagnostic(true);
+    } catch (error) {
+      console.error('[ProtectedRoute] Erro ao executar diagnóstico:', error);
+      setDiagnosticReport(['Erro ao executar diagnóstico de autenticação:', error?.toString() || 'Erro desconhecido']);
+      setShowDiagnostic(true);
+    }
   };
   
-  // Estado de carregamento durante a verificação de autenticação
+  // Função para tentar recuperação automática
+  const attemptRecovery = async () => {
+    setShowDiagnostic(false);
+    const recovered = await AuthManager.attemptAutoRecovery();
+    if (recovered) {
+      setRetryCount(prev => prev + 1);
+    } else {
+      // Se falhar na recuperação, podemos redirecionar para o login
+      if (retryCount >= 2) {
+        window.location.href = '/login';
+      } else {
+        setRetryCount(prev => prev + 1);
+      }
+    }
+  };
+  
+  // Função para tentar novamente
+  const handleRetry = () => {
+    // Se já tentamos várias vezes, mostrar diagnóstico
+    if (retryCount >= 2) {
+      runDiagnostic();
+    } else {
+      setRetryCount(prev => prev + 1);
+    }
+  };
+  
+  // Se estiver carregando, mostrar loader
   if (isLoading) {
     return <RetryableLoader message="Verificando autenticação..." onRetry={handleRetry} />;
   }
@@ -173,14 +334,26 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
   
   // Verificação de JWT - mostra loader enquanto verifica
   if (isVerifyingJWT) {
-    return <RetryableLoader message="Verificando credenciais..." onRetry={handleRetry} />;
+    return <RetryableLoader message="Verificando credenciais..." onRetry={handleRetry} retryCount={retryCount} />;
   }
   
-  // Se o JWT não foi verificado, mas temos um usuário, mostra um erro
+  // Se o JWT não foi verificado e temos um erro de autenticação
+  if (!jwtVerified && authError) {
+    return (
+      <RetryableLoader 
+        message={authError}
+        subMessage="Sua sessão pode ter expirado ou ter sido comprometida."
+        onRetry={handleRetry}
+        isError={true}
+        retryCount={retryCount}
+      />
+    );
+  }
+  
+  // Se o JWT não foi verificado, mas temos um usuário
   if (!jwtVerified && retryCount > 0) {
     console.warn('[ProtectedRoute] Falha na verificação de JWT, mas usuário existe');
-    // Dependendo da abordagem, pode tentar redirecionamento para login
-    // Ou mostrar um erro, mas por enquanto permitir acessar mesmo assim
+    // Estamos permitindo continuar mesmo assim
   }
   
   // Verificação especial para o usuário da Gestão de Frotas na rota de dashboard
@@ -204,7 +377,19 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
     return <Redirect to="/acesso-negado" />;
   }
   
-  // Usuário autenticado e com permissão, renderiza o componente
-  console.log(`[ProtectedRoute] Renderizando componente para ${path}`);
-  return <Component />;
+  return (
+    <>
+      {/* Usuário autenticado e com permissão, renderiza o componente */}
+      <Component />
+      
+      {/* Modal de diagnóstico quando ativado */}
+      {showDiagnostic && (
+        <AuthDiagnostic 
+          report={diagnosticReport} 
+          onClose={() => setShowDiagnostic(false)} 
+          onRetry={attemptRecovery}
+        />
+      )}
+    </>
+  );
 };
