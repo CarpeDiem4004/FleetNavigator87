@@ -17,6 +17,16 @@ import {
 /**
  * Interface para dados de abastecimento
  */
+/**
+ * Interface para respostas da API
+ */
+export interface SupabaseResponse {
+  success: boolean;
+  data?: any;
+  error?: any;
+  message?: string;
+}
+
 export interface AbastecimentoData {
   id?: number;
   placa: string;

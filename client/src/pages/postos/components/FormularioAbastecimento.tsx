@@ -4,6 +4,7 @@ import { z } from "zod";
 import { CheckCircle2, Fuel } from "lucide-react";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSafeState } from "@/hooks/useSafeState"; // 👈 Importando o novo hook
+import { AbastecimentoData, SupabaseResponse } from "@/services/PostoSupabaseService";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -653,10 +654,10 @@ const FormularioAbastecimento: React.FC<
               dadosAbastecimento
             );
             
-            if (supabaseResult.success) {
-              console.log(`Abastecimento registrado com sucesso no Supabase para o posto ${postId}:`, supabaseResult.data);
+            if (supabaseResult && (supabaseResult as SupabaseResponse).success) {
+              console.log(`Abastecimento registrado com sucesso no Supabase para o posto ${postId}:`, (supabaseResult as SupabaseResponse).data);
             } else {
-              console.error(`Erro ao registrar abastecimento no Supabase para o posto ${postId}:`, supabaseResult.error);
+              console.error(`Erro ao registrar abastecimento no Supabase para o posto ${postId}:`, (supabaseResult as SupabaseResponse).error);
               toast({
                 title: "Aviso",
                 description: "Registro salvo, mas houve erro ao enviar para o backup no Supabase",
