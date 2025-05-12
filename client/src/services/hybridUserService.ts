@@ -117,7 +117,17 @@ export const getAllUsers = async () => {
  */
 export const getUserById = async (id: number) => {
   try {
-    const response = await api.get(`/users/${id}`);
+    const token = localStorage.getItem('authToken');
+    
+    if (!token) {
+      return { success: false, message: 'Não autenticado' };
+    }
+    
+    const response = await api.get(`/api/hybrid/users/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
     return response.data;
   } catch (error: any) {
     console.error(`Erro ao obter usuário ${id}:`, error);
@@ -140,7 +150,17 @@ export const createUser = async (userData: {
   isActive?: boolean;
 }) => {
   try {
-    const response = await api.post('/users', userData);
+    const token = localStorage.getItem('authToken');
+    
+    if (!token) {
+      return { success: false, message: 'Não autenticado' };
+    }
+    
+    const response = await api.post('/api/hybrid/users', userData, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
     return response.data;
   } catch (error: any) {
     console.error('Erro ao criar usuário:', error);
@@ -165,7 +185,17 @@ export const updateUser = async (
   }
 ) => {
   try {
-    const response = await api.put(`/users/${id}`, userData);
+    const token = localStorage.getItem('authToken');
+    
+    if (!token) {
+      return { success: false, message: 'Não autenticado' };
+    }
+    
+    const response = await api.put(`/api/hybrid/users/${id}`, userData, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
     return response.data;
   } catch (error: any) {
     console.error(`Erro ao atualizar usuário ${id}:`, error);
@@ -181,7 +211,17 @@ export const updateUser = async (
  */
 export const deleteUser = async (id: number) => {
   try {
-    const response = await api.delete(`/users/${id}`);
+    const token = localStorage.getItem('authToken');
+    
+    if (!token) {
+      return { success: false, message: 'Não autenticado' };
+    }
+    
+    const response = await api.delete(`/api/hybrid/users/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
     return response.data;
   } catch (error: any) {
     console.error(`Erro ao excluir usuário ${id}:`, error);
@@ -197,7 +237,17 @@ export const deleteUser = async (id: number) => {
  */
 export const toggleUserStatus = async (id: number, isActive: boolean) => {
   try {
-    const response = await api.patch(`/users/${id}/status`, { isActive });
+    const token = localStorage.getItem('authToken');
+    
+    if (!token) {
+      return { success: false, message: 'Não autenticado' };
+    }
+    
+    const response = await api.patch(`/api/hybrid/users/${id}/status`, { isActive }, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
     return response.data;
   } catch (error: any) {
     console.error(`Erro ao alterar status do usuário ${id}:`, error);
@@ -213,7 +263,17 @@ export const toggleUserStatus = async (id: number, isActive: boolean) => {
  */
 export const resetUserPassword = async (id: number, password?: string) => {
   try {
-    const response = await api.post(`/users/${id}/reset-password`, { password });
+    const token = localStorage.getItem('authToken');
+    
+    if (!token) {
+      return { success: false, message: 'Não autenticado' };
+    }
+    
+    const response = await api.post(`/api/hybrid/users/${id}/reset-password`, { password }, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
     return response.data;
   } catch (error: any) {
     console.error(`Erro ao redefinir senha do usuário ${id}:`, error);
