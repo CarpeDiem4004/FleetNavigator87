@@ -606,17 +606,17 @@ const FormularioAbastecimento: React.FC<
         } else if (postId.toLowerCase() === "guarulhos_v2" || 
             postId.toLowerCase().includes("guarulhos_v2") || 
             postId.toLowerCase().includes("guarulhos v2")) {
-          // Usar a rota direta para Guarulhos V2
-          endpoint = `/api/abastecimento-direto/guarulhos_v2`;
+          // Usar a rota resiliente para Guarulhos V2
+          endpoint = `/api/resilient/abastecimento-direto/guarulhos_v2`;
           usarRotaDireta = true;
-          console.log(">>> Usando rota específica para Guarulhos V2");
+          console.log(">>> Usando rota resiliente para Guarulhos V2");
         } else if (postId.toLowerCase() === "alair_v2" || 
             postId.toLowerCase().includes("alair_v2") || 
             postId.toLowerCase().includes("alair v2")) {
-          // Usar a rota direta para Alair V2
-          endpoint = `/api/abastecimento-direto/alair_v2`;
+          // Usar a rota resiliente para Alair V2
+          endpoint = `/api/resilient/abastecimento-direto/alair_v2`;
           usarRotaDireta = true;
-          console.log(">>> Usando rota específica para Alair V2");
+          console.log(">>> Usando rota resiliente para Alair V2");
         } else if (postId.toLowerCase().includes("remedios")) {
           endpoint = "/api/posto-remedios-standalone/abastecimentos";
         } else {

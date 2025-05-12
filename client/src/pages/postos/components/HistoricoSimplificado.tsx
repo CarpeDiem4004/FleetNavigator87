@@ -37,7 +37,29 @@ const HistoricoSimplificado: React.FC<HistoricoSimplificadoProps> = ({
     setError(null);
     
     try {
+      // Prevenção de cache adicionando timestamp na URL
       const timestamp = new Date().getTime();
+      
+      // Primeiro tentar usar a rota resiliente para garantir dados mesmo com falhas
+      try {
+        const resilientResponse = await axios.get(`/api/resilient/historico-direto/${encodeURIComponent(posto)}?t=${timestamp}`, {
+          headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        
+        console.log('[HistoricoSimplificado] Dados obtidos via sistema resiliente:', resilientResponse);
+        
+        if (resilientResponse.data && resilientResponse.data.success) {
+          setHistorico(resilientResponse.data.data || []);
+          return; // Saímos da função se obtivemos os dados com sucesso
+        }
+      } catch (resilientError) {
+        console.log('[HistoricoSimplificado] Erro no sistema resiliente, tentando rota legada:', resilientError);
+      }
+      
+      // Cair de volta para a rota original se a resiliente falhar
       const response = await axios.get(`/api/historico-direto/${encodeURIComponent(posto)}?t=${timestamp}`);
       
       if (response.data && response.data.success) {
