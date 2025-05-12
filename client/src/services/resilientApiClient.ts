@@ -15,9 +15,9 @@ class ResilientApiClient {
 
   /**
    * Construtor
-   * @param baseUrl URL base da API (padrão: /api/universal)
+   * @param baseUrl URL base da API (padrão: simplificada)
    */
-  constructor(baseUrl: string = '/api/universal') {
+  constructor(baseUrl: string = '') {
     this.baseUrl = baseUrl;
     // Obter token de autenticação do localStorage
     this.authToken = localStorage.getItem('authToken');

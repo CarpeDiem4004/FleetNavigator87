@@ -4,9 +4,9 @@
  */
 import axios from 'axios';
 
-// Criar uma instância do axios configurada para API híbrida
+// Criar uma instância do axios configurada para API híbrida (agora usando rotas simplificadas)
 const api = axios.create({
-  baseURL: '/api/hybrid'
+  baseURL: ''
 });
 
 // Interceptor para adicionar o token JWT em todas as requisições
@@ -24,7 +24,7 @@ api.interceptors.request.use(config => {
 export const login = async (email: string, password: string) => {
   try {
     console.log('Tentando login híbrido para:', email);
-    // Tentar primeiro o endpoint da api híbrida
+    // Tentar primeiro o endpoint da api híbrida (rota simplificada)
     try {
       const response = await api.post('/auth/login', { email, password });
       
@@ -38,7 +38,23 @@ export const login = async (email: string, password: string) => {
         return { success: true, user: response.data.user };
       }
     } catch (hybridError) {
-      console.warn('Autenticação híbrida falhou, tentando API tradicional:', hybridError);
+      console.warn('Autenticação híbrida falhou, tentando rota alternativa:', hybridError);
+      
+      // Tenta com o prefixo /api/hybrid como fallback
+      try {
+        const hybridFallbackResponse = await axios.post('/api/hybrid/auth/login', { email, password });
+        if (hybridFallbackResponse.data.success && hybridFallbackResponse.data.token) {
+          // Armazenar o token JWT no localStorage
+          localStorage.setItem('authToken', hybridFallbackResponse.data.token);
+          // Armazenar dados básicos do usuário
+          localStorage.setItem('userData', JSON.stringify(hybridFallbackResponse.data.user));
+          
+          console.log('Login híbrido (fallback) bem-sucedido para:', email);
+          return { success: true, user: hybridFallbackResponse.data.user };
+        }
+      } catch (fallbackError) {
+        console.warn('Também falhou com rota híbrida alternativa, tentando tradicional:', fallbackError);
+      }
     }
     
     // Se falhar, tenta o endpoint tradicional
@@ -51,7 +67,7 @@ export const login = async (email: string, password: string) => {
         return { success: true, user: traditionalResponse.data };
       }
     } catch (traditionalError) {
-      console.error('Ambos os métodos de autenticação falharam:', traditionalError);
+      console.error('Todos os métodos de autenticação falharam:', traditionalError);
     }
     
     return { success: false, message: 'Falha na autenticação' };
@@ -69,10 +85,23 @@ export const login = async (email: string, password: string) => {
  */
 export const verifyToken = async () => {
   try {
-    const response = await api.get('/auth/verify');
-    return response.data.success;
+    // Tentar primeiro com rota simplificada
+    try {
+      const response = await api.get('/auth/verify');
+      return response.data.success;
+    } catch (mainError) {
+      console.warn('Verificação de token na rota simplificada falhou, tentando rota alternativa:', mainError);
+      
+      // Se falhar, tentar com rota tradicional /api/hybrid/auth/verify
+      const fallbackResponse = await axios.get('/api/hybrid/auth/verify', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+      return fallbackResponse.data.success;
+    }
   } catch (error) {
-    console.error('Token inválido:', error);
+    console.error('Token inválido (todas as tentativas falharam):', error);
     return false;
   }
 };
