@@ -17,11 +17,32 @@ export default function AutoSaveDemo() {
 
   // Verificar status da conexão com o Supabase ao carregar o componente
   useEffect(() => {
+    // Implementamos nossa própria função de verificação de conexão
     const checkConnection = async () => {
       setConnectionStatus('checking');
       try {
-        const { data, error } = await supabase.from('health_check').select('*').limit(1);
-        if (error) throw error;
+        // Primeiro tenta verificar se existe a tabela de health check
+        const { data, error } = await supabase
+          .from('health_check')
+          .select('id')
+          .limit(1)
+          .maybeSingle();
+        
+        if (error) {
+          // Se falhar, tenta criar a tabela demo_forms como verificação alternativa
+          const { error: tableError } = await supabase
+            .from('demo_forms')
+            .select('id')
+            .limit(1)
+            .maybeSingle();
+          
+          if (tableError) {
+            console.error('Erro ao verificar tabelas no Supabase:', tableError);
+            throw tableError;
+          }
+        }
+        
+        // Se chegamos aqui, a conexão está funcionando
         setConnectionStatus('connected');
         setIsOnline(true);
       } catch (error) {
@@ -35,9 +56,23 @@ export default function AutoSaveDemo() {
 
     // Verificar periodicamente a cada 30 segundos
     const interval = setInterval(checkConnection, 30000);
+    
+    // Adicionar listeners para eventos de conectividade do navegador
+    const handleOnline = () => checkConnection();
+    const handleOffline = () => {
+      setConnectionStatus('disconnected');
+      setIsOnline(false);
+    };
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
-    // Limpar intervalo ao desmontar
-    return () => clearInterval(interval);
+    // Limpar recursos ao desmontar
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   // Carregar registros de demonstração
@@ -45,15 +80,44 @@ export default function AutoSaveDemo() {
     const fetchDemoData = async () => {
       setIsLoading(true);
       try {
-        // Usar uma tabela 'demo_forms' que podemos criar apenas para este exemplo
+        // Tentar verificar se a tabela existe antes
+        const { data: tablesData, error: tablesError } = await supabase
+          .rpc('get_schema_tables')
+          .contains('table_name', 'demo_forms');
+        
+        // Se não conseguir verificar tabelas ou a tabela não existir, tentar criar
+        if (tablesError || !tablesData || tablesData.length === 0) {
+          // Tentar criar a tabela via API para evitar erro no Supabase (permissões)
+          try {
+            const response = await fetch('/api/diagnostico/create-demo-table', {
+              method: 'POST',
+            });
+            
+            if (!response.ok) {
+              console.warn('Não foi possível criar a tabela de demonstração via API');
+            } else {
+              console.log('Tabela de demonstração criada ou já existente');
+            }
+          } catch (apiError) {
+            console.error('Erro ao criar tabela de demonstração via API:', apiError);
+          }
+        }
+        
+        // Tentar buscar os dados mesmo que a criação da tabela falhe
+        // Pode ser que ela já exista
         const { data, error } = await supabase
           .from('demo_forms')
           .select('*')
           .order('created_at', { ascending: false })
           .limit(5);
 
-        if (error && error.code !== 'PGRST116') { // Ignora erro de tabela não encontrada
-          throw error;
+        if (error) {
+          // Se o erro for que a tabela não existe, silenciosamente ignora
+          if (error.code === 'PGRST116') {
+            console.info('Tabela de demonstração ainda não existe');
+          } else {
+            throw error;
+          }
         }
 
         if (data) {
@@ -61,7 +125,11 @@ export default function AutoSaveDemo() {
         }
       } catch (error) {
         console.error('Erro ao carregar dados de demonstração:', error);
-        // Silenciosamente falha, não mostra toast para não confundir o usuário
+        toast({
+          title: 'Erro ao carregar dados',
+          description: 'Não foi possível carregar os registros de demonstração',
+          variant: 'destructive'
+        });
       } finally {
         setIsLoading(false);
       }
@@ -70,7 +138,7 @@ export default function AutoSaveDemo() {
     if (connectionStatus === 'connected') {
       fetchDemoData();
     }
-  }, [connectionStatus]);
+  }, [connectionStatus, toast]);
 
   // Função para simular desconexão
   const simulateDisconnection = () => {
@@ -86,8 +154,42 @@ export default function AutoSaveDemo() {
   const restoreConnection = async () => {
     setConnectionStatus('checking');
     try {
-      const { data, error } = await supabase.from('health_check').select('*').limit(1);
-      if (error) throw error;
+      // Verificar se o browser está online
+      if (!navigator.onLine) {
+        toast({
+          title: 'Sem conexão',
+          description: 'Parece que o dispositivo está sem conexão com a internet.',
+          variant: 'destructive'
+        });
+        setConnectionStatus('disconnected');
+        return;
+      }
+      
+      // Tenta verificar a conexão com o Supabase de forma mais abrangente
+      try {
+        // Primeiro tenta obter o status do serviço Supabase através de um endpoint
+        // independente como garantia dupla
+        const healthResponse = await fetch('https://status.supabase.com/api/v2/status.json', {
+          method: 'GET',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
+        
+        if (!healthResponse.ok) {
+          console.warn('Serviço Supabase pode estar com problemas');
+        }
+      } catch (healthError) {
+        console.warn('Não foi possível verificar status do serviço Supabase', healthError);
+      }
+      
+      // Agora tenta com nosso Supabase específico
+      const { data, error } = await supabase
+        .from('demo_forms')
+        .select('id')
+        .limit(1)
+        .maybeSingle();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      
       setConnectionStatus('connected');
       setIsOnline(true);
       toast({

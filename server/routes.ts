@@ -834,6 +834,43 @@ async function criarTabelaSolicitacoesFuelCard() {
   }
 }
 
+/**
+ * Cria a tabela demo_forms para testes e exemplos se não existir
+ */
+async function criarTabelaDemoForms() {
+  try {
+    // Verificar se a tabela já existe
+    const checkResult = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'demo_forms'
+      ) as exists;
+    `);
+
+    if (!checkResult.rows[0].exists) {
+      console.log("Criando tabela demo_forms para uso em exemplos...");
+      
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS demo_forms (
+          id SERIAL PRIMARY KEY,
+          form_title VARCHAR(255) NOT NULL,
+          form_data JSONB,
+          status VARCHAR(50) DEFAULT 'rascunho',
+          created_by VARCHAR(255),
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+      `);
+      
+      console.log("Tabela demo_forms criada com sucesso!");
+    } else {
+      console.log("Tabela demo_forms já existe.");
+    }
+  } catch (error) {
+    console.error("Erro ao criar tabela demo_forms:", error);
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Criar tabelas necessárias se não existirem
   await criarTabelaAbastecimentos();
@@ -851,6 +888,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await criarTabelaMovimentacaoPneu();
   await atualizarTabelaPneus();
   await setupTireActivityTable();
+  await criarTabelaDemoForms();
   // Rota para registro de movimentações de pátio
   app.post('/api/registro/movimentacao-patio', async (req, res) => {
     try {
