@@ -1,5 +1,6 @@
 import express from 'express';
 import { userService, generateRandomPassword } from '../services/userService';
+import { getSupabaseAdapter } from '../services/supabaseAdapter';
 
 // Router específico para API de usuários
 const router = express.Router();
