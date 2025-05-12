@@ -265,52 +265,120 @@ export function setupAuth(app: Express) {
   });
 
   app.get("/api/user", async (req, res) => {
+    // Verificar se há um cabeçalho de verificação especial
+    const isVerification = req.headers['x-auth-verification'] === 'true';
+
     // Verificar se o usuário está autenticado
     if (!req.isAuthenticated()) {
+      // Log mais detalhado para depuração
       console.log('Tentativa de acesso não autenticado a /api/user', {
         hasSession: !!req.session,
         sessionID: req.sessionID,
         cookies: req.headers.cookie,
         origin: req.headers.origin,
         referer: req.headers.referer,
-        userAgent: req.headers['user-agent']
+        userAgent: req.headers['user-agent'],
+        headers: Object.keys(req.headers),
+        cookieContent: req.headers.cookie,
+        isVerification
       });
       
-      // Verificar tentativa de recuperação de sessão
-      if (req.session && (req.session as any)?.passport?.user) {
-        const userId = (req.session as any).passport.user;
-        console.log(`[API/USER] Tentando recuperação automática de sessão para userId: ${userId}`);
+      // Se esta é uma requisição de verificação após login, tentar mais agressivamente
+      if (isVerification) {
+        console.log('[API/USER] Requisição de verificação de autenticação especial');
         
-        try {
-          // Tentar obter o usuário do banco
-          const user = await storage.getUser(userId);
+        // Verificar se temos ID de usuário na sessão
+        if (req.session && (req.session as any)?.passport?.user) {
+          const userId = (req.session as any).passport.user;
+          console.log(`[API/USER] Encontrado ID de usuário na sessão: ${userId}`);
           
-          if (user) {
-            console.log(`[API/USER] Recuperado usuário ${user.id} (${user.email}) do banco, tentando login manual`);
+          try {
+            // Tentar obter o usuário do banco
+            const user = await storage.getUser(userId);
             
-            // Login manual do usuário
-            return req.login(user, (loginErr) => {
-              if (loginErr) {
-                console.error('[API/USER] Falha na recuperação da sessão:', loginErr);
-                return res.status(401).json({ 
-                  message: "Não autenticado",
-                  recoveryAttempted: true,
-                  recoverySuccess: false,
-                  error: "Erro ao restaurar sessão"
-                });
-              }
+            if (user) {
+              console.log(`[API/USER] Recuperado usuário ${user.id} (${user.email}), tentando login manual`);
               
-              // Sucesso na recuperação
-              console.log('[API/USER] Sessão recuperada com sucesso!');
-              const userWithoutPassword = { ...user, password: undefined };
-              return res.json({
-                ...userWithoutPassword,
-                _sessionRecovered: true
+              // Login manual do usuário
+              return req.login(user, (loginErr) => {
+                if (loginErr) {
+                  console.error('[API/USER] Falha na recuperação da sessão:', loginErr);
+                  return res.status(401).json({ 
+                    message: "Não autenticado",
+                    recoveryAttempted: true,
+                    recoverySuccess: false,
+                    error: "Erro ao restaurar sessão"
+                  });
+                }
+                
+                // Sucesso na recuperação
+                console.log('[API/USER] Sessão recuperada com sucesso!');
+                
+                // Tocar na sessão para garantir persistência
+                req.session.touch();
+                
+                // Salvar a sessão explicitamente
+                req.session.save((saveErr) => {
+                  if (saveErr) {
+                    console.error('[API/USER] Erro ao salvar sessão:', saveErr);
+                  } else {
+                    console.log('[API/USER] Sessão salva explicitamente');
+                  }
+                  
+                  const userWithoutPassword = { ...user, password: undefined };
+                  return res.json({
+                    ...userWithoutPassword,
+                    _sessionRecovered: true,
+                    _sessionSaved: !saveErr
+                  });
+                });
               });
-            });
+            }
+          } catch (error) {
+            console.error('[API/USER] Erro ao recuperar usuário para verificação:', error);
           }
-        } catch (error) {
-          console.error('[API/USER] Erro ao recuperar usuário para recuperação de sessão:', error);
+        }
+      } else {
+        // Verificação de sessão normal
+        if (req.session && (req.session as any)?.passport?.user) {
+          const userId = (req.session as any).passport.user;
+          console.log(`[API/USER] Tentando recuperação automática de sessão para userId: ${userId}`);
+          
+          try {
+            // Tentar obter o usuário do banco
+            const user = await storage.getUser(userId);
+            
+            if (user) {
+              console.log(`[API/USER] Recuperado usuário ${user.id} (${user.email}) do banco, tentando login manual`);
+              
+              // Login manual do usuário
+              return req.login(user, (loginErr) => {
+                if (loginErr) {
+                  console.error('[API/USER] Falha na recuperação da sessão:', loginErr);
+                  return res.status(401).json({ 
+                    message: "Não autenticado",
+                    recoveryAttempted: true,
+                    recoverySuccess: false,
+                    error: "Erro ao restaurar sessão"
+                  });
+                }
+                
+                // Sucesso na recuperação
+                console.log('[API/USER] Sessão recuperada com sucesso!');
+                
+                // Tocar na sessão para garantir persistência
+                req.session.touch();
+                
+                const userWithoutPassword = { ...user, password: undefined };
+                return res.json({
+                  ...userWithoutPassword,
+                  _sessionRecovered: true
+                });
+              });
+            }
+          } catch (error) {
+            console.error('[API/USER] Erro ao recuperar usuário para recuperação de sessão:', error);
+          }
         }
       }
       
@@ -320,6 +388,23 @@ export function setupAuth(app: Express) {
     
     // Usuário está autenticado normalmente
     console.log(`Informações do usuário solicitadas: ${req.user.id} (${req.user.email})`);
+    
+    // Se for uma requisição de verificação, garantir persistência da sessão
+    if (isVerification) {
+      console.log(`[API/USER] Verificando persistência de sessão para ${req.user.id} (${req.user.email})`);
+      
+      // Tocar na sessão para garantir persistência
+      req.session.touch();
+      
+      // Forçar salvamento da sessão
+      req.session.save((err) => {
+        if (err) {
+          console.error('[API/USER] Erro ao salvar sessão durante verificação:', err);
+        } else {
+          console.log('[API/USER] Sessão salva com sucesso durante verificação');
+        }
+      });
+    }
     
     // Não enviar a senha para o cliente
     const userWithoutPassword = { ...req.user, password: undefined };

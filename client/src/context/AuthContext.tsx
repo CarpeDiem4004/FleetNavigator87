@@ -65,31 +65,60 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isAuthenticated: supabaseAuthenticated
   } = useSupabaseAuth();
 
-  // Efeito para sincronizar o estado de autenticação do Supabase com o estado local
+  // Efeito para verificar e sincronizar o estado de autenticação
   useEffect(() => {
-    // Se o hook do Supabase já determinou o estado de autenticação
-    if (!supabaseLoading) {
-      if (supabaseAuthenticated && supabaseUser) {
-        // Converter o usuário do Supabase para o formato esperado pelo nosso contexto
-        const userData = {
-          id: supabaseUser.id ? parseInt(supabaseUser.id) : 0,
-          name: supabaseUser.user_metadata?.name || 'Usuário',
-          email: supabaseUser.email || '',
-          role: supabaseUser.user_metadata?.role || 'operador',
-          baseId: supabaseUser.user_metadata?.baseId || null,
-          basename: supabaseUser.user_metadata?.basename || null,
-          oficina_id: supabaseUser.user_metadata?.oficina_id || null
-        };
-        
-        setUser(userData);
-        console.log('Usuário autenticado via Supabase:', userData);
+    const verifyAuth = async () => {
+      console.log("Verificando estado de autenticação inicial...");
+      
+      // Se o hook do Supabase já determinou o estado de autenticação
+      if (!supabaseLoading) {
+        if (supabaseAuthenticated && supabaseUser) {
+          // Converter o usuário do Supabase para o formato esperado pelo nosso contexto
+          const userData = {
+            id: supabaseUser.id ? parseInt(supabaseUser.id) : 0,
+            name: supabaseUser.user_metadata?.name || 'Usuário',
+            email: supabaseUser.email || '',
+            role: supabaseUser.user_metadata?.role || 'operador',
+            baseId: supabaseUser.user_metadata?.baseId || null,
+            basename: supabaseUser.user_metadata?.basename || null,
+            oficina_id: supabaseUser.user_metadata?.oficina_id || null
+          };
+          
+          setUser(userData);
+          console.log('Usuário autenticado via Supabase:', userData);
+          
+          // Verificar se precisamos sincronizar com a sessão tradicional
+          try {
+            const syncResponse = await fetch('/api/resync-session', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseUser.aud}`
+              },
+              credentials: 'include'
+            });
+            
+            if (syncResponse.ok) {
+              console.log('Sessão tradicional sincronizada com Supabase');
+            } else {
+              console.warn('Não foi possível sincronizar a sessão tradicional');
+            }
+          } catch (syncError) {
+            console.warn('Erro ao sincronizar sessão:', syncError);
+          }
+        } else {
+          // Se não tem usuário no Supabase, tenta a verificação tradicional
+          await checkTraditionalAuth();
+        }
       } else {
-        // Se não tem usuário no Supabase, tenta a verificação tradicional
-        checkTraditionalAuth();
+        // Supabase ainda está carregando, verificar método tradicional enquanto isso
+        await checkTraditionalAuth();
       }
       
       setIsLoading(false);
-    }
+    };
+    
+    verifyAuth();
   }, [supabaseUser, supabaseLoading, supabaseAuthenticated]);
   
   // Função para verificar autenticação tradicional
@@ -181,47 +210,101 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       console.log("Tentando fazer login com:", email);
       
-      // Primeiro, tentar login com Supabase
-      let supabaseSuccessful = false;
+      // Sempre tentar a autenticação tradicional primeiro
       let userData = null;
+      let authSuccess = false;
       
+      // PASSO 1: Tentar autenticação tradicional através da API Express
       try {
-        // Tenta login com Supabase
-        const { success, session, user: supaUser, error } = await supabaseLogin(email, password);
+        console.log("Iniciando autenticação tradicional...");
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include', // Importante para cookies de sessão
+          body: JSON.stringify({ username: email, password }),
+        });
         
-        if (success && session) {
-          console.log("Login Supabase bem-sucedido:", supaUser);
-          supabaseSuccessful = true;
+        if (response.ok) {
+          userData = await response.json();
+          console.log("Login tradicional bem-sucedido:", userData);
+          authSuccess = true;
           
-          // Converter para o formato esperado do usuário
-          userData = {
-            id: supaUser?.id ? parseInt(supaUser.id) : 0,
-            name: supaUser?.user_metadata?.name || 'Usuário',
-            email: supaUser?.email || email,
-            role: supaUser?.user_metadata?.role || 'operador',
-            baseId: supaUser?.user_metadata?.baseId || null,
-            basename: supaUser?.user_metadata?.basename || null,
-            oficina_id: supaUser?.user_metadata?.oficina_id || null
-          };
-        } else if (error) {
-          console.warn("Falha no login com Supabase:", error);
+          // Adicionar header de verificação para garantir cookie
+          const verifyResponse = await fetch('/api/user', {
+            method: 'GET',
+            credentials: 'include',
+            headers: { 'X-Auth-Verification': 'true' }
+          });
+          
+          if (!verifyResponse.ok) {
+            console.warn("Verificação de sessão falhou após login bem-sucedido. Tentando recuperar...");
+          } else {
+            console.log("Sessão verificada e cookies persistidos com sucesso");
+          }
+        } else {
+          console.warn("Autenticação tradicional falhou, tentando métodos alternativos");
         }
-      } catch (supabaseError) {
-        console.error("Erro ao tentar login com Supabase:", supabaseError);
+      } catch (tradError) {
+        console.error("Erro na autenticação tradicional:", tradError);
       }
       
-      // Se Supabase falhar, tentar métodos alternativos
-      if (!supabaseSuccessful) {
-        // Tenta primeiro a rota de autenticação JWT híbrida
-        let authSuccess = false;
-        
+      // PASSO 2: Se a autenticação tradicional falhar, tentar Supabase
+      if (!authSuccess) {
+        try {
+          console.log("Tentando login com Supabase...");
+          const { success, session, user: supaUser, error } = await supabaseLogin(email, password);
+          
+          if (success && session) {
+            console.log("Login Supabase bem-sucedido:", supaUser);
+            
+            // Converter para o formato esperado do usuário
+            userData = {
+              id: supaUser?.id ? parseInt(supaUser.id) : 0,
+              name: supaUser?.user_metadata?.name || 'Usuário',
+              email: supaUser?.email || email,
+              role: supaUser?.user_metadata?.role || 'operador',
+              baseId: supaUser?.user_metadata?.baseId || null,
+              basename: supaUser?.user_metadata?.basename || null,
+              oficina_id: supaUser?.user_metadata?.oficina_id || null
+            };
+            
+            authSuccess = true;
+            
+            // Sincronizar com sistema tradicional
+            try {
+              console.log("Sincronizando sessão tradicional com Supabase...");
+              const syncResponse = await fetch('/api/resync-session', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${session.access_token}`
+                },
+                credentials: 'include'
+              });
+              
+              if (syncResponse.ok) {
+                console.log("Sessão tradicional sincronizada após login Supabase");
+              } else {
+                console.warn("Falha ao sincronizar sessão tradicional");
+              }
+            } catch (syncError) {
+              console.warn("Erro ao sincronizar sessão:", syncError);
+            }
+          } else if (error) {
+            console.warn("Falha no login com Supabase:", error);
+          }
+        } catch (supabaseError) {
+          console.error("Erro ao tentar login com Supabase:", supabaseError);
+        }
+      }
+      
+      // PASSO 3: Se ainda não autenticou, tentar autenticação JWT híbrida
+      if (!authSuccess) {
         try {
           console.log("Tentando autenticação JWT híbrida...");
           const jwtResponse = await fetch('/api/hybrid/auth/login', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
           });
           
@@ -236,36 +319,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               authSuccess = true;
             }
           } else {
-            console.warn("Autenticação JWT falhou, tentando método tradicional");
+            console.warn("Autenticação JWT híbrida falhou");
           }
         } catch (jwtError) {
-          console.error("Erro na tentativa de autenticação JWT:", jwtError);
+          console.error("Erro na autenticação JWT híbrida:", jwtError);
         }
+      }
+      
+      // PASSO 4: Se algum método funcionou, sincronizar entre os sistemas
+      if (authSuccess && userData) {
+        console.log("Autenticação bem-sucedida. Método:", 
+          authSuccess ? "Tradicional -> Supabase -> JWT" : "Falha");
         
-        // Se a autenticação JWT falhar, tenta a autenticação tradicional
-        if (!authSuccess) {
-          console.log("Tentando autenticação tradicional...");
-          const response = await fetch('/api/login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-            body: JSON.stringify({ username: email, password }),
-          });
-          
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            console.error("Erro na resposta de login:", response.status, errorData);
-            throw new Error(errorData.message || 'Erro de autenticação');
-          }
-          
-          userData = await response.json();
-          console.log("Login tradicional bem-sucedido:", userData);
-          
-          // Se login tradicional foi bem-sucedido, mas Supabase falhou,
-          // tenta criar o usuário no Supabase para sincronização futura
+        // Define o usuário no estado
+        setUser(userData);
+        
+        // Verificar se temos usuário em um sistema mas não no outro
+        if (authSuccess && !supabaseAuthenticated) {
           try {
+            console.log("Sincronizando com Supabase após login tradicional...");
             await supabaseRegister(email, password, {
               name: userData.name,
               role: userData.role,
@@ -273,22 +345,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               basename: userData.basename,
               oficina_id: userData.oficina_id
             });
-            console.log("Usuário sincronizado com Supabase após login tradicional");
+            console.log("Registro Supabase realizado após login tradicional");
           } catch (syncError) {
-            console.warn("Não foi possível sincronizar usuário com Supabase:", syncError);
+            console.warn("Não foi possível registrar no Supabase:", syncError);
           }
         }
+        
+        toast({
+          title: "Login bem-sucedido",
+          description: `Bem-vindo, ${userData?.name || email}!`,
+        });
+        
+        return userData as User;
+      } else {
+        throw new Error("Não foi possível autenticar com nenhum dos métodos disponíveis");
       }
-      
-      // Define o usuário no estado, independente do método de autenticação usado
-      setUser(userData);
-      
-      toast({
-        title: "Login bem-sucedido",
-        description: `Bem-vindo, ${userData?.name || email}!`,
-      });
-      
-      return userData as User;
     } catch (error: any) {
       console.error('Erro no login:', error);
       
