@@ -63,7 +63,8 @@ const NavItem: React.FC<{
   const Icon = item.icon;
   
   return (
-    <div
+    <Link
+      href={item.href}
       onClick={(e) => {
         // Se for um submenu, não navegamos
         if (item.href === '#') {
@@ -72,6 +73,7 @@ const NavItem: React.FC<{
         }
         
         // Navegação direta para simplificar e corrigir problemas
+        e.preventDefault();
         window.location.href = item.href;
         onClose();
       }}
@@ -83,7 +85,7 @@ const NavItem: React.FC<{
     >
       <Icon className="flex-shrink-0 mr-3 h-5 w-5" />
       <span>{item.name}</span>
-    </div>
+    </Link>
   );
 };
 
@@ -137,7 +139,7 @@ const NavItemWithSubmenu: React.FC<{
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  // Navegação direta mais compatível
+                  // Usar o hook do wouter para navegação
                   window.location.href = subItem.href;
                   onClose();
                 }}
