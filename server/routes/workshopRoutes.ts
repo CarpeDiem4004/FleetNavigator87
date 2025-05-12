@@ -1015,5 +1015,35 @@ router.get('/dashboard', authMiddleware, workshopAuthMiddleware, async (req: Aut
   }
 });
 
+// Rota para obter oficinas pendentes de aprovação (para o dashboard)
+router.get('/pending', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    // Apenas admin ou gestor_frota pode ver as oficinas pendentes
+    if (req.user?.role !== 'admin' && req.user?.role !== 'gestor_frota') {
+      return res.status(403).json({ message: 'Você não tem permissão para esta ação' });
+    }
+    
+    const client = await pool.connect();
+    try {
+      // Busca as oficinas pendentes de aprovação
+      const result = await client.query(`
+        SELECT w.*, 
+               COALESCE(wd.approval_status, 'pendente') as approval_status
+        FROM workshops w
+        LEFT JOIN workshop_details wd ON w.id = wd.workshop_id
+        WHERE wd.approval_status = 'pendente' OR wd.approval_status IS NULL
+        ORDER BY w.created_at DESC
+      `);
+      
+      res.json(result.rows);
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Erro ao buscar oficinas pendentes:', error);
+    res.status(500).json({ message: 'Erro ao buscar oficinas pendentes', error: (error as Error).message });
+  }
+});
+
 // Exporta as rotas
 export default router;
