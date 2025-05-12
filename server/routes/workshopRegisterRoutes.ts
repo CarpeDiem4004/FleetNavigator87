@@ -45,7 +45,7 @@ router.post('/register', async (req: Request, res: Response) => {
     // Verifica se já existe uma oficina com este CNPJ
     const checkCnpj = await pool.query(`
       SELECT EXISTS (
-        SELECT 1 FROM workshop_details WHERE cnpj = $1
+        SELECT 1 FROM workshops WHERE cnpj = $1
       )
     `, [cnpj]);
     
@@ -71,16 +71,21 @@ router.post('/register', async (req: Request, res: Response) => {
         specialties, 
         observations,
         is_active,
-        status
+        cnpj,
+        email,
+        service_type
       ) VALUES (
-        $1, $2, $3, $4, $5, false, 'pendente'
+        $1, $2, $3, $4, $5, false, $6, $7, $8
       ) RETURNING id
     `, [
       nome,
       telefone,
       endereco, 
-      ramoAtuacao,
-      'Cadastro via formulário público.' // Observações iniciais
+      'Serviços gerais',
+      'Cadastro via formulário público.', // Observações iniciais
+      cnpj,
+      email,
+      ramoAtuacao
     ]);
     
     const workshopId = result.rows[0].id;
@@ -89,20 +94,16 @@ router.post('/register', async (req: Request, res: Response) => {
     await pool.query(`
       INSERT INTO workshop_details (
         workshop_id,
-        cnpj,
-        email,
-        banco,
-        agencia,
-        conta,
-        tipo_conta,
-        status
+        approval_status,
+        bank_name,
+        bank_agency,
+        bank_account,
+        account_type
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, 'pendente'
+        $1, 'pendente', $2, $3, $4, $5
       )
     `, [
       workshopId,
-      cnpj,
-      email,
       banco || null,
       agencia || null,
       conta || null,
