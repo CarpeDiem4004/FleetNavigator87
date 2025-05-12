@@ -64,7 +64,13 @@ class HybridUserService {
    * Mapeia um registro de usuário do banco para um objeto JavaScript
    */
   mapDbUserToObject(dbUser) {
-    return dbUser ? {
+    if (!dbUser) return null;
+    
+    // Log para depuração
+    console.log('[HybridUserService] Mapeando objeto de usuário do banco:', 
+      { ...dbUser, password: '***' });
+    
+    return {
       id: dbUser.id,
       name: dbUser.name,
       email: dbUser.email,
@@ -73,8 +79,8 @@ class HybridUserService {
       baseId: dbUser.base_id,
       basename: dbUser.basename,
       oficinaId: dbUser.oficina_id,
-      isActive: dbUser.is_active || true
-    } : null;
+      isActive: dbUser.is_active !== undefined ? dbUser.is_active : true
+    };
   }
 
   /**
@@ -194,9 +200,14 @@ class HybridUserService {
         password: hashedPassword,
         role: userData.role,
         base_id: userData.baseId || null,
+        basename: userData.basename || null,
         oficina_id: userData.oficinaId || null,
         is_active: userData.isActive !== undefined ? userData.isActive : true
       };
+      
+      // Log para debug do formato de dados
+      console.log('[HybridUserService] Dados normalizados para criação:', 
+        { ...userDataForDb, password: '***' });
       
       let createdUser = null;
       
@@ -204,8 +215,8 @@ class HybridUserService {
       if (this.pgPool) {
         try {
           const query = `
-            INSERT INTO users (name, email, password, role, base_id, oficina_id, is_active)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            INSERT INTO users (name, email, password, role, base_id, basename, oficina_id, is_active)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING *
           `;
           
@@ -215,6 +226,7 @@ class HybridUserService {
             userDataForDb.password,
             userDataForDb.role,
             userDataForDb.base_id,
+            userDataForDb.basename,
             userDataForDb.oficina_id,
             userDataForDb.is_active
           ];
@@ -223,6 +235,8 @@ class HybridUserService {
           
           if (result.rows.length > 0) {
             console.log('[HybridUserService] Usuário criado via PostgreSQL');
+            console.log('[HybridUserService] Dados do usuário criado:', 
+              { ...result.rows[0], password: '***' });
             createdUser = this.mapDbUserToObject(result.rows[0]);
           }
         } catch (pgError) {
@@ -243,6 +257,8 @@ class HybridUserService {
           
           if (data) {
             console.log('[HybridUserService] Usuário criado via Supabase');
+            console.log('[HybridUserService] Dados do usuário criado via Supabase:', 
+              { ...data, password: '***' });
             createdUser = this.mapDbUserToObject(data);
           }
         } catch (supabaseError) {
