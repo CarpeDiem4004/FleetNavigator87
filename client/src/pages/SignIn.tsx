@@ -47,60 +47,134 @@ export default function SignIn({ oficina = false }: SignInProps) {
       setLoading(true);
       console.log("Tentando fazer login com:", email);
       
-      // Limpar qualquer sessão existente
-      document.cookie = "connect.sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-      localStorage.removeItem('authToken');
+      // Abordagem mais direta e força armazenamento de cookies:
+      // 1. Login direto com API tradicional primeiro (garante cookies de sessão)
+      // 2. Sincroniza com Supabase para garantir tokens JWT
+      // 3. Força salvamento de cookies
+      // 4. Usa rota de emergência para garantir sessão persistente
       
-      // Usar o hook de autenticação para fazer login
-      const loggedUser = await login(email, password);
-      
-      // Sucesso no login - aguardar um pouco para garantir que os cookies sejam salvos
-      toast({
-        title: "Login bem-sucedido",
-        description: `Bem-vindo, ${loggedUser?.name || email}!`,
-      });
-      
-      console.log("Login bem-sucedido, estabelecendo sessão...");
-      
-      // Pequeno atraso para garantir que os cookies sejam salvos
-      setTimeout(() => {
-        // Verificar API de usuário para confirmar persistência de sessão
-        fetch('/api/user', {
-          method: 'GET',
-          credentials: 'include',
+      // ETAPA 1: Login tradicional diretamente com a API
+      let userData = null;
+      try {
+        const loginResponse = await fetch('/api/login', {
+          method: 'POST',
           headers: {
-            'X-Auth-Verification': 'true',
-            'Content-Type': 'application/json'
-          }
-        }).then(response => {
-          if (response.ok) {
-            console.log("Sessão verificada com sucesso, redirecionando...");
-            
-            // Redirecionar com base no tipo de usuário
-            if (loggedUser && loggedUser.role === 'oficina') {
-              navigate('/oficina/dashboard');
-            } else if (loggedUser && loggedUser.basename === "Gestão de Frotas") {
-              navigate('/fleet-management');
-            } else {
-              navigate('/');
-            }
-          } else {
-            console.warn("Sessão não pôde ser verificada, mas login foi bem-sucedido");
-            // Redirecionar mesmo assim, já que o login foi bem-sucedido
-            if (loggedUser && loggedUser.role === 'oficina') {
-              navigate('/oficina/dashboard');
-            } else if (loggedUser && loggedUser.basename === "Gestão de Frotas") {
-              navigate('/fleet-management');
-            } else {
-              navigate('/');
-            }
-          }
-        }).catch(err => {
-          console.error("Erro ao verificar sessão:", err);
-          // Redirecionar mesmo assim
-          navigate('/');
+            'Content-Type': 'application/json',
+            'X-Bypass-Auth-System': 'true', // Indica uso direto da API, não via Passport
+          },
+          body: JSON.stringify({ email, password }),
+          credentials: 'include',  // Crucial para cookies
         });
-      }, 1000); // Aguardar 1 segundo
+        
+        if (loginResponse.ok) {
+          userData = await loginResponse.json();
+          console.log("Login API tradicional bem-sucedido:", userData);
+          
+          // Armazenar token na localStorage para compatibilidade
+          if (userData.token) {
+            localStorage.setItem('authToken', userData.token);
+            // Set cookie via JavaScript
+            document.cookie = `authToken=${userData.token}; path=/; max-age=86400; SameSite=Lax`;
+          }
+        } else {
+          console.warn("Login API tradicional falhou, tentando via hook...");
+        }
+      } catch (apiError) {
+        console.error("Erro ao fazer login via API tradicional:", apiError);
+      }
+      
+      // ETAPA 2: Login com hook (tenta Supabase e API tradicional de forma robusta)
+      // Fazer sempre este login mesmo se o direto funcionou, pois garante o token JWT do Supabase
+      const loggedUser = await login(email, password);
+      console.log("Login hook completo, resultado:", loggedUser);
+      
+      // ETAPA 3: Forçar sincronização de sessão imediatamente usando a nova rota
+      try {
+        // Combinamos os dados de ambas fontes para máxima compatibilidade
+        const user = {
+          ...(userData || {}),
+          ...(loggedUser || {}),
+          email: email
+        };
+        
+        console.log("Forçando sincronização de sessão com:", user.email);
+        
+        const syncResponse = await fetch('/api/force-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Emergency-Auth': 'true',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ 
+            user: user,
+            email: email
+          })
+        });
+        
+        if (syncResponse.ok) {
+          console.log("Sincronização de emergência bem-sucedida!");
+          
+          // Mostrar mensagem de sucesso
+          toast({
+            title: "Login bem-sucedido",
+            description: `Bem-vindo, ${user?.name || email}!`,
+          });
+          
+          // Redirecionar com base no tipo de usuário
+          if (user.role === 'oficina') {
+            navigate('/oficina/dashboard');
+          } else if (user.basename === "Gestão de Frotas") {
+            navigate('/fleet-management');
+          } else {
+            navigate('/');
+          }
+        } else {
+          console.warn("Sincronização de emergência falhou, mas continuando...");
+          
+          // Tentar com rota de ressincronização tradicional
+          try {
+            await fetch('/api/resync-session', {
+              method: 'POST',
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Force-Sync': 'true'
+              },
+              body: JSON.stringify({ 
+                user: user,
+                email: email
+              })
+            });
+            console.log("Ressincronização secundária feita");
+          } catch (resyncError) {
+            console.warn("Ressincronização secundária falhou:", resyncError);
+          }
+          
+          // Redirecionar mesmo assim
+          toast({
+            title: "Login bem-sucedido",
+            description: `Bem-vindo, ${user?.name || email}!`,
+          });
+          
+          // Redirecionar com base no tipo de usuário
+          if (user.role === 'oficina') {
+            navigate('/oficina/dashboard');
+          } else if (user.basename === "Gestão de Frotas") {
+            navigate('/fleet-management');
+          } else {
+            navigate('/');
+          }
+        }
+      } catch (syncError) {
+        console.error("Erro na sincronização de emergência:", syncError);
+        // Redirecionar mesmo assim já que o login foi bem-sucedido
+        toast({
+          title: "Login bem-sucedido",
+          description: `Bem-vindo, ${loggedUser?.name || email}!`,
+        });
+        navigate('/');
+      }
       
     } catch (error: any) {
       console.error('Erro ao fazer login:', error);

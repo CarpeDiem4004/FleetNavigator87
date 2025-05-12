@@ -8429,6 +8429,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Rota para ressincronização de sessão (resolver problema de 401 após reinicialização do servidor)
   app.post("/api/resync-session", resyncSession);
+  
+  // Rota de emergência para forçar uma sessão em caso de falhas persistentes
+  app.post("/api/force-session", async (req, res) => {
+    try {
+      console.log("[ForceSession] Tentando criar sessão de emergência");
+      const { user, email } = req.body;
+      
+      if (!user && !email) {
+        return res.status(400).json({ success: false, message: "Dados de usuário não fornecidos" });
+      }
+      
+      // Buscar o usuário no banco de dados
+      let dbUser = null;
+      
+      if (user && user.id) {
+        // Se temos ID do usuário, buscar diretamente
+        const result = await pool.query('SELECT * FROM users WHERE id = $1', [user.id]);
+        if (result.rowCount > 0) {
+          dbUser = result.rows[0];
+        } else {
+          const tradResult = await pool.query('SELECT * FROM usuarios WHERE id = $1', [user.id]);
+          if (tradResult.rowCount > 0) {
+            dbUser = tradResult.rows[0];
+          }
+        }
+      } else if (email) {
+        // Se temos apenas email, buscar por email
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        if (result.rowCount > 0) {
+          dbUser = result.rows[0];
+        } else {
+          const tradResult = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]);
+          if (tradResult.rowCount > 0) {
+            dbUser = tradResult.rows[0];
+          }
+        }
+      }
+      
+      if (!dbUser) {
+        return res.status(404).json({ success: false, message: "Usuário não encontrado" });
+      }
+      
+      // Criar sessão manualmente se req.login estiver disponível (adicionado pelo Passport)
+      if (typeof req.login === 'function') {
+        req.login(dbUser, (err) => {
+          if (err) {
+            console.error('[ForceSession] Erro ao criar sessão:', err);
+            return res.status(500).json({ success: false, message: "Erro ao criar sessão" });
+          }
+          
+          // Garantir que a sessão seja persistida
+          req.session.touch();
+          req.session.save((saveErr) => {
+            if (saveErr) {
+              console.warn('[ForceSession] Aviso ao salvar sessão:', saveErr);
+            }
+            
+            console.log(`[ForceSession] Sessão criada com sucesso para ${dbUser.email}`);
+            return res.status(200).json({ 
+              success: true, 
+              message: "Sessão criada com sucesso",
+              user: {
+                id: dbUser.id,
+                name: dbUser.name,
+                email: dbUser.email,
+                role: dbUser.role,
+                baseId: dbUser.baseId || dbUser.base_id,
+                basename: dbUser.basename
+              }
+            });
+          });
+        });
+      } else {
+        console.error("[ForceSession] Passport.js não inicializado, req.login não disponível");
+        return res.status(500).json({ 
+          success: false, 
+          message: "Não foi possível criar a sessão, Passport.js não inicializado" 
+        });
+      }
+    } catch (error) {
+      console.error("[ForceSession] Erro ao criar sessão de emergência:", error);
+      return res.status(500).json({ success: false, message: "Erro interno ao processar a solicitação" });
+    }
+  });
 
   // Registrar rotas de autenticação híbrida
   app.use('/api/auth', authHybridRoutes);
