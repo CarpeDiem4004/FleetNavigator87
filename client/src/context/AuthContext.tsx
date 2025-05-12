@@ -89,7 +89,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           
           // Verificar se precisamos sincronizar com a sessão tradicional
           try {
-            const syncResponse = await fetch('/api/resync-session', {
+            const syncResponse = await fetch('/api/resync-session-jwt', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -273,7 +273,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             // Sincronizar com sistema tradicional
             try {
               console.log("Sincronizando sessão tradicional com Supabase...");
-              const syncResponse = await fetch('/api/resync-session', {
+              const syncResponse = await fetch('/api/resync-session-jwt', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',

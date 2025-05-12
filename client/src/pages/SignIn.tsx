@@ -134,7 +134,7 @@ export default function SignIn({ oficina = false }: SignInProps) {
           
           // Tentar com rota de ressincronização tradicional
           try {
-            await fetch('/api/resync-session', {
+            await fetch('/api/resync-session-jwt', {
               method: 'POST',
               credentials: 'include',
               headers: {

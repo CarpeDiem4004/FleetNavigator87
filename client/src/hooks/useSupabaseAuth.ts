@@ -233,7 +233,7 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
       const jwt = session.access_token;
       
       // Chamar a API para ressincronizar a sessão
-      const response = await fetch('/api/resync-session', {
+      const response = await fetch('/api/resync-session-jwt', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
