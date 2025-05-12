@@ -76,14 +76,19 @@ export const isFleetManager = (req: Request, res: Response, next: NextFunction) 
     });
   }
 
+  console.log('isFleetManager middleware - Verificando permissão:', req.user);
+
   // Note que o papel (role) 'gestor_frota' é específico para gestores de frota
-  if (req.user.role !== 'gestor_frota' && req.user.role !== 'admin') {
+  // Aceita também 'admin' e 'gestor' para compatibilidade
+  if (req.user.role !== 'gestor_frota' && req.user.role !== 'admin' && req.user.role !== 'gestor') {
+    console.log('isFleetManager middleware - Acesso negado, papel:', req.user.role);
     return res.status(403).json({ 
       success: false, 
       message: 'Acesso restrito a gestores de frota' 
     });
   }
 
+  console.log('isFleetManager middleware - Acesso permitido, papel:', req.user.role);
   next();
 };
 

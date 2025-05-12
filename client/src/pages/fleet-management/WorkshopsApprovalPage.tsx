@@ -70,20 +70,37 @@ export default function WorkshopsApprovalPage() {
   const queryClient = useQueryClient();
 
   // Consulta para buscar oficinas pendentes usando apiRequest da queryClient
-  const { data: workshops = [], isLoading, error } = useQuery({
+  const { data: workshops = [], isLoading, error, refetch } = useQuery({
     queryKey: ['/api/workshops/pending'],
     // Utilizamos diretamente a função pré-configurada para adicionar o token
     staleTime: 1000 * 60, // 1 minuto
     retry: 3,
-    // Em ambiente de desenvolvimento, mockamos dados para testes
-    initialData: [
-      // Oficinas pendentes no banco de dados
-      {"id":1,"name":"oficina teste","email":"admin@muricionfleet.com","phone":"(11) 99999-9999","address":"tetste osasoco","cnpj":"24.657.266/0001-70","service_type":"mecanica","created_at":"2025-05-12T13:59:34.325Z","approval_status":"pendente"},
-      {"id":2,"name":"teste","email":"admin@muricionfleet.com","phone":"(11) 99999-9999","address":"teste osasco","cnpj":"24.657.266/0001-56","service_type":"mecanica","created_at":"2025-05-12T15:00:36.243Z","approval_status":"pendente"},
-      {"id":3,"name":"teste","email":"admin@muricionfleet.com","phone":"(11) 99999-9999","address":"teste osasco","cnpj":"24.657.266/0001-45","service_type":"mecanica","created_at":"2025-05-12T15:16:40.965Z","approval_status":"pendente"},
-      {"id":4,"name":"oficina teste","email":"admin@muricionfleet.com","phone":"(11) 99999-9999","address":"teste osasco","cnpj":"24.657.266/0001-55","service_type":"mecanica","created_at":"2025-05-12T15:23:05.884Z","approval_status":"pendente"},
-      {"id":5,"name":"teste","email":"admin@muricionfleet.com","phone":"(11) 99999-9999","address":"teste osasco","cnpj":"24.657.266/0001-33","service_type":"mecanica","created_at":"2025-05-12T15:30:00.065Z","approval_status":"pendente"}
-    ]
+    queryFn: async () => {
+      try {
+        console.log('Buscando oficinas pendentes...');
+        const token = localStorage.getItem('authToken');
+        const response = await fetch('/api/workshops/pending', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          console.error('Erro na resposta:', response.status);
+          throw new Error('Falha ao buscar oficinas pendentes');
+        }
+        
+        const data = await response.json();
+        console.log('Oficinas pendentes recebidas:', data);
+        return data;
+      } catch (error) {
+        console.error('Erro ao buscar oficinas pendentes:', error);
+        throw error;
+      }
+    },
+    // Em ambiente de desenvolvimento, mockamos dados para testes se necessário
+    initialData: []
   });
 
   // Filtra as oficinas com segurança - protege contra valores nulos ou indefinidos
@@ -357,6 +374,15 @@ export default function WorkshopsApprovalPage() {
           <div className="text-sm text-muted-foreground">
             Total de solicitações pendentes: {filteredWorkshops?.filter((w: Workshop) => w.approval_status === 'pendente').length || 0}
           </div>
+          <Button 
+            onClick={() => refetch()} 
+            variant="outline" 
+            size="sm"
+            className="flex items-center gap-1"
+          >
+            <RefreshCw className="h-4 w-4 mr-1" />
+            Atualizar Lista
+          </Button>
         </CardFooter>
       </Card>
 
