@@ -26,6 +26,7 @@ router.get('/pending', isAuthenticated, isFleetManager, async (req: Request, res
              wd.bank_account, wd.account_type
       FROM workshops w
       LEFT JOIN workshop_details wd ON w.id = wd.workshop_id
+      WHERE COALESCE(wd.approval_status, 'pendente') = 'pendente'
       ORDER BY w.created_at DESC
     `);
 
