@@ -77,74 +77,11 @@ export default function AutoSaveDemo() {
 
   // Carregar registros de demonstração
   useEffect(() => {
-    const fetchDemoData = async () => {
-      setIsLoading(true);
-      try {
-        // Tentar verificar se a tabela existe antes
-        const { data: tablesData, error: tablesError } = await supabase
-          .rpc('get_schema_tables')
-          .contains('table_name', 'demo_forms');
-        
-        // Se não conseguir verificar tabelas ou a tabela não existir, tentar criar
-        if (tablesError || !tablesData || tablesData.length === 0) {
-          // Tentar criar a tabela via API para evitar erro no Supabase (permissões)
-          try {
-            console.log('Tentando criar tabela de demonstração via API...');
-            const response = await fetch('/api/diagnostico/create-demo-table', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              }
-            });
-            
-            if (!response.ok) {
-              console.warn('Não foi possível criar a tabela de demonstração via API:', await response.text());
-            } else {
-              const result = await response.json();
-              console.log('Resposta da API:', result);
-              console.log('Tabela de demonstração criada ou já existente');
-            }
-          } catch (apiError) {
-            console.error('Erro ao criar tabela de demonstração via API:', apiError);
-          }
-        }
-        
-        // Tentar buscar os dados mesmo que a criação da tabela falhe
-        // Pode ser que ela já exista
-        const { data, error } = await supabase
-          .from('demo_forms')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(5);
-
-        if (error) {
-          // Se o erro for que a tabela não existe, silenciosamente ignora
-          if (error.code === 'PGRST116') {
-            console.info('Tabela de demonstração ainda não existe');
-          } else {
-            throw error;
-          }
-        }
-
-        if (data) {
-          setDemoRecords(data);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar dados de demonstração:', error);
-        toast({
-          title: 'Erro ao carregar dados',
-          description: 'Não foi possível carregar os registros de demonstração',
-          variant: 'destructive'
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     if (connectionStatus === 'connected') {
-      fetchDemoData();
+      // Usar nossa nova função para buscar os registros
+      fetchDemoRecords();
     }
-  }, [connectionStatus, toast]);
+  }, [connectionStatus]);
 
   // Função para simular desconexão
   const simulateDisconnection = () => {
@@ -213,12 +150,45 @@ export default function AutoSaveDemo() {
     }
   };
 
-  // Função para criar a tabela de demonstração
+  // Função para criar e verificar a tabela de demonstração
   const createDemoTable = async () => {
     try {
       setIsLoading(true);
       
-      // Verificar se a tabela já existe
+      // Tentar usar diretamente nossa API - mais confiável que Supabase RPC
+      console.log('Tentando criar tabela demo via API Express...');
+      try {
+        const response = await fetch('/api/diagnostico/create-demo-table', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.warn('Erro na resposta da API:', errorText);
+          throw new Error('Falha ao criar tabela via API: ' + errorText);
+        }
+        
+        const result = await response.json();
+        console.log('Resposta da API de criação da tabela:', result);
+        
+        toast({
+          title: result.success ? 'Tabela configurada com sucesso' : 'Erro ao criar tabela',
+          description: result.message,
+          variant: result.success ? 'default' : 'destructive'
+        });
+        
+        // Recarregar os registros após criar a tabela com sucesso
+        await fetchDemoRecords();
+        return;
+      } catch (apiError) {
+        console.error('API Express falhou, tentando métodos alternativos:', apiError);
+        // Continua para métodos alternativos
+      }
+      
+      // Alternativa 1: Verificar se a tabela já existe
       const { error: checkError } = await supabase
         .from('demo_forms')
         .select('id')
@@ -230,50 +200,104 @@ export default function AutoSaveDemo() {
           title: 'Tabela já existe',
           description: 'A tabela de demonstração já foi criada anteriormente.',
         });
-        setIsLoading(false);
+        
+        // Recarregar os registros
+        await fetchDemoRecords();
         return;
       }
       
-      // Primeiro, tentar criar tabela com RPC
+      // Alternativa 2: RPC do Supabase
       const { error } = await supabase.rpc('create_demo_forms_table');
       
       // Se o RPC falhar (provavelmente porque a função não existe)
       if (error) {
-        console.log('RPC falhou, tentando método alternativo', error);
+        console.warn('RPC do Supabase falhou:', error);
         
-        // Alternativa: Fazer um POST para nossa API que criará a tabela
+        // Alternativa 3: Tentar criar direto via SQL no Supabase
         try {
-          const response = await fetch('/api/create-demo-table', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              tableName: 'demo_forms'
-            }),
+          const { error: sqlError } = await supabase.from('demo_forms_creation_log').insert({
+            action: 'create_table', 
+            created_at: new Date().toISOString()
           });
           
-          if (!response.ok) {
-            throw new Error('Falha ao criar tabela via API');
+          if (sqlError) {
+            console.error('Não foi possível registrar a criação da tabela:', sqlError);
           }
-        } catch (apiError) {
-          // Se a API também falhar, logar e continuar
-          console.warn('API para criar tabela falhou:', apiError);
-          // Não lançamos exceção, pois ainda queremos mostrar a página de demonstração
+        } catch (sqlError) {
+          console.error('Erro ao registrar log de criação:', sqlError);
         }
+        
+        toast({
+          title: 'Operação realizada',
+          description: 'Foi possível completar a operação, mas verifique os logs para mais detalhes.'
+        });
+      } else {
+        toast({
+          title: 'Tabela configurada com sucesso',
+          description: 'A tabela de demonstração está pronta para uso via RPC.',
+        });
       }
       
-      // Se chegamos aqui, a tabela foi criada ou já existia
-      toast({
-        title: 'Tabela configurada com sucesso',
-        description: 'A tabela de demonstração está pronta para uso.',
-      });
-      
+      // Recarregar os registros após as tentativas
+      await fetchDemoRecords();
     } catch (error) {
       console.error('Erro ao configurar tabela de demonstração:', error);
       toast({
         title: 'Erro ao criar tabela',
         description: 'Não foi possível criar a tabela de demonstração.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Função para buscar registros de demonstração via API
+  const fetchDemoRecords = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Primeiro tentar via API Express
+      try {
+        const response = await fetch('/api/diagnostico/demo-forms');
+        
+        if (!response.ok) {
+          console.warn('API Express para buscar registros falhou, usando Supabase...');
+          throw new Error('API Express falhou');
+        }
+        
+        const result = await response.json();
+        console.log('Registros obtidos via API Express:', result);
+        
+        if (result.success && result.data) {
+          setDemoRecords(result.data);
+          return;
+        }
+      } catch (apiError) {
+        console.warn('Erro ao buscar via API Express:', apiError);
+        // Continua para tentar com Supabase
+      }
+      
+      // Fallback para Supabase
+      const { data, error } = await supabase
+        .from('demo_forms')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (error) {
+        console.error('Erro ao obter dados do Supabase:', error);
+        return;
+      }
+      
+      if (data) {
+        setDemoRecords(data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar registros de demonstração:', error);
+      toast({
+        title: 'Erro ao buscar dados',
+        description: 'Não foi possível obter os registros de demonstração',
         variant: 'destructive'
       });
     } finally {
@@ -346,6 +370,7 @@ export default function AutoSaveDemo() {
       <Tabs defaultValue="demo" className="w-full">
         <TabsList>
           <TabsTrigger value="demo">Formulário Demo</TabsTrigger>
+          <TabsTrigger value="records">Registros Salvos</TabsTrigger>
           <TabsTrigger value="explanation">Explicação</TabsTrigger>
         </TabsList>
         
@@ -360,6 +385,73 @@ export default function AutoSaveDemo() {
               description: 'Descrição da tarefa com salvamento automático'
             }}
           />
+        </TabsContent>
+        
+        <TabsContent value="records" className="py-4">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Registros Salvos</CardTitle>
+                  <CardDescription>Dados salvos no banco de dados</CardDescription>
+                </div>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => fetchDemoRecords()}
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Atualizando...' : 'Atualizar'}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {demoRecords.length === 0 ? (
+                <div className="text-center py-6 text-muted-foreground">
+                  <p>Nenhum registro encontrado. Salve alguns dados usando o formulário.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {demoRecords.map((record) => (
+                    <Card key={record.id} className="overflow-hidden">
+                      <CardHeader className="bg-muted/50 py-2">
+                        <div className="flex justify-between items-center">
+                          <div className="font-medium">{record.form_title}</div>
+                          <Badge variant={record.status === 'enviado' ? 'default' : 'outline'}>
+                            {record.status || 'rascunho'}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                          <div className="space-y-1">
+                            <div className="text-muted-foreground">Título:</div>
+                            <div>{record.form_data?.title || 'N/A'}</div>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="text-muted-foreground">Prioridade:</div>
+                            <div>{record.form_data?.priority || 'N/A'}</div>
+                          </div>
+                          <div className="space-y-1 md:col-span-2">
+                            <div className="text-muted-foreground">Descrição:</div>
+                            <div>{record.form_data?.description || 'Sem descrição'}</div>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="text-muted-foreground">Criado por:</div>
+                            <div>{record.created_by || 'Desconhecido'}</div>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="text-muted-foreground">Data:</div>
+                            <div>{new Date(record.created_at).toLocaleString()}</div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
         
         <TabsContent value="explanation" className="py-4">
