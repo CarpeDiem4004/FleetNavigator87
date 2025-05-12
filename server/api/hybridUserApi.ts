@@ -253,7 +253,7 @@ router.post('/', verifyJwt, async (req: any, res) => {
 
 /**
  * Rota para atualizar um usuário
- * PUT /api/hybrid/users/:id
+ * PUT /api/hybrid/users/:id (caminho simplificado: /:id)
  */
 router.put('/:id', verifyJwt, async (req: any, res) => {
   try {
@@ -335,7 +335,7 @@ router.put('/:id', verifyJwt, async (req: any, res) => {
 
 /**
  * Rota para excluir um usuário
- * DELETE /api/hybrid/users/:id
+ * DELETE /api/hybrid/users/:id (caminho simplificado: /:id)
  */
 router.delete('/:id', verifyJwt, async (req: any, res) => {
   try {
@@ -384,7 +384,7 @@ router.delete('/:id', verifyJwt, async (req: any, res) => {
 
 /**
  * Rota para atualizar status do usuário (ativo/inativo)
- * PATCH /api/hybrid/users/:id/status
+ * PATCH /api/hybrid/users/:id/status (caminho simplificado: /:id/status)
  */
 router.patch('/:id/status', verifyJwt, async (req: any, res) => {
   try {
@@ -434,7 +434,7 @@ router.patch('/:id/status', verifyJwt, async (req: any, res) => {
 
 /**
  * Rota para redefinir a senha de um usuário
- * POST /api/hybrid/users/:id/reset-password
+ * POST /api/hybrid/users/:id/reset-password (caminho simplificado: /:id/reset-password)
  */
 router.post('/:id/reset-password', verifyJwt, async (req: any, res) => {
   try {
