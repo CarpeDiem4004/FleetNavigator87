@@ -17,7 +17,7 @@ router.use(isAuth);
 
 /**
  * Rota para verificar status do sistema de persistência
- * GET /api/resilient/status
+ * GET /api/resilient/status (caminho simplificado: /status)
  */
 router.get('/status', async (_req: Request, res: Response) => {
   try {
@@ -42,7 +42,7 @@ router.get('/status', async (_req: Request, res: Response) => {
 
 /**
  * Rota para forçar processamento de operações pendentes
- * POST /api/resilient/process
+ * POST /api/resilient/process (caminho simplificado: /process)
  */
 router.post('/process', async (_req: Request, res: Response) => {
   try {
@@ -68,8 +68,8 @@ router.post('/process', async (_req: Request, res: Response) => {
 // =============================================================================
 
 /**
- * Rota para listar multas
- * GET /api/resilient/multas
+ * Rota para listar multas com filtros opcionais
+ * GET /api/resilient/multas (caminho simplificado: /multas)
  */
 router.get('/multas', async (req: Request, res: Response) => {
   try {
@@ -112,7 +112,7 @@ router.get('/multas', async (req: Request, res: Response) => {
 
 /**
  * Rota para obter uma multa pelo ID
- * GET /api/resilient/multas/:id
+ * GET /api/resilient/multas/:id (caminho simplificado: /multas/:id)
  */
 router.get('/multas/:id', async (req: Request, res: Response) => {
   try {
@@ -146,7 +146,7 @@ router.get('/multas/:id', async (req: Request, res: Response) => {
 
 /**
  * Rota para registrar uma nova multa
- * POST /api/resilient/multas
+ * POST /api/resilient/multas (caminho simplificado: /multas)
  */
 router.post('/multas', async (req: Request, res: Response) => {
   try {
@@ -171,7 +171,7 @@ router.post('/multas', async (req: Request, res: Response) => {
 
 /**
  * Rota para atualizar uma multa
- * PUT /api/resilient/multas/:id
+ * PUT /api/resilient/multas/:id (caminho simplificado: /multas/:id)
  */
 router.put('/multas/:id', async (req: Request, res: Response) => {
   try {
@@ -197,7 +197,7 @@ router.put('/multas/:id', async (req: Request, res: Response) => {
 
 /**
  * Rota para atualizar o status do ciclo de vida de uma multa
- * PUT /api/resilient/multas/:id/status
+ * PUT /api/resilient/multas/:id/status (caminho simplificado: /multas/:id/status)
  */
 router.put('/multas/:id/status', async (req: Request, res: Response) => {
   try {
