@@ -8433,6 +8433,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rota para ressincronização de sessão (resolver problema de 401 após reinicialização do servidor)
   app.post("/api/resync-session", resyncSession);
   
+  // Rota específica para ressincronização de token JWT
+  app.post("/api/resync-session-jwt", async (req, res) => {
+    console.log("[Resync JWT] Iniciando ressincronização de token JWT");
+    
+    try {
+      // Verificar se existe um token JWT no cabeçalho Authorization
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        console.log("[Resync JWT] Sem token JWT no cabeçalho");
+        return res.status(401).json({ message: "Token JWT ausente" });
+      }
+      
+      // Extrair o token
+      const token = authHeader.split(' ')[1];
+      console.log(`[Resync JWT] Token recebido (parcial): ${token.substring(0, 10)}...`);
+      
+      // Verificar se há dados do usuário no corpo
+      const { user, email } = req.body;
+      
+      // Se não temos o email ou é diferente do token, verificar o token diretamente
+      if (!email) {
+        console.log("[Resync JWT] Email não fornecido, verificando token diretamente");
+        
+        try {
+          // Verificar token JWT com Supabase
+          const { createClient } = await import('@supabase/supabase-js');
+          const supabase = createClient(
+            process.env.VITE_SUPABASE_URL || '',
+            process.env.VITE_SUPABASE_SERVICE_KEY || ''
+          );
+          
+          // Obter detalhes do usuário pelo JWT
+          const { data, error } = await supabase.auth.getUser(token);
+          
+          if (error || !data.user) {
+            console.error("[Resync JWT] Erro ao verificar token com Supabase:", error);
+            return res.status(401).json({ message: "Token JWT inválido", error });
+          }
+          
+          // Buscar o usuário pelo email no banco de dados
+          const userEmail = data.user.email;
+          console.log(`[Resync JWT] Email extraído do token: ${userEmail}`);
+          
+          const { rows } = await pool.query(
+            'SELECT * FROM users WHERE email = $1',
+            [userEmail]
+          );
+          
+          if (rows.length === 0) {
+            console.log(`[Resync JWT] Usuário não encontrado para o email: ${userEmail}`);
+            return res.status(404).json({ message: "Usuário não encontrado" });
+          }
+          
+          const dbUser = rows[0];
+          
+          // Armazenar na sessão
+          req.login(dbUser, async (loginErr) => {
+            if (loginErr) {
+              console.error('[Resync JWT] Erro ao salvar na sessão:', loginErr);
+              return res.status(500).json({ message: "Erro ao sincronizar sessão" });
+            }
+            
+            console.log(`[Resync JWT] Usuário ${dbUser.email} ressincronizado com sucesso`);
+            
+            // Registrar o login
+            try {
+              await pool.query(
+                'UPDATE users SET "lastLogin" = NOW() WHERE id = $1',
+                [dbUser.id]
+              );
+            } catch (updateErr) {
+              console.warn('[Resync JWT] Erro ao atualizar lastLogin:', updateErr);
+            }
+            
+            // Responder com sucesso e detalhes de usuário
+            return res.status(200).json({
+              message: "Sessão ressincronizada com sucesso",
+              user: dbUser
+            });
+          });
+          
+        } catch (supabaseError) {
+          console.error('[Resync JWT] Erro ao verificar token com Supabase:', supabaseError);
+          return res.status(500).json({ message: "Erro interno ao verificar token" });
+        }
+      } else {
+        // Método alternativo: buscar o usuário diretamente pelo email fornecido
+        console.log(`[Resync JWT] Email fornecido: ${email}, buscando no banco`);
+        
+        try {
+          const { rows } = await pool.query(
+            'SELECT * FROM users WHERE email = $1',
+            [email]
+          );
+          
+          if (rows.length === 0) {
+            console.log(`[Resync JWT] Usuário não encontrado para o email: ${email}`);
+            return res.status(404).json({ message: "Usuário não encontrado" });
+          }
+          
+          const dbUser = rows[0];
+          
+          // Armazenar na sessão
+          req.login(dbUser, async (loginErr) => {
+            if (loginErr) {
+              console.error('[Resync JWT] Erro ao salvar na sessão:', loginErr);
+              return res.status(500).json({ message: "Erro ao sincronizar sessão" });
+            }
+            
+            console.log(`[Resync JWT] Usuário ${dbUser.email} ressincronizado com sucesso`);
+            
+            // Registrar o login
+            try {
+              await pool.query(
+                'UPDATE users SET "lastLogin" = NOW() WHERE id = $1',
+                [dbUser.id]
+              );
+            } catch (updateErr) {
+              console.warn('[Resync JWT] Erro ao atualizar lastLogin:', updateErr);
+            }
+            
+            // Responder com sucesso e detalhes de usuário
+            return res.status(200).json({
+              message: "Sessão ressincronizada com sucesso",
+              user: dbUser
+            });
+          });
+          
+        } catch (dbError) {
+          console.error('[Resync JWT] Erro ao buscar usuário:', dbError);
+          return res.status(500).json({ message: "Erro ao buscar usuário" });
+        }
+      }
+    } catch (error) {
+      console.error('[Resync JWT] Erro geral:', error);
+      return res.status(500).json({ message: "Erro interno no servidor" });
+    }
+  });
+
   // Rota de emergência para forçar uma sessão em caso de falhas persistentes
   app.post("/api/force-session", async (req, res) => {
     try {

@@ -127,6 +127,9 @@ import PostoAcessoDireto from "@/pages/PostoAcessoDireto";
 import LinksExternosPostos from "@/pages/postos/LinksExternosPostos";
 
 function App() {
+  // Ativar o hook de injeção automática de token JWT em todas as requisições fetch
+  useFetchWithAuth();
+  
   return (
     <QueryClientProvider client={queryClient}>
       <SupabaseAuthProvider>
