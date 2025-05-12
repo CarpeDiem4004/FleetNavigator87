@@ -15,7 +15,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 const router = express.Router();
 
 // Middleware para verificar JWT
-const verifyToken = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+const verifyToken = (req: any, res: express.Response, next: express.NextFunction) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) {
     return res.status(401).json({ message: 'Token não fornecido' });
@@ -23,7 +23,7 @@ const verifyToken = (req: express.Request, res: express.Response, next: express.
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secretpadrao');
-    req.user = decoded;
+    req.user = decoded as any;
     next();
   } catch (error) {
     return res.status(401).json({ message: 'Token inválido' });
