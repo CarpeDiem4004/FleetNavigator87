@@ -12,10 +12,10 @@ const router = express.Router();
 const userService = getHybridUserService();
 
 /**
- * Middleware para verificar autenticação JWT
- * Verifica se o token JWT é válido e adiciona o usuário ao objeto de requisição
+ * Middleware para verificar autenticação JWT ou de Sessão
+ * Verifica o token JWT ou a sessão e adiciona o usuário ao objeto de requisição
  */
-const verifyJwtAuth = async (req, res, next) => {
+const verifyHybridAuth = async (req, res, next) => {
   try {
     // Registrar informações da requisição para debug
     console.log('[HybridAPI] Requisição recebida:', {
@@ -25,11 +25,19 @@ const verifyJwtAuth = async (req, res, next) => {
         authorization: req.headers.authorization ? 'Presente' : 'Ausente',
         'content-type': req.headers['content-type'],
         'user-agent': req.headers['user-agent'],
+        cookie: req.headers.cookie ? 'Presente' : 'Ausente'
       },
       ip: req.ip,
+      isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : 'não disponível'
     });
     
-    // Extrair token do cabeçalho de autorização
+    // Etapa 1: Verificar se o usuário já está autenticado via sessão
+    if (req.isAuthenticated && req.isAuthenticated()) {
+      console.log(`[HybridAPI] Usuário já autenticado via sessão: ${req.user.id} (${req.user.email})`);
+      return next();
+    }
+    
+    // Etapa 2: Tentar autenticação via JWT
     const authHeader = req.headers.authorization;
     
     if (!authHeader) {
@@ -77,7 +85,7 @@ const verifyJwtAuth = async (req, res, next) => {
     // Continuar para o próximo middleware/rota
     next();
   } catch (error) {
-    console.error('[HybridAPI] Erro ao verificar token JWT:', error);
+    console.error('[HybridAPI] Erro ao verificar autenticação:', error);
     return res.status(401).json({
       success: false,
       message: 'Erro ao verificar autenticação',
@@ -90,7 +98,7 @@ const verifyJwtAuth = async (req, res, next) => {
  * Rota para criar um novo usuário
  * POST /api/hybrid/users
  */
-router.post('/api/hybrid/users', verifyJwtAuth, async (req, res) => {
+router.post('/api/hybrid/users', verifyHybridAuth, async (req, res) => {
   try {
     console.log('[HybridAPI] Requisição para criar usuário recebida');
     
@@ -159,7 +167,7 @@ router.post('/api/hybrid/users', verifyJwtAuth, async (req, res) => {
  * Rota para obter um usuário pelo ID
  * GET /api/hybrid/users/:id
  */
-router.get('/api/hybrid/users/:id', verifyJwtAuth, async (req, res) => {
+router.get('/api/hybrid/users/:id', verifyHybridAuth, async (req, res) => {
   try {
     const { id } = req.params;
     console.log(`[HybridAPI] Buscando usuário com ID: ${id}`);
@@ -194,7 +202,7 @@ router.get('/api/hybrid/users/:id', verifyJwtAuth, async (req, res) => {
  * Rota para buscar usuário por email
  * GET /api/hybrid/users/email/:email
  */
-router.get('/api/hybrid/users/email/:email', verifyJwtAuth, async (req, res) => {
+router.get('/api/hybrid/users/email/:email', verifyHybridAuth, async (req, res) => {
   try {
     const { email } = req.params;
     console.log(`[HybridAPI] Buscando usuário com email: ${email}`);
@@ -229,7 +237,7 @@ router.get('/api/hybrid/users/email/:email', verifyJwtAuth, async (req, res) => 
  * Rota para listar todos os usuários
  * GET /api/hybrid/users
  */
-router.get('/api/hybrid/users', verifyJwtAuth, async (req, res) => {
+router.get('/api/hybrid/users', verifyHybridAuth, async (req, res) => {
   try {
     console.log('[HybridAPI] Listando usuários');
     
@@ -268,7 +276,7 @@ router.get('/api/hybrid/users', verifyJwtAuth, async (req, res) => {
  * Rota para atualizar um usuário
  * PUT /api/hybrid/users/:id
  */
-router.put('/api/hybrid/users/:id', verifyJwtAuth, async (req, res) => {
+router.put('/api/hybrid/users/:id', verifyHybridAuth, async (req, res) => {
   try {
     const { id } = req.params;
     console.log(`[HybridAPI] Atualizando usuário com ID: ${id}`);
@@ -327,7 +335,7 @@ router.put('/api/hybrid/users/:id', verifyJwtAuth, async (req, res) => {
  * Rota para redefinir a senha de um usuário
  * POST /api/hybrid/users/:id/reset-password
  */
-router.post('/api/hybrid/users/:id/reset-password', verifyJwtAuth, async (req, res) => {
+router.post('/api/hybrid/users/:id/reset-password', verifyHybridAuth, async (req, res) => {
   try {
     const { id } = req.params;
     console.log(`[HybridAPI] Redefinindo senha para usuário com ID: ${id}`);
@@ -366,7 +374,7 @@ router.post('/api/hybrid/users/:id/reset-password', verifyJwtAuth, async (req, r
  * Rota para excluir um usuário
  * DELETE /api/hybrid/users/:id
  */
-router.delete('/api/hybrid/users/:id', verifyJwtAuth, async (req, res) => {
+router.delete('/api/hybrid/users/:id', verifyHybridAuth, async (req, res) => {
   try {
     const { id } = req.params;
     console.log(`[HybridAPI] Excluindo usuário com ID: ${id}`);
@@ -462,7 +470,7 @@ router.post('/api/hybrid/auth/login', async (req, res) => {
  * Rota para verificar se um token JWT é válido
  * GET /api/hybrid/auth/verify
  */
-router.get('/api/hybrid/auth/verify', verifyJwtAuth, (req, res) => {
+router.get('/api/hybrid/auth/verify', verifyHybridAuth, (req, res) => {
   // Se chegou aqui, o token é válido e o usuário está no req.user
   const user = req.user;
   console.log(`[HybridAPI] Token verificado com sucesso para usuário: ${user.id} (${user.email})`);
