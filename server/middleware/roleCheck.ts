@@ -1,13 +1,18 @@
+/**
+ * Middleware para verificação de papéis (roles) de usuários
+ * Este middleware verifica se o usuário autenticado tem o papel necessário para acessar determinados recursos
+ */
+
 import { Request, Response, NextFunction } from 'express';
 import { AuthenticatedUser } from '../types/user';
 
-// Extend a interface de Request para incluir o usuário autenticado
+// Estende a interface Request para incluir o usuário autenticado
 declare global {
-  namespace Express {
-    interface Request {
-      user?: AuthenticatedUser;
+    namespace Express {
+        interface Request {
+            user?: AuthenticatedUser;
+        }
     }
-  }
 }
 
 /**
@@ -18,23 +23,23 @@ declare global {
  */
 export const roleCheck = (roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    // Verifica se existe um usuário autenticado
+    // Verifica se há um usuário autenticado
     if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Usuário não autenticado'
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Não autenticado' 
       });
     }
 
     // Verifica se o papel do usuário está na lista de papéis permitidos
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        message: 'Acesso negado: permissão insuficiente'
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Acesso não autorizado. Papel requerido: ' + roles.join(' ou ') 
       });
     }
 
-    // Usuário tem permissão, continua
+    // Se passar por todas as verificações, prossegue para o próximo middleware
     next();
   };
 };
@@ -44,16 +49,16 @@ export const roleCheck = (roles: string[]) => {
  */
 export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
   if (!req.user) {
-    return res.status(401).json({
-      success: false,
-      message: 'Usuário não autenticado'
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Não autenticado' 
     });
   }
 
   if (req.user.role !== 'admin') {
-    return res.status(403).json({
-      success: false,
-      message: 'Acesso negado: apenas administradores podem acessar esse recurso'
+    return res.status(403).json({ 
+      success: false, 
+      message: 'Acesso restrito a administradores' 
     });
   }
 
@@ -65,16 +70,17 @@ export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
  */
 export const isFleetManager = (req: Request, res: Response, next: NextFunction) => {
   if (!req.user) {
-    return res.status(401).json({
-      success: false,
-      message: 'Usuário não autenticado'
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Não autenticado' 
     });
   }
 
+  // Note que o papel (role) 'gestor_frota' é específico para gestores de frota
   if (req.user.role !== 'gestor_frota' && req.user.role !== 'admin') {
-    return res.status(403).json({
-      success: false,
-      message: 'Acesso negado: apenas gestores de frota podem acessar esse recurso'
+    return res.status(403).json({ 
+      success: false, 
+      message: 'Acesso restrito a gestores de frota' 
     });
   }
 
@@ -86,9 +92,9 @@ export const isFleetManager = (req: Request, res: Response, next: NextFunction) 
  */
 export const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
   if (!req.user) {
-    return res.status(401).json({
-      success: false,
-      message: 'Usuário não autenticado'
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Não autenticado' 
     });
   }
 

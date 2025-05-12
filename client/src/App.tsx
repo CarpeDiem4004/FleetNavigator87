@@ -48,6 +48,9 @@ import HistoricoPatioPage from "@/pages/postos/HistoricoPatioPage";
 import HistoricoConsolidado from "@/pages/postos/HistoricoConsolidado";
 import PostosVisaoGeralPage from "@/pages/postos/PostosVisaoGeralPage";
 import PostoDetalhesPage from "@/pages/postos/PostoDetalhesPage";
+
+// Importação da página de aprovação de oficinas
+import WorkshopsApprovalPage from "@/pages/fleet-management/WorkshopsApprovalPage";
 import SupabaseDiagnostico from "@/pages/diagnostico/SupabaseDiagnostico";
 import SupabaseConsole from "@/pages/diagnostico/SupabaseConsole";
 import ComparacaoEsquemas from "@/pages/diagnostico/ComparacaoEsquemas";
@@ -359,6 +362,13 @@ function App() {
           <Route path="/oficinas/onboarding">
             <ProtectedRoute allowedRoles={["oficina"]}>
               <OficinasOnboarding />
+            </ProtectedRoute>
+          </Route>
+
+          {/* Rota para aprovação de oficinas (exclusiva para gestores de frota) */}
+          <Route path="/fleet-management/workshops/approval">
+            <ProtectedRoute allowedRoles={["admin", "gestor_frota"]}>
+              <WorkshopsApprovalPage />
             </ProtectedRoute>
           </Route>
           
