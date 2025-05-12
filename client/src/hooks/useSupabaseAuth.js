@@ -145,7 +145,7 @@ export function useSupabaseAuth() {
             
             // Tentar criar nova rota de sincronização avançada
             try {
-              await fetch('/api/resync-session', {
+              await fetch('/api/resync-session-jwt', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',

@@ -566,7 +566,7 @@ export function setupAuth(app: Express) {
   });
   
   // Rota para ressincronizar sessão a partir de token JWT (Supabase)
-  app.post("/api/resync-session", async (req, res) => {
+  app.post("/api/resync-session-jwt", async (req, res) => {
     try {
       // Verificar se há um token JWT no cabeçalho de autorização
       const authHeader = req.headers.authorization;
