@@ -19,11 +19,11 @@ router.get('/pending', isAuthenticated, isFleetManager, async (req: Request, res
   try {
     // Busca todas as oficinas junto com seus detalhes
     const result = await pool.query(`
-      SELECT w.id, w.name as nome, w.phone as telefone, w.email, w.address as endereco, w.service_type as ramoAtuacao, 
-             w.created_at as dataCadastro, 
-             wd.approval_status as status, wd.notes as observacoes,
-             wd.bank_name as banco, wd.bank_agency as agencia, 
-             wd.bank_account as conta, wd.account_type as tipoConta
+      SELECT w.id, w.name, w.phone, w.email, w.address, w.service_type, w.cnpj,
+             w.created_at, 
+             COALESCE(wd.approval_status, 'pendente') as approval_status, wd.notes,
+             wd.bank_name, wd.bank_agency, 
+             wd.bank_account, wd.account_type
       FROM workshops w
       LEFT JOIN workshop_details wd ON w.id = wd.workshop_id
       ORDER BY w.created_at DESC
@@ -49,11 +49,11 @@ router.get('/:id', isAuthenticated, isFleetManager, async (req: Request, res: Re
     const { id } = req.params;
 
     const result = await pool.query(`
-      SELECT w.id, w.name as nome, w.phone as telefone, w.email, w.address as endereco, w.service_type as ramoAtuacao, 
-             w.created_at as dataCadastro, 
-             wd.approval_status as status, wd.notes as observacoes,
-             wd.bank_name as banco, wd.bank_agency as agencia, 
-             wd.bank_account as conta, wd.account_type as tipoConta,
+      SELECT w.id, w.name, w.phone, w.email, w.address, w.service_type, w.cnpj,
+             w.created_at, 
+             COALESCE(wd.approval_status, 'pendente') as approval_status, wd.notes,
+             wd.bank_name, wd.bank_agency, 
+             wd.bank_account, wd.account_type,
              wd.legal_representative, wd.legal_document,
              wd.insurance_details, wd.payment_terms, wd.service_warranty
       FROM workshops w
