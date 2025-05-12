@@ -87,6 +87,7 @@ import OficinaDashboard from "@/pages/oficina/OficinaDashboard";
 import OficinaMurici from "@/pages/OficinaMurici";
 import OficinasOnboarding from "@/pages/oficinas/OficinasOnboarding";
 import CadastroOficina from "@/pages/oficinas/CadastroOficina";
+import CadastroOficinaSimplificado from "@/pages/oficinas/CadastroOficinaSimplificado";
 import BaseRequests from "@/pages/BaseRequests";
 import CartaoAbastecimentoPage from "@/pages/CartaoAbastecimentoPage";
 import PainelPostosPage from "@/pages/PainelPostosPage";
@@ -348,6 +349,10 @@ function App() {
           {/* Rotas para Oficinas Externas */}
           <Route path="/oficinas/cadastro">
             <CadastroOficina />
+          </Route>
+          
+          <Route path="/oficinas/cadastro-simplificado">
+            <CadastroOficinaSimplificado />
           </Route>
           
           <Route path="/oficinas/onboarding">
