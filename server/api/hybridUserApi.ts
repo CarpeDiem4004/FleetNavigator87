@@ -7,6 +7,7 @@ import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { supabase } from '../utils/supabaseConnection';
+import { pool as dbPool } from '../db';
 
 const router = express.Router();
 
@@ -69,10 +70,9 @@ const verifyJwt = async (req: any, res: express.Response, next: express.NextFunc
  */
 const getDbConnection = (): Pool => {
   try {
-    // Importar o pool do módulo db para garantir que temos uma conexão válida
-    const { pool } = require('../db');
-    if (pool) {
-      return pool;
+    // Usar o pool importado no topo do arquivo
+    if (dbPool) {
+      return dbPool;
     }
     
     throw new Error('Não foi possível obter conexão com o banco de dados');
