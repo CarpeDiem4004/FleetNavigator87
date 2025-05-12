@@ -3,10 +3,15 @@
  * Este script lê o arquivo SQL e executa as instruções no banco de dados
  */
 
-const { createClient } = require('@supabase/supabase-js');
-const { Pool } = require('pg');
-const fs = require('fs');
-const path = require('path');
+import { createClient } from '@supabase/supabase-js';
+import pg from 'pg';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const { Pool } = pg;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Credenciais do Supabase - lidas de variáveis de ambiente
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
