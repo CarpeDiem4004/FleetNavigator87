@@ -352,6 +352,11 @@ function App() {
             <OficinasExternaPage />
           </Route>
           
+          {/* Rota para cadastro simplificado de oficinas - alternativa ao login */}
+          <Route path="/oficinas/cadastro-simplificado">
+            <CadastroOficinaSimplificado />
+          </Route>
+          
           {/* Rota de acesso para oficinas - login específico */}
           <Route path="/oficina">
             <SignIn oficina={true} />

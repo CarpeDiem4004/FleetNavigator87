@@ -147,7 +147,7 @@ export default function WorkshopsApprovalPage() {
       // Preparamos as informações de acesso
       // Obtém o domínio atual para funcionar tanto no ambiente de desenvolvimento quanto produção
       const currentDomain = window.location.origin;
-      const loginPath = '/oficina'; // Rota correta para o login de oficinas
+      const loginPath = '/oficinas/cadastro-simplificado'; // Usamos o cadastro simplificado para acessar o portal
       
       setAccessInfo({
         name: workshop?.name || '',
