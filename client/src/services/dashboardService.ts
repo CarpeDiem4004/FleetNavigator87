@@ -128,7 +128,7 @@ export async function getPendingWorkshops(): Promise<PendingWorkshopsData> {
     const data = await response.json();
     
     // Filtrar apenas as oficinas com status pendente
-    const pendingWorkshops = data.filter(workshop => 
+    const pendingWorkshops = data.filter((workshop: any) => 
       workshop.approval_status === 'pendente' || !workshop.approval_status
     );
     

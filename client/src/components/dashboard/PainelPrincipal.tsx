@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'wouter';
 import { supabase } from '@/lib/supabase-client';
 import { 
   getTotalVehicles, 
