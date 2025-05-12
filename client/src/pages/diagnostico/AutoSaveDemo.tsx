@@ -89,13 +89,19 @@ export default function AutoSaveDemo() {
         if (tablesError || !tablesData || tablesData.length === 0) {
           // Tentar criar a tabela via API para evitar erro no Supabase (permissões)
           try {
+            console.log('Tentando criar tabela de demonstração via API...');
             const response = await fetch('/api/diagnostico/create-demo-table', {
               method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              }
             });
             
             if (!response.ok) {
-              console.warn('Não foi possível criar a tabela de demonstração via API');
+              console.warn('Não foi possível criar a tabela de demonstração via API:', await response.text());
             } else {
+              const result = await response.json();
+              console.log('Resposta da API:', result);
               console.log('Tabela de demonstração criada ou já existente');
             }
           } catch (apiError) {

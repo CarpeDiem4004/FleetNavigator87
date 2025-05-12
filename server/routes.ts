@@ -891,6 +891,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await atualizarTabelaPneus();
   await setupTireActivityTable();
   await criarTabelaDemoForms();
+  
+  // Registrar rotas de diagnóstico
+  app.use('/api/diagnostico', diagnosticoRoutes);
   // Rota para registro de movimentações de pátio
   app.post('/api/registro/movimentacao-patio', async (req, res) => {
     try {
