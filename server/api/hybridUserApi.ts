@@ -533,7 +533,19 @@ authRouter.post('/login', async (req, res) => {
     }
     
     // Verificar senha
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    // Verificar se a senha está em formato hash (começa com $) ou em texto puro
+    let isPasswordValid = false;
+    
+    if (user.password.startsWith('$')) {
+      // Se for hash bcrypt
+      isPasswordValid = await bcrypt.compare(password, user.password);
+    } else {
+      // Se for texto puro
+      isPasswordValid = password === user.password;
+      
+      // Log para alertar sobre senhas em texto puro
+      console.warn(`⚠️ [Segurança] Usuário ${user.email} tem senha em texto puro. Recomendamos atualizar para hash bcrypt.`);
+    }
     
     if (!isPasswordValid) {
       return res.status(401).json({
