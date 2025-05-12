@@ -99,22 +99,42 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
       // Prevenção de cache adicionando timestamp na URL
       const timestamp = new Date().getTime();
       
-      // Usar a nova rota direta para evitar problemas com interceptação do Vite
-      const response = await axios.get(`/api/historico-direto/${encodeURIComponent(posto)}?t=${timestamp}`, {
-        headers: {
-          'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest' // Indicar que é uma solicitação AJAX
+      // Primeiro tentar usar a rota resiliente para garantir dados mesmo com falhas
+      let apiResponse: any = null;
+      try {
+        apiResponse = await axios.get(`/api/resilient/historico-direto/${encodeURIComponent(posto)}?t=${timestamp}`, {
+          headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        
+        console.log('[HistoricoView] Dados obtidos via sistema resiliente:', apiResponse);
+      } catch (resilientError) {
+        console.log('[HistoricoView] Erro no sistema resiliente, tentando rota legada:', resilientError);
+        
+        // Cair de volta para a rota original se a resiliente falhar
+        try {
+          apiResponse = await axios.get(`/api/historico-direto/${encodeURIComponent(posto)}?t=${timestamp}`, {
+            headers: {
+              'Accept': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest' // Indicar que é uma solicitação AJAX
+            }
+          });
+        } catch (legacyError) {
+          console.error('[HistoricoView] Erro também na rota legada:', legacyError);
+          throw legacyError; // Propagar o erro para ser capturado pelo try/catch externo
         }
-      });
+      }
       
-      console.log('Resposta do histórico:', response);
+      console.log('Resposta do histórico:', apiResponse);
       
-      if (response.data && response.data.success) {
-        setHistorico(response.data.data || []);
+      if (apiResponse && apiResponse.data && apiResponse.data.success) {
+        setHistorico(apiResponse.data.data || []);
         setLastRefreshTime(new Date());
       } else {
-        setError(response.data?.error || 'Erro ao carregar o histórico');
-        console.error('Erro na resposta:', response.data);
+        setError(apiResponse?.data?.error || 'Erro ao carregar o histórico');
+        console.error('Erro na resposta:', apiResponse?.data || 'Sem dados');
       }
     } catch (err: any) {
       console.error('Erro ao carregar histórico:', err);
