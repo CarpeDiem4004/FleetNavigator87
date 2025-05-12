@@ -111,8 +111,11 @@ app.use((req, res, next) => {
   app.use(userApi);
   
   // Registrar os roteadores de API híbrida (funcionam dentro e fora do Replit)
-  app.use(hybridUserApi);
-  app.use(hybridBasesApi);
+  // Registrando com dois prefixos para suportar ambos os formatos durante a transição
+  app.use('/api/hybrid', hybridUserApi);  // Formato tradicional: /api/hybrid/...
+  app.use('/', hybridUserApi);           // Formato simplificado: /...
+  app.use('/api/hybrid', hybridBasesApi); // Formato tradicional
+  app.use('/', hybridBasesApi);          // Formato simplificado
   
   // Registrar rota de diagnóstico para verificar autenticação no módulo de frota
   app.use('/api/frota', frotaDiagnosticoRoute);
