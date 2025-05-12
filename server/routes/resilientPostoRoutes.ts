@@ -270,4 +270,79 @@ router.get('/status', async (_req: Request, res: Response) => {
   }
 });
 
+/**
+ * Rota especial para compatibilidade com o frontend
+ * POST /api/resilient/abastecimento-direto/:posto
+ */
+router.post('/abastecimento-direto/:posto', async (req: Request, res: Response) => {
+  try {
+    const nomePosto = req.params.posto;
+    const abastecimento = req.body;
+    
+    console.log(`[API Resiliente] Recebendo abastecimento via rota compatível para posto: ${nomePosto}`);
+    
+    const result = await postoService.registrarAbastecimento(abastecimento, nomePosto);
+    
+    if (!result) {
+      return res.status(500).json({
+        success: false,
+        message: 'Falha ao registrar abastecimento'
+      });
+    }
+    
+    return res.json({
+      success: true,
+      message: 'Abastecimento registrado com sucesso',
+      data: result
+    });
+  } catch (error) {
+    console.error('Erro ao registrar abastecimento via rota compatível:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao registrar abastecimento',
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
+/**
+ * Rota para obter histórico direto
+ * GET /api/resilient/historico-direto/:posto
+ */
+router.get('/historico-direto/:posto', async (req: Request, res: Response) => {
+  try {
+    const nomePosto = req.params.posto.replace('posto ', ''); // Remove "posto " do início
+    console.log(`[API Resiliente] Buscando histórico direto para posto: ${nomePosto}`);
+    
+    // Padronização do nome do posto (para formatos como "posto campinas_v2" ou só "campinas_v2")
+    const postoNormalizado = nomePosto
+      .replace(/\s+/g, '_') // Substituir espaços por underscore
+      .replace(/^(posto_|posto\s+)/i, '') // Remover prefixo "posto_" ou "posto "
+      .toLowerCase(); // Normalizar para minúsculas
+      
+    // Capitalizar a primeira letra de cada palavra separada por underscore
+    const postoParts = postoNormalizado.split('_');
+    const postoCapitalizado = postoParts
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join('_');
+    
+    console.log(`[API Resiliente] Buscando histórico para posto normalizado: ${postoCapitalizado}`);
+    
+    const abastecimentos = await postoService.getAbastecimentos(postoCapitalizado);
+    
+    return res.json({
+      success: true,
+      data: abastecimentos || [],
+      count: abastecimentos?.length || 0
+    });
+  } catch (error) {
+    console.error(`[API Resiliente] Erro ao buscar histórico direto:`, error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao buscar histórico direto',
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
 export default router;

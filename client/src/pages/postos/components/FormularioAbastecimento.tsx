@@ -570,10 +570,10 @@ const FormularioAbastecimento: React.FC<
         if (postId.toLowerCase() === "campinas_v2" || 
             postId.toLowerCase().includes("campinas_v2") || 
             postId.toLowerCase().includes("campinas v2")) {
-          // Usar a rota direta para Campinas V2
-          endpoint = `/api/abastecimento-direto/campinas_v2`;
+          // Usar a rota resiliente para Campinas V2 
+          endpoint = `/api/resilient/abastecimento-direto/campinas_v2`;
           usarRotaDireta = true;
-          console.log(">>> Usando rota específica para Campinas V2");
+          console.log(">>> Usando rota resiliente para Campinas V2");
         } else if (postId.toLowerCase() === "osasco_v2" || 
             postId.toLowerCase().includes("osasco_v2") || 
             postId.toLowerCase().includes("osasco v2")) {
