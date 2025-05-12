@@ -88,9 +88,9 @@ const verifyJwtAuth = async (req, res, next) => {
 
 /**
  * Rota para criar um novo usuário
- * POST /api/hybrid/users
+ * POST /api/hybrid/users (caminho simplificado: /)
  */
-router.post('/api/hybrid/users', verifyJwtAuth, async (req, res) => {
+router.post('/', verifyJwtAuth, async (req, res) => {
   try {
     console.log('[HybridAPI] Requisição para criar usuário recebida');
     
@@ -192,9 +192,9 @@ router.get('/:id', verifyJwtAuth, async (req, res) => {
 
 /**
  * Rota para buscar usuário por email
- * GET /api/hybrid/users/email/:email
+ * GET /api/hybrid/users/email/:email (caminho simplificado: /email/:email)
  */
-router.get('/api/hybrid/users/email/:email', verifyJwtAuth, async (req, res) => {
+router.get('/email/:email', verifyJwtAuth, async (req, res) => {
   try {
     const { email } = req.params;
     console.log(`[HybridAPI] Buscando usuário com email: ${email}`);
@@ -227,9 +227,9 @@ router.get('/api/hybrid/users/email/:email', verifyJwtAuth, async (req, res) => 
 
 /**
  * Rota para listar todos os usuários
- * GET /api/hybrid/users
+ * GET /api/hybrid/users (caminho simplificado: /)
  */
-router.get('/api/hybrid/users', verifyJwtAuth, async (req, res) => {
+router.get('/', verifyJwtAuth, async (req, res) => {
   try {
     console.log('[HybridAPI] Listando usuários');
     
@@ -266,9 +266,9 @@ router.get('/api/hybrid/users', verifyJwtAuth, async (req, res) => {
 
 /**
  * Rota para atualizar um usuário
- * PUT /api/hybrid/users/:id
+ * PUT /api/hybrid/users/:id (caminho simplificado: /:id)
  */
-router.put('/api/hybrid/users/:id', verifyJwtAuth, async (req, res) => {
+router.put('/:id', verifyJwtAuth, async (req, res) => {
   try {
     const { id } = req.params;
     console.log(`[HybridAPI] Atualizando usuário com ID: ${id}`);
@@ -325,9 +325,9 @@ router.put('/api/hybrid/users/:id', verifyJwtAuth, async (req, res) => {
 
 /**
  * Rota para redefinir a senha de um usuário
- * POST /api/hybrid/users/:id/reset-password
+ * POST /api/hybrid/users/:id/reset-password (caminho simplificado: /:id/reset-password)
  */
-router.post('/api/hybrid/users/:id/reset-password', verifyJwtAuth, async (req, res) => {
+router.post('/:id/reset-password', verifyJwtAuth, async (req, res) => {
   try {
     const { id } = req.params;
     console.log(`[HybridAPI] Redefinindo senha para usuário com ID: ${id}`);
@@ -364,9 +364,9 @@ router.post('/api/hybrid/users/:id/reset-password', verifyJwtAuth, async (req, r
 
 /**
  * Rota para excluir um usuário
- * DELETE /api/hybrid/users/:id
+ * DELETE /api/hybrid/users/:id (caminho simplificado: /:id)
  */
-router.delete('/api/hybrid/users/:id', verifyJwtAuth, async (req, res) => {
+router.delete('/:id', verifyJwtAuth, async (req, res) => {
   try {
     const { id } = req.params;
     console.log(`[HybridAPI] Excluindo usuário com ID: ${id}`);
