@@ -85,6 +85,8 @@ import TratativaManutencaoPage from "@/pages/TratativaManutencaoPage";
 import OficinasExternaPage from "@/pages/OficinasExternaPage";
 import OficinaDashboard from "@/pages/oficina/OficinaDashboard";
 import OficinaMurici from "@/pages/OficinaMurici";
+import OficinasOnboarding from "@/pages/oficinas/OficinasOnboarding";
+import CadastroOficina from "@/pages/oficinas/CadastroOficina";
 import BaseRequests from "@/pages/BaseRequests";
 import CartaoAbastecimentoPage from "@/pages/CartaoAbastecimentoPage";
 import PainelPostosPage from "@/pages/PainelPostosPage";

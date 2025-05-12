@@ -3,16 +3,16 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { CheckCircle2, ArrowRight, FileCheck, Tools, Wrench, BookOpen, Car, Receipt } from "lucide-react";
+import { CheckCircle2, ArrowRight, FileCheck, Wrench, BookOpen, Car, Receipt, Settings } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 
 export default function OficinasOnboarding() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("inicio");
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
 
   // Verificar se o usuário está autenticado e tem o papel de oficina
   useEffect(() => {
@@ -23,11 +23,11 @@ export default function OficinasOnboarding() {
         description: "Esta página é apenas para oficinas credenciadas.",
         variant: "destructive"
       });
-      navigate("/");
+      setLocation("/");
     } else {
       setLoading(false);
     }
-  }, [user, toast, navigate]);
+  }, [user, toast, setLocation]);
 
   // Função para marcar etapa como concluída
   const markStepAsCompleted = (step: string) => {
@@ -64,7 +64,7 @@ export default function OficinasOnboarding() {
       <div className="grid gap-6 md:grid-cols-3 mb-8">
         <Card>
           <CardHeader className="pb-2">
-            <Tools className="h-8 w-8 text-blue-600 mb-2" />
+            <Settings className="h-8 w-8 text-blue-600 mb-2" />
             <CardTitle>Manutenções de Frota</CardTitle>
             <CardDescription>
               Gerencie os veículos em manutenção e envie orçamentos
@@ -364,7 +364,7 @@ export default function OficinasOnboarding() {
                 </Button>
                 <Button 
                   variant="default" 
-                  onClick={() => navigate("/oficina/dashboard")}
+                  onClick={() => setLocation("/oficina/dashboard")}
                   className="bg-green-600 hover:bg-green-700"
                 >
                   Ir para o Portal <ArrowRight className="ml-2 h-4 w-4" />

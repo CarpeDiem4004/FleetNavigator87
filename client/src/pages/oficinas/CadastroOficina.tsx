@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { FileEdit, CheckCircle2, Upload, MailCheck, Building, User, Phone, Map, Wrench } from "lucide-react";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,7 +38,7 @@ type OficinaFormValues = z.infer<typeof oficinaFormSchema>;
 
 export default function CadastroOficina() {
   const { toast } = useToast();
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("cadastro");
   const [submitting, setSubmitting] = useState(false);
   const [cadastroRealizado, setCadastroRealizado] = useState(false);
@@ -589,7 +589,7 @@ export default function CadastroOficina() {
                   Ir para Login
                 </Button>
                 <Button 
-                  onClick={() => navigate("/oficinas/onboarding")}
+                  onClick={() => setLocation("/oficinas/onboarding")}
                   className="bg-green-600 hover:bg-green-700"
                 >
                   Tutorial Inicial
