@@ -51,6 +51,8 @@ import authTestRoutes from './routes/authTest';
 // Importação das novas rotas resilientes
 import resilientPostoRoutes from './routes/resilientPostoRoutes';
 import resilientRoutes from './routes/resilientRoutes';
+// Importação da API híbrida de usuários
+import hybridUserApi from './api/hybridUserApi';
 // Importação da rota de ressincronização de sessão
 import { resyncSession } from './routes/sessionResyncRoute';
 // Importação do cliente Supabase para armazenamento de arquivos
