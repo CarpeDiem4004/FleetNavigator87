@@ -52,7 +52,7 @@ import authTestRoutes from './routes/authTest';
 import resilientPostoRoutes from './routes/resilientPostoRoutes';
 import resilientRoutes from './routes/resilientRoutes';
 // Importação da API híbrida de usuários
-import hybridUserApi from './api/hybridUserApi';
+import { router as hybridUserApi, authRouter as hybridAuthApi } from './api/hybridUserApi';
 // Importação da rota de ressincronização de sessão
 import { resyncSession } from './routes/sessionResyncRoute';
 // Importação do cliente Supabase para armazenamento de arquivos
@@ -8817,10 +8817,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/users', hybridUserApi);
   
   // Registrar endpoints de autenticação híbrida no caminho original para compatibilidade
-  app.use('/api/hybrid/auth', hybridUserApi);
+  app.use('/api/hybrid/auth', hybridAuthApi);
   
   // Registrar endpoints de autenticação híbrida no caminho simplificado (novo padrão recomendado)
-  app.use('/auth', hybridUserApi);
+  app.use('/auth', hybridAuthApi);
 
   const httpServer = createServer(app);
   return httpServer;

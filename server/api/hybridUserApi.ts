@@ -9,7 +9,9 @@ import jwt from 'jsonwebtoken';
 import { supabase } from '../utils/supabaseConnection';
 import { pool as dbPool } from '../db';
 
+// Criar routers separados para usuários e autenticação
 const router = express.Router();
+const authRouter = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'murici-hybrid-auth-secret-key-2025';
 const JWT_EXPIRY = '7d'; // 7 dias
@@ -489,7 +491,7 @@ router.post('/:id/reset-password', verifyJwt, async (req: any, res) => {
  * Rota para autenticação e geração de token JWT
  * POST /api/hybrid/auth/login (caminho simplificado: /auth/login)
  */
-router.post('/auth/login', async (req, res) => {
+authRouter.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     
@@ -592,7 +594,7 @@ router.post('/auth/login', async (req, res) => {
  * Rota para verificar se um token JWT é válido
  * GET /api/hybrid/auth/verify (caminho simplificado: /auth/verify)
  */
-router.get('/auth/verify', verifyJwt, (req: any, res) => {
+authRouter.get('/verify', verifyJwt, (req: any, res) => {
   // Se chegou aqui, o token é válido
   return res.json({
     success: true,
@@ -623,4 +625,5 @@ function generateRandomPassword(length: number = 10): string {
   return password.split('').sort(() => 0.5 - Math.random()).join('');
 }
 
-export default router;
+// Exportar tanto o router de usuários quanto o de autenticação
+export { router, authRouter };
