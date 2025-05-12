@@ -10,7 +10,7 @@ import { supabase } from '../utils/supabaseConnection';
 
 const router = express.Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'murici-onfleet-jwt-secret-2025';
+const JWT_SECRET = process.env.JWT_SECRET || 'murici-hybrid-auth-secret-key-2025';
 const JWT_EXPIRY = '7d'; // 7 dias
 
 /**
