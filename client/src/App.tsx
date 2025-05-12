@@ -49,8 +49,7 @@ import HistoricoConsolidado from "@/pages/postos/HistoricoConsolidado";
 import PostosVisaoGeralPage from "@/pages/postos/PostosVisaoGeralPage";
 import PostoDetalhesPage from "@/pages/postos/PostoDetalhesPage";
 
-// Importação da página de aprovação de oficinas
-import WorkshopsApprovalPage from "@/pages/fleet-management/WorkshopsApprovalPage";
+// Importação de páginas de diagnóstico
 import SupabaseDiagnostico from "@/pages/diagnostico/SupabaseDiagnostico";
 import SupabaseConsole from "@/pages/diagnostico/SupabaseConsole";
 import ComparacaoEsquemas from "@/pages/diagnostico/ComparacaoEsquemas";
