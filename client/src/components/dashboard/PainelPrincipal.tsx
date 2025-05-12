@@ -6,10 +6,12 @@ import {
   getVehiclesInMaintenance, 
   getTireStockStats, 
   getFuelConsumption,
+  getPendingWorkshops,
   type TotalVehiclesData,
   type VehiclesInMaintenanceData,
   type TireStockStats,
-  type FuelConsumptionData
+  type FuelConsumptionData,
+  type PendingWorkshopsData
 } from '@/services/dashboardService';
 
 // Interface para os novos KPIs do dashboard
@@ -18,6 +20,7 @@ interface DashboardKPIs {
   maintenance?: VehiclesInMaintenanceData;
   tires?: TireStockStats;
   fuel?: FuelConsumptionData;
+  pendingWorkshops?: PendingWorkshopsData;
 }
 
 // Interface original para manter compatibilidade

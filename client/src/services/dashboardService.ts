@@ -25,6 +25,11 @@ export interface FuelConsumptionData {
   variation: number;
 }
 
+// Interface para oficinas pendentes de aprovação
+export interface PendingWorkshopsData {
+  total: number;
+}
+
 // Interfaces para o Executive Dashboard
 export interface KPI {
   name: string;
@@ -109,6 +114,31 @@ export async function getFuelConsumption(): Promise<FuelConsumptionData> {
   
   const data = await response.json();
   return data.data;
+}
+
+// Obter oficinas pendentes de aprovação
+export async function getPendingWorkshops(): Promise<PendingWorkshopsData> {
+  try {
+    const response = await apiRequest('GET', '/api/workshops/pending');
+    
+    if (!response.ok) {
+      throw new Error('Erro ao obter oficinas pendentes');
+    }
+    
+    const data = await response.json();
+    
+    // Filtrar apenas as oficinas com status pendente
+    const pendingWorkshops = data.filter(workshop => 
+      workshop.approval_status === 'pendente' || !workshop.approval_status
+    );
+    
+    return {
+      total: pendingWorkshops.length
+    };
+  } catch (error) {
+    console.error('Erro ao buscar oficinas pendentes:', error);
+    return { total: 0 };
+  }
 }
 
 // Função para buscar dados para o dashboard executivo
