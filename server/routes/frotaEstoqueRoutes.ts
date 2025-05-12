@@ -175,7 +175,7 @@ router.get('/estoque-resumo', async (req, res) => {
 });
 
 // POST - Adicionar nova peça - Adiciona depuração para debug de problemas de autenticação
-router.post('/estoque-pecas', async (req, res) => {
+router.post('/estoque-pecas', verifyAuth, sessionAuth, async (req, res) => {
   // Verificar autenticação manualmente aqui antes de prosseguir
   console.log('[EstoqueRoute] Requisição recebida para criação de peça:', {
     cookies: !!req.headers.cookie,
@@ -270,7 +270,7 @@ router.post('/estoque-pecas', async (req, res) => {
 });
 
 // POST - Registrar movimentação de estoque
-router.post('/movimentacao-estoque', async (req, res) => {
+router.post('/movimentacao-estoque', verifyAuth, sessionAuth, async (req, res) => {
   const {
     peca_id,
     tipo_movimento,
