@@ -15,6 +15,7 @@ import RefuelingNew from "@/pages/RefuelingNew";
 import FinesNew from "@/pages/FinesNew";
 // EntradaOperacoes removido (LineHall)
 import UsersNew from "@/pages/UsersNew";
+import UserManagementPage from "@/pages/admin/UserManagementPage";
 import Bases from "@/pages/Bases";
 import SignIn from "@/pages/SignIn";
 import RegisterNew from "@/pages/RegisterNew";
@@ -253,6 +254,11 @@ function App() {
             </ProtectedRoute>
           </Route>
           <ProtectedRoute path="/users" component={UsersNew} />
+          <Route path="/admin/users">
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <UserManagementPage />
+            </ProtectedRoute>
+          </Route>
           <ProtectedRoute path="/bases" component={Bases} />
           <ProtectedRoute path="/bases/campinas" component={BaseCampinas} />
           <ProtectedRoute path="/bases/campinas/despesas" component={DespesasCampinas} />

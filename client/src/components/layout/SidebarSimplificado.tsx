@@ -198,6 +198,16 @@ const SidebarSimplificado: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Pneus', href: '/tires', icon: CircleDot },
     { name: 'Abastecimento', href: '/refueling', icon: Fuel },
     
+    // Administração
+    {
+      name: 'Administração',
+      href: '#',
+      icon: Settings,
+      subItems: [
+        { name: 'Gerenciar Usuários', href: '/admin/users', icon: Users },
+      ]
+    },
+    
     // Nova seção para Postos
     {
       name: 'Postos de Abastecimento', 
@@ -237,7 +247,7 @@ const SidebarSimplificado: React.FC<SidebarProps> = ({ open, setOpen }) => {
       ]
     },
     
-    { name: 'Usuários', href: '/users', icon: Users },
+    // Removendo o item "Usuários" já que temos na seção de Administração
     
     // Adicionando acesso rápido na lista principal também para maior visibilidade
     { 
