@@ -12,17 +12,17 @@ export default function fixCookieSession(req: Request, res: Response, next: Next
   }
 
   // Log para diagnóstico
-  console.log('[Cookie Middleware] Ajustando sessão: maxAge=2592000000, sameSite=none');
+  console.log('[Cookie Middleware] Ajustando sessão: maxAge=2592000000, sameSite=lax');
 
-  // CORREÇÃO CRÍTICA: Forçar a aceitação de cookies em qualquer domínio
-  // Isso resolve problemas de CORS e compartilhamento de cookies
+  // CORREÇÃO CRÍTICA: Configurar cookies adequadamente para melhor compatibilidade 
+  // e garantir compartilhamento entre domínios
 
   // Ajustar configurações do cookie de sessão para máxima compatibilidade
   if (req.session.cookie) {
     req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 dias
     req.session.cookie.secure = false; // Desabilitar secure para garantir funcionamento em http e https
-    req.session.cookie.sameSite = 'none'; // Permitir cookies de qualquer origem
-    req.session.cookie.httpOnly = false; // Permitir acesso via JavaScript
+    req.session.cookie.sameSite = 'lax'; // Garantir maior compatibilidade entre browsers
+    req.session.cookie.httpOnly = true; // Proteger cookie contra acesso via JavaScript
 
     // Se houver headers de autorização, armazenar na sessão para recuperação de emergência
     if (req.headers.authorization) {
