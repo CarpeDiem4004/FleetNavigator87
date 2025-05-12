@@ -84,7 +84,7 @@ const getDbConnection = (): Pool => {
 
 /**
  * Rota para listar todos os usuários
- * GET /api/hybrid/users
+ * GET /api/hybrid/users (caminho simplificado: /)
  */
 router.get('/', verifyJwt, async (req: any, res) => {
   try {
@@ -124,7 +124,7 @@ router.get('/', verifyJwt, async (req: any, res) => {
 
 /**
  * Rota para obter um usuário pelo ID
- * GET /api/hybrid/users/:id
+ * GET /api/hybrid/users/:id (caminho simplificado: /:id)
  */
 router.get('/:id', verifyJwt, async (req: any, res) => {
   try {
@@ -171,7 +171,7 @@ router.get('/:id', verifyJwt, async (req: any, res) => {
 
 /**
  * Rota para criar um novo usuário
- * POST /api/hybrid/users
+ * POST /api/hybrid/users (caminho simplificado: /)
  */
 router.post('/', verifyJwt, async (req: any, res) => {
   try {
@@ -590,7 +590,7 @@ router.post('/auth/login', async (req, res) => {
 
 /**
  * Rota para verificar se um token JWT é válido
- * GET /api/hybrid/auth/verify
+ * GET /api/hybrid/auth/verify (caminho simplificado: /auth/verify)
  */
 router.get('/auth/verify', verifyJwt, (req: any, res) => {
   // Se chegou aqui, o token é válido
