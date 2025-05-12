@@ -164,6 +164,9 @@ export default function FleetManagement() {
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Building2 className="h-5 w-5 text-primary" />
                   Oficinas Credenciadas
+                  <div className="bg-amber-500 text-white text-xs px-2 py-1 rounded-full ml-1">
+                    Nova
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardFooter className="mt-auto">
