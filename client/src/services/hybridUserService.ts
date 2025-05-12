@@ -26,7 +26,7 @@ export const login = async (email: string, password: string) => {
     console.log('Tentando login híbrido para:', email);
     // Tentar primeiro o endpoint da api híbrida
     try {
-      const response = await api.post('/users/auth/login', { email, password });
+      const response = await api.post('/auth/login', { email, password });
       
       if (response.data.success && response.data.token) {
         // Armazenar o token JWT no localStorage
@@ -69,7 +69,7 @@ export const login = async (email: string, password: string) => {
  */
 export const verifyToken = async () => {
   try {
-    const response = await api.get('/api/hybrid/users/auth/verify');
+    const response = await api.get('/auth/verify');
     return response.data.success;
   } catch (error) {
     console.error('Token inválido:', error);
@@ -116,7 +116,7 @@ export const getAllUsers = async () => {
       return { success: false, message: 'Não autenticado' };
     }
     
-    const response = await api.get('/api/hybrid/users', {
+    const response = await api.get('/users', {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -143,7 +143,7 @@ export const getUserById = async (id: number) => {
       return { success: false, message: 'Não autenticado' };
     }
     
-    const response = await api.get(`/api/hybrid/users/${id}`, {
+    const response = await api.get(`/users/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -176,7 +176,7 @@ export const createUser = async (userData: {
       return { success: false, message: 'Não autenticado' };
     }
     
-    const response = await api.post('/api/hybrid/users', userData, {
+    const response = await api.post('/users', userData, {
       headers: {
         Authorization: `Bearer ${token}`
       }
