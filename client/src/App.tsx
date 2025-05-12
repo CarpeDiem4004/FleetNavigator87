@@ -16,6 +16,7 @@ import RefuelingNew from "@/pages/RefuelingNew";
 import FinesNew from "@/pages/FinesNew";
 // EntradaOperacoes removido (LineHall)
 import UsersNew from "@/pages/UsersNew";
+import UsersHybrid from "@/pages/UsersHybrid";
 import Bases from "@/pages/Bases";
 import SignIn from "@/pages/SignIn";
 import RegisterNew from "@/pages/RegisterNew";
@@ -180,7 +181,8 @@ function App() {
           <ProtectedRoute path="/fleet-management/budgets" component={BudgetManagementPage} />
           <ProtectedRoute path="/accidents" component={Accidents} />
           <ProtectedRoute path="/work-safety" component={WorkSafety} />
-          <ProtectedRoute path="/users" component={UsersNew} />
+          <ProtectedRoute path="/users" component={UsersHybrid} />
+          <ProtectedRoute path="/users-old" component={UsersNew} />
           <ProtectedRoute path="/bases" component={Bases} />
           <ProtectedRoute path="/bases/campinas" component={BaseCampinas} />
           <ProtectedRoute path="/bases/campinas/despesas" component={DespesasCampinas} />
