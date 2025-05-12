@@ -1,0 +1,132 @@
+/**
+ * Rotas para o registro de oficinas
+ * Este módulo adiciona as rotas para registro público de oficinas
+ */
+
+import express, { Request, Response } from 'express';
+import { pool } from '../db';
+import { createWorkshopDetailsTable } from '../db/workshopDetailsTable';
+
+const router = express.Router();
+
+// Interface para os dados de cadastro da oficina
+interface OficinaFormData {
+  nome: string;
+  cnpj: string;
+  telefone: string;
+  email: string;
+  endereco: string;
+  ramoAtuacao: string;
+  banco: string;
+  agencia: string;
+  conta: string;
+  tipoConta: string;
+}
+
+/**
+ * POST /api/workshops/register
+ * Registra uma nova oficina a partir do formulário público
+ */
+router.post('/register', async (req: Request, res: Response) => {
+  const { 
+    nome, cnpj, telefone, email, endereco, ramoAtuacao,
+    banco, agencia, conta, tipoConta
+  } = req.body as OficinaFormData;
+  
+  // Validação básica dos dados
+  if (!nome || !cnpj || !email || !telefone || !endereco) {
+    return res.status(400).json({ 
+      success: false,
+      message: 'Dados incompletos. Preencha todos os campos obrigatórios.'
+    });
+  }
+  
+  try {
+    // Verifica se já existe uma oficina com este CNPJ
+    const checkCnpj = await pool.query(`
+      SELECT EXISTS (
+        SELECT 1 FROM workshop_details WHERE cnpj = $1
+      )
+    `, [cnpj]);
+    
+    if (checkCnpj.rows[0].exists) {
+      return res.status(409).json({
+        success: false,
+        message: 'Já existe uma oficina cadastrada com este CNPJ.'
+      });
+    }
+    
+    // Certifica que a tabela workshop_details existe
+    await createWorkshopDetailsTable();
+    
+    // Transação para criar o registro da oficina
+    await pool.query('BEGIN');
+    
+    // 1. Insere o registro básico na tabela workshops
+    const result = await pool.query(`
+      INSERT INTO workshops (
+        name, 
+        phone, 
+        address, 
+        specialties, 
+        observations,
+        is_active,
+        status
+      ) VALUES (
+        $1, $2, $3, $4, $5, false, 'pendente'
+      ) RETURNING id
+    `, [
+      nome,
+      telefone,
+      endereco, 
+      ramoAtuacao,
+      'Cadastro via formulário público.' // Observações iniciais
+    ]);
+    
+    const workshopId = result.rows[0].id;
+    
+    // 2. Insere os detalhes na tabela workshop_details
+    await pool.query(`
+      INSERT INTO workshop_details (
+        workshop_id,
+        cnpj,
+        email,
+        banco,
+        agencia,
+        conta,
+        tipo_conta,
+        status
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, 'pendente'
+      )
+    `, [
+      workshopId,
+      cnpj,
+      email,
+      banco || null,
+      agencia || null,
+      conta || null,
+      tipoConta || null
+    ]);
+    
+    await pool.query('COMMIT');
+    
+    // Notifica os administradores (implementação futura)
+    // await notifyAdmins(workshopId);
+    
+    res.status(201).json({
+      success: true,
+      message: 'Oficina cadastrada com sucesso!',
+      workshopId
+    });
+  } catch (error) {
+    await pool.query('ROLLBACK');
+    console.error('Erro ao cadastrar oficina:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao cadastrar oficina. Tente novamente mais tarde.'
+    });
+  }
+});
+
+export default router;

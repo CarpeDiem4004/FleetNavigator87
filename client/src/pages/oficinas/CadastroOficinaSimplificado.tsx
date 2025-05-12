@@ -60,9 +60,20 @@ export default function CadastroOficinaSimplificado() {
       setSubmitting(true);
       console.log("Dados do formulário:", data);
 
-      // Simulando uma requisição ao backend
-      // Na implementação real, isso deve ser substituído por uma chamada à API
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Envio dos dados para o backend
+      const response = await fetch('/api/workshops/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erro no cadastro: ${response.status}`);
+      }
+      
+      const result = await response.json();
       
       // Sucesso no cadastro
       setCadastroRealizado(true);
@@ -70,7 +81,7 @@ export default function CadastroOficinaSimplificado() {
       
       toast({
         title: "Cadastro realizado com sucesso!",
-        description: "Seus dados foram registrados. Continue o cadastro quando for solicitado.",
+        description: "Seus dados foram registrados. A análise será feita em breve pela equipe de gestão de frotas.",
       });
     } catch (error) {
       console.error("Erro ao cadastrar oficina:", error);
