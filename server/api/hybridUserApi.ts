@@ -487,7 +487,7 @@ router.post('/:id/reset-password', verifyJwt, async (req: any, res) => {
 
 /**
  * Rota para autenticação e geração de token JWT
- * POST /api/hybrid/auth/login
+ * POST /api/hybrid/auth/login (caminho simplificado: /auth/login)
  */
 router.post('/auth/login', async (req, res) => {
   try {

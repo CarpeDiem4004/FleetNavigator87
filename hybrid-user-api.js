@@ -460,9 +460,9 @@ router.post('/auth/login', async (req, res) => {
 
 /**
  * Rota para verificar se um token JWT é válido
- * GET /api/hybrid/auth/verify
+ * GET /api/hybrid/auth/verify (caminho simplificado: /auth/verify)
  */
-router.get('/api/hybrid/auth/verify', verifyJwtAuth, (req, res) => {
+router.get('/auth/verify', verifyJwtAuth, (req, res) => {
   // Se chegou aqui, o token é válido e o usuário está no req.user
   const user = req.user;
   console.log(`[HybridAPI] Token verificado com sucesso para usuário: ${user.id} (${user.email})`);
@@ -478,7 +478,7 @@ router.get('/api/hybrid/auth/verify', verifyJwtAuth, (req, res) => {
 
 /**
  * Rota para testar conectividade com a API híbrida
- * GET /api/hybrid/ping
+ * GET /api/hybrid/ping (caminho simplificado: /ping)
  */
 router.get('/ping', (req, res) => {
   console.log('[HybridAPI] Requisição de ping recebida');
