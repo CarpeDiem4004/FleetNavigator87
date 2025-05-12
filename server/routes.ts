@@ -8797,6 +8797,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registrar rotas para o histórico de pátio
   app.use('/api/patio', patioRoutes);
+  
+  // Rota para criar tabela de demonstração para o AutoSave
+  app.post('/api/create-demo-table', async (req, res) => {
+    try {
+      const { tableName } = req.body;
+      
+      if (!tableName) {
+        return res.status(400).json({ success: false, message: 'Nome da tabela é obrigatório' });
+      }
+      
+      // Apenas permitir criar tabelas específicas para demo
+      if (tableName !== 'demo_forms') {
+        return res.status(403).json({ success: false, message: 'Tabela não permitida' });
+      }
+      
+      // Executar SQL para criar a tabela de demonstração
+      const query = `
+        CREATE TABLE IF NOT EXISTS ${tableName} (
+          id SERIAL PRIMARY KEY,
+          title TEXT,
+          description TEXT,
+          priority TEXT,
+          assignedTo TEXT,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+      `;
+      
+      await pool.query(query);
+      
+      return res.json({ success: true, message: 'Tabela criada com sucesso' });
+    } catch (error) {
+      console.error('Erro ao criar tabela de demonstração:', error);
+      return res.status(500).json({ success: false, message: 'Erro ao criar tabela', error: String(error) });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

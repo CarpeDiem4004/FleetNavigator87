@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { supabase } from '@/lib/supabaseClient';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 interface User {
   id: number;
@@ -52,225 +54,241 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  
+  // Usar o hook do Supabase para autenticação
+  const {
+    user: supabaseUser,
+    loading: supabaseLoading,
+    login: supabaseLogin,
+    logout: supabaseLogout,
+    register: supabaseRegister,
+    isAuthenticated: supabaseAuthenticated
+  } = useSupabaseAuth();
 
+  // Efeito para sincronizar o estado de autenticação do Supabase com o estado local
   useEffect(() => {
-    let isMounted = true;
-    
-    // Verificar se o usuário está autenticado ao carregar a página
-    const checkAuth = async () => {
-      try {
-        console.log("Verificando autenticação...");
+    // Se o hook do Supabase já determinou o estado de autenticação
+    if (!supabaseLoading) {
+      if (supabaseAuthenticated && supabaseUser) {
+        // Converter o usuário do Supabase para o formato esperado pelo nosso contexto
+        const userData = {
+          id: supabaseUser.id ? parseInt(supabaseUser.id) : 0,
+          name: supabaseUser.user_metadata?.name || 'Usuário',
+          email: supabaseUser.email || '',
+          role: supabaseUser.user_metadata?.role || 'operador',
+          baseId: supabaseUser.user_metadata?.baseId || null,
+          basename: supabaseUser.user_metadata?.basename || null,
+          oficina_id: supabaseUser.user_metadata?.oficina_id || null
+        };
         
-        // Verificar se temos um token JWT armazenado
-        const authToken = localStorage.getItem('authToken');
-        let authSource = 'sessão';
-        let isAuthenticated = false;
-        let userData = null;
+        setUser(userData);
+        console.log('Usuário autenticado via Supabase:', userData);
+      } else {
+        // Se não tem usuário no Supabase, tenta a verificação tradicional
+        checkTraditionalAuth();
+      }
+      
+      setIsLoading(false);
+    }
+  }, [supabaseUser, supabaseLoading, supabaseAuthenticated]);
+  
+  // Função para verificar autenticação tradicional
+  const checkTraditionalAuth = async () => {
+    try {
+      console.log("Verificando autenticação tradicional...");
+      
+      // Verificar se temos um token JWT armazenado
+      const authToken = localStorage.getItem('authToken');
+      let authSource = 'sessão';
+      let isAuthenticated = false;
+      let userData = null;
+      
+      // Se temos token JWT, tenta verificar ele primeiro
+      if (authToken) {
+        console.log("Token JWT encontrado, tentando verificar...");
+        authSource = 'token';
         
-        // Se temos token JWT, tenta verificar ele primeiro
-        if (authToken) {
-          console.log("Token JWT encontrado, tentando verificar...");
-          authSource = 'token';
-          
-          try {
-            // Tenta verificar o token JWT
-            const jwtVerifyResponse = await fetch('/api/hybrid/auth/verify', {
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json'
-              }
-            });
-            
-            if (jwtVerifyResponse.ok) {
-              // Token JWT válido
-              const jwtData = await jwtVerifyResponse.json();
-              console.log("Token JWT verificado com sucesso:", jwtData);
-              userData = jwtData.user;
-              isAuthenticated = true;
-            } else {
-              console.warn("Token JWT inválido ou expirado");
-              // Remove o token inválido
-              localStorage.removeItem('authToken');
-            }
-          } catch (jwtError) {
-            console.error("Erro ao verificar token JWT:", jwtError);
-          }
-        }
-        
-        // Se não conseguiu autenticar com JWT, tenta sessão tradicional
-        if (!isAuthenticated) {
-          console.log("Tentando verificar sessão tradicional...");
-          
-          const response = await fetch('/api/user', {
+        try {
+          // Tenta verificar o token JWT
+          const jwtVerifyResponse = await fetch('/api/hybrid/auth/verify', {
             method: 'GET',
-            credentials: 'include', // Importante para enviar cookies de sessão
             headers: {
+              'Authorization': `Bearer ${authToken}`,
               'Content-Type': 'application/json'
             }
           });
           
-          // Verificação crítica: se o componente foi desmontado, não atualize o estado
-          if (!isMounted) return;
-          
-          if (response.ok) {
-            userData = await response.json();
+          if (jwtVerifyResponse.ok) {
+            // Token JWT válido
+            const jwtData = await jwtVerifyResponse.json();
+            console.log("Token JWT verificado com sucesso:", jwtData);
+            userData = jwtData.user;
             isAuthenticated = true;
-            authSource = 'sessão';
-            console.log("Sessão tradicional verificada com sucesso");
           } else {
-            if (response.status === 401) {
-              console.log('Nenhuma sessão de usuário encontrada');
-            } else {
-              console.error('Erro ao verificar autenticação de sessão:', response.statusText);
-            }
+            console.warn("Token JWT inválido ou expirado");
+            // Remove o token inválido
+            localStorage.removeItem('authToken');
           }
-        }
-        
-        // Atualiza o estado com base no resultado da autenticação
-        if (isAuthenticated && userData) {
-          console.log(`Usuário autenticado via ${authSource}:`, userData);
-          setUser(userData);
-        } else {
-          console.log("Usuário não autenticado");
-          setUser(null);
-        }
-      } catch (error) {
-        console.error('Erro ao verificar autenticação:', error);
-      } finally {
-        if (isMounted) {
-          console.log("Verificação de autenticação completa, isLoading=false");
-          setIsLoading(false);
+        } catch (jwtError) {
+          console.error("Erro ao verificar token JWT:", jwtError);
         }
       }
-    };
-
-    checkAuth();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+      
+      // Se não conseguiu autenticar com JWT, tenta sessão tradicional
+      if (!isAuthenticated) {
+        console.log("Tentando verificar sessão tradicional...");
+        
+        const response = await fetch('/api/user', {
+          method: 'GET',
+          credentials: 'include', // Importante para enviar cookies de sessão
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          userData = await response.json();
+          isAuthenticated = true;
+          authSource = 'sessão';
+          console.log("Sessão tradicional verificada com sucesso");
+        } else {
+          if (response.status === 401) {
+            console.log('Nenhuma sessão de usuário encontrada');
+          } else {
+            console.error('Erro ao verificar autenticação de sessão:', response.statusText);
+          }
+        }
+      }
+      
+      // Atualiza o estado com base no resultado da autenticação
+      if (isAuthenticated && userData) {
+        console.log(`Usuário autenticado via ${authSource}:`, userData);
+        setUser(userData);
+      } else {
+        console.log("Usuário não autenticado");
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('Erro ao verificar autenticação tradicional:', error);
+    } finally {
+      setIsLoading(false);
+      console.log("Verificação de autenticação completa, isLoading=false");
+    }
+  };
 
   const login = async (email: string, password: string): Promise<User> => {
     setIsLoading(true);
     try {
       console.log("Tentando fazer login com:", email);
       
-      // Tenta primeiro a rota de autenticação JWT híbrida
+      // Primeiro, tentar login com Supabase
+      let supabaseSuccessful = false;
       let userData = null;
-      let authSuccess = false;
       
       try {
-        console.log("Tentando autenticação JWT híbrida...");
-        const jwtResponse = await fetch('/api/hybrid/auth/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email, password }),
-        });
+        // Tenta login com Supabase
+        const { success, session, user: supaUser, error } = await supabaseLogin(email, password);
         
-        if (jwtResponse.ok) {
-          const jwtData = await jwtResponse.json();
+        if (success && session) {
+          console.log("Login Supabase bem-sucedido:", supaUser);
+          supabaseSuccessful = true;
           
-          // Armazenar o token JWT no localStorage para uso futuro
-          if (jwtData.token) {
-            localStorage.setItem('authToken', jwtData.token);
-            console.log("Token JWT armazenado com sucesso");
-            userData = jwtData.user;
-            authSuccess = true;
-            
-            // Verifica o token imediatamente para garantir que está funcionando
-            try {
-              const verifyResponse = await fetch('/api/hybrid/auth/verify', {
-                method: 'GET',
-                headers: {
-                  'Authorization': `Bearer ${jwtData.token}`,
-                  'Content-Type': 'application/json'
-                }
-              });
-              
-              if (verifyResponse.ok) {
-                console.log("Token JWT verificado com sucesso");
-              } else {
-                console.warn("Falha na verificação do token JWT");
-              }
-            } catch (verifyError) {
-              console.error("Erro ao verificar token JWT:", verifyError);
-            }
-          }
-        } else {
-          console.warn("Autenticação JWT falhou, status:", jwtResponse.status);
-          try {
-            const errorData = await jwtResponse.json();
-            console.warn("Erro JWT:", errorData);
-          } catch (e) {
-            // Ignora erro de parsing
-          }
+          // Converter para o formato esperado do usuário
+          userData = {
+            id: supaUser?.id ? parseInt(supaUser.id) : 0,
+            name: supaUser?.user_metadata?.name || 'Usuário',
+            email: supaUser?.email || email,
+            role: supaUser?.user_metadata?.role || 'operador',
+            baseId: supaUser?.user_metadata?.baseId || null,
+            basename: supaUser?.user_metadata?.basename || null,
+            oficina_id: supaUser?.user_metadata?.oficina_id || null
+          };
+        } else if (error) {
+          console.warn("Falha no login com Supabase:", error);
         }
-      } catch (jwtError) {
-        console.error("Erro na tentativa de autenticação JWT:", jwtError);
+      } catch (supabaseError) {
+        console.error("Erro ao tentar login com Supabase:", supabaseError);
       }
       
-      // Se a autenticação JWT falhar, tenta a autenticação tradicional
-      if (!authSuccess) {
-        console.log("Tentando autenticação tradicional...");
-        const response = await fetch('/api/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({ username: email, password }),
-        });
+      // Se Supabase falhar, tentar métodos alternativos
+      if (!supabaseSuccessful) {
+        // Tenta primeiro a rota de autenticação JWT híbrida
+        let authSuccess = false;
         
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          console.error("Erro na resposta de login:", response.status, errorData);
-          throw new Error(errorData.message || 'Erro de autenticação');
+        try {
+          console.log("Tentando autenticação JWT híbrida...");
+          const jwtResponse = await fetch('/api/hybrid/auth/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password }),
+          });
+          
+          if (jwtResponse.ok) {
+            const jwtData = await jwtResponse.json();
+            
+            // Armazenar o token JWT no localStorage para uso futuro
+            if (jwtData.token) {
+              localStorage.setItem('authToken', jwtData.token);
+              console.log("Token JWT armazenado com sucesso");
+              userData = jwtData.user;
+              authSuccess = true;
+            }
+          } else {
+            console.warn("Autenticação JWT falhou, tentando método tradicional");
+          }
+        } catch (jwtError) {
+          console.error("Erro na tentativa de autenticação JWT:", jwtError);
         }
         
-        userData = await response.json();
-        console.log("Login tradicional bem-sucedido:", userData);
-      } else {
-        console.log("Usando dados de usuário da autenticação JWT:", userData);
+        // Se a autenticação JWT falhar, tenta a autenticação tradicional
+        if (!authSuccess) {
+          console.log("Tentando autenticação tradicional...");
+          const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ username: email, password }),
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error("Erro na resposta de login:", response.status, errorData);
+            throw new Error(errorData.message || 'Erro de autenticação');
+          }
+          
+          userData = await response.json();
+          console.log("Login tradicional bem-sucedido:", userData);
+          
+          // Se login tradicional foi bem-sucedido, mas Supabase falhou,
+          // tenta criar o usuário no Supabase para sincronização futura
+          try {
+            await supabaseRegister(email, password, {
+              name: userData.name,
+              role: userData.role,
+              baseId: userData.baseId,
+              basename: userData.basename,
+              oficina_id: userData.oficina_id
+            });
+            console.log("Usuário sincronizado com Supabase após login tradicional");
+          } catch (syncError) {
+            console.warn("Não foi possível sincronizar usuário com Supabase:", syncError);
+          }
+        }
       }
       
       // Define o usuário no estado, independente do método de autenticação usado
       setUser(userData);
       
-      // Forçar uma verificação de autenticação após o login
-      setTimeout(() => {
-        const authToken = localStorage.getItem('authToken');
-        const headers: HeadersInit = { 
-          'Content-Type': 'application/json'
-        };
-        
-        if (authToken) {
-          headers['Authorization'] = `Bearer ${authToken}`;
-        }
-        
-        fetch('/api/user', {
-          method: 'GET',
-          credentials: 'include',
-          headers
-        })
-        .then(res => res.json())
-        .then(data => {
-          console.log("Verificação pós-login:", data);
-        })
-        .catch(error => {
-          console.error("Erro na verificação pós-login:", error);
-        });
-      }, 500);
-      
       toast({
         title: "Login bem-sucedido",
-        description: `Bem-vindo, ${userData.name || userData.email}!`,
+        description: `Bem-vindo, ${userData?.name || email}!`,
       });
       
-      return userData;
+      return userData as User;
     } catch (error: any) {
       console.error('Erro no login:', error);
       
@@ -287,17 +305,41 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const logout = async () => {
     try {
-      // Remover token JWT do localStorage
-      localStorage.removeItem('authToken');
-      console.log("Token JWT removido do localStorage");
+      setIsLoading(true);
       
-      const response = await apiRequest('POST', '/api/logout');
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao fazer logout');
+      // Primeiro tenta logout via Supabase
+      let supabaseLogoutSuccess = false;
+      try {
+        const { success, error } = await supabaseLogout();
+        if (success) {
+          supabaseLogoutSuccess = true;
+          console.log("Logout Supabase realizado com sucesso");
+        } else if (error) {
+          console.warn("Erro ao fazer logout do Supabase:", error);
+        }
+      } catch (supaError) {
+        console.error("Exceção ao fazer logout do Supabase:", supaError);
       }
       
+      // Fazer logout tradicional independentemente do resultado do Supabase
+      try {
+        // Remover token JWT do localStorage
+        localStorage.removeItem('authToken');
+        console.log("Token JWT removido do localStorage");
+        
+        const response = await apiRequest('POST', '/api/logout');
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.warn('Erro ao fazer logout tradicional:', errorData.message);
+        } else {
+          console.log("Logout tradicional realizado com sucesso");
+        }
+      } catch (tradError) {
+        console.warn("Erro ao fazer logout tradicional:", tradError);
+      }
+      
+      // Resetar o estado independentemente do método
       setUser(null);
       
       toast({
@@ -312,6 +354,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         description: error.message || "Ocorreu um erro ao tentar desconectar",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -320,29 +364,69 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       console.log("Tentando registrar usuário:", email);
       
-      const response = await apiRequest('POST', '/api/register', {
-        username: email,
-        password: password,
-        name: name,
-        role: 'operador' // Papel padrão para novos usuários
-      });
+      // Dados do usuário para registro
+      const userData = {
+        name,
+        role: 'operador', // Papel padrão para novos usuários
+      };
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao registrar usuário');
+      // Primeiro tentar registro no Supabase
+      let supabaseSuccessful = false;
+      let registeredUser = null;
+      
+      try {
+        const { success, user: supaUser, error } = await supabaseRegister(email, password, userData);
+        
+        if (success && supaUser) {
+          console.log("Registro Supabase bem-sucedido:", supaUser);
+          supabaseSuccessful = true;
+          
+          // Converter para o formato esperado do usuário
+          registeredUser = {
+            id: supaUser.id ? parseInt(supaUser.id) : 0,
+            name: name,
+            email: email,
+            role: 'operador',
+            baseId: null,
+            basename: null,
+            oficina_id: null
+          };
+        } else if (error) {
+          console.warn("Falha no registro com Supabase:", error);
+        }
+      } catch (supabaseError) {
+        console.error("Erro ao tentar registro com Supabase:", supabaseError);
       }
       
-      const userData = await response.json();
-      console.log("Registro bem-sucedido:", userData);
+      // Se o registro no Supabase falhou ou não está disponível, tentar o registro tradicional
+      if (!supabaseSuccessful) {
+        console.log("Tentando registro tradicional...");
+        
+        const response = await apiRequest('POST', '/api/register', {
+          username: email,
+          password: password,
+          name: name,
+          role: 'operador'
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erro ao registrar usuário');
+        }
+        
+        registeredUser = await response.json();
+        console.log("Registro tradicional bem-sucedido:", registeredUser);
+      }
       
-      setUser(userData);
+      // Define o usuário no estado
+      setUser(registeredUser);
       
       toast({
         title: "Registro bem-sucedido",
         description: "Sua conta foi criada com sucesso!",
       });
       
-      return userData;
+      return registeredUser as User;
     } catch (error: any) {
       console.error('Erro no registro:', error);
       
