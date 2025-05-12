@@ -419,150 +419,195 @@ export function setupAuth(app: Express) {
   });
 
   app.get("/api/user", async (req, res) => {
-    // Verificar se há um cabeçalho de verificação especial
+    // Extrair flags de verificação
     const isVerification = req.headers['x-auth-verification'] === 'true';
+    const isEmergency = req.headers['x-emergency-auth'] === 'true';
+    const hasAuthHeader = !!req.headers.authorization;
+    
+    // Log diagnóstico inicial
+    console.log(`[API/USER] Requisição recebida:`, {
+      isAuthenticated: req.isAuthenticated(),
+      hasSession: !!req.session,
+      sessionID: req.sessionID,
+      hasCookies: !!req.headers.cookie,
+      hasAuthHeader,
+      isVerification,
+      isEmergency,
+      origem: req.headers.origin,
+      referer: req.headers.referer
+    });
 
-    // Verificar se o usuário está autenticado
-    if (!req.isAuthenticated()) {
-      // Log mais detalhado para depuração
-      console.log('Tentativa de acesso não autenticado a /api/user', {
-        hasSession: !!req.session,
-        sessionID: req.sessionID,
-        cookies: req.headers.cookie,
-        origin: req.headers.origin,
-        referer: req.headers.referer,
-        userAgent: req.headers['user-agent'],
-        headers: Object.keys(req.headers),
-        cookieContent: req.headers.cookie,
-        isVerification
-      });
+    // MÉTODO 1: Verificar autenticação via Passport (padrão)
+    if (req.isAuthenticated() && req.user) {
+      console.log(`[API/USER] Usuário já autenticado via Passport: ${req.user.id} (${req.user.email})`);
       
-      // Se esta é uma requisição de verificação após login, tentar mais agressivamente
-      if (isVerification) {
-        console.log('[API/USER] Requisição de verificação de autenticação especial');
-        
-        // Verificar se temos ID de usuário na sessão
-        if (req.session && (req.session as any)?.passport?.user) {
-          const userId = (req.session as any).passport.user;
-          console.log(`[API/USER] Encontrado ID de usuário na sessão: ${userId}`);
-          
-          try {
-            // Tentar obter o usuário do banco
-            const user = await storage.getUser(userId);
-            
-            if (user) {
-              console.log(`[API/USER] Recuperado usuário ${user.id} (${user.email}), tentando login manual`);
-              
-              // Login manual do usuário
-              return req.login(user, (loginErr) => {
-                if (loginErr) {
-                  console.error('[API/USER] Falha na recuperação da sessão:', loginErr);
-                  return res.status(401).json({ 
-                    message: "Não autenticado",
-                    recoveryAttempted: true,
-                    recoverySuccess: false,
-                    error: "Erro ao restaurar sessão"
-                  });
-                }
-                
-                // Sucesso na recuperação
-                console.log('[API/USER] Sessão recuperada com sucesso!');
-                
-                // Tocar na sessão para garantir persistência
-                req.session.touch();
-                
-                // Salvar a sessão explicitamente
-                req.session.save((saveErr) => {
-                  if (saveErr) {
-                    console.error('[API/USER] Erro ao salvar sessão:', saveErr);
-                  } else {
-                    console.log('[API/USER] Sessão salva explicitamente');
-                  }
-                  
-                  const userWithoutPassword = { ...user, password: undefined };
-                  return res.json({
-                    ...userWithoutPassword,
-                    _sessionRecovered: true,
-                    _sessionSaved: !saveErr
-                  });
-                });
-              });
-            }
-          } catch (error) {
-            console.error('[API/USER] Erro ao recuperar usuário para verificação:', error);
-          }
-        }
-      } else {
-        // Verificação de sessão normal
-        if (req.session && (req.session as any)?.passport?.user) {
-          const userId = (req.session as any).passport.user;
-          console.log(`[API/USER] Tentando recuperação automática de sessão para userId: ${userId}`);
-          
-          try {
-            // Tentar obter o usuário do banco
-            const user = await storage.getUser(userId);
-            
-            if (user) {
-              console.log(`[API/USER] Recuperado usuário ${user.id} (${user.email}) do banco, tentando login manual`);
-              
-              // Login manual do usuário
-              return req.login(user, (loginErr) => {
-                if (loginErr) {
-                  console.error('[API/USER] Falha na recuperação da sessão:', loginErr);
-                  return res.status(401).json({ 
-                    message: "Não autenticado",
-                    recoveryAttempted: true,
-                    recoverySuccess: false,
-                    error: "Erro ao restaurar sessão"
-                  });
-                }
-                
-                // Sucesso na recuperação
-                console.log('[API/USER] Sessão recuperada com sucesso!');
-                
-                // Tocar na sessão para garantir persistência
-                req.session.touch();
-                
-                const userWithoutPassword = { ...user, password: undefined };
-                return res.json({
-                  ...userWithoutPassword,
-                  _sessionRecovered: true
-                });
-              });
-            }
-          } catch (error) {
-            console.error('[API/USER] Erro ao recuperar usuário para recuperação de sessão:', error);
-          }
-        }
-      }
-      
-      // Se não conseguiu recuperar, retornar erro de autenticação
-      return res.status(401).json({ message: "Não autenticado" });
-    }
-    
-    // Usuário está autenticado normalmente
-    console.log(`Informações do usuário solicitadas: ${req.user.id} (${req.user.email})`);
-    
-    // Se for uma requisição de verificação, garantir persistência da sessão
-    if (isVerification) {
-      console.log(`[API/USER] Verificando persistência de sessão para ${req.user.id} (${req.user.email})`);
-      
-      // Tocar na sessão para garantir persistência
+      // Garantir sessão persistente
       req.session.touch();
       
-      // Forçar salvamento da sessão
-      req.session.save((err) => {
-        if (err) {
-          console.error('[API/USER] Erro ao salvar sessão durante verificação:', err);
-        } else {
-          console.log('[API/USER] Sessão salva com sucesso durante verificação');
-        }
+      // Retornar dados do usuário sem senha
+      const userWithoutPassword = { ...req.user, password: undefined };
+      return res.json({
+        ...userWithoutPassword,
+        _authMethod: 'session_standard'
       });
     }
+
+    // MÉTODO 2: Tentar recuperar Token JWT do cabeçalho Authorization
+    if (hasAuthHeader && req.headers.authorization.startsWith('Bearer ')) {
+      const jwtToken = req.headers.authorization.split(' ')[1];
+      console.log('[API/USER] Tentando autenticação via token JWT');
+      
+      try {
+        // Validar com Supabase
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+        
+        if (supabaseUrl && supabaseKey) {
+          const supabase = createClient(supabaseUrl, supabaseKey);
+          const { data: { user: supaUser }, error } = await supabase.auth.getUser(jwtToken);
+          
+          if (supaUser && !error) {
+            console.log(`[API/USER] Token JWT válido para: ${supaUser.email}`);
+            
+            // Buscar usuário no banco
+            const dbUser = await storage.getUserByEmail(supaUser.email);
+            
+            if (dbUser) {
+              console.log(`[API/USER] Usuário encontrado no banco: ${dbUser.id} (${dbUser.email})`);
+              
+              // Login manual do usuário
+              return req.login(dbUser, (loginErr) => {
+                if (loginErr) {
+                  console.error('[API/USER] Falha na autenticação via JWT:', loginErr);
+                } else {
+                  console.log('[API/USER] Login manual via JWT bem-sucedido');
+                  
+                  // Armazenar token JWT na sessão para recuperação de emergência
+                  if (req.session) {
+                    // @ts-ignore
+                    req.session.emergencyToken = jwtToken;
+                    
+                    // Salvar sessão explicitamente
+                    req.session.save((saveErr) => {
+                      if (saveErr) {
+                        console.error('[API/USER] Erro ao salvar sessão após login via JWT:', saveErr);
+                      } else {
+                        console.log('[API/USER] Sessão salva com sucesso após login via JWT');
+                      }
+                    });
+                  }
+                  
+                  const userWithoutPassword = { ...dbUser, password: undefined };
+                  return res.json({
+                    ...userWithoutPassword,
+                    _authMethod: 'jwt_token'
+                  });
+                }
+              });
+            }
+          } else {
+            console.log('[API/USER] Token JWT inválido ou expirado:', error?.message);
+          }
+        }
+      } catch (jwtError) {
+        console.error('[API/USER] Erro ao processar JWT:', jwtError);
+      }
+    }
+
+    // MÉTODO 3: Tentar recuperação de sessão parcial (passport.user existe)
+    if (req.session && (req.session as any)?.passport?.user) {
+      const userId = (req.session as any).passport.user;
+      console.log(`[API/USER] Sessão parcial encontrada, userId=${userId}`);
+      
+      try {
+        // Buscar usuário no banco
+        const user = await storage.getUser(userId);
+        
+        if (user) {
+          console.log(`[API/USER] Usuário recuperado do banco: ${user.id} (${user.email})`);
+          
+          // Login manual
+          return req.login(user, (loginErr) => {
+            if (loginErr) {
+              console.error('[API/USER] Falha na recuperação da sessão parcial:', loginErr);
+            } else {
+              console.log('[API/USER] Sessão parcial recuperada com sucesso');
+              
+              // Garantir persistência
+              req.session.touch();
+              req.session.save();
+              
+              const userWithoutPassword = { ...user, password: undefined };
+              return res.json({
+                ...userWithoutPassword,
+                _authMethod: 'session_recovery'
+              });
+            }
+          });
+        }
+      } catch (error) {
+        console.error('[API/USER] Erro ao recuperar usuário da sessão parcial:', error);
+      }
+    }
+
+    // MÉTODO 4: Token de Emergência na Sessão
+    if (isEmergency && req.session && (req.session as any).emergencyToken) {
+      const emergencyToken = (req.session as any).emergencyToken;
+      console.log('[API/USER] Tentando recuperação com token de emergência');
+      
+      try {
+        // Validar com Supabase
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+        
+        if (supabaseUrl && supabaseKey) {
+          const supabase = createClient(supabaseUrl, supabaseKey);
+          const { data: { user: supaUser }, error } = await supabase.auth.getUser(emergencyToken);
+          
+          if (supaUser && !error) {
+            console.log(`[API/USER] Token emergencial válido para: ${supaUser.email}`);
+            
+            // Buscar usuário no banco
+            const dbUser = await storage.getUserByEmail(supaUser.email);
+            
+            if (dbUser) {
+              console.log(`[API/USER] Usuário recuperado via emergência: ${dbUser.id}`);
+              
+              // Login manual
+              return req.login(dbUser, (loginErr) => {
+                if (loginErr) {
+                  console.error('[API/USER] Falha no login de emergência:', loginErr);
+                } else {
+                  // Garantir persistência
+                  req.session.touch();
+                  req.session.save();
+                  
+                  const userWithoutPassword = { ...dbUser, password: undefined };
+                  return res.json({
+                    ...userWithoutPassword,
+                    _authMethod: 'emergency_token'
+                  });
+                }
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[API/USER] Erro na recuperação de emergência:', error);
+      }
+    }
     
-    // Não enviar a senha para o cliente
-    const userWithoutPassword = { ...req.user, password: undefined };
-    res.json(userWithoutPassword);
+    // Log detalhado para diagnóstico quando todos os métodos falharem
+    console.log('[API/USER] Todos os métodos de autenticação falharam. Detalhes:', {
+      sessionID: req.sessionID,
+      hasPassportObj: !!(req.session && (req.session as any)?.passport),
+      sessionKeys: req.session ? Object.keys(req.session) : [],
+      cookieHeader: req.headers.cookie ? 'Presente' : 'Ausente',
+      authorizationHeader: hasAuthHeader ? 'Presente' : 'Ausente'
+    });
+    
+    // Nenhum método funcionou
+    return res.status(401).json({ message: "Não autenticado" });
   });
   
   // Rota para ressincronizar sessão a partir de token JWT (Supabase)
