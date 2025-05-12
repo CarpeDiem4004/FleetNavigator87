@@ -232,10 +232,26 @@ function App() {
               <WorkshopsPage />
             </ProtectedRoute>
           </Route>
-          <ProtectedRoute path="/fleet-management/maintenance" component={MaintenancePage} />
-          <ProtectedRoute path="/fleet-management/budgets" component={BudgetManagementPage} />
-          <ProtectedRoute path="/accidents" component={Accidents} />
-          <ProtectedRoute path="/work-safety" component={WorkSafety} />
+          <Route path="/fleet-management/maintenance">
+            <ProtectedRoute allowedRoles={["admin", "gestor_frota"]}>
+              <MaintenancePage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/fleet-management/budgets">
+            <ProtectedRoute allowedRoles={["admin", "gestor_frota"]}>
+              <BudgetManagementPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/accidents">
+            <ProtectedRoute allowedRoles={["admin", "gestor_frota"]}>
+              <Accidents />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/work-safety">
+            <ProtectedRoute allowedRoles={["admin", "gestor_frota"]}>
+              <WorkSafety />
+            </ProtectedRoute>
+          </Route>
           <ProtectedRoute path="/users" component={UsersNew} />
           <ProtectedRoute path="/bases" component={Bases} />
           <ProtectedRoute path="/bases/campinas" component={BaseCampinas} />
