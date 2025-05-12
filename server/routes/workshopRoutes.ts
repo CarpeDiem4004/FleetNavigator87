@@ -3,19 +3,29 @@
  * Funciona com as tabelas criadas para o módulo de oficinas
  */
 
-const express = require('express');
-const router = express.Router();
-const { Pool } = require('pg');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+import express, { Request, Response, NextFunction } from 'express';
+import { pool } from '../db';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
-// Configuração da conexão com o banco de dados
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL
-});
+const router = express.Router();
+
+// Interface para usuário autenticado
+interface AuthenticatedUser {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  oficina_id: number | null;
+}
+
+// Interface para Request com usuário
+interface AuthenticatedRequest extends Request {
+  user?: AuthenticatedUser;
+}
 
 // Middleware para verificar autenticação JWT
-const authMiddleware = async (req, res, next) => {
+const authMiddleware = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
     
@@ -23,7 +33,7 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ message: 'Token não fornecido. Autenticação necessária.' });
     }
     
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'muriciLogisticaSecret2025');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'muriciLogisticaSecret2025') as { userId: number };
     const client = await pool.connect();
     
     try {
@@ -60,7 +70,7 @@ const authMiddleware = async (req, res, next) => {
 };
 
 // Middleware para verificar se o usuário é uma oficina ou admin
-const workshopAuthMiddleware = (req, res, next) => {
+const workshopAuthMiddleware = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   if (!req.user) {
     return res.status(401).json({ message: 'Usuário não autenticado' });
   }
@@ -78,7 +88,7 @@ const workshopAuthMiddleware = (req, res, next) => {
 };
 
 // Rota para cadastrar uma nova oficina
-router.post('/cadastro', async (req, res) => {
+router.post('/cadastro', async (req: Request, res: Response) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -158,7 +168,7 @@ router.post('/cadastro', async (req, res) => {
     console.error('Erro ao cadastrar oficina:', error);
     res.status(500).json({
       message: 'Erro ao processar o cadastro. Tente novamente mais tarde.',
-      error: error.message
+      error: (error as Error).message
     });
   } finally {
     client.release();
@@ -169,9 +179,11 @@ router.post('/cadastro', async (req, res) => {
 // ==========================================
 
 // Listar detalhes da oficina do usuário logado
-router.get('/perfil', authMiddleware, workshopAuthMiddleware, async (req, res) => {
+router.get('/perfil', authMiddleware, workshopAuthMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const workshopId = req.user.role === 'oficina' ? req.user.oficina_id : req.query.id;
+    const workshopId = req.user?.role === 'oficina' 
+      ? req.user.oficina_id 
+      : (req.query.id ? parseInt(req.query.id as string) : undefined);
     
     if (!workshopId) {
       return res.status(400).json({ message: 'ID da oficina não fornecido' });
@@ -199,17 +211,17 @@ router.get('/perfil', authMiddleware, workshopAuthMiddleware, async (req, res) =
     }
   } catch (error) {
     console.error('Erro ao buscar perfil da oficina:', error);
-    res.status(500).json({ message: 'Erro ao buscar perfil da oficina', error: error.message });
+    res.status(500).json({ message: 'Erro ao buscar perfil da oficina', error: (error as Error).message });
   }
 });
 
 // Atualizar perfil da oficina
-router.put('/perfil', authMiddleware, workshopAuthMiddleware, async (req, res) => {
+router.put('/perfil', authMiddleware, workshopAuthMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
     // Se for usuário oficina, só pode atualizar a própria oficina
-    const workshopId = req.user.oficina_id;
+    const workshopId = req.user?.oficina_id;
     
-    if (req.user.role === 'oficina' && (!workshopId || parseInt(req.body.id) !== workshopId)) {
+    if (req.user?.role === 'oficina' && (!workshopId || parseInt(req.body.id) !== workshopId)) {
       return res.status(403).json({ message: 'Você só pode atualizar sua própria oficina' });
     }
     
@@ -314,12 +326,12 @@ router.put('/perfil', authMiddleware, workshopAuthMiddleware, async (req, res) =
     }
   } catch (error) {
     console.error('Erro ao atualizar perfil da oficina:', error);
-    res.status(500).json({ message: 'Erro ao atualizar perfil da oficina', error: error.message });
+    res.status(500).json({ message: 'Erro ao atualizar perfil da oficina', error: (error as Error).message });
   }
 });
 
 // Criar orçamento
-router.post('/orcamentos', authMiddleware, workshopAuthMiddleware, async (req, res) => {
+router.post('/orcamentos', authMiddleware, workshopAuthMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const client = await pool.connect();
     try {
@@ -344,9 +356,9 @@ router.post('/orcamentos', authMiddleware, workshopAuthMiddleware, async (req, r
       }
       
       // Define o ID da oficina (se for admin, usa o ID fornecido)
-      const workshopId = req.user.role === 'oficina' 
+      const workshopId = req.user?.role === 'oficina' 
         ? req.user.oficina_id 
-        : (req.body.workshop_id || req.user.oficina_id);
+        : (req.body.workshop_id || req.user?.oficina_id);
       
       if (!workshopId) {
         return res.status(400).json({ message: 'ID da oficina não fornecido' });
@@ -416,7 +428,7 @@ router.post('/orcamentos', authMiddleware, workshopAuthMiddleware, async (req, r
         INSERT INTO workshop_budget_history
         (budget_id, previous_status, new_status, user_id, observations)
         VALUES ($1, NULL, 'pendente', $2, 'Orçamento criado')
-      `, [budgetId, req.user.id]);
+      `, [budgetId, req.user?.id]);
       
       // Registra o veículo em manutenção, se ainda não estiver registrado
       const vehicleCheck = await client.query(`
@@ -460,26 +472,26 @@ router.post('/orcamentos', authMiddleware, workshopAuthMiddleware, async (req, r
     }
   } catch (error) {
     console.error('Erro ao criar orçamento:', error);
-    res.status(500).json({ message: 'Erro ao criar orçamento', error: error.message });
+    res.status(500).json({ message: 'Erro ao criar orçamento', error: (error as Error).message });
   }
 });
 
 // Listar orçamentos da oficina
-router.get('/orcamentos', authMiddleware, workshopAuthMiddleware, async (req, res) => {
+router.get('/orcamentos', authMiddleware, workshopAuthMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
     // Define o ID da oficina (se for admin ou gestor_frota, pode ver todos ou filtrar por ID)
     let workshopId = null;
     let whereClause = '';
-    let queryParams = [];
+    let queryParams: any[] = [];
     
-    if (req.user.role === 'oficina') {
+    if (req.user?.role === 'oficina') {
       // Usuário de oficina só vê seus próprios orçamentos
       workshopId = req.user.oficina_id;
       whereClause = 'WHERE b.workshop_id = $1';
       queryParams.push(workshopId);
     } else if (req.query.workshop_id) {
       // Admin ou gestor filtrando por oficina específica
-      workshopId = req.query.workshop_id;
+      workshopId = parseInt(req.query.workshop_id as string);
       whereClause = 'WHERE b.workshop_id = $1';
       queryParams.push(workshopId);
     }
@@ -524,14 +536,14 @@ router.get('/orcamentos', authMiddleware, workshopAuthMiddleware, async (req, re
     }
   } catch (error) {
     console.error('Erro ao listar orçamentos:', error);
-    res.status(500).json({ message: 'Erro ao listar orçamentos', error: error.message });
+    res.status(500).json({ message: 'Erro ao listar orçamentos', error: (error as Error).message });
   }
 });
 
 // Obter detalhes de um orçamento específico
-router.get('/orcamentos/:id', authMiddleware, workshopAuthMiddleware, async (req, res) => {
+router.get('/orcamentos/:id', authMiddleware, workshopAuthMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const budgetId = req.params.id;
+    const budgetId = parseInt(req.params.id);
     
     const client = await pool.connect();
     try {
@@ -550,7 +562,7 @@ router.get('/orcamentos/:id', authMiddleware, workshopAuthMiddleware, async (req
       const budget = budgetResult.rows[0];
       
       // Verifica se o usuário tem permissão para acessar este orçamento
-      if (req.user.role === 'oficina' && budget.workshop_id !== req.user.oficina_id) {
+      if (req.user?.role === 'oficina' && budget.workshop_id !== req.user.oficina_id) {
         return res.status(403).json({ message: 'Você não tem permissão para acessar este orçamento' });
       }
       
@@ -589,19 +601,19 @@ router.get('/orcamentos/:id', authMiddleware, workshopAuthMiddleware, async (req
     }
   } catch (error) {
     console.error('Erro ao buscar detalhes do orçamento:', error);
-    res.status(500).json({ message: 'Erro ao buscar detalhes do orçamento', error: error.message });
+    res.status(500).json({ message: 'Erro ao buscar detalhes do orçamento', error: (error as Error).message });
   }
 });
 
 // Aprovar ou rejeitar um orçamento (apenas admin ou gestor_frota)
-router.put('/orcamentos/:id/status', authMiddleware, async (req, res) => {
+router.put('/orcamentos/:id/status', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
     // Apenas admin ou gestor_frota pode aprovar/rejeitar orçamentos
-    if (req.user.role !== 'admin' && req.user.role !== 'gestor_frota') {
+    if (req.user?.role !== 'admin' && req.user?.role !== 'gestor_frota') {
       return res.status(403).json({ message: 'Você não tem permissão para esta ação' });
     }
     
-    const budgetId = req.params.id;
+    const budgetId = parseInt(req.params.id);
     const { status, observations } = req.body;
     
     if (!status || !['aprovado', 'rejeitado'].includes(status)) {
@@ -636,7 +648,7 @@ router.put('/orcamentos/:id/status', authMiddleware, async (req, res) => {
         UPDATE workshop_budgets
         SET status = $1, approved_by = $2, approved_at = CURRENT_TIMESTAMP
         WHERE id = $3
-      `, [status, req.user.id, budgetId]);
+      `, [status, req.user?.id, budgetId]);
       
       // Registra no histórico
       await client.query(`
@@ -647,7 +659,7 @@ router.put('/orcamentos/:id/status', authMiddleware, async (req, res) => {
         budgetId, 
         currentBudget.status, 
         status, 
-        req.user.id, 
+        req.user?.id, 
         observations || `Orçamento ${status === 'aprovado' ? 'aprovado' : 'rejeitado'} pelo gestor`
       ]);
       
@@ -675,12 +687,12 @@ router.put('/orcamentos/:id/status', authMiddleware, async (req, res) => {
     }
   } catch (error) {
     console.error('Erro ao atualizar status do orçamento:', error);
-    res.status(500).json({ message: 'Erro ao atualizar status do orçamento', error: error.message });
+    res.status(500).json({ message: 'Erro ao atualizar status do orçamento', error: (error as Error).message });
   }
 });
 
 // Rota para upload de documentos da oficina
-router.post('/documentos', authMiddleware, workshopAuthMiddleware, async (req, res) => {
+router.post('/documentos', authMiddleware, workshopAuthMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { document_type, document_name, file_path, file_type, file_size } = req.body;
     
@@ -690,9 +702,9 @@ router.post('/documentos', authMiddleware, workshopAuthMiddleware, async (req, r
     }
     
     // Define o ID da oficina
-    const workshopId = req.user.role === 'oficina' 
+    const workshopId = req.user?.role === 'oficina' 
       ? req.user.oficina_id 
-      : (req.body.workshop_id || req.user.oficina_id);
+      : (req.body.workshop_id || req.user?.oficina_id);
     
     if (!workshopId) {
       return res.status(400).json({ message: 'ID da oficina não fornecido' });
@@ -723,20 +735,20 @@ router.post('/documentos', authMiddleware, workshopAuthMiddleware, async (req, r
     }
   } catch (error) {
     console.error('Erro ao enviar documento:', error);
-    res.status(500).json({ message: 'Erro ao enviar documento', error: error.message });
+    res.status(500).json({ message: 'Erro ao enviar documento', error: (error as Error).message });
   }
 });
 
 // Listar documentos da oficina
-router.get('/documentos', authMiddleware, workshopAuthMiddleware, async (req, res) => {
+router.get('/documentos', authMiddleware, workshopAuthMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
     // Define o ID da oficina
-    let workshopId = null;
+    let workshopId: number | null | undefined = null;
     
-    if (req.user.role === 'oficina') {
+    if (req.user?.role === 'oficina') {
       workshopId = req.user.oficina_id;
     } else if (req.query.workshop_id) {
-      workshopId = req.query.workshop_id;
+      workshopId = parseInt(req.query.workshop_id as string);
     }
     
     if (!workshopId) {
@@ -757,23 +769,23 @@ router.get('/documentos', authMiddleware, workshopAuthMiddleware, async (req, re
     }
   } catch (error) {
     console.error('Erro ao listar documentos:', error);
-    res.status(500).json({ message: 'Erro ao listar documentos', error: error.message });
+    res.status(500).json({ message: 'Erro ao listar documentos', error: (error as Error).message });
   }
 });
 
 // Rota para listar veículos em manutenção
-router.get('/veiculos-em-manutencao', authMiddleware, workshopAuthMiddleware, async (req, res) => {
+router.get('/veiculos-em-manutencao', authMiddleware, workshopAuthMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
     // Define o ID da oficina (se for admin, pode ver todos)
     let whereClause = '';
-    let queryParams = [];
+    let queryParams: any[] = [];
     
-    if (req.user.role === 'oficina') {
+    if (req.user?.role === 'oficina') {
       whereClause = 'WHERE workshop_id = $1';
       queryParams.push(req.user.oficina_id);
     } else if (req.query.workshop_id) {
       whereClause = 'WHERE workshop_id = $1';
-      queryParams.push(req.query.workshop_id);
+      queryParams.push(parseInt(req.query.workshop_id as string));
     }
     
     // Filtro adicional por status, se fornecido
@@ -812,14 +824,14 @@ router.get('/veiculos-em-manutencao', authMiddleware, workshopAuthMiddleware, as
     }
   } catch (error) {
     console.error('Erro ao listar veículos em manutenção:', error);
-    res.status(500).json({ message: 'Erro ao listar veículos em manutenção', error: error.message });
+    res.status(500).json({ message: 'Erro ao listar veículos em manutenção', error: (error as Error).message });
   }
 });
 
 // Atualizar status de um veículo em manutenção
-router.put('/veiculos-em-manutencao/:id/status', authMiddleware, workshopAuthMiddleware, async (req, res) => {
+router.put('/veiculos-em-manutencao/:id/status', authMiddleware, workshopAuthMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const vehicleId = req.params.id;
+    const vehicleId = parseInt(req.params.id);
     const { status, observations, expected_exit_date } = req.body;
     
     if (!status) {
@@ -853,7 +865,7 @@ router.put('/veiculos-em-manutencao/:id/status', authMiddleware, workshopAuthMid
       }
       
       // Se for usuário de oficina, verifica se tem permissão
-      if (req.user.role === 'oficina' && vehicleCheck.rows[0].workshop_id !== req.user.oficina_id) {
+      if (req.user?.role === 'oficina' && vehicleCheck.rows[0].workshop_id !== req.user.oficina_id) {
         return res.status(403).json({ message: 'Você não tem permissão para modificar este veículo' });
       }
       
@@ -915,20 +927,20 @@ router.put('/veiculos-em-manutencao/:id/status', authMiddleware, workshopAuthMid
     }
   } catch (error) {
     console.error('Erro ao atualizar status do veículo:', error);
-    res.status(500).json({ message: 'Erro ao atualizar status do veículo', error: error.message });
+    res.status(500).json({ message: 'Erro ao atualizar status do veículo', error: (error as Error).message });
   }
 });
 
 // Dashboard para oficinas
-router.get('/dashboard', authMiddleware, workshopAuthMiddleware, async (req, res) => {
+router.get('/dashboard', authMiddleware, workshopAuthMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
     // Define o ID da oficina (se for admin, pode ver todos)
     let workshopId = null;
     
-    if (req.user.role === 'oficina') {
+    if (req.user?.role === 'oficina') {
       workshopId = req.user.oficina_id;
     } else if (req.query.workshop_id) {
-      workshopId = req.query.workshop_id;
+      workshopId = parseInt(req.query.workshop_id as string);
     }
     
     if (!workshopId) {
@@ -999,9 +1011,9 @@ router.get('/dashboard', authMiddleware, workshopAuthMiddleware, async (req, res
     }
   } catch (error) {
     console.error('Erro ao buscar dados do dashboard:', error);
-    res.status(500).json({ message: 'Erro ao buscar dados do dashboard', error: error.message });
+    res.status(500).json({ message: 'Erro ao buscar dados do dashboard', error: (error as Error).message });
   }
 });
 
 // Exporta as rotas
-module.exports = router;
+export default router;
