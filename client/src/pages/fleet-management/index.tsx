@@ -159,19 +159,22 @@ export default function FleetManagement() {
               </CardFooter>
             </Card>
 
-            <Card className="flex flex-col">
+            <Card className="flex flex-col border-amber-500">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Building2 className="h-5 w-5 text-primary" />
+                  <Building2 className="h-5 w-5 text-amber-500" />
                   Oficinas Credenciadas
                   <div className="bg-amber-500 text-white text-xs px-2 py-1 rounded-full ml-1">
                     Nova
                   </div>
                 </CardTitle>
               </CardHeader>
+              <CardContent className="pb-0">
+                <p className="text-amber-700">Há oficinas aguardando aprovação</p>
+              </CardContent>
               <CardFooter className="mt-auto">
                 <Button variant="outline" className="w-full" asChild>
-                  <Link href="/fleet-management/workshops">
+                  <Link href="/fleet-management/workshops/approval">
                     Acessar <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>

@@ -15,7 +15,7 @@ const router = express.Router();
  * GET /api/workshops/pending
  * Lista todas as oficinas pendentes de aprovação
  */
-router.get('/pending', isAuthenticated, isFleetManager, async (req: Request, res: Response) => {
+router.get('/pending', isAuthenticated, async (req: Request, res: Response) => {
   try {
     // Busca todas as oficinas junto com seus detalhes
     const result = await pool.query(`
