@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Copy, Check } from 'lucide-react';
 // Componente inline para spinner (devido a problema de importação)
 const Spinner = ({ size = "md" }: { size?: "sm" | "md" | "lg" }) => {
   const sizeClass = {
@@ -101,6 +102,33 @@ export default function WorkshopsApprovalPage() {
            serviceType.includes(term);
   });
 
+  // Estado para o modal de acesso
+  const [accessDialogOpen, setAccessDialogOpen] = useState(false);
+  const [accessInfo, setAccessInfo] = useState<{
+    name: string;
+    email: string;
+    link: string;
+    password: string;
+  } | null>(null);
+  
+  // Estado para copiar texto
+  const [copied, setCopied] = useState({
+    link: false,
+    email: false,
+    password: false,
+    all: false
+  });
+  
+  // Função para copiar texto para a área de transferência
+  const copyToClipboard = (text: string, field: 'link' | 'email' | 'password' | 'all') => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied({ ...copied, [field]: true });
+      setTimeout(() => {
+        setCopied({ ...copied, [field]: false });
+      }, 2000);
+    });
+  };
+  
   // Função para aprovar uma oficina - implementação temporária para demonstração
   const handleApprove = async (workshopId: number) => {
     try {
@@ -116,6 +144,17 @@ export default function WorkshopsApprovalPage() {
       // Geramos uma senha temporária
       const tempPassword = Math.random().toString(36).slice(-8);
       
+      // Preparamos as informações de acesso
+      setAccessInfo({
+        name: workshop?.name || '',
+        email: workshop?.email || '',
+        link: 'https://gestaoonfleet.com.br/oficina/login',
+        password: tempPassword
+      });
+      
+      // Abrimos o modal de acesso
+      setAccessDialogOpen(true);
+      
       // Exibimos informações no console
       console.log('Oficina aprovada:', workshop);
       console.log('Link de acesso:', `https://gestaoonfleet.com.br/oficina/login`);
@@ -125,13 +164,9 @@ export default function WorkshopsApprovalPage() {
       // Atualizamos a UI com as informações de acesso
       toast({
         title: 'Oficina aprovada com sucesso!',
-        description: 'Anote as informações de acesso para enviar à oficina.',
+        description: 'As informações de acesso estão sendo exibidas.',
         variant: 'default',
       });
-      
-      // Exibimos um diálogo com as informações de acesso
-      // (Na versão atual, só mostramos no console, mas poderíamos adicionar um Dialog component)
-      alert(`Oficina aprovada: ${workshop?.name}\n\nInformações de acesso:\nLink: https://gestaoonfleet.com.br/oficina/login\nEmail: ${workshop?.email}\nSenha temporária: ${tempPassword}\n\nForneça estas informações diretamente à oficina.`);
       
       // Atualiza a lista localmente
       // Em produção, voltaremos a usar a chamada de API real
@@ -348,6 +383,97 @@ export default function WorkshopsApprovalPage() {
               disabled={!rejectionReason.trim()}
             >
               Confirmar Rejeição
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Diálogo de informações de acesso */}
+      <Dialog open={accessDialogOpen} onOpenChange={setAccessDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Informações de Acesso da Oficina</DialogTitle>
+            <DialogDescription>
+              Forneça estas informações à oficina para que ela possa acessar o sistema.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <h4 className="font-medium">Oficina aprovada</h4>
+              <p className="text-sm text-slate-500">{accessInfo?.name}</p>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium">Link de acesso</h4>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1"
+                  onClick={() => copyToClipboard(accessInfo?.link || '', 'link')}
+                >
+                  {copied.link ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copied.link ? 'Copiado' : 'Copiar'}
+                </Button>
+              </div>
+              <p className="text-sm font-mono p-2 bg-slate-100 rounded-md break-all select-all">
+                {accessInfo?.link}
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium">Email para acesso</h4>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1"
+                  onClick={() => copyToClipboard(accessInfo?.email || '', 'email')}
+                >
+                  {copied.email ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copied.email ? 'Copiado' : 'Copiar'}
+                </Button>
+              </div>
+              <p className="text-sm font-mono p-2 bg-slate-100 rounded-md break-all select-all">
+                {accessInfo?.email}
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium">Senha temporária</h4>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1"
+                  onClick={() => copyToClipboard(accessInfo?.password || '', 'password')}
+                >
+                  {copied.password ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copied.password ? 'Copiado' : 'Copiar'}
+                </Button>
+              </div>
+              <p className="text-sm font-mono p-2 bg-slate-100 rounded-md break-all select-all">
+                {accessInfo?.password}
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-between sm:space-x-2">
+            <Button
+              variant="secondary"
+              onClick={() => setAccessDialogOpen(false)}
+            >
+              Fechar
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => copyToClipboard(
+                `Link: ${accessInfo?.link}\nEmail: ${accessInfo?.email}\nSenha: ${accessInfo?.password}`,
+                'all'
+              )}
+              className="mb-2 sm:mb-0 gap-1"
+            >
+              {copied.all ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copied.all ? 'Tudo copiado' : 'Copiar tudo'}
             </Button>
           </DialogFooter>
         </DialogContent>
