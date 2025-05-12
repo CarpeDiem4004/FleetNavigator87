@@ -195,7 +195,20 @@ const SidebarSimplificado: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Veículos', href: '/vehicles', icon: Truck },
     { name: 'Motoristas', href: '/drivers', icon: Users },
     { name: 'Manutenção', href: '/manutencao', icon: Wrench },
-    { name: 'Pneus', href: '/tires', icon: CircleDot },
+    
+    // Menu de Pneus com submenu
+    {
+      name: 'Pneus', 
+      href: '#', 
+      icon: CircleDot,
+      subItems: [
+        { name: 'Gestão de Pneus', href: '/tires', icon: CircleDot },
+        { name: 'Entrada de Pneus', href: '/tires/entrada', icon: CircleDot },
+        { name: 'Solicitações', href: '/tires/solicitacoes', icon: CircleDot },
+        { name: 'Gestão Resiliente', href: '/tires/resiliente', icon: Database, className: 'text-green-400 hover:text-green-300' }
+      ]
+    },
+    
     { name: 'Abastecimento', href: '/refueling', icon: Fuel },
     
     // Nova seção para Postos
