@@ -83,6 +83,54 @@ export function AutoSaveForm({
   // Função para salvar manualmente
   const handleSave = async () => {
     try {
+      console.log('Tentando salvar dados via API de diagnóstico...');
+      
+      // Primeiro tentar salvar através da nossa API Express
+      if (table === 'demo_forms') {
+        try {
+          const response = await fetch('/api/diagnostico/demo-forms', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              form_title: data.title || 'Sem título',
+              form_data: {
+                description: data.description,
+                priority: data.priority,
+                assignedTo: data.assignedTo,
+                ...data
+              },
+              status: 'enviado',
+              created_by: data.assignedTo || 'usuário_formulário'
+            })
+          });
+          
+          if (!response.ok) {
+            console.warn('Resposta da API de diagnóstico não foi OK:', await response.text());
+            throw new Error('Erro ao salvar pela API, tentando método alternativo');
+          }
+          
+          const result = await response.json();
+          console.log('Dados salvos com sucesso via API de diagnóstico:', result);
+          
+          toast({
+            title: 'Salvo com sucesso (API)',
+            description: 'Todos os dados foram salvos no servidor via API Express.',
+          });
+          
+          if (onSave) {
+            onSave(data);
+          }
+          
+          return;
+        } catch (apiError) {
+          console.warn('Falha ao salvar via API, usando fallback:', apiError);
+          // Continua para a próxima opção (fallback)
+        }
+      }
+      
+      // Fallback: Método padrão do hook useAutoSave
       const result = await save();
       if (result.success) {
         toast({
