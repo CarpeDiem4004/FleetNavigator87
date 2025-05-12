@@ -70,7 +70,14 @@ export default function CadastroOficinaSimplificado() {
       });
       
       if (!response.ok) {
-        throw new Error(`Erro no cadastro: ${response.status}`);
+        // Tentar obter a mensagem de erro do servidor
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.message || `Erro no cadastro: ${response.status}`);
+        } catch (parseError) {
+          // Se não conseguir analisar a resposta JSON, usar mensagem genérica
+          throw new Error(`Erro no cadastro: ${response.status}`);
+        }
       }
       
       const result = await response.json();
@@ -85,9 +92,15 @@ export default function CadastroOficinaSimplificado() {
       });
     } catch (error) {
       console.error("Erro ao cadastrar oficina:", error);
+      // Verificar se a mensagem de erro é sobre CNPJ duplicado
+      const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro ao processar seu cadastro.";
+      const isDuplicateCNPJ = errorMessage.includes("CNPJ") && errorMessage.includes("exist");
+      
       toast({
-        title: "Erro no cadastro",
-        description: error instanceof Error ? error.message : "Ocorreu um erro ao processar seu cadastro. Tente novamente.",
+        title: isDuplicateCNPJ ? "CNPJ já cadastrado" : "Erro no cadastro",
+        description: isDuplicateCNPJ 
+          ? "Este CNPJ já está registrado no sistema. Se você já possui cadastro, entre em contato com a central de atendimento."
+          : errorMessage,
         variant: "destructive",
       });
     } finally {

@@ -52,7 +52,7 @@ router.post('/register', async (req: Request, res: Response) => {
     if (checkCnpj.rows[0].exists) {
       return res.status(409).json({
         success: false,
-        message: 'Já existe uma oficina cadastrada com este CNPJ.'
+        message: 'CNPJ já existente no sistema. Por favor, verifique se sua oficina já está cadastrada ou entre em contato com o suporte.'
       });
     }
     
