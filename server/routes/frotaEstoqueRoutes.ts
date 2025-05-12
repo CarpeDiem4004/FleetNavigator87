@@ -16,6 +16,9 @@ const upload = multer({ storage: storage });
 // Rota de diagnóstico para verificar autenticação
 router.get('/diagnostico', (req, res) => {
   const isAuth = req.isAuthenticated();
+  const cookieInfo = req.headers.cookie ? 
+    req.headers.cookie.split(';').map(c => c.trim()) : [];
+  
   const sessionInfo = req.session 
     ? {
         id: req.sessionID,
@@ -28,7 +31,19 @@ router.get('/diagnostico', (req, res) => {
         } : undefined
       }
     : undefined;
-    
+  
+  // Verificar token de autenticação do Supabase
+  let supabaseToken = null;
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    supabaseToken = 'Presente (Bearer)';
+  }
+  
+  // Verificar outras fontes
+  const hasSupabaseCookie = cookieInfo.some(c => c.startsWith('supabase-auth'));
+  
+  // Verificar usuário do Supabase
+  const hasSupabaseUser = !!req.supabaseUser;
+  
   return res.json({
     isAuthenticated: isAuth,
     user: isAuth ? { 
@@ -36,14 +51,30 @@ router.get('/diagnostico', (req, res) => {
       email: req.user.email,
       role: req.user.role
     } : null,
+    supabaseUser: hasSupabaseUser ? {
+      id: req.supabaseUser?.id,
+      email: req.supabaseUser?.email,
+      role: req.supabaseUser?.role
+    } : null,
+    authMethods: {
+      session: isAuth,
+      jwt: !!supabaseToken || hasSupabaseCookie,
+      supabaseUser: hasSupabaseUser
+    },
     host: req.hostname,
     path: req.path,
     method: req.method,
     session: sessionInfo,
+    cookies: {
+      count: cookieInfo.length,
+      hasSupabaseCookie: hasSupabaseCookie
+    },
     headers: {
-      cookie: req.headers.cookie,
-      origin: req.headers.origin,
-      referer: req.headers.referer,
+      cookieParsed: cookieInfo,
+      authorization: req.headers.authorization ? 'Presente' : 'Ausente',
+      cookie: req.headers.cookie ? 'Presente' : 'Ausente',
+      origin: req.headers.origin || 'Não informado',
+      referer: req.headers.referer || 'Não informado',
       'user-agent': req.headers['user-agent']
     }
   });
