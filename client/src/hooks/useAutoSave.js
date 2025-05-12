@@ -100,7 +100,44 @@ export function useAutoSave(table, cacheKey, initialData = {}, options = {}) {
             // Transformar os dados se necessário
             const dataToSave = transformBeforeSave ? transformBeforeSave(item.data) : item.data;
             
-            // Tenta salvar com retry
+            // Se for a tabela demo_forms, tentar primeiro com a API Express
+            if (table === 'demo_forms') {
+              try {
+                // Transformar os dados para o formato esperado pela API
+                const apiData = {
+                  form_title: dataToSave.title || 'Sincronizado',
+                  form_data: dataToSave,
+                  status: dataToSave.status || 'sincronizado',
+                  created_by: dataToSave.assignedTo || 'sincronização_offline'
+                };
+                
+                console.log('Tentando sincronizar dado offline via API:', apiData);
+                
+                const response = await fetch('/api/diagnostico/demo-forms', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(apiData)
+                });
+                
+                if (!response.ok) {
+                  const errorText = await response.text();
+                  console.warn('API Express falhou durante sincronização:', errorText);
+                  throw new Error('API Express falhou: ' + errorText);
+                }
+                
+                const apiResult = await response.json();
+                console.log('Dado offline sincronizado com sucesso via API Express:', apiResult);
+                
+                return { success: true, data: apiResult.data, originalItem: item, api: true };
+              } catch (apiError) {
+                console.warn('Erro ao sincronizar via API Express, usando Supabase:', apiError);
+                // Falhou, continua com Supabase
+              }
+            }
+            
+            // Tenta salvar com retry via Supabase
             const { data, error } = await withRetry(() => {
               if (item.method === 'insert') {
                 return supabase.from(table).insert(dataToSave);
@@ -142,7 +179,7 @@ export function useAutoSave(table, cacheKey, initialData = {}, options = {}) {
     }
   }, [offlineCache, table, transformBeforeSave, offlineCacheKey]);
   
-  // Salvar dados no Supabase
+  // Salvar dados no Supabase ou via API Express
   const saveToSupabase = useCallback(async (dataToSave, method = 'upsert') => {
     if (validateBeforeSave && !validateBeforeSave(dataToSave)) {
       console.warn('Validação falhou, não salvando dados');
@@ -172,13 +209,60 @@ export function useAutoSave(table, cacheKey, initialData = {}, options = {}) {
       };
     }
     
-    // Tentar salvar no Supabase
+    // Tentar salvar os dados
     try {
       setSaving(true);
       setError(null);
       
       let result;
       
+      // Se for tabela demo_forms, tentar primeiro com API Express
+      if (table === 'demo_forms') {
+        try {
+          // Transformar os dados para o formato esperado pela API
+          const apiData = {
+            form_title: transformedData.title || 'Sem título',
+            form_data: transformedData,
+            status: transformedData.status || 'rascunho',
+            created_by: transformedData.assignedTo || 'usuário_autoSave'
+          };
+          
+          console.log('Tentando salvar via API de diagnóstico:', apiData);
+          
+          const response = await fetch('/api/diagnostico/demo-forms', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(apiData)
+          });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.warn('API Express falhou, usando Supabase como fallback:', errorText);
+            throw new Error('API Express falhou: ' + errorText);
+          }
+          
+          const apiResult = await response.json();
+          console.log('Dados salvos com sucesso via API Express:', apiResult);
+          
+          // Considerar bem-sucedido e retornar
+          setLastSaved(new Date());
+          if (onSaveSuccess) onSaveSuccess(apiResult.data);
+          
+          return { 
+            success: true, 
+            data: apiResult.data, 
+            timestamp: new Date(),
+            api: true 
+          };
+        } catch (apiError) {
+          console.warn('Erro ao salvar via API Express, usando Supabase como fallback:', apiError);
+          // Falhou API Express, continua para Supabase
+        }
+      }
+      
+      // Se não for demo_forms ou se a tentativa com API Express falhou, usar Supabase
       // Usar diferentes métodos de inserção baseado no parâmetro method
       if (method === 'insert') {
         result = await withRetry(() => supabase.from(table).insert(transformedData));
