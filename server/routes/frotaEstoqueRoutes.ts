@@ -55,7 +55,7 @@ import { hybridAuth } from '../middleware/hybridAuth';
 router.use(hybridAuth);
 
 // GET - Listar todas as peças em estoque
-router.get('/estoque-pecas', async (req, res) => {
+router.get('/estoque-pecas', verifyAuth, sessionAuth, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
@@ -90,7 +90,7 @@ router.get('/estoque-pecas', async (req, res) => {
 });
 
 // GET - Listar peças com estoque baixo
-router.get('/estoque-pecas/baixo', async (req, res) => {
+router.get('/estoque-pecas/baixo', verifyAuth, sessionAuth, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
@@ -122,7 +122,7 @@ router.get('/estoque-pecas/baixo', async (req, res) => {
 });
 
 // GET - Listar peças com estoque zerado
-router.get('/estoque-pecas/zerado', async (req, res) => {
+router.get('/estoque-pecas/zerado', verifyAuth, sessionAuth, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
@@ -154,7 +154,7 @@ router.get('/estoque-pecas/zerado', async (req, res) => {
 });
 
 // GET - Obter resumo do estoque
-router.get('/estoque-resumo', async (req, res) => {
+router.get('/estoque-resumo', verifyAuth, sessionAuth, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
@@ -421,7 +421,7 @@ router.get('/movimentacao-estoque/:pecaId', async (req, res) => {
 });
 
 // GET - Exportar estoque para Excel
-router.get('/estoque-exportar', async (req, res) => {
+router.get('/estoque-exportar', verifyAuth, sessionAuth, async (req, res) => {
   try {
     // Registrar operação de exportação
     const userInfo = {
@@ -510,7 +510,7 @@ router.get('/estoque-exportar', async (req, res) => {
 });
 
 // GET - Obter template para importação
-router.get('/estoque-template', async (req, res) => {
+router.get('/estoque-template', verifyAuth, sessionAuth, async (req, res) => {
   try {
     // Obter estrutura do template
     const result = await pool.query(`
@@ -589,7 +589,7 @@ router.get('/estoque-template', async (req, res) => {
 });
 
 // POST - Importar estoque do Excel
-router.post('/estoque-importar', upload.single('file'), async (req, res) => {
+router.post('/estoque-importar', verifyAuth, sessionAuth, upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: 'Nenhum arquivo enviado' });
   }
