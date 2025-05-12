@@ -578,31 +578,31 @@ const FormularioAbastecimento: React.FC<
         } else if (postId.toLowerCase() === "osasco_v2" || 
             postId.toLowerCase().includes("osasco_v2") || 
             postId.toLowerCase().includes("osasco v2")) {
-          // Usar a rota direta para Osasco V2
-          endpoint = `/api/abastecimento-direto/osasco_v2`;
+          // Usar a rota resiliente para Osasco V2
+          endpoint = `/api/resilient/abastecimento-direto/osasco_v2`;
           usarRotaDireta = true;
-          console.log(">>> Usando rota específica para Osasco V2");
+          console.log(">>> Usando rota resiliente para Osasco V2");
         } else if (postId.toLowerCase() === "socorro_v2" || 
             postId.toLowerCase().includes("socorro_v2") || 
             postId.toLowerCase().includes("socorro v2")) {
-          // Usar a rota direta para Socorro V2
-          endpoint = `/api/abastecimento-direto/socorro_v2`;
+          // Usar a rota resiliente para Socorro V2
+          endpoint = `/api/resilient/abastecimento-direto/socorro_v2`;
           usarRotaDireta = true;
-          console.log(">>> Usando rota específica para Socorro V2");
+          console.log(">>> Usando rota resiliente para Socorro V2");
         } else if (postId.toLowerCase() === "sorocaba_v2" || 
             postId.toLowerCase().includes("sorocaba_v2") || 
             postId.toLowerCase().includes("sorocaba v2")) {
-          // Usar a rota direta para Sorocaba V2
-          endpoint = `/api/abastecimento-direto/sorocaba_v2`;
+          // Usar a rota resiliente para Sorocaba V2
+          endpoint = `/api/resilient/abastecimento-direto/sorocaba_v2`;
           usarRotaDireta = true;
-          console.log(">>> Usando rota específica para Sorocaba V2");
+          console.log(">>> Usando rota resiliente para Sorocaba V2");
         } else if (postId.toLowerCase() === "abc_v2" || 
             postId.toLowerCase().includes("abc_v2") || 
             postId.toLowerCase().includes("abc v2")) {
-          // Usar a rota direta para ABC V2
-          endpoint = `/api/abastecimento-direto/abc_v2`;
+          // Usar a rota resiliente para ABC V2
+          endpoint = `/api/resilient/abastecimento-direto/abc_v2`;
           usarRotaDireta = true;
-          console.log(">>> Usando rota específica para ABC V2");
+          console.log(">>> Usando rota resiliente para ABC V2");
         } else if (postId.toLowerCase() === "guarulhos_v2" || 
             postId.toLowerCase().includes("guarulhos_v2") || 
             postId.toLowerCase().includes("guarulhos v2")) {

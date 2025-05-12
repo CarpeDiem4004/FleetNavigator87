@@ -144,7 +144,7 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
       try {
         console.log('Tentando rota alternativa...');
         const timestamp = new Date().getTime();
-        const fallbackResponse = await axios.get(`/api/posto-supabase/historico/${posto.toLowerCase()}?t=${timestamp}`);
+        const fallbackResponse = await axios.get<SupabaseResponse>(`/api/posto-supabase/historico/${posto.toLowerCase()}?t=${timestamp}`);
         
         if (fallbackResponse.data && fallbackResponse.data.success) {
           setHistorico(fallbackResponse.data.data || []);
