@@ -69,25 +69,49 @@ export default function WorkshopsApprovalPage() {
   const queryClient = useQueryClient();
 
   // Consulta para buscar oficinas pendentes
-  const { data: workshops, isLoading, error } = useQuery({
+  const { data: workshops = [], isLoading, error } = useQuery({
     queryKey: ['/api/workshops/pending'],
     queryFn: async () => {
-      const response = await fetch('/api/workshops/pending', {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      try {
+        const response = await fetch('/api/workshops/pending', {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
         }
-      });
-      return response.json();
+        
+        return await response.json();
+      } catch (err) {
+        console.error('Erro ao buscar oficinas pendentes:', err);
+        return [];
+      }
+    },
+    // Em caso de erro, retorna um array vazio para evitar erros de renderização
+    onError: (err) => {
+      console.error('Erro na query de oficinas pendentes:', err);
+      return [];
     }
   });
 
-  const filteredWorkshops = workshops?.filter((workshop: Workshop) => 
-    workshop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    workshop.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    workshop.cnpj.includes(searchTerm) ||
-    (workshop.service_type && workshop.service_type.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Filtra as oficinas com segurança - protege contra valores nulos ou indefinidos
+  const filteredWorkshops = workshops?.filter((workshop: Workshop) => {
+    if (!workshop) return false;
+    
+    const name = workshop.name?.toLowerCase() || '';
+    const email = workshop.email?.toLowerCase() || '';
+    const cnpj = workshop.cnpj || '';
+    const serviceType = workshop.service_type?.toLowerCase() || '';
+    const term = searchTerm.toLowerCase();
+    
+    return name.includes(term) || 
+           email.includes(term) || 
+           cnpj.includes(searchTerm) || 
+           serviceType.includes(term);
+  });
 
   // Função para aprovar uma oficina
   const handleApprove = async (workshopId: number) => {

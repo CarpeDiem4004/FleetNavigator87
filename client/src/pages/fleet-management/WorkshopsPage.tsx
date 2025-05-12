@@ -84,9 +84,25 @@ export default function WorkshopsPage() {
     queryKey: ['/api/workshops/pending'],
     refetchOnWindowFocus: false,
     enabled: canApproveWorkshops, // Só executa a query se o usuário tiver permissão
-    onError: () => {
-      // Em caso de erro, retorna array vazio para não quebrar a interface
-      return [];
+    queryFn: async () => {
+      try {
+        const response = await fetch('/api/workshops/pending', {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          }
+        });
+        
+        if (!response.ok) {
+          console.error(`Erro ao buscar oficinas pendentes: ${response.status}`);
+          return [];
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error('Erro ao buscar oficinas pendentes:', error);
+        return [];
+      }
     }
   });
 

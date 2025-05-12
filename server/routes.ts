@@ -2725,7 +2725,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get("/api/workshops/:id", isAuthenticated, async (req, res) => {
     try {
-      const workshop = await storage.getWorkshop(parseInt(req.params.id));
+      // Verifica se o ID é um número válido antes de chamar a função getWorkshop
+      const workshopId = parseInt(req.params.id);
+      
+      if (isNaN(workshopId)) {
+        return res.status(400).json({ message: "Invalid workshop ID" });
+      }
+      
+      const workshop = await storage.getWorkshop(workshopId);
       
       if (!workshop) {
         return res.status(404).json({ message: "Workshop not found" });

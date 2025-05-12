@@ -1035,7 +1035,20 @@ router.get('/pending', authMiddleware, async (req: AuthenticatedRequest, res: Re
         ORDER BY w.created_at DESC
       `);
       
-      res.json(result.rows);
+      // Garante que todos os registros tenham campos essenciais
+      const safeRows = result.rows.map(row => ({
+        id: row.id || 0,
+        name: row.name || 'Nome não disponível',
+        email: row.email || 'Email não disponível',
+        cnpj: row.cnpj || 'CNPJ não disponível',
+        phone: row.phone || 'Telefone não disponível',
+        address: row.address || 'Endereço não disponível',
+        service_type: row.service_type || 'Não especificado',
+        created_at: row.created_at || new Date().toISOString(),
+        approval_status: row.approval_status || 'pendente'
+      }));
+      
+      res.json(safeRows);
     } finally {
       client.release();
     }
