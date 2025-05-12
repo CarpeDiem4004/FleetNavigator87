@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { AbastecimentoData, SupabaseResponse } from "@/services/PostoSupabaseService";
 import { 
   Card, 
   CardContent, 
@@ -100,9 +101,9 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
       const timestamp = new Date().getTime();
       
       // Primeiro tentar usar a rota resiliente para garantir dados mesmo com falhas
-      let apiResponse: any = null;
+      let apiResponse: { data: SupabaseResponse } | null = null;
       try {
-        apiResponse = await axios.get(`/api/resilient/historico-direto/${encodeURIComponent(posto)}?t=${timestamp}`, {
+        apiResponse = await axios.get<SupabaseResponse>(`/api/resilient/historico-direto/${encodeURIComponent(posto)}?t=${timestamp}`, {
           headers: {
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
@@ -115,7 +116,7 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
         
         // Cair de volta para a rota original se a resiliente falhar
         try {
-          apiResponse = await axios.get(`/api/historico-direto/${encodeURIComponent(posto)}?t=${timestamp}`, {
+          apiResponse = await axios.get<SupabaseResponse>(`/api/historico-direto/${encodeURIComponent(posto)}?t=${timestamp}`, {
             headers: {
               'Accept': 'application/json',
               'X-Requested-With': 'XMLHttpRequest' // Indicar que é uma solicitação AJAX
