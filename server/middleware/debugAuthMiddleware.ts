@@ -40,6 +40,36 @@ export const debugAuthMiddleware = (req: Request, res: Response, next: NextFunct
     console.log(`[DebugAuth] isAuthenticated: ${isAuthed}`);
     console.log(`[DebugAuth] SessionID: ${req.sessionID}`);
     console.log(`[DebugAuth] Cookies: ${cookieInfo}`);
+    
+    // Verificação detalhada do cabeçalho de autorização
+    const authHeader = req.headers.authorization;
+    if (authHeader) {
+      console.log(`[DebugAuth] Authorization Header: ${authHeader.substring(0, 15)}...`);
+      
+      // Se for Bearer token, verificar formato
+      if (authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        console.log(`[DebugAuth] Bearer token present, length: ${token.length}`);
+        
+        // Verificar formato básico de JWT (xxx.yyy.zzz)
+        if (token.split('.').length === 3) {
+          console.log(`[DebugAuth] Token format appears to be valid JWT`);
+        } else {
+          console.warn(`[DebugAuth] Token does not appear to be valid JWT format`);
+        }
+      }
+    } else {
+      console.warn(`[DebugAuth] No Authorization header present!`);
+      
+      // Verificação de outros cabeçalhos que podem ter o token
+      if (req.headers['x-auth-token']) {
+        console.log(`[DebugAuth] x-auth-token header found instead`);
+      }
+      
+      // Listar todos os cabeçalhos para debug
+      console.log(`[DebugAuth] All headers:`, JSON.stringify(req.headers));
+    }
+    
     console.log(`[DebugAuth] Session Info:`, sessionInfo);
     console.log(`[DebugAuth] User:`, req.user || 'Não autenticado');
 
