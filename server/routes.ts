@@ -48,6 +48,8 @@ import { setupTireActivityRoutes, setupTireActivityTable } from "./tireActivityA
 import { consultarUsuarios, consultarUsuarioPorId } from "./handlers/userHandler";
 // Importação das rotas de teste de autenticação híbrida
 import authTestRoutes from './routes/authTest';
+// Importação das novas rotas resilientes
+import resilientPostoRoutes from './routes/resilientPostoRoutes';
 // Importação da rota de ressincronização de sessão
 import { resyncSession } from './routes/sessionResyncRoute';
 // Importação do cliente Supabase para armazenamento de arquivos
@@ -8794,6 +8796,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registrar rotas para histórico consolidado de abastecimentos
   app.use('/api/historico', historicoConsolidadoRoutes);
+  
+  // Rotas resilientes com persistência de dados garantida
+  app.use('/api/resilient', resilientPostoRoutes);
   
   // Registrar rotas para o histórico de pátio
   app.use('/api/patio', patioRoutes);
