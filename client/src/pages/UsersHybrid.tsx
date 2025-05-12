@@ -212,9 +212,20 @@ const UsersHybrid: React.FC = () => {
   // Carregar bases
   const loadBases = async () => {
     try {
-      // Utilizando API híbrida para bases (deve ser implementada)
-      // Por enquanto, podemos usar mock de bases ou a API tradicional
-      const response = await fetch('/api/bases');
+      // Utilizando API híbrida para bases
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        console.error('Token de autenticação não encontrado');
+        return;
+      }
+      
+      const response = await fetch('/api/hybrid/bases', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
       if (response.ok) {
         const data = await response.json();
         setBases(data.bases || []);
