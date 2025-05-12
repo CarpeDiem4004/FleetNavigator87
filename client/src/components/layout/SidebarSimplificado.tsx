@@ -30,7 +30,13 @@ import {
   Building, // Ícone alternativo para Oficina
   Link2, // Ícone para acesso direto
   ExternalLinkIcon, // Ícone para links externos
-  Settings // Ícone para configurações
+  Settings, // Ícone para configurações
+  Database, // Ícone para banco de dados
+  ChevronUp, // Ícone para chevron up
+  X, // Ícone para fechar
+  Menu, // Ícone para menu
+  BarChart, // Ícone para gráficos
+  Boxes // Ícone para caixas
 } from 'lucide-react';
 
 // Define a interface para os itens do menu
@@ -57,8 +63,7 @@ const NavItem: React.FC<{
   const Icon = item.icon;
   
   return (
-    <Link
-      href={item.href}
+    <div
       onClick={(e) => {
         // Se for um submenu, não navegamos
         if (item.href === '#') {
@@ -66,12 +71,11 @@ const NavItem: React.FC<{
           return;
         }
         
-        e.preventDefault();
-        window.history.pushState(null, "", item.href);
-        window.dispatchEvent(new PopStateEvent("popstate"));
+        // Navegação direta para simplificar e corrigir problemas
+        window.location.href = item.href;
         onClose();
       }}
-      className={`flex items-center px-4 py-2 rounded-md group transition-all duration-200 ${
+      className={`flex items-center px-4 py-2 rounded-md group transition-all duration-200 cursor-pointer ${
         isActive
           ? 'text-white bg-primary-600 shadow-md shadow-primary/30 border-l-2 border-white font-medium' 
           : 'text-slate-100 hover:bg-primary/20 hover:text-white hover:shadow-sm'
@@ -79,7 +83,7 @@ const NavItem: React.FC<{
     >
       <Icon className="flex-shrink-0 mr-3 h-5 w-5" />
       <span>{item.name}</span>
-    </Link>
+    </div>
   );
 };
 
@@ -133,8 +137,8 @@ const NavItemWithSubmenu: React.FC<{
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  window.history.pushState(null, "", subItem.href);
-                  window.dispatchEvent(new PopStateEvent("popstate"));
+                  // Navegação direta mais compatível
+                  window.location.href = subItem.href;
                   onClose();
                 }}
                 className={`flex items-center px-4 py-2 rounded-md group transition-all duration-200 cursor-pointer ${
@@ -205,7 +209,7 @@ const SidebarSimplificado: React.FC<SidebarProps> = ({ open, setOpen }) => {
         { name: 'Gestão de Pneus', href: '/tires', icon: CircleDot },
         { name: 'Entrada de Pneus', href: '/tires/entrada', icon: CircleDot },
         { name: 'Solicitações', href: '/tires/solicitacoes', icon: CircleDot },
-        { name: 'Gestão Resiliente', href: '/tires/resiliente', icon: Database, className: 'text-green-400 hover:text-green-300' }
+        { name: 'Gestão Resiliente', href: '/tires/resiliente', icon: Droplets, className: 'text-green-400 hover:text-green-300' }
       ]
     },
     
