@@ -50,6 +50,7 @@ import { consultarUsuarios, consultarUsuarioPorId } from "./handlers/userHandler
 import authTestRoutes from './routes/authTest';
 // Importação das novas rotas resilientes
 import resilientPostoRoutes from './routes/resilientPostoRoutes';
+import resilientRoutes from './routes/resilientRoutes';
 // Importação da rota de ressincronização de sessão
 import { resyncSession } from './routes/sessionResyncRoute';
 // Importação do cliente Supabase para armazenamento de arquivos
@@ -8797,8 +8798,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rotas para histórico consolidado de abastecimentos
   app.use('/api/historico', historicoConsolidadoRoutes);
   
-  // Rotas resilientes com persistência de dados garantida
+  // Rotas resilientes com persistência de dados garantida para postos
   app.use('/api/resilient', resilientPostoRoutes);
+  
+  // Rotas resilientes universais para todos os módulos (multas, manutenção, pneus, etc.)
+  app.use('/api/universal', resilientRoutes);
   
   // Registrar rotas para o histórico de pátio
   app.use('/api/patio', patioRoutes);

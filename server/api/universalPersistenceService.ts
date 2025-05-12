@@ -387,7 +387,7 @@ class UniversalPersistenceService {
       this.addPendingOperation(module, table, 'update', data, filter);
       
       // Retornar os dados originais com flag de pendente
-      return { ...data, _pending: true } as T;
+      return { ...data, _pending: true } as unknown as T;
     }
   }
 
