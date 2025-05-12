@@ -58,24 +58,48 @@ class ResilientApiClient {
    * @returns Resposta da requisição
    */
   private async request<T>(method: string, endpoint: string, data?: any): Promise<T> {
-    try {
-      console.log(`[ResilientApiClient] Enviando requisição ${method} para ${endpoint}`);
-      
-      const url = `${this.baseUrl}${endpoint}`;
-      const headers = this.getHeaders();
-      
-      const response = await axios({
-        method,
-        url,
-        headers,
-        data,
-      });
-      
-      return response.data;
-    } catch (error) {
-      console.error(`[ResilientApiClient] Erro na requisição ${method} para ${endpoint}:`, error);
-      throw error;
+    // Lista de prefixos de URL a tentar, em ordem de prioridade
+    const urlPrefixes = [
+      // 1. Rota simplificada (sem prefixo)
+      '',
+      // 2. Rota padrão com prefixo /api
+      '/api',
+      // 3. Rota híbrida com prefixo
+      '/api/hybrid'
+    ];
+    
+    let lastError: any = null;
+    
+    // Tentar cada prefixo em ordem até um sucesso
+    for (const prefix of urlPrefixes) {
+      try {
+        // Construir URL com o prefixo atual
+        const finalEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+        const url = `${this.baseUrl}${prefix}${finalEndpoint}`;
+        const headers = this.getHeaders();
+        
+        console.log(`[ResilientApiClient] Tentando requisição ${method} para ${url}`);
+        
+        const response = await axios({
+          method,
+          url,
+          headers,
+          data,
+        });
+        
+        console.log(`[ResilientApiClient] Sucesso com ${url}`);
+        return response.data;
+      } catch (error: any) {
+        console.warn(`[ResilientApiClient] Falha na requisição ${method} para ${prefix}${endpoint}:`, 
+                    error.response?.status || error.message);
+        lastError = error;
+        // Continuar para o próximo prefixo
+      }
     }
+    
+    // Se chegou aqui, todos os prefixos falharam
+    console.error(`[ResilientApiClient] Todas as tentativas falharam para ${endpoint}`, lastError);
+    throw lastError;
   }
 
   /**
