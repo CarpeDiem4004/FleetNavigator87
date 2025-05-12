@@ -15,8 +15,10 @@ const router = express.Router();
  * GET /api/workshops/pending
  * Lista todas as oficinas pendentes de aprovação
  */
-router.get('/pending', isAuthenticated, async (req: Request, res: Response) => {
+router.get('/pending', isAuthenticated, isFleetManager, async (req: Request, res: Response) => {
   try {
+    console.log('Buscando oficinas pendentes, usuário:', req.user);
+    
     // Busca todas as oficinas junto com seus detalhes
     const result = await pool.query(`
       SELECT w.id, w.name, w.phone, w.email, w.address, w.service_type, w.cnpj,
@@ -30,6 +32,9 @@ router.get('/pending', isAuthenticated, async (req: Request, res: Response) => {
       ORDER BY w.created_at DESC
     `);
 
+    // Adiciona logs para debug
+    console.log(`Encontradas ${result.rows.length} oficinas pendentes`);
+    
     res.json(result.rows);
   } catch (error) {
     console.error('Erro ao listar oficinas pendentes:', error);
