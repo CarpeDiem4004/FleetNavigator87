@@ -399,9 +399,9 @@ router.delete('/api/hybrid/users/:id', verifyJwtAuth, async (req, res) => {
 
 /**
  * Rota para autenticação e geração de token JWT
- * POST /api/hybrid/auth/login
+ * POST /api/hybrid/auth/login (caminho simplificado: /auth/login)
  */
-router.post('/api/hybrid/auth/login', async (req, res) => {
+router.post('/auth/login', async (req, res) => {
   try {
     console.log('[HybridAPI] Requisição para login/autenticação recebida');
     
@@ -480,7 +480,7 @@ router.get('/api/hybrid/auth/verify', verifyJwtAuth, (req, res) => {
  * Rota para testar conectividade com a API híbrida
  * GET /api/hybrid/ping
  */
-router.get('/api/hybrid/ping', (req, res) => {
+router.get('/ping', (req, res) => {
   console.log('[HybridAPI] Requisição de ping recebida');
   
   return res.status(200).json({
