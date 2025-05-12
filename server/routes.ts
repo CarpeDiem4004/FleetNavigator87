@@ -8811,6 +8811,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registrar API híbrida de usuários
   app.use('/api/hybrid/users', hybridUserApi);
+  
+  // Registrar endpoints de autenticação híbrida diretamente na raiz da API híbrida
+  app.use('/api/hybrid/auth', hybridUserApi);
 
   const httpServer = createServer(app);
   return httpServer;
