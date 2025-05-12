@@ -21,7 +21,7 @@ import RegisterNew from "@/pages/RegisterNew";
 import LoginWithSupabase from "@/pages/LoginWithSupabase";
 import RegisterWithSupabase from "@/pages/RegisterWithSupabase";
 import AccessDeniedPage from "@/pages/access-denied";
-import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 // LineHallRedirect removido conforme solicitação
 import FleetManagementRedirect from "@/components/permission/FleetManagementRedirect";
 import { AuthProvider } from "@/context/AuthContext";

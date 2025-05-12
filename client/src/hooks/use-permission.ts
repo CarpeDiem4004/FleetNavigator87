@@ -3,7 +3,7 @@
  * Permite verificar se o usuário tem as permissões (roles) necessárias para acessar determinadas funcionalidades
  */
 
-import { useAuth } from '@/context/auth-context';
+import { useAuth } from '@/context/AuthContext';
 
 /**
  * Hook que verifica se o usuário atual tem permissão baseado em seu papel (role)

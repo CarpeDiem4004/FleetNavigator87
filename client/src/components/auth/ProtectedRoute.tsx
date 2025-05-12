@@ -6,7 +6,7 @@
  */
 
 import React, { ReactNode } from 'react';
-import { useAuth } from '@/context/auth-context';
+import { useAuth } from '@/context/AuthContext';
 import { Redirect } from 'wouter';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertTriangle } from 'lucide-react';
