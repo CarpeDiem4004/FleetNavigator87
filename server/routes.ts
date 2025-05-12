@@ -1,7 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { createWorkshopDetailsTable } from "./db/workshopDetailsTable";
 import { 
   insertBaseSchema, insertVehicleSchema, insertMaintenanceSchema,
   insertWorkshopSchema, insertTireSchema, insertRefuelingSchema, 
@@ -12,8 +11,6 @@ import {
   type InsertMaintenanceChat, type InsertChatMessage,
   type InsertBaseRequest, type InsertBaseRequestUpdate
 } from "@shared/schema";
-import workshopRegisterRoutes from './routes/workshopRegisterRoutes';
-import workshopApprovalRoutes from './routes/workshopApprovalRoutes';
 import { setupAuth } from "./auth";
 import { getDashboardKPIs, getPainelPrincipal } from "./dashboardApi";
 // middleware de autenticação híbrida já importado abaixo como alias
@@ -41,12 +38,7 @@ import postoSupabaseRoutes from "./routes/postoSupabaseRoutes";
 import frotaEstoqueRoutes from "./routes/frotaEstoqueRoutes";
 import historicoConsolidadoRoutes from "./routes/historicoConsolidadoRoutes";
 import patioRoutes from "./routes/patioRoutes";
-import oficinaRoutes from "./routes/oficinaRoutes";
-import workshopRoutes from "./routes/workshopRoutes";
-import workshopRegisterRoutes from "./routes/workshopRegisterRoutes";
-import workshopApprovalRoutes from "./routes/workshopApprovalRoutes";
 import { db, pool } from "./db";
-import { createWorkshopDetailsTable } from "./db/workshopDetailsTable";
 import authHybridRoutes from "./routes/authHybridRoutes";
 import * as userHandler from "./handlers/userHandler";
 import { atualizarTabelaPneus } from "./updatePneus";
@@ -2725,14 +2717,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get("/api/workshops/:id", isAuthenticated, async (req, res) => {
     try {
-      // Verifica se o ID é um número válido antes de chamar a função getWorkshop
-      const workshopId = parseInt(req.params.id);
-      
-      if (isNaN(workshopId)) {
-        return res.status(400).json({ message: "Invalid workshop ID" });
-      }
-      
-      const workshop = await storage.getWorkshop(workshopId);
+      const workshop = await storage.getWorkshop(parseInt(req.params.id));
       
       if (!workshop) {
         return res.status(404).json({ message: "Workshop not found" });
@@ -8812,20 +8797,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registrar rotas para o histórico de pátio
   app.use('/api/patio', patioRoutes);
-  
-  // Registrar rotas para oficinas externas
-  app.use('/api/oficinas', oficinaRoutes);
-  app.use('/api/workshops', workshopRoutes);
-  
-  // Registrar rotas de workshop
-  // Registrar rotas para registro e aprovação de oficinas
-  app.use('/api/workshops', workshopRegisterRoutes);
-  app.use('/api/workshops', workshopApprovalRoutes);
-  
-  // Inicializar tabela de detalhes de oficinas para o fluxo de aprovação
-  createWorkshopDetailsTable()
-    .then(() => console.log('Verificação da tabela workshop_details concluída.'))
-    .catch(error => console.error('Erro ao verificar tabela workshop_details:', error));
 
   const httpServer = createServer(app);
   return httpServer;

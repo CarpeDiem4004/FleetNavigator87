@@ -29,11 +29,6 @@ import { debugAuthMiddleware, recoverSessionMiddleware } from './middleware/debu
 import frotaDiagnosticoRoute from "./routes/frotaDiagnosticoRoute";
 // Importar rotas de recebimentos e movimentações de pátio
 import recebimentosMovimentacoesRoutes from "./routes/recebimentosMovimentacoesRoutes";
-// Importar rotas de oficinas e workshops
-import workshopRoutes from "./routes/workshopRoutes";
-import workshopRegisterRoutes from "./routes/workshopRegisterRoutes";
-import workshopApprovalRoutes from "./routes/workshopApprovalRoutes";
-import userRoutes from "./routes/userRoutes";
 
 // Configuração das variáveis de ambiente do Supabase
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
@@ -118,14 +113,6 @@ app.use((req, res, next) => {
   // Registrar os roteadores de API híbrida (funcionam dentro e fora do Replit)
   app.use(hybridUserApi);
   app.use(hybridBasesApi);
-  
-  // Registrar rotas de oficinas
-  app.use('/api/workshops', workshopRoutes);
-  app.use('/api/workshops', workshopRegisterRoutes);
-  app.use('/api/workshops', workshopApprovalRoutes);
-  
-  // Registrar rotas de usuários
-  app.use('/api/users', userRoutes);
   
   // Registrar rota de diagnóstico para verificar autenticação no módulo de frota
   app.use('/api/frota', frotaDiagnosticoRoute);

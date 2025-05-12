@@ -43,32 +43,6 @@ export default function FleetManagement() {
     queryKey: ['/api/maintenance'],
     refetchOnWindowFocus: false
   });
-  
-  // Buscar oficinas pendentes de aprovação
-  const { data: pendingWorkshops = [] } = useQuery({
-    queryKey: ['/api/workshops/pending'],
-    refetchOnWindowFocus: false,
-    queryFn: async () => {
-      try {
-        const response = await fetch('/api/workshops/pending', {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-          }
-        });
-        
-        if (!response.ok) {
-          console.error(`Erro ao buscar oficinas pendentes: ${response.status}`);
-          return [];
-        }
-        
-        return await response.json();
-      } catch (error) {
-        console.error('Erro ao buscar oficinas pendentes:', error);
-        return [];
-      }
-    }
-  });
 
   // Calcular estatísticas
   const totalVehicles = vehicles.length;
@@ -159,22 +133,16 @@ export default function FleetManagement() {
               </CardFooter>
             </Card>
 
-            <Card className="flex flex-col border-amber-500">
+            <Card className="flex flex-col">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Building2 className="h-5 w-5 text-amber-500" />
+                  <Building2 className="h-5 w-5 text-primary" />
                   Oficinas Credenciadas
-                  <div className="bg-amber-500 text-white text-xs px-2 py-1 rounded-full ml-1">
-                    Nova
-                  </div>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pb-0">
-                <p className="text-amber-700">Há oficinas aguardando aprovação</p>
-              </CardContent>
               <CardFooter className="mt-auto">
                 <Button variant="outline" className="w-full" asChild>
-                  <Link href="/fleet-management/workshops/approval">
+                  <Link href="/fleet-management/workshops">
                     Acessar <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
@@ -228,7 +196,7 @@ export default function FleetManagement() {
                 </div>
               </CardContent>
               <CardFooter>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                   <Card className="bg-slate-50">
                     <CardHeader className="py-2 px-4">
                       <CardTitle className="text-sm">Manutenções pendentes</CardTitle>
@@ -251,30 +219,6 @@ export default function FleetManagement() {
                       <Button variant="link" className="p-0 h-auto" asChild>
                         <Link href="/fleet-management/maintenance?status=em_andamento">
                           Ver todas <ArrowRight className="ml-1 h-3 w-3" />
-                        </Link>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                  <Card className={`${pendingWorkshops.length > 0 ? 'bg-amber-50 border-amber-200' : 'bg-slate-50'}`}>
-                    <CardHeader className="py-2 px-4">
-                      <CardTitle className={`text-sm flex items-center ${pendingWorkshops.length > 0 ? 'text-amber-700' : ''}`}>
-                        {pendingWorkshops.length > 0 && (
-                          <AlertCircle className="h-4 w-4 mr-1 text-amber-500" />
-                        )}
-                        Oficinas pendentes
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="py-2 px-4">
-                      <p className={`text-2xl font-bold ${pendingWorkshops.length > 0 ? 'text-amber-600' : ''}`}>
-                        {pendingWorkshops.length}
-                      </p>
-                      <Button 
-                        variant="link" 
-                        className={`p-0 h-auto ${pendingWorkshops.length > 0 ? 'text-amber-600' : ''}`} 
-                        asChild
-                      >
-                        <Link href="/fleet-management/workshops/approval">
-                          Aprovar oficinas <ArrowRight className="ml-1 h-3 w-3" />
                         </Link>
                       </Button>
                     </CardContent>

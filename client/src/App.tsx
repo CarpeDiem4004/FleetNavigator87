@@ -15,14 +15,13 @@ import RefuelingNew from "@/pages/RefuelingNew";
 import FinesNew from "@/pages/FinesNew";
 // EntradaOperacoes removido (LineHall)
 import UsersNew from "@/pages/UsersNew";
-import UserManagementPage from "@/pages/admin/UserManagementPage";
 import Bases from "@/pages/Bases";
 import SignIn from "@/pages/SignIn";
 import RegisterNew from "@/pages/RegisterNew";
 import LoginWithSupabase from "@/pages/LoginWithSupabase";
 import RegisterWithSupabase from "@/pages/RegisterWithSupabase";
 import AccessDeniedPage from "@/pages/access-denied";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
 // LineHallRedirect removido conforme solicitação
 import FleetManagementRedirect from "@/components/permission/FleetManagementRedirect";
 import { AuthProvider } from "@/context/AuthContext";
@@ -49,8 +48,6 @@ import HistoricoPatioPage from "@/pages/postos/HistoricoPatioPage";
 import HistoricoConsolidado from "@/pages/postos/HistoricoConsolidado";
 import PostosVisaoGeralPage from "@/pages/postos/PostosVisaoGeralPage";
 import PostoDetalhesPage from "@/pages/postos/PostoDetalhesPage";
-
-// Importação de páginas de diagnóstico
 import SupabaseDiagnostico from "@/pages/diagnostico/SupabaseDiagnostico";
 import SupabaseConsole from "@/pages/diagnostico/SupabaseConsole";
 import ComparacaoEsquemas from "@/pages/diagnostico/ComparacaoEsquemas";
@@ -67,7 +64,6 @@ import FleetManagement from "@/pages/fleet-management";
 import Accidents from "@/pages/accidents";
 import WorkSafety from "@/pages/work-safety";
 import WorkshopsPage from "@/pages/fleet-management/WorkshopsPage";
-import WorkshopsApprovalPage from "@/pages/fleet-management/WorkshopsApprovalPage";
 import MaintenancePage from "@/pages/fleet-management/MaintenancePage";
 import BudgetManagementPage from "@/pages/fleet-management/BudgetManagementPage";
 import InventoryPage from "@/pages/fleet-management/InventoryPage";
@@ -89,9 +85,6 @@ import TratativaManutencaoPage from "@/pages/TratativaManutencaoPage";
 import OficinasExternaPage from "@/pages/OficinasExternaPage";
 import OficinaDashboard from "@/pages/oficina/OficinaDashboard";
 import OficinaMurici from "@/pages/OficinaMurici";
-import OficinasOnboarding from "@/pages/oficinas/OficinasOnboarding";
-import CadastroOficina from "@/pages/oficinas/CadastroOficina";
-import CadastroOficinaSimplificado from "@/pages/oficinas/CadastroOficinaSimplificado";
 import BaseRequests from "@/pages/BaseRequests";
 import CartaoAbastecimentoPage from "@/pages/CartaoAbastecimentoPage";
 import PainelPostosPage from "@/pages/PainelPostosPage";
@@ -164,101 +157,28 @@ function App() {
             </Route>
           
           {/* Novo Dashboard com KPIs */}
-          <Route path="/">
-            <ProtectedRoute allowedRoles={["admin", "gestor", "gestor_frota", "operador"]}>
-              <Dashboard />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/executive-dashboard">
-            <ProtectedRoute allowedRoles={["admin", "gestor_frota"]}>
-              <ExecutiveDashboard />
-            </ProtectedRoute>
-          </Route>
+          <ProtectedRoute path="/" component={Dashboard} />
+          <ProtectedRoute path="/executive-dashboard" component={ExecutiveDashboard} />
           
           {/* Rotas protegidas com verificação de permissão de base */}
-          <Route path="/vehicles">
-            <ProtectedRoute allowedRoles={["admin", "gestor", "gestor_frota", "operador"]}>
-              <VehiclesNew />
-            </ProtectedRoute>
-          </Route>
+          <ProtectedRoute path="/vehicles" component={VehiclesNew} />
           {/* <ProtectedRoute path="/maintenance" component={MaintenanceNew} /> */}
-          <Route path="/tires">
-            <ProtectedRoute allowedRoles={["admin", "gestor", "gestor_frota", "pneus"]}>
-              <TiresPage />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/tires/entrada">
-            <ProtectedRoute allowedRoles={["admin", "gestor", "gestor_frota", "pneus"]}>
-              <TiresEntrada />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/tires/solicitacoes">
-            <ProtectedRoute allowedRoles={["admin", "gestor", "gestor_frota", "pneus"]}>
-              <SolicitacoesPneus />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/tires/:id">
-            <ProtectedRoute allowedRoles={["admin", "gestor", "gestor_frota", "pneus"]}>
-              <TireDetailPage />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/refueling">
-            <ProtectedRoute allowedRoles={["admin", "gestor", "gestor_frota", "operador"]}>
-              <RefuelingNew />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/fines">
-            <ProtectedRoute allowedRoles={["admin", "gestor", "gestor_frota"]}>
-              <FinesNew />
-            </ProtectedRoute>
-          </Route>
+          <ProtectedRoute path="/tires" component={TiresPage} />
+          <ProtectedRoute path="/tires/entrada" component={TiresEntrada} />
+          <ProtectedRoute path="/tires/solicitacoes" component={SolicitacoesPneus} />
+          <ProtectedRoute path="/tires/:id" component={TireDetailPage} />
+          <ProtectedRoute path="/refueling" component={RefuelingNew} />
+          <ProtectedRoute path="/fines" component={FinesNew} />
           {/* Line Hall removido conforme solicitação */}
-          <Route path="/fleet-management">
-            <ProtectedRoute allowedRoles={["admin", "gestor_frota"]}>
-              <FleetManagement />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/fleet-management/inventory">
-            <ProtectedRoute allowedRoles={["admin", "gestor_frota"]}>
-              <InventoryPage />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/fleet-management/parts-inventory">
-            <ProtectedRoute allowedRoles={["admin", "gestor_frota"]}>
-              <PartsInventoryPage />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/fleet-management/workshops">
-            <ProtectedRoute allowedRoles={["admin", "gestor_frota"]}>
-              <WorkshopsPage />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/fleet-management/maintenance">
-            <ProtectedRoute allowedRoles={["admin", "gestor_frota"]}>
-              <MaintenancePage />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/fleet-management/budgets">
-            <ProtectedRoute allowedRoles={["admin", "gestor_frota"]}>
-              <BudgetManagementPage />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/accidents">
-            <ProtectedRoute allowedRoles={["admin", "gestor_frota"]}>
-              <Accidents />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/work-safety">
-            <ProtectedRoute allowedRoles={["admin", "gestor_frota"]}>
-              <WorkSafety />
-            </ProtectedRoute>
-          </Route>
+          <ProtectedRoute path="/fleet-management" component={FleetManagement} />
+          <ProtectedRoute path="/fleet-management/inventory" component={InventoryPage} />
+          <ProtectedRoute path="/fleet-management/parts-inventory" component={PartsInventoryPage} />
+          <ProtectedRoute path="/fleet-management/workshops" component={WorkshopsPage} />
+          <ProtectedRoute path="/fleet-management/maintenance" component={MaintenancePage} />
+          <ProtectedRoute path="/fleet-management/budgets" component={BudgetManagementPage} />
+          <ProtectedRoute path="/accidents" component={Accidents} />
+          <ProtectedRoute path="/work-safety" component={WorkSafety} />
           <ProtectedRoute path="/users" component={UsersNew} />
-          <Route path="/admin/users">
-            <ProtectedRoute allowedRoles={["admin"]}>
-              <UserManagementPage />
-            </ProtectedRoute>
-          </Route>
           <ProtectedRoute path="/bases" component={Bases} />
           <ProtectedRoute path="/bases/campinas" component={BaseCampinas} />
           <ProtectedRoute path="/bases/campinas/despesas" component={DespesasCampinas} />
@@ -358,11 +278,6 @@ function App() {
             <OficinasExternaPage />
           </Route>
           
-          {/* Rota para cadastro simplificado de oficinas - alternativa ao login */}
-          <Route path="/oficinas/cadastro-simplificado">
-            <CadastroOficinaSimplificado />
-          </Route>
-          
           {/* Rota de acesso para oficinas - login específico */}
           <Route path="/oficina">
             <SignIn oficina={true} />
@@ -426,28 +341,6 @@ function App() {
           {/* Formulário simplificado para Abastecimento do Posto Remédios */}
           <Route path="/abastecimento-posto-remedios">
             <AbastecimentoPostoRemediosPage />
-          </Route>
-          
-          {/* Rotas para Oficinas Externas */}
-          <Route path="/oficinas/cadastro">
-            <CadastroOficina />
-          </Route>
-          
-          <Route path="/oficinas/cadastro-simplificado">
-            <CadastroOficinaSimplificado />
-          </Route>
-          
-          <Route path="/oficinas/onboarding">
-            <ProtectedRoute allowedRoles={["oficina"]}>
-              <OficinasOnboarding />
-            </ProtectedRoute>
-          </Route>
-
-          {/* Rota para aprovação de oficinas (exclusiva para gestores de frota) */}
-          <Route path="/fleet-management/workshops/approval">
-            <ProtectedRoute allowedRoles={["admin", "gestor_frota"]}>
-              <WorkshopsApprovalPage />
-            </ProtectedRoute>
           </Route>
           
           <Route>

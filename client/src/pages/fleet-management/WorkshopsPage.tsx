@@ -31,12 +31,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Building2, Plus, Wrench, Phone, MapPin, AlertTriangle, Clock, ArrowRight, FileCheck } from 'lucide-react';
+import { Building2, Plus, Wrench, Phone, MapPin, AlertTriangle } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { Switch } from '@/components/ui/switch';
-import { Link } from 'wouter';
-import { useContext } from 'react';
-import { AuthContext } from '@/context/AuthContext';
 
 interface Workshop {
   id: number;
@@ -50,23 +47,11 @@ interface Workshop {
   observations?: string;
 }
 
-interface PendingWorkshop {
-  id: number;
-  name: string;
-  cnpj?: string;
-  email?: string;
-  approval_status: string;
-}
-
 export default function WorkshopsPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [editingWorkshop, setEditingWorkshop] = useState<Workshop | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
-
-  // Verifica se o usuário tem permissão para aprovar oficinas (admin ou gestor_frota)
-  const canApproveWorkshops = user?.role === 'admin' || user?.role === 'gestor_frota';
 
   const [formData, setFormData] = useState<Partial<Workshop>>({
     name: '',
@@ -77,33 +62,6 @@ export default function WorkshopsPage() {
     isActive: true,
     specialties: '',
     observations: ''
-  });
-  
-  // Buscar oficinas pendentes de aprovação (apenas se o usuário tiver permissão)
-  const { data: pendingWorkshops = [], isLoading: isLoadingPending } = useQuery<PendingWorkshop[]>({
-    queryKey: ['/api/workshops/pending'],
-    refetchOnWindowFocus: false,
-    enabled: canApproveWorkshops, // Só executa a query se o usuário tiver permissão
-    queryFn: async () => {
-      try {
-        const response = await fetch('/api/workshops/pending', {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-          }
-        });
-        
-        if (!response.ok) {
-          console.error(`Erro ao buscar oficinas pendentes: ${response.status}`);
-          return [];
-        }
-        
-        return await response.json();
-      } catch (error) {
-        console.error('Erro ao buscar oficinas pendentes:', error);
-        return [];
-      }
-    }
   });
 
   const { data: workshops = [], isLoading } = useQuery<Workshop[]>({
@@ -262,53 +220,6 @@ export default function WorkshopsPage() {
               Nova Oficina
             </Button>
           </div>
-          
-          {/* Card de oficinas pendentes de aprovação - só mostra se o usuário tiver permissão */}
-          {canApproveWorkshops && pendingWorkshops.length > 0 && (
-            <Card className="border-amber-300 bg-amber-50">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center text-amber-800">
-                  <Clock className="h-5 w-5 mr-2" />
-                  Novas Oficinas Pendentes
-                </CardTitle>
-                <CardDescription className="text-amber-700">
-                  Existem {pendingWorkshops.length} {pendingWorkshops.length === 1 ? 'oficina aguardando' : 'oficinas aguardando'} sua aprovação
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-sm text-amber-800 mb-4">
-                  Oficinas que solicitaram cadastro no sistema e precisam de sua aprovação para começar a operar.
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {pendingWorkshops.slice(0, 3).map((workshop) => (
-                    <div key={workshop.id} className="bg-white border border-amber-200 rounded-md p-3 flex-1 min-w-[250px]">
-                      <div className="font-medium">{workshop.name}</div>
-                      {workshop.cnpj && (
-                        <div className="text-xs text-gray-500 mt-1">CNPJ: {workshop.cnpj}</div>
-                      )}
-                      {workshop.email && (
-                        <div className="text-xs text-gray-500 mt-1">Email: {workshop.email}</div>
-                      )}
-                    </div>
-                  ))}
-                  {pendingWorkshops.length > 3 && (
-                    <div className="bg-white border border-amber-200 rounded-md p-3 flex items-center justify-center flex-1 min-w-[120px]">
-                      <div className="text-sm text-amber-700">
-                        +{pendingWorkshops.length - 3} {pendingWorkshops.length - 3 === 1 ? 'oficina' : 'oficinas'}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-              <CardFooter className="pt-0">
-                <Link to="/fleet-management/workshops/approval">
-                  <Button variant="outline" className="text-amber-700 border-amber-300 hover:bg-amber-100 hover:text-amber-800">
-                    Revisar Solicitações <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              </CardFooter>
-            </Card>
-          )}
 
           <Card>
             <CardHeader>
