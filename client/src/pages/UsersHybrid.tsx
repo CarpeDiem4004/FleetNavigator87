@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   Loader2, Search, Plus, KeyRound, FileEdit, 
   Trash2, UserX, UserCircle2, RefreshCw, 
-  Copy, CheckCircle2
+  Copy, CheckCircle2, AlertTriangle
 } from 'lucide-react';
 import { 
   Table, 
@@ -17,6 +17,8 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
+
+import * as hybridUserService from '../services/hybridUserService';
 import { 
   Dialog,
   DialogContent,
@@ -37,7 +39,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { NativeSelect } from '@/components/ui/native-select';
-import * as hybridUserService from '../services/hybridUserService';
 
 // Tipo para usuários
 interface User {
@@ -161,7 +162,30 @@ const UsersHybrid: React.FC = () => {
   
   // Carregar usuários quando o componente montar
   useEffect(() => {
-    loadUsers();
+    // Primeiro autenticar e então carregar os usuários
+    const init = async () => {
+      try {
+        setLoading(true);
+        // Realizar login com credenciais de administrador
+        const loginResult = await hybridUserService.login('admin@muricionfleet.com', 'MuricionAdmin2025');
+        
+        if (loginResult.success) {
+          console.log('Login bem-sucedido com API híbrida');
+          // Após login bem-sucedido, carregar os usuários
+          await loadUsers();
+        } else {
+          console.error('Falha no login com API híbrida:', loginResult.message);
+          setError('Erro de autenticação. Por favor, tente novamente.');
+        }
+      } catch (error) {
+        console.error('Erro ao inicializar página de usuários:', error);
+        setError('Erro ao inicializar a página. Por favor, tente novamente.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    init();
   }, []);
   
   // Função para carregar usuários usando o serviço híbrido
