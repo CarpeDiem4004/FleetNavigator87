@@ -39,6 +39,7 @@ type Workshop = {
   phone: string;
   address: string;
   cnpj: string;
+  service_type: string;
   created_at: string;
   approval_status: 'pendente' | 'aprovado' | 'rejeitado';
 };
@@ -63,7 +64,8 @@ export default function WorkshopsApprovalPage() {
   const filteredWorkshops = workshops?.filter((workshop: Workshop) => 
     workshop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     workshop.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    workshop.cnpj.includes(searchTerm)
+    workshop.cnpj.includes(searchTerm) ||
+    (workshop.service_type && workshop.service_type.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Função para aprovar uma oficina
@@ -185,7 +187,7 @@ export default function WorkshopsApprovalPage() {
         <CardContent>
           <div className="mb-4">
             <Input
-              placeholder="Buscar por nome, e-mail ou CNPJ..."
+              placeholder="Buscar por nome, e-mail, CNPJ ou ramo de atuação..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="max-w-md"
@@ -205,6 +207,7 @@ export default function WorkshopsApprovalPage() {
                     <TableHead>CNPJ</TableHead>
                     <TableHead>E-mail</TableHead>
                     <TableHead>Telefone</TableHead>
+                    <TableHead>Ramo de Atuação</TableHead>
                     <TableHead>Data do Cadastro</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Ações</TableHead>
@@ -217,6 +220,7 @@ export default function WorkshopsApprovalPage() {
                       <TableCell>{workshop.cnpj}</TableCell>
                       <TableCell>{workshop.email}</TableCell>
                       <TableCell>{workshop.phone}</TableCell>
+                      <TableCell>{workshop.service_type || 'Não informado'}</TableCell>
                       <TableCell>{formatDate(workshop.created_at)}</TableCell>
                       <TableCell>{renderStatusBadge(workshop.approval_status)}</TableCell>
                       <TableCell>
