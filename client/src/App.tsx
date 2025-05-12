@@ -163,8 +163,16 @@ function App() {
             </Route>
           
           {/* Novo Dashboard com KPIs */}
-          <ProtectedRoute path="/" component={Dashboard} />
-          <ProtectedRoute path="/executive-dashboard" component={ExecutiveDashboard} />
+          <Route path="/">
+            <ProtectedRoute allowedRoles={["admin", "gestor", "gestor_frota", "operador"]}>
+              <Dashboard />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/executive-dashboard">
+            <ProtectedRoute allowedRoles={["admin", "gestor_frota"]}>
+              <ExecutiveDashboard />
+            </ProtectedRoute>
+          </Route>
           
           {/* Rotas protegidas com verificação de permissão de base */}
           <ProtectedRoute path="/vehicles" component={VehiclesNew} />
@@ -179,7 +187,11 @@ function App() {
           <ProtectedRoute path="/fleet-management" component={FleetManagement} />
           <ProtectedRoute path="/fleet-management/inventory" component={InventoryPage} />
           <ProtectedRoute path="/fleet-management/parts-inventory" component={PartsInventoryPage} />
-          <ProtectedRoute path="/fleet-management/workshops" component={WorkshopsPage} />
+          <Route path="/fleet-management/workshops">
+            <ProtectedRoute allowedRoles={["admin", "gestor_frota"]}>
+              <WorkshopsPage />
+            </ProtectedRoute>
+          </Route>
           <ProtectedRoute path="/fleet-management/maintenance" component={MaintenancePage} />
           <ProtectedRoute path="/fleet-management/budgets" component={BudgetManagementPage} />
           <ProtectedRoute path="/accidents" component={Accidents} />

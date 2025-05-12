@@ -30,7 +30,23 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Spinner } from '@/components/ui/spinner';
+// Componente inline para spinner (devido a problema de importação)
+const Spinner = ({ size = "md" }: { size?: "sm" | "md" | "lg" }) => {
+  const sizeClass = {
+    sm: "h-4 w-4",
+    md: "h-6 w-6",
+    lg: "h-8 w-8",
+  };
+
+  return (
+    <div
+      className={`inline-block animate-spin rounded-full border-2 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite] ${sizeClass[size]}`}
+      role="status"
+    >
+      <span className="sr-only">Carregando...</span>
+    </div>
+  );
+};
 
 type Workshop = {
   id: number;
@@ -56,7 +72,12 @@ export default function WorkshopsApprovalPage() {
   const { data: workshops, isLoading, error } = useQuery({
     queryKey: ['/api/workshops/pending'],
     queryFn: async () => {
-      const response = await apiRequest('/api/workshops/pending');
+      const response = await fetch('/api/workshops/pending', {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
       return response.json();
     }
   });
