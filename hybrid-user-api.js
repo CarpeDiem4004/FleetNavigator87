@@ -106,7 +106,7 @@ router.post('/api/hybrid/users', verifyJwtAuth, async (req, res) => {
     }
     
     // Verificar se o role é válido
-    const validRoles = ['admin', 'gestor', 'operador', 'oficina', 'pneus', 'posto'];
+    const validRoles = ['admin', 'gestor', 'operador', 'oficina', 'pneus', 'posto', 'gestor_frota'];
     if (!validRoles.includes(role)) {
       return res.status(400).json({
         success: false,
