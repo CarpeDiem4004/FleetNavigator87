@@ -69,8 +69,8 @@ const verifyJwt = async (req: any, res: express.Response, next: express.NextFunc
  */
 const getDbConnection = (): Pool => {
   try {
-    // Usar a conexão do pool do Supabase se disponível
-    const pool = supabase.getPostgresPool();
+    // Importar o pool do módulo db para garantir que temos uma conexão válida
+    const { pool } = require('../db');
     if (pool) {
       return pool;
     }

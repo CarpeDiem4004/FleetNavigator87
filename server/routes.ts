@@ -8808,6 +8808,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registrar rotas para o histórico de pátio
   app.use('/api/patio', patioRoutes);
+  
+  // Registrar API híbrida de usuários
+  app.use('/api/hybrid/users', hybridUserApi);
 
   const httpServer = createServer(app);
   return httpServer;
