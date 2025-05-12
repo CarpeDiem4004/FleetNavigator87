@@ -12,6 +12,7 @@ import {
   type InsertBaseRequest, type InsertBaseRequestUpdate
 } from "@shared/schema";
 import { setupAuth } from "./auth";
+import { resyncSession, initResyncRoutes } from "./routes/sessionResyncRoute";
 import { getDashboardKPIs, getPainelPrincipal } from "./dashboardApi";
 // middleware de autenticação híbrida já importado abaixo como alias
 import { getExecutiveDashboard } from "./executiveDashboard";
@@ -875,6 +876,9 @@ async function criarTabelaDemoForms() {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Inicializar rotas de ressincronização
+  initResyncRoutes(pool);
+  
   // Criar tabelas necessárias se não existirem
   await criarTabelaAbastecimentos();
   await criarTabelaMovimentacoesPatio();

@@ -22,7 +22,7 @@ import hybridBasesApi from "../hybrid-bases-api.js";
 // Importar middleware de CORS personalizado
 import { corsMiddleware } from "./middleware/cors";
 // Importar middleware para corrigir cookies de sessão
-import { fixCookieSessionMiddleware } from "./middleware/fixCookieSession";
+import fixCookieSession from "./middleware/fixCookieSession";
 // Importar middlewares de diagnóstico e recuperação de autenticação
 import { debugAuthMiddleware, recoverSessionMiddleware } from './middleware/debugAuthMiddleware';
 // Importar rota de diagnóstico para frota
@@ -39,6 +39,8 @@ process.env.SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.e
 const app = express();
 // Aplicar middleware CORS personalizado
 app.use(corsMiddleware);
+// Aplicar middleware de correção de cookies
+app.use(fixCookieSession);
 // Middlewares padrão do Express
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -91,9 +93,9 @@ app.use((req, res, next) => {
   
   const server = await registerRoutes(app);
   
-  // Agora podemos aplicar o middleware de fixação de cookies e diagnóstico 
+  // Agora podemos aplicar o middleware de diagnóstico 
   // já que o Passport está inicializado
-  app.use(fixCookieSessionMiddleware);
+  // Nota: O middleware de fixação de cookies já foi aplicado no início
   app.use(debugAuthMiddleware);
   app.use(recoverSessionMiddleware);
 

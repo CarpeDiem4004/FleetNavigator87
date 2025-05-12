@@ -1,82 +1,61 @@
+/**
+ * Middleware para corrigir problemas de cookies e sessão em diferentes ambientes
+ * Ajusta as configurações de cookie para garantir compatibilidade entre
+ * domínios personalizados, Replit e ambientes locais
+ */
 import { Request, Response, NextFunction } from 'express';
 
-/**
- * Middleware para ajustar cookies de sessão em ambientes de desenvolvimento
- * Isso corrige problemas com domínio e flags que podem impedir
- * o armazenamento e envio de cookies de sessão pelo navegador
- */
-export const fixCookieSessionMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  // Interceptar o método res.cookie para ajustar configurações de cookies
-  const originalSetCookie = res.cookie;
-  
-  // @ts-ignore - Sobrescrevendo método para ajustar cookies
-  res.cookie = function(name: string, value: string, options: any = {}) {
-    // Modificar as opções de cookie para garantir compatibilidade
-    const newOptions = {
-      ...options,
-      sameSite: 'lax', // Permitir cookies de terceiros em ambientes de desenvolvimento
-      secure: process.env.NODE_ENV === 'production', // Apenas HTTPS em produção
-      httpOnly: true, // Impedir acesso via JavaScript
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dias em milissegundos
-      path: '/' // Garantir acesso de qualquer rota
-    };
-    
-    // Se estamos em desenvolvimento, não definir o domínio do cookie
-    // pois isso pode causar problemas com hosts locais como localhost
-    if (process.env.NODE_ENV !== 'production') {
-      delete newOptions.domain;
-    }
-    
-    // Registrar para depuração
-    console.log(`[Cookie Middleware] Definindo cookie: ${name} (Domínio: ${newOptions.domain || 'default'}, Secure: ${newOptions.secure}, MaxAge: ${newOptions.maxAge})`);
-    
-    // Chamar o método original com as opções ajustadas
-    return originalSetCookie.call(res, name, value, newOptions);
-  };
-  
-  // Também interceptamos setHeader para ajustar cookies de sessão
-  const originalSetHeader = res.setHeader;
-  res.setHeader = function(name: string, value: string | string[]) {
-    if (name.toLowerCase() === 'set-cookie' && Array.isArray(value)) {
-      value = value.map(cookie => {
-        if (cookie.includes('connect.sid=')) {
-          console.log(`[Cookie Middleware] Ajustando cookie de sessão: ${cookie.substring(0, 30)}...`);
-          return cookie
-            .replace(/; SameSite=(None|Lax|Strict)/gi, '; SameSite=Lax')
-            .replace(/; Domain=[^;]+/gi, '')
-            .replace(/; secure/gi, process.env.NODE_ENV === 'production' ? '; secure' : '')
-            .replace(/; Max-Age=[^;]+/gi, '; Max-Age=2592000')
-            .replace(/; Path=[^;]+/gi, '; Path=/');
-        }
-        return cookie;
-      });
-    }
-    return originalSetHeader.call(this, name, value);
-  };
-  
-  // Se houver um objeto de sessão na requisição
-  if (req.session) {
-    // Verificar se estamos no Replit ou em um ambiente de desenvolvimento
-    const isReplit = process.env.REPL_ID || process.env.REPL_SLUG;
-    const isDev = process.env.NODE_ENV !== 'production';
-    
-    if (isReplit || isDev) {
-      // Ajustar configurações do cookie para funcionar no Replit
-      (req.session as any).cookie.sameSite = 'lax';
-      (req.session as any).cookie.secure = false; // Permitir HTTP para desenvolvimento
-      (req.session as any).cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 dias
-      (req.session as any).cookie.path = '/';
-      
-      // Remover configuração de domínio que pode estar causando problemas
-      delete (req.session as any).cookie.domain;
-      
-      // "Tocar" na sessão para garantir que as alterações sejam aplicadas
-      req.session.touch();
-      
-      // Debug
-      console.log(`[Cookie Middleware] Ajustando sessão: maxAge=${(req.session as any).cookie.maxAge}, sameSite=${(req.session as any).cookie.sameSite}`);
-    }
+export default function fixCookieSession(req: Request, res: Response, next: NextFunction) {
+  // Se a sessão não existir, continuar
+  if (!req.session) {
+    return next();
   }
-  
+
+  // Log para diagnóstico
+  console.log('[Cookie Middleware] Ajustando sessão: maxAge=2592000000, sameSite=none');
+
+  // CORREÇÃO CRÍTICA: Forçar a aceitação de cookies em qualquer domínio
+  // Isso resolve problemas de CORS e compartilhamento de cookies
+
+  // Ajustar configurações do cookie de sessão para máxima compatibilidade
+  if (req.session.cookie) {
+    req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 dias
+    req.session.cookie.secure = false; // Desabilitar secure para garantir funcionamento em http e https
+    req.session.cookie.sameSite = 'none'; // Permitir cookies de qualquer origem
+    req.session.cookie.httpOnly = false; // Permitir acesso via JavaScript
+
+    // Se houver headers de autorização, armazenar na sessão para recuperação de emergência
+    if (req.headers.authorization) {
+      const authHeader = req.headers.authorization;
+      if (authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        // @ts-ignore
+        req.session.emergencyToken = token;
+      }
+    }
+
+    // Se o cookie connect.sid estiver na requisição, ajustar e registrar
+    if (req.headers.cookie && req.headers.cookie.includes('connect.sid')) {
+      const cookieHeader = req.headers.cookie;
+      const sidMatch = cookieHeader.match(/connect\.sid=([^;]+)/);
+      
+      if (sidMatch && sidMatch[1]) {
+        const sid = sidMatch[1];
+        console.log(`[Cookie Middleware] Ajustando cookie de sessão: connect.sid=${sid.substring(0, 20)}...`);
+      }
+    }
+    
+    // Configurar o header para permitir cookies de qualquer origem
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    
+    // Garantir que Access-Control-Allow-Origin seja configurado
+    const origin = req.headers.origin || '*';
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    
+    // Configurar headers adicionais para melhorar a compatibilidade de CORS
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Force-Sync, X-Auth-Verification, X-Emergency-Auth');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  }
+
   next();
-};
+}
