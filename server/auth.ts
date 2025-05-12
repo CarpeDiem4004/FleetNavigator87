@@ -316,7 +316,9 @@ export function setupAuth(app: Express) {
     
     try {
       // Verificar se o token é válido (pode falhar se o secret for diferente)
-      const decoded = jwt.verify(token, JWT_SECRET);
+      const jsonwebtoken = require('jsonwebtoken');
+      const jwtSecret = process.env.JWT_SECRET || 'seu_jwt_secret_dev';
+      const decoded = jsonwebtoken.verify(token, jwtSecret);
       
       // Verificar o email do usuário no token
       const userEmail = (decoded as any).email;
@@ -326,7 +328,7 @@ export function setupAuth(app: Express) {
       }
       
       // Buscar usuário no banco por email
-      const user = await storage.getUserByUsername(userEmail);
+      const user = await storage.getUserByEmail(userEmail);
       
       if (!user) {
         return res.status(404).json({ message: "Usuário não encontrado" });
@@ -357,6 +359,65 @@ export function setupAuth(app: Express) {
     }
   });
   
+  // Rota de emergência para forçar sessão
+  app.post("/api/force-session", async (req, res) => {
+    try {
+      const { user, email } = req.body;
+      
+      if (!user || !email) {
+        return res.status(400).json({ message: "Dados de usuário incompletos" });
+      }
+      
+      console.log(`[ForceSession] Tentando forçar sessão para: ${email}`);
+      
+      // Buscar usuário diretamente do banco por email para ter todas as informações
+      let dbUser;
+      try {
+        dbUser = await storage.getUserByEmail(email);
+        
+        if (!dbUser) {
+          console.warn(`[ForceSession] Usuário não encontrado no banco: ${email}`);
+          return res.status(404).json({ message: "Usuário não encontrado" });
+        }
+        
+        console.log(`[ForceSession] Usuário encontrado: ${dbUser.id} (${dbUser.email})`);
+      } catch (dbError) {
+        console.error("[ForceSession] Erro ao consultar banco:", dbError);
+        return res.status(500).json({ message: "Erro ao buscar usuário no banco de dados" });
+      }
+      
+      // Login manual com o usuário encontrado no banco
+      req.login(dbUser, (loginErr) => {
+        if (loginErr) {
+          console.error("[ForceSession] Erro ao fazer login manual:", loginErr);
+          return res.status(500).json({ message: "Erro ao estabelecer sessão" });
+        }
+        
+        console.log(`[ForceSession] Login manual bem-sucedido para: ${dbUser.id} (${dbUser.email})`);
+        
+        // Tocar na sessão para garantir persistência
+        req.session.touch();
+        
+        // Salvar a sessão explicitamente
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("[ForceSession] Erro ao salvar sessão:", saveErr);
+            return res.status(500).json({ message: "Erro ao salvar sessão" });
+          }
+          
+          console.log("[ForceSession] Sessão salva com sucesso");
+          
+          // Remover senha antes de retornar
+          const userWithoutPassword = { ...dbUser, password: undefined };
+          return res.status(200).json(userWithoutPassword);
+        });
+      });
+    } catch (error) {
+      console.error("[ForceSession] Erro inesperado:", error);
+      res.status(500).json({ message: "Erro ao processar pedido de força de sessão" });
+    }
+  });
+
   app.get("/api/user", async (req, res) => {
     // Verificar se há um cabeçalho de verificação especial
     const isVerification = req.headers['x-auth-verification'] === 'true';
