@@ -14,6 +14,7 @@ export function useFetchWithAuth() {
     // Primeiro, tenta obter do localStorage
     const localToken = localStorage.getItem('authToken');
     if (localToken) {
+      console.log('[FetchWithAuth] Token encontrado no localStorage');
       return localToken;
     }
 
@@ -25,11 +26,26 @@ export function useFetchWithAuth() {
       // Se encontrou um token, armazena no localStorage para uso futuro
       if (token) {
         localStorage.setItem('authToken', token);
-        console.log('[FetchWithAuth] Token obtido do Supabase e armazenado');
+        console.log('[FetchWithAuth] Token obtido do Supabase e armazenado no localStorage');
         return token;
       }
     } catch (error) {
       console.error('[FetchWithAuth] Erro ao obter sessão Supabase:', error);
+    }
+
+    // Tenta buscar de outra fonte de armazenamento do Supabase
+    try {
+      const savedSession = localStorage.getItem("supabase.auth.token");
+      if (savedSession) {
+        const sessionData = JSON.parse(savedSession);
+        if (sessionData?.access_token) {
+          localStorage.setItem('authToken', sessionData.access_token);
+          console.log('[FetchWithAuth] Token recuperado de supabase.auth.token');
+          return sessionData.access_token;
+        }
+      }
+    } catch (error) {
+      console.error('[FetchWithAuth] Erro ao processar token salvo do Supabase:', error);
     }
 
     return null;
@@ -113,6 +129,17 @@ export function useFetchWithAuth() {
         } else {
           console.warn('[FetchWithAuth] Não foi possível obter token JWT para requisição:',
             typeof input === 'string' ? input : 'Request object');
+            
+          // Se a requisição for para rotas protegidas, especialmente para API frota/estoque
+          const inputUrl = typeof input === 'string' ? input : input.url;
+          if (inputUrl.includes('/api/frota/') && 
+              !inputUrl.includes('/login') && 
+              !inputUrl.includes('/register')) {
+            console.warn('[FetchWithAuth] Tentando acessar rota protegida sem autenticação:', inputUrl);
+            // Redirecionar para a página de login
+            window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+            throw new Error('Não autenticado. Redirecionando para login.');
+          }
         }
       }
       
@@ -130,7 +157,25 @@ export function useFetchWithAuth() {
       }
 
       // Chamar o fetch original com os headers modificados
-      return originalFetch(input, init);
+      try {
+        const response = await originalFetch(input, init);
+        
+        // Se for uma rota protegida e recebemos 401, redirecionar para o login
+        if (response.status === 401 && isInternalRequest) {
+          const inputUrl = typeof input === 'string' ? input : input.url;
+          if (inputUrl.includes('/api/frota/')) {
+            console.warn('[FetchWithAuth] Recebeu 401 de uma rota protegida:', inputUrl);
+            setTimeout(() => {
+              window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+            }, 100);
+          }
+        }
+        
+        return response;
+      } catch (error) {
+        console.error('[FetchWithAuth] Erro na requisição fetch:', error);
+        throw error;
+      }
     };
 
     // Limpeza: restaurar o fetch original quando o componente for desmontado
