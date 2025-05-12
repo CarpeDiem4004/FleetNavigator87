@@ -232,6 +232,12 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
       // Obter o token de acesso atual
       const jwt = session.access_token;
       
+      // Armazenar o token no localStorage para todas as requisições
+      if (jwt) {
+        localStorage.setItem('authToken', jwt);
+        console.log('[ResyncSession] Token JWT armazenado no localStorage');
+      }
+      
       // Chamar a API para ressincronizar a sessão
       const response = await fetch('/api/resync-session-jwt', {
         method: 'POST',
@@ -239,7 +245,9 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${jwt}`
         },
-        credentials: 'include'
+        credentials: 'include',
+        // Garantir que não estamos usando cache
+        cache: 'no-cache',
       });
       
       if (!response.ok) {

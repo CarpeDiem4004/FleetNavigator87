@@ -88,6 +88,21 @@ export default function SignIn({ oficina = false }: SignInProps) {
       const loggedUser = await login(email, password);
       console.log("Login hook completo, resultado:", loggedUser);
       
+      // ETAPA 2.1: Garantir que temos o token JWT armazenado corretamente
+      try {
+        // Importação dinâmica para evitar dependência circular
+        const supabaseModule = await import('@/lib/supabaseClient');
+        const { data } = await supabaseModule.supabase.auth.getSession();
+        
+        if (data?.session?.access_token) {
+          // Armazenar o token do Supabase no localStorage para todas as requisições
+          localStorage.setItem('authToken', data.session.access_token);
+          console.log("Token JWT do Supabase armazenado com sucesso");
+        }
+      } catch (tokenError) {
+        console.error("Erro ao obter token JWT do Supabase:", tokenError);
+      }
+      
       // ETAPA 3: Forçar sincronização de sessão imediatamente usando a nova rota
       try {
         // Combinamos os dados de ambas fontes para máxima compatibilidade

@@ -89,11 +89,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           
           // Verificar se precisamos sincronizar com a sessão tradicional
           try {
+            // Obter a sessão atual para extrair o token de acesso real
+            const { data: sessionData } = await supabase.auth.getSession();
+            const accessToken = sessionData?.session?.access_token;
+            
+            console.log('Sincronizando sessão com token JWT:', accessToken ? 'Disponível' : 'Indisponível');
+            
+            if (!accessToken) {
+              console.warn('Token de acesso não disponível para sincronização');
+              throw new Error('Token de acesso não disponível');
+            }
+            
+            // Armazenar token para uso em outras requisições
+            localStorage.setItem('authToken', accessToken);
+            
             const syncResponse = await fetch('/api/resync-session-jwt', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabaseUser.aud}`
+                'Authorization': `Bearer ${accessToken}`
               },
               credentials: 'include'
             });

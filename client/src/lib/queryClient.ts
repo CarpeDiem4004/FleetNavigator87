@@ -1,6 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { PostgrestResponse } from '@supabase/supabase-js';
-import { supabase } from "./supabase";
+import { supabase } from "./supabaseClient";
 
 // Estado para controlar tentativas de ressincronização
 let isAttemptingResync = false;
