@@ -30,6 +30,11 @@ const oficinaFormSchema = z.object({
 // Tipo inferido do schema
 type OficinaFormValues = z.infer<typeof oficinaFormSchema>;
 
+/**
+ * Página de cadastro simplificado de oficina 
+ * Esta página também serve como ponto de acesso alternativo para oficinas quando 
+ * a rota /oficina não estiver funcionando corretamente
+ */
 export default function CadastroOficinaSimplificado() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
