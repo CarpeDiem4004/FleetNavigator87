@@ -52,6 +52,8 @@ import authTestRoutes from './routes/authTest';
 import { resyncSession } from './routes/sessionResyncRoute';
 // Importação do cliente Supabase para armazenamento de arquivos
 import { createClient } from '@supabase/supabase-js';
+// Importação das rotas de diagnóstico
+import diagnosticoRoutes from './routes/diagnosticoRoutes';
 // Importação dos middlewares antigos para compatibilidade com código existente
 import { 
   isAuthenticated as authMiddleware, 
