@@ -23,7 +23,7 @@ api.interceptors.request.use(config => {
  */
 export const login = async (email: string, password: string) => {
   try {
-    const response = await api.post('/auth/login', { email, password });
+    const response = await api.post('/api/hybrid/users/auth/login', { email, password });
     
     if (response.data.success && response.data.token) {
       // Armazenar o token JWT no localStorage
@@ -49,7 +49,7 @@ export const login = async (email: string, password: string) => {
  */
 export const verifyToken = async () => {
   try {
-    const response = await api.get('/auth/verify');
+    const response = await api.get('/api/hybrid/users/auth/verify');
     return response.data.success;
   } catch (error) {
     console.error('Token inválido:', error);
@@ -90,7 +90,17 @@ export const getCurrentUser = () => {
  */
 export const getAllUsers = async () => {
   try {
-    const response = await api.get('/users');
+    const token = localStorage.getItem('authToken');
+    
+    if (!token) {
+      return { success: false, message: 'Não autenticado' };
+    }
+    
+    const response = await api.get('/api/hybrid/users', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
     return response.data;
   } catch (error: any) {
     console.error('Erro ao obter usuários:', error);
