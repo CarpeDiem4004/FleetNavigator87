@@ -23,15 +23,35 @@ api.interceptors.request.use(config => {
  */
 export const login = async (email: string, password: string) => {
   try {
-    const response = await api.post('/api/hybrid/users/auth/login', { email, password });
-    
-    if (response.data.success && response.data.token) {
-      // Armazenar o token JWT no localStorage
-      localStorage.setItem('authToken', response.data.token);
-      // Armazenar dados básicos do usuário
-      localStorage.setItem('userData', JSON.stringify(response.data.user));
+    console.log('Tentando login híbrido para:', email);
+    // Tentar primeiro o endpoint da api híbrida
+    try {
+      const response = await api.post('/users/auth/login', { email, password });
       
-      return { success: true, user: response.data.user };
+      if (response.data.success && response.data.token) {
+        // Armazenar o token JWT no localStorage
+        localStorage.setItem('authToken', response.data.token);
+        // Armazenar dados básicos do usuário
+        localStorage.setItem('userData', JSON.stringify(response.data.user));
+        
+        console.log('Login híbrido bem-sucedido para:', email);
+        return { success: true, user: response.data.user };
+      }
+    } catch (hybridError) {
+      console.warn('Autenticação híbrida falhou, tentando API tradicional:', hybridError);
+    }
+    
+    // Se falhar, tenta o endpoint tradicional
+    try {
+      const traditionalResponse = await axios.post('/api/login', { email, password });
+      if (traditionalResponse.data && traditionalResponse.data.id) {
+        // Armazenar dados básicos do usuário
+        localStorage.setItem('userData', JSON.stringify(traditionalResponse.data));
+        console.log('Login tradicional bem-sucedido para:', email);
+        return { success: true, user: traditionalResponse.data };
+      }
+    } catch (traditionalError) {
+      console.error('Ambos os métodos de autenticação falharam:', traditionalError);
     }
     
     return { success: false, message: 'Falha na autenticação' };
