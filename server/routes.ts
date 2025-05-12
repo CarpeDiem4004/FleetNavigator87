@@ -12,6 +12,8 @@ import {
   type InsertMaintenanceChat, type InsertChatMessage,
   type InsertBaseRequest, type InsertBaseRequestUpdate
 } from "@shared/schema";
+import workshopRegisterRoutes from './routes/workshopRegisterRoutes';
+import workshopApprovalRoutes from './routes/workshopApprovalRoutes';
 import { setupAuth } from "./auth";
 import { getDashboardKPIs, getPainelPrincipal } from "./dashboardApi";
 // middleware de autenticação híbrida já importado abaixo como alias
@@ -8808,6 +8810,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/oficinas', oficinaRoutes);
   app.use('/api/workshops', workshopRoutes);
   
+  // Registrar rotas de workshop
   // Registrar rotas para registro e aprovação de oficinas
   app.use('/api/workshops', workshopRegisterRoutes);
   app.use('/api/workshops', workshopApprovalRoutes);

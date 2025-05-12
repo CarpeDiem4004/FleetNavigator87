@@ -7,6 +7,7 @@ import express, { Request, Response } from 'express';
 import { pool } from '../db';
 import { isAuthenticated, isFleetManager } from '../middleware/roleCheck';
 import { sendEmail } from '../utils/email';
+import { hash } from 'bcrypt';
 
 const router = express.Router();
 
