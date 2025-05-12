@@ -126,20 +126,31 @@ export default function PainelPrincipal() {
     staleTime: 5 * 60 * 1000, // 5 minutos
     retry: 1
   });
+  
+  // Consulta para obter oficinas pendentes de aprovação
+  const pendingWorkshopsQuery = useQuery({
+    queryKey: ['/api/workshops/pending'],
+    queryFn: getPendingWorkshops,
+    enabled: true,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    retry: 1
+  });
 
   // Estado de carregamento global para todas as consultas
   const isLoading = 
     vehiclesQuery.isLoading || 
     maintenanceQuery.isLoading || 
     tiresQuery.isLoading || 
-    fuelQuery.isLoading;
+    fuelQuery.isLoading ||
+    pendingWorkshopsQuery.isLoading;
 
   // Verificar se todas as consultas têm erros
   const allFailed = 
     vehiclesQuery.isError && 
     maintenanceQuery.isError && 
     tiresQuery.isError && 
-    fuelQuery.isError;
+    fuelQuery.isError &&
+    pendingWorkshopsQuery.isError;
 
   // Busca os dados do painel principal da tabela legada no Supabase
   useEffect(() => {
@@ -192,8 +203,12 @@ export default function PainelPrincipal() {
       newKpis.fuel = fuelQuery.data;
     }
     
+    if (pendingWorkshopsQuery.data) {
+      newKpis.pendingWorkshops = pendingWorkshopsQuery.data;
+    }
+    
     setKpis(newKpis);
-  }, [vehiclesQuery.data, maintenanceQuery.data, tiresQuery.data, fuelQuery.data]);
+  }, [vehiclesQuery.data, maintenanceQuery.data, tiresQuery.data, fuelQuery.data, pendingWorkshopsQuery.data]);
 
   if (isLoading) {
     return (
@@ -290,6 +305,22 @@ export default function PainelPrincipal() {
           />
         </div>
       </div>
+
+      {/* Seção de Oficinas Pendentes - CARD 5 */}
+      {kpis.pendingWorkshops && kpis.pendingWorkshops.total > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-gray-700 pl-2 border-l-4 border-purple-500">Oficinas</h2>
+          <div className="grid md:grid-cols-1 gap-5">
+            <Link to="/fleet-management/workshops/approval" className="hover:opacity-95 transition-opacity">
+              <KpiCard 
+                label="Oficinas Pendentes de Aprovação" 
+                value={kpis.pendingWorkshops.total} 
+                color="purple"
+              />
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Exibir dados históricos se estiverem disponíveis */}
       {painel && (
