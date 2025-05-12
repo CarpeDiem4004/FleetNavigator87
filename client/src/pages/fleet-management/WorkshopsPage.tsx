@@ -63,6 +63,10 @@ export default function WorkshopsPage() {
   const [editingWorkshop, setEditingWorkshop] = useState<Workshop | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useContext(AuthContext);
+
+  // Verifica se o usuário tem permissão para aprovar oficinas (admin ou gestor_frota)
+  const canApproveWorkshops = user?.role === 'admin' || user?.role === 'gestor_frota';
 
   const [formData, setFormData] = useState<Partial<Workshop>>({
     name: '',
@@ -75,12 +79,13 @@ export default function WorkshopsPage() {
     observations: ''
   });
   
-  // Buscar oficinas pendentes de aprovação
+  // Buscar oficinas pendentes de aprovação (apenas se o usuário tiver permissão)
   const { data: pendingWorkshops = [], isLoading: isLoadingPending } = useQuery<PendingWorkshop[]>({
     queryKey: ['/api/workshops/pending'],
     refetchOnWindowFocus: false,
-    // Se houver erro de permissão, apenas retorna um array vazio
+    enabled: canApproveWorkshops, // Só executa a query se o usuário tiver permissão
     onError: () => {
+      // Em caso de erro, retorna array vazio para não quebrar a interface
       return [];
     }
   });
@@ -242,8 +247,8 @@ export default function WorkshopsPage() {
             </Button>
           </div>
           
-          {/* Card de oficinas pendentes de aprovação */}
-          {pendingWorkshops.length > 0 && (
+          {/* Card de oficinas pendentes de aprovação - só mostra se o usuário tiver permissão */}
+          {canApproveWorkshops && pendingWorkshops.length > 0 && (
             <Card className="border-amber-300 bg-amber-50">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center text-amber-800">
