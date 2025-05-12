@@ -241,15 +241,46 @@ router.get('/api/hybrid/users', verifyHybridAuth, async (req, res) => {
   try {
     console.log('[HybridAPI] Listando usuários');
     
+    // Registrar detalhes da requisição para depuração
+    console.log('[HybridAPI] Requisição recebida:', {
+      method: req.method,
+      url: req.url,
+      headers: {
+        authorization: req.headers.authorization ? 'Presente' : 'Ausente',
+        'content-type': req.headers['content-type'],
+        'user-agent': req.headers['user-agent'],
+        cookie: req.headers.cookie ? 'Presente' : 'Ausente'
+      },
+      ip: req.ip,
+      isAuthenticated: req.isAuthenticated && req.isAuthenticated()
+    });
+    
     // Extrair filtros da query string
-    const { role, baseId, active } = req.query;
+    const { role, baseId, active, isActive } = req.query;
     const filters = {};
     
     if (role) filters.role = role;
     if (baseId) filters.baseId = parseInt(baseId, 10);
+    // Aceitar ambos 'active' e 'isActive' para retrocompatibilidade
     if (active !== undefined) filters.isActive = active === 'true';
+    if (isActive !== undefined) filters.isActive = isActive === 'true';
     
+    // Primeiro, vamos forçar uma consulta direta ao banco para garantir dados atualizados
+    console.log('[HybridAPI] Consultando usuários diretamente do banco...');
     const users = await userService.listUsers(filters);
+    
+    console.log(`[HybridAPI] ${users.length} usuários encontrados`);
+    
+    // Depuração detalhada dos usuários encontrados
+    users.forEach((user, index) => {
+      console.log(`[HybridAPI] Usuário ${index + 1}:`, { 
+        id: user.id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role,
+        isActive: user.isActive
+      });
+    });
     
     // Remover senhas dos objetos de resposta
     const usersWithoutPasswords = users.map(user => {

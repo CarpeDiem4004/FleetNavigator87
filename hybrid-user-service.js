@@ -473,9 +473,53 @@ class HybridUserService {
   /**
    * Lista todos os usuários com filtros opcionais
    */
+  /**
+   * Força a atualização do cache de usuários
+   * Isso garante que sempre buscamos dados atualizados do banco
+   */
+  async refreshUsersCache() {
+    try {
+      console.log('[HybridUserService] Atualizando cache de usuários...');
+      
+      // Consultar usuários direto no banco para forçar atualização
+      if (this.pgPool) {
+        try {
+          const query = 'SELECT COUNT(*) FROM users';
+          const result = await this.pgPool.query(query);
+          const count = parseInt(result.rows[0].count, 10);
+          console.log(`[HybridUserService] Cache atualizado: ${count} usuários no PostgreSQL`);
+        } catch (pgError) {
+          console.error('[HybridUserService] Erro ao atualizar cache via PostgreSQL:', pgError);
+        }
+      }
+      
+      if (this.supabase) {
+        try {
+          const { count, error } = await this.supabase
+            .from('users')
+            .select('*', { count: 'exact', head: true });
+          
+          if (error) throw error;
+          
+          console.log(`[HybridUserService] Cache atualizado: ${count || 0} usuários no Supabase`);
+        } catch (supabaseError) {
+          console.error('[HybridUserService] Erro ao atualizar cache via Supabase:', supabaseError);
+        }
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('[HybridUserService] Erro ao atualizar cache de usuários:', error);
+      return false;
+    }
+  }
+
   async listUsers(filters = {}) {
     try {
       console.log('[HybridUserService] Listando usuários com filtros:', filters);
+      
+      // Forçar atualização do cache antes de consultar
+      await this.refreshUsersCache();
       
       let usersList = null;
       
@@ -509,11 +553,27 @@ class HybridUserService {
             paramCounter++;
           }
           
+          // Para debug - lista todas as tabelas do banco
+          const tableQuery = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'";
+          const tableResult = await this.pgPool.query(tableQuery);
+          console.log('[HybridUserService] Tabelas disponíveis:', 
+            tableResult.rows.map(r => r.table_name).join(', '));
+          
           const query = `SELECT * FROM users ${whereClause} ORDER BY name`;
+          console.log('[HybridUserService] Executando consulta SQL:', query, values);
+          
           const result = await this.pgPool.query(query, values);
+          
+          console.log(`[HybridUserService] Resultado da consulta: ${result.rows.length} linhas`);
           
           if (result.rows.length > 0) {
             console.log(`[HybridUserService] ${result.rows.length} usuários encontrados via PostgreSQL`);
+            // Log detalhado para debug
+            result.rows.forEach((row, idx) => {
+              console.log(`[HybridUserService] Usuário ${idx + 1} do banco:`, 
+                { id: row.id, name: row.name, email: row.email, role: row.role, is_active: row.is_active });
+            });
+            
             usersList = result.rows.map(user => this.mapDbUserToObject(user));
           } else {
             usersList = [];
@@ -548,6 +608,12 @@ class HybridUserService {
           
           if (data) {
             console.log(`[HybridUserService] ${data.length} usuários encontrados via Supabase`);
+            // Log detalhado para debug
+            data.forEach((user, idx) => {
+              console.log(`[HybridUserService] Usuário ${idx + 1} do Supabase:`, 
+                { id: user.id, name: user.name, email: user.email, role: user.role, is_active: user.is_active });
+            });
+            
             usersList = data.map(user => this.mapDbUserToObject(user));
           } else {
             usersList = [];
