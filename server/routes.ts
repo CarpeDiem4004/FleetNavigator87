@@ -8809,11 +8809,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rotas para o histórico de pátio
   app.use('/api/patio', patioRoutes);
   
-  // Registrar API híbrida de usuários
+  // Registrar API híbrida de usuários 
+  // Mantendo suporte ao caminho legado para compatibilidade com código cliente existente
   app.use('/api/hybrid/users', hybridUserApi);
   
-  // Registrar endpoints de autenticação híbrida diretamente na raiz da API híbrida
+  // Registrar API híbrida de usuários com caminho simplificado (novo padrão recomendado)
+  app.use('/users', hybridUserApi);
+  
+  // Registrar endpoints de autenticação híbrida no caminho original para compatibilidade
   app.use('/api/hybrid/auth', hybridUserApi);
+  
+  // Registrar endpoints de autenticação híbrida no caminho simplificado (novo padrão recomendado)
+  app.use('/auth', hybridUserApi);
 
   const httpServer = createServer(app);
   return httpServer;

@@ -157,9 +157,9 @@ router.post('/api/hybrid/users', verifyJwtAuth, async (req, res) => {
 
 /**
  * Rota para obter um usuário pelo ID
- * GET /api/hybrid/users/:id
+ * GET /api/hybrid/users/:id (caminho simplificado: /:id)
  */
-router.get('/api/hybrid/users/:id', verifyJwtAuth, async (req, res) => {
+router.get('/:id', verifyJwtAuth, async (req, res) => {
   try {
     const { id } = req.params;
     console.log(`[HybridAPI] Buscando usuário com ID: ${id}`);
