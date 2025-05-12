@@ -175,18 +175,58 @@ function App() {
           </Route>
           
           {/* Rotas protegidas com verificação de permissão de base */}
-          <ProtectedRoute path="/vehicles" component={VehiclesNew} />
+          <Route path="/vehicles">
+            <ProtectedRoute allowedRoles={["admin", "gestor", "gestor_frota", "operador"]}>
+              <VehiclesNew />
+            </ProtectedRoute>
+          </Route>
           {/* <ProtectedRoute path="/maintenance" component={MaintenanceNew} /> */}
-          <ProtectedRoute path="/tires" component={TiresPage} />
-          <ProtectedRoute path="/tires/entrada" component={TiresEntrada} />
-          <ProtectedRoute path="/tires/solicitacoes" component={SolicitacoesPneus} />
-          <ProtectedRoute path="/tires/:id" component={TireDetailPage} />
-          <ProtectedRoute path="/refueling" component={RefuelingNew} />
-          <ProtectedRoute path="/fines" component={FinesNew} />
+          <Route path="/tires">
+            <ProtectedRoute allowedRoles={["admin", "gestor", "gestor_frota", "pneus"]}>
+              <TiresPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/tires/entrada">
+            <ProtectedRoute allowedRoles={["admin", "gestor", "gestor_frota", "pneus"]}>
+              <TiresEntrada />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/tires/solicitacoes">
+            <ProtectedRoute allowedRoles={["admin", "gestor", "gestor_frota", "pneus"]}>
+              <SolicitacoesPneus />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/tires/:id">
+            <ProtectedRoute allowedRoles={["admin", "gestor", "gestor_frota", "pneus"]}>
+              <TireDetailPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/refueling">
+            <ProtectedRoute allowedRoles={["admin", "gestor", "gestor_frota", "operador"]}>
+              <RefuelingNew />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/fines">
+            <ProtectedRoute allowedRoles={["admin", "gestor", "gestor_frota"]}>
+              <FinesNew />
+            </ProtectedRoute>
+          </Route>
           {/* Line Hall removido conforme solicitação */}
-          <ProtectedRoute path="/fleet-management" component={FleetManagement} />
-          <ProtectedRoute path="/fleet-management/inventory" component={InventoryPage} />
-          <ProtectedRoute path="/fleet-management/parts-inventory" component={PartsInventoryPage} />
+          <Route path="/fleet-management">
+            <ProtectedRoute allowedRoles={["admin", "gestor_frota"]}>
+              <FleetManagement />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/fleet-management/inventory">
+            <ProtectedRoute allowedRoles={["admin", "gestor_frota"]}>
+              <InventoryPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/fleet-management/parts-inventory">
+            <ProtectedRoute allowedRoles={["admin", "gestor_frota"]}>
+              <PartsInventoryPage />
+            </ProtectedRoute>
+          </Route>
           <Route path="/fleet-management/workshops">
             <ProtectedRoute allowedRoles={["admin", "gestor_frota"]}>
               <WorkshopsPage />

@@ -92,9 +92,17 @@ export default function WorkshopsApprovalPage() {
   // Função para aprovar uma oficina
   const handleApprove = async (workshopId: number) => {
     try {
-      await apiRequest(`/api/workshops/${workshopId}/approve`, {
-        method: 'POST'
+      const response = await fetch(`/api/workshops/${workshopId}/approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
       });
+
+      if (!response.ok) {
+        throw new Error('Falha ao aprovar oficina');
+      }
 
       toast({
         title: 'Oficina aprovada com sucesso!',
@@ -125,10 +133,18 @@ export default function WorkshopsApprovalPage() {
     if (!selectedWorkshop) return;
     
     try {
-      await apiRequest(`/api/workshops/${selectedWorkshop.id}/reject`, {
+      const response = await fetch(`/api/workshops/${selectedWorkshop.id}/reject`, {
         method: 'POST',
-        data: { motivo: rejectionReason }
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify({ motivo: rejectionReason })
       });
+
+      if (!response.ok) {
+        throw new Error('Falha ao rejeitar oficina');
+      }
 
       toast({
         title: 'Oficina rejeitada',
