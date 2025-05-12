@@ -345,6 +345,17 @@ function App() {
             <AbastecimentoPostoRemediosPage />
           </Route>
           
+          {/* Rotas para Oficinas Externas */}
+          <Route path="/oficinas/cadastro">
+            <CadastroOficina />
+          </Route>
+          
+          <Route path="/oficinas/onboarding">
+            <ProtectedRoute allowedRoles={["oficina"]}>
+              <OficinasOnboarding />
+            </ProtectedRoute>
+          </Route>
+          
           <Route>
             <NotFound />
           </Route>
