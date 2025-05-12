@@ -12,7 +12,7 @@ import {
   type InsertBaseRequest, type InsertBaseRequestUpdate
 } from "@shared/schema";
 import { setupAuth } from "./auth";
-import { resyncSession, initResyncRoutes } from "./routes/sessionResyncRoute";
+import { initResyncRoutes } from "./routes/sessionResyncRoute";
 import { getDashboardKPIs, getPainelPrincipal } from "./dashboardApi";
 // middleware de autenticação híbrida já importado abaixo como alias
 import { getExecutiveDashboard } from "./executiveDashboard";
@@ -29,7 +29,7 @@ import { runSupabaseDiagnostic } from "./supabaseDiagnostic";
 import { registerPneusRoutes } from "./pneusApi";
 import { registerTireMoveRoutes } from "./tireMoveApi";
 import { compareSchemas } from "./compareSchemas";
-import diagnosticoRoutes from "./routes/diagnosticoRoutes";
+import diagnosticoRoutes from './routes/diagnosticoRoutes';
 import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
 // Removida importação redundante, pois está sendo importada via supabaseInsertRoute
 import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoutes";
@@ -54,8 +54,7 @@ import authTestRoutes from './routes/authTest';
 import { resyncSession } from './routes/sessionResyncRoute';
 // Importação do cliente Supabase para armazenamento de arquivos
 import { createClient } from '@supabase/supabase-js';
-// Importação das rotas de diagnóstico
-import diagnosticoRoutes from './routes/diagnosticoRoutes';
+// Importação das rotas de diagnóstico já feita acima
 // Importação dos middlewares antigos para compatibilidade com código existente
 import { 
   isAuthenticated as authMiddleware, 
