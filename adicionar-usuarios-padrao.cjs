@@ -3,10 +3,10 @@
  * Este script deve ser executado uma única vez para adicionar usuários essenciais
  */
 
-import { Pool } from 'pg';
-import { createClient } from '@supabase/supabase-js';
-import { scrypt, randomBytes } from 'crypto';
-import { promisify } from 'util';
+const { Pool } = require('pg');
+const { createClient } = require('@supabase/supabase-js');
+const { scrypt, randomBytes } = require('crypto');
+const { promisify } = require('util');
 
 // Função assíncrona para hash de senha
 const scryptAsync = promisify(scrypt);
