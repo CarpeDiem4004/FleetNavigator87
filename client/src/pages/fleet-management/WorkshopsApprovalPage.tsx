@@ -110,19 +110,28 @@ export default function WorkshopsApprovalPage() {
       // Atualizamos o array de oficinas localmente, removendo a oficina aprovada
       const updatedWorkshops = workshops.filter((w: Workshop) => w.id !== workshopId);
       
-      // Simulamos o email enviado
+      // Obtemos os dados da oficina aprovada
       const workshop = workshops.find((w: Workshop) => w.id === workshopId);
+      
+      // Geramos uma senha temporária
+      const tempPassword = Math.random().toString(36).slice(-8);
       
       // Exibimos informações no console
       console.log('Oficina aprovada:', workshop);
-      console.log('Email seria enviado para:', workshop?.email);
-      console.log('Senha temporária gerada:', Math.random().toString(36).slice(-8));
+      console.log('Link de acesso:', `https://gestaoonfleet.com.br/oficina/login`);
+      console.log('Email para acesso:', workshop?.email);
+      console.log('Senha temporária:', tempPassword);
       
-      // Atualizamos a UI
+      // Atualizamos a UI com as informações de acesso
       toast({
         title: 'Oficina aprovada com sucesso!',
-        description: 'Um email foi enviado para a oficina com as informações de acesso.',
+        description: 'Anote as informações de acesso para enviar à oficina.',
+        variant: 'default',
       });
+      
+      // Exibimos um diálogo com as informações de acesso
+      // (Na versão atual, só mostramos no console, mas poderíamos adicionar um Dialog component)
+      alert(`Oficina aprovada: ${workshop?.name}\n\nInformações de acesso:\nLink: https://gestaoonfleet.com.br/oficina/login\nEmail: ${workshop?.email}\nSenha temporária: ${tempPassword}\n\nForneça estas informações diretamente à oficina.`);
       
       // Atualiza a lista localmente
       // Em produção, voltaremos a usar a chamada de API real
