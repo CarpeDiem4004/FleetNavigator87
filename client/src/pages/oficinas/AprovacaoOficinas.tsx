@@ -1,21 +1,20 @@
-import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Check, X, Building, Info, AlertCircle, Clock } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import { usePermission } from "@/hooks/use-permission";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { CheckCircle, XCircle, AlertTriangle, Clock, UserCheck, Ban } from 'lucide-react';
+import { usePermission } from '@/hooks/use-permission';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 
-// Interface para as oficinas pendentes de aprovação
-interface OficinaPendente {
+interface Oficina {
   id: number;
   nome: string;
   cnpj: string;
@@ -24,482 +23,439 @@ interface OficinaPendente {
   endereco: string;
   ramoAtuacao: string;
   dataCadastro: string;
-  status: "pendente" | "aprovado" | "rejeitado";
+  status: 'pendente' | 'aprovado' | 'rejeitado';
   observacoes?: string;
+  banco?: string;
+  agencia?: string;
+  conta?: string;
+  tipoConta?: string;
 }
 
-export default function AprovacaoOficinas() {
-  const { toast } = useToast();
-  const { user } = useAuth();
+const AprovacaoOficinas: React.FC = () => {
+  const [oficinas, setOficinas] = useState<Oficina[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [oficinaAtual, setOficinaAtual] = useState<Oficina | null>(null);
+  const [motivoRejeicao, setMotivoRejeicao] = useState('');
+  const [dialogRejeitarAberto, setDialogRejeitarAberto] = useState(false);
+  const [dialogSucessoAberto, setDialogSucessoAberto] = useState(false);
+  const [ultimaAcao, setUltimaAcao] = useState<{ tipo: 'aprovacao' | 'rejeicao', oficina: string } | null>(null);
+  const [filtro, setFiltro] = useState('');
+  
   const { hasPermission } = usePermission();
-  const queryClient = useQueryClient();
+  const { toast } = useToast();
   
-  const [activeTab, setActiveTab] = useState("pendentes");
-  const [oficinaDetalhes, setOficinaDetalhes] = useState<OficinaPendente | null>(null);
-  const [showDialog, setShowDialog] = useState(false);
-  const [motivoRejeicao, setMotivoRejeicao] = useState("");
-  const [rejectMode, setRejectMode] = useState(false);
-
-  // Verifica se o usuário tem permissão para aprovar oficinas
-  const canApproveWorkshops = hasPermission(["admin", "gestor_frota"]);
+  // Verifica se o usuário tem permissão para acessar esta página
+  const podeAprovar = hasPermission(['admin', 'gestor_frota']);
   
-  // Query para buscar oficinas pendentes
-  const { data: oficinas, isLoading, error } = useQuery({
-    queryKey: ['/api/workshops/pending'],
-    queryFn: async () => {
-      const response = await apiRequest('/api/workshops/pending');
-      return response.data;
-    },
-    enabled: canApproveWorkshops
-  });
-
-  // Mutação para aprovar uma oficina
-  const approvalMutation = useMutation({
-    mutationFn: async (oficinaId: number) => {
-      return await apiRequest(`/api/workshops/${oficinaId}/approve`, {
-        method: 'POST'
-      });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Oficina aprovada",
-        description: "A oficina foi aprovada com sucesso e já pode acessar o sistema.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/workshops/pending'] });
-      setShowDialog(false);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erro ao aprovar oficina",
-        description: error.message || "Ocorreu um erro ao aprovar a oficina. Tente novamente.",
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Mutação para rejeitar uma oficina
-  const rejectionMutation = useMutation({
-    mutationFn: async ({ oficinaId, motivo }: { oficinaId: number, motivo: string }) => {
-      return await apiRequest(`/api/workshops/${oficinaId}/reject`, {
-        method: 'POST',
-        data: { motivo }
-      });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Oficina rejeitada",
-        description: "A oficina foi rejeitada e será notificada sobre o motivo.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/workshops/pending'] });
-      setShowDialog(false);
-      setRejectMode(false);
-      setMotivoRejeicao("");
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erro ao rejeitar oficina",
-        description: error.message || "Ocorreu um erro ao rejeitar a oficina. Tente novamente.",
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Filtra as oficinas por status
-  const oficinasPendentes = oficinas?.filter(o => o.status === "pendente") || [];
-  const oficinasAprovadas = oficinas?.filter(o => o.status === "aprovado") || [];
-  const oficinasRejeitadas = oficinas?.filter(o => o.status === "rejeitado") || [];
-
-  // Abre o diálogo com os detalhes da oficina
-  const verDetalhes = (oficina: OficinaPendente) => {
-    setOficinaDetalhes(oficina);
-    setShowDialog(true);
-    setRejectMode(false);
-  };
-
-  // Função para aprovar uma oficina
-  const aprovarOficina = (oficinaId: number) => {
-    approvalMutation.mutate(oficinaId);
-  };
-
-  // Função para abrir o modo de rejeição
-  const prepararRejeicao = () => {
-    setRejectMode(true);
-  };
-
-  // Função para rejeitar uma oficina
-  const rejeitarOficina = () => {
-    if (!motivoRejeicao.trim()) {
-      toast({
-        title: "Motivo necessário",
-        description: "Informe o motivo da rejeição para continuar.",
-        variant: "destructive",
-      });
-      return;
+  useEffect(() => {
+    async function carregarOficinas() {
+      try {
+        setLoading(true);
+        const response = await apiRequest('/api/workshops/pending');
+        const data = await response.json();
+        setOficinas(data);
+      } catch (error) {
+        console.error('Erro ao carregar oficinas:', error);
+        toast({
+          title: 'Erro',
+          description: 'Não foi possível carregar a lista de oficinas pendentes.',
+          variant: 'destructive'
+        });
+      } finally {
+        setLoading(false);
+      }
     }
     
-    if (oficinaDetalhes) {
-      rejectionMutation.mutate({ 
-        oficinaId: oficinaDetalhes.id, 
-        motivo: motivoRejeicao
+    carregarOficinas();
+  }, [toast]);
+  
+  const handleAprovar = async (id: number) => {
+    try {
+      const oficina = oficinas.find(o => o.id === id);
+      if (!oficina) return;
+      
+      await apiRequest(`/api/workshops/${id}/approve`, {
+        method: 'POST'
+      });
+      
+      // Atualiza a lista de oficinas
+      setOficinas(prev => prev.map(o => 
+        o.id === id ? { ...o, status: 'aprovado' } : o
+      ));
+      
+      // Configura mensagem de sucesso
+      setUltimaAcao({
+        tipo: 'aprovacao',
+        oficina: oficina.nome
+      });
+      
+      setDialogSucessoAberto(true);
+      
+    } catch (error) {
+      console.error('Erro ao aprovar oficina:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível aprovar a oficina.',
+        variant: 'destructive'
       });
     }
   };
-
-  // Verifica se o usuário não tem permissão para acessar esta página
-  if (!canApproveWorkshops) {
+  
+  const handleRejeitarDialog = (oficina: Oficina) => {
+    setOficinaAtual(oficina);
+    setMotivoRejeicao('');
+    setDialogRejeitarAberto(true);
+  };
+  
+  const handleRejeitar = async () => {
+    if (!oficinaAtual) return;
+    
+    try {
+      await apiRequest(`/api/workshops/${oficinaAtual.id}/reject`, {
+        method: 'POST',
+        data: { motivo: motivoRejeicao }
+      });
+      
+      // Atualiza a lista de oficinas
+      setOficinas(prev => prev.map(o => 
+        o.id === oficinaAtual.id ? { ...o, status: 'rejeitado' } : o
+      ));
+      
+      // Configura mensagem de sucesso
+      setUltimaAcao({
+        tipo: 'rejeicao',
+        oficina: oficinaAtual.nome
+      });
+      
+      // Fecha o dialog de rejeição e abre o de sucesso
+      setDialogRejeitarAberto(false);
+      setDialogSucessoAberto(true);
+      
+    } catch (error) {
+      console.error('Erro ao rejeitar oficina:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível rejeitar a oficina.',
+        variant: 'destructive'
+      });
+    }
+  };
+  
+  // Filtra as oficinas por texto na busca e por status
+  const filtrarOficinas = (status?: string) => {
+    return oficinas.filter(o => {
+      // Filtro por texto
+      const matchTexto = filtro === '' || 
+        o.nome.toLowerCase().includes(filtro.toLowerCase()) ||
+        o.cnpj.includes(filtro) ||
+        o.ramoAtuacao.toLowerCase().includes(filtro.toLowerCase());
+      
+      // Filtro por status
+      const matchStatus = !status || o.status === status;
+      
+      return matchTexto && matchStatus;
+    });
+  };
+  
+  const oficinasPendentes = filtrarOficinas('pendente');
+  const oficinasAprovadas = filtrarOficinas('aprovado');
+  const oficinasRejeitadas = filtrarOficinas('rejeitado');
+  
+  if (!podeAprovar) {
     return (
-      <div className="container mx-auto py-8 px-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-red-600">Acesso Negado</CardTitle>
-            <CardDescription>
-              Você não tem permissão para acessar esta página. Esta funcionalidade é restrita a administradores e gestores de frota.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Acesso Negado</AlertTitle>
+          <AlertDescription>
+            Você não tem permissão para acessar esta página. Esta funcionalidade é restrita 
+            a administradores e gestores de frota.
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
-
+  
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex items-center mb-6">
-        <Building className="h-8 w-8 mr-3 text-blue-600" />
-        <div>
-          <h1 className="text-2xl font-bold">Aprovação de Oficinas</h1>
-          <p className="text-gray-500">
-            Gerencie solicitações de cadastro de oficinas parceiras
-          </p>
-        </div>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-3 w-full max-w-md">
-          <TabsTrigger value="pendentes" className="flex items-center gap-1">
-            <Clock className="h-4 w-4" />
-            <span>Pendentes</span>
-            {oficinasPendentes.length > 0 && (
-              <Badge variant="destructive" className="ml-1">
-                {oficinasPendentes.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="aprovadas">
-            <Check className="h-4 w-4 mr-1" />
-            Aprovadas
-          </TabsTrigger>
-          <TabsTrigger value="rejeitadas">
-            <X className="h-4 w-4 mr-1" />
-            Rejeitadas
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="pendentes">
-          <Card>
-            <CardHeader>
-              <CardTitle>Oficinas Pendentes de Aprovação</CardTitle>
-              <CardDescription>
-                Revise e aprove os cadastros de novas oficinas parceiras
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="py-8 text-center">Carregando solicitações...</div>
-              ) : error ? (
-                <div className="py-8 text-center text-red-600">
-                  <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-                  Erro ao carregar solicitações. Tente novamente mais tarde.
-                </div>
+    <div className="container mx-auto p-6">
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Aprovação de Oficinas</CardTitle>
+          <CardDescription>
+            Gerencie o cadastro de novas oficinas no sistema. Você pode aprovar ou rejeitar 
+            as solicitações de cadastro.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4">
+            <Label htmlFor="filtro">Buscar oficina</Label>
+            <Input 
+              id="filtro" 
+              placeholder="Buscar por nome, CNPJ ou ramo de atuação..." 
+              value={filtro}
+              onChange={(e) => setFiltro(e.target.value)}
+              className="max-w-md"
+            />
+          </div>
+          
+          <Tabs defaultValue="pendentes">
+            <TabsList>
+              <TabsTrigger value="pendentes">
+                Pendentes <Badge variant="secondary" className="ml-2">{oficinasPendentes.length}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="aprovadas">
+                Aprovadas <Badge variant="secondary" className="ml-2">{oficinasAprovadas.length}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="rejeitadas">
+                Rejeitadas <Badge variant="secondary" className="ml-2">{oficinasRejeitadas.length}</Badge>
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="pendentes">
+              {loading ? (
+                <div className="text-center py-8">Carregando oficinas pendentes...</div>
               ) : oficinasPendentes.length === 0 ? (
-                <div className="py-8 text-center text-gray-500">
-                  <Info className="h-8 w-8 mx-auto mb-2" />
-                  Não há solicitações pendentes no momento.
+                <div className="text-center py-8 text-muted-foreground">
+                  <Clock className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>Não há oficinas pendentes de aprovação.</p>
                 </div>
               ) : (
-                <Table>
-                  <TableCaption>Lista de oficinas aguardando aprovação</TableCaption>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>CNPJ</TableHead>
-                      <TableHead>Ramo</TableHead>
-                      <TableHead>Data de Cadastro</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {oficinasPendentes.map((oficina) => (
-                      <TableRow key={oficina.id}>
-                        <TableCell className="font-medium">{oficina.nome}</TableCell>
-                        <TableCell>{oficina.cnpj}</TableCell>
-                        <TableCell>{oficina.ramoAtuacao}</TableCell>
-                        <TableCell>{new Date(oficina.dataCadastro).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => verDetalhes(oficina)}
-                            >
-                              Detalhes
-                            </Button>
-                            <Button
-                              variant="default"
-                              size="sm"
-                              onClick={() => aprovarOficina(oficina.id)}
-                              disabled={approvalMutation.isPending}
-                            >
-                              {approvalMutation.isPending ? "Aprovando..." : "Aprovar"}
-                            </Button>
+                <div className="space-y-4 mt-4">
+                  {oficinasPendentes.map(oficina => (
+                    <Card key={oficina.id} className="overflow-hidden">
+                      <div className="flex items-center px-6 py-3 bg-muted">
+                        <div className="flex-1">
+                          <h3 className="font-medium">{oficina.nome}</h3>
+                          <p className="text-sm text-muted-foreground">CNPJ: {oficina.cnpj}</p>
+                        </div>
+                        <Badge className="bg-amber-500">Pendente</Badge>
+                      </div>
+                      <CardContent className="pt-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <h4 className="text-sm font-medium mb-1">Contato</h4>
+                            <p className="text-sm">{oficina.telefone}</p>
+                            <p className="text-sm">{oficina.email}</p>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="aprovadas">
-          <Card>
-            <CardHeader>
-              <CardTitle>Oficinas Aprovadas</CardTitle>
-              <CardDescription>
-                Oficinas que já foram aprovadas e têm acesso ao sistema
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="py-8 text-center">Carregando oficinas aprovadas...</div>
-              ) : error ? (
-                <div className="py-8 text-center text-red-600">
-                  <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-                  Erro ao carregar oficinas. Tente novamente mais tarde.
+                          <div>
+                            <h4 className="text-sm font-medium mb-1">Endereço</h4>
+                            <p className="text-sm">{oficina.endereco}</p>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium mb-1">Ramo de Atuação</h4>
+                            <p className="text-sm">{oficina.ramoAtuacao}</p>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium mb-1">Data de Cadastro</h4>
+                            <p className="text-sm">{new Date(oficina.dataCadastro).toLocaleDateString('pt-BR')}</p>
+                          </div>
+                          {oficina.banco && (
+                            <div className="md:col-span-2">
+                              <h4 className="text-sm font-medium mb-1">Dados Bancários</h4>
+                              <p className="text-sm">
+                                {oficina.banco} - Agência: {oficina.agencia}, Conta: {oficina.conta} ({oficina.tipoConta})
+                              </p>
+                            </div>
+                          )}
+                          {oficina.observacoes && (
+                            <div className="md:col-span-2">
+                              <h4 className="text-sm font-medium mb-1">Observações</h4>
+                              <p className="text-sm">{oficina.observacoes}</p>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex justify-end gap-2 mt-6">
+                          <Button 
+                            variant="outline" 
+                            onClick={() => handleRejeitarDialog(oficina)}
+                            className="text-red-600 border-red-600 hover:bg-red-50"
+                          >
+                            <XCircle className="w-4 h-4 mr-2" />
+                            Rejeitar
+                          </Button>
+                          <Button 
+                            onClick={() => handleAprovar(oficina.id)}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Aprovar
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="aprovadas">
+              {loading ? (
+                <div className="text-center py-8">Carregando oficinas aprovadas...</div>
               ) : oficinasAprovadas.length === 0 ? (
-                <div className="py-8 text-center text-gray-500">
-                  <Info className="h-8 w-8 mx-auto mb-2" />
-                  Não há oficinas aprovadas no sistema.
+                <div className="text-center py-8 text-muted-foreground">
+                  <UserCheck className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>Não há oficinas aprovadas.</p>
                 </div>
               ) : (
-                <Table>
-                  <TableCaption>Lista de oficinas aprovadas</TableCaption>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>CNPJ</TableHead>
-                      <TableHead>Ramo</TableHead>
-                      <TableHead>Data de Aprovação</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {oficinasAprovadas.map((oficina) => (
-                      <TableRow key={oficina.id}>
-                        <TableCell className="font-medium">{oficina.nome}</TableCell>
-                        <TableCell>{oficina.cnpj}</TableCell>
-                        <TableCell>{oficina.ramoAtuacao}</TableCell>
-                        <TableCell>{new Date(oficina.dataCadastro).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => verDetalhes(oficina)}
-                          >
-                            Detalhes
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="rejeitadas">
-          <Card>
-            <CardHeader>
-              <CardTitle>Oficinas Rejeitadas</CardTitle>
-              <CardDescription>
-                Oficinas cujo cadastro foi rejeitado
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="py-8 text-center">Carregando oficinas rejeitadas...</div>
-              ) : error ? (
-                <div className="py-8 text-center text-red-600">
-                  <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-                  Erro ao carregar oficinas. Tente novamente mais tarde.
+                <div className="space-y-4 mt-4">
+                  {oficinasAprovadas.map(oficina => (
+                    <Card key={oficina.id}>
+                      <div className="flex items-center px-6 py-3 bg-muted">
+                        <div className="flex-1">
+                          <h3 className="font-medium">{oficina.nome}</h3>
+                          <p className="text-sm text-muted-foreground">CNPJ: {oficina.cnpj}</p>
+                        </div>
+                        <Badge className="bg-green-600">Aprovada</Badge>
+                      </div>
+                      <CardContent className="pt-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <h4 className="text-sm font-medium mb-1">Contato</h4>
+                            <p className="text-sm">{oficina.telefone}</p>
+                            <p className="text-sm">{oficina.email}</p>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium mb-1">Endereço</h4>
+                            <p className="text-sm">{oficina.endereco}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="rejeitadas">
+              {loading ? (
+                <div className="text-center py-8">Carregando oficinas rejeitadas...</div>
               ) : oficinasRejeitadas.length === 0 ? (
-                <div className="py-8 text-center text-gray-500">
-                  <Info className="h-8 w-8 mx-auto mb-2" />
-                  Não há oficinas rejeitadas no sistema.
+                <div className="text-center py-8 text-muted-foreground">
+                  <Ban className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>Não há oficinas rejeitadas.</p>
                 </div>
               ) : (
-                <Table>
-                  <TableCaption>Lista de oficinas rejeitadas</TableCaption>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>CNPJ</TableHead>
-                      <TableHead>Ramo</TableHead>
-                      <TableHead>Data de Rejeição</TableHead>
-                      <TableHead>Motivo</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {oficinasRejeitadas.map((oficina) => (
-                      <TableRow key={oficina.id}>
-                        <TableCell className="font-medium">{oficina.nome}</TableCell>
-                        <TableCell>{oficina.cnpj}</TableCell>
-                        <TableCell>{oficina.ramoAtuacao}</TableCell>
-                        <TableCell>{new Date(oficina.dataCadastro).toLocaleDateString()}</TableCell>
-                        <TableCell className="max-w-xs truncate">
-                          {oficina.observacoes || "Não informado"}
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => verDetalhes(oficina)}
-                          >
-                            Detalhes
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <div className="space-y-4 mt-4">
+                  {oficinasRejeitadas.map(oficina => (
+                    <Card key={oficina.id}>
+                      <div className="flex items-center px-6 py-3 bg-muted">
+                        <div className="flex-1">
+                          <h3 className="font-medium">{oficina.nome}</h3>
+                          <p className="text-sm text-muted-foreground">CNPJ: {oficina.cnpj}</p>
+                        </div>
+                        <Badge variant="destructive">Rejeitada</Badge>
+                      </div>
+                      <CardContent className="pt-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <h4 className="text-sm font-medium mb-1">Contato</h4>
+                            <p className="text-sm">{oficina.telefone}</p>
+                            <p className="text-sm">{oficina.email}</p>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium mb-1">Data de Cadastro</h4>
+                            <p className="text-sm">{new Date(oficina.dataCadastro).toLocaleDateString('pt-BR')}</p>
+                          </div>
+                          {oficina.observacoes && (
+                            <div className="md:col-span-2">
+                              <h4 className="text-sm font-medium mb-1">Motivo da Rejeição</h4>
+                              <p className="text-sm">{oficina.observacoes}</p>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Diálogo de detalhes da oficina */}
-      {oficinaDetalhes && (
-        <Dialog open={showDialog} onOpenChange={setShowDialog}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>
-                {rejectMode ? "Rejeitar Cadastro" : "Detalhes da Oficina"}
-              </DialogTitle>
-              <DialogDescription>
-                {rejectMode
-                  ? "Informe o motivo da rejeição que será enviado à oficina."
-                  : "Visualize as informações completas da oficina."}
-              </DialogDescription>
-            </DialogHeader>
-
-            {rejectMode ? (
-              <div className="space-y-4 py-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Motivo da Rejeição:</label>
-                  <textarea 
-                    className="w-full p-2 border rounded-md resize-y min-h-[100px]"
-                    placeholder="Descreva o motivo da rejeição..."
-                    value={motivoRejeicao}
-                    onChange={(e) => setMotivoRejeicao(e.target.value)}
-                  />
-                </div>
-              </div>
-            ) : (
-              <ScrollArea className="max-h-[60vh]">
-                <div className="space-y-4 py-2">
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">Dados da Oficina</h3>
-                    <div className="space-y-2">
-                      <div>
-                        <span className="font-medium">Nome:</span> {oficinaDetalhes.nome}
-                      </div>
-                      <div>
-                        <span className="font-medium">CNPJ:</span> {oficinaDetalhes.cnpj}
-                      </div>
-                      <div>
-                        <span className="font-medium">Ramo de Atuação:</span> {oficinaDetalhes.ramoAtuacao}
-                      </div>
-                      <div>
-                        <span className="font-medium">Telefone:</span> {oficinaDetalhes.telefone}
-                      </div>
-                      <div>
-                        <span className="font-medium">E-mail:</span> {oficinaDetalhes.email}
-                      </div>
-                      <div>
-                        <span className="font-medium">Endereço:</span> {oficinaDetalhes.endereco}
-                      </div>
-                      <div>
-                        <span className="font-medium">Data de Cadastro:</span>{" "}
-                        {new Date(oficinaDetalhes.dataCadastro).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {oficinaDetalhes.status === "rejeitado" && oficinaDetalhes.observacoes && (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">Motivo da Rejeição</h3>
-                      <p className="text-gray-700">{oficinaDetalhes.observacoes}</p>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            )}
-
-            <DialogFooter className="flex justify-between">
-              {rejectMode ? (
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+      
+      {/* Dialog de Rejeição */}
+      <Dialog open={dialogRejeitarAberto} onOpenChange={setDialogRejeitarAberto}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rejeitar Cadastro de Oficina</DialogTitle>
+            <DialogDescription>
+              Informe um motivo para a rejeição do cadastro da oficina {oficinaAtual?.nome}.
+              Essa informação será enviada por e-mail para o solicitante.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Label htmlFor="motivo_rejeicao">Motivo da rejeição</Label>
+            <Textarea
+              id="motivo_rejeicao"
+              placeholder="Informe o motivo da rejeição..."
+              value={motivoRejeicao}
+              onChange={(e) => setMotivoRejeicao(e.target.value)}
+              className="mt-2"
+              rows={4}
+            />
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDialogRejeitarAberto(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleRejeitar}
+              disabled={!motivoRejeicao.trim()}
+              variant="destructive"
+            >
+              Confirmar Rejeição
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Dialog de Sucesso */}
+      <Dialog open={dialogSucessoAberto} onOpenChange={setDialogSucessoAberto}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {ultimaAcao?.tipo === 'aprovacao' ? (
+                <span className="flex items-center text-green-600">
+                  <CheckCircle className="w-5 h-5 mr-2" />
+                  Cadastro Aprovado
+                </span>
+              ) : (
+                <span className="flex items-center text-red-600">
+                  <XCircle className="w-5 h-5 mr-2" />
+                  Cadastro Rejeitado
+                </span>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {ultimaAcao?.tipo === 'aprovacao' ? (
                 <>
-                  <Button variant="outline" onClick={() => setRejectMode(false)}>
-                    Voltar
-                  </Button>
-                  <Button 
-                    variant="destructive" 
-                    onClick={rejeitarOficina}
-                    disabled={rejectionMutation.isPending}
-                  >
-                    {rejectionMutation.isPending ? "Rejeitando..." : "Confirmar Rejeição"}
-                  </Button>
+                  O cadastro da oficina <strong>{ultimaAcao?.oficina}</strong> foi aprovado com sucesso.
+                  Uma notificação foi enviada para o e-mail do responsável.
                 </>
               ) : (
                 <>
-                  <div>
-                    {oficinaDetalhes.status === "pendente" && (
-                      <Button 
-                        variant="destructive" 
-                        className="mr-2"
-                        onClick={prepararRejeicao}
-                      >
-                        Rejeitar
-                      </Button>
-                    )}
-                  </div>
-                  <div>
-                    <Button variant="outline" onClick={() => setShowDialog(false)} className="mr-2">
-                      Fechar
-                    </Button>
-                    {oficinaDetalhes.status === "pendente" && (
-                      <Button 
-                        variant="default"
-                        onClick={() => aprovarOficina(oficinaDetalhes.id)}
-                        disabled={approvalMutation.isPending}
-                      >
-                        {approvalMutation.isPending ? "Aprovando..." : "Aprovar"}
-                      </Button>
-                    )}
-                  </div>
+                  O cadastro da oficina <strong>{ultimaAcao?.oficina}</strong> foi rejeitado.
+                  O motivo da rejeição foi enviado para o e-mail do responsável.
                 </>
               )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <DialogFooter>
+            <Button onClick={() => setDialogSucessoAberto(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-}
+};
+
+export default AprovacaoOficinas;

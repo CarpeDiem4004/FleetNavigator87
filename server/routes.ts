@@ -1,6 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { createWorkshopDetailsTable } from "./db/workshopDetailsTable";
 import { 
   insertBaseSchema, insertVehicleSchema, insertMaintenanceSchema,
   insertWorkshopSchema, insertTireSchema, insertRefuelingSchema, 
@@ -8806,6 +8807,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rotas para oficinas externas
   app.use('/api/oficinas', oficinaRoutes);
   app.use('/api/workshops', workshopRoutes);
+  
+  // Registrar rotas para registro e aprovação de oficinas
+  app.use('/api/workshops', workshopRegisterRoutes);
+  app.use('/api/workshops', workshopApprovalRoutes);
+  
+  // Inicializar tabela de detalhes de oficinas para o fluxo de aprovação
+  createWorkshopDetailsTable()
+    .then(() => console.log('Verificação da tabela workshop_details concluída.'))
+    .catch(error => console.error('Erro ao verificar tabela workshop_details:', error));
 
   const httpServer = createServer(app);
   return httpServer;
