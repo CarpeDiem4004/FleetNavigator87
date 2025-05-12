@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, RefreshCw } from 'lucide-react';
 // Componente inline para spinner (devido a problema de importação)
 const Spinner = ({ size = "md" }: { size?: "sm" | "md" | "lg" }) => {
   const sizeClass = {
