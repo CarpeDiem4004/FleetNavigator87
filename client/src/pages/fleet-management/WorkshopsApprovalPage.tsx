@@ -145,10 +145,14 @@ export default function WorkshopsApprovalPage() {
       const tempPassword = Math.random().toString(36).slice(-8);
       
       // Preparamos as informações de acesso
+      // Obtém o domínio atual para funcionar tanto no ambiente de desenvolvimento quanto produção
+      const currentDomain = window.location.origin;
+      const loginPath = '/oficina/login';
+      
       setAccessInfo({
         name: workshop?.name || '',
         email: workshop?.email || '',
-        link: 'https://gestaoonfleet.com.br/oficina/login',
+        link: currentDomain + loginPath,
         password: tempPassword
       });
       
@@ -157,7 +161,7 @@ export default function WorkshopsApprovalPage() {
       
       // Exibimos informações no console
       console.log('Oficina aprovada:', workshop);
-      console.log('Link de acesso:', `https://gestaoonfleet.com.br/oficina/login`);
+      console.log('Link de acesso:', currentDomain + loginPath);
       console.log('Email para acesso:', workshop?.email);
       console.log('Senha temporária:', tempPassword);
       
