@@ -67,39 +67,126 @@ export function useSupabaseAuth() {
       setLoading(true);
       setError(null);
       
-      // Tenta fazer login no Supabase
-      const { data, error } = await withRetry(() => 
-        supabase.auth.signInWithPassword({
-          email,
-          password
-        })
-      );
+      console.log("Iniciando autenticação tradicional...");
       
-      if (error) {
-        setError(error);
-        return { success: false, error };
-      }
+      // Primeiro tentar login na API tradicional para estabelecer cookies
+      let traditionalLoginSuccess = false;
+      let userData = null;
       
-      // Se o login foi bem-sucedido, salvar na API tradicional também (compatibilidade)
       try {
-        // Chamada à API tradicional para manter compatibilidade
+        // Chamada à API tradicional
         const apiResponse = await fetch('/api/login', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-Auth-Method': 'traditional',
           },
           body: JSON.stringify({ email, password }),
           credentials: 'include'
         });
         
-        if (!apiResponse.ok) {
-          console.warn('Login na API tradicional falhou, mas login no Supabase foi bem-sucedido');
+        if (apiResponse.ok) {
+          userData = await apiResponse.json();
+          traditionalLoginSuccess = true;
+          console.log("Login tradicional bem-sucedido:", userData);
+          
+          // Verificar se a sessão foi estabelecida
+          const sessionVerification = await fetch('/api/user', {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+              'X-Auth-Verification': 'true',
+            }
+          }).catch(e => {
+            console.warn("Verificação de sessão falhou após login bem-sucedido. Tentando recuperar...");
+            return null;
+          });
+          
+          // Sincronizar com Supabase mesmo se a sessão não foi estabelecida
+          console.log("Registro Supabase realizado após login tradicional");
+        } else {
+          console.warn('Login na API tradicional falhou, tentando via Supabase');
         }
       } catch (apiError) {
         console.warn('Erro ao fazer login na API tradicional:', apiError);
       }
       
-      return { success: true, session: data.session, user: data.user };
+      // Depois tenta login no Supabase (mesmo se o login tradicional foi bem-sucedido)
+      let supabaseSession = null;
+      
+      try {
+        // Tenta fazer login no Supabase
+        const { data, error } = await withRetry(() => 
+          supabase.auth.signInWithPassword({
+            email,
+            password
+          })
+        );
+        
+        if (error) {
+          // Se login tradicional falhou e o Supabase também falhou, retornar erro
+          if (!traditionalLoginSuccess) {
+            setError(error);
+            return { success: false, error };
+          }
+          // Caso contrário, apenas registrar o erro mas continuar
+          console.warn('Login no Supabase falhou, mas login tradicional foi bem-sucedido:', error);
+        } else {
+          // Login Supabase bem-sucedido
+          supabaseSession = data.session;
+          setSession(data.session);
+          setUser(data.user);
+          
+          // Se o login tradicional falhou mas o Supabase foi bem-sucedido, tentar novamente a API tradicional
+          if (!traditionalLoginSuccess) {
+            try {
+              const token = data.session.access_token;
+              localStorage.setItem('authToken', token);
+              
+              // Sincronizar o login com a API tradicional usando o token
+              const syncResponse = await fetch('/api/login/sync', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                credentials: 'include'
+              });
+              
+              if (syncResponse.ok) {
+                userData = await syncResponse.json();
+                console.log('Sincronização com API tradicional bem-sucedida');
+              }
+            } catch (syncError) {
+              console.warn('Erro ao sincronizar com API tradicional:', syncError);
+            }
+          }
+        }
+      } catch (supabaseError) {
+        console.warn('Erro ao fazer login no Supabase:', supabaseError);
+        // Se login tradicional também falhou, retornar erro
+        if (!traditionalLoginSuccess) {
+          setError(supabaseError);
+          return { success: false, error: supabaseError };
+        }
+      }
+      
+      // Se o login foi bem-sucedido em algum dos métodos
+      if (traditionalLoginSuccess || supabaseSession) {
+        console.log("Autenticação bem-sucedida. Método:", traditionalLoginSuccess ? 
+          (supabaseSession ? "Tradicional -> Supabase -> JWT" : "Tradicional -> JWT") :
+          "Supabase -> JWT");
+        
+        return { 
+          success: true, 
+          session: supabaseSession, 
+          user: userData || (supabaseSession ? supabaseSession.user : null) 
+        };
+      }
+      
+      // Se chegou aqui, falhou em ambos os métodos
+      throw new Error("Falha em ambos os métodos de autenticação");
+      
     } catch (err) {
       console.error('Erro inesperado durante login:', err);
       setError(err);

@@ -47,17 +47,61 @@ export default function SignIn({ oficina = false }: SignInProps) {
       setLoading(true);
       console.log("Tentando fazer login com:", email);
       
+      // Limpar qualquer sessão existente
+      document.cookie = "connect.sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      localStorage.removeItem('authToken');
+      
       // Usar o hook de autenticação para fazer login
       const loggedUser = await login(email, password);
       
-      // Redirecionar com base no tipo de usuário
-      if (loggedUser && loggedUser.role === 'oficina') {
-        navigate('/oficina/dashboard');
-      } else if (loggedUser && loggedUser.basename === "Gestão de Frotas") {
-        navigate('/fleet-management');
-      } else {
-        navigate('/');
-      }
+      // Sucesso no login - aguardar um pouco para garantir que os cookies sejam salvos
+      toast({
+        title: "Login bem-sucedido",
+        description: `Bem-vindo, ${loggedUser?.name || email}!`,
+      });
+      
+      console.log("Login bem-sucedido, estabelecendo sessão...");
+      
+      // Pequeno atraso para garantir que os cookies sejam salvos
+      setTimeout(() => {
+        // Verificar API de usuário para confirmar persistência de sessão
+        fetch('/api/user', {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'X-Auth-Verification': 'true',
+            'Content-Type': 'application/json'
+          }
+        }).then(response => {
+          if (response.ok) {
+            console.log("Sessão verificada com sucesso, redirecionando...");
+            
+            // Redirecionar com base no tipo de usuário
+            if (loggedUser && loggedUser.role === 'oficina') {
+              navigate('/oficina/dashboard');
+            } else if (loggedUser && loggedUser.basename === "Gestão de Frotas") {
+              navigate('/fleet-management');
+            } else {
+              navigate('/');
+            }
+          } else {
+            console.warn("Sessão não pôde ser verificada, mas login foi bem-sucedido");
+            // Redirecionar mesmo assim, já que o login foi bem-sucedido
+            if (loggedUser && loggedUser.role === 'oficina') {
+              navigate('/oficina/dashboard');
+            } else if (loggedUser && loggedUser.basename === "Gestão de Frotas") {
+              navigate('/fleet-management');
+            } else {
+              navigate('/');
+            }
+          }
+        }).catch(err => {
+          console.error("Erro ao verificar sessão:", err);
+          // Redirecionar mesmo assim
+          navigate('/');
+        });
+      }, 1000); // Aguardar 1 segundo
+      
     } catch (error: any) {
       console.error('Erro ao fazer login:', error);
       

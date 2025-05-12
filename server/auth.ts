@@ -62,12 +62,12 @@ export function setupAuth(app: Express) {
     secret: process.env.SESSION_SECRET || (process.env.NODE_ENV !== 'production' ? 
       'dev_temp_secret_' + Date.now().toString() : 
       (() => { throw new Error('SESSION_SECRET deve ser definido em produção'); })()),
-    resave: false,
-    saveUninitialized: false,
+    resave: true, // Importante para persistência da sessão
+    saveUninitialized: true, // Garante que a sessão seja salva mesmo que não modificada
     store: sessionStore,
     cookie: {
       secure: false, // Desabilitado para desenvolvimento, em produção deveria ser true
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dias para maior persistência
       sameSite: 'lax', // Ajuda nas requisições cross-site (importante para APIs)
       httpOnly: true,
       path: '/'
@@ -83,19 +83,59 @@ export function setupAuth(app: Express) {
 
   app.use(session(sessionSettings));
   
-  // Middleware para ajustar o domínio do cookie para o domínio personalizado
+  // Middleware para configurar sessão e cookies
   app.use((req, res, next) => {
-    if (req.hostname && req.hostname.includes('gestaoonfleet.com.br') && req.session) {
-      // Configurar domínio do cookie para o domínio personalizado
-      const domainName = '.gestaoonfleet.com.br';
-      if ((req.session as any).cookie.domain !== domainName) {
-        console.log(`[SessionMiddleware] Ajustando domínio do cookie para: ${domainName} (request para ${req.hostname}${req.path})`);
-        (req.session as any).cookie.domain = domainName;
+    // Verificar se estamos no ambiente de produção ou teste
+    const isDev = req.hostname.includes('replit.dev') || req.hostname.includes('localhost');
+    const isProd = req.hostname.includes('gestaoonfleet.com.br');
+    
+    // Guardar o cookie original
+    const originalCookie = res.getHeader('set-cookie');
+    
+    // Ajustar domínio do cookie se necessário
+    if (req.session) {
+      if (isProd && req.hostname.includes('gestaoonfleet.com.br')) {
+        // Configurar domínio do cookie para o domínio personalizado
+        const domainName = '.gestaoonfleet.com.br';
+        if ((req.session as any).cookie.domain !== domainName) {
+          console.log(`[SessionMiddleware] Ajustando domínio do cookie para: ${domainName} (request para ${req.hostname}${req.path})`);
+          (req.session as any).cookie.domain = domainName;
+        }
+      } else if (isDev) {
+        // Para ambiente de desenvolvimento/teste
+        console.log(`[Cookie Middleware] Ajustando sessão: maxAge=${(req.session as any).cookie.maxAge}, sameSite=${(req.session as any).cookie.sameSite}`);
+        
+        // Forçar SameSite para Lax e httpOnly para false em dev
+        (req.session as any).cookie.sameSite = 'lax';
+        (req.session as any).cookie.httpOnly = true;
       }
       
-      // Tocar na sessão para garantir que ela será salva com as novas configurações
+      // Tocar na sessão para garantir que ela será salva
       req.session.touch();
     }
+    
+    // Substituir o método end para adicionar SameSite=None nas respostas
+    const originalEnd = res.end;
+    res.end = function(chunk?: any, encoding?: any, callback?: any) {
+      if (!res.headersSent && res.getHeader('set-cookie')) {
+        if (isDev) {
+          let cookies = res.getHeader('set-cookie');
+          if (Array.isArray(cookies)) {
+            cookies = cookies.map((cookie: string) => {
+              // Garantir SameSite=Lax e remover Secure em desenvolvimento
+              return cookie
+                .replace(/SameSite=None/gi, 'SameSite=Lax')
+                .replace(/Secure;/gi, '');
+            });
+            res.setHeader('set-cookie', cookies);
+          }
+        }
+      }
+      
+      // Chamar o método original com os argumentos
+      return originalEnd.call(this, chunk, encoding, callback);
+    };
+    
     next();
   });
   
@@ -264,6 +304,59 @@ export function setupAuth(app: Express) {
     });
   });
 
+  // Rota específica para sincronização de login entre Supabase e o sistema tradicional
+  app.post("/api/login/sync", async (req, res) => {
+    // Verificar JWT do Supabase
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: "Token JWT não fornecido" });
+    }
+    
+    const token = authHeader.substring(7); // Remove 'Bearer ' do valor
+    
+    try {
+      // Verificar se o token é válido (pode falhar se o secret for diferente)
+      const decoded = jwt.verify(token, JWT_SECRET);
+      
+      // Verificar o email do usuário no token
+      const userEmail = (decoded as any).email;
+      
+      if (!userEmail) {
+        return res.status(400).json({ message: "Token não contém email" });
+      }
+      
+      // Buscar usuário no banco por email
+      const user = await storage.getUserByUsername(userEmail);
+      
+      if (!user) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+      
+      // Fazer login manual para estabelecer a sessão
+      req.login(user, (loginErr) => {
+        if (loginErr) {
+          console.error("Erro ao sincronizar login:", loginErr);
+          return res.status(500).json({ message: "Erro ao sincronizar login" });
+        }
+        
+        // Tocar e salvar a sessão explicitamente
+        req.session.touch();
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("Erro ao salvar sessão na sincronização:", saveErr);
+          }
+          
+          // Remover senha antes de retornar
+          const userWithoutPassword = { ...user, password: undefined };
+          return res.json(userWithoutPassword);
+        });
+      });
+    } catch (error) {
+      console.error("Erro ao verificar token na sincronização:", error);
+      return res.status(401).json({ message: "Token inválido ou expirado" });
+    }
+  });
+  
   app.get("/api/user", async (req, res) => {
     // Verificar se há um cabeçalho de verificação especial
     const isVerification = req.headers['x-auth-verification'] === 'true';
