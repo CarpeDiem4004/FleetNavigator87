@@ -4,7 +4,7 @@
  */
 import axios from 'axios';
 
-// Criar uma instância do axios configurada
+// Criar uma instância do axios configurada para API híbrida
 const api = axios.create({
   baseURL: '/api/hybrid'
 });
@@ -211,7 +211,7 @@ export const updateUser = async (
       return { success: false, message: 'Não autenticado' };
     }
     
-    const response = await api.put(`/api/hybrid/users/${id}`, userData, {
+    const response = await api.put(`/users/${id}`, userData, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -237,7 +237,7 @@ export const deleteUser = async (id: number) => {
       return { success: false, message: 'Não autenticado' };
     }
     
-    const response = await api.delete(`/api/hybrid/users/${id}`, {
+    const response = await api.delete(`/users/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -263,7 +263,7 @@ export const toggleUserStatus = async (id: number, isActive: boolean) => {
       return { success: false, message: 'Não autenticado' };
     }
     
-    const response = await api.patch(`/api/hybrid/users/${id}/status`, { isActive }, {
+    const response = await api.patch(`/users/${id}/status`, { isActive }, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -289,7 +289,7 @@ export const resetUserPassword = async (id: number, password?: string) => {
       return { success: false, message: 'Não autenticado' };
     }
     
-    const response = await api.post(`/api/hybrid/users/${id}/reset-password`, { password }, {
+    const response = await api.post(`/users/${id}/reset-password`, { password }, {
       headers: {
         Authorization: `Bearer ${token}`
       }
