@@ -359,7 +359,7 @@ const TratativaManutencaoPage: React.FC = () => {
               Gerencie e acompanhe o andamento das solicitações de manutenção
             </p>
           </div>
-          <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2">
+          <div>
             <Button
               variant="outline"
               onClick={() => {
@@ -385,33 +385,8 @@ const TratativaManutencaoPage: React.FC = () => {
                     });
                   });
               }}
-              className="flex items-center"
             >
-              <DollarSign className="mr-2 h-4 w-4" />
-              Copiar Link para Oficinas
-            </Button>
-            
-            <Button 
-              variant="default"
-              className="bg-green-600 hover:bg-green-700 flex items-center"
-              onClick={() => {
-                // Abrir o link em uma nova aba
-                window.open('/oficinas/cadastro', '_blank');
-              }}
-            >
-              <CheckCircle2 className="mr-2 h-4 w-4" />
-              Cadastrar Oficina
-            </Button>
-            
-            <Button 
-              variant="secondary"
-              className="flex items-center"
-              onClick={() => {
-                window.location.href = '/oficina/dashboard';
-              }}
-            >
-              <MessageSquare className="mr-2 h-4 w-4" />
-              Painel de Orçamentos
+              Copiar Link para Cadastro de Oficinas
             </Button>
           </div>
         </div>

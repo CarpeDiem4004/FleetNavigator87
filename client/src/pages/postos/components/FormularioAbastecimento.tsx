@@ -4,7 +4,6 @@ import { z } from "zod";
 import { CheckCircle2, Fuel } from "lucide-react";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSafeState } from "@/hooks/useSafeState"; // 👈 Importando o novo hook
-import { AbastecimentoData, SupabaseResponse } from "@/services/PostoSupabaseService";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -571,52 +570,52 @@ const FormularioAbastecimento: React.FC<
         if (postId.toLowerCase() === "campinas_v2" || 
             postId.toLowerCase().includes("campinas_v2") || 
             postId.toLowerCase().includes("campinas v2")) {
-          // Usar a rota resiliente para Campinas V2 
-          endpoint = `/api/resilient/abastecimento-direto/campinas_v2`;
+          // Usar a rota direta para Campinas V2
+          endpoint = `/api/abastecimento-direto/campinas_v2`;
           usarRotaDireta = true;
-          console.log(">>> Usando rota resiliente para Campinas V2");
+          console.log(">>> Usando rota específica para Campinas V2");
         } else if (postId.toLowerCase() === "osasco_v2" || 
             postId.toLowerCase().includes("osasco_v2") || 
             postId.toLowerCase().includes("osasco v2")) {
-          // Usar a rota resiliente para Osasco V2
-          endpoint = `/api/resilient/abastecimento-direto/osasco_v2`;
+          // Usar a rota direta para Osasco V2
+          endpoint = `/api/abastecimento-direto/osasco_v2`;
           usarRotaDireta = true;
-          console.log(">>> Usando rota resiliente para Osasco V2");
+          console.log(">>> Usando rota específica para Osasco V2");
         } else if (postId.toLowerCase() === "socorro_v2" || 
             postId.toLowerCase().includes("socorro_v2") || 
             postId.toLowerCase().includes("socorro v2")) {
-          // Usar a rota resiliente para Socorro V2
-          endpoint = `/api/resilient/abastecimento-direto/socorro_v2`;
+          // Usar a rota direta para Socorro V2
+          endpoint = `/api/abastecimento-direto/socorro_v2`;
           usarRotaDireta = true;
-          console.log(">>> Usando rota resiliente para Socorro V2");
+          console.log(">>> Usando rota específica para Socorro V2");
         } else if (postId.toLowerCase() === "sorocaba_v2" || 
             postId.toLowerCase().includes("sorocaba_v2") || 
             postId.toLowerCase().includes("sorocaba v2")) {
-          // Usar a rota resiliente para Sorocaba V2
-          endpoint = `/api/resilient/abastecimento-direto/sorocaba_v2`;
+          // Usar a rota direta para Sorocaba V2
+          endpoint = `/api/abastecimento-direto/sorocaba_v2`;
           usarRotaDireta = true;
-          console.log(">>> Usando rota resiliente para Sorocaba V2");
+          console.log(">>> Usando rota específica para Sorocaba V2");
         } else if (postId.toLowerCase() === "abc_v2" || 
             postId.toLowerCase().includes("abc_v2") || 
             postId.toLowerCase().includes("abc v2")) {
-          // Usar a rota resiliente para ABC V2
-          endpoint = `/api/resilient/abastecimento-direto/abc_v2`;
+          // Usar a rota direta para ABC V2
+          endpoint = `/api/abastecimento-direto/abc_v2`;
           usarRotaDireta = true;
-          console.log(">>> Usando rota resiliente para ABC V2");
+          console.log(">>> Usando rota específica para ABC V2");
         } else if (postId.toLowerCase() === "guarulhos_v2" || 
             postId.toLowerCase().includes("guarulhos_v2") || 
             postId.toLowerCase().includes("guarulhos v2")) {
-          // Usar a rota resiliente para Guarulhos V2
-          endpoint = `/api/resilient/abastecimento-direto/guarulhos_v2`;
+          // Usar a rota direta para Guarulhos V2
+          endpoint = `/api/abastecimento-direto/guarulhos_v2`;
           usarRotaDireta = true;
-          console.log(">>> Usando rota resiliente para Guarulhos V2");
+          console.log(">>> Usando rota específica para Guarulhos V2");
         } else if (postId.toLowerCase() === "alair_v2" || 
             postId.toLowerCase().includes("alair_v2") || 
             postId.toLowerCase().includes("alair v2")) {
-          // Usar a rota resiliente para Alair V2
-          endpoint = `/api/resilient/abastecimento-direto/alair_v2`;
+          // Usar a rota direta para Alair V2
+          endpoint = `/api/abastecimento-direto/alair_v2`;
           usarRotaDireta = true;
-          console.log(">>> Usando rota resiliente para Alair V2");
+          console.log(">>> Usando rota específica para Alair V2");
         } else if (postId.toLowerCase().includes("remedios")) {
           endpoint = "/api/posto-remedios-standalone/abastecimentos";
         } else {
@@ -654,10 +653,10 @@ const FormularioAbastecimento: React.FC<
               dadosAbastecimento
             );
             
-            if (supabaseResult && (supabaseResult as SupabaseResponse).success) {
-              console.log(`Abastecimento registrado com sucesso no Supabase para o posto ${postId}:`, (supabaseResult as SupabaseResponse).data);
+            if (supabaseResult.success) {
+              console.log(`Abastecimento registrado com sucesso no Supabase para o posto ${postId}:`, supabaseResult.data);
             } else {
-              console.error(`Erro ao registrar abastecimento no Supabase para o posto ${postId}:`, (supabaseResult as SupabaseResponse).error);
+              console.error(`Erro ao registrar abastecimento no Supabase para o posto ${postId}:`, supabaseResult.error);
               toast({
                 title: "Aviso",
                 description: "Registro salvo, mas houve erro ao enviar para o backup no Supabase",

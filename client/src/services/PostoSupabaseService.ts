@@ -17,16 +17,6 @@ import {
 /**
  * Interface para dados de abastecimento
  */
-/**
- * Interface para respostas da API
- */
-export interface SupabaseResponse {
-  success: boolean;
-  data?: any;
-  error?: any;
-  message?: string;
-}
-
 export interface AbastecimentoData {
   id?: number;
   placa: string;
@@ -343,7 +333,7 @@ class PostoSupabaseService {
    * @param dados Dados do abastecimento
    * @returns Dados do abastecimento registrado
    */
-  async registrarAbastecimento(posto: string, dados: AbastecimentoData): Promise<SupabaseResponse> {
+  async registrarAbastecimento(posto: string, dados: AbastecimentoData): Promise<AbastecimentoData> {
     try {
       if (!isPostoValido(posto)) {
         throw new Error(`Posto inválido: ${posto}`);
@@ -362,25 +352,13 @@ class PostoSupabaseService {
       const response = await axios.post(`/api/posto/${postoFormatado}/abastecimento`, dados);
       
       if (response.data && response.data.success) {
-        return {
-          success: true,
-          data: response.data.data,
-          message: 'Abastecimento registrado com sucesso'
-        };
+        return response.data.data;
       } else {
-        return {
-          success: false,
-          error: response.data?.error || {},
-          message: response.data?.message || 'Erro ao registrar abastecimento'
-        };
+        throw new Error(response.data?.message || 'Erro ao registrar abastecimento');
       }
     } catch (error) {
       console.error(`Erro ao registrar abastecimento para posto ${posto}:`, error);
-      return {
-        success: false,
-        error: error,
-        message: error instanceof Error ? error.message : 'Erro desconhecido ao registrar abastecimento'
-      };
+      throw error;
     }
   }
 }

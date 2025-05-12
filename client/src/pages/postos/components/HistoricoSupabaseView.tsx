@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { AbastecimentoData, SupabaseResponse } from "@/services/PostoSupabaseService";
 import { 
   Card, 
   CardContent, 
@@ -100,42 +99,22 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
       // Prevenção de cache adicionando timestamp na URL
       const timestamp = new Date().getTime();
       
-      // Primeiro tentar usar a rota resiliente para garantir dados mesmo com falhas
-      let apiResponse: { data: SupabaseResponse } | null = null;
-      try {
-        apiResponse = await axios.get<SupabaseResponse>(`/api/resilient/historico-direto/${encodeURIComponent(posto)}?t=${timestamp}`, {
-          headers: {
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-          }
-        });
-        
-        console.log('[HistoricoView] Dados obtidos via sistema resiliente:', apiResponse);
-      } catch (resilientError) {
-        console.log('[HistoricoView] Erro no sistema resiliente, tentando rota legada:', resilientError);
-        
-        // Cair de volta para a rota original se a resiliente falhar
-        try {
-          apiResponse = await axios.get<SupabaseResponse>(`/api/historico-direto/${encodeURIComponent(posto)}?t=${timestamp}`, {
-            headers: {
-              'Accept': 'application/json',
-              'X-Requested-With': 'XMLHttpRequest' // Indicar que é uma solicitação AJAX
-            }
-          });
-        } catch (legacyError) {
-          console.error('[HistoricoView] Erro também na rota legada:', legacyError);
-          throw legacyError; // Propagar o erro para ser capturado pelo try/catch externo
+      // Usar a nova rota direta para evitar problemas com interceptação do Vite
+      const response = await axios.get(`/api/historico-direto/${encodeURIComponent(posto)}?t=${timestamp}`, {
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest' // Indicar que é uma solicitação AJAX
         }
-      }
+      });
       
-      console.log('Resposta do histórico:', apiResponse);
+      console.log('Resposta do histórico:', response);
       
-      if (apiResponse && apiResponse.data && apiResponse.data.success) {
-        setHistorico(apiResponse.data.data || []);
+      if (response.data && response.data.success) {
+        setHistorico(response.data.data || []);
         setLastRefreshTime(new Date());
       } else {
-        setError(apiResponse?.data?.error || 'Erro ao carregar o histórico');
-        console.error('Erro na resposta:', apiResponse?.data || 'Sem dados');
+        setError(response.data?.error || 'Erro ao carregar o histórico');
+        console.error('Erro na resposta:', response.data);
       }
     } catch (err: any) {
       console.error('Erro ao carregar histórico:', err);
@@ -144,7 +123,7 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
       try {
         console.log('Tentando rota alternativa...');
         const timestamp = new Date().getTime();
-        const fallbackResponse = await axios.get<SupabaseResponse>(`/api/posto-supabase/historico/${posto.toLowerCase()}?t=${timestamp}`);
+        const fallbackResponse = await axios.get(`/api/posto-supabase/historico/${posto.toLowerCase()}?t=${timestamp}`);
         
         if (fallbackResponse.data && fallbackResponse.data.success) {
           setHistorico(fallbackResponse.data.data || []);

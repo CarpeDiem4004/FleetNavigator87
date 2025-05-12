@@ -110,30 +110,9 @@ app.use((req, res, next) => {
   // Registrar o roteador de API de usuários
   app.use(userApi);
   
-  // Rotas públicas (sem autenticação) - DEVEM ser registradas ANTES das rotas protegidas
-  // Lista de páginas públicas que precisam ser acessíveis sem login
-  const publicRoutes = ['/login', '/login-supabase', '/register', '/register-supabase', 
-    '/acesso-negado', '/public', '/auth', '/auth/login', '/auth/verify'];
-    
-  // Middleware que permite acesso a rotas públicas sem autenticação
-  app.use((req, res, next) => {
-    const path = req.path;
-    // Se é uma rota pública ou começa com /auth/ ou é uma rota de API específica
-    if (publicRoutes.includes(path) || path.startsWith('/auth/') || 
-        path === '/api/login' || path === '/api/register' || 
-        path.startsWith('/posto/') && path.includes('/public')) {
-      console.log(`[PublicRoute] Acesso à rota pública: ${path}`);
-      return next();
-    }
-    next();
-  });
-  
   // Registrar os roteadores de API híbrida (funcionam dentro e fora do Replit)
-  // Registrando com dois prefixos para suportar ambos os formatos durante a transição
-  app.use('/api/hybrid', hybridUserApi);  // Formato tradicional: /api/hybrid/...
-  app.use('/', hybridUserApi);           // Formato simplificado: /...
-  app.use('/api/hybrid', hybridBasesApi); // Formato tradicional
-  app.use('/', hybridBasesApi);          // Formato simplificado
+  app.use(hybridUserApi);
+  app.use(hybridBasesApi);
   
   // Registrar rota de diagnóstico para verificar autenticação no módulo de frota
   app.use('/api/frota', frotaDiagnosticoRoute);

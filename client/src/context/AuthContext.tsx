@@ -73,27 +73,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           authSource = 'token';
           
           try {
-            // Tenta verificar o token JWT usando a rota simplificada
-            console.log("Tentando verificar token na rota simplificada...");
-            let jwtVerifyResponse = await fetch('/auth/verify', {
+            // Tenta verificar o token JWT
+            const jwtVerifyResponse = await fetch('/api/hybrid/auth/verify', {
               method: 'GET',
               headers: {
                 'Authorization': `Bearer ${authToken}`,
                 'Content-Type': 'application/json'
               }
             });
-            
-            // Se falhar com a rota simplificada, tenta a rota tradicional
-            if (!jwtVerifyResponse.ok) {
-              console.log("Verificação na rota simplificada falhou, tentando rota tradicional...");
-              jwtVerifyResponse = await fetch('/api/hybrid/auth/verify', {
-                method: 'GET',
-                headers: {
-                  'Authorization': `Bearer ${authToken}`,
-                  'Content-Type': 'application/json'
-                }
-              });
-            }
             
             if (jwtVerifyResponse.ok) {
               // Token JWT válido
@@ -102,7 +89,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               userData = jwtData.user;
               isAuthenticated = true;
             } else {
-              console.warn("Token JWT inválido ou expirado em ambas as rotas");
+              console.warn("Token JWT inválido ou expirado");
               // Remove o token inválido
               localStorage.removeItem('authToken');
             }
@@ -175,26 +162,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       let authSuccess = false;
       
       try {
-        console.log("Tentando autenticação JWT híbrida (rota simplificada)...");
-        let jwtResponse = await fetch('/auth/login', {
+        console.log("Tentando autenticação JWT híbrida...");
+        const jwtResponse = await fetch('/api/hybrid/auth/login', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ email, password }),
         });
-        
-        // Se falhar com a rota simplificada, tenta a rota tradicional
-        if (!jwtResponse.ok) {
-          console.log("Login via rota simplificada falhou, tentando rota tradicional...");
-          jwtResponse = await fetch('/api/hybrid/auth/login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-          });
-        }
         
         if (jwtResponse.ok) {
           const jwtData = await jwtResponse.json();
@@ -208,9 +183,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             
             // Verifica o token imediatamente para garantir que está funcionando
             try {
-              console.log("Verificando token JWT recém-obtido...");
-              // Tenta verificar com a rota simplificada primeiro
-              let verifyResponse = await fetch('/auth/verify', {
+              const verifyResponse = await fetch('/api/hybrid/auth/verify', {
                 method: 'GET',
                 headers: {
                   'Authorization': `Bearer ${jwtData.token}`,
@@ -218,29 +191,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 }
               });
               
-              // Se falhar, tenta a rota tradicional
-              if (!verifyResponse.ok) {
-                console.log("Verificação via rota simplificada falhou, tentando rota tradicional...");
-                verifyResponse = await fetch('/api/hybrid/auth/verify', {
-                  method: 'GET',
-                  headers: {
-                    'Authorization': `Bearer ${jwtData.token}`,
-                    'Content-Type': 'application/json'
-                  }
-                });
-              }
-              
               if (verifyResponse.ok) {
                 console.log("Token JWT verificado com sucesso");
               } else {
-                console.warn("Falha na verificação do token JWT em ambas as rotas");
+                console.warn("Falha na verificação do token JWT");
               }
             } catch (verifyError) {
               console.error("Erro ao verificar token JWT:", verifyError);
             }
           }
         } else {
-          console.warn("Autenticação JWT falhou em ambas as rotas, status:", jwtResponse.status);
+          console.warn("Autenticação JWT falhou, status:", jwtResponse.status);
           try {
             const errorData = await jwtResponse.json();
             console.warn("Erro JWT:", errorData);
@@ -280,7 +241,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(userData);
       
       // Forçar uma verificação de autenticação após o login
-      setTimeout(async () => {
+      setTimeout(() => {
         const authToken = localStorage.getItem('authToken');
         const headers: HeadersInit = { 
           'Content-Type': 'application/json'
@@ -290,34 +251,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           headers['Authorization'] = `Bearer ${authToken}`;
         }
         
-        try {
-          // Tenta primeiro com a rota simplificada
-          console.log("Verificação pós-login (rota simplificada)...");
-          let verifyResponse = await fetch('/auth/verify', {
-            method: 'GET',
-            credentials: 'include',
-            headers
-          });
-          
-          // Se falhar, tenta com a rota tradicional
-          if (!verifyResponse.ok) {
-            console.log("Verificação pós-login falhou, tentando rota alternativa...");
-            verifyResponse = await fetch('/api/hybrid/auth/verify', {
-              method: 'GET',
-              credentials: 'include',
-              headers
-            });
-          }
-          
-          if (verifyResponse.ok) {
-            const data = await verifyResponse.json();
-            console.log("Verificação pós-login bem-sucedida:", data);
-          } else {
-            console.warn("Verificação pós-login falhou em ambas as rotas");
-          }
-        } catch (error) {
+        fetch('/api/user', {
+          method: 'GET',
+          credentials: 'include',
+          headers
+        })
+        .then(res => res.json())
+        .then(data => {
+          console.log("Verificação pós-login:", data);
+        })
+        .catch(error => {
           console.error("Erro na verificação pós-login:", error);
-        }
+        });
       }, 500);
       
       toast({

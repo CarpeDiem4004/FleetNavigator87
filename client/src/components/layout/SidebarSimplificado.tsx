@@ -30,13 +30,7 @@ import {
   Building, // Ícone alternativo para Oficina
   Link2, // Ícone para acesso direto
   ExternalLinkIcon, // Ícone para links externos
-  Settings, // Ícone para configurações
-  Database, // Ícone para banco de dados
-  ChevronUp, // Ícone para chevron up
-  X, // Ícone para fechar
-  Menu, // Ícone para menu
-  BarChart, // Ícone para gráficos
-  Boxes // Ícone para caixas
+  Settings // Ícone para configurações
 } from 'lucide-react';
 
 // Define a interface para os itens do menu
@@ -72,12 +66,12 @@ const NavItem: React.FC<{
           return;
         }
         
-        // Navegação direta para simplificar e corrigir problemas
         e.preventDefault();
-        window.location.href = item.href;
+        window.history.pushState(null, "", item.href);
+        window.dispatchEvent(new PopStateEvent("popstate"));
         onClose();
       }}
-      className={`flex items-center px-4 py-2 rounded-md group transition-all duration-200 cursor-pointer ${
+      className={`flex items-center px-4 py-2 rounded-md group transition-all duration-200 ${
         isActive
           ? 'text-white bg-primary-600 shadow-md shadow-primary/30 border-l-2 border-white font-medium' 
           : 'text-slate-100 hover:bg-primary/20 hover:text-white hover:shadow-sm'
@@ -139,8 +133,8 @@ const NavItemWithSubmenu: React.FC<{
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  // Usar o hook do wouter para navegação
-                  window.location.href = subItem.href;
+                  window.history.pushState(null, "", subItem.href);
+                  window.dispatchEvent(new PopStateEvent("popstate"));
                   onClose();
                 }}
                 className={`flex items-center px-4 py-2 rounded-md group transition-all duration-200 cursor-pointer ${
@@ -201,20 +195,7 @@ const SidebarSimplificado: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Veículos', href: '/vehicles', icon: Truck },
     { name: 'Motoristas', href: '/drivers', icon: Users },
     { name: 'Manutenção', href: '/manutencao', icon: Wrench },
-    
-    // Menu de Pneus com submenu
-    {
-      name: 'Pneus', 
-      href: '#', 
-      icon: CircleDot,
-      subItems: [
-        { name: 'Gestão de Pneus', href: '/tires', icon: CircleDot },
-        { name: 'Entrada de Pneus', href: '/tires/entrada', icon: CircleDot },
-        { name: 'Solicitações', href: '/tires/solicitacoes', icon: CircleDot },
-        { name: 'Gestão Resiliente', href: '/tires/resiliente', icon: Droplets, className: 'text-green-400 hover:text-green-300' }
-      ]
-    },
-    
+    { name: 'Pneus', href: '/tires', icon: CircleDot },
     { name: 'Abastecimento', href: '/refueling', icon: Fuel },
     
     // Nova seção para Postos

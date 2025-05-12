@@ -11,12 +11,10 @@ import MaintenanceNew from "@/pages/MaintenanceNew";
 import TiresPage from "@/pages/TiresPage";
 import TireDetailPage from "@/pages/TireDetailPage";
 import SolicitacoesPneus from "@/pages/pneus/SolicitacoesPneus";
-import GerenciamentoResilientePage from "@/pages/pneus/GerenciamentoResilientePage";
 import RefuelingNew from "@/pages/RefuelingNew";
 import FinesNew from "@/pages/FinesNew";
 // EntradaOperacoes removido (LineHall)
 import UsersNew from "@/pages/UsersNew";
-import UsersHybrid from "@/pages/UsersHybrid";
 import Bases from "@/pages/Bases";
 import SignIn from "@/pages/SignIn";
 import RegisterNew from "@/pages/RegisterNew";
@@ -104,7 +102,6 @@ import ManutencaoFrotaCampinas from "@/pages/bases/ManutencaoFrotaCampinas";
 
 // Importação das páginas da Base Goiânia
 import BaseGoiania from "@/pages/bases/BaseGoiania";
-import MultasGoiania from "@/pages/bases/MultasGoiania";
 
 // Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
@@ -168,7 +165,6 @@ function App() {
           <ProtectedRoute path="/tires" component={TiresPage} />
           <ProtectedRoute path="/tires/entrada" component={TiresEntrada} />
           <ProtectedRoute path="/tires/solicitacoes" component={SolicitacoesPneus} />
-          <ProtectedRoute path="/tires/resiliente" component={GerenciamentoResilientePage} />
           <ProtectedRoute path="/tires/:id" component={TireDetailPage} />
           <ProtectedRoute path="/refueling" component={RefuelingNew} />
           <ProtectedRoute path="/fines" component={FinesNew} />
@@ -181,8 +177,7 @@ function App() {
           <ProtectedRoute path="/fleet-management/budgets" component={BudgetManagementPage} />
           <ProtectedRoute path="/accidents" component={Accidents} />
           <ProtectedRoute path="/work-safety" component={WorkSafety} />
-          <ProtectedRoute path="/users" component={UsersHybrid} />
-          <ProtectedRoute path="/users-old" component={UsersNew} />
+          <ProtectedRoute path="/users" component={UsersNew} />
           <ProtectedRoute path="/bases" component={Bases} />
           <ProtectedRoute path="/bases/campinas" component={BaseCampinas} />
           <ProtectedRoute path="/bases/campinas/despesas" component={DespesasCampinas} />
@@ -195,7 +190,6 @@ function App() {
           
           {/* Rotas para a Base Goiânia */}
           <ProtectedRoute path="/bases/goiania" component={BaseGoiania} />
-          <ProtectedRoute path="/bases/goiania/multas" component={MultasGoiania} />
           <ProtectedRoute path="/solicitacoes" component={BaseRequests} />
           
           {/* Rotas para os postos de abastecimento - protegidas */}

@@ -48,11 +48,6 @@ import { setupTireActivityRoutes, setupTireActivityTable } from "./tireActivityA
 import { consultarUsuarios, consultarUsuarioPorId } from "./handlers/userHandler";
 // Importação das rotas de teste de autenticação híbrida
 import authTestRoutes from './routes/authTest';
-// Importação das novas rotas resilientes
-import resilientPostoRoutes from './routes/resilientPostoRoutes';
-import resilientRoutes from './routes/resilientRoutes';
-// Importação da API híbrida de usuários
-import { router as hybridUserApi, authRouter as hybridAuthApi } from './api/hybridUserApi';
 // Importação da rota de ressincronização de sessão
 import { resyncSession } from './routes/sessionResyncRoute';
 // Importação do cliente Supabase para armazenamento de arquivos
@@ -8800,27 +8795,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rotas para histórico consolidado de abastecimentos
   app.use('/api/historico', historicoConsolidadoRoutes);
   
-  // Rotas resilientes com persistência de dados garantida para postos
-  app.use('/api/resilient', resilientPostoRoutes);
-  
-  // Rotas resilientes universais para todos os módulos (multas, manutenção, pneus, etc.)
-  app.use('/api/universal', resilientRoutes);
-  
   // Registrar rotas para o histórico de pátio
   app.use('/api/patio', patioRoutes);
-  
-  // Registrar API híbrida de usuários 
-  // Mantendo suporte ao caminho legado para compatibilidade com código cliente existente
-  app.use('/api/hybrid/users', hybridUserApi);
-  
-  // Registrar API híbrida de usuários com caminho simplificado (novo padrão recomendado)
-  app.use('/users', hybridUserApi);
-  
-  // Registrar endpoints de autenticação híbrida no caminho original para compatibilidade
-  app.use('/api/hybrid/auth', hybridAuthApi);
-  
-  // Registrar endpoints de autenticação híbrida no caminho simplificado (novo padrão recomendado)
-  app.use('/auth', hybridAuthApi);
 
   const httpServer = createServer(app);
   return httpServer;

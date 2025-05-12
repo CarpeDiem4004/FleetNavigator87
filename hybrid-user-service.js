@@ -574,21 +574,11 @@ class HybridUserService {
       console.log(`[HybridUserService] Comparando senha para autenticação`);
       
       // Verificar se a senha armazenada está no formato correto
-      if (!stored) {
-        console.error('[HybridUserService] Senha armazenada é null ou undefined');
+      if (!stored || !stored.includes('.')) {
+        console.error('[HybridUserService] Formato de senha inválido');
         return false;
       }
       
-      // Se a senha armazenada não contém um ponto, significa que pode estar em texto plano
-      if (!stored.includes('.')) {
-        console.warn('[HybridUserService] Senha não está em formato hash, comparando diretamente');
-        // Comparação direta (para senhas legadas em texto plano)
-        const result = supplied === stored;
-        console.log(`[HybridUserService] Resultado da comparação direta: ${result ? 'válida' : 'inválida'}`);
-        return result;
-      }
-      
-      // Senha no formato hash.salt 
       const [hashed, salt] = stored.split('.');
       const hashedBuf = Buffer.from(hashed, 'hex');
       const suppliedBuf = await scryptAsync(supplied, salt, 64);

@@ -88,9 +88,9 @@ const verifyJwtAuth = async (req, res, next) => {
 
 /**
  * Rota para criar um novo usuário
- * POST /api/hybrid/users (caminho simplificado: /)
+ * POST /api/hybrid/users
  */
-router.post('/', verifyJwtAuth, async (req, res) => {
+router.post('/api/hybrid/users', verifyJwtAuth, async (req, res) => {
   try {
     console.log('[HybridAPI] Requisição para criar usuário recebida');
     
@@ -157,9 +157,9 @@ router.post('/', verifyJwtAuth, async (req, res) => {
 
 /**
  * Rota para obter um usuário pelo ID
- * GET /api/hybrid/users/:id (caminho simplificado: /:id)
+ * GET /api/hybrid/users/:id
  */
-router.get('/:id', verifyJwtAuth, async (req, res) => {
+router.get('/api/hybrid/users/:id', verifyJwtAuth, async (req, res) => {
   try {
     const { id } = req.params;
     console.log(`[HybridAPI] Buscando usuário com ID: ${id}`);
@@ -192,9 +192,9 @@ router.get('/:id', verifyJwtAuth, async (req, res) => {
 
 /**
  * Rota para buscar usuário por email
- * GET /api/hybrid/users/email/:email (caminho simplificado: /email/:email)
+ * GET /api/hybrid/users/email/:email
  */
-router.get('/email/:email', verifyJwtAuth, async (req, res) => {
+router.get('/api/hybrid/users/email/:email', verifyJwtAuth, async (req, res) => {
   try {
     const { email } = req.params;
     console.log(`[HybridAPI] Buscando usuário com email: ${email}`);
@@ -227,9 +227,9 @@ router.get('/email/:email', verifyJwtAuth, async (req, res) => {
 
 /**
  * Rota para listar todos os usuários
- * GET /api/hybrid/users (caminho simplificado: /)
+ * GET /api/hybrid/users
  */
-router.get('/', verifyJwtAuth, async (req, res) => {
+router.get('/api/hybrid/users', verifyJwtAuth, async (req, res) => {
   try {
     console.log('[HybridAPI] Listando usuários');
     
@@ -266,9 +266,9 @@ router.get('/', verifyJwtAuth, async (req, res) => {
 
 /**
  * Rota para atualizar um usuário
- * PUT /api/hybrid/users/:id (caminho simplificado: /:id)
+ * PUT /api/hybrid/users/:id
  */
-router.put('/:id', verifyJwtAuth, async (req, res) => {
+router.put('/api/hybrid/users/:id', verifyJwtAuth, async (req, res) => {
   try {
     const { id } = req.params;
     console.log(`[HybridAPI] Atualizando usuário com ID: ${id}`);
@@ -325,9 +325,9 @@ router.put('/:id', verifyJwtAuth, async (req, res) => {
 
 /**
  * Rota para redefinir a senha de um usuário
- * POST /api/hybrid/users/:id/reset-password (caminho simplificado: /:id/reset-password)
+ * POST /api/hybrid/users/:id/reset-password
  */
-router.post('/:id/reset-password', verifyJwtAuth, async (req, res) => {
+router.post('/api/hybrid/users/:id/reset-password', verifyJwtAuth, async (req, res) => {
   try {
     const { id } = req.params;
     console.log(`[HybridAPI] Redefinindo senha para usuário com ID: ${id}`);
@@ -364,9 +364,9 @@ router.post('/:id/reset-password', verifyJwtAuth, async (req, res) => {
 
 /**
  * Rota para excluir um usuário
- * DELETE /api/hybrid/users/:id (caminho simplificado: /:id)
+ * DELETE /api/hybrid/users/:id
  */
-router.delete('/:id', verifyJwtAuth, async (req, res) => {
+router.delete('/api/hybrid/users/:id', verifyJwtAuth, async (req, res) => {
   try {
     const { id } = req.params;
     console.log(`[HybridAPI] Excluindo usuário com ID: ${id}`);
@@ -399,9 +399,9 @@ router.delete('/:id', verifyJwtAuth, async (req, res) => {
 
 /**
  * Rota para autenticação e geração de token JWT
- * POST /api/hybrid/auth/login (caminho simplificado: /auth/login)
+ * POST /api/hybrid/auth/login
  */
-router.post('/auth/login', async (req, res) => {
+router.post('/api/hybrid/auth/login', async (req, res) => {
   try {
     console.log('[HybridAPI] Requisição para login/autenticação recebida');
     
@@ -460,9 +460,9 @@ router.post('/auth/login', async (req, res) => {
 
 /**
  * Rota para verificar se um token JWT é válido
- * GET /api/hybrid/auth/verify (caminho simplificado: /auth/verify)
+ * GET /api/hybrid/auth/verify
  */
-router.get('/auth/verify', verifyJwtAuth, (req, res) => {
+router.get('/api/hybrid/auth/verify', verifyJwtAuth, (req, res) => {
   // Se chegou aqui, o token é válido e o usuário está no req.user
   const user = req.user;
   console.log(`[HybridAPI] Token verificado com sucesso para usuário: ${user.id} (${user.email})`);
@@ -478,9 +478,9 @@ router.get('/auth/verify', verifyJwtAuth, (req, res) => {
 
 /**
  * Rota para testar conectividade com a API híbrida
- * GET /api/hybrid/ping (caminho simplificado: /ping)
+ * GET /api/hybrid/ping
  */
-router.get('/ping', (req, res) => {
+router.get('/api/hybrid/ping', (req, res) => {
   console.log('[HybridAPI] Requisição de ping recebida');
   
   return res.status(200).json({

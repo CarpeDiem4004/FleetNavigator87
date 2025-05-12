@@ -273,12 +273,6 @@ export function registerUsuariosSupabaseRoutes(app: Express) {
         });
       }
       
-      // Mapear "Gestor de Frota" para "gestor_frota" se necessário
-      let roleValue = role;
-      if (role === "Gestor de Frota") {
-        roleValue = "gestor_frota";
-      }
-      
       // Gerar username se não for fornecido
       const finalUsername = username || email.split('@')[0];
       
@@ -333,7 +327,7 @@ export function registerUsuariosSupabaseRoutes(app: Express) {
           finalUsername,
           passwordHash,
           nome_completo,
-          roleValue,
+          role,
           base_id || null,
           base_nome || null,
           oficina_id || null
