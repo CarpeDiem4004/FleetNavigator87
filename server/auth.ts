@@ -32,6 +32,92 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
+// Função para verificar token JWT e retornar usuário
+async function verifyJwtToken(token: string): Promise<SelectUser | null> {
+  try {
+    console.log(`[JWT Verify] Verificando token (primeiros 10 caracteres): ${token.substring(0, 10)}...`);
+    
+    // Criar cliente Supabase com service key
+    const supabase = createClient(
+      process.env.VITE_SUPABASE_URL || '',
+      process.env.VITE_SUPABASE_SERVICE_KEY || ''
+    );
+    
+    // Verificar o token JWT
+    const { data, error } = await supabase.auth.getUser(token);
+    
+    if (error || !data.user) {
+      console.error("[JWT Verify] Erro ao verificar token:", error);
+      return null;
+    }
+    
+    // Obter email do usuário
+    const userEmail = data.user.email;
+    if (!userEmail) {
+      console.error("[JWT Verify] Token não contém email do usuário");
+      return null;
+    }
+    
+    console.log(`[JWT Verify] Token válido para o email: ${userEmail}`);
+    
+    // Buscar usuário no banco de dados
+    const { rows } = await pool.query(
+      'SELECT * FROM users WHERE email = $1',
+      [userEmail]
+    );
+    
+    if (rows.length === 0) {
+      console.error(`[JWT Verify] Usuário não encontrado para o email: ${userEmail}`);
+      return null;
+    }
+    
+    return rows[0];
+  } catch (error) {
+    console.error("[JWT Verify] Erro ao verificar token JWT:", error);
+    return null;
+  }
+}
+
+// Middleware para autenticação através de token JWT
+export function jwtAuthMiddleware(req: any, res: any, next: any) {
+  // Se o usuário já está autenticado via Passport, continue
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  
+  // Verificar se existe um token JWT no cabeçalho
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next(); // Não há token, continue para o próximo middleware
+  }
+  
+  // Extrair o token
+  const token = authHeader.split(' ')[1];
+  
+  // Verificar o token e autenticar o usuário
+  verifyJwtToken(token)
+    .then(user => {
+      if (!user) {
+        return next(); // Token inválido ou usuário não encontrado
+      }
+      
+      // Autenticar o usuário via Passport
+      req.login(user, (err: any) => {
+        if (err) {
+          console.error("[JWT Middleware] Erro ao fazer login via token:", err);
+          return next(err);
+        }
+        
+        console.log(`[JWT Middleware] Usuário ${user.email} autenticado via token JWT`);
+        next();
+      });
+    })
+    .catch(error => {
+      console.error("[JWT Middleware] Erro ao verificar token:", error);
+      next(error);
+    });
+}
+
 export function setupAuth(app: Express) {
   // Configuração da sessão
   const MemoryStore = createMemoryStore(session);
@@ -141,6 +227,11 @@ export function setupAuth(app: Express) {
   
   app.use(passport.initialize());
   app.use(passport.session());
+  
+  // Adicionar o middleware de autenticação JWT após o Passport
+  // Isso permite que as requisições sejam autenticadas tanto via sessão tradicional
+  // quanto via token JWT no cabeçalho Authorization
+  app.use(jwtAuthMiddleware);
 
   passport.use(
     new LocalStrategy(

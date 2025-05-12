@@ -54,32 +54,91 @@ api.interceptors.request.use(
 // Função para tentar recuperar a sessão em caso de erro 401
 const trySessionRecovery = async () => {
   try {
+    console.log('[API Recovery] Iniciando tentativa de recuperação de sessão...');
+    
     // Importação dinâmica para evitar dependência circular
     const { supabase } = await import('../lib/supabaseClient');
     
-    // Verificar se temos uma sessão válida
+    // Verificar se temos uma sessão válida no Supabase
     const { data } = await supabase.auth.getSession();
     
     if (data?.session) {
       // Tentar ressincronizar a sessão com o backend tradicional
       const token = data.session.access_token;
+      const email = data.session.user?.email;
+      
+      console.log(`[API Recovery] Sessão Supabase válida para ${email}, ressincronizando com backend...`);
+      
+      // Armazenar token para uso futuro
       localStorage.setItem('authToken', token);
       
-      // Chamar endpoint de ressincronização
-      await fetch('/api/resync-session-jwt', {
+      // Chamar endpoint de ressincronização JWT
+      const response = await fetch('/api/resync-session-jwt', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
+        body: JSON.stringify({ 
+          email: email,
+          user: { email: email }
+        }),
         credentials: 'include'
       });
       
-      console.log('[API Recovery] Sessão ressincronizada após erro 401');
-      return true;
+      // Verificar se a ressincronização foi bem-sucedida
+      if (response.ok) {
+        console.log('[API Recovery] Sessão ressincronizada com sucesso via JWT');
+        return true;
+      } else {
+        console.warn('[API Recovery] Ressincronização JWT falhou, tentando método secundário...');
+        
+        // Tentar o método de ressincronização tradicional
+        const resyncResponse = await fetch('/api/resync-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ 
+            email: email
+          }),
+          credentials: 'include'
+        });
+        
+        if (resyncResponse.ok) {
+          console.log('[API Recovery] Sessão ressincronizada com método secundário');
+          return true;
+        }
+        
+        // Tentar o método de emergência como último recurso
+        console.warn('[API Recovery] Métodos de ressincronização falharam, tentando método de emergência...');
+        
+        // Chamar endpoint de emergência para forçar uma sessão
+        const emergencyResponse = await fetch('/api/force-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            email: email,
+            user: { email: email }
+          }),
+          credentials: 'include'
+        });
+        
+        if (emergencyResponse.ok) {
+          console.log('[API Recovery] Sessão recuperada com método de emergência');
+          return true;
+        }
+        
+        console.error('[API Recovery] Todos os métodos de recuperação falharam');
+        return false;
+      }
+    } else {
+      console.warn('[API Recovery] Sem sessão válida no Supabase');
+      return false;
     }
-    
-    return false;
   } catch (error) {
     console.error('[API Recovery] Erro ao tentar recuperar sessão:', error);
     return false;
