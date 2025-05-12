@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           
           try {
             // Tenta verificar o token JWT
-            const jwtVerifyResponse = await fetch('/api/hybrid/auth/verify', {
+            const jwtVerifyResponse = await fetch('/auth/verify', {
               method: 'GET',
               headers: {
                 'Authorization': `Bearer ${authToken}`,
@@ -163,7 +163,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       try {
         console.log("Tentando autenticação JWT híbrida...");
-        const jwtResponse = await fetch('/api/hybrid/auth/login', {
+        const jwtResponse = await fetch('/auth/login', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -183,7 +183,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             
             // Verifica o token imediatamente para garantir que está funcionando
             try {
-              const verifyResponse = await fetch('/api/hybrid/auth/verify', {
+              const verifyResponse = await fetch('/auth/verify', {
                 method: 'GET',
                 headers: {
                   'Authorization': `Bearer ${jwtData.token}`,
@@ -251,7 +251,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           headers['Authorization'] = `Bearer ${authToken}`;
         }
         
-        fetch('/api/user', {
+        fetch('/auth/verify', {
           method: 'GET',
           credentials: 'include',
           headers
