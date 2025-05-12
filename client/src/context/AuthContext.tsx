@@ -280,7 +280,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(userData);
       
       // Forçar uma verificação de autenticação após o login
-      setTimeout(() => {
+      setTimeout(async () => {
         const authToken = localStorage.getItem('authToken');
         const headers: HeadersInit = { 
           'Content-Type': 'application/json'
@@ -290,18 +290,34 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           headers['Authorization'] = `Bearer ${authToken}`;
         }
         
-        fetch('/auth/verify', {
-          method: 'GET',
-          credentials: 'include',
-          headers
-        })
-        .then(res => res.json())
-        .then(data => {
-          console.log("Verificação pós-login:", data);
-        })
-        .catch(error => {
+        try {
+          // Tenta primeiro com a rota simplificada
+          console.log("Verificação pós-login (rota simplificada)...");
+          let verifyResponse = await fetch('/auth/verify', {
+            method: 'GET',
+            credentials: 'include',
+            headers
+          });
+          
+          // Se falhar, tenta com a rota tradicional
+          if (!verifyResponse.ok) {
+            console.log("Verificação pós-login falhou, tentando rota alternativa...");
+            verifyResponse = await fetch('/api/hybrid/auth/verify', {
+              method: 'GET',
+              credentials: 'include',
+              headers
+            });
+          }
+          
+          if (verifyResponse.ok) {
+            const data = await verifyResponse.json();
+            console.log("Verificação pós-login bem-sucedida:", data);
+          } else {
+            console.warn("Verificação pós-login falhou em ambas as rotas");
+          }
+        } catch (error) {
           console.error("Erro na verificação pós-login:", error);
-        });
+        }
       }, 500);
       
       toast({
