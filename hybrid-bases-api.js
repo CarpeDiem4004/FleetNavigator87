@@ -15,82 +15,9 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPAB
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 /**
- * Middleware para verificar autenticação JWT
- * Verifica se o token JWT é válido e adiciona o usuário ao objeto de requisição
+ * Importar middleware unificado de autenticação
  */
-const verifyJwtAuth = async (req, res, next) => {
-  try {
-    // Registrar informações da requisição para debug
-    console.log('[HybridAPI] Requisição recebida:', {
-      method: req.method,
-      url: req.url,
-      headers: {
-        authorization: req.headers.authorization ? 'Presente' : 'Ausente',
-        'content-type': req.headers['content-type'],
-        'user-agent': req.headers['user-agent'],
-      },
-      ip: req.ip,
-    });
-    
-    // Extrair token do cabeçalho de autorização
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader) {
-      console.log('[HybridAPI] Autenticação JWT falhou: Cabeçalho Authorization não fornecido');
-      return res.status(401).json({
-        success: false,
-        message: 'Não autenticado - Token não fornecido'
-      });
-    }
-    
-    // Verificar formato do token (Bearer TOKEN)
-    const parts = authHeader.split(' ');
-    if (parts.length !== 2 || parts[0] !== 'Bearer') {
-      console.log('[HybridAPI] Autenticação JWT falhou: Formato do cabeçalho inválido -', authHeader);
-      return res.status(401).json({
-        success: false,
-        message: 'Formato de token inválido'
-      });
-    }
-    
-    const token = parts[1];
-    console.log('[HybridAPI] Token JWT extraído com sucesso, verificando...');
-    
-    // Verificar token usando Hybrid User Service
-    // Reutilizamos a função de verificação do hybrid-user-service.js
-    const { getHybridUserService } = await import('./hybrid-user-service.js');
-    const userService = getHybridUserService();
-    const verificationResult = await userService.verifyToken(token, true);
-    
-    if (!verificationResult || !verificationResult.user) {
-      console.log('[HybridAPI] Autenticação JWT falhou: Token inválido ou usuário não encontrado/inativo');
-      return res.status(401).json({
-        success: false,
-        message: 'Token inválido ou expirado'
-      });
-    }
-    
-    // Adicionar usuário e informações do token ao objeto de requisição
-    req.user = verificationResult.user;
-    if (verificationResult.tokenInfo && verificationResult.tokenInfo.exp) {
-      // Converter timestamp Unix para data ISO
-      const expirationDate = new Date(verificationResult.tokenInfo.exp * 1000);
-      req.tokenExpiration = expirationDate.toISOString();
-    }
-    
-    console.log(`[HybridAPI] Autenticação JWT bem-sucedida para usuário: ${req.user.id} (${req.user.email})`);
-    
-    // Continuar para o próximo middleware/rota
-    next();
-  } catch (error) {
-    console.error('[HybridAPI] Erro ao verificar token JWT:', error);
-    return res.status(401).json({
-      success: false,
-      message: 'Erro ao verificar autenticação',
-      error: error.message
-    });
-  }
-};
+import { unifiedAuthMiddleware, requireRoles } from './server/utils/auth-utils.js';
 
 /**
  * Função para obter bases do banco de dados adequado
@@ -145,7 +72,7 @@ async function getBases() {
  * Rota para listar todas as bases
  * GET /api/hybrid/bases
  */
-router.get('/api/hybrid/bases', verifyJwtAuth, async (req, res) => {
+router.get('/api/hybrid/bases', unifiedAuthMiddleware, async (req, res) => {
   try {
     console.log('[HybridAPI] Listando bases');
     
