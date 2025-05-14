@@ -117,7 +117,7 @@ router.get('/api/hybrid/bases', unifiedAuthMiddleware, async (req, res) => {
  * Rota para obter uma base pelo ID
  * GET /api/hybrid/bases/:id
  */
-router.get('/api/hybrid/bases/:id', verifyJwtAuth, async (req, res) => {
+router.get('/api/hybrid/bases/:id', unifiedAuthMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     console.log(`[HybridAPI] Buscando base com ID: ${id}`);
