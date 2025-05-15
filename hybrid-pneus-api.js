@@ -430,7 +430,7 @@ router.get('/solicitacoes', unifiedAuthMiddleware, pneusAccessMiddleware, async 
  * Rota para obter histórico de movimentações de um pneu
  * GET /api/hybrid/pneus/:id/historico
  */
-router.get('/:id/historico', authenticateMiddleware, async (req, res) => {
+router.get('/:id/historico', unifiedAuthMiddleware, pneusAccessMiddleware, async (req, res) => {
   try {
     const pneuId = req.params.id;
     const conn = getDbConnection();

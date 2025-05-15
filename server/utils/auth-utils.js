@@ -1,6 +1,28 @@
 /**
  * auth-utils.js
  * Utilitários para autenticação unificada no sistema
+ * 
+ * Este módulo implementa um sistema de autenticação unificado que funciona
+ * com qualquer um dos métodos de autenticação do sistema:
+ * 
+ * 1. Sessão Express tradicional (req.isAuthenticated)
+ * 2. Token JWT nos headers (Authorization: Bearer TOKEN)
+ * 3. Token JWT em cookies (authToken ou supabase-auth-token)
+ * 4. Token Supabase (validado contra a API do Supabase)
+ * 
+ * COMO USAR:
+ * 
+ * 1. Para proteger rotas que exigem apenas autenticação:
+ *    router.get('/rota-protegida', unifiedAuthMiddleware, (req, res) => {...});
+ * 
+ * 2. Para proteger rotas que exigem permissão de administrador:
+ *    router.post('/rota-admin', unifiedAuthMiddleware, adminRoleMiddleware, (req, res) => {...});
+ * 
+ * 3. Para proteger rotas que exigem roles específicas:
+ *    router.get('/rota-gestor', unifiedAuthMiddleware, requireRoles(['admin', 'gestor']), (req, res) => {...});
+ * 
+ * IMPORTANTE: Esse módulo está sendo usado para migrar todas as APIs para um padrão
+ * consistente de autenticação, eliminando implementações específicas.
  */
 import jwt from 'jsonwebtoken';
 import { createClient } from '@supabase/supabase-js';
@@ -131,6 +153,60 @@ export async function unifiedAuthMiddleware(req, res, next) {
       error: error.message
     });
   }
+}
+
+/**
+ * Middleware para verificar acesso às funcionalidades de pneus
+ * Usado para proteger rotas do módulo de gestão de pneus
+ */
+export function pneusAccessMiddleware(req, res, next) {
+  if (!req.user) {
+    console.log('[PneusAccess] Usuário não autenticado');
+    return res.status(401).json({
+      success: false,
+      message: 'Não autenticado'
+    });
+  }
+
+  const allowedRoles = ['admin', 'gestor', 'pneus', 'gestor_frota'];
+  
+  if (!allowedRoles.includes(req.user.role)) {
+    console.log(`[PneusAccess] Acesso negado para usuário ${req.user.id} (${req.user.email}) com role ${req.user.role}`);
+    return res.status(403).json({
+      success: false,
+      message: 'Acesso negado',
+      error: 'Você não tem permissão para acessar o módulo de pneus'
+    });
+  }
+
+  console.log(`[PneusAccess] Acesso permitido para usuário ${req.user.id} (${req.user.email}) com role ${req.user.role}`);
+  next();
+}
+
+/**
+ * Middleware para verificar se o usuário é admin
+ * Usado para proteger rotas que exigem permissão de administrador
+ */
+export function adminRoleMiddleware(req, res, next) {
+  if (!req.user) {
+    console.log('[AdminRole] Usuário não autenticado');
+    return res.status(401).json({
+      success: false,
+      message: 'Não autenticado'
+    });
+  }
+
+  if (req.user.role !== 'admin') {
+    console.log(`[AdminRole] Acesso negado para usuário ${req.user.id} (${req.user.email}) com role ${req.user.role}`);
+    return res.status(403).json({
+      success: false,
+      message: 'Acesso negado',
+      error: 'Esta operação requer privilégios de administrador'
+    });
+  }
+
+  console.log(`[AdminRole] Acesso admin permitido para usuário ${req.user.id} (${req.user.email})`);
+  next();
 }
 
 /**
