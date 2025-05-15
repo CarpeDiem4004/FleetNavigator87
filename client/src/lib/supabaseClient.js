@@ -1,77 +1,59 @@
-/**
- * Cliente Supabase simulado para evitar dependências externas
- * Importa e reexporta de supabase-helper.js
- */
+import { createClient } from '@supabase/supabase-js';
 
-import { supabase, getSupabaseAdminClient, checkConnection as helperCheckConnection } from './supabase-helper';
+// Obtém variáveis de ambiente do Vite
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY;
 
-/**
- * Função para chamar uma função com retry automático
- */
-export async function withRetry(fn, maxRetries = 3, delay = 1000) {
-  let retries = 0;
+// Verifica se as variáveis de ambiente estão definidas
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Variáveis de ambiente do Supabase não definidas!');
+}
+
+// Cria o cliente Supabase com persistência automática de sessão
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    storage: window.localStorage,
+  },
+});
+
+// Cliente com chave de serviço para operações administrativas (apenas no servidor)
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+// Função para tentar novamente uma operação em caso de falha
+export async function withRetry(operation, maxRetries = 3, delay = 1000) {
+  let lastError;
   
-  while (retries < maxRetries) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      console.log(`[withRetry] Tentativa ${retries + 1}/${maxRetries}`);
-      const result = await fn();
+      const result = await operation();
       return result;
-    } catch (err) {
-      retries++;
-      console.error(`[withRetry] Exceção na tentativa ${retries}/${maxRetries}:`, err);
+    } catch (error) {
+      console.log(`Tentativa ${attempt + 1} falhou. Tentando novamente em ${delay}ms...`, error);
+      lastError = error;
       
-      if (retries >= maxRetries) {
-        return { data: null, error: err };
-      }
-      
+      // Esperar antes de tentar novamente
       await new Promise(resolve => setTimeout(resolve, delay));
-      delay *= 1.5; // Aumentar o delay a cada tentativa
+      
+      // Aumentar o tempo de espera para a próxima tentativa (backoff exponencial)
+      delay = delay * 1.5;
     }
   }
   
-  return { data: null, error: new Error(`Falha após ${maxRetries} tentativas`) };
+  // Se chegamos aqui, todas as tentativas falharam
+  console.error(`Todas as ${maxRetries} tentativas falharam`, lastError);
+  throw lastError;
 }
 
-/**
- * Verificar conexão com o Supabase
- */
+// Função para verificar conexão com o Supabase
 export async function checkSupabaseConnection() {
-  console.log('[Mock] Verificando conexão com Supabase...');
-  return { connected: true };
+  try {
+    const { data, error } = await supabase.from('health_check').select('*').limit(1);
+    return !error;
+  } catch (error) {
+    console.error('Erro ao verificar conexão com Supabase:', error);
+    return false;
+  }
 }
-
-/**
- * Verificar todas as conexões (Supabase, API, database)
- */
-export async function checkAllConnections() {
-  console.log('[Mock] Verificando todas as conexões...');
-  return { 
-    data: {
-      supabase: true,
-      api: true,
-      database: true
-    }, 
-    error: null 
-  };
-}
-
-/**
- * Função simulada para buscar registros
- */
-export async function fetchRecords(table, limit = 10) {
-  console.log(`[Mock] Buscando registros da tabela ${table} (limite: ${limit})`);
-  return { 
-    data: Array(limit).fill().map((_, i) => ({ 
-      id: i + 1, 
-      created_at: new Date().toISOString(),
-      name: `Registro ${i + 1}`
-    })), 
-    error: null 
-  };
-}
-
-// Exportando a função checkConnection do helper
-export const checkConnection = helperCheckConnection;
-
-// Exportar o cliente Supabase simulado e outras funções para compatibilidade
-export { supabase, getSupabaseAdminClient };

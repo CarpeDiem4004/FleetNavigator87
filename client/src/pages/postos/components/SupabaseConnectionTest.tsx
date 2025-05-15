@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, XCircle, AlertTriangle, RefreshCw } from 'lucide-react';
-// Usando o novo módulo auxiliar para garantir compatibilidade
-import { checkConnection } from '../../../lib/supabase-helper';
+import { checkConnection } from '@/lib/supabase-client';
 import { useToast } from '@/hooks/use-toast';
 
 export const SupabaseConnectionTest: React.FC = () => {
