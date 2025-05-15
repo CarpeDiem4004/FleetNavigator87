@@ -11,8 +11,15 @@
 export * from './supabaseClient';
 
 // Exportação padrão para compatibilidade
-import { supabase } from './supabaseClient';
+import { supabase, checkConnection, getSupabaseAdminClient } from './supabaseClient';
 export default supabase;
+
+// Garantir que as funções comumente usadas estejam disponíveis
+export { getSupabaseAdminClient };
+export { checkConnection };
+
+// Adicionar outros aliases de funções que possam ser usados em código antigo
+export const checkSupabaseStatus = async () => await checkConnection();
 
 // Aviso de depreciação no console
 console.warn(

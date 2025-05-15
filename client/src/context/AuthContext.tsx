@@ -266,20 +266,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (!authSuccess) {
         try {
           console.log("Tentando login com Supabase...");
-          const { success, session, user: supaUser, error } = await supabaseLogin(email, password);
+          const { error } = await supabaseLogin(email, password);
           
-          if (success && session) {
-            console.log("Login Supabase bem-sucedido:", supaUser);
+          if (!error && supabaseUser) {
+            console.log("Login Supabase bem-sucedido:", supabaseUser);
+            
+            // Obter a sessão atual
+            const { data: sessionData } = await supabase.auth.getSession();
+            const session = sessionData?.session;
             
             // Converter para o formato esperado do usuário
             userData = {
-              id: supaUser?.id ? parseInt(supaUser.id) : 0,
-              name: supaUser?.user_metadata?.name || 'Usuário',
-              email: supaUser?.email || email,
-              role: supaUser?.user_metadata?.role || 'operador',
-              baseId: supaUser?.user_metadata?.baseId || null,
-              basename: supaUser?.user_metadata?.basename || null,
-              oficina_id: supaUser?.user_metadata?.oficina_id || null
+              id: supabaseUser?.id ? parseInt(supabaseUser.id) : 0,
+              name: supabaseUser?.user_metadata?.name || 'Usuário',
+              email: supabaseUser?.email || email,
+              role: supabaseUser?.user_metadata?.role || 'operador',
+              baseId: supabaseUser?.user_metadata?.baseId || null,
+              basename: supabaseUser?.user_metadata?.basename || null,
+              oficina_id: supabaseUser?.user_metadata?.oficina_id || null
             };
             
             authSuccess = true;
@@ -352,13 +356,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         if (authSuccess && !supabaseAuthenticated) {
           try {
             console.log("Sincronizando com Supabase após login tradicional...");
-            await supabaseRegister(email, password, {
-              name: userData.name,
-              role: userData.role,
-              baseId: userData.baseId,
-              basename: userData.basename,
-              oficina_id: userData.oficina_id
-            });
+            await supabaseRegister(email, password, userData.name || 'Usuário');
             console.log("Registro Supabase realizado após login tradicional");
           } catch (syncError) {
             console.warn("Não foi possível registrar no Supabase:", syncError);
@@ -395,13 +393,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Primeiro tenta logout via Supabase
       let supabaseLogoutSuccess = false;
       try {
-        const { success, error } = await supabaseLogout();
-        if (success) {
-          supabaseLogoutSuccess = true;
-          console.log("Logout Supabase realizado com sucesso");
-        } else if (error) {
-          console.warn("Erro ao fazer logout do Supabase:", error);
-        }
+        await supabaseLogout();
+        supabaseLogoutSuccess = true;
+        console.log("Logout Supabase realizado com sucesso");
       } catch (supaError) {
         console.error("Exceção ao fazer logout do Supabase:", supaError);
       }
@@ -460,15 +454,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       let registeredUser = null;
       
       try {
-        const { success, user: supaUser, error } = await supabaseRegister(email, password, userData);
+        // Criar objeto com dados do usuário para o perfil
+        const userMetadata = {
+          name: name,
+          role: 'operador'
+        };
         
-        if (success && supaUser) {
-          console.log("Registro Supabase bem-sucedido:", supaUser);
+        const { error } = await supabaseRegister(email, password, name);
+        
+        if (!error && supabaseUser) {
+          console.log("Registro Supabase bem-sucedido:", supabaseUser);
           supabaseSuccessful = true;
           
           // Converter para o formato esperado do usuário
           registeredUser = {
-            id: supaUser.id ? parseInt(supaUser.id) : 0,
+            id: supabaseUser.id ? parseInt(supabaseUser.id) : 0,
             name: name,
             email: email,
             role: 'operador',
