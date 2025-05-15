@@ -1,0 +1,1798 @@
+9360-d1447a9a5d9f8868.js:1 Replit version 3bd91389, pid2 version 0.0.1304
+_app-3cacc8758c33b3e1.js:38 
+      /////////////////////
+   ///////////////////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////        Curious and driven?
+  ///////////////@@@@@@@///////        Work with us!
+  ///////////////@@@@@@@///////
+  ///////////////@@@@@@@///////        https://join.replit.com/hack.with.us
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@#//////////////
+   ///////////////////////////
+      /////////////////////
+      
+_app-3cacc8758c33b3e1.js:38  
+_app-3cacc8758c33b3e1.js:38 [LaunchDarkly] LaunchDarkly client initialized
+stallwart.build.js:1 stallwart: failed ping 1
+/t/carpe-diem-4004:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
+_app-3cacc8758c33b3e1.js:38 WARN: A component changed from uncontrolled to controlled.
+(anonymous) @ _app-3cacc8758c33b3e1.js:38
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Unrecognized feature: 'ambient-light-sensor'.
+Unrecognized feature: 'ambient-light-sensor'.
+Unrecognized feature: 'ambient-light-sensor'.
+Unrecognized feature: 'ambient-light-sensor'.
+Unrecognized feature: 'ambient-light-sensor'.
+Unrecognized feature: 'ambient-light-sensor'.
+Unrecognized feature: 'battery'.
+Unrecognized feature: 'battery'.
+Unrecognized feature: 'battery'.
+Unrecognized feature: 'battery'.
+Unrecognized feature: 'battery'.
+Unrecognized feature: 'battery'.
+Unrecognized feature: 'execution-while-not-rendered'.
+Unrecognized feature: 'execution-while-not-rendered'.
+Unrecognized feature: 'execution-while-not-rendered'.
+Unrecognized feature: 'execution-while-not-rendered'.
+Unrecognized feature: 'execution-while-not-rendered'.
+Unrecognized feature: 'execution-while-not-rendered'.
+Unrecognized feature: 'execution-while-out-of-viewport'.
+Unrecognized feature: 'execution-while-out-of-viewport'.
+Unrecognized feature: 'execution-while-out-of-viewport'.
+Unrecognized feature: 'execution-while-out-of-viewport'.
+Unrecognized feature: 'execution-while-out-of-viewport'.
+Unrecognized feature: 'execution-while-out-of-viewport'.
+Unrecognized feature: 'layout-animations'.
+Unrecognized feature: 'layout-animations'.
+Unrecognized feature: 'layout-animations'.
+Unrecognized feature: 'layout-animations'.
+Unrecognized feature: 'layout-animations'.
+Unrecognized feature: 'layout-animations'.
+Unrecognized feature: 'legacy-image-formats'.
+Unrecognized feature: 'legacy-image-formats'.
+Unrecognized feature: 'legacy-image-formats'.
+Unrecognized feature: 'legacy-image-formats'.
+Unrecognized feature: 'legacy-image-formats'.
+Unrecognized feature: 'legacy-image-formats'.
+Unrecognized feature: 'navigation-override'.
+Unrecognized feature: 'navigation-override'.
+Unrecognized feature: 'navigation-override'.
+Unrecognized feature: 'navigation-override'.
+Unrecognized feature: 'navigation-override'.
+Unrecognized feature: 'navigation-override'.
+Unrecognized feature: 'oversized-images'.
+Unrecognized feature: 'oversized-images'.
+Unrecognized feature: 'oversized-images'.
+Unrecognized feature: 'oversized-images'.
+Unrecognized feature: 'oversized-images'.
+Unrecognized feature: 'oversized-images'.
+Unrecognized feature: 'publickey-credentials'.
+Unrecognized feature: 'publickey-credentials'.
+Unrecognized feature: 'publickey-credentials'.
+Unrecognized feature: 'publickey-credentials'.
+Unrecognized feature: 'publickey-credentials'.
+Unrecognized feature: 'publickey-credentials'.
+Unrecognized feature: 'speaker-selection'.
+Unrecognized feature: 'speaker-selection'.
+Unrecognized feature: 'speaker-selection'.
+Unrecognized feature: 'speaker-selection'.
+Unrecognized feature: 'speaker-selection'.
+Unrecognized feature: 'speaker-selection'.
+Unrecognized feature: 'unoptimized-images'.
+Unrecognized feature: 'unoptimized-images'.
+Unrecognized feature: 'unoptimized-images'.
+Unrecognized feature: 'unoptimized-images'.
+Unrecognized feature: 'unoptimized-images'.
+Unrecognized feature: 'unoptimized-images'.
+Unrecognized feature: 'unsized-media'.
+Unrecognized feature: 'unsized-media'.
+Unrecognized feature: 'unsized-media'.
+Unrecognized feature: 'unsized-media'.
+Unrecognized feature: 'unsized-media'.
+Unrecognized feature: 'unsized-media'.
+framework-5a421f7f5a9a0f98.js:1 Unrecognized feature: 'pointer-lock'.
+_ @ framework-5a421f7f5a9a0f98.js:1
+Allow attribute will take precedence over 'allowfullscreen'.
+Allow attribute will take precedence over 'allowfullscreen'.
+Allow attribute will take precedence over 'allowfullscreen'.
+Allow attribute will take precedence over 'allowfullscreen'.
+Allow attribute will take precedence over 'allowfullscreen'.
+Allow attribute will take precedence over 'allowfullscreen'.
+Allow attribute will take precedence over 'allowpaymentrequest'.
+Allow attribute will take precedence over 'allowpaymentrequest'.
+Allow attribute will take precedence over 'allowpaymentrequest'.
+Allow attribute will take precedence over 'allowpaymentrequest'.
+Allow attribute will take precedence over 'allowpaymentrequest'.
+Allow attribute will take precedence over 'allowpaymentrequest'.
+stallwart.build.js:1 stallwart: failed ping 1
+stallwart.build.js:1 stallwart: failed ping 2
+stallwart.build.js:1 stallwart: failed ping 3
+stallwart.build.js:1 stallwart: failed ping 4
+stallwart.build.js:1 stallwart: failed ping 5
+stallwart.build.js:1 stallwart: session stalled
+_app-3cacc8758c33b3e1.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//login' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-3cacc8758c33b3e1.js:38
+_app-3cacc8758c33b3e1.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//login' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-3cacc8758c33b3e1.js:38
+_app-3cacc8758c33b3e1.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//login' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-3cacc8758c33b3e1.js:38
+a.JZ.<computed> @ _app-3cacc8758c33b3e1.js:6
+d @ main-0aa6fe532ec96379.js:1
+(anonymous) @ _app-3cacc8758c33b3e1.js:6
+lU @ framework-5a421f7f5a9a0f98.js:1
+t.useMemo @ framework-5a421f7f5a9a0f98.js:1
+(anonymous) @ _app-3cacc8758c33b3e1.js:6
+ld @ framework-5a421f7f5a9a0f98.js:1
+ou @ framework-5a421f7f5a9a0f98.js:1
+i @ framework-5a421f7f5a9a0f98.js:1
+uI @ framework-5a421f7f5a9a0f98.js:1
+uM @ framework-5a421f7f5a9a0f98.js:1
+uS @ framework-5a421f7f5a9a0f98.js:1
+C @ framework-5a421f7f5a9a0f98.js:1
+z @ framework-5a421f7f5a9a0f98.js:1
+_app-3cacc8758c33b3e1.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//login' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-3cacc8758c33b3e1.js:38
+a.JZ.<computed> @ _app-3cacc8758c33b3e1.js:6
+d @ main-0aa6fe532ec96379.js:1
+(anonymous) @ _app-3cacc8758c33b3e1.js:6
+lU @ framework-5a421f7f5a9a0f98.js:1
+t.useMemo @ framework-5a421f7f5a9a0f98.js:1
+(anonymous) @ _app-3cacc8758c33b3e1.js:6
+ld @ framework-5a421f7f5a9a0f98.js:1
+ou @ framework-5a421f7f5a9a0f98.js:1
+i @ framework-5a421f7f5a9a0f98.js:1
+uI @ framework-5a421f7f5a9a0f98.js:1
+uM @ framework-5a421f7f5a9a0f98.js:1
+uS @ framework-5a421f7f5a9a0f98.js:1
+C @ framework-5a421f7f5a9a0f98.js:1
+z @ framework-5a421f7f5a9a0f98.js:1
+_app-3cacc8758c33b3e1.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//login' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-3cacc8758c33b3e1.js:38
+a.JZ.<computed> @ _app-3cacc8758c33b3e1.js:6
+d @ main-0aa6fe532ec96379.js:1
+(anonymous) @ _app-3cacc8758c33b3e1.js:6
+lU @ framework-5a421f7f5a9a0f98.js:1
+t.useMemo @ framework-5a421f7f5a9a0f98.js:1
+(anonymous) @ _app-3cacc8758c33b3e1.js:6
+ld @ framework-5a421f7f5a9a0f98.js:1
+ou @ framework-5a421f7f5a9a0f98.js:1
+i @ framework-5a421f7f5a9a0f98.js:1
+uI @ framework-5a421f7f5a9a0f98.js:1
+uM @ framework-5a421f7f5a9a0f98.js:1
+uS @ framework-5a421f7f5a9a0f98.js:1
+C @ framework-5a421f7f5a9a0f98.js:1
+z @ framework-5a421f7f5a9a0f98.js:1
+_app-3cacc8758c33b3e1.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//login' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-3cacc8758c33b3e1.js:38
+_app-3cacc8758c33b3e1.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//login' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-3cacc8758c33b3e1.js:38
+_app-3cacc8758c33b3e1.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//login' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-3cacc8758c33b3e1.js:38
+_app-3cacc8758c33b3e1.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//login' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-3cacc8758c33b3e1.js:38
+_app-3cacc8758c33b3e1.js:38 task queue exceeded allotted deadline by 21ms
+(anonymous) @ _app-3cacc8758c33b3e1.js:38
+_app-3cacc8758c33b3e1.js:38 task queue exceeded allotted deadline by 21ms
+(anonymous) @ _app-3cacc8758c33b3e1.js:38
+_app-3cacc8758c33b3e1.js:38 task queue exceeded allotted deadline by 25ms
+(anonymous) @ _app-3cacc8758c33b3e1.js:38
+VM245 tabs.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+tabs.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+tabs.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+tabs.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+tabs.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM247 skeleton.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+skeleton.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+skeleton.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+skeleton.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+skeleton.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM246 KpiCard.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+KpiCard.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+KpiCard.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+KpiCard.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+KpiCard.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM269 MainLayoutSimple.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+MainLayoutSimple.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+MainLayoutSimple.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+MainLayoutSimple.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+MainLayoutSimple.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM267 CadastroFrota.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+CadastroFrota.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+CadastroFrota.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+CadastroFrota.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+CadastroFrota.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM246 KpiCard.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+KpiCard.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+KpiCard.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+KpiCard.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+KpiCard.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM249 ChartCard.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+ChartCard.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+ChartCard.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+ChartCard.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+ChartCard.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM254 DashboardTable.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+DashboardTable.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+DashboardTable.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+DashboardTable.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+DashboardTable.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM253 BarChartComponent.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+BarChartComponent.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+BarChartComponent.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+BarChartComponent.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+BarChartComponent.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM257 PieChartComponent.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+PieChartComponent.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+PieChartComponent.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+PieChartComponent.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+PieChartComponent.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM255 dashboardService.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+dashboardService.ts:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+dashboardService.ts:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+dashboardService.ts:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+dashboardService.ts:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM259 calendar.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+calendar.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+calendar.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+calendar.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+calendar.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM261 popover.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+popover.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+popover.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+popover.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+popover.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM275 label.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+label.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+label.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+label.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+label.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM279 select.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+select.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+select.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+select.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+select.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM278 dialog.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+dialog.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+dialog.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+dialog.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+dialog.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM270 badge.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+badge.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+badge.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+badge.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+badge.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM271 tiresService.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+tiresService.ts:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+tiresService.ts:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+tiresService.ts:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+tiresService.ts:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM286 tireRequestsService.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+tireRequestsService.ts:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+tireRequestsService.ts:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+tireRequestsService.ts:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+tireRequestsService.ts:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM285 TireRequestForm.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+TireRequestForm.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+TireRequestForm.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+TireRequestForm.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+TireRequestForm.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM276 TireMountingHistory.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+TireMountingHistory.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+TireMountingHistory.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+TireMountingHistory.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+TireMountingHistory.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM272 TireActivityHistory.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+TireActivityHistory.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+TireActivityHistory.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+TireActivityHistory.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+TireActivityHistory.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM273 useSupabaseAuth.js:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+useSupabaseAuth.js:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+useSupabaseAuth.js:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+useSupabaseAuth.js:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+useSupabaseAuth.js:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM274 tireActivityLogService.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+tireActivityLogService.ts:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+tireActivityLogService.ts:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+tireActivityLogService.ts:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+tireActivityLogService.ts:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM287 textarea.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+textarea.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+textarea.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+textarea.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+textarea.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM288 alert.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/alert.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/alert.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/alert.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/alert.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM289 native-select.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/native-select.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/native-select.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/native-select.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/native-select.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM296 progress.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/progress.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/progress.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/progress.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/progress.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM290 importBases.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/utils/importBases.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/utils/importBases.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/utils/importBases.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/utils/importBases.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM291 schema.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/@fs/home/runner/workspace/shared/schema.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/@fs/home/runner/workspace/shared/schema.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/@fs/home/runner/workspace/shared/schema.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/@fs/home/runner/workspace/shared/schema.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM292 form.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/form.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/form.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/form.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/form.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM295 switch.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/switch.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/switch.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/switch.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/switch.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM294 login-background.jpeg:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/assets/login-background.jpeg?import:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/assets/login-background.jpeg?import:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/assets/login-background.jpeg?import:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/assets/login-background.jpeg?import:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM293 use-base-permission.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hooks/use-base-permission.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hooks/use-base-permission.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hooks/use-base-permission.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hooks/use-base-permission.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM307 authManager.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/lib/authManager.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/lib/authManager.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/lib/authManager.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/lib/authManager.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM306 PostoPage.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/postos/PostoPage.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/postos/PostoPage.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/postos/PostoPage.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/postos/PostoPage.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM305 postos.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/constants/postos.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/constants/postos.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/constants/postos.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/constants/postos.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM12412 supabase-client.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/lib/supabase-client.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/lib/supabase-client.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/lib/supabase-client.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+supabase-client.ts:11 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM308 HistoricoConsolidadoView.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/postos/components/HistoricoConsolidadoView.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/postos/components/HistoricoConsolidadoView.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/postos/components/HistoricoConsolidadoView.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+HistoricoConsolidadoView.tsx:403 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM309 dropdown-menu.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/dropdown-menu.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/dropdown-menu.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/dropdown-menu.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+dropdown-menu.tsx:35 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM312 RemoverPostoSaoPaulo.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/postos/RemoverPostoSaoPaulo.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/postos/RemoverPostoSaoPaulo.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/postos/RemoverPostoSaoPaulo.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+RemoverPostoSaoPaulo.tsx:69 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM311 accordion.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/accordion.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/accordion.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/accordion.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+accordion.tsx:13 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/diagnostico/SincronizarTabelas.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/diagnostico/SincronizarTabelas.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/diagnostico/SincronizarTabelas.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/diagnostico/SincronizarTabelas.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+SincronizarTabelas.tsx:47 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ErrorBoundary.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ErrorBoundary.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ErrorBoundary.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ErrorBoundary.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+ErrorBoundary.tsx:40 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/separator.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/separator.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/separator.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/ui/separator.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+separator.tsx:14 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/lib/supabase.ts?t=1747331711155:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/lib/supabase.ts?t=1747331711155:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/lib/supabase.ts?t=1747331711155:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/lib/supabase.ts?t=1747331711155:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/lib/supabase.ts?t=1747331711155:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/forms/AutoSaveForm.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/forms/AutoSaveForm.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+AutoSaveForm.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+AutoSaveForm.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+AutoSaveForm.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hooks/use-auth.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hooks/use-auth.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+use-auth.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+use-auth.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+use-auth.ts:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/maintenance/MaintenanceDetailDialog.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/maintenance/MaintenanceDetailDialog.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+MaintenanceDetailDialog.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+MaintenanceDetailDialog.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+MaintenanceDetailDialog.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hooks/use-vehicles.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hooks/use-vehicles.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+use-vehicles.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+use-vehicles.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+use-vehicles.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/chat/MaintenanceChatHistory.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/chat/MaintenanceChatHistory.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+MaintenanceChatHistory.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+MaintenanceChatHistory.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+MaintenanceChatHistory.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+(index):1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+(index):1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+_app-3cacc8758c33b3e1.js:38 task queue exceeded allotted deadline by 24ms
+(anonymous) @ _app-3cacc8758c33b3e1.js:38
+_app-3cacc8758c33b3e1.js:38 task queue exceeded allotted deadline by 599ms
+(anonymous) @ _app-3cacc8758c33b3e1.js:38
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/postos/public/SocorroV2Public.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/postos/public/SocorroV2Public.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+SocorroV2Public.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+SocorroV2Public.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+SocorroV2Public.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/postos/public/SorocabaV2Public.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/postos/public/SorocabaV2Public.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+SorocabaV2Public.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+SorocabaV2Public.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+SorocabaV2Public.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+(index):1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/postos/RegisterPostoUser.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/postos/RegisterPostoUser.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+RegisterPostoUser.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+RegisterPostoUser.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+RegisterPostoUser.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/RedirectToPosto.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/RedirectToPosto.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+RedirectToPosto.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+RedirectToPosto.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+RedirectToPosto.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+(index):1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+(index):1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+(index):1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+(index):1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+(index):1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+_app-3cacc8758c33b3e1.js:38 task queue exceeded allotted deadline by 76ms
+(anonymous) @ _app-3cacc8758c33b3e1.js:38
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+(index):1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+anchor:1 Uncaught (in promise) Timeout (o)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+(index):1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/diagnostico/MigracaoAnexosPage.tsx?t=1747332874656:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/diagnostico/MigracaoAnexosPage.tsx?t=1747332874656:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/diagnostico/MigracaoAnexosPage.tsx?t=1747332874656:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/diagnostico/MigracaoAnexosPage.tsx?t=1747332874656:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/diagnostico/MigracaoAnexosPage.tsx?t=1747332874656:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+(index):1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/diagnostico/UploadDocumentoPage.tsx?t=1747332874656:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/diagnostico/UploadDocumentoPage.tsx?t=1747332874656:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/diagnostico/UploadDocumentoPage.tsx?t=1747332874656:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/diagnostico/UploadDocumentoPage.tsx?t=1747332874656:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/diagnostico/UploadDocumentoPage.tsx?t=1747332874656:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM10 @react-refresh:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+@react-refresh:2 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+@react-refresh:2 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+@react-refresh:2 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+@react-refresh:2 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM18 env.mjs:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+env.mjs:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+env.mjs:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+env.mjs:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+env.mjs:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/App.tsx?t=1747333083548&v=5ZwfJlK5p2gwHC-PxHdrn:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/App.tsx?t=1747333083548&v=5ZwfJlK5p2gwHC-PxHdrn:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/App.tsx?t=1747333083548&v=5ZwfJlK5p2gwHC-PxHdrn:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/App.tsx?t=1747333083548&v=5ZwfJlK5p2gwHC-PxHdrn:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/App.tsx?t=1747333083548&v=5ZwfJlK5p2gwHC-PxHdrn:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/index.css?t=1747333083548&v=5ZwfJlK5p2gwHC-PxHdrn:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/index.css?t=1747333083548&v=5ZwfJlK5p2gwHC-PxHdrn:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/index.css?t=1747333083548&v=5ZwfJlK5p2gwHC-PxHdrn:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/index.css?t=1747333083548&v=5ZwfJlK5p2gwHC-PxHdrn:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/index.css?t=1747333083548&v=5ZwfJlK5p2gwHC-PxHdrn:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hide-error.css?v=5ZwfJlK5p2gwHC-PxHdrn:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hide-error.css?v=5ZwfJlK5p2gwHC-PxHdrn:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hide-error.css?v=5ZwfJlK5p2gwHC-PxHdrn:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hide-error.css?v=5ZwfJlK5p2gwHC-PxHdrn:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hide-error.css?v=5ZwfJlK5p2gwHC-PxHdrn:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/App.tsx?t=1747333208021&v=V39EOtYSlPRcD-kNLY04K:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/App.tsx?t=1747333208021&v=V39EOtYSlPRcD-kNLY04K:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/App.tsx?t=1747333208021&v=V39EOtYSlPRcD-kNLY04K:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/App.tsx?t=1747333208021&v=V39EOtYSlPRcD-kNLY04K:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/App.tsx?t=1747333208021&v=V39EOtYSlPRcD-kNLY04K:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/index.css?t=1747333208021&v=V39EOtYSlPRcD-kNLY04K:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/index.css?t=1747333208021&v=V39EOtYSlPRcD-kNLY04K:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/index.css?t=1747333208021&v=V39EOtYSlPRcD-kNLY04K:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/index.css?t=1747333208021&v=V39EOtYSlPRcD-kNLY04K:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/index.css?t=1747333208021&v=V39EOtYSlPRcD-kNLY04K:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hide-error.css?v=V39EOtYSlPRcD-kNLY04K:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hide-error.css?v=V39EOtYSlPRcD-kNLY04K:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hide-error.css?v=V39EOtYSlPRcD-kNLY04K:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hide-error.css?v=V39EOtYSlPRcD-kNLY04K:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hide-error.css?v=V39EOtYSlPRcD-kNLY04K:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM71 eruda.js:2 WebSocket connection to 'wss://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/?token=w6RqibW6WeT7' failed: 
+t @ VM71 eruda.js:2
+ WebSocket connection to 'wss://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/?token=w6RqibW6WeT7' failed: 
+t @ eruda.js:2
+ WebSocket connection to 'wss://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/?token=w6RqibW6WeT7' failed: 
+t @ eruda.js:2
+ WebSocket connection to 'wss://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/?token=w6RqibW6WeT7' failed: 
+t @ eruda.js:2
+ WebSocket connection to 'wss://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/?token=w6RqibW6WeT7' failed: 
+t @ eruda.js:2
+VM351 tooltip.tsx:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+tooltip.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+tooltip.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+tooltip.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+tooltip.tsx:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/lib/supabaseClient.js?t=1747334261912:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/lib/supabaseClient.js?t=1747334261912:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/lib/supabaseClient.js?t=1747334261912:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/lib/supabaseClient.js?t=1747334261912:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/lib/supabaseClient.js?t=1747334261912:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/context/AuthContext.tsx?t=1747334261912:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/context/AuthContext.tsx?t=1747334261912:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/context/AuthContext.tsx?t=1747334261912:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/context/AuthContext.tsx?t=1747334261912:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/context/AuthContext.tsx?t=1747334261912:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hooks/useAutoSave.js?t=1747334261912:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hooks/useAutoSave.js?t=1747334261912:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hooks/useAutoSave.js?t=1747334261912:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hooks/useAutoSave.js?t=1747334261912:1  Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/hooks/useAutoSave.js?t=1747334261912:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/:1 
+            
+            
+           Failed to load resource: the server responded with a status of 502 (Bad Gateway)
+VM71 eruda.js:2 [vite] connecting...
+VM71 eruda.js:2 [vite] connected.
+VM68 SupabaseDiagnostico.tsx:23 Uncaught SyntaxError: The requested module '/src/lib/supabase-client.ts' does not provide an export named 'checkAllConnections' (at VM68 SupabaseDiagnostico.tsx:23:10)
+[Violation] 'setTimeout' handler took <N>ms
+[Violation] 'setTimeout' handler took <N>ms
+[Violation] 'setTimeout' handler took <N>ms
+[Violation] 'setTimeout' handler took <N>ms
+[Violation] 'setTimeout' handler took <N>ms
+[Violation] 'setTimeout' handler took <N>ms
+[Violation] 'setTimeout' handler took <N>ms
+[Violation] 'setTimeout' handler took <N>ms
+[Violation] 'setTimeout' handler took <N>ms
+[Violation] 'setTimeout' handler took <N>ms
+[Violation] 'setTimeout' handler took <N>ms
+[Violation] 'setTimeout' handler took <N>ms
+[Violation] 'setTimeout' handler took <N>ms
+[Violation] 'setTimeout' handler took <N>ms
+[Violation] 'setTimeout' handler took <N>ms
+[Violation] 'setTimeout' handler took <N>ms
+[Violation] 'setTimeout' handler took <N>ms
+_app-3cacc8758c33b3e1.js:38 [Violation] 'requestAnimationFrame' handler took 786ms
+[Violation] Forced reflow while executing JavaScript took <N>ms
+[Violation] Forced reflow while executing JavaScript took <N>ms
+[Violation] Forced reflow while executing JavaScript took <N>ms
+[Violation] Forced reflow while executing JavaScript took <N>ms
+[Violation] Forced reflow while executing JavaScript took <N>ms
+_app-3cacc8758c33b3e1.js:38 [Violation] 'requestAnimationFrame' handler took 769ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'requestIdleCallback' handler took 131ms
+_app-3cacc8758c33b3e1.js:38 [Violation] 'setInterval' handler took 372ms
+VM13119 eruda.js:2 [Violation] Added non-passive event listener to a scroll-blocking 'wheel' event. Consider marking event handler as 'passive' to make the page more responsive. See https://www.chromestatus.com/feature/5745543795965952
+add @ VM13119 eruda.js:2
+(anonymous) @ VM13119 eruda.js:2
+t @ VM13119 eruda.js:2
+(anonymous) @ VM13119 eruda.js:2
+on @ VM13119 eruda.js:2
+value @ VM13119 eruda.js:2
+t @ VM13119 eruda.js:2
+value @ VM13119 eruda.js:2
+t @ VM13119 eruda.js:2
+_initDevTools @ VM13119 eruda.js:2
+init @ VM13119 eruda.js:2
+(anonymous) @ VM13120 injected.js:2
+(anonymous) @ VM13120 injected.js:156
+VM13119 eruda.js:2 [vite] connecting...
+VM13119 eruda.js:2 [vite] connected.
+VM13119 eruda.js:2 [vite] server connection lost. Polling for restart...
+VM13119 eruda.js:2 
+            
+            
+           GET https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/ 502 (Bad Gateway)
+window.fetch @ VM13119 eruda.js:2
+ping @ VM13121 client:736
+waitForSuccessfulPing @ VM13121 client:749
+(anonymous) @ VM13121 client:561
+ 
+            
+            
+           GET https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/ 502 (Bad Gateway)
+window.fetch @ eruda.js:2
+ping @ client:736
+waitForSuccessfulPing @ client:749
+(anonymous) @ client:561
+ 
+            
+            
+           GET https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/ 502 (Bad Gateway)
+window.fetch @ eruda.js:2
+ping @ client:736
+waitForSuccessfulPing @ client:749
+(anonymous) @ client:561
+ 
+            
+            
+           GET https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/ 502 (Bad Gateway)
+window.fetch @ eruda.js:2
+ping @ client:736
+waitForSuccessfulPing @ client:749
+(anonymous) @ client:561
+ 
+            
+            
+           GET https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/ 502 (Bad Gateway)
+window.fetch @ eruda.js:2
+ping @ client:736
+waitForSuccessfulPing @ client:749
+(anonymous) @ client:561
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/App.tsx?t=1747335127345&v=3GZDvqmeGO8QRt6XC4lJl:55 
+            
+            
+           GET https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/postos/SocorroV2.tsx?t=1747335127345 net::ERR_ABORTED 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/App.tsx?t=1747335127345&v=3GZDvqmeGO8QRt6XC4lJl:55 
+            
+            
+           GET https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/postos/SocorroV2.tsx?t=1747335127345 net::ERR_ABORTED 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/App.tsx?t=1747335127345&v=3GZDvqmeGO8QRt6XC4lJl:55 
+            
+            
+           GET https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/postos/SocorroV2.tsx?t=1747335127345 net::ERR_ABORTED 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/App.tsx?t=1747335127345&v=3GZDvqmeGO8QRt6XC4lJl:55 
+            
+            
+           GET https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/postos/SocorroV2.tsx?t=1747335127345 net::ERR_ABORTED 502 (Bad Gateway)
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/App.tsx?t=1747335127345&v=3GZDvqmeGO8QRt6XC4lJl:55 
+            
+            
+           GET https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/postos/SocorroV2.tsx?t=1747335127345 net::ERR_ABORTED 502 (Bad Gateway)
+VM13121 client:562 
+            
+            
+           GET https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/ 502 (Bad Gateway)
+(anonymous) @ VM13121 client:562
+ 
+            
+            
+           GET https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/ 502 (Bad Gateway)
+(anonymous) @ client:562
+ 
+            
+            
+           GET https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/ 502 (Bad Gateway)
+(anonymous) @ client:562
+ 
+            
+            
+           GET https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/ 502 (Bad Gateway)
+(anonymous) @ client:562
+ 
+            
+            
+           GET https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/ 502 (Bad Gateway)
+(anonymous) @ client:562
+ [vite] connecting...
+ [vite] connected.
+supabase.ts:1 Uncaught SyntaxError: The requested module '/src/lib/supabaseClient.js' does not provide an export named 'getSupabaseClient'
+ [vite] connecting...
+ [vite] connected.
+supabase.ts:1 Uncaught SyntaxError: The requested module '/src/lib/supabaseClient.js' does not provide an export named 'getSupabaseClient'
+ [vite] server connection lost. Polling for restart...
+ 
+            
+            
+           GET https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/ 502 (Bad Gateway)
+window.fetch @ eruda.js:2
+ping @ client:736
+waitForSuccessfulPing @ client:749
+(anonymous) @ client:561
+ 
+            
+            
+           GET https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/ 502 (Bad Gateway)
+window.fetch @ eruda.js:2
+ping @ client:736
+waitForSuccessfulPing @ client:749
+(anonymous) @ client:561
+ 
+            
+            
+           GET https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/ 502 (Bad Gateway)
+window.fetch @ eruda.js:2
+ping @ client:736
+waitForSuccessfulPing @ client:749
+(anonymous) @ client:561
+ 
+            
+            
+           GET https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/ 502 (Bad Gateway)
+(anonymous) @ client:562
+ 
+            
+            
+           GET https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/ 502 (Bad Gateway)
+(anonymous) @ client:562
+ 
+            
+            
+           GET https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/ 502 (Bad Gateway)
+(anonymous) @ client:562
+ [vite] connecting...
+ [vite] connected.
+ [vite] connecting...
+ [vite] connected.
+supabase.ts:1 Uncaught SyntaxError: The requested module '/src/lib/supabaseClient.js' does not provide an export named 'getSupabaseClient'
+Console.js:61 [vite] connecting...
+Console.js:61 [vite] connected.
+supabase.ts:2 Uncaught SyntaxError: The requested module '/src/lib/supabaseClient.js' does not provide an export named 'getSupabaseClient' (at supabase.ts:2:84)
+_app-3cacc8758c33b3e1.js:38 [Violation] 'requestAnimationFrame' handler took 1265ms
+_app-3cacc8758c33b3e1.js:38 [Violation] 'setInterval' handler took 141ms
+_app-3cacc8758c33b3e1.js:38 [Violation] 'setInterval' handler took 181ms

@@ -25,7 +25,8 @@ import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
 // LineHallRedirect removido conforme solicitação
 import FleetManagementRedirect from "@/components/permission/FleetManagementRedirect";
 import { AuthProvider } from "@/context/AuthContext";
-import { SupabaseAuthProvider } from "@/context/SupabaseAuthContext";
+// Importamos diretamente do MockAuthContext (desacoplando do Supabase)
+import { MockAuthProvider } from "@/context/MockAuthContext";
 // Importação do hook para injetar token JWT em todas as requisições
 import { useFetchWithAuth } from "@/hooks/useFetchWithAuth";
 
@@ -133,7 +134,7 @@ function App() {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <SupabaseAuthProvider>
+      <MockAuthProvider>
         <AuthProvider>
           <Switch>
             <Route path="/login">
