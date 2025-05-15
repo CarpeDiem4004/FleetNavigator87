@@ -6,40 +6,32 @@ const express = require('express');
 const { getHybridUserService } = require('./hybrid-user-service');
 const { PG_POOL, isEnvironmentSupabase } = require('./utils/db-connection');
 const { getSupabaseClient } = require('./utils/supabase-client');
+const { unifiedAuthMiddleware, requireRoles } = require('./server/utils/auth-utils.js');
 
 const router = express.Router();
 const userService = getHybridUserService();
 
-// Middleware de autenticação
-const authenticateMiddleware = async (req, res, next) => {
+// Middleware para verificar se o usuário tem permissão para gerenciar pneus
+const pneusAccessMiddleware = (req, res, next) => {
   try {
-    // Verifica se o token foi fornecido no cabeçalho Authorization
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ message: 'Token de autenticação não fornecido' });
-    }
-
-    const token = authHeader.split(' ')[1];
-    
-    // Verificar o token 
-    const user = await userService.verifyToken(token);
-    if (!user) {
-      return res.status(401).json({ message: 'Token inválido ou expirado' });
-    }
-    
-    // Verificar permissões
-    if (!['admin', 'pneus'].includes(user.role)) {
+    // Verificar se o usuário tem permissões de admin ou pneus
+    if (!req.user || !['admin', 'pneus'].includes(req.user.role)) {
       return res.status(403).json({ 
-        message: 'Acesso não autorizado. Você não tem permissões para gerenciar pneus.' 
+        success: false,
+        message: 'Acesso não autorizado',
+        error: 'Você não tem permissões para gerenciar pneus.'
       });
     }
     
-    // Adicionar o usuário ao objeto req
-    req.user = user;
+    // Se chegou aqui, o usuário tem permissão
     next();
   } catch (error) {
-    console.error('Erro ao autenticar requisição:', error);
-    res.status(500).json({ message: 'Erro ao processar autenticação' });
+    console.error('[PneusAccess] Erro ao verificar permissões:', error);
+    return res.status(500).json({ 
+      success: false,
+      message: 'Erro ao verificar permissões',
+      error: error.message 
+    });
   }
 };
 
@@ -58,7 +50,7 @@ function getDbConnection() {
  * Rota para listar todos os pneus
  * GET /api/hybrid/pneus
  */
-router.get('/', authenticateMiddleware, async (req, res) => {
+router.get('/', unifiedAuthMiddleware, pneusAccessMiddleware, async (req, res) => {
   try {
     const conn = getDbConnection();
     let result;
@@ -88,7 +80,7 @@ router.get('/', authenticateMiddleware, async (req, res) => {
  * Rota para obter um pneu pelo ID
  * GET /api/hybrid/pneus/:id
  */
-router.get('/:id', authenticateMiddleware, async (req, res) => {
+router.get('/:id', unifiedAuthMiddleware, pneusAccessMiddleware, async (req, res) => {
   try {
     const id = req.params.id;
     const conn = getDbConnection();
@@ -124,7 +116,7 @@ router.get('/:id', authenticateMiddleware, async (req, res) => {
  * Rota para criar um novo pneu
  * POST /api/hybrid/pneus
  */
-router.post('/', authenticateMiddleware, async (req, res) => {
+router.post('/', unifiedAuthMiddleware, pneusAccessMiddleware, async (req, res) => {
   try {
     const pneuData = req.body;
     const conn = getDbConnection();
@@ -183,7 +175,7 @@ router.post('/', authenticateMiddleware, async (req, res) => {
  * Rota para atualizar um pneu
  * PUT /api/hybrid/pneus/:id
  */
-router.put('/:id', authenticateMiddleware, async (req, res) => {
+router.put('/:id', unifiedAuthMiddleware, pneusAccessMiddleware, async (req, res) => {
   try {
     const id = req.params.id;
     const pneuData = req.body;
@@ -250,7 +242,7 @@ router.put('/:id', authenticateMiddleware, async (req, res) => {
  * Rota para registrar movimentação de pneu
  * POST /api/hybrid/pneus/:id/movimentacao
  */
-router.post('/:id/movimentacao', authenticateMiddleware, async (req, res) => {
+router.post('/:id/movimentacao', unifiedAuthMiddleware, pneusAccessMiddleware, async (req, res) => {
   try {
     const pneuId = req.params.id;
     const movimentacaoData = {
@@ -341,7 +333,7 @@ router.post('/:id/movimentacao', authenticateMiddleware, async (req, res) => {
  * Rota para criar solicitação de pneus
  * POST /api/hybrid/pneus/solicitacoes
  */
-router.post('/solicitacoes', authenticateMiddleware, async (req, res) => {
+router.post('/solicitacoes', unifiedAuthMiddleware, pneusAccessMiddleware, async (req, res) => {
   try {
     const solicitacaoData = {
       ...req.body,
@@ -406,7 +398,7 @@ router.post('/solicitacoes', authenticateMiddleware, async (req, res) => {
  * Rota para listar solicitações de pneus
  * GET /api/hybrid/pneus/solicitacoes
  */
-router.get('/solicitacoes', authenticateMiddleware, async (req, res) => {
+router.get('/solicitacoes', unifiedAuthMiddleware, pneusAccessMiddleware, async (req, res) => {
   try {
     const conn = getDbConnection();
     let result;
