@@ -22,6 +22,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // Cliente com chave de serviço para operações administrativas (apenas no servidor)
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
+// Função para obter cliente admin (compatibilidade com supabaseClient.ts)
+export const getSupabaseAdminClient = () => supabaseAdmin;
+
 // Função para tentar novamente uma operação em caso de falha
 export async function withRetry(operation, maxRetries = 3, delay = 1000) {
   let lastError;
