@@ -1,10 +1,12 @@
 /**
  * Rotas para acessar views e tabelas específicas para postos no Supabase
+ * Com autenticação unificada aplicada
  */
 
 import express from 'express';
 import { Pool } from 'pg';
 import { formatPostoName } from '../utils/posto-utils.js';
+import { unifiedAuthMiddleware, requireRoles } from '../utils/auth-utils.js';
 
 const router = express.Router();
 const pool = new Pool({
@@ -20,7 +22,7 @@ router.use((req, res, next) => {
 });
 
 // Rota para verificar se view/tabela específica de posto existe
-router.get('/check-table/:posto', async (req, res) => {
+router.get('/check-table/:posto', unifiedAuthMiddleware, requireRoles(['admin', 'gestor', 'operador', 'posto']), async (req, res) => {
   try {
     const postoName = formatPostoName(req.params.posto);
     const tableName = `abastecimentos_posto_${postoName.toLowerCase()}`;
@@ -67,7 +69,7 @@ router.get('/check-table/:posto', async (req, res) => {
 });
 
 // Rota para obter histórico de um posto específico da view consolidada
-router.get('/historico/:posto', async (req, res) => {
+router.get('/historico/:posto', unifiedAuthMiddleware, requireRoles(['admin', 'gestor', 'operador', 'posto']), async (req, res) => {
   try {
     const postoName = formatPostoName(req.params.posto);
     const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_consolidado`;
@@ -110,7 +112,7 @@ router.get('/historico/:posto', async (req, res) => {
 });
 
 // Rota para obter estatísticas mensais
-router.get('/estatisticas-mensais/:posto', async (req, res) => {
+router.get('/estatisticas-mensais/:posto', unifiedAuthMiddleware, requireRoles(['admin', 'gestor', 'operador', 'posto']), async (req, res) => {
   try {
     const postoName = formatPostoName(req.params.posto);
     const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_estatisticas_mensais`;
@@ -153,7 +155,7 @@ router.get('/estatisticas-mensais/:posto', async (req, res) => {
 });
 
 // Rota para obter consumo por veículo
-router.get('/consumo-por-veiculo/:posto', async (req, res) => {
+router.get('/consumo-por-veiculo/:posto', unifiedAuthMiddleware, requireRoles(['admin', 'gestor', 'operador', 'posto']), async (req, res) => {
   try {
     const postoName = formatPostoName(req.params.posto);
     const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_consumo_por_veiculo`;
@@ -196,7 +198,7 @@ router.get('/consumo-por-veiculo/:posto', async (req, res) => {
 });
 
 // Rota para obter comparativo entre diesel e ARLA
-router.get('/comparativo-combustiveis/:posto', async (req, res) => {
+router.get('/comparativo-combustiveis/:posto', unifiedAuthMiddleware, requireRoles(['admin', 'gestor', 'operador', 'posto']), async (req, res) => {
   try {
     const postoName = formatPostoName(req.params.posto);
     const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_comparativo_combustiveis`;
