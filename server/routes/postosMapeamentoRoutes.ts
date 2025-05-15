@@ -1,12 +1,13 @@
 import type { Express } from "express";
 import { pool } from "../db";
+import { unifiedAuthMiddleware, requireRoles, adminRoleMiddleware } from "../utils/auth-utils.js";
 
 /**
  * Registra as rotas para gerenciar o mapeamento de postos
  */
 export function registerPostosMapeamentoRoutes(app: Express) {
   // Rota para buscar todos os postos
-  app.get("/api/postos-mapeamento", async (req, res) => {
+  app.get("/api/postos-mapeamento", unifiedAuthMiddleware, async (req, res) => {
     try {
       console.log("[API] Buscando todos os postos do mapeamento");
       
@@ -34,7 +35,7 @@ export function registerPostosMapeamentoRoutes(app: Express) {
   });
   
   // Rota para buscar posto pelo nome
-  app.get("/api/postos-mapeamento/:nome", async (req, res) => {
+  app.get("/api/postos-mapeamento/:nome", unifiedAuthMiddleware, async (req, res) => {
     try {
       const nome = req.params.nome.toLowerCase();
       console.log(`[API] Buscando posto do mapeamento: ${nome}`);
@@ -96,7 +97,7 @@ export function registerPostosMapeamentoRoutes(app: Express) {
   });
   
   // Rota para atualizar campos do questionário
-  app.put("/api/postos-mapeamento/:nome/questionario", async (req, res) => {
+  app.put("/api/postos-mapeamento/:nome/questionario", unifiedAuthMiddleware, requireRoles(['admin', 'gestor']), async (req, res) => {
     try {
       const nome = req.params.nome.toLowerCase();
       const { campos_questionario } = req.body;
@@ -147,7 +148,7 @@ export function registerPostosMapeamentoRoutes(app: Express) {
   });
   
   // Rota para criar um novo posto no mapeamento
-  app.post("/api/postos-mapeamento", async (req, res) => {
+  app.post("/api/postos-mapeamento", unifiedAuthMiddleware, adminRoleMiddleware, async (req, res) => {
     try {
       const {
         nome,

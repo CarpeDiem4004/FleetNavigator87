@@ -1,9 +1,10 @@
 import { Express } from 'express';
 import { pool } from '../db';
+import { unifiedAuthMiddleware, requireRoles, adminRoleMiddleware } from "../utils/auth-utils.js";
 
 export function registerPrecosCombustivelRoutes(app: Express) {
   // Obter preços do combustível
-  app.get('/api/precos-combustivel', async (req, res) => {
+  app.get('/api/precos-combustivel', unifiedAuthMiddleware, async (req, res) => {
     try {
       const query = 'SELECT * FROM preco_combustivel ORDER BY tipo';
       const result = await pool.query(query);
@@ -23,7 +24,7 @@ export function registerPrecosCombustivelRoutes(app: Express) {
   });
 
   // Obter preço por tipo de combustível
-  app.get('/api/precos-combustivel/:tipo', async (req, res) => {
+  app.get('/api/precos-combustivel/:tipo', unifiedAuthMiddleware, async (req, res) => {
     try {
       const { tipo } = req.params;
       
@@ -52,15 +53,9 @@ export function registerPrecosCombustivelRoutes(app: Express) {
   });
 
   // Atualizar ou inserir preço de combustível
-  app.post('/api/precos-combustivel', async (req, res) => {
+  app.post('/api/precos-combustivel', unifiedAuthMiddleware, adminRoleMiddleware, async (req, res) => {
     try {
-      // Verificar se o usuário é admin
-      if (req.user?.role !== 'admin') {
-        return res.status(403).json({
-          success: false,
-          message: 'Permissão negada. Apenas administradores podem atualizar preços.'
-        });
-      }
+      // O adminRoleMiddleware já garante que o usuário é admin
 
       const { tipo, valor_litro } = req.body;
       
