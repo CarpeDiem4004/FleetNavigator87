@@ -3,7 +3,7 @@
  * Importa e reexporta de supabase-helper.js
  */
 
-import { supabase, getSupabaseAdminClient } from './supabase-helper';
+import { supabase, getSupabaseAdminClient, checkConnection as helperCheckConnection } from './supabase-helper';
 
 /**
  * Função para chamar uma função com retry automático
@@ -69,6 +69,9 @@ export async function fetchRecords(table, limit = 10) {
     error: null 
   };
 }
+
+// Exportando a função checkConnection do helper
+export const checkConnection = helperCheckConnection;
 
 // Exportar o cliente Supabase simulado e outras funções para compatibilidade
 export { supabase, getSupabaseAdminClient };

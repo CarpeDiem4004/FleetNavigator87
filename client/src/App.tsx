@@ -357,7 +357,7 @@ function App() {
         </Switch>
         <Toaster />
         </AuthProvider>
-      </SupabaseAuthProvider>
+      </MockAuthProvider>
     </QueryClientProvider>
   );
 }
