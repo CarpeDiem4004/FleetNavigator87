@@ -3,13 +3,14 @@
  * Estas rotas facilitam o acesso direto através de links como gestaoonfleet.com.br/postos
  */
 
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { pool } from '../db';
+import { unifiedAuthMiddleware, requireRoles } from '../utils/auth-utils.js';
 
 const router = Router();
 
 // Middleware para verificar se a requisição vem do domínio personalizado
-const verificarDominioPersonalizado = (req, res, next) => {
+const verificarDominioPersonalizado = (req: Request, res: Response, next: NextFunction) => {
   const isExternalDomain = req.hostname.includes('gestaoonfleet.com.br');
   
   if (isExternalDomain) {
@@ -28,7 +29,14 @@ const verificarDominioPersonalizado = (req, res, next) => {
 router.use(verificarDominioPersonalizado);
 
 // Rota para página inicial dos postos através do domínio personalizado
-router.get('/', async (req, res) => {
+// Como esta rota pode ser acessada externamente, aplicamos autenticação opcional
+router.get('/', async (req: Request, res: Response) => {
+  // Tenta autenticar, mas não impede acesso se falhar
+  try {
+    await unifiedAuthMiddleware(req, res, () => {});
+  } catch (error) {
+    console.log('[PostosExternalRoutes] Acesso não autenticado permitido');
+  }
   try {
     // Buscar lista de postos disponíveis
     const query = `
@@ -56,7 +64,13 @@ router.get('/', async (req, res) => {
 });
 
 // Rota para acesso a um posto específico através do domínio personalizado
-router.get('/:posto', async (req, res) => {
+router.get('/:posto', async (req: Request, res: Response) => {
+  // Tenta autenticar, mas não impede acesso se falhar
+  try {
+    await unifiedAuthMiddleware(req, res, () => {});
+  } catch (error) {
+    console.log('[PostosExternalRoutes] Acesso não autenticado permitido para posto específico');
+  }
   try {
     const nomePosto = req.params.posto;
     

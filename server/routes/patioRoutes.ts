@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { isAuthenticated } from "../middleware/auth";
 import { db, pool } from "../db";
+import { unifiedAuthMiddleware, requireRoles } from "../utils/auth-utils.js";
 
 const router = Router();
 
@@ -169,7 +170,7 @@ async function getConsolidatedPatioData() {
  * Rota para obter todas as movimentações de pátio consolidadas
  * GET /api/patio/movimentacoes
  */
-router.get("/movimentacoes", async (req: Request, res: Response) => {
+router.get("/movimentacoes", unifiedAuthMiddleware, requireRoles(['admin', 'gestor', 'operador']), async (req: Request, res: Response) => {
   // Logging das informações de autenticação para diagnóstico
   console.log('[API Pátio] Headers autenticação:', {
     authorization: req.headers.authorization ? 'Present (redacted)' : 'Not present',
