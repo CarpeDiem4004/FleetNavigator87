@@ -1,14 +1,15 @@
 import { Router } from 'express';
 import { pool } from '../db';
 import { isAuthenticated } from '../middleware/auth';
+import { unifiedAuthMiddleware, requireRoles, adminRoleMiddleware } from '../utils/auth-utils.js';
 
 const router = Router();
 
 /**
  * Rota para buscar o histórico consolidado de abastecimentos de todos os postos
- * Requer autenticação de admin
+ * Requer autenticação e permissões adequadas via middleware unificado
  */
-router.get('/historico-consolidado', isAuthenticated, async (req, res) => {
+router.get('/historico-consolidado', unifiedAuthMiddleware, requireRoles(['admin', 'gestor']), async (req, res) => {
   try {
     // Com o middleware isAuthenticated, sabemos que o usuário está autenticado
     // Seja por sessão, token JWT ou Supabase
@@ -145,18 +146,12 @@ router.get('/historico-consolidado', isAuthenticated, async (req, res) => {
 
 /**
  * Rota para buscar estatísticas consolidadas de todos os postos
- * Requer autenticação de admin
+ * Requer autenticação e permissão de admin via middleware unificado
  */
-router.get('/estatisticas-consolidadas', isAuthenticated, async (req, res) => {
+router.get('/estatisticas-consolidadas', unifiedAuthMiddleware, adminRoleMiddleware, async (req, res) => {
   try {
-    // Verificar se o usuário é admin
+    // O adminRoleMiddleware já garante que o usuário é admin
     const user = req.user;
-    if (!user || user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Acesso negado. Esta função é exclusiva para administradores.'
-      });
-    }
     
     const { periodo = '30' } = req.query;
     const dias = parseInt(periodo as string) || 30;

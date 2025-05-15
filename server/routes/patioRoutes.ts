@@ -206,7 +206,7 @@ router.get("/movimentacoes", unifiedAuthMiddleware, requireRoles(['admin', 'gest
  * Rota para buscar movimentações por placa
  * GET /api/patio/veiculos/:placa
  */
-router.get("/veiculos/:placa", async (req: Request, res: Response) => {
+router.get("/veiculos/:placa", unifiedAuthMiddleware, requireRoles(['admin', 'gestor', 'operador']), async (req: Request, res: Response) => {
   // Logging das informações para diagnóstico
   console.log('[API Pátio/Veículos] Headers autenticação:', {
     authorization: req.headers.authorization ? 'Present (redacted)' : 'Not present',

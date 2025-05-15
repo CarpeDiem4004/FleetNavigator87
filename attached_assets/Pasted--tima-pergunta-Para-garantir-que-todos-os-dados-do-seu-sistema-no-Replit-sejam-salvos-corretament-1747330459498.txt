@@ -1,0 +1,100 @@
+Ótima pergunta. Para garantir que **todos os dados do seu sistema no Replit sejam salvos corretamente no Supabase**, você precisa seguir **boas práticas de integração com banco de dados externo**. Aqui está um **guia passo a passo** para isso:
+
+---
+
+### ✅ 1. **Garanta a conexão correta com Supabase**
+
+No seu projeto Replit (backend Node.js ou Express, por exemplo):
+
+1. Instale o cliente do Supabase:
+
+   ```bash
+   npm install @supabase/supabase-js
+   ```
+
+2. Crie um arquivo `supabaseClient.js` (ou similar):
+
+   ```js
+   import { createClient } from '@supabase/supabase-js';
+
+   const supabaseUrl = 'https://<sua-url>.supabase.co';
+   const supabaseKey = 'chave-anon-public-do-supabase';
+   export const supabase = createClient(supabaseUrl, supabaseKey);
+   ```
+
+> **⚠️ Dica:** Guarde a `supabaseKey` como uma variável de ambiente no Replit (`.env`) para não expor no código:
+
+```env
+SUPABASE_URL=https://<sua-url>.supabase.co
+SUPABASE_KEY=sua-chave-aqui
+```
+
+E altere o código:
+
+```js
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+```
+
+---
+
+### ✅ 2. **Garanta que TODAS as interações de dados usem Supabase**
+
+Em vez de salvar em variáveis locais, arrays, ou arquivos no Replit, **sempre que precisar gravar, editar ou consultar dados**, use Supabase diretamente. Por exemplo:
+
+```js
+// Inserir novo abastecimento
+const { data, error } = await supabase
+  .from('abastecimentos')
+  .insert([
+    { placa: 'ABC1234', km: 120000, motorista: 'João', tipo: 'Diesel' }
+  ]);
+```
+
+```js
+// Buscar dados
+const { data, error } = await supabase
+  .from('abastecimentos')
+  .select('*')
+  .eq('placa', 'ABC1234');
+```
+
+---
+
+### ✅ 3. **Nunca dependa apenas de estado local**
+
+Evite depender de variáveis JavaScript no servidor para guardar dados temporários que deveriam estar no banco. Exemplo do que **não fazer**:
+
+```js
+let abastecimentos = []; // ❌ dados perdidos ao reiniciar Replit
+abastecimentos.push(req.body); // perigoso!
+```
+
+---
+
+### ✅ 4. **Crie logs ou auditoria se necessário**
+
+Se quiser segurança extra, crie uma tabela `logs` no Supabase para armazenar registros de alterações, ou use `row_level_security` para proteger os dados por base/usuário.
+
+---
+
+### ✅ 5. **Testes frequentes**
+
+A cada novo módulo (ex: cadastro, checklist, abastecimento), teste:
+
+* Se o dado foi gravado corretamente no Supabase.
+* Se pode ser consultado mesmo após reiniciar o servidor Replit.
+* Se erros são tratados com mensagens claras no frontend/backend.
+
+---
+
+### ✅ 6. **Resumo prático para você adotar**
+
+* [x] Usar apenas Supabase para gravar/ler dados
+* [x] Armazenar `URL` e `KEY` como variáveis de ambiente
+* [x] Nunca guardar dados importantes em arrays ou arquivos do Replit
+* [x] Garantir tratamento de erro e confirmação de sucesso
+* [x] Opcional: logs/auditoria e RLS para segurança
+
+---
+
+Se quiser, posso revisar seu código atual no Replit e te mostrar onde garantir que tudo esteja sendo salvo no Supabase corretamente. Quer?
