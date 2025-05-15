@@ -57,3 +57,6 @@ export async function checkSupabaseConnection() {
     return false;
   }
 }
+
+// Alias para compatibilidade com código importando checkConnection
+export const checkConnection = checkSupabaseConnection;
