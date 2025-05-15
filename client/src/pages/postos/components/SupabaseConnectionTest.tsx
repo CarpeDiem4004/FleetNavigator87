@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, XCircle, AlertTriangle, RefreshCw } from 'lucide-react';
-import { checkConnection } from '@/lib/supabase-client';
+// Usando o proxy em vez do módulo direto para contornar problemas de importação
+import { checkConnection } from '@/lib/supabase-proxy';
 import { useToast } from '@/hooks/use-toast';
 
 export const SupabaseConnectionTest: React.FC = () => {

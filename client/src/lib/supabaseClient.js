@@ -65,6 +65,18 @@ export async function checkSupabaseConnection() {
 export const checkConnection = checkSupabaseConnection;
 
 /**
+ * Verifica todas as conexões do sistema
+ * Esta função é usada em testes de diagnóstico e para verificação de conectividade
+ */
+export const checkAllConnections = async () => {
+  const supabaseConnected = await checkSupabaseConnection();
+  return {
+    supabase: supabaseConnected,
+    baseConnection: supabaseConnected
+  };
+};
+
+/**
  * Busca registros de uma tabela com opções de filtro e ordenação
  */
 export async function fetchRecords(
