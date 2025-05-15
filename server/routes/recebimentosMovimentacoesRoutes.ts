@@ -7,6 +7,7 @@
 
 import express, { Request, Response } from 'express';
 import { Pool } from 'pg';
+import { unifiedAuthMiddleware, requireRoles, adminRoleMiddleware } from "../utils/auth-utils.js";
 
 const router = express.Router();
 const pool = new Pool({
@@ -51,8 +52,9 @@ router.use((req, res, next) => {
 /**
  * Rota para obter recebimentos de combustível de um posto específico
  * GET /api/recebimentos/:posto
+ * Requer autenticação através do middleware unificado
  */
-router.get('/recebimentos/:posto', async (req, res) => {
+router.get('/recebimentos/:posto', unifiedAuthMiddleware, async (req, res) => {
   try {
     const postoName = formatPostoName(req.params.posto);
     const tableName = `recebimentos_posto_${postoName.toLowerCase()}`;
@@ -101,8 +103,9 @@ router.get('/recebimentos/:posto', async (req, res) => {
 /**
  * Rota para registrar um novo recebimento de combustível
  * POST /api/recebimentos/:posto
+ * Requer autenticação e permissão de admin ou gestor via middleware unificado
  */
-router.post('/recebimentos/:posto', async (req, res) => {
+router.post('/recebimentos/:posto', unifiedAuthMiddleware, requireRoles(['admin', 'gestor']), async (req, res) => {
   try {
     const postoName = formatPostoName(req.params.posto);
     const tableName = `recebimentos_posto_${postoName.toLowerCase()}`;
@@ -236,8 +239,9 @@ router.post('/recebimentos/:posto', async (req, res) => {
 /**
  * Rota para obter movimentações de pátio de um posto específico
  * GET /api/movimentacoes-patio/:posto
+ * Requer autenticação via middleware unificado
  */
-router.get('/movimentacoes-patio/:posto', async (req, res) => {
+router.get('/movimentacoes-patio/:posto', unifiedAuthMiddleware, async (req, res) => {
   try {
     console.log(`Buscando movimentações de pátio para posto: ${req.params.posto}`);
     const postoName = formatPostoName(req.params.posto);
@@ -289,8 +293,9 @@ router.get('/movimentacoes-patio/:posto', async (req, res) => {
 /**
  * Rota para registrar uma nova movimentação de pátio
  * POST /api/movimentacoes-patio/:posto
+ * Requer autenticação e permissão de admin ou gestor via middleware unificado
  */
-router.post('/movimentacoes-patio/:posto', async (req, res) => {
+router.post('/movimentacoes-patio/:posto', unifiedAuthMiddleware, requireRoles(['admin', 'gestor']), async (req, res) => {
   try {
     const postoName = formatPostoName(req.params.posto);
     const tableName = `movimentacoes_patio_${postoName.toLowerCase()}`;

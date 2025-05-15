@@ -1,4 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
+// Importar o cliente Supabase do arquivo unificado
+import { getSupabaseClient, getSupabaseAdminClient, supabase, supabaseAdmin } from './supabaseClient';
 
 // Verificar se as variáveis de ambiente estão definidas
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -8,14 +9,6 @@ const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY;
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Variáveis de ambiente do Supabase não configuradas. Certifique-se de que VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY estão definidas.');
 }
-
-// Criar o cliente Supabase com a chave anônima (para uso no navegador)
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// Criar o cliente Supabase com a chave de serviço (para operações administrativas)
-export const supabaseAdmin = supabaseServiceKey 
-  ? createClient(supabaseUrl, supabaseServiceKey)
-  : null;
 
 // Informações de configuração para debugging
 console.log('Verificando variáveis de ambiente do Supabase:');
@@ -69,6 +62,9 @@ export const ensureBucketExists = async (bucketName: string): Promise<boolean> =
   console.log(`Verificando se o bucket ${bucketName} existe...`);
   
   try {
+    // Obter instância do cliente Supabase
+    const supabase = getSupabaseClient();
+    
     // Verificar se o bucket já existe
     const { data: buckets, error: listError } = await supabase.storage.listBuckets();
     
@@ -118,6 +114,9 @@ export const getBucketName = async (): Promise<string> => {
   console.log("Verificando buckets disponíveis...");
   
   try {
+    // Obter instância do cliente Supabase
+    const supabase = getSupabaseClient();
+    
     // Verificar se algum bucket existe
     const { data: buckets, error: listError } = await supabase.storage.listBuckets();
     
@@ -172,6 +171,10 @@ export const uploadFileToSupabase = async (file: File, path: string, bucketName?
     // Obter o nome do bucket a ser usado
     const bucket = bucketName || await getBucketName();
     console.log(`Usando bucket para upload: ${bucket}`);
+    
+    // Obter os clientes Supabase
+    const supabase = getSupabaseClient();
+    const supabaseAdmin = getSupabaseAdminClient();
     
     // Escolher o cliente Supabase para usar (admin se disponível, cliente normal caso contrário)
     const client = supabaseAdmin || supabase;
@@ -387,6 +390,9 @@ export const registerAttachmentMetadata = async (
   attachmentType: 'budget' | 'invoice' = 'budget'
 ) => {
   try {
+    // Obter cliente Supabase
+    const supabase = getSupabaseClient();
+    
     // Inserir registro de metadados do anexo no banco de dados
     const { data, error } = await supabase
       .from('budget_attachments')

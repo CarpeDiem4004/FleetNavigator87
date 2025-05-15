@@ -1,0 +1,377 @@
+ Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+zv @ index-DMeIxzRx.js:54
+ Verificando variáveis de ambiente do Supabase:
+ - VITE_SUPABASE_URL disponível: true
+ - VITE_SUPABASE_ANON_KEY disponível: true
+ - VITE_SUPABASE_SERVICE_KEY disponível: true
+ Supabase Service Key (primeiros 10 caracteres): eyJhbGciOi...
+ Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+zv @ index-DMeIxzRx.js:54
+ Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+zv @ index-DMeIxzRx.js:54
+ Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+zv @ index-DMeIxzRx.js:54
+ Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+zv @ index-DMeIxzRx.js:54
+ Verificando variáveis de ambiente do Supabase:
+ - VITE_SUPABASE_URL disponível: true
+ - VITE_SUPABASE_ANON_KEY disponível: true
+ - VITE_SUPABASE_SERVICE_KEY disponível: true
+ Supabase Service Key (primeiros 10 caracteres): eyJhbGciOi...
+ Configuração Supabase Cliente: Object
+ Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+zv @ index-DMeIxzRx.js:54
+ AuthContext Provider valores: Array(5)
+ Verificando estado de autenticação inicial...
+ Verificando autenticação tradicional...
+ Token JWT encontrado, tentando verificar...
+ Supabase: Usuário não autenticado, limpando dados
+ [FetchWithAuth] Token encontrado no localStorage
+ [FetchWithAuth] Token JWT inicializado com sucesso
+ AuthContext Provider valores: Array(5)
+ [FetchWithAuth] Substituindo fetch global para injetar JWT automaticamente
+ AuthContext Provider valores: Array(5)
+ Verificando estado de autenticação inicial...
+ Verificando autenticação tradicional...
+ Token JWT encontrado, tentando verificar...
+ [FetchWithAuth] Requisição para /api/hybrid/auth/verify Object
+ AuthContext Provider valores: Array(5)
+/api/hybrid/auth/verify:1  Failed to load resource: the server responded with a status of 401 ()
+ Token JWT inválido ou expirado
+h @ index-DMeIxzRx.js:724
+ Tentando verificar sessão tradicional...
+ [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/user
+window.fetch @ index-DMeIxzRx.js:856
+ [FetchWithAuth] Requisição para /api/user Object
+/api/user:1  Failed to load resource: the server responded with a status of 401 ()
+ Nenhuma sessão de usuário encontrada
+ Usuário não autenticado
+ Verificação de autenticação completa, isLoading=false
+ AuthContext Provider valores: Array(5)
+ [ProtectedRoute] Usuário não autenticado, redirecionando para login...
+ [ProtectedRoute] Verificando JWT...
+ [ProtectedRoute] Nenhum token JWT encontrado, tentando recuperação automática...
+ [AuthManager] Iniciando tentativa de recuperação automática
+ [AuthManager] Não foi possível recuperar automaticamente
+attemptAutoRecovery @ index-DMeIxzRx.js:855
+ [ProtectedRoute] Recuperação automática falhou
+w @ index-DMeIxzRx.js:856
+/login:1 [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) 
+/api/hybrid/auth/verify:1  Failed to load resource: the server responded with a status of 401 ()
+ Token JWT inválido ou expirado
+h @ index-DMeIxzRx.js:724
+ Tentando verificar sessão tradicional...
+ [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/user
+window.fetch @ index-DMeIxzRx.js:856
+ [FetchWithAuth] Requisição para /api/user Object
+/api/user:1  Failed to load resource: the server responded with a status of 401 ()
+ Nenhuma sessão de usuário encontrada
+ Usuário não autenticado
+ Verificação de autenticação completa, isLoading=false
+ Tentando fazer login com: admin@muricionfleet.com
+ [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/login
+window.fetch @ index-DMeIxzRx.js:856
+ [FetchWithAuth] Requisição para /api/login Object
+/api/login:1  Failed to load resource: the server responded with a status of 401 ()
+ Login API tradicional falhou, tentando via hook...
+x @ index-DMeIxzRx.js:851
+ Tentando fazer login com: admin@muricionfleet.com
+ Iniciando autenticação tradicional...
+ AuthContext Provider valores: Array(5)
+ [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/login
+window.fetch @ index-DMeIxzRx.js:856
+ [FetchWithAuth] Requisição para /api/login Object
+ Login tradicional bem-sucedido: Object
+ [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/user
+window.fetch @ index-DMeIxzRx.js:856
+ [FetchWithAuth] Requisição para /api/user Object
+ Sessão verificada e cookies persistidos com sucesso
+ Autenticação bem-sucedida. Método: Tradicional -> Supabase -> JWT
+ Sincronizando com Supabase após login tradicional...
+ AuthContext Provider valores: Array(5)
+ Verificando estado de autenticação inicial...
+ Verificando autenticação tradicional...
+ Tentando verificar sessão tradicional...
+ [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/user
+window.fetch @ index-DMeIxzRx.js:856
+ [FetchWithAuth] Requisição para /api/user Object
+ Sessão tradicional verificada com sucesso
+ Usuário autenticado via sessão: Object
+ Verificação de autenticação completa, isLoading=false
+ AuthContext Provider valores: Array(5)
+ Permission granted for admin user to route: / (admin role: admin, email: admin@muricionfleet.com)
+ [ProtectedRoute] Verificação de permissão para /: PERMITIDO
+ [ProtectedRoute] Verificando JWT...
+ [ProtectedRoute] Nenhum token JWT encontrado, tentando recuperação automática...
+ [AuthManager] Iniciando tentativa de recuperação automática
+ [apiRequest] Sem token JWT disponível para a requisição: /api/dashboard/kpis
+ [apiRequest] Enviando requisição GET para /api/dashboard/kpis 
+ [AuthManager] Não foi possível recuperar automaticamente
+attemptAutoRecovery @ index-DMeIxzRx.js:855
+ [ProtectedRoute] Recuperação automática falhou
+w @ index-DMeIxzRx.js:856
+ [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/dashboard/kpis
+window.fetch @ index-DMeIxzRx.js:856
+ [FetchWithAuth] Requisição para /api/dashboard/kpis Object
+ Permission granted for admin user to route: / (admin role: admin, email: admin@muricionfleet.com)
+ [ProtectedRoute] Verificação de permissão para /: PERMITIDO
+hvsmxxqkuyjhpsiojupb.supabase.co/auth/v1/signup:1  Failed to load resource: the server responded with a status of 400 ()
+ Registro Supabase realizado após login tradicional
+ Login hook completo, resultado: Object
+ AuthContext Provider valores: Array(5)
+ Permission granted for admin user to route: / (admin role: admin, email: admin@muricionfleet.com)
+ [ProtectedRoute] Verificação de permissão para /: PERMITIDO
+ Verificando estado de autenticação inicial...
+ Verificando autenticação tradicional...
+ Tentando verificar sessão tradicional...
+ Forçando sincronização de sessão com: admin@muricionfleet.com
+ [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/user
+window.fetch @ index-DMeIxzRx.js:856
+ [FetchWithAuth] Requisição para /api/user Object
+ [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/force-session
+window.fetch @ index-DMeIxzRx.js:856
+ [FetchWithAuth] Requisição para /api/force-session Object
+ API de dashboard não retornou dados no formato esperado, usando dados simulados.
+ Sincronização de emergência bem-sucedida!
+ AuthContext Provider valores: Array(5)
+ Permission granted for admin user to route: / (admin role: admin, email: admin@muricionfleet.com)
+ [ProtectedRoute] Verificação de permissão para /: PERMITIDO
+ Sessão tradicional verificada com sucesso
+ Usuário autenticado via sessão: Object
+ Verificação de autenticação completa, isLoading=false
+ AuthContext Provider valores: Array(5)
+ Permission granted for admin user to route: / (admin role: admin, email: admin@muricionfleet.com)
+ [ProtectedRoute] Verificação de permissão para /: PERMITIDO
+ [ProtectedRoute] Verificando JWT...
+ [ProtectedRoute] Nenhum token JWT encontrado, tentando recuperação automática...
+ [AuthManager] Iniciando tentativa de recuperação automática
+ [AuthManager] Não foi possível recuperar automaticamente
+attemptAutoRecovery @ index-DMeIxzRx.js:855
+ [ProtectedRoute] Recuperação automática falhou
+w @ index-DMeIxzRx.js:856
+ Permission granted for admin user to route: / (admin role: admin, email: admin@muricionfleet.com)
+ [ProtectedRoute] Verificação de permissão para /: PERMITIDO
+ AuthContext Provider valores: Array(5)
+ Permission granted for admin user to route: / (admin role: admin, email: admin@muricionfleet.com)
+ [ProtectedRoute] Verificação de permissão para /: PERMITIDO
+ AuthContext Provider valores: Array(5)
+ Permission granted for admin user to route: / (admin role: admin, email: admin@muricionfleet.com)
+ [ProtectedRoute] Verificação de permissão para /: PERMITIDO
+ Permission granted for admin user to route: /users (admin role: admin, email: admin@muricionfleet.com)
+ [ProtectedRoute] Verificação de permissão para /users: PERMITIDO
+ Formato dos dados recebidos: Object
+ Resposta da API de bases: undefined
+ Bases extraídas: Array(0)
+ UsersNew - Dados recebidos: Object
+ [QueryClient] Sem token JWT disponível para GET: /api/hybrid/users
+ [QueryClient] Enviando requisição GET para /api/hybrid/users
+ [QueryClient] Sem token JWT disponível para GET: /api/hybrid/bases
+ [QueryClient] Enviando requisição GET para /api/hybrid/bases
+ [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/hybrid/users
+window.fetch @ index-DMeIxzRx.js:856
+ [FetchWithAuth] Requisição para /api/hybrid/users Object
+ [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/hybrid/bases
+window.fetch @ index-DMeIxzRx.js:856
+ [FetchWithAuth] Requisição para /api/hybrid/bases Object
+ Formato dos dados recebidos: Object
+ Resposta da API de bases: Object
+ Bases extraídas: Array(1)
+ UsersNew - Dados recebidos: Object
+ Formato dos dados recebidos: Object
+ Resposta da API de bases: Object
+ Bases extraídas: Array(1)
+ UsersNew - Dados recebidos: Object
+ Status de usuários: Array(2)
+ Formato dos dados recebidos: Object
+ Resposta da API de bases: Object
+ Bases extraídas: Array(1)
+ UsersNew - Dados recebidos: Object
+ Status de usuários: Array(2)
+ Formato dos dados recebidos: Object
+ Resposta da API de bases: Object
+ Bases extraídas: Array(1)
+ UsersNew - Dados recebidos: Object
+ Status de usuários: Array(2)
+ [QueryClient] Sem token JWT disponível para GET: /api/hybrid/bases
+ [QueryClient] Enviando requisição GET para /api/hybrid/bases
+ [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/hybrid/bases
+window.fetch @ index-DMeIxzRx.js:856
+ [FetchWithAuth] Requisição para /api/hybrid/bases Object
+/users:1 [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq)
+/users:1 [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq)
+ Formato dos dados recebidos: Object
+ Resposta da API de bases: Object
+ Bases extraídas: Array(1)
+ UsersNew - Dados recebidos: Object
+ Status de usuários: Array(2)
+ Formato dos dados recebidos: Object
+ Resposta da API de bases: Object
+ Bases extraídas: Array(1)
+ UsersNew - Dados recebidos: Object
+ Status de usuários: Array(2)
+ Formato dos dados recebidos: Object
+ Resposta da API de bases: Object
+ Bases extraídas: Array(1)
+ UsersNew - Dados recebidos: Object
+ Status de usuários: Array(2)
+ Formato dos dados recebidos: Object
+ Resposta da API de bases: Object
+ Bases extraídas: Array(1)
+ UsersNew - Dados recebidos: Object
+ Status de usuários: Array(2)
+ Formato dos dados recebidos: Object
+ Resposta da API de bases: Object
+ Bases extraídas: Array(1)
+ UsersNew - Dados recebidos: Object
+ Status de usuários: Array(2)
+ Enviando dados de usuário: Object
+ AuthContext Provider valores: Array(5)
+ Permission granted for admin user to route: /users (admin role: admin, email: admin@muricionfleet.com)
+ [ProtectedRoute] Verificação de permissão para /users: PERMITIDO
+ Formato dos dados recebidos: Object
+ Resposta da API de bases: Object
+ Bases extraídas: Array(1)
+ UsersNew - Dados recebidos: Object
+ Status de usuários: Array(2)
+ [apiRequest] Sem token JWT disponível para a requisição: /api/hybrid/users
+ [apiRequest] Enviando requisição POST para /api/hybrid/users 
+ [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/hybrid/users
+window.fetch @ index-DMeIxzRx.js:856
+ [FetchWithAuth] Requisição para /api/hybrid/users Object
+ AuthContext Provider valores: Array(5)
+ Permission granted for admin user to route: /users (admin role: admin, email: admin@muricionfleet.com)
+ [ProtectedRoute] Verificação de permissão para /users: PERMITIDO
+ Formato dos dados recebidos: Object
+ Resposta da API de bases: Object
+ Bases extraídas: Array(1)
+ UsersNew - Dados recebidos: Object
+ Status de usuários: Array(2)
+ [QueryClient] Sem token JWT disponível para GET: /api/hybrid/users
+ [QueryClient] Enviando requisição GET para /api/hybrid/users
+ [QueryClient] Sem token JWT disponível para GET: /api/hybrid/bases
+ [QueryClient] Enviando requisição GET para /api/hybrid/bases
+ [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/hybrid/users
+window.fetch @ index-DMeIxzRx.js:856
+ [FetchWithAuth] Requisição para /api/hybrid/users Object
+ [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/hybrid/bases
+window.fetch @ index-DMeIxzRx.js:856
+ [FetchWithAuth] Requisição para /api/hybrid/bases Object
+ Formato dos dados recebidos: Object
+ Resposta da API de bases: Object
+index-DMeIxzRx.js:850 Bases extraídas: Array(1)
+index-DMeIxzRx.js:850 UsersNew - Dados recebidos: Object
+index-DMeIxzRx.js:850 Status de usuários: Array(3)
+index-DMeIxzRx.js:724 AuthContext Provider valores: Array(5)
+index-DMeIxzRx.js:851 Permission granted for admin user to route: /users (admin role: admin, email: admin@muricionfleet.com)
+index-DMeIxzRx.js:856 [ProtectedRoute] Verificação de permissão para /users: PERMITIDO
+index-DMeIxzRx.js:850 Formato dos dados recebidos: Object
+index-DMeIxzRx.js:850 Resposta da API de bases: Object
+index-DMeIxzRx.js:850 Bases extraídas: Array(1)
+index-DMeIxzRx.js:850 UsersNew - Dados recebidos: Object
+index-DMeIxzRx.js:850 Status de usuários: Array(3)
+index-DMeIxzRx.js:724 AuthContext Provider valores: Array(5)
+index-DMeIxzRx.js:851 Permission granted for admin user to route: /users (admin role: admin, email: admin@muricionfleet.com)
+index-DMeIxzRx.js:856 [ProtectedRoute] Verificação de permissão para /users: PERMITIDO
+index-DMeIxzRx.js:850 Formato dos dados recebidos: Object
+index-DMeIxzRx.js:850 Resposta da API de bases: Object
+index-DMeIxzRx.js:850 Bases extraídas: Array(1)
+index-DMeIxzRx.js:850 UsersNew - Dados recebidos: Object
+index-DMeIxzRx.js:850 Status de usuários: Array(3)
+index-DMeIxzRx.js:851 Permission granted for admin user to route: / (admin role: admin, email: admin@muricionfleet.com)
+index-DMeIxzRx.js:856 [ProtectedRoute] Verificação de permissão para /: PERMITIDO
+index-DMeIxzRx.js:851 Permission granted for admin user to route: /posto/campinas_v2 (admin role: admin, email: admin@muricionfleet.com)
+index-DMeIxzRx.js:856 [ProtectedRoute] Verificação de permissão para /posto/campinas_v2: PERMITIDO
+index-DMeIxzRx.js:856 TanqueConfigDialog - Atualizando valores: Object
+index-DMeIxzRx.js:856 [FETCH] Iniciando atualização de dados para: campinas_v2
+index-DMeIxzRx.js:856 Configuração carregada do localStorage: Object
+index-DMeIxzRx.js:856 Buscando configurações de tanque para: Campinas_v2
+index-DMeIxzRx.js:983 Carregando histórico do posto posto campinas v2, refreshTrigger: 0
+index-DMeIxzRx.js:856 [FETCH] Buscando movimentações de pátio para o posto: campinas_v2
+index-DMeIxzRx.js:856 [FETCH] Usando nome capitalizado: Campinas_v2
+index-DMeIxzRx.js:856 TanqueConfigDialog - Atualizando valores: Object
+index-DMeIxzRx.js:54 [apiRequest] Sem token JWT disponível para a requisição: /api/precos-combustivel/Diesel
+index-DMeIxzRx.js:54 [apiRequest] Enviando requisição GET para /api/precos-combustivel/Diesel 
+index-DMeIxzRx.js:856 [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/configuracao-tanques/Campinas_v2
+window.fetch @ index-DMeIxzRx.js:856
+index-DMeIxzRx.js:856 [FetchWithAuth] Requisição para /api/configuracao-tanques/Campinas_v2 Object
+index-DMeIxzRx.js:856 [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/movimentacoes-patio/campinas_v2
+window.fetch @ index-DMeIxzRx.js:856
+index-DMeIxzRx.js:856 [FetchWithAuth] Requisição para /api/movimentacoes-patio/campinas_v2 Object
+index-DMeIxzRx.js:856 [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/precos-combustivel/Diesel
+window.fetch @ index-DMeIxzRx.js:856
+index-DMeIxzRx.js:856 [FetchWithAuth] Requisição para /api/precos-combustivel/Diesel Object
+/api/precos-combustivel/Diesel:1 
+            
+            
+           Failed to load resource: the server responded with a status of 500 ()
+index-DMeIxzRx.js:856 Erro ao buscar preços de combustível: Error: 500: {"success":false,"message":"Erro ao buscar preço para combustível Diesel","error":"error: relation \"preco_combustivel\" does not exist"}
+    at TH (index-DMeIxzRx.js:54:55248)
+    at async st (index-DMeIxzRx.js:54:56869)
+    at async m (index-DMeIxzRx.js:856:43379)
+m @ index-DMeIxzRx.js:856
+index-DMeIxzRx.js:724 AuthContext Provider valores: Array(5)
+index-DMeIxzRx.js:851 Permission granted for admin user to route: /posto/campinas_v2 (admin role: admin, email: admin@muricionfleet.com)
+index-DMeIxzRx.js:856 [ProtectedRoute] Verificação de permissão para /posto/campinas_v2: PERMITIDO
+index-DMeIxzRx.js:856 [FETCH] Movimentações recuperadas: 0
+index-DMeIxzRx.js:856 Configuração de tanques obtida via API: Object
+index-DMeIxzRx.js:856 [FETCH] Buscando abastecimentos para o posto: Campinas_v2
+index-DMeIxzRx.js:856 TanqueConfigDialog - Atualizando valores: Object
+index-DMeIxzRx.js:856 [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/diagnostico/abastecimentos/campinas_v2
+window.fetch @ index-DMeIxzRx.js:856
+index-DMeIxzRx.js:856 [FetchWithAuth] Requisição para /api/diagnostico/abastecimentos/campinas_v2 Object
+index-DMeIxzRx.js:856 [FETCH] Dados recuperados via API local: 0
+index-DMeIxzRx.js:856 [FETCH] Buscando recebimentos para o posto: Campinas_v2
+index-DMeIxzRx.js:856 [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/recebimentos/campinas_v2
+window.fetch @ index-DMeIxzRx.js:856
+index-DMeIxzRx.js:856 [FetchWithAuth] Requisição para /api/recebimentos/campinas_v2 Object
+/api/historico-direto/posto%20campinas%20v2?t=1747331163796:1 
+            
+            
+           Failed to load resource: the server responded with a status of 404 ()
+index-DMeIxzRx.js:983 Erro ao carregar histórico: Zt
+k @ index-DMeIxzRx.js:983
+index-DMeIxzRx.js:983 Tentando rota alternativa...
+index-DMeIxzRx.js:856 [FETCH] Erro ao buscar recebimentos: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+Te @ index-DMeIxzRx.js:856
+index-DMeIxzRx.js:724 AuthContext Provider valores: Array(5)
+index-DMeIxzRx.js:851 Permission granted for admin user to route: /posto/campinas_v2 (admin role: admin, email: admin@muricionfleet.com)
+index-DMeIxzRx.js:856 [ProtectedRoute] Verificação de permissão para /posto/campinas_v2: PERMITIDO
+index-DMeIxzRx.js:856 Atualizando dados automaticamente...
+index-DMeIxzRx.js:856 [FETCH] Iniciando atualização de dados para: campinas_v2
+index-DMeIxzRx.js:856 Configuração carregada do localStorage: {id: 6, posto: 'Campinas_v2', diesel_capacidade: '20000', diesel_nivel: '15000', arla_capacidade: '1000', …}
+index-DMeIxzRx.js:856 Buscando configurações de tanque para: Campinas_v2
+index-DMeIxzRx.js:856 TanqueConfigDialog - Atualizando valores: {dieselNivel: '15000', dieselCapacidade: '20000', dieselValorLitro: 5, arlaNivel: '750', arlaCapacidade: '1000', …}
+index-DMeIxzRx.js:856 [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/configuracao-tanques/Campinas_v2
+window.fetch @ index-DMeIxzRx.js:856
+await in window.fetch
+R @ index-DMeIxzRx.js:856
+Se @ index-DMeIxzRx.js:856
+(anonymous) @ index-DMeIxzRx.js:856
+index-DMeIxzRx.js:856 [FetchWithAuth] Requisição para /api/configuracao-tanques/Campinas_v2 {hasAuthHeader: false, credentials: 'include'}
+index-DMeIxzRx.js:856 Configuração de tanques obtida via API: {id: 6, posto: 'Campinas_v2', diesel_capacidade: '20000', diesel_nivel: '15000', arla_capacidade: '1000', …}
+index-DMeIxzRx.js:856 [FETCH] Buscando abastecimentos para o posto: Campinas_v2
+index-DMeIxzRx.js:856 TanqueConfigDialog - Atualizando valores: {dieselNivel: 15000, dieselCapacidade: 20000, dieselValorLitro: 5, arlaNivel: 750, arlaCapacidade: 1000, …}
+index-DMeIxzRx.js:856 [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/diagnostico/abastecimentos/campinas_v2
+window.fetch @ index-DMeIxzRx.js:856
+await in window.fetch
+V @ index-DMeIxzRx.js:856
+Se @ index-DMeIxzRx.js:856
+await in Se
+(anonymous) @ index-DMeIxzRx.js:856
+index-DMeIxzRx.js:856 [FetchWithAuth] Requisição para /api/diagnostico/abastecimentos/campinas_v2 {hasAuthHeader: false, credentials: 'include'}
+index-DMeIxzRx.js:856 [FETCH] Dados recuperados via API local: 0
+index-DMeIxzRx.js:856 [FETCH] Buscando recebimentos para o posto: Campinas_v2
+index-DMeIxzRx.js:856 [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/recebimentos/campinas_v2
+window.fetch @ index-DMeIxzRx.js:856
+await in window.fetch
+Te @ index-DMeIxzRx.js:856
+Se @ index-DMeIxzRx.js:856
+await in Se
+(anonymous) @ index-DMeIxzRx.js:856
+index-DMeIxzRx.js:856 [FetchWithAuth] Requisição para /api/recebimentos/campinas_v2 {hasAuthHeader: false, credentials: 'include'}
+index-DMeIxzRx.js:856 [FETCH] Erro ao buscar recebimentos: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+Te @ index-DMeIxzRx.js:856
+await in Te
+Se @ index-DMeIxzRx.js:856
+await in Se
+(anonymous) @ index-DMeIxzRx.js:856

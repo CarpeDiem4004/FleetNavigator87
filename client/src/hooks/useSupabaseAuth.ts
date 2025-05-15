@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
+import { Session, User, AuthChangeEvent, SupabaseClient } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -39,6 +39,8 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
       try {
         setLoading(true);
         console.log("[useSupabaseAuth] Verificando sessão Supabase...");
+        
+        // Usar o cliente Supabase global que já foi importado
         
         // Tentar restaurar a sessão do localStorage primeiro
         const savedSession = localStorage.getItem("supabase.auth.token");
@@ -106,6 +108,8 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
       }
     };
 
+    // Usar o cliente Supabase global que foi importado
+
     // Obter a sessão inicial
     setSupabaseSession();
 
@@ -141,6 +145,9 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
       setLoading(true);
       setError(null);
       
+      // Usar a instância global do supabase
+      // Não chamar getSupabaseClient() para evitar múltiplas instâncias
+      
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -172,6 +179,9 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
     try {
       setLoading(true);
       setError(null);
+      
+      // Usar a instância global do supabase
+      // Não chamar getSupabaseClient() para evitar múltiplas instâncias
       
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
@@ -223,6 +233,9 @@ export function useSupabaseAuth(): UseSupabaseAuthReturn {
   const signOut = async () => {
     try {
       setLoading(true);
+      
+      // Usar a instância global do supabase
+      // Não chamar getSupabaseClient() para evitar múltiplas instâncias
       
       await supabase.auth.signOut();
       
