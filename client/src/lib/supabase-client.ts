@@ -10,8 +10,47 @@
 // Re-exportar tudo do arquivo principal consolidado
 export * from './supabaseClient';
 
+// Exportações nomeadas explícitas para compatibilidade com importações antigas
+import { 
+  supabase,
+  supabaseAdmin,
+  getSupabaseClient,
+  getSupabaseAdminClient,
+  checkConnection,
+  checkSupabaseConnection,
+  checkAllConnections,
+  fetchRecords,
+  insertRecord,
+  insertData,
+  updateData,
+  deleteRecord,
+  deleteRecords,
+  withRetry,
+  createSupabaseClient,
+  createSupabaseAdmin
+} from './supabaseClient';
+
+// Re-exportar explicitamente para compatibilidade
+export {
+  supabase,
+  supabaseAdmin,
+  getSupabaseClient,
+  getSupabaseAdminClient,
+  checkConnection,
+  checkSupabaseConnection,
+  checkAllConnections,
+  fetchRecords,
+  insertRecord,
+  insertData,
+  updateData,
+  deleteRecord,
+  deleteRecords,
+  withRetry,
+  createSupabaseClient,
+  createSupabaseAdmin
+};
+
 // Exportação padrão para compatibilidade
-import { supabase } from './supabaseClient';
 export default supabase;
 
 // Aviso de depreciação no console

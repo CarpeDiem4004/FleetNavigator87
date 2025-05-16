@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { RefreshCw, Server, Globe } from 'lucide-react';
-import { checkAllConnections } from '@/lib/supabase-client';
+import { supabase } from '@/lib/supabaseClient';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { useAuth } from '@/context/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

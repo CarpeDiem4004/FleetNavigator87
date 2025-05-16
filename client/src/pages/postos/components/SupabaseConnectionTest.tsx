@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, XCircle, AlertTriangle, RefreshCw } from 'lucide-react';
-import { checkConnection } from '@/lib/supabase-client';
+import { supabase } from '@/lib/supabaseClient';
 import { useToast } from '@/hooks/use-toast';
 
 export const SupabaseConnectionTest: React.FC = () => {
@@ -13,7 +13,11 @@ export const SupabaseConnectionTest: React.FC = () => {
   const testConnection = async () => {
     try {
       setIsLoading(true);
-      const connected = await checkConnection();
+      
+      // Teste direto com o cliente Supabase
+      const { error } = await supabase.from('users').select('count', { count: 'exact', head: true });
+      const connected = !error;
+      
       setIsConnected(connected);
       
       if (connected) {
@@ -23,6 +27,7 @@ export const SupabaseConnectionTest: React.FC = () => {
           variant: 'default',
         });
       } else {
+        console.error('Erro na conexão:', error);
         toast({
           title: 'Falha na conexão',
           description: 'Não foi possível conectar ao Supabase. Verifique sua internet ou tente novamente mais tarde.',
