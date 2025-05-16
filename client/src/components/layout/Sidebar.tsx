@@ -247,6 +247,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     ]},
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
     { name: 'Line Hall', href: '/line-hall-shopee', icon: Map },
+    { name: 'Parceiros de Guincho', href: '/fleet-management/towing-partners', icon: Truck },
     // Submenu para Bases com opções específicas para Campinas
     { name: 'Bases', href: '#', icon: Warehouse, subItems: baseItems },
     { name: 'Usuários', href: '/users', icon: Users },
@@ -284,6 +285,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList }
     ]},
     { name: 'Line Hall', href: '/line-hall-shopee', icon: Map },
+    { name: 'Parceiros de Guincho', href: '/fleet-management/towing-partners', icon: Truck },
     { name: 'Análise da Operação', href: '/fleet-management/operational-analysis', icon: BarChart4 },
     { name: 'Visão Geral da Frota', href: '/fleet-management/fleet-overview', icon: Activity },
     { name: 'Veículos Parados', href: '/fleet-management/downtime-analysis', icon: ChevronsDown },
