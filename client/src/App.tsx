@@ -50,7 +50,7 @@ import HistoricoPatioPage from "@/pages/postos/HistoricoPatioPage";
 import HistoricoConsolidado from "@/pages/postos/HistoricoConsolidado";
 import PostosVisaoGeralPage from "@/pages/postos/PostosVisaoGeralPage";
 import PostoDetalhesPage from "@/pages/postos/PostoDetalhesPage";
-import SupabaseDiagnostico from "@/pages/diagnostico/SupabaseDiagnostico";
+import SupabaseDiagnostico from "@/pages/diagnostico/SupabaseDiagnosticoSimples";
 import SupabaseConsole from "@/pages/diagnostico/SupabaseConsole";
 import ComparacaoEsquemas from "@/pages/diagnostico/ComparacaoEsquemas";
 import SincronizarTabelasPage from "@/pages/diagnostico/sincronizar-tabelas";
