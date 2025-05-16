@@ -64,7 +64,7 @@ const formSchema = z.object({
   notes: z.string().max(500, { message: 'Observações devem ter no máximo 500 caracteres' }).optional().or(z.literal('')),
   coverage_radius: z.coerce.number().min(1, { message: 'Raio de atendimento deve ser maior que 0' }).optional(),
   has_insurance: z.boolean().default(false),
-  accepts_24h: z.boolean().default(false),
+  available_24h: z.boolean().default(false),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -145,7 +145,8 @@ const NewTowingPartnerPage: React.FC = () => {
       status: 'pendente',
       notes: '',
       has_insurance: false,
-      accepts_24h: false,
+      available_24h: false,
+      coverage_radius: undefined,
     }
   });
   
@@ -577,7 +578,7 @@ const NewTowingPartnerPage: React.FC = () => {
                 
                 <FormField
                   control={form.control}
-                  name="accepts_24h"
+                  name="available_24h"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                       <FormControl>

@@ -31,6 +31,12 @@ interface TowingPartner {
   total_requests?: number;
   completed_requests?: number;
   cost_per_km?: number;
+  available_24h?: boolean;
+  has_insurance?: boolean;
+  coverage_radius?: number;
+  notes?: string;
+  address?: string;
+  company_document?: string;
 }
 
 interface TowingRequest {
@@ -253,6 +259,32 @@ const TowingPartnerDetailPage: React.FC = () => {
                       : <span className="text-muted-foreground text-sm">Valor não informado</span>
                     }
                   </span>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium mb-2">Informações adicionais</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    {partner.available_24h 
+                      ? <CheckCircle2 size={16} className="text-green-600" />
+                      : <XCircle size={16} className="text-red-500" />
+                    }
+                    <span className="text-sm">Atendimento 24 horas</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {partner.has_insurance 
+                      ? <CheckCircle2 size={16} className="text-green-600" />
+                      : <XCircle size={16} className="text-red-500" />
+                    }
+                    <span className="text-sm">Seguro para carga e veículos</span>
+                  </div>
+                  {partner.coverage_radius && (
+                    <div className="flex items-center gap-2">
+                      <MapPin size={16} className="text-primary" />
+                      <span className="text-sm">Raio de cobertura: {partner.coverage_radius} km</span>
+                    </div>
+                  )}
                 </div>
               </div>
               
