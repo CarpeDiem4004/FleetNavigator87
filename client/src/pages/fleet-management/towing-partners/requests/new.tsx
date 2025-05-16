@@ -283,7 +283,7 @@ const NewTowingRequestPage: React.FC = () => {
                       <FormLabel>Tipo de Serviço</FormLabel>
                       <Select 
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value || undefined}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -311,7 +311,7 @@ const NewTowingRequestPage: React.FC = () => {
                       <FormLabel>Urgência</FormLabel>
                       <Select 
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value || undefined}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -400,7 +400,7 @@ const NewTowingRequestPage: React.FC = () => {
                       ) : partners && partners.length > 0 ? (
                         <Select 
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value || undefined}
                         >
                           <FormControl>
                             <SelectTrigger>
