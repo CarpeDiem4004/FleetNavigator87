@@ -204,8 +204,7 @@ router.get('/requests', authenticateJWT, async (req, res) => {
       .from('towing_requests')
       .select(`
         *,
-        towing_partners(id, name, phone),
-        users(id, name)
+        towing_partners(id, name, phone)
       `)
       .order('request_date', { ascending: false });
       
@@ -237,8 +236,7 @@ router.get('/requests/:id', authenticateJWT, async (req, res) => {
       .from('towing_requests')
       .select(`
         *,
-        towing_partners(id, name, phone, email, city, region),
-        users(id, name, email)
+        towing_partners(id, name, phone, email, city, region)
       `)
       .eq('id', id)
       .single();

@@ -135,13 +135,14 @@ const TowingPartnerDetailPage: React.FC = () => {
     error,
   } = useQuery<TowingPartner>({
     queryKey: ['/api/towing/partners', id],
-    enabled: !!user && !!id,
+    enabled: !!id,
   });
   
   // Busca as solicitações para este parceiro
   const {
     data: requests,
     isLoading: isRequestsLoading,
+    error: requestsError,
   } = useQuery<TowingRequest[]>({
     queryKey: ['/api/towing/requests', { partnerId: id }],
     enabled: !!user && !!id,
