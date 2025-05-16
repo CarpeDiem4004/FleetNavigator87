@@ -38,7 +38,7 @@ import {
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileSpreadsheet, Plus, Search, FileEdit, Trash2, Download as FileDownload, Upload as FileUp, Calendar, Truck, Wrench as Tool, Clock, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
-import { createSupabaseClient } from '@/lib/supabase-client';
+import { createSupabaseClient } from '@/lib/supabase-compat';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

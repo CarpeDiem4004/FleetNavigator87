@@ -23,7 +23,7 @@ import { Plus, Save, ArrowLeft, Trash2 } from 'lucide-react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
-import { createSupabaseClient } from '@/lib/supabase-client';
+import { createSupabaseClient } from '@/lib/supabase-compat';
 
 // Interface para o modelo de pneus
 interface Tire {

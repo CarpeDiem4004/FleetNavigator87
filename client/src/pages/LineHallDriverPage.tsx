@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase-client';
+import { supabase } from '@/lib/supabase-compat';
 import { useLocation } from 'wouter';
 import {
   Card,
