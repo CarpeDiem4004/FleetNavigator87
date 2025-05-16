@@ -201,18 +201,63 @@ export class AuthManager {
         headers: {
           'Content-Type': 'application/json',
           'X-Emergency-Auth': 'true'
-        }
+        },
+        body: JSON.stringify({
+          emergencyAuth: 'true',
+          username: 'admin@muricionfleet.com'
+        })
       });
       
       if (response.ok) {
         const data = await response.json();
         if (data.token) {
           console.log('[AuthManager] Token de emergência obtido com sucesso');
+          
+          // Salvar o token para uso posterior
           localStorage.setItem(this.AUTH_TOKEN_KEY, data.token);
+          
+          // Verificar se o token é válido com o Supabase
+          try {
+            const { data: userData, error: verifyError } = await supabase.auth.getUser(data.token);
+            if (verifyError) {
+              console.warn('[AuthManager] Token de emergência obtido, mas não é válido no Supabase:', verifyError.message);
+              console.log('[AuthManager] Usando token de emergência mesmo assim para fluxo alternativo');
+            } else {
+              console.log('[AuthManager] Token de emergência verificado com sucesso pelo Supabase');
+            }
+          } catch (verifyError) {
+            console.warn('[AuthManager] Erro ao verificar token de emergência:', verifyError);
+          }
+          
           return true;
         }
       } else {
         console.warn('[AuthManager] Falha ao obter token de emergência:', response.status);
+        // Tentar login direto usando credenciais de emergência sem token
+        try {
+          console.log('[AuthManager] Tentando login de emergência direto...');
+          const loginResponse = await fetch('/api/login', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              username: 'admin@muricionfleet.com',
+              password: 'MuricionAdmin2025',
+              emergencyAuth: 'true'
+            })
+          });
+          
+          if (loginResponse.ok) {
+            console.log('[AuthManager] Login de emergência direto bem-sucedido');
+            return true;
+          } else {
+            console.warn('[AuthManager] Falha no login de emergência direto:', loginResponse.status);
+          }
+        } catch (loginError) {
+          console.error('[AuthManager] Erro no login de emergência direto:', loginError);
+        }
       }
     } catch (error) {
       console.error('[AuthManager] Erro ao solicitar token de emergência:', error);

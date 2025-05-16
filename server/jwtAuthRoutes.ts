@@ -10,16 +10,21 @@ const router = Router();
 
 // Configuração do Supabase
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.VITE_SUPABASE_SERVICE_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_KEY || '';
 
-// JWT Secret (deve ser o mesmo usado para validar os tokens)
-// Usamos a mesma chave ANON do Supabase para garantir compatibilidade
-const JWT_SECRET = process.env.JWT_SECRET || process.env.SUPABASE_ANON_KEY || 'seu_jwt_secret_dev';
+// Criar dois clientes: um com a chave anônima e outro com a chave de serviço
+const supabaseAnon = createClient(supabaseUrl, supabaseAnonKey);
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+// JWT Secret - IMPORTANTE: Devemos usar a chave ANON do Supabase
+// O Supabase espera que os tokens sejam assinados com a chave ANON
+const JWT_SECRET = process.env.VITE_SUPABASE_ANON_KEY || 'seu_jwt_secret_dev';
 const JWT_EXPIRY = '7d'; // 7 dias
 
 // Log para debug - não mostra a chave completa
-console.log('[JWTAuth] Usando JWT_SECRET (primeiros 15 caracteres):', JWT_SECRET.substring(0, 15) + '...');
+console.log('[JWTAuth] Usando JWT_SECRET (primeiros 10 caracteres):', 
+  JWT_SECRET ? JWT_SECRET.substring(0, 10) + '...' : 'INDEFINIDA');
 
 /**
  * Rota para gerar um token JWT a partir de uma sessão existente
