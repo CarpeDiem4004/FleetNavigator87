@@ -14,8 +14,12 @@ const supabaseKey = process.env.VITE_SUPABASE_SERVICE_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // JWT Secret (deve ser o mesmo usado para validar os tokens)
-const JWT_SECRET = process.env.JWT_SECRET || 'seu_jwt_secret_dev';
+// Usamos a mesma chave ANON do Supabase para garantir compatibilidade
+const JWT_SECRET = process.env.JWT_SECRET || process.env.SUPABASE_ANON_KEY || 'seu_jwt_secret_dev';
 const JWT_EXPIRY = '7d'; // 7 dias
+
+// Log para debug - não mostra a chave completa
+console.log('[JWTAuth] Usando JWT_SECRET (primeiros 15 caracteres):', JWT_SECRET.substring(0, 15) + '...');
 
 /**
  * Rota para gerar um token JWT a partir de uma sessão existente

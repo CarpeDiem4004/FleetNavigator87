@@ -189,23 +189,22 @@ export default function PartsInventory() {
   });
 
   // Filtrar peças com base no termo de busca - usando useMemo apenas para calcular o resultado filtrado
-  const calculatedFilteredParts = React.useMemo(() => {
+  // e atribuindo diretamente ao estado sem usar useEffect para evitar o loop infinito
+  React.useEffect(() => {
     if (!parts || parts.length === 0) {
-      return [];
+      setFilteredParts([]);
+      return;
     }
     
-    return parts.filter(part => 
+    const filtered = parts.filter(part => 
       part.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
       part.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (part.categoria && part.categoria.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (part.fabricante && part.fabricante.toLowerCase().includes(searchTerm.toLowerCase()))
     );
+    
+    setFilteredParts(filtered);
   }, [searchTerm, parts]);
-  
-  // Atualiza o estado apenas quando os resultados calculados mudam
-  useEffect(() => {
-    setFilteredParts(calculatedFilteredParts);
-  }, [calculatedFilteredParts]);
 
   // Função para submeter movimentação de estoque
   const onSubmitMovement = async (data: z.infer<typeof movimentacaoEstoqueSchema>) => {

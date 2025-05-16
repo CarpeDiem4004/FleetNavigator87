@@ -1,0 +1,88 @@
+index.tsx:207 Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.
+    at PartsInventory (https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/pages/fleet-management/parts-inventory/index.tsx:82:21)
+    at ProtectedRoute (https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/components/permission/ProtectedRoute.tsx:206:34)
+    at Switch (https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=bfaf285d:247:17)
+    at AuthProvider (https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/context/AuthContext.tsx:42:32)
+    at SupabaseAuthProvider (https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/context/SupabaseAuthContext.tsx:32:40)
+    at QueryClientProvider (https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit…rkspace/node_modules/.vite/deps/@tanstack_react-query.js?v=bfaf285d:2805:3)
+    at App (https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/src/App.tsx?v=nCHHWEQIpnea6EuJp624_:132:3)
+
+
+O ChatGPT disse:
+Esse erro aqui:
+
+vbnet
+Copiar
+Editar
+Warning: Maximum update depth exceeded.
+This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.
+é um erro clássico de loop infinito em setState() dentro do React.
+
+✅ O que significa isso?
+Esse erro aparece quando um componente está chamando setState() (ou algo que provoca uma atualização de estado) dentro de um useEffect mal configurado, geralmente assim:
+
+tsx
+Copiar
+Editar
+useEffect(() => {
+  setState(algumaCoisa); // ← isso roda a cada render se não tiver dependência
+});
+Ou então:
+
+tsx
+Copiar
+Editar
+useEffect(() => {
+  setState(outroValor); // ← mas `outroValor` muda toda vez → novo render → loop
+}, [outroValor]);
+🎯 Onde está o problema?
+O erro está no componente PartsInventory, especificamente nesta linha:
+
+java
+Copiar
+Editar
+at PartsInventory (index.tsx:82:21)
+✅ Como corrigir
+1. Verifique todos os useEffect em PartsInventory
+Procure algo assim:
+
+tsx
+Copiar
+Editar
+useEffect(() => {
+  setState(...); // ← Causa loop
+});
+e corrija adicionando um array de dependências correto, ou mesmo vazio:
+
+tsx
+Copiar
+Editar
+useEffect(() => {
+  setState(...); // ← Só executa uma vez
+}, []);
+2. Evite usar valores calculados ou estados que mudam dentro do próprio useEffect como dependência.
+Isso causa loops assim:
+
+tsx
+Copiar
+Editar
+useEffect(() => {
+  setValor(valor + 1); // ← Isso muda `valor`, que está na dependência...
+}, [valor]); // ← ...o que reexecuta o effect, criando um ciclo infinito
+Exemplo de correção típica
+tsx
+Copiar
+Editar
+// ❌ ERRADO
+useEffect(() => {
+  setData(fetchData());
+});
+
+// ✅ CERTO
+useEffect(() => {
+  const load = async () => {
+    const dados = await fetchData();
+    setData(dados);
+  };
+  load();
+}, []); // ← assim executa só uma vez
