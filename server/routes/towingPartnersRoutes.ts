@@ -90,7 +90,7 @@ router.get('/partners/:id', authenticateJWT, async (req, res) => {
  */
 router.post('/partners', authenticateJWT, verifyFleetManager, async (req, res) => {
   try {
-    const partnerData = req.body;
+    let partnerData = req.body;
     
     // Validação simples
     if (!partnerData.name || !partnerData.phone || !partnerData.city || !partnerData.region) {
@@ -100,15 +100,46 @@ router.post('/partners', authenticateJWT, verifyFleetManager, async (req, res) =
       });
     }
 
-    const { data, error } = await supabase
-      .from('towing_partners')
-      .insert([partnerData])
-      .select()
-      .single();
+    // Removendo campos que podem causar problemas com esquema do banco
+    if (partnerData.cost_per_km !== undefined && partnerData.cost_per_km !== null) {
+      // Convertendo para número para garantir formato correto
+      const costPerKm = Number(partnerData.cost_per_km);
+      if (!isNaN(costPerKm)) {
+        partnerData.cost_per_km = costPerKm;
+      } else {
+        delete partnerData.cost_per_km;
+      }
+    }
 
-    if (error) throw error;
+    try {
+      const { data, error } = await supabase
+        .from('towing_partners')
+        .insert([partnerData])
+        .select()
+        .single();
 
-    res.status(201).json(data);
+      if (error) throw error;
+
+      res.status(201).json(data);
+    } catch (supabaseError: any) {
+      // Verificar se o erro está relacionado ao campo cost_per_km
+      if (supabaseError.message && supabaseError.message.includes('cost_per_km')) {
+        // Remover o campo problemático e tentar novamente
+        delete partnerData.cost_per_km;
+        
+        const { data, error } = await supabase
+          .from('towing_partners')
+          .insert([partnerData])
+          .select()
+          .single();
+          
+        if (error) throw error;
+        
+        res.status(201).json(data);
+      } else {
+        throw supabaseError;
+      }
+    }
   } catch (error: any) {
     console.error('Erro ao criar parceiro de guincho:', error);
     res.status(500).json({ error: 'Erro ao criar parceiro de guincho', details: error.message });
@@ -123,7 +154,7 @@ router.post('/partners', authenticateJWT, verifyFleetManager, async (req, res) =
 router.put('/partners/:id', authenticateJWT, verifyFleetManager, async (req, res) => {
   try {
     const { id } = req.params;
-    const partnerData = req.body;
+    let partnerData = req.body;
     
     // Validação simples
     if (!partnerData.name || !partnerData.phone || !partnerData.city || !partnerData.region) {
@@ -133,20 +164,55 @@ router.put('/partners/:id', authenticateJWT, verifyFleetManager, async (req, res
       });
     }
 
-    const { data, error } = await supabase
-      .from('towing_partners')
-      .update(partnerData)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    
-    if (!data) {
-      return res.status(404).json({ error: 'Parceiro de guincho não encontrado' });
+    // Tratando o campo cost_per_km para garantir formato correto
+    if (partnerData.cost_per_km !== undefined && partnerData.cost_per_km !== null) {
+      const costPerKm = Number(partnerData.cost_per_km);
+      if (!isNaN(costPerKm)) {
+        partnerData.cost_per_km = costPerKm;
+      } else {
+        delete partnerData.cost_per_km;
+      }
     }
 
-    res.json(data);
+    try {
+      const { data, error } = await supabase
+        .from('towing_partners')
+        .update(partnerData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      if (!data) {
+        return res.status(404).json({ error: 'Parceiro de guincho não encontrado' });
+      }
+
+      res.json(data);
+    } catch (supabaseError: any) {
+      // Verificar se o erro está relacionado ao campo cost_per_km
+      if (supabaseError.message && supabaseError.message.includes('cost_per_km')) {
+        // Remover o campo problemático e tentar novamente
+        delete partnerData.cost_per_km;
+        
+        const { data, error } = await supabase
+          .from('towing_partners')
+          .update(partnerData)
+          .eq('id', id)
+          .select()
+          .single();
+          
+        if (error) throw error;
+        
+        if (!data) {
+          return res.status(404).json({ error: 'Parceiro de guincho não encontrado' });
+        }
+        
+        res.json(data);
+      } else {
+        throw supabaseError;
+      }
+    }
   } catch (error: any) {
     console.error(`Erro ao atualizar parceiro de guincho (ID: ${req.params.id}):`, error);
     res.status(500).json({ error: 'Erro ao atualizar parceiro de guincho', details: error.message });
