@@ -105,6 +105,8 @@ export default function PartsInventory() {
   const [selectedPart, setSelectedPart] = useState<Part | null>(null);
   const [isMovementDialogOpen, setIsMovementDialogOpen] = useState(false);
   const [isNewPartDialogOpen, setIsNewPartDialogOpen] = useState(false);
+  const [isEditPartDialogOpen, setIsEditPartDialogOpen] = useState(false);
+  const [isDeletePartDialogOpen, setIsDeletePartDialogOpen] = useState(false);
   
   // Formulário de movimentação de estoque
   const movementForm = useForm<z.infer<typeof movimentacaoEstoqueSchema>>({
