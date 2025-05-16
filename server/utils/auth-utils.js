@@ -33,7 +33,9 @@ const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_KEY || process.env.
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Chave para JWT
-const JWT_SECRET = process.env.JWT_SECRET || 'murici-hybrid-auth-secret-key-2025';
+// Usamos a ANON_KEY do Supabase como o segredo para JWT
+// Isso garante compatibilidade com a verificação no Supabase
+const JWT_SECRET = process.env.VITE_SUPABASE_ANON_KEY || 'murici-hybrid-auth-secret-key-2025';
 
 /**
  * Middleware para autenticação unificada
