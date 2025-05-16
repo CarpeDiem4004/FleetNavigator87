@@ -150,6 +150,14 @@ app.use((req, res, next) => {
     getHistoricoPosto(req, res);
   });
   
+  // Rota especial para histórico de Campinas V2 com URL codificada
+  app.get('/api/historico-direto/posto%20campinas%20v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE CAMPINAS V2 (URL CODIFICADA) ====");
+    // Forçar o parâmetro posto para garantir que seja tratado corretamente
+    req.params = { posto: 'campinas_v2' };
+    getHistoricoPosto(req, res);
+  });
+  
   // Rotas especiais para Osasco, seguindo mesmo padrão de Campinas V2
   // Rota de abastecimento
   app.post('/api/abastecimento-direto-osasco', (req, res) => {
