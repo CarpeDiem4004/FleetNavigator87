@@ -23,6 +23,10 @@ import RegisterWithSupabase from "@/pages/RegisterWithSupabase";
 import AccessDeniedPage from "@/pages/access-denied";
 //import TowingPartnersPage from "@/pages/TowingPartnersPage";
 import TowingPartnersPage from "@/pages/fleet-management/towing-partners";
+import TowingPartnerDetailPage from "@/pages/fleet-management/towing-partners/[id]";
+import NewTowingPartnerPage from "@/pages/fleet-management/towing-partners/new";
+import TowingRequestsPage from "@/pages/fleet-management/towing-partners/requests";
+import NewTowingRequestPage from "@/pages/fleet-management/towing-partners/requests/new";
 import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
 // LineHallRedirect removido conforme solicitação
 import FleetManagementRedirect from "@/components/permission/FleetManagementRedirect";
@@ -185,6 +189,10 @@ function App() {
           <ProtectedRoute path="/fleet-management/maintenance" component={MaintenancePage} />
           <ProtectedRoute path="/fleet-management/budgets" component={BudgetManagementPage} />
           <ProtectedRoute path="/fleet-management/towing-partners" component={TowingPartnersPage} />
+          <ProtectedRoute path="/fleet-management/towing-partners/new" component={NewTowingPartnerPage} />
+          <ProtectedRoute path="/fleet-management/towing-partners/requests" component={TowingRequestsPage} />
+          <ProtectedRoute path="/fleet-management/towing-partners/requests/new" component={NewTowingRequestPage} />
+          <ProtectedRoute path="/fleet-management/towing-partners/:id" component={TowingPartnerDetailPage} />
           <ProtectedRoute path="/accidents" component={Accidents} />
           <ProtectedRoute path="/work-safety" component={WorkSafety} />
           <ProtectedRoute path="/users" component={UsersNew} />
