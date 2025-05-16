@@ -38,6 +38,7 @@ import { registerUsuariosSupabaseRoutes } from "./routes/usuariosSupabaseRoutes"
 import { supabaseInsertHandler } from "./routes/supabaseInsertRoute";
 import postoSupabaseRoutes from "./routes/postoSupabaseRoutes";
 import frotaEstoqueRoutes from "./routes/frotaEstoqueRoutes";
+import parceirosGuinchoRoutes from "./routes/parceirosGuinchoRoutes";
 import historicoConsolidadoRoutes from "./routes/historicoConsolidadoRoutes";
 import patioRoutes from "./routes/patioRoutes";
 import { db, pool } from "./db";
