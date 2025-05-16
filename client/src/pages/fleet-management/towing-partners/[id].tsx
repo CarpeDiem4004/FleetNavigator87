@@ -30,6 +30,7 @@ interface TowingPartner {
   rating: number;
   total_requests?: number;
   completed_requests?: number;
+  cost_per_km?: number;
 }
 
 interface TowingRequest {
@@ -240,6 +241,18 @@ const TowingPartnerDetailPage: React.FC = () => {
                       {method}
                     </Badge>
                   ))}
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-medium mb-2">Valor do Serviço</h4>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-primary text-lg">
+                    {partner.cost_per_km 
+                      ? `R$ ${partner.cost_per_km.toFixed(2)}/km`
+                      : <span className="text-muted-foreground text-sm">Valor não informado</span>
+                    }
+                  </span>
                 </div>
               </div>
               

@@ -47,6 +47,13 @@ const formSchema = z.object({
     .max(200, { message: 'Endereço deve ter no máximo 200 caracteres' })
     .optional()
     .or(z.literal('')),
+  cost_per_km: z.preprocess(
+    (val) => val === '' ? undefined : Number(val),
+    z.number({ invalid_type_error: 'O valor deve ser um número' })
+      .min(0, { message: 'O valor não pode ser negativo' })
+      .max(1000, { message: 'O valor máximo é R$ 1.000,00 por km' })
+      .optional()
+  ),
   service_types: z.array(z.string())
     .min(1, { message: 'Selecione pelo menos um tipo de serviço' }),
   payment_methods: z.array(z.string())
@@ -132,6 +139,7 @@ const NewTowingPartnerPage: React.FC = () => {
       city: '',
       region: '',
       address: '',
+      cost_per_km: undefined,
       service_types: [],
       payment_methods: [],
       status: 'pendente',
