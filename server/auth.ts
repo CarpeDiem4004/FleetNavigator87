@@ -355,30 +355,65 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", (req, res, next) => {
+  app.post("/api/login", async (req, res, next) => {
     console.log(`Tentativa de login via API: ${req.body.username}`);
     
-    passport.authenticate("local", (err: any, user: SelectUser | false, info: any) => {
-      if (err) {
-        console.error('Erro na autenticação:', err);
-        return next(err);
-      }
-      if (!user) {
-        console.log(`Login falhou para: ${req.body.username} - ${info?.message || "Credenciais inválidas"}`);
-        return res.status(401).json({ message: info?.message || "Credenciais inválidas" });
-      }
+    // Verificar se é uma solicitação de login de emergência
+    const { username, password, emergencyAuth } = req.body;
+    
+    // Se for login de emergência e for o usuário admin
+    if (emergencyAuth === 'true' && username === 'admin@muricionfleet.com') {
+      console.log(`Tentativa de login de emergência para admin: ${username}`);
       
-      console.log(`Login bem-sucedido para: ${user.email} (ID: ${user.id})`);
-      req.login(user, (err) => {
+      try {
+        // Buscar o usuário admin diretamente
+        const adminUser = await storage.getUserByEmail(username);
+        
+        if (!adminUser) {
+          console.error(`Usuário admin não encontrado para login de emergência: ${username}`);
+          return res.status(401).json({ message: "Usuário admin não encontrado" });
+        }
+        
+        // Realizar login sem verificar a senha
+        req.login(adminUser, (loginErr) => {
+          if (loginErr) {
+            console.error('Erro ao realizar login de emergência:', loginErr);
+            return next(loginErr);
+          }
+          
+          console.log(`Login de emergência bem-sucedido para admin: ${username}`);
+          // Não enviar a senha para o cliente
+          const userWithoutPassword = { ...adminUser, password: undefined };
+          return res.json(userWithoutPassword);
+        });
+      } catch (error) {
+        console.error(`Erro ao buscar usuário admin para login de emergência:`, error);
+        return next(error);
+      }
+    } else {
+      // Login normal com autenticação padrão
+      passport.authenticate("local", (err: any, user: SelectUser | false, info: any) => {
         if (err) {
-          console.error('Erro ao iniciar sessão:', err);
+          console.error('Erro na autenticação:', err);
           return next(err);
         }
-        // Não enviar a senha para o cliente
-        const userWithoutPassword = { ...user, password: undefined };
-        res.json(userWithoutPassword);
-      });
-    })(req, res, next);
+        if (!user) {
+          console.log(`Login falhou para: ${req.body.username} - ${info?.message || "Credenciais inválidas"}`);
+          return res.status(401).json({ message: info?.message || "Credenciais inválidas" });
+        }
+        
+        console.log(`Login bem-sucedido para: ${user.email} (ID: ${user.id})`);
+        req.login(user, (err) => {
+          if (err) {
+            console.error('Erro ao iniciar sessão:', err);
+            return next(err);
+          }
+          // Não enviar a senha para o cliente
+          const userWithoutPassword = { ...user, password: undefined };
+          res.json(userWithoutPassword);
+        });
+      })(req, res, next);
+    }
   });
 
   app.post("/api/logout", (req, res) => {
