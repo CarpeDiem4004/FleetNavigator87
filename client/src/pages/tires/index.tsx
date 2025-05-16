@@ -218,19 +218,38 @@ export default function TiresPage() {
               </Button>
               
               <Button 
-                variant="outline" 
+                variant="default" 
                 onClick={initializeTiresTables}
                 disabled={isLoading}
+                className="bg-green-600 hover:bg-green-700 text-white"
               >
                 {isLoading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <RefreshCw className="mr-2 h-4 w-4" />
                 )}
-                Inicializar
+                Inicializar Tabelas
               </Button>
             </div>
           </div>
+          
+          {/* Mensagem de aviso quando a tabela não existe */}
+          {(error || statsError) && (
+            <Card className="border-red-500 bg-red-50 mb-4">
+              <CardContent className="p-4">
+                <div className="flex gap-2 items-center">
+                  <AlertCircle className="h-5 w-5 text-red-500" />
+                  <div>
+                    <h3 className="font-semibold text-red-700">Erro ao carregar dados de pneus</h3>
+                    <p className="text-sm text-red-600">
+                      Parece que as tabelas de pneus não foram inicializadas. Clique no botão verde "Inicializar Tabelas" 
+                      acima para criar a estrutura necessária.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
           
           {/* Cards de estatísticas */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
