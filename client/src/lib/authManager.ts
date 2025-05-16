@@ -167,41 +167,151 @@ export class AuthManager {
   static async attemptAutoRecovery(): Promise<boolean> {
     console.log('[AuthManager] Iniciando tentativa de recuperação automática');
     
-    // Se existe token no Supabase mas não em authToken, sincronizar
-    const supabaseTokenData = localStorage.getItem(this.SUPABASE_TOKEN_KEY);
-    if (supabaseTokenData && !localStorage.getItem(this.AUTH_TOKEN_KEY)) {
+    // PASSO 1: Verificar token no localStorage
+    const authToken = localStorage.getItem(this.AUTH_TOKEN_KEY);
+    if (authToken) {
+      console.log('[AuthManager] Token encontrado em authToken, verificando validade...');
       try {
-        const data = JSON.parse(supabaseTokenData);
-        if (data.currentSession?.access_token) {
-          localStorage.setItem(this.AUTH_TOKEN_KEY, data.currentSession.access_token);
-          console.log('[AuthManager] Token recuperado do Supabase storage');
+        // Verificar se o token é válido
+        const { data, error } = await supabase.auth.getUser(authToken);
+        if (!error && data.user) {
+          console.log('[AuthManager] Token em authToken é válido para:', data.user.email);
           
-          // Tentar ressincronizar com o servidor
-          await this.resyncWithServer(data.currentSession.access_token);
-          return true;
+          // Ressincronizar com o servidor
+          const syncResult = await this.resyncWithServer(authToken);
+          if (syncResult) {
+            console.log('[AuthManager] Sessão ressincronizada com sucesso usando token existente');
+            return true;
+          }
+        } else {
+          console.warn('[AuthManager] Token em authToken é inválido, removendo...');
+          localStorage.removeItem(this.AUTH_TOKEN_KEY);
         }
       } catch (e) {
-        console.error('[AuthManager] Erro ao processar token Supabase:', e);
+        console.error('[AuthManager] Erro ao verificar token em authToken:', e);
       }
     }
     
-    // Tentar obter a sessão atual do Supabase
+    // PASSO 2: Se não tem token válido em authToken, verificar no Supabase storage
+    const supabaseTokenData = localStorage.getItem(this.SUPABASE_TOKEN_KEY);
+    if (supabaseTokenData) {
+      try {
+        console.log('[AuthManager] Verificando tokens no Supabase storage...');
+        let token = null;
+        
+        // Tentar extrair o token da sessão armazenada
+        try {
+          const data = JSON.parse(supabaseTokenData);
+          // Verificar formato atual
+          if (data.currentSession?.access_token) {
+            token = data.currentSession.access_token;
+          } 
+          // Verificar formato alternativo
+          else if (data.session?.access_token) {
+            token = data.session.access_token;
+          }
+        } catch (parseError) {
+          console.error('[AuthManager] Erro ao analisar token do Supabase storage:', parseError);
+        }
+        
+        if (token) {
+          console.log('[AuthManager] Token encontrado no Supabase storage, verificando validade...');
+          
+          // Verificar se o token é válido
+          const { data, error } = await supabase.auth.getUser(token);
+          if (!error && data.user) {
+            console.log('[AuthManager] Token do Supabase storage é válido para:', data.user.email);
+            
+            // Salvar em authToken
+            localStorage.setItem(this.AUTH_TOKEN_KEY, token);
+            
+            // Ressincronizar com o servidor
+            const syncResult = await this.resyncWithServer(token);
+            if (syncResult) {
+              console.log('[AuthManager] Sessão ressincronizada com sucesso usando token do Supabase');
+              return true;
+            }
+          } else {
+            console.warn('[AuthManager] Token do Supabase storage é inválido');
+          }
+        }
+      } catch (e) {
+        console.error('[AuthManager] Erro ao processar token do Supabase storage:', e);
+      }
+    }
+    
+    // PASSO 3: Tentar obter uma nova sessão do Supabase
     try {
+      console.log('[AuthManager] Tentando obter sessão atual do Supabase...');
       const { data } = await supabase.auth.getSession();
       if (data.session?.access_token) {
-        localStorage.setItem(this.AUTH_TOKEN_KEY, data.session.access_token);
-        console.log('[AuthManager] Token recuperado da sessão atual do Supabase');
+        console.log('[AuthManager] Nova sessão do Supabase obtida para:', data.session.user?.email);
         
-        // Tentar ressincronizar com o servidor
-        await this.resyncWithServer(data.session.access_token);
-        return true;
+        // Salvar token
+        localStorage.setItem(this.AUTH_TOKEN_KEY, data.session.access_token);
+        
+        // Ressincronizar com o servidor
+        const syncResult = await this.resyncWithServer(data.session.access_token);
+        if (syncResult) {
+          console.log('[AuthManager] Sessão ressincronizada com sucesso usando nova sessão');
+          return true;
+        }
+      } else {
+        console.log('[AuthManager] Nenhuma sessão ativa encontrada no Supabase');
       }
     } catch (error) {
-      console.error('[AuthManager] Erro ao obter sessão atual:', error);
+      console.error('[AuthManager] Erro ao obter sessão atual do Supabase:', error);
+    }
+    
+    // PASSO 4: Tentar verificar se há uma sessão Express tradicional ativa
+    try {
+      console.log('[AuthManager] Verificando sessão tradicional Express...');
+      const response = await fetch('/api/user', {
+        method: 'GET',
+        credentials: 'include',
+        cache: 'no-store',
+        headers: {
+          'X-Auth-Check': 'true'
+        }
+      });
+      
+      if (response.ok) {
+        const userData = await response.json();
+        console.log('[AuthManager] Sessão tradicional ativa encontrada para:', userData.email);
+        
+        // Se temos sessão tradicional mas não JWT, tentar forçar um token JWT
+        try {
+          console.log('[AuthManager] Tentando obter token JWT para a sessão tradicional...');
+          const tokenResponse = await fetch('/api/get-jwt-token', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email: userData.email })
+          });
+          
+          if (tokenResponse.ok) {
+            const tokenData = await tokenResponse.json();
+            if (tokenData.token) {
+              console.log('[AuthManager] Token JWT obtido com sucesso para sessão tradicional');
+              localStorage.setItem(this.AUTH_TOKEN_KEY, tokenData.token);
+              return true;
+            }
+          }
+        } catch (tokenError) {
+          console.error('[AuthManager] Erro ao obter token JWT para sessão tradicional:', tokenError);
+        }
+        
+        // Mesmo sem token JWT, temos uma sessão válida
+        return true;
+      }
+    } catch (sessionError) {
+      console.error('[AuthManager] Erro ao verificar sessão tradicional:', sessionError);
     }
     
     // Nenhuma recuperação foi possível
-    console.warn('[AuthManager] Não foi possível recuperar automaticamente');
+    console.warn('[AuthManager] Não foi possível recuperar automaticamente a sessão');
     return false;
   }
   
