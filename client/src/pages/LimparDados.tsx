@@ -6,7 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Trash2, RefreshCw } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import MainLayoutSimple from "@/components/layout/MainLayoutSimple";
-import { deleteRecords, fetchRecords, supabaseAdmin, supabaseAnonKey, supabaseUrl } from '@/lib/supabaseClient';
+import { 
+  supabase, 
+  supabaseAdmin, 
+  supabaseUrl, 
+  supabaseAnonKey, 
+  fetchRecords, 
+  deleteRecords 
+} from '@/lib/supabase-compat';
 
 /**
  * Componente especial para limpeza de dados com um único botão
@@ -16,6 +23,9 @@ export default function LimparDados() {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<string>("Aguardando comando para limpar dados");
   const [isComplete, setIsComplete] = useState(false);
+  
+  // Não é necessário reimplementar as funções localmente,
+  // pois estamos importando do módulo de compatibilidade
 
   // Lista de tabelas para limpar
   const tables = [

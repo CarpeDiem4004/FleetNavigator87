@@ -1,7 +1,26 @@
-import { createClient } from '@supabase/supabase-js';
-import { SupabaseClient } from '@supabase/supabase-js';
+/**
+ * ARQUIVO DE COMPATIBILIDADE UNIFICADO PARA SUPABASE
+ * 
+ * Este arquivo fornece todas as funções e tipos necessários para funcionar com o Supabase
+ * de forma unificada, evitando problemas de importação entre módulos.
+ * 
+ * Como usar: import { supabase, fetchRecords, etc... } from '@/lib/supabase-compat'
+ */
 
-// Interface para resultados de diagnóstico do cliente
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+
+// Constantes de configuração do Supabase
+export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
+export const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';
+export const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDg5ODIwNiwiZXhwIjoyMDYwMjc0MjA2fQ.bvwwqQBQVUOlyHYMsX9C5dSQhsQYI2r8qmqRBHgG_0Y';
+
+// Log de diagnóstico para verificar URLs e chaves (evitar mostrar a chave completa)
+console.log('[supabase-compat] Verificando variáveis de ambiente do Supabase:');
+console.log('- VITE_SUPABASE_URL disponível:', Boolean(import.meta.env.VITE_SUPABASE_URL));
+console.log('- VITE_SUPABASE_ANON_KEY disponível:', Boolean(import.meta.env.VITE_SUPABASE_ANON_KEY));
+console.log('- VITE_SUPABASE_SERVICE_KEY disponível:', Boolean(import.meta.env.VITE_SUPABASE_SERVICE_KEY));
+
+// Definição de tipos unificados para diagnósticos
 export interface ClientDiagnosticResults {
   authConnection: boolean;
   databaseConnection: boolean;
@@ -16,24 +35,18 @@ export interface ClientDiagnosticResults {
   supabase?: boolean;
 }
 
-// Tentar obter do ambiente, mas fornecer fallbacks para garantir que sempre funcione
-export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
-export const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';
-export const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDg5ODIwNiwiZXhwIjoyMDYwMjc0MjA2fQ.bvwwqQBQVUOlyHYMsX9C5dSQhsQYI2r8qmqRBHgG_0Y';
-
-// Log de diagnóstico para verificar URLs e chaves (evitar mostrar a chave completa)
-console.log('Verificando variáveis de ambiente do Supabase:');
-console.log('- VITE_SUPABASE_URL disponível:', Boolean(import.meta.env.VITE_SUPABASE_URL));
-console.log('- VITE_SUPABASE_ANON_KEY disponível:', Boolean(import.meta.env.VITE_SUPABASE_ANON_KEY));
-console.log('- VITE_SUPABASE_SERVICE_KEY disponível:', Boolean(import.meta.env.VITE_SUPABASE_SERVICE_KEY));
-
-if (supabaseServiceKey) {
-  // Mostrar apenas os primeiros 10 caracteres para debug, mas não exibir a chave completa
-  console.log('Supabase Service Key (primeiros 10 caracteres):', supabaseServiceKey.substring(0, 10) + '...');
+export interface ServerDiagnosticResults {
+  baseConnection: boolean;
+  readPermission: boolean;
+  writePermission: boolean;
+  tables: Record<string, { exists: boolean, error: string | null }>;
+  baseConnectionError?: string;
+  readPermissionError?: string;
+  writePermissionError?: string;
+  readSample?: any;
 }
 
-// Armazenar uma única instância do cliente para todo o aplicativo
-// Evitar criar múltiplas instâncias do GoTrueClient no mesmo contexto
+// Instâncias do cliente Supabase (singleton pattern)
 let _supabase: SupabaseClient | null = null;
 let _supabaseAdmin: SupabaseClient | null = null;
 
@@ -44,10 +57,10 @@ let _supabaseAdmin: SupabaseClient | null = null;
  */
 export const getSupabaseClient = (): SupabaseClient => {
   if (!_supabase) {
-    console.log("[getSupabaseClient] Criando nova instância do cliente Supabase");
+    console.log("[supabase-compat] Criando nova instância do cliente Supabase");
     _supabase = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
-        storageKey: 'supabase.auth.token', // Usar a mesma chave em todos os lugares
+        storageKey: 'supabase.auth.token',
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: true
@@ -58,8 +71,6 @@ export const getSupabaseClient = (): SupabaseClient => {
         },
       }
     });
-  } else {
-    console.log("[getSupabaseClient] Retornando instância existente do cliente Supabase");
   }
   return _supabase;
 };
@@ -70,7 +81,7 @@ export const getSupabaseClient = (): SupabaseClient => {
  */
 export const getSupabaseAdminClient = (): SupabaseClient => {
   if (!_supabaseAdmin) {
-    console.log("[getSupabaseAdminClient] Criando nova instância do cliente Supabase Admin");
+    console.log("[supabase-compat] Criando nova instância do cliente Supabase Admin");
     _supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         storageKey: 'supabase.auth.admin.token',
@@ -78,8 +89,6 @@ export const getSupabaseAdminClient = (): SupabaseClient => {
         persistSession: true
       }
     });
-  } else {
-    console.log("[getSupabaseAdminClient] Retornando instância existente do cliente Supabase Admin");
   }
   return _supabaseAdmin;
 };
@@ -89,7 +98,6 @@ export const createSupabaseClient = getSupabaseClient;
 export const createSupabaseAdmin = getSupabaseAdminClient;
 
 // Exportar instâncias únicas para uso geral no aplicativo
-// Usar estas instâncias ao invés de chamar getSupabaseClient() diretamente
 export const supabase = getSupabaseClient();
 export const supabaseAdmin = getSupabaseAdminClient();
 
@@ -98,12 +106,12 @@ export const supabaseAdmin = getSupabaseAdminClient();
  */
 export const checkConnection = async (): Promise<boolean> => {
   try {
-    console.log('Verificando conexão com Supabase...');
+    console.log('[supabase-compat] Verificando conexão com Supabase...');
     // Tentamos fazer uma busca simples para verificar a conexão
     const { error } = await supabase.from('users').select('count', { count: 'exact', head: true });
     
     if (!error) {
-      console.log('Conexão com Supabase estabelecida com sucesso (users)');
+      console.log('[supabase-compat] Conexão com Supabase estabelecida com sucesso (users)');
       return true;
     }
     
@@ -114,11 +122,11 @@ export const checkConnection = async (): Promise<boolean> => {
         .select('count()', { count: 'exact', head: true });
       
       if (!abastecimentosError) {
-        console.log('Conexão com Supabase estabelecida com sucesso (abastecimentos)');
+        console.log('[supabase-compat] Conexão com Supabase estabelecida com sucesso (abastecimentos)');
         return true;
       }
     } catch (e) {
-      console.log('Falha ao verificar com tabela abastecimentos, tentando outra');
+      console.log('[supabase-compat] Falha ao verificar com tabela abastecimentos, tentando outra');
     }
     
     try {
@@ -127,27 +135,37 @@ export const checkConnection = async (): Promise<boolean> => {
         .select('count()', { count: 'exact', head: true });
       
       if (!veiculosError) {
-        console.log('Conexão com Supabase estabelecida com sucesso (veiculos)');
+        console.log('[supabase-compat] Conexão com Supabase estabelecida com sucesso (veiculos)');
         return true;
       }
     } catch (e) {
-      console.log('Falha ao verificar com tabela veiculos');
+      console.log('[supabase-compat] Falha ao verificar com tabela veiculos');
     }
     
     return false;
   } catch (err) {
-    console.error('Erro ao verificar conexão com Supabase:', err);
+    console.error('[supabase-compat] Erro ao verificar conexão com Supabase:', err);
     return false;
   }
 };
 
 // Aliases para manter compatibilidade com códigos que usavam supabase-client.ts
 export const checkSupabaseConnection = checkConnection;
+
 export const checkAllConnections = async () => {
   const supabaseConnected = await checkConnection();
   return {
     supabase: supabaseConnected,
-    baseConnection: supabaseConnected
+    baseConnection: supabaseConnected,
+    databaseConnection: supabaseConnected,
+    authConnection: supabaseConnected,
+    storageConnection: supabaseConnected,
+    functionsConnection: supabaseConnected,
+    realtimeConnection: supabaseConnected,
+    readPermission: supabaseConnected,
+    writePermission: supabaseConnected,
+    authSystem: supabaseConnected,
+    rpcFunctions: supabaseConnected
   };
 };
 
@@ -165,8 +183,7 @@ export async function fetchRecords(
   } = {}
 ): Promise<{ success: boolean; data?: any; error?: any }> {
   try {
-    const client = getSupabaseClient();
-    let query = client.from(table).select(options.columns || '*');
+    let query = supabase.from(table).select(options.columns || '*');
     
     // Aplicar filtros
     if (options.filter) {
@@ -212,13 +229,13 @@ export async function fetchRecords(
       : await query;
     
     if (error) {
-      console.error(`Erro ao buscar registros de ${table}:`, error);
+      console.error(`[supabase-compat] Erro ao buscar registros de ${table}:`, error);
       return { success: false, error };
     }
     
     return { success: true, data };
   } catch (error) {
-    console.error(`Exceção ao buscar registros de ${table}:`, error);
+    console.error(`[supabase-compat] Exceção ao buscar registros de ${table}:`, error);
     return { success: false, error: error instanceof Error ? error.message : error };
   }
 }
@@ -231,8 +248,7 @@ export async function insertRecord(
   data: Record<string, any>
 ): Promise<{ success: boolean; data?: any; error?: any }> {
   try {
-    console.log(`Tentando inserir registro em ${table} com cliente padrão`);
-    const client = getSupabaseClient();
+    console.log(`[supabase-compat] Tentando inserir registro em ${table} com cliente padrão`);
     
     // Timeout para evitar que a operação fique presa indefinidamente
     const timeoutPromise = new Promise((_, reject) => {
@@ -240,24 +256,23 @@ export async function insertRecord(
     });
     
     // Tentativa com cliente padrão
-    const insertPromise = client.from(table).insert([data]).select();
+    const insertPromise = supabase.from(table).insert([data]).select();
     
     // Race entre o timeout e a inserção
     const result = await Promise.race([insertPromise, timeoutPromise]) as any;
     
     if (result.error) {
-      console.error(`Erro ao inserir registro em ${table} com cliente padrão:`, result.error);
+      console.error(`[supabase-compat] Erro ao inserir registro em ${table} com cliente padrão:`, result.error);
       
       // Tentativa com cliente admin como fallback
-      console.log(`Tentando inserir registro em ${table} com cliente admin`);
-      const admin = getSupabaseAdminClient();
-      const { data: adminResult, error: adminError } = await admin
+      console.log(`[supabase-compat] Tentando inserir registro em ${table} com cliente admin`);
+      const { data: adminResult, error: adminError } = await supabaseAdmin
         .from(table)
         .insert([data])
         .select();
       
       if (adminError) {
-        console.error(`Erro ao inserir registro em ${table} com cliente admin:`, adminError);
+        console.error(`[supabase-compat] Erro ao inserir registro em ${table} com cliente admin:`, adminError);
         return { success: false, error: adminError };
       }
       
@@ -266,7 +281,7 @@ export async function insertRecord(
     
     return { success: true, data: result.data };
   } catch (error) {
-    console.error(`Exceção ao inserir registro em ${table}:`, error);
+    console.error(`[supabase-compat] Exceção ao inserir registro em ${table}:`, error);
     return { success: false, error: error instanceof Error ? error.message : error };
   }
 }
@@ -284,21 +299,20 @@ export async function updateData(
   idField: string = 'id'
 ): Promise<{ success: boolean; data?: any; error?: any }> {
   try {
-    const client = getSupabaseClient();
-    const { data: result, error } = await client
+    const { data: result, error } = await supabase
       .from(table)
       .update(data)
       .eq(idField, id)
       .select();
       
     if (error) {
-      console.error(`Erro ao atualizar registro em ${table}:`, error);
+      console.error(`[supabase-compat] Erro ao atualizar registro em ${table}:`, error);
       return { success: false, error };
     }
     
     return { success: true, data: result };
   } catch (error) {
-    console.error(`Exceção ao atualizar registro em ${table}:`, error);
+    console.error(`[supabase-compat] Exceção ao atualizar registro em ${table}:`, error);
     return { success: false, error: error instanceof Error ? error.message : error };
   }
 }
@@ -312,20 +326,19 @@ export async function deleteRecord(
   idField: string = 'id'
 ): Promise<{ success: boolean; error?: any }> {
   try {
-    const client = getSupabaseClient();
-    const { error } = await client
+    const { error } = await supabase
       .from(table)
       .delete()
       .eq(idField, id);
       
     if (error) {
-      console.error(`Erro ao excluir registro de ${table}:`, error);
+      console.error(`[supabase-compat] Erro ao excluir registro de ${table}:`, error);
       return { success: false, error };
     }
     
     return { success: true };
   } catch (error) {
-    console.error(`Exceção ao excluir registro de ${table}:`, error);
+    console.error(`[supabase-compat] Exceção ao excluir registro de ${table}:`, error);
     return { success: false, error: error instanceof Error ? error.message : error };
   }
 }
@@ -338,8 +351,7 @@ export async function deleteRecords(
   filter?: Record<string, any>
 ): Promise<{ success: boolean; error?: any }> {
   try {
-    const client = getSupabaseClient();
-    let query = client.from(table).delete();
+    let query = supabase.from(table).delete();
     
     // Aplicar filtros
     if (filter) {
@@ -353,13 +365,13 @@ export async function deleteRecords(
     const { error } = await query;
       
     if (error) {
-      console.error(`Erro ao excluir registros de ${table}:`, error);
+      console.error(`[supabase-compat] Erro ao excluir registros de ${table}:`, error);
       return { success: false, error };
     }
     
     return { success: true };
   } catch (error) {
-    console.error(`Exceção ao excluir registros de ${table}:`, error);
+    console.error(`[supabase-compat] Exceção ao excluir registros de ${table}:`, error);
     return { success: false, error: error instanceof Error ? error.message : error };
   }
 }
@@ -385,7 +397,7 @@ export async function withRetry<T>(
       // Se tiver erro de conexão, tentar novamente
       if (error.code === 'PGRST301' || error.message?.includes('connection')) {
         retries++;
-        console.log(`Tentativa ${retries}/${maxRetries} falhou, tentando novamente em ${delay}ms...`);
+        console.log(`[supabase-compat] Tentativa ${retries}/${maxRetries} falhou, tentando novamente em ${delay}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
         delay *= 1.5; // Aumentar o delay a cada tentativa
       } else {
@@ -394,7 +406,7 @@ export async function withRetry<T>(
       }
     } catch (err) {
       retries++;
-      console.error(`Exceção na tentativa ${retries}/${maxRetries}:`, err);
+      console.error(`[supabase-compat] Exceção na tentativa ${retries}/${maxRetries}:`, err);
       
       if (retries >= maxRetries) {
         return { data: null, error: err };
@@ -408,5 +420,5 @@ export async function withRetry<T>(
   return { data: null, error: new Error(`Falha após ${maxRetries} tentativas`) };
 }
 
-// Exportar o cliente padrão para compatibilidade com import padrão
+// Exportação padrão
 export default supabase;

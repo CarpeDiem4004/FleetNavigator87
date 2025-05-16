@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { format, differenceInDays } from 'date-fns';
-import { fetchRecords } from '@/lib/supabaseClient';
+import { fetchRecords } from '@/lib/supabase-compat';
 import * as XLSX from 'xlsx';
 import { useQuery } from '@tanstack/react-query';
 

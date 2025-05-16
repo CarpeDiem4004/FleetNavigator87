@@ -1,21 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { SupabaseClient } from '@supabase/supabase-js';
 
-// Interface para resultados de diagnóstico do cliente
-export interface ClientDiagnosticResults {
-  authConnection: boolean;
-  databaseConnection: boolean;
-  storageConnection: boolean;
-  functionsConnection: boolean;
-  realtimeConnection: boolean;
-  baseConnection?: boolean;
-  readPermission?: boolean;
-  writePermission?: boolean;
-  authSystem?: boolean;
-  rpcFunctions?: boolean;
-  supabase?: boolean;
-}
-
 // Tentar obter do ambiente, mas fornecer fallbacks para garantir que sempre funcione
 export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
 export const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';

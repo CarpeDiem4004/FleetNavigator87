@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchRecords } from '@/lib/supabaseClient';
+import { supabase, fetchRecords } from '@/lib/supabase-compat';
 import { format } from 'date-fns';
 import { FaGasPump, FaMoneyBillWave, FaCar, FaWater, FaProjectDiagram } from 'react-icons/fa';
 import { BsFillFuelPumpFill } from 'react-icons/bs';
@@ -24,6 +24,74 @@ interface Abastecimento {
 }
 
 const HistoricoGeralPage: React.FC = () => {
+  // Implementação local da função fetchRecords para evitar problemas de importação
+  const fetchRecords = async (
+    table: string,
+    options: { 
+      columns?: string; 
+      filter?: Record<string, any>;
+      order?: { column: string; ascending?: boolean };
+      limit?: number;
+      single?: boolean;
+    } = {}
+  ): Promise<{ success: boolean; data?: any; error?: any }> => {
+    try {
+      let query = supabase.from(table).select(options.columns || '*');
+      
+      // Aplicar filtros
+      if (options.filter) {
+        Object.entries(options.filter).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            if (typeof value === 'object' && 'op' in value && 'value' in value) {
+              // Filtro avançado com operador personalizado
+              const { op, value: filterValue } = value as { op: string; value: any };
+              switch (op) {
+                case 'eq': query = query.eq(key, filterValue); break;
+                case 'neq': query = query.neq(key, filterValue); break;
+                case 'gt': query = query.gt(key, filterValue); break;
+                case 'gte': query = query.gte(key, filterValue); break;
+                case 'lt': query = query.lt(key, filterValue); break;
+                case 'lte': query = query.lte(key, filterValue); break;
+                case 'like': query = query.like(key, `%${filterValue}%`); break;
+                case 'ilike': query = query.ilike(key, `%${filterValue}%`); break;
+                case 'in': query = query.in(key, filterValue); break;
+                default: query = query.eq(key, filterValue);
+              }
+            } else {
+              // Filtro simples por igualdade
+              query = query.eq(key, value);
+            }
+          }
+        });
+      }
+      
+      // Aplicar ordenação
+      if (options.order) {
+        const { column, ascending = true } = options.order;
+        query = query.order(column, { ascending });
+      }
+      
+      // Aplicar limite
+      if (options.limit) {
+        query = query.limit(options.limit);
+      }
+      
+      // Executar a consulta
+      const { data, error } = options.single 
+        ? await query.single() 
+        : await query;
+      
+      if (error) {
+        console.error(`Erro ao buscar registros de ${table}:`, error);
+        return { success: false, error };
+      }
+      
+      return { success: true, data };
+    } catch (error) {
+      console.error(`Exceção ao buscar registros de ${table}:`, error);
+      return { success: false, error: error instanceof Error ? error.message : error };
+    }
+  };
   const [abastecimentos, setAbastecimentos] = useState<Abastecimento[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);

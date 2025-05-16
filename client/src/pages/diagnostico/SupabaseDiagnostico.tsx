@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { RefreshCw, Server, Globe, CheckCircle2, XCircle } from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, checkAllConnections, ClientDiagnosticResults } from '@/lib/supabase-compat';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { useAuth } from '@/context/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
-// Tipo para os resultados do diagnóstico do cliente
-type ClientDiagnosticResults = {
+// Tipo para complementar os resultados do diagnóstico do cliente
+interface ExtendedClientDiagnosticResults extends ClientDiagnosticResults {
   authConnection: boolean;
   databaseConnection: boolean;
   storageConnection: boolean;
