@@ -64,18 +64,36 @@ router.get('/partners/:id', authenticateJWT, async (req, res) => {
   try {
     const { id } = req.params;
     
+    // Validar se o ID é um número válido
+    const numericId = parseInt(id);
+    if (isNaN(numericId)) {
+      return res.status(400).json({ error: 'ID inválido', details: 'O ID do parceiro deve ser um número' });
+    }
+    
+    console.log(`Buscando parceiro de guincho com ID: ${numericId}`);
+    
     const { data, error } = await supabase
       .from('towing_partners')
       .select('*')
-      .eq('id', id)
+      .eq('id', numericId)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error(`Erro ao buscar parceiro (ID: ${numericId}):`, error);
+      
+      if (error.code === 'PGRST116') {
+        return res.status(404).json({ error: 'Parceiro de guincho não encontrado' });
+      }
+      
+      throw error;
+    }
     
     if (!data) {
+      console.log(`Parceiro de guincho com ID ${numericId} não encontrado`);
       return res.status(404).json({ error: 'Parceiro de guincho não encontrado' });
     }
 
+    console.log(`Parceiro de guincho encontrado: ${data.name} (ID: ${data.id})`);
     res.json(data);
   } catch (error: any) {
     console.error(`Erro ao buscar parceiro de guincho (ID: ${req.params.id}):`, error);
