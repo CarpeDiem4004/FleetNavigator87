@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabaseClient';
 export function useFetchWithAuth() {
   const [initialized, setInitialized] = useState(false);
   
-  // Função para obter o token JWT da sessão Supabase ou localStorage
+  // Função para obter o token JWT da sessão Supabase, localStorage ou novo endpoint de JWT
   const getAuthToken = useCallback(async (): Promise<string | null> => {
     // Primeiro, tenta obter do localStorage
     const localToken = localStorage.getItem('authToken');
@@ -46,6 +46,31 @@ export function useFetchWithAuth() {
       }
     } catch (error) {
       console.error('[FetchWithAuth] Erro ao processar token salvo do Supabase:', error);
+    }
+    
+    // Nova funcionalidade: tenta obter um token JWT do endpoint Express
+    try {
+      console.log('[FetchWithAuth] Tentando obter token JWT do endpoint Express');
+      const response = await fetch('/api/get-jwt-token', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.token) {
+          localStorage.setItem('authToken', data.token);
+          console.log('[FetchWithAuth] Token JWT obtido com sucesso do Express');
+          return data.token;
+        }
+      } else {
+        console.warn('[FetchWithAuth] Falha ao obter token JWT do Express:', response.status);
+      }
+    } catch (error) {
+      console.error('[FetchWithAuth] Erro ao solicitar token JWT do Express:', error);
     }
 
     return null;

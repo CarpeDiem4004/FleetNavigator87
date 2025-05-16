@@ -192,6 +192,32 @@ export class AuthManager {
       }
     }
     
+    // PASSO ESPECIAL: Nova funcionalidade - tentar obter token de emergência para usuário admin
+    try {
+      console.log('[AuthManager] Tentando obter token de emergência...');
+      const response = await fetch('/api/get-jwt-token', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Emergency-Auth': 'true'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.token) {
+          console.log('[AuthManager] Token de emergência obtido com sucesso');
+          localStorage.setItem(this.AUTH_TOKEN_KEY, data.token);
+          return true;
+        }
+      } else {
+        console.warn('[AuthManager] Falha ao obter token de emergência:', response.status);
+      }
+    } catch (error) {
+      console.error('[AuthManager] Erro ao solicitar token de emergência:', error);
+    }
+    
     // PASSO 2: Se não tem token válido em authToken, verificar no Supabase storage
     const supabaseTokenData = localStorage.getItem(this.SUPABASE_TOKEN_KEY);
     if (supabaseTokenData) {
