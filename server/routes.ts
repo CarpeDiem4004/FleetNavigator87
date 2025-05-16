@@ -9078,6 +9078,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rotas para parceiros de guincho
   app.use('/api/guincho', parceirosGuinchoRoutes);
   
+  // Registrar rotas para gestão de pneus
+  app.use('/api/pneus', pneusRoutes);
+  
   // Rota para criar tabela de demonstração para o AutoSave
   app.post('/api/create-demo-table', async (req, res) => {
     try {
