@@ -119,6 +119,9 @@ app.use((req, res, next) => {
   // Registrar rota de diagnóstico para verificar autenticação no módulo de frota
   app.use('/api/frota', frotaDiagnosticoRoute);
   
+  // Registrar rotas de recebimentos e movimentações de pátio
+  app.use('/api', recebimentosMovimentacoesRoutes);
+  
   // Registrar as rotas de API diretas para evitar interceptação do Vite
   // Estas rotas serão processadas antes do middleware do Vite e terão os headers adequados
   app.get('/api/historico-direto/:posto', getHistoricoPosto);
