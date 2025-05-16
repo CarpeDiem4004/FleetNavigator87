@@ -225,6 +225,12 @@ const TowingPartnerDetailPage: React.FC = () => {
                   <Mail size={16} className="text-primary" />
                   <span className="text-sm">{partner.email}</span>
                 </div>
+                {partner.cnpj && (
+                  <div className="flex items-center gap-2">
+                    <FileText size={16} className="text-primary" />
+                    <span className="text-sm">CNPJ: {partner.cnpj}</span>
+                  </div>
+                )}
               </div>
               
               <Separator />
