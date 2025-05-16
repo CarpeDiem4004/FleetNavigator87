@@ -60,15 +60,25 @@ router.post('/get-jwt-token', async (req: Request, res: Response) => {
           if (adminUser) {
             console.log('[JWTAuth] Usuário admin encontrado, gerando token de emergência');
             
-            // Payload do token JWT de emergência
+            // Payload do token JWT de emergência no formato compatível com Supabase
             const payload = {
-              sub: adminUser.id.toString(),
-              id: adminUser.id,
-              email: adminUser.email,
-              name: adminUser.name,
-              role: adminUser.role,
+              // Campos padrão JWT
+              iss: 'muricionfleet-auth', // Issuer
+              sub: adminUser.id.toString(), // Subject (ID do usuário)
               iat: Math.floor(Date.now() / 1000),
-              exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) // 7 dias
+              exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 7 dias
+              
+              // Campos necessários para compatibilidade com Supabase
+              aud: 'authenticated',
+              role: 'authenticated',
+              
+              // Campos personalizados para armazenar dados do usuário
+              user_metadata: {
+                id: adminUser.id,
+                email: adminUser.email,
+                name: adminUser.name,
+                role: adminUser.role
+              }
             };
             
             // Gerar token JWT
@@ -154,17 +164,27 @@ router.post('/get-jwt-token', async (req: Request, res: Response) => {
       // Continuamos mesmo com erro no Supabase, geraremos um token sem integração
     }
     
-    // Payload do token JWT
+    // Payload do token JWT no formato compatível com Supabase
     const payload = {
-      sub: supabaseUserId || user.id.toString(),
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      baseId: user.baseId || user.base_id,
-      basename: user.basename,
+      // Campos padrão JWT
+      iss: 'muricionfleet-auth', // Issuer
+      sub: supabaseUserId || user.id.toString(), // Subject (ID do usuário)
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) // 7 dias
+      exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 7 dias
+      
+      // Campos necessários para compatibilidade com Supabase
+      aud: 'authenticated',
+      role: 'authenticated',
+      
+      // Campos personalizados para armazenar dados do usuário
+      user_metadata: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        baseId: user.baseId || user.base_id,
+        basename: user.basename
+      }
     };
     
     // Gerar o token JWT
