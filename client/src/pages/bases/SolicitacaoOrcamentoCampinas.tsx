@@ -60,8 +60,9 @@ import {
   uploadBudgetFile,
   BUDGET_ATTACHMENTS_BUCKET, 
   INVOICE_ATTACHMENTS_BUCKET,
-  supabase 
-} from '@/lib/supabase';
+  supabase, 
+  ensureBucketExists
+} from '@/lib/supabase-compat';
 
 // Schema de validação para solicitação de orçamento
 const budgetRequestSchema = z.object({

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase-compat';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';

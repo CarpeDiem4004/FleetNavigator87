@@ -48,89 +48,19 @@ export default function SupabaseDiagnostico() {
   const [isServerLoading, setIsServerLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Implementação local de checkAllConnections
-  const checkAllConnections = async (): Promise<ClientDiagnosticResults> => {
-    const results: ClientDiagnosticResults = {
-      authConnection: false,
-      databaseConnection: false,
-      storageConnection: false,
-      functionsConnection: false,
-      realtimeConnection: false
-    };
-    
-    try {
-      // Testar conexão com autenticação
-      const authTest = await supabase.auth.getSession();
-      results.authConnection = !authTest.error;
-      
-      // Testar conexão com banco de dados
-      const dbTest = await supabase.from('users').select('count', { count: 'exact', head: true });
-      results.databaseConnection = !dbTest.error;
-      
-      // Testar conexão com storage
-      try {
-        const storageTest = await supabase.storage.listBuckets();
-        results.storageConnection = !storageTest.error;
-      } catch (e) {
-        results.storageConnection = false;
-      }
-      
-      // Testar conexão com functions (simulado)
-      results.functionsConnection = true;
-      
-      // Testar conexão com realtime (simulado)
-      results.realtimeConnection = true;
-      
-      return results;
-    } catch (e) {
-      console.error("Erro ao verificar conexões:", e);
-      return results;
-    }
-  };
+  // Usamos a função importada do módulo de compatibilidade
   
-  // Executar testes no cliente
+  // Executar testes no cliente - usando a função checkAllConnections importada
   const executarTestesCliente = async () => {
     try {
       setIsClientLoading(true);
       setError(null);
       console.log("Iniciando diagnóstico de conexão Supabase no cliente...");
       
-      // Implementação interna dos testes
-      const results: ClientDiagnosticResults = {
-        authConnection: false,
-        databaseConnection: false,
-        storageConnection: false,
-        functionsConnection: false,
-        realtimeConnection: false
-      };
+      // Usando a função importada do módulo de compatibilidade
+      const results = await checkAllConnections();
       
-      try {
-        // Testar conexão com autenticação
-        const authTest = await supabase.auth.getSession();
-        results.authConnection = !authTest.error;
-        
-        // Testar conexão com banco de dados
-        const dbTest = await supabase.from('users').select('count', { count: 'exact', head: true });
-        results.databaseConnection = !dbTest.error;
-        
-        // Testar conexão com storage
-        try {
-          const storageTest = await supabase.storage.listBuckets();
-          results.storageConnection = !storageTest.error;
-        } catch (e) {
-          results.storageConnection = false;
-        }
-        
-        // Testar conexão com functions (simulado)
-        results.functionsConnection = true;
-        
-        // Testar conexão com realtime (simulado)
-        results.realtimeConnection = true;
-      } catch (e) {
-        console.error("Erro ao verificar conexões:", e);
-      }
       setClientResultados(results);
-      
       console.log("Diagnóstico cliente completo:", results);
     } catch (error: any) {
       setError(error.message || "Erro desconhecido ao executar diagnóstico no cliente");
