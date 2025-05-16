@@ -68,9 +68,55 @@ export function useFetchWithAuth() {
         }
       } else {
         console.warn('[FetchWithAuth] Falha ao obter token JWT do Express:', response.status);
+        
+        // Se falhou, tenta com o header de emergência
+        console.log('[FetchWithAuth] Tentando obter token de emergência');
+        const emergencyResponse = await fetch('/api/get-jwt-token', {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Emergency-Auth': 'true'
+          }
+        });
+        
+        if (emergencyResponse.ok) {
+          const emergencyData = await emergencyResponse.json();
+          if (emergencyData.token) {
+            localStorage.setItem('authToken', emergencyData.token);
+            console.log('[FetchWithAuth] Token de emergência obtido com sucesso!');
+            return emergencyData.token;
+          }
+        } else {
+          console.warn('[FetchWithAuth] Falha ao obter token de emergência:', emergencyResponse.status);
+        }
       }
     } catch (error) {
       console.error('[FetchWithAuth] Erro ao solicitar token JWT do Express:', error);
+      
+      // Última tentativa com o header de emergência em caso de erro
+      try {
+        console.log('[FetchWithAuth] Tentando obter token de emergência após erro');
+        const emergencyResponse = await fetch('/api/get-jwt-token', {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Emergency-Auth': 'true'
+          }
+        });
+        
+        if (emergencyResponse.ok) {
+          const emergencyData = await emergencyResponse.json();
+          if (emergencyData.token) {
+            localStorage.setItem('authToken', emergencyData.token);
+            console.log('[FetchWithAuth] Token de emergência obtido com sucesso após erro!');
+            return emergencyData.token;
+          }
+        }
+      } catch (emergencyError) {
+        console.error('[FetchWithAuth] Erro ao solicitar token de emergência:', emergencyError);
+      }
     }
 
     return null;
