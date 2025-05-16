@@ -262,6 +262,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Oficinas Credenciadas', href: '/fleet-management/workshops', icon: ClipboardList },
     { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package },
+    { name: 'Parceiros de Guincho', href: '/fleet-management/towing-partners', icon: Truck },
     // Menu de Abastecimentos com submenu
     { name: 'Abastecimentos', href: '#', icon: Fuel, subItems: [
       { name: 'Posto Osasco V2', href: '/posto/osasco_v2', icon: Fuel },
