@@ -110,6 +110,16 @@ router.post('/partners', authenticateJWT, verifyFleetManager, async (req, res) =
         delete partnerData.cost_per_km;
       }
     }
+    
+    // Remover campos que não existem na tabela do banco de dados
+    // Campos que estão na interface mas não no banco
+    if ('has_insurance' in partnerData) {
+      delete partnerData.has_insurance;
+    }
+    
+    if ('coverage_radius' in partnerData) {
+      delete partnerData.coverage_radius;
+    }
 
     try {
       const { data, error } = await supabase
@@ -172,6 +182,16 @@ router.put('/partners/:id', authenticateJWT, verifyFleetManager, async (req, res
       } else {
         delete partnerData.cost_per_km;
       }
+    }
+    
+    // Remover campos que não existem na tabela do banco de dados
+    // Campos que estão na interface mas não no banco
+    if ('has_insurance' in partnerData) {
+      delete partnerData.has_insurance;
+    }
+    
+    if ('coverage_radius' in partnerData) {
+      delete partnerData.coverage_radius;
     }
 
     try {
