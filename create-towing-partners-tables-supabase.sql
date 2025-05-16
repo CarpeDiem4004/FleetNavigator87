@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS towing_partners (
     service_types TEXT[],
     price_range VARCHAR(50),
     payment_methods TEXT[],
+    cost_per_km DECIMAL(10,2),
     available_24h BOOLEAN DEFAULT FALSE,
     can_transport_multiple BOOLEAN DEFAULT FALSE,
     notes TEXT,
@@ -88,13 +89,13 @@ EXECUTE FUNCTION update_updated_at_column();
 
 -- Inserir alguns dados de exemplo para parceiros de guincho
 INSERT INTO towing_partners 
-(name, company_name, cnpj, phone, email, city, region, address, contact_person, service_types, payment_methods, available_24h, status)
+(name, company_name, cnpj, phone, email, city, region, address, contact_person, service_types, payment_methods, cost_per_km, available_24h, status)
 VALUES
-('Guincho Rápido Ltda', 'Guincho Rápido Serviços Automotivos Ltda', '12.345.678/0001-90', '(11) 98765-4321', 'contato@guinchorapido.com.br', 'São Paulo', 'Zona Sul', 'Av. Santo Amaro, 1500', 'João Silva', ARRAY['leve', 'médio'], ARRAY['dinheiro', 'cartão', 'boleto'], TRUE, 'ativo'),
-('Guincho Seguro S.A.', 'Segurança em Reboques S.A.', '23.456.789/0001-01', '(11) 91234-5678', 'contato@guinchoseguro.com.br', 'São Paulo', 'Zona Norte', 'Av. Braz Leme, 780', 'Maria Oliveira', ARRAY['leve', 'médio', 'pesado'], ARRAY['dinheiro', 'cartão'], TRUE, 'ativo'),
-('Guincho Estrela', 'Estrela Serviços de Reboque Ltda', '34.567.890/0001-12', '(19) 98877-6655', 'atendimento@guinchestrela.com.br', 'Campinas', 'Centro', 'Rua Dr. Quirino, 450', 'Carlos Santos', ARRAY['leve', 'médio', 'pesado', 'especial'], ARRAY['dinheiro', 'cartão', 'pix'], TRUE, 'ativo'),
-('Guincho & Reboque ABC', 'ABC Guinchamento e Reboque Ltda', '45.678.901/0001-23', '(11) 97766-5544', 'abc@guinchoabc.com.br', 'Santo André', 'ABC', 'Av. Industrial, 890', 'Roberto Martins', ARRAY['leve', 'médio'], ARRAY['dinheiro', 'cartão'], FALSE, 'inativo'),
-('Guincho Águia', 'Águia Serviços de Reboque Eireli', '56.789.012/0001-34', '(11) 99988-7766', 'contato@guinchoaguia.com.br', 'Guarulhos', 'Aeroporto', 'Rodovia Hélio Smidt, S/N', 'Ana Ferreira', ARRAY['leve', 'médio', 'pesado', 'moto'], ARRAY['dinheiro', 'cartão', 'pix'], TRUE, 'ativo');
+('Guincho Rápido Ltda', 'Guincho Rápido Serviços Automotivos Ltda', '12.345.678/0001-90', '(11) 98765-4321', 'contato@guinchorapido.com.br', 'São Paulo', 'Zona Sul', 'Av. Santo Amaro, 1500', 'João Silva', ARRAY['leve', 'médio'], ARRAY['dinheiro', 'cartão', 'boleto'], 5.50, TRUE, 'ativo'),
+('Guincho Seguro S.A.', 'Segurança em Reboques S.A.', '23.456.789/0001-01', '(11) 91234-5678', 'contato@guinchoseguro.com.br', 'São Paulo', 'Zona Norte', 'Av. Braz Leme, 780', 'Maria Oliveira', ARRAY['leve', 'médio', 'pesado'], ARRAY['dinheiro', 'cartão'], 6.25, TRUE, 'ativo'),
+('Guincho Estrela', 'Estrela Serviços de Reboque Ltda', '34.567.890/0001-12', '(19) 98877-6655', 'atendimento@guinchestrela.com.br', 'Campinas', 'Centro', 'Rua Dr. Quirino, 450', 'Carlos Santos', ARRAY['leve', 'médio', 'pesado', 'especial'], ARRAY['dinheiro', 'cartão', 'pix'], 7.00, TRUE, 'ativo'),
+('Guincho & Reboque ABC', 'ABC Guinchamento e Reboque Ltda', '45.678.901/0001-23', '(11) 97766-5544', 'abc@guinchoabc.com.br', 'Santo André', 'ABC', 'Av. Industrial, 890', 'Roberto Martins', ARRAY['leve', 'médio'], ARRAY['dinheiro', 'cartão'], 4.75, FALSE, 'inativo'),
+('Guincho Águia', 'Águia Serviços de Reboque Eireli', '56.789.012/0001-34', '(11) 99988-7766', 'contato@guinchoaguia.com.br', 'Guarulhos', 'Aeroporto', 'Rodovia Hélio Smidt, S/N', 'Ana Ferreira', ARRAY['leve', 'médio', 'pesado', 'moto'], ARRAY['dinheiro', 'cartão', 'pix'], 6.80, TRUE, 'ativo');
 
 -- Criar view para resumo de parceiros
 CREATE OR REPLACE VIEW towing_partners_summary AS
