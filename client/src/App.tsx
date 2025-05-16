@@ -21,7 +21,8 @@ import RegisterNew from "@/pages/RegisterNew";
 import LoginWithSupabase from "@/pages/LoginWithSupabase";
 import RegisterWithSupabase from "@/pages/RegisterWithSupabase";
 import AccessDeniedPage from "@/pages/access-denied";
-import TowingPartnersPage from "@/pages/TowingPartnersPage";
+//import TowingPartnersPage from "@/pages/TowingPartnersPage";
+import TowingPartnersPage from "@/pages/fleet-management/towing-partners";
 import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
 // LineHallRedirect removido conforme solicitação
 import FleetManagementRedirect from "@/components/permission/FleetManagementRedirect";
