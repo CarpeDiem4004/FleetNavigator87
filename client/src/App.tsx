@@ -244,6 +244,7 @@ function App() {
           <ProtectedRoute path="/drivers" component={DriversPage} />
           <ProtectedRoute path="/manutencao" component={ManutencaoPage} />
           <ProtectedRoute path="/tratativa-manutencao" component={TratativaManutencaoPage} />
+          <ProtectedRoute path="/tires" component={TiresPage} />
           
           {/* Rota pública para checklist do motorista */}
           <Route path="/checklist/:id">
