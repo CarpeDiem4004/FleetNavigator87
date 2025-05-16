@@ -21,6 +21,7 @@ import RegisterNew from "@/pages/RegisterNew";
 import LoginWithSupabase from "@/pages/LoginWithSupabase";
 import RegisterWithSupabase from "@/pages/RegisterWithSupabase";
 import AccessDeniedPage from "@/pages/access-denied";
+import TowingPartners from "@/pages/fleet-management/towing-partners";
 import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
 // LineHallRedirect removido conforme solicitação
 import FleetManagementRedirect from "@/components/permission/FleetManagementRedirect";
@@ -182,6 +183,7 @@ function App() {
           <ProtectedRoute path="/fleet-management/workshops" component={WorkshopsPage} />
           <ProtectedRoute path="/fleet-management/maintenance" component={MaintenancePage} />
           <ProtectedRoute path="/fleet-management/budgets" component={BudgetManagementPage} />
+          <ProtectedRoute path="/fleet-management/towing-partners" component={TowingPartners} />
           <ProtectedRoute path="/accidents" component={Accidents} />
           <ProtectedRoute path="/work-safety" component={WorkSafety} />
           <ProtectedRoute path="/users" component={UsersNew} />
