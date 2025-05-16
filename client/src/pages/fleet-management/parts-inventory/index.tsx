@@ -15,7 +15,9 @@ import {
   ArrowUpDown,
   Download,
   Upload,
-  ShoppingCart
+  ShoppingCart,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -118,6 +120,38 @@ export default function PartsInventory() {
       nota_fiscal: '',
       veiculo_placa: '',
       observacoes: '',
+    },
+  });
+  
+  // Formulário para edição de peça
+  const editPartForm = useForm<Omit<Part, 'id' | 'quantidade' | 'valor_total' | 'status_disponibilidade'>>({
+    resolver: zodResolver(
+      z.object({
+        codigo: z.string().min(1, "Código é obrigatório"),
+        nome: z.string().min(2, "Nome é obrigatório"),
+        descricao: z.string().optional().nullable(),
+        categoria: z.string().optional().nullable(),
+        fabricante: z.string().optional().nullable(),
+        aplicacao: z.string().optional().nullable(),
+        valor_unitario: z.number().min(0, "Valor unitário deve ser maior ou igual a zero"),
+        estoque_minimo: z.number().min(0, "Estoque mínimo deve ser maior ou igual a zero"),
+        estoque_maximo: z.number().optional().nullable(),
+        localizacao: z.string().optional().nullable(),
+        unidade_medida: z.string().min(1, "Unidade de medida é obrigatória"),
+      })
+    ),
+    defaultValues: {
+      codigo: '',
+      nome: '',
+      descricao: '',
+      categoria: '',
+      fabricante: '',
+      aplicacao: '',
+      valor_unitario: 0,
+      estoque_minimo: 0,
+      estoque_maximo: null,
+      localizacao: '',
+      unidade_medida: 'UN',
     },
   });
 
@@ -312,6 +346,31 @@ export default function PartsInventory() {
   const handleOpenMovementDialog = (part: Part) => {
     setSelectedPart(part);
     setIsMovementDialogOpen(true);
+  };
+  
+  // Função para abrir diálogo de edição
+  const handleOpenEditDialog = (part: Part) => {
+    setSelectedPart(part);
+    // Preencher o formulário com os dados da peça selecionada
+    editPartForm.reset({
+      nome: part.nome,
+      descricao: part.descricao || '',
+      categoria: part.categoria || '',
+      fabricante: part.fabricante || '',
+      aplicacao: part.aplicacao || '',
+      valor_unitario: part.valor_unitario,
+      estoque_minimo: part.estoque_minimo,
+      estoque_maximo: part.estoque_maximo || undefined,
+      localizacao: part.localizacao || '',
+      unidade_medida: part.unidade_medida
+    });
+    setIsEditPartDialogOpen(true);
+  };
+  
+  // Função para abrir diálogo de exclusão
+  const handleOpenDeleteDialog = (part: Part) => {
+    setSelectedPart(part);
+    setIsDeletePartDialogOpen(true);
   };
 
   // Funções para exportar e importar Excel
@@ -626,14 +685,33 @@ export default function PartsInventory() {
                               )}
                             </TableCell>
                             <TableCell className="text-right">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleOpenMovementDialog(part)}
-                              >
-                                <ArrowUpDown className="h-4 w-4 mr-1" />
-                                Movimentar
-                              </Button>
+                              <div className="flex justify-end space-x-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleOpenMovementDialog(part)}
+                                >
+                                  <ArrowUpDown className="h-4 w-4 mr-1" />
+                                  Movimentar
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleOpenEditDialog(part)}
+                                >
+                                  <Pencil className="h-4 w-4 mr-1" />
+                                  Editar
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleOpenDeleteDialog(part)}
+                                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1" />
+                                  Excluir
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
