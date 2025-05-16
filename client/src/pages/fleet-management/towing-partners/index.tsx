@@ -32,6 +32,7 @@ interface TowingPartner {
   rating: number;
   total_requests?: number;
   completed_requests?: number;
+  cost_per_km?: number;
 }
 
 interface TowingPartnerSummary extends TowingPartner {
@@ -334,6 +335,7 @@ const TowingPartnersPage: React.FC = () => {
                         <TableHead>Nome</TableHead>
                         <TableHead>Região</TableHead>
                         <TableHead>Serviços</TableHead>
+                        <TableHead>Valor (R$/km)</TableHead>
                         <TableHead>Avaliação</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Ações</TableHead>
@@ -357,6 +359,12 @@ const TowingPartnersPage: React.FC = () => {
                                 </Badge>
                               )}
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            {partner.cost_per_km 
+                              ? <span className="font-medium text-primary">R$ {partner.cost_per_km.toFixed(2)}</span>
+                              : <span className="text-muted-foreground text-sm">Não informado</span>
+                            }
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center">
