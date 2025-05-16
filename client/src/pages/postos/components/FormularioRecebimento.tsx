@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { TruckIcon } from 'lucide-react';
 import { TabsContent } from '@/components/ui/tabs';
-import { insertData, checkConnection } from '@/lib/supabase-client';
+import { insertData, checkConnection } from '@/lib/supabaseClient';
 
 // Schema de validação para o formulário de recebimento de combustível
 const recebimentoSchema = z.object({

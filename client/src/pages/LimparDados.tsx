@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Trash2, RefreshCw } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import MainLayoutSimple from "@/components/layout/MainLayoutSimple";
-import { deleteRecords, fetchRecords, supabaseAdmin, supabaseAnonKey, supabaseUrl } from '@/lib/supabase-client';
+import { deleteRecords, fetchRecords, supabaseAdmin, supabaseAnonKey, supabaseUrl } from '@/lib/supabaseClient';
 
 /**
  * Componente especial para limpeza de dados com um único botão

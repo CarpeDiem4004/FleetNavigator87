@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchRecords } from '@/lib/supabase-client';
+import { fetchRecords } from '@/lib/supabaseClient';
 import { format } from 'date-fns';
 import { FaGasPump, FaMoneyBillWave, FaCar, FaWater, FaProjectDiagram } from 'react-icons/fa';
 import { BsFillFuelPumpFill } from 'react-icons/bs';

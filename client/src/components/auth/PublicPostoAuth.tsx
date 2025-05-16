@@ -17,7 +17,7 @@ import { Loader2, Fuel, AlertTriangle } from 'lucide-react';
 import { useSafeDialog } from '@/hooks/use-safe-dialog';
 
 // Importação central do Supabase para garantir consistência
-import { supabase } from '@/lib/supabase-client';
+import { supabase } from '@/lib/supabaseClient';
 
 // Tipos
 interface User {
