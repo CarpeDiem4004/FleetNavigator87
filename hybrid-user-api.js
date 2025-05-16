@@ -43,6 +43,16 @@ router.post('/api/hybrid/users', unifiedAuthMiddleware, adminRoleMiddleware, asy
       });
     }
     
+    // Verificar permissão especial para criar usuário gestor_frota
+    // Apenas usuários administradores podem criar outros com o papel de gestor_frota
+    if (role === 'gestor_frota' && req.user.role !== 'admin') {
+      console.log(`[HybridAPI] Tentativa de criar usuário gestor_frota por usuário não-admin: ${req.user.id} (${req.user.email}) com role ${req.user.role}`);
+      return res.status(403).json({
+        success: false,
+        message: 'Apenas administradores podem criar usuários com papel de gestor de frota'
+      });
+    }
+    
     // Verificar se o usuário já existe
     const existingUser = await userService.getUserByEmail(email);
     if (existingUser) {
