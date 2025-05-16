@@ -352,6 +352,31 @@ const NewTowingPartnerPage: React.FC = () => {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="cost_per_km"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor (R$/km)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01" 
+                          min="0"
+                          placeholder="0.00"
+                          {...field}
+                          value={field.value === undefined ? '' : field.value}
+                          onChange={(e) => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Valor cobrado por quilômetro rodado
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </CardContent>
           </Card>
