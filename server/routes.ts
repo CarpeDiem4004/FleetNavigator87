@@ -39,6 +39,7 @@ import { supabaseInsertHandler } from "./routes/supabaseInsertRoute";
 import postoSupabaseRoutes from "./routes/postoSupabaseRoutes";
 import frotaEstoqueRoutes from "./routes/frotaEstoqueRoutes";
 import parceirosGuinchoRoutes from "./routes/parceirosGuinchoRoutes";
+import towingPartnersRoutes from "./routes/towingPartnersRoutes";
 import historicoConsolidadoRoutes from "./routes/historicoConsolidadoRoutes";
 import patioRoutes from "./routes/patioRoutes";
 import pneusRoutes from "./routes/pneusRoutes";
@@ -9077,6 +9078,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registrar rotas para parceiros de guincho
   app.use('/api/guincho', parceirosGuinchoRoutes);
+  
+  // Registrar rotas para o novo módulo de parceiros de guincho
+  app.use('/api/towing', towingPartnersRoutes);
   
   // Registrar rotas para gestão de pneus
   app.use('/api/pneus', pneusRoutes);

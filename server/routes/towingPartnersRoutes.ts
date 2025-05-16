@@ -3,7 +3,7 @@
  */
 import { Router } from 'express';
 import { createClient } from '@supabase/supabase-js';
-import { authenticateJWT } from '../utils/auth-utils';
+import { unifiedAuthMiddleware as authenticateJWT } from '../utils/auth-utils';
 import { verifyAdmin, verifyFleetManager } from '../middleware/roleMiddleware';
 
 // Configuração do Supabase

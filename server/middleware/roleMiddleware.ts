@@ -1,87 +1,165 @@
 /**
- * Middleware para verificação de papéis/funções de usuário
+ * Middleware para controle de acesso baseado em papéis (roles)
+ * Usado para proteger rotas com base em funções específicas dos usuários
  */
 import { Request, Response, NextFunction } from 'express';
 
-// Interface para o usuário autenticado (estendendo a Request)
+// Interface para tipagem correta da requisição autenticada
 interface AuthenticatedRequest extends Request {
   user?: {
     id: number;
     name: string;
     email: string;
     role: string;
+    baseId?: number;
+    oficinaId?: number;
   };
 }
 
 /**
  * Middleware para verificar se o usuário é administrador
- * @param req Request (requisição)
- * @param res Response (resposta)
- * @param next NextFunction (próxima função na cadeia)
  */
-export const verifyAdmin = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  // Verificar se o usuário está autenticado
+export function verifyAdmin(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   if (!req.user) {
-    return res.status(401).json({ error: 'Acesso negado', details: 'Usuário não autenticado' });
+    return res.status(401).json({
+      error: 'Não autenticado',
+      message: 'É necessário estar autenticado para acessar este recurso'
+    });
   }
 
-  // Verificar se o usuário é administrador
   if (req.user.role !== 'admin') {
-    return res.status(403).json({ 
-      error: 'Acesso negado', 
-      details: 'Esta operação requer privilégios de administrador'
+    console.log(`[RoleMiddleware] Acesso admin negado para usuário ${req.user.id} (${req.user.email}) com role ${req.user.role}`);
+    return res.status(403).json({
+      error: 'Acesso negado',
+      message: 'Esta operação requer privilégios de administrador'
     });
   }
 
-  // Usuário é administrador, prosseguir
+  console.log(`[RoleMiddleware] Acesso admin permitido para usuário ${req.user.id} (${req.user.email})`);
   next();
-};
+}
 
 /**
- * Middleware para verificar se o usuário é administrador ou gestor de frota
- * @param req Request (requisição)
- * @param res Response (resposta)
- * @param next NextFunction (próxima função na cadeia)
+ * Middleware para verificar se o usuário é gestor de frota
  */
-export const verifyFleetManager = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  // Verificar se o usuário está autenticado
+export function verifyFleetManager(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   if (!req.user) {
-    return res.status(401).json({ error: 'Acesso negado', details: 'Usuário não autenticado' });
-  }
-
-  // Verificar se o usuário é administrador ou gestor de frota
-  if (req.user.role !== 'admin' && req.user.role !== 'gestor_frota') {
-    return res.status(403).json({ 
-      error: 'Acesso negado', 
-      details: 'Esta operação requer privilégios de administrador ou gestor de frota'
+    return res.status(401).json({
+      error: 'Não autenticado',
+      message: 'É necessário estar autenticado para acessar este recurso'
     });
   }
 
-  // Usuário tem permissão, prosseguir
+  const allowedRoles = ['admin', 'gestor_frota'];
+  
+  if (!allowedRoles.includes(req.user.role)) {
+    console.log(`[RoleMiddleware] Acesso gestor frota negado para usuário ${req.user.id} (${req.user.email}) com role ${req.user.role}`);
+    return res.status(403).json({
+      error: 'Acesso negado',
+      message: 'Esta operação requer privilégios de gestor de frota'
+    });
+  }
+
+  console.log(`[RoleMiddleware] Acesso gestor frota permitido para usuário ${req.user.id} (${req.user.email})`);
   next();
-};
+}
 
 /**
- * Middleware para verificar se o usuário possui algum dos papéis informados
- * @param roles Array de papéis permitidos
- * @returns Middleware de verificação de papel
+ * Middleware para verificar se o usuário tem acesso à gestão de postos
  */
-export const verifyRoles = (roles: string[]) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    // Verificar se o usuário está autenticado
-    if (!req.user) {
-      return res.status(401).json({ error: 'Acesso negado', details: 'Usuário não autenticado' });
-    }
+export function verifyFuelStationAccess(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  if (!req.user) {
+    return res.status(401).json({
+      error: 'Não autenticado',
+      message: 'É necessário estar autenticado para acessar este recurso'
+    });
+  }
 
-    // Verificar se o papel do usuário está na lista de papéis permitidos
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ 
-        error: 'Acesso negado', 
-        details: 'Você não tem permissão para acessar este recurso'
+  const allowedRoles = ['admin', 'gestor_frota', 'posto'];
+  
+  if (!allowedRoles.includes(req.user.role)) {
+    console.log(`[RoleMiddleware] Acesso posto negado para usuário ${req.user.id} (${req.user.email}) com role ${req.user.role}`);
+    return res.status(403).json({
+      error: 'Acesso negado',
+      message: 'Esta operação requer privilégios de gestão de postos'
+    });
+  }
+
+  console.log(`[RoleMiddleware] Acesso posto permitido para usuário ${req.user.id} (${req.user.email})`);
+  next();
+}
+
+/**
+ * Middleware para verificar se o usuário tem acesso à gestão de pneus
+ */
+export function verifyTireAccess(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  if (!req.user) {
+    return res.status(401).json({
+      error: 'Não autenticado',
+      message: 'É necessário estar autenticado para acessar este recurso'
+    });
+  }
+
+  const allowedRoles = ['admin', 'gestor_frota', 'pneus'];
+  
+  if (!allowedRoles.includes(req.user.role)) {
+    console.log(`[RoleMiddleware] Acesso pneus negado para usuário ${req.user.id} (${req.user.email}) com role ${req.user.role}`);
+    return res.status(403).json({
+      error: 'Acesso negado',
+      message: 'Esta operação requer privilégios de gestão de pneus'
+    });
+  }
+
+  console.log(`[RoleMiddleware] Acesso pneus permitido para usuário ${req.user.id} (${req.user.email})`);
+  next();
+}
+
+/**
+ * Middleware para verificar se o usuário é gestor de base
+ */
+export function verifyBaseManager(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  if (!req.user) {
+    return res.status(401).json({
+      error: 'Não autenticado',
+      message: 'É necessário estar autenticado para acessar este recurso'
+    });
+  }
+
+  const allowedRoles = ['admin', 'gestor', 'gestor_frota'];
+  
+  if (!allowedRoles.includes(req.user.role)) {
+    console.log(`[RoleMiddleware] Acesso gestor base negado para usuário ${req.user.id} (${req.user.email}) com role ${req.user.role}`);
+    return res.status(403).json({
+      error: 'Acesso negado',
+      message: 'Esta operação requer privilégios de gestor'
+    });
+  }
+
+  console.log(`[RoleMiddleware] Acesso gestor base permitido para usuário ${req.user.id} (${req.user.email})`);
+  next();
+}
+
+/**
+ * Middleware para verificar se o usuário tem alguma das roles especificadas
+ */
+export function verifyRoles(roles: string[]) {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({
+        error: 'Não autenticado',
+        message: 'É necessário estar autenticado para acessar este recurso'
       });
     }
 
-    // Usuário tem um papel permitido, prosseguir
+    if (!roles.includes(req.user.role)) {
+      console.log(`[RoleMiddleware] Acesso negado para usuário ${req.user.id} (${req.user.email}) com role ${req.user.role}`);
+      return res.status(403).json({
+        error: 'Acesso negado',
+        message: 'Você não tem permissão para acessar este recurso'
+      });
+    }
+
+    console.log(`[RoleMiddleware] Acesso permitido para usuário ${req.user.id} (${req.user.email})`);
     next();
   };
-};
+}
