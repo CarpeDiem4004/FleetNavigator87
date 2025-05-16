@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase-client';
+import { supabase } from '@/lib/supabase-compat';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {

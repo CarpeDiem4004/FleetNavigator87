@@ -14,7 +14,7 @@ import {
   insertData, 
   supabase, 
   limparTodosOsDados 
-} from "@/lib/supabase-client";
+} from "@/lib/supabase-compat";
 import MainLayoutSimple from "@/components/layout/MainLayoutSimple";
 import { useAuth } from "@/hooks/use-auth";
 

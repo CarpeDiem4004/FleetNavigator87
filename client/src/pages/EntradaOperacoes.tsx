@@ -24,7 +24,7 @@ import { Label } from '@/components/ui/label';
 import { Search, FileEdit, Trash2, Plus } from 'lucide-react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase-client';
+import { supabase } from '@/lib/supabase-compat';
 
 interface OperationEntry {
   id: number;
