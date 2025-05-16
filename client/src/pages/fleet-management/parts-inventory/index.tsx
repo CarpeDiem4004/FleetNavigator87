@@ -197,8 +197,8 @@ export default function PartsInventory() {
     }
     
     const filtered = parts.filter(part => 
-      part.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      part.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (part.codigo && part.codigo.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (part.nome && part.nome.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (part.categoria && part.categoria.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (part.fabricante && part.fabricante.toLowerCase().includes(searchTerm.toLowerCase()))
     );
