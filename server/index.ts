@@ -29,6 +29,8 @@ import { debugAuthMiddleware, recoverSessionMiddleware } from './middleware/debu
 import frotaDiagnosticoRoute from "./routes/frotaDiagnosticoRoute";
 // Importar rotas de recebimentos e movimentações de pátio
 import recebimentosMovimentacoesRoutes from "./routes/recebimentosMovimentacoesRoutes";
+// Importar rotas de preços de combustível
+import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoutes";
 
 // Configuração das variáveis de ambiente do Supabase
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
