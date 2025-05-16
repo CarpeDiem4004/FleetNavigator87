@@ -454,8 +454,8 @@ export const StatusTanquePosto = forwardRef<StatusTanqueRef, StatusTanqueProps>(
       const formattedPosto = formatPosto(posto);
       console.log("[FETCH] Buscando recebimentos para o posto:", formattedPosto);
       
-      // Usar a nova API para obter os recebimentos
-      const response = await fetch(`/api/recebimentos/${posto}`);
+      // Usar a nova API para obter os recebimentos com autenticação
+      const response = await apiRequest('GET', `/api/recebimentos/${posto}`);
       
       if (!response.ok) {
         throw new Error(`Erro ao buscar recebimentos: ${response.status}`);
