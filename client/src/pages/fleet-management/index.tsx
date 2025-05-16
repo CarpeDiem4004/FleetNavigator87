@@ -14,7 +14,8 @@ import {
   MessageSquare,
   AlertCircle,
   Package,
-  BarChart3
+  BarChart3,
+  Car
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'wouter';
@@ -149,6 +150,22 @@ export default function FleetManagement() {
               </CardFooter>
             </Card>
 
+            <Card className="flex flex-col">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Car className="h-5 w-5 text-primary" />
+                  Parceiros de Guincho
+                </CardTitle>
+              </CardHeader>
+              <CardFooter className="mt-auto">
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href="/fleet-management/towing-partners">
+                    Acessar <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+            
             <Card className="flex flex-col">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-lg">
