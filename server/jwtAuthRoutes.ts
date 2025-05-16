@@ -3,6 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
 import { storage } from './storage';
 import { User } from '@shared/schema';
+import passport from 'passport';
+import session from 'express-session';
 
 const router = Router();
 
@@ -26,16 +28,19 @@ router.post('/get-jwt-token', async (req: Request, res: Response) => {
   try {
     console.log('[JWTAuth] Recebida solicitação para gerar token JWT');
     console.log('[JWTAuth] Informações da requisição:', {
-      isAuthenticated: req.isAuthenticated(),
       hasUser: !!req.user,
       sessionID: req.sessionID,
       hasCookies: !!req.headers.cookie,
+      emergencyAuth: req.headers['x-emergency-auth'] || 'Ausente',
       method: req.method,
       path: req.path
     });
     
-    // Verificar se o usuário está autenticado via sessão
-    if (!req.isAuthenticated() || !req.user) {
+    // Verificar se o usuário está autenticado via sessão (checagem segura)
+    // Não podemos usar req.isAuthenticated porque pode não estar disponível neste router
+    const isAuthenticated = typeof req.user !== 'undefined' && req.user !== null;
+    
+    if (!isAuthenticated) {
       console.log('[JWTAuth] Usuário não está autenticado');
       // Verificar se é uma solicitação de emergência pelo header
       const isEmergencyRequest = req.headers['x-emergency-auth'] === 'true';
@@ -85,6 +90,14 @@ router.post('/get-jwt-token', async (req: Request, res: Response) => {
       return res.status(401).json({ 
         success: false, 
         message: 'Usuário não autenticado' 
+      });
+    }
+    
+    // Garantir que req.user existe antes de prosseguir
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuário não encontrado na sessão'
       });
     }
     
@@ -214,7 +227,8 @@ router.get('/validate-jwt', async (req: Request, res: Response) => {
       }
       
       // Autenticar o usuário na sessão também (opcional)
-      if (!req.isAuthenticated()) {
+      const isAlreadyAuthenticated = typeof req.user !== 'undefined' && req.user !== null;
+      if (!isAlreadyAuthenticated) {
         // Precisamos converter os tipos para satisfazer o TypeScript
         // A função login espera um objeto que siga o contrato de User
         // Criamos um objeto compatível com a interface User
