@@ -722,7 +722,153 @@ export default function PartsInventory() {
               </Card>
             </TabsContent>
             
-            {/* As outras TabsContent (baixo, zerado) teriam conteúdo similar */}
+            {/* Conteúdo da aba Estoque Baixo */}
+            <TabsContent value="baixo" className="mt-0">
+              <Card>
+                <CardContent className="p-0">
+                  {isLoadingParts ? (
+                    <div className="flex justify-center items-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : isErrorParts ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-destructive">
+                      <AlertCircle className="h-8 w-8 mb-2" />
+                      <p>Erro ao carregar dados do estoque</p>
+                    </div>
+                  ) : (
+                    <div className="relative overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[100px]">Código</TableHead>
+                            <TableHead>Nome</TableHead>
+                            <TableHead>Categoria</TableHead>
+                            <TableHead className="text-center">Quantidade</TableHead>
+                            <TableHead className="text-center">Mínimo</TableHead>
+                            <TableHead className="text-center">Status</TableHead>
+                            <TableHead className="text-right">Ações</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredParts.filter(part => part.quantidade > 0 && part.quantidade < part.estoque_minimo).length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={7} className="h-24 text-center">
+                                <div className="flex flex-col items-center justify-center text-muted-foreground">
+                                  <PackageOpen className="h-8 w-8 mb-2" />
+                                  <p>Nenhum item com estoque baixo encontrado</p>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            filteredParts
+                              .filter(part => part.quantidade > 0 && part.quantidade < part.estoque_minimo)
+                              .map((part) => (
+                                <TableRow key={part.id}>
+                                  <TableCell className="font-medium">{part.codigo}</TableCell>
+                                  <TableCell>{part.nome}</TableCell>
+                                  <TableCell>{part.categoria || '-'}</TableCell>
+                                  <TableCell className="text-center">{part.quantidade}</TableCell>
+                                  <TableCell className="text-center">{part.estoque_minimo}</TableCell>
+                                  <TableCell className="text-center">
+                                    <Badge variant="warning">Baixo</Badge>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="flex justify-end space-x-1">
+                                      <Button variant="ghost" size="icon" onClick={() => handleOpenMovementDialog(part)}>
+                                        <ShoppingCart className="h-4 w-4" />
+                                      </Button>
+                                      <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(part)}>
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+                                      <Button variant="ghost" size="icon" onClick={() => handleOpenDeleteDialog(part)}>
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            {/* Conteúdo da aba Estoque Zerado */}
+            <TabsContent value="zerado" className="mt-0">
+              <Card>
+                <CardContent className="p-0">
+                  {isLoadingParts ? (
+                    <div className="flex justify-center items-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : isErrorParts ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-destructive">
+                      <AlertCircle className="h-8 w-8 mb-2" />
+                      <p>Erro ao carregar dados do estoque</p>
+                    </div>
+                  ) : (
+                    <div className="relative overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[100px]">Código</TableHead>
+                            <TableHead>Nome</TableHead>
+                            <TableHead>Categoria</TableHead>
+                            <TableHead className="text-center">Quantidade</TableHead>
+                            <TableHead className="text-center">Mínimo</TableHead>
+                            <TableHead className="text-center">Status</TableHead>
+                            <TableHead className="text-right">Ações</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredParts.filter(part => part.quantidade <= 0).length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={7} className="h-24 text-center">
+                                <div className="flex flex-col items-center justify-center text-muted-foreground">
+                                  <PackageOpen className="h-8 w-8 mb-2" />
+                                  <p>Nenhum item com estoque zerado encontrado</p>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            filteredParts
+                              .filter(part => part.quantidade <= 0)
+                              .map((part) => (
+                                <TableRow key={part.id}>
+                                  <TableCell className="font-medium">{part.codigo}</TableCell>
+                                  <TableCell>{part.nome}</TableCell>
+                                  <TableCell>{part.categoria || '-'}</TableCell>
+                                  <TableCell className="text-center">{part.quantidade}</TableCell>
+                                  <TableCell className="text-center">{part.estoque_minimo}</TableCell>
+                                  <TableCell className="text-center">
+                                    <Badge variant="destructive">Zerado</Badge>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="flex justify-end space-x-1">
+                                      <Button variant="ghost" size="icon" onClick={() => handleOpenMovementDialog(part)}>
+                                        <ShoppingCart className="h-4 w-4" />
+                                      </Button>
+                                      <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(part)}>
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+                                      <Button variant="ghost" size="icon" onClick={() => handleOpenDeleteDialog(part)}>
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
           </Tabs>
         </div>
       </div>
