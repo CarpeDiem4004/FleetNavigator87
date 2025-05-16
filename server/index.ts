@@ -158,6 +158,14 @@ app.use((req, res, next) => {
     getHistoricoPosto(req, res);
   });
   
+  // Rota de abastecimento para Campinas V2 (formato com espaços)
+  app.post('/api/abastecimento-direto/posto%20campinas%20v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE CAMPINAS V2 (URL CODIFICADA) ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como campinas_v2
+    req.params = { ...req.params, posto: 'campinas_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
   // Rotas especiais para Osasco, seguindo mesmo padrão de Campinas V2
   // Rota de abastecimento
   app.post('/api/abastecimento-direto-osasco', (req, res) => {
