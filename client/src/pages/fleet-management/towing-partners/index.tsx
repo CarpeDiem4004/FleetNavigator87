@@ -85,7 +85,7 @@ const PartnerCard: React.FC<{ partner: TowingPartner }> = ({ partner }) => {
       </CardContent>
       <CardFooter className="pt-2 border-t">
         <Link to={`/fleet-management/towing-partners/${partner.id}`}>
-          <Button variant="ghost" size="sm" className="w-full text-primary">
+          <Button variant="default" size="sm" className="w-full">
             Ver detalhes <ChevronRight size={16} className="ml-1" />
           </Button>
         </Link>
@@ -377,7 +377,7 @@ const TowingPartnersPage: React.FC = () => {
                           </TableCell>
                           <TableCell className="text-right">
                             <Link to={`/fleet-management/towing-partners/${partner.id}`}>
-                              <Button variant="ghost" size="sm">
+                              <Button variant="default" size="sm">
                                 Ver detalhes
                               </Button>
                             </Link>
@@ -470,7 +470,7 @@ const TowingPartnersPage: React.FC = () => {
                           </TableCell>
                           <TableCell className="text-right">
                             <Link to={`/fleet-management/towing-partners/${partner.id}`}>
-                              <Button variant="ghost" size="sm">
+                              <Button variant="default" size="sm">
                                 Ver detalhes
                               </Button>
                             </Link>
@@ -540,7 +540,7 @@ const TowingPartnersPage: React.FC = () => {
                                 </Button>
                               )}
                               <Link to={`/fleet-management/towing-partners/${partner.id}`}>
-                                <Button variant="ghost" size="sm">
+                                <Button variant="default" size="sm">
                                   Ver detalhes
                                 </Button>
                               </Link>
@@ -598,7 +598,7 @@ const TowingPartnersPage: React.FC = () => {
                                 </Button>
                               )}
                               <Link to={`/fleet-management/towing-partners/${partner.id}`}>
-                                <Button variant="ghost" size="sm">
+                                <Button variant="default" size="sm">
                                   Ver detalhes
                                 </Button>
                               </Link>
