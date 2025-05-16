@@ -52,6 +52,8 @@ import { consultarUsuarios, consultarUsuarioPorId } from "./handlers/userHandler
 import authTestRoutes from './routes/authTest';
 // Importação da rota de ressincronização de sessão
 import { resyncSession } from './routes/sessionResyncRoute';
+// Importação das novas rotas de JWT
+import jwtAuthRoutes from './jwtAuthRoutes';
 // Importação do cliente Supabase para armazenamento de arquivos
 import { createClient } from '@supabase/supabase-js';
 // Importação das rotas de diagnóstico já feita acima
@@ -898,6 +900,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registrar rotas de diagnóstico
   app.use('/api/diagnostico', diagnosticoRoutes);
+  
+  // Registrar rotas de autenticação JWT
+  app.use('/api', jwtAuthRoutes);
   // Rota para registro de movimentações de pátio
   app.post('/api/registro/movimentacao-patio', async (req, res) => {
     try {

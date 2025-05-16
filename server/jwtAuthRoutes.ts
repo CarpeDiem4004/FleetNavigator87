@@ -1,0 +1,346 @@
+import { Router, Request, Response } from 'express';
+import { createClient } from '@supabase/supabase-js';
+import jwt from 'jsonwebtoken';
+import { storage } from './storage';
+import { User } from '@shared/schema';
+
+const router = Router();
+
+// Configuração do Supabase
+const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
+const supabaseKey = process.env.VITE_SUPABASE_SERVICE_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// JWT Secret (deve ser o mesmo usado para validar os tokens)
+const JWT_SECRET = process.env.JWT_SECRET || 'seu_jwt_secret_dev';
+const JWT_EXPIRY = '7d'; // 7 dias
+
+/**
+ * Rota para gerar um token JWT a partir de uma sessão existente
+ * POST /api/get-jwt-token
+ * 
+ * Esta rota verifica se há uma sessão ativa e gera um token JWT
+ * que pode ser usado para autenticação em outras partes do sistema
+ */
+router.post('/get-jwt-token', async (req: Request, res: Response) => {
+  try {
+    console.log('[JWTAuth] Recebida solicitação para gerar token JWT');
+    
+    // Verificar se o usuário está autenticado via sessão
+    if (!req.isAuthenticated() || !req.user) {
+      console.log('[JWTAuth] Usuário não está autenticado');
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Usuário não autenticado' 
+      });
+    }
+    
+    const user = req.user;
+    console.log(`[JWTAuth] Gerando token JWT para usuário: ${user.email}`);
+    
+    // Buscar usuário no Supabase para manter a integração
+    let supabaseUserId = '';
+    
+    try {
+      // Verificar se o usuário existe no Supabase
+      const { data: authData, error: authError } = await supabase.auth.admin.getUserByEmail(user.email);
+      
+      if (authError || !authData.user) {
+        console.log(`[JWTAuth] Usuário não encontrado no Supabase: ${user.email}`);
+        
+        // Se não existe, criar uma entrada no Supabase (opcional)
+        // Esta parte pode ser omitida se preferir apenas gerar o token JWT sem integração Supabase
+        
+        // Gerar uma senha aleatória temporária (já que não temos acesso à senha original)
+        const tempPassword = Math.random().toString(36).slice(-10);
+        
+        // Criar o usuário no Supabase
+        const { data: signUpData, error: signUpError } = await supabase.auth.admin.createUser({
+          email: user.email,
+          password: tempPassword,
+          email_confirm: true,
+          user_metadata: {
+            name: user.name,
+            role: user.role,
+            baseId: user.baseId || user.base_id,
+            basename: user.basename
+          }
+        });
+        
+        if (signUpError) {
+          console.error(`[JWTAuth] Erro ao criar usuário no Supabase: ${signUpError.message}`);
+        } else if (signUpData.user) {
+          console.log(`[JWTAuth] Usuário criado no Supabase: ${signUpData.user.id}`);
+          supabaseUserId = signUpData.user.id;
+        }
+      } else {
+        console.log(`[JWTAuth] Usuário encontrado no Supabase: ${authData.user.id}`);
+        supabaseUserId = authData.user.id;
+      }
+    } catch (supabaseError) {
+      console.error('[JWTAuth] Erro ao interagir com Supabase:', supabaseError);
+      // Continuamos mesmo com erro no Supabase, geraremos um token sem integração
+    }
+    
+    // Payload do token JWT
+    const payload = {
+      sub: supabaseUserId || user.id.toString(),
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      baseId: user.baseId || user.base_id,
+      basename: user.basename,
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) // 7 dias
+    };
+    
+    // Gerar o token JWT
+    const token = jwt.sign(payload, JWT_SECRET);
+    
+    console.log(`[JWTAuth] Token JWT gerado com sucesso para: ${user.email}`);
+    
+    // Retornar o token
+    return res.status(200).json({
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        baseId: user.baseId || user.base_id,
+        basename: user.basename
+      }
+    });
+    
+  } catch (error) {
+    console.error('[JWTAuth] Erro ao gerar token JWT:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno ao gerar token JWT' 
+    });
+  }
+});
+
+/**
+ * Rota para validar um token JWT
+ * GET /api/validate-jwt
+ * 
+ * Esta rota recebe um token JWT no cabeçalho Authorization
+ * e retorna os dados do usuário se o token for válido
+ */
+router.get('/validate-jwt', async (req: Request, res: Response) => {
+  try {
+    // Obter o token do cabeçalho Authorization
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Token não fornecido' 
+      });
+    }
+    
+    const token = authHeader.substring(7);
+    
+    // Verificar o token JWT
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      console.log(`[JWTAuth] Token JWT válido para: ${(decoded as any).email}`);
+      
+      // Buscar o usuário atualizado no banco de dados
+      const user = await storage.getUserByEmail((decoded as any).email);
+      
+      if (!user) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Usuário não encontrado' 
+        });
+      }
+      
+      // Autenticar o usuário na sessão também (opcional)
+      if (!req.isAuthenticated()) {
+        req.login(user, (loginErr) => {
+          if (loginErr) {
+            console.error('[JWTAuth] Erro ao autenticar usuário via sessão:', loginErr);
+          } else {
+            console.log('[JWTAuth] Usuário autenticado na sessão após validação JWT');
+          }
+        });
+      }
+      
+      // Retornar os dados do usuário
+      return res.status(200).json({
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          baseId: user.baseId || user.base_id,
+          basename: user.basename
+        },
+        token: token // Retorna o mesmo token para facilitar 
+      });
+      
+    } catch (jwtError) {
+      console.error('[JWTAuth] Token inválido:', jwtError);
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Token inválido ou expirado' 
+      });
+    }
+    
+  } catch (error) {
+    console.error('[JWTAuth] Erro ao validar token JWT:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno ao validar token JWT' 
+    });
+  }
+});
+
+/**
+ * Rota para ressincronizar a sessão usando um token JWT
+ * POST /api/resync-session-jwt
+ * 
+ * Esta rota recebe um token JWT e cria/atualiza uma sessão para o usuário
+ */
+router.post('/resync-session-jwt', async (req: Request, res: Response) => {
+  try {
+    // Obter o token do cabeçalho Authorization
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Token não fornecido' 
+      });
+    }
+    
+    const token = authHeader.substring(7);
+    
+    console.log('[JWTAuth] Solicitação de ressincronização com token JWT');
+    
+    // Verificar o token JWT usando o Supabase
+    try {
+      // Verificar com o Supabase
+      const { data: userData, error: userError } = await supabase.auth.getUser(token);
+      
+      if (userError || !userData.user) {
+        // Se falhar no Supabase, tentar verificar o token localmente
+        try {
+          const decoded = jwt.verify(token, JWT_SECRET);
+          console.log(`[JWTAuth] Token JWT verificado localmente para: ${(decoded as any).email}`);
+          
+          // Buscar o usuário no banco de dados
+          const user = await storage.getUserByEmail((decoded as any).email);
+          
+          if (!user) {
+            return res.status(404).json({ 
+              success: false, 
+              message: 'Usuário não encontrado' 
+            });
+          }
+          
+          // Autenticar o usuário na sessão
+          req.login(user, (loginErr) => {
+            if (loginErr) {
+              console.error('[JWTAuth] Erro ao autenticar usuário via sessão:', loginErr);
+              return res.status(500).json({ 
+                success: false, 
+                message: 'Erro ao autenticar usuário na sessão' 
+              });
+            }
+            
+            console.log('[JWTAuth] Usuário autenticado na sessão após ressincronização JWT local');
+            
+            // Salvar a sessão explicitamente
+            req.session.save((saveErr) => {
+              if (saveErr) {
+                console.error('[JWTAuth] Erro ao salvar sessão:', saveErr);
+              }
+              
+              return res.status(200).json({
+                success: true,
+                message: 'Sessão ressincronizada com sucesso (local)',
+                user: {
+                  id: user.id,
+                  email: user.email,
+                  name: user.name,
+                  role: user.role
+                }
+              });
+            });
+          });
+          
+        } catch (jwtError) {
+          console.error('[JWTAuth] Token inválido:', jwtError);
+          return res.status(401).json({ 
+            success: false, 
+            message: 'Token inválido ou expirado' 
+          });
+        }
+      } else {
+        // Token válido no Supabase
+        console.log(`[JWTAuth] Token JWT verificado pelo Supabase para: ${userData.user.email}`);
+        
+        // Buscar o usuário no banco de dados
+        const user = await storage.getUserByEmail(userData.user.email || '');
+        
+        if (!user) {
+          return res.status(404).json({ 
+            success: false, 
+            message: 'Usuário não encontrado' 
+          });
+        }
+        
+        // Autenticar o usuário na sessão
+        req.login(user, (loginErr) => {
+          if (loginErr) {
+            console.error('[JWTAuth] Erro ao autenticar usuário via sessão:', loginErr);
+            return res.status(500).json({ 
+              success: false, 
+              message: 'Erro ao autenticar usuário na sessão' 
+            });
+          }
+          
+          console.log('[JWTAuth] Usuário autenticado na sessão após ressincronização JWT Supabase');
+          
+          // Salvar a sessão explicitamente
+          req.session.save((saveErr) => {
+            if (saveErr) {
+              console.error('[JWTAuth] Erro ao salvar sessão:', saveErr);
+            }
+            
+            return res.status(200).json({
+              success: true,
+              message: 'Sessão ressincronizada com sucesso (Supabase)',
+              user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                role: user.role
+              }
+            });
+          });
+        });
+      }
+      
+    } catch (tokenError) {
+      console.error('[JWTAuth] Erro ao verificar token:', tokenError);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Erro ao verificar token' 
+      });
+    }
+    
+  } catch (error) {
+    console.error('[JWTAuth] Erro na ressincronização da sessão:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno na ressincronização' 
+    });
+  }
+});
+
+export default router;
