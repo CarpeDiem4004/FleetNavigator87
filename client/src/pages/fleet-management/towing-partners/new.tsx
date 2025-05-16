@@ -27,7 +27,7 @@ const formSchema = z.object({
   name: z.string()
     .min(3, { message: 'O nome deve ter pelo menos 3 caracteres' })
     .max(100, { message: 'O nome deve ter no máximo 100 caracteres' }),
-  company_document: z.string()
+  cnpj: z.string()
     .min(14, { message: 'CNPJ deve ter 14 dígitos' })
     .max(18, { message: 'CNPJ deve ter no máximo 18 caracteres' })
     .optional()
@@ -133,7 +133,7 @@ const NewTowingPartnerPage: React.FC = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
-      company_document: '',
+      cnpj: '',
       phone: '',
       email: '',
       city: '',
@@ -254,7 +254,7 @@ const NewTowingPartnerPage: React.FC = () => {
                 
                 <FormField
                   control={form.control}
-                  name="company_document"
+                  name="cnpj"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>CNPJ</FormLabel>

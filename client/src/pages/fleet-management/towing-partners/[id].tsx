@@ -36,7 +36,7 @@ interface TowingPartner {
   coverage_radius?: number;
   notes?: string;
   address?: string;
-  company_document?: string;
+  cnpj?: string;
 }
 
 interface TowingRequest {
