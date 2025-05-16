@@ -3,8 +3,8 @@ import { pool } from '../db';
 import { unifiedAuthMiddleware, requireRoles, adminRoleMiddleware } from "../utils/auth-utils.js";
 
 export function registerPrecosCombustivelRoutes(app: Express) {
-  // Obter preços do combustível
-  app.get('/api/precos-combustivel', unifiedAuthMiddleware, async (req, res) => {
+  // Obter preços do combustível (endpoint público)
+  app.get('/api/precos-combustivel', async (req, res) => {
     try {
       const query = 'SELECT * FROM preco_combustivel ORDER BY tipo';
       const result = await pool.query(query);
@@ -23,8 +23,8 @@ export function registerPrecosCombustivelRoutes(app: Express) {
     }
   });
 
-  // Obter preço por tipo de combustível
-  app.get('/api/precos-combustivel/:tipo', unifiedAuthMiddleware, async (req, res) => {
+  // Obter preço por tipo de combustível (endpoint público)
+  app.get('/api/precos-combustivel/:tipo', async (req, res) => {
     try {
       const { tipo } = req.params;
       
