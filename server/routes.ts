@@ -41,6 +41,7 @@ import frotaEstoqueRoutes from "./routes/frotaEstoqueRoutes";
 import parceirosGuinchoRoutes from "./routes/parceirosGuinchoRoutes";
 import historicoConsolidadoRoutes from "./routes/historicoConsolidadoRoutes";
 import patioRoutes from "./routes/patioRoutes";
+import pneusRoutes from "./routes/pneusRoutes";
 import { db, pool } from "./db";
 import authHybridRoutes from "./routes/authHybridRoutes";
 import * as userHandler from "./handlers/userHandler";
