@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Fuel, Droplet, Settings, Edit, Save, RefreshCw, DollarSign } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { apiRequest } from '@/lib/queryClient';
 import TanqueConfigDialog from '@/components/posto-dialogs/TanqueConfigDialog';
 import PrecosCombustivelDialog from '@/components/posto-dialogs/PrecosCombustivelDialog';
 import PrecosCombustivelCard from '@/components/posto-cards/PrecosCombustivelCard';
