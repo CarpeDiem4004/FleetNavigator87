@@ -1,5 +1,8 @@
 // Importar o cliente Supabase do arquivo unificado
-import { getSupabaseClient, getSupabaseAdminClient, supabase, supabaseAdmin } from './supabaseClient';
+import { getSupabaseClient, getSupabaseAdminClient, supabase as supabaseClient, supabaseAdmin } from './supabaseClient';
+
+// Re-exportar o cliente Supabase para compatibilidade
+export const supabase = supabaseClient;
 
 // Verificar se as variáveis de ambiente estão definidas
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
