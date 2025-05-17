@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -44,6 +44,14 @@ interface TowingPartnerSummary extends TowingPartner {
 
 // Componente para cartão/card de parceiro
 const PartnerCard: React.FC<{ partner: TowingPartner }> = ({ partner }) => {
+  // No Wouter, useLocation retorna [path, setPath]
+  const [_, setLocation] = useLocation();
+  
+  const handleViewDetails = () => {
+    console.log(`Navegando para parceiro: ${partner.id}`);
+    setLocation(`/fleet-management/towing-partners/${partner.id}`);
+  };
+  
   return (
     <Card className="h-full flex flex-col hover:shadow-md transition-shadow duration-200">
       <CardHeader className="pb-2">
@@ -84,11 +92,14 @@ const PartnerCard: React.FC<{ partner: TowingPartner }> = ({ partner }) => {
         </div>
       </CardContent>
       <CardFooter className="pt-2 border-t">
-        <Link to={`/fleet-management/towing-partners/${partner.id}`}>
-          <Button variant="default" size="sm" className="w-full">
-            Ver detalhes <ChevronRight size={16} className="ml-1" />
-          </Button>
-        </Link>
+        <Button 
+          variant="default" 
+          size="sm" 
+          className="w-full"
+          onClick={handleViewDetails}
+        >
+          Ver detalhes <ChevronRight size={16} className="ml-1" />
+        </Button>
       </CardFooter>
     </Card>
   );
