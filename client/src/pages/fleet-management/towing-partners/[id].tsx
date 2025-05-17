@@ -137,19 +137,29 @@ const TowingPartnerDetailPage: React.FC = () => {
     queryKey: ['/api/towing/partners', id],
     enabled: !!id,
     queryFn: async () => {
-      const response = await fetch(`/api/towing/partners/${id}`, {
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      console.log(`Buscando dados do parceiro com ID: ${id}`);
+      try {
+        const response = await fetch(`/api/towing/partners/${id}`, {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          }
+        });
+        
+        console.log(`Status da resposta: ${response.status}`);
+        
+        if (!response.ok) {
+          console.error(`Erro ao buscar parceiro ID=${id}:`, response.status);
+          throw new Error(`Falha ao carregar dados do parceiro: ${response.status}`);
         }
-      });
-      
-      if (!response.ok) {
-        console.error(`Erro ao buscar parceiro ID=${id}:`, response.status);
-        throw new Error('Falha ao carregar dados do parceiro');
+        
+        const data = await response.json();
+        console.log(`Dados recebidos:`, data);
+        return data;
+      } catch (error) {
+        console.error(`Erro na requisição do parceiro ID=${id}:`, error);
+        throw error;
       }
-      
-      return response.json();
     }
   });
   

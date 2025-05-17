@@ -85,12 +85,23 @@ router.get('/partners/:id', authenticateJWT, async (req, res) => {
       console.error(`Erro ao verificar tabela towing_partners:`, tableError);
     }
     
-    // Buscar o parceiro específico
-    const { data, error } = await supabase
+    // Logs adicionais para depuração
+    console.log(`Supabase URL: ${supabaseUrl.substring(0, 10)}...`);
+    console.log(`Buscando parceiro de guincho na tabela towing_partners com ID = ${numericId}`);
+    
+    // Buscar o parceiro específico com logs detalhados
+    const result = await supabase
       .from('towing_partners')
       .select('*')
       .eq('id', numericId)
       .single();
+      
+    const { data, error } = result;
+    
+    console.log(`Resultado da busca: ${data ? 'Parceiro encontrado' : 'Parceiro não encontrado'}`);
+    if (error) {
+      console.log(`Erro Supabase: ${error.message}`);
+    }
 
     if (error) {
       console.error(`Erro ao buscar parceiro (ID: ${numericId}):`, error);
