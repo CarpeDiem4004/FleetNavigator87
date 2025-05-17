@@ -198,10 +198,13 @@ export function adminRoleMiddleware(req, res, next) {
     });
   }
 
-  // Modificado para permitir que administradores gerenciem todos os tipos de usuários
+  // Modificado para permitir que administradores e usuários autenticados do Supabase gerenciem todos os tipos de usuários
   // Isso inclui a capacidade de criar usuários com o papel de gestor_frota
-  if (req.user.role !== 'admin') {
-    console.log(`[AdminRole] Acesso negado para usuário ${req.user.id} (${req.user.email}) com role ${req.user.role}`);
+  const isAdmin = req.user.role === 'admin';
+  const isSupabaseAuthenticated = req.user.role === 'authenticated';
+  
+  if (!isAdmin && !isSupabaseAuthenticated) {
+    console.log(`[AdminRole] Acesso negado para usuário ${req.user.id} (${req.user.email || 'sem email'}) com role ${req.user.role}`);
     return res.status(403).json({
       success: false,
       message: 'Acesso negado',
