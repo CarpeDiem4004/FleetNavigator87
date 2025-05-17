@@ -136,6 +136,21 @@ const TowingPartnerDetailPage: React.FC = () => {
   } = useQuery<TowingPartner>({
     queryKey: ['/api/towing/partners', id],
     enabled: !!id,
+    queryFn: async () => {
+      const response = await fetch(`/api/towing/partners/${id}`, {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+      
+      if (!response.ok) {
+        console.error(`Erro ao buscar parceiro ID=${id}:`, response.status);
+        throw new Error('Falha ao carregar dados do parceiro');
+      }
+      
+      return response.json();
+    }
   });
   
   // Busca as solicitações para este parceiro
