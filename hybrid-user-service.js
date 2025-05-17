@@ -211,14 +211,56 @@ class HybridUserService {
       
       let createdUser = null;
       
+      // Verificar valores de enum user_role no PostgreSQL
+      if (this.pgPool && userDataForDb.role === 'gestor_frota') {
+        try {
+          // Verificar se o valor já existe no enum
+          const checkQuery = `
+            SELECT EXISTS (
+              SELECT 1 FROM pg_enum e 
+              JOIN pg_type t ON e.enumtypid = t.oid 
+              WHERE t.typname = 'user_role' 
+              AND e.enumlabel = 'gestor_frota'
+            ) AS exists
+          `;
+          
+          const checkResult = await this.pgPool.query(checkQuery);
+          const enumExists = checkResult.rows[0]?.exists;
+          
+          // Se o valor 'gestor_frota' não existe no enum, tentar adicionar
+          if (!enumExists) {
+            try {
+              console.log('[HybridUserService] Tentando adicionar valor gestor_frota ao enum user_role');
+              await this.pgPool.query(`ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'gestor_frota'`);
+              console.log('[HybridUserService] Valor gestor_frota adicionado ao enum user_role');
+            } catch (enumError) {
+              console.error('[HybridUserService] Erro ao adicionar valor ao enum:', enumError);
+              // Continuar mesmo com erro, vamos tentar o Supabase depois
+            }
+          }
+        } catch (enumCheckError) {
+          console.error('[HybridUserService] Erro ao verificar enum:', enumCheckError);
+        }
+      }
+      
       // Tentar com PostgreSQL direto primeiro (ambiente Replit)
       if (this.pgPool) {
         try {
-          const query = `
-            INSERT INTO users (name, email, password, role, base_id, basename, oficina_id, is_active)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            RETURNING *
-          `;
+          // Se for gestor_frota, tentar inserir com cast para evitar problemas de enum
+          let query;
+          if (userDataForDb.role === 'gestor_frota') {
+            query = `
+              INSERT INTO users (name, email, password, role, base_id, basename, oficina_id, is_active)
+              VALUES ($1, $2, $3, $4::text::user_role, $5, $6, $7, $8)
+              RETURNING *
+            `;
+          } else {
+            query = `
+              INSERT INTO users (name, email, password, role, base_id, basename, oficina_id, is_active)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+              RETURNING *
+            `;
+          }
           
           const values = [
             userDataForDb.name,
