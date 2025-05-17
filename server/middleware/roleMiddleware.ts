@@ -27,15 +27,17 @@ export function verifyAdmin(req: AuthenticatedRequest, res: Response, next: Next
     });
   }
 
-  if (req.user.role !== 'admin') {
-    console.log(`[RoleMiddleware] Acesso admin negado para usuário ${req.user.id} (${req.user.email}) com role ${req.user.role}`);
+  // Verificar se o usuário tem o papel 'admin' 
+  // OU se o usuário está autenticado através do Supabase com role 'authenticated'
+  if (req.user.role !== 'admin' && req.user.role !== 'authenticated') {
+    console.log(`[RoleMiddleware] Acesso admin negado para usuário ${req.user.id} (${req.user.email || ''}) com role ${req.user.role}`);
     return res.status(403).json({
       error: 'Acesso negado',
       message: 'Esta operação requer privilégios de administrador'
     });
   }
 
-  console.log(`[RoleMiddleware] Acesso admin permitido para usuário ${req.user.id} (${req.user.email})`);
+  console.log(`[RoleMiddleware] Acesso admin permitido para usuário ${req.user.id} (${req.user.email || ''})`);
   next();
 }
 
@@ -50,17 +52,17 @@ export function verifyFleetManager(req: AuthenticatedRequest, res: Response, nex
     });
   }
 
-  const allowedRoles = ['admin', 'gestor_frota'];
+  const allowedRoles = ['admin', 'gestor_frota', 'authenticated'];
   
   if (!allowedRoles.includes(req.user.role)) {
-    console.log(`[RoleMiddleware] Acesso gestor frota negado para usuário ${req.user.id} (${req.user.email}) com role ${req.user.role}`);
+    console.log(`[RoleMiddleware] Acesso gestor frota negado para usuário ${req.user.id} (${req.user.email || ''}) com role ${req.user.role}`);
     return res.status(403).json({
       error: 'Acesso negado',
       message: 'Esta operação requer privilégios de gestor de frota'
     });
   }
 
-  console.log(`[RoleMiddleware] Acesso gestor frota permitido para usuário ${req.user.id} (${req.user.email})`);
+  console.log(`[RoleMiddleware] Acesso gestor frota permitido para usuário ${req.user.id} (${req.user.email || ''})`);
   next();
 }
 
