@@ -128,6 +128,32 @@ const TowingPartnerDetailPage: React.FC = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('info');
   
+  // Função para adaptar formato antigo para o novo
+  const adaptPartnerData = (data) => {
+    if (!data) return null;
+    
+    console.log('Adaptando dados do parceiro:', data);
+    
+    // Converter formato antigo (parceiros_guincho) para o novo formato (towing_partners)
+    return {
+      id: data.id,
+      name: data.nome || data.name || '',
+      phone: data.telefone || data.phone || '',
+      email: data.email || '',
+      city: data.cidade || data.city || '',
+      region: data.regiao || data.region || '',
+      status: data.status || 'ativo',
+      service_types: data.tipos_servico || data.service_types || [],
+      payment_methods: data.formas_pagamento || data.payment_methods || [],
+      rating: data.avaliacao || data.rating || 3,
+      available_24h: data.atende_24h || data.accepts_24h || data.available_24h || false,
+      has_insurance: data.possui_seguro || data.has_insurance || false,
+      coverage_radius: data.raio_cobertura || data.coverage_radius || 0,
+      address: data.endereco || data.address || '',
+      cnpj: data.documento_empresa || data.company_document || data.cnpj || ''
+    };
+  };
+  
   // Busca o parceiro de guincho pelo ID
   const {
     data: partner,
