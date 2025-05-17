@@ -240,7 +240,7 @@ router.get('/api/hybrid/users', unifiedAuthMiddleware, async (req, res) => {
  * Rota para atualizar um usuário
  * PUT /api/hybrid/users/:id
  */
-router.put('/api/hybrid/users/:id', unifiedAuthMiddleware, adminRoleMiddleware, async (req, res) => {
+router.put('/api/hybrid/users/:id', unifiedAuthMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     console.log(`[HybridAPI] Atualizando usuário com ID: ${id}`);
@@ -299,7 +299,7 @@ router.put('/api/hybrid/users/:id', unifiedAuthMiddleware, adminRoleMiddleware, 
  * Rota para redefinir a senha de um usuário
  * POST /api/hybrid/users/:id/reset-password
  */
-router.post('/api/hybrid/users/:id/reset-password', unifiedAuthMiddleware, adminRoleMiddleware, async (req, res) => {
+router.post('/api/hybrid/users/:id/reset-password', unifiedAuthMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     console.log(`[HybridAPI] Redefinindo senha para usuário com ID: ${id}`);
@@ -338,7 +338,7 @@ router.post('/api/hybrid/users/:id/reset-password', unifiedAuthMiddleware, admin
  * Rota para excluir um usuário
  * DELETE /api/hybrid/users/:id
  */
-router.delete('/api/hybrid/users/:id', unifiedAuthMiddleware, adminRoleMiddleware, async (req, res) => {
+router.delete('/api/hybrid/users/:id', unifiedAuthMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     console.log(`[HybridAPI] Excluindo usuário com ID: ${id}`);

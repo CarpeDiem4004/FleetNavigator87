@@ -212,7 +212,7 @@ export function adminRoleMiddleware(req, res, next) {
     });
   }
 
-  console.log(`[AdminRole] Acesso admin permitido para usuário ${req.user.id} (${req.user.email})`);
+  console.log(`[AdminRole] Acesso admin permitido para usuário ${req.user.id} (email: ${req.user.email || 'não definido'}, role: ${req.user.role})`);
   next();
 }
 
