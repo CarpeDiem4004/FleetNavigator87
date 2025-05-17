@@ -9,6 +9,16 @@ import { verifyAdmin, verifyFleetManager } from '../middleware/roleMiddleware';
 // Configuração do Supabase
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
 const supabaseKey = process.env.VITE_SUPABASE_SERVICE_KEY || '';
+
+// Verificar que as chaves do Supabase estão presentes
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Erro: Configuração do Supabase incompleta (URL ou chave de serviço ausente)');
+}
+
+console.log('TowingPartnersRoutes - Inicializando cliente Supabase com URL:', 
+  supabaseUrl ? `${supabaseUrl.substring(0, 15)}...` : 'não definida');
+console.log('TowingPartnersRoutes - Chave de serviço disponível:', !!supabaseKey);
+
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const router = Router();

@@ -139,23 +139,40 @@ const TowingPartnerDetailPage: React.FC = () => {
     queryFn: async () => {
       console.log(`Buscando dados do parceiro com ID: ${id}`);
       try {
-        const response = await fetch(`/api/towing/partners/${id}`, {
+        // Tentar primeira rota (nova)
+        console.log(`Tentando buscar em /api/towing/partners/${id}`);
+        let response = await fetch(`/api/towing/partners/${id}`, {
           headers: {
             'Accept': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('authToken')}`
           }
         });
         
-        console.log(`Status da resposta: ${response.status}`);
+        console.log(`Status da resposta (nova rota): ${response.status}`);
+        
+        // Se a primeira rota falhar, tentar rota alternativa
+        if (!response.ok) {
+          console.log(`Tentando rota alternativa /api/guincho/parceiros/${id}`);
+          response = await fetch(`/api/guincho/parceiros/${id}`, {
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            }
+          });
+          console.log(`Status da resposta (rota alternativa): ${response.status}`);
+        }
         
         if (!response.ok) {
-          console.error(`Erro ao buscar parceiro ID=${id}:`, response.status);
+          console.error(`Erro ao buscar parceiro ID=${id} em ambas as rotas:`, response.status);
           throw new Error(`Falha ao carregar dados do parceiro: ${response.status}`);
         }
         
         const data = await response.json();
         console.log(`Dados recebidos:`, data);
-        return data;
+        
+        // Verificar se os dados precisam de adaptação (formato antigo vs. novo)
+        const adaptedData = data.error ? null : (data.name ? data : adaptPartnerData(data));
+        return adaptedData;
       } catch (error) {
         console.error(`Erro na requisição do parceiro ID=${id}:`, error);
         throw error;

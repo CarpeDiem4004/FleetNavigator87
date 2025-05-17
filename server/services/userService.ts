@@ -62,6 +62,13 @@ export class PostgresUserService extends UserService {
   
   async createUser(userData: CreateUserParams): Promise<User> {
     try {
+      console.log('PostgresUserService - Criando usuário:', {
+        name: userData.name, 
+        email: userData.email, 
+        role: userData.role,
+        baseId: userData.baseId
+      });
+      
       // Verificar se base existe se baseId for fornecido
       if (userData.baseId) {
         const baseQuery = 'SELECT id FROM bases WHERE id = $1';
@@ -70,6 +77,41 @@ export class PostgresUserService extends UserService {
         if (baseResult.rowCount === 0) {
           throw new Error('Base não encontrada');
         }
+      }
+      
+      // Verificar se a tabela users existe
+      const tableCheckQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'users'
+        );
+      `;
+      const tableCheck = await pool.query(tableCheckQuery);
+      
+      if (!tableCheck.rows[0].exists) {
+        console.error('Tabela users não existe!');
+        
+        // Criar a tabela users
+        console.log('Criando tabela users...');
+        const createTableQuery = `
+          CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            role VARCHAR(50) NOT NULL,
+            base_id INTEGER,
+            basename VARCHAR(255),
+            oficina_id INTEGER,
+            is_active BOOLEAN DEFAULT TRUE,
+            last_login TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+        `;
+        await pool.query(createTableQuery);
+        console.log('Tabela users criada com sucesso');
       }
       
       // Construir a query de inserção
@@ -88,12 +130,14 @@ export class PostgresUserService extends UserService {
         userData.isActive !== undefined ? userData.isActive : true
       ];
       
+      console.log('Executando query de inserção...');
       const result = await pool.query(query, values);
       
       if (!result.rowCount || result.rowCount === 0) {
         throw new Error('Falha ao criar usuário');
       }
       
+      console.log('Usuário criado com sucesso:', result.rows[0].email);
       return this.mapDbUserToUser(result.rows[0]);
     } catch (error) {
       console.error('Erro ao criar usuário:', error);
