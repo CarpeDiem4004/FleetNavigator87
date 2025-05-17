@@ -67,11 +67,25 @@ router.get('/partners/:id', authenticateJWT, async (req, res) => {
     // Validar se o ID é um número válido
     const numericId = parseInt(id);
     if (isNaN(numericId)) {
+      console.log(`ID de parceiro inválido recebido: ${id}`);
       return res.status(400).json({ error: 'ID inválido', details: 'O ID do parceiro deve ser um número' });
     }
     
     console.log(`Buscando parceiro de guincho com ID: ${numericId}`);
     
+    // Verificar dados da tabela
+    const { data: tableInfo, error: tableError } = await supabase
+      .from('towing_partners')
+      .select('count()')
+      .limit(1);
+      
+    console.log(`Informação da tabela towing_partners:`, tableInfo);
+    
+    if (tableError) {
+      console.error(`Erro ao verificar tabela towing_partners:`, tableError);
+    }
+    
+    // Buscar o parceiro específico
     const { data, error } = await supabase
       .from('towing_partners')
       .select('*')
@@ -90,6 +104,15 @@ router.get('/partners/:id', authenticateJWT, async (req, res) => {
     
     if (!data) {
       console.log(`Parceiro de guincho com ID ${numericId} não encontrado`);
+      
+      // Listar parceiros disponíveis para depuração
+      const { data: allPartners } = await supabase
+        .from('towing_partners')
+        .select('id, name')
+        .limit(10);
+        
+      console.log(`Parceiros disponíveis:`, allPartners);
+      
       return res.status(404).json({ error: 'Parceiro de guincho não encontrado' });
     }
 
