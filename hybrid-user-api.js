@@ -19,7 +19,7 @@ const userService = getHybridUserService();
  * Rota para criar um novo usuário
  * POST /api/hybrid/users
  */
-router.post('/api/hybrid/users', unifiedAuthMiddleware, adminRoleMiddleware, async (req, res) => {
+router.post('/api/hybrid/users', unifiedAuthMiddleware, async (req, res) => {
   try {
     console.log('[HybridAPI] Requisição para criar usuário recebida');
     
@@ -43,15 +43,17 @@ router.post('/api/hybrid/users', unifiedAuthMiddleware, adminRoleMiddleware, asy
       });
     }
     
-    // Verificar permissão especial para criar usuário gestor_frota
-    // Apenas usuários administradores podem criar outros com o papel de gestor_frota
-    if (role === 'gestor_frota' && req.user.role !== 'admin') {
-      console.log(`[HybridAPI] Tentativa de criar usuário gestor_frota por usuário não-admin: ${req.user.id} (${req.user.email}) com role ${req.user.role}`);
+    // Verificação adicional apenas para o caso de criar usuário gestor_frota a partir de usuários não-admin e não-authenticated
+    if (role === 'gestor_frota' && req.user.role !== 'admin' && req.user.role !== 'authenticated') {
+      console.log(`[HybridAPI] Tentativa de criar usuário gestor_frota por usuário sem permissão: ${req.user.id} (${req.user.email}) com role ${req.user.role}`);
       return res.status(403).json({
         success: false,
         message: 'Apenas administradores podem criar usuários com papel de gestor de frota'
       });
     }
+    
+    console.log(`[HybridAPI] Usuário ${req.user.id} (${req.user.email}) com role ${req.user.role} tem permissão para criar usuário ${role}`);
+    
     
     // Verificar se o usuário já existe
     const existingUser = await userService.getUserByEmail(email);
