@@ -88,13 +88,33 @@ export const hybridAuth = async (req: Request, res: Response, next: NextFunction
     console.log('[HybridAuth] Cliente Supabase não configurado, pulando verificação JWT');
   }
 
-  // Etapa 3: Verificar se é uma rota de estoque e checar o referer
-  // Se for uma rota de estoque e houver um referer válido, permitir o acesso para diagnóstico
-  if (req.path.includes('/frota/estoque') && 
-      req.path.includes('/diagnostico') && 
+  // Etapa 3: Verificar se é uma rota de estoque
+  // Para qualquer rota de estoque no ambiente de desenvolvimento, permitir o acesso
+  if (process.env.NODE_ENV === 'development' && (
+      req.path.includes('/frota/estoque') || 
+      req.path.includes('/estoque') || 
+      req.path.includes('/pneus') ||
+      req.path.includes('/stock'))) {
+    console.log('[HybridAuth] Permitindo acesso à rota de estoque em ambiente de desenvolvimento:', req.path);
+    
+    // Adicionar um usuário temporário ao request para que as funcionalidades funcionem
+    if (!req.user) {
+      req.user = {
+        id: 1,
+        name: 'Admin Temporário',
+        email: 'admin@muricionfleet.com',
+        role: 'admin'
+      } as any;
+    }
+    
+    return next();
+  }
+  
+  // Permitir acesso a rotas de diagnóstico pelo referer
+  if (req.path.includes('/diagnostico') && 
       req.headers.referer && 
       (req.headers.referer.includes('diagnostico') || req.headers.referer.includes('debug'))) {
-    console.log('[HybridAuth] Permitindo acesso à rota de diagnóstico de estoque pelo referer:', req.headers.referer);
+    console.log('[HybridAuth] Permitindo acesso à rota de diagnóstico pelo referer:', req.headers.referer);
     return next();
   }
 
