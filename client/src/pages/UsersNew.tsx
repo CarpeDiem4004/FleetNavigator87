@@ -597,10 +597,10 @@ const UsersNew: React.FC = () => {
                     ) : (
                       <NativeSelect
                         id="base"
-                        value={newUser.baseId?.toString() || '0'}
+                        value={newUser.baseId?.toString() || 'global'}
                         onChange={(e) => handleBaseChange(e.target.value)}
                         options={[
-                          { value: '0', label: 'Nenhuma (Global)' },
+                          { value: 'global', label: 'Nenhuma (Global)' },
                           ...(bases || []).map(base => ({
                             value: base.id.toString(),
                             label: base.name

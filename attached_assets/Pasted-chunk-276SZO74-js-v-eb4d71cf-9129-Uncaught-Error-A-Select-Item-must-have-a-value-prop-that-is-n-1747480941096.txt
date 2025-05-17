@@ -1,0 +1,82 @@
+chunk-276SZO74.js?v=eb4d71cf:9129 Uncaught Error: A <Select.Item /> must have a value prop that is not an empty string. This is because the Select value can be set to an empty string to clear the selection and show the placeholder.
+    at @radix-ui_react-sele…s?v=eb4d71cf:870:13
+    at renderWithHooks (chunk-276SZO74.js?v=eb4d71cf:11548:26)
+    at updateForwardRef (chunk-276SZO74.js?v=eb4d71cf:14325:28)
+    at beginWork (chunk-276SZO74.js?v=eb4d71cf:15946:22)
+    at beginWork$1 (chunk-276SZO74.js?v=eb4d71cf:19753:22)
+    at performUnitOfWork (chunk-276SZO74.js?v=eb4d71cf:19198:20)
+    at workLoopSync (chunk-276SZO74.js?v=eb4d71cf:19137:13)
+    at renderRootSync (chunk-276SZO74.js?v=eb4d71cf:19116:15)
+    at recoverFromConcurrentError (chunk-276SZO74.js?v=eb4d71cf:18736:28)
+    at performSyncWorkOnRoot (chunk-276SZO74.js?v=eb4d71cf:18879:28)
+
+chunk-276SZO74.js?v=eb4d71cf:18625 [Violation] 'click' handler took 
+
+
+O ChatGPT disse:
+Esse erro está vindo do componente <Select.Item /> da biblioteca Radix UI e a mensagem é bem direta:
+
+"A <Select.Item /> deve ter uma prop value que não seja uma string vazia."
+
+🧨 O que está acontecendo
+Você provavelmente está fazendo algo assim:
+
+tsx
+Copiar
+Editar
+<Select.Item value="">
+  <Select.ItemText>Selecione uma opção</Select.ItemText>
+</Select.Item>
+E o Radix está dizendo que isso não é permitido, porque o valor "" (string vazia) é reservado para limpar o valor do select.
+
+✅ Como corrigir
+Você tem duas opções:
+
+✅ 1. Usar um Select.Placeholder separado em vez de usar <Select.Item value="">
+tsx
+Copiar
+Editar
+<Select.Root value={valor} onValueChange={setValor}>
+  <Select.Trigger>
+    <Select.Value placeholder="Selecione uma opção" />
+  </Select.Trigger>
+
+  <Select.Content>
+    <Select.Viewport>
+      <Select.Item value="opcao1">
+        <Select.ItemText>Opção 1</Select.ItemText>
+      </Select.Item>
+      <Select.Item value="opcao2">
+        <Select.ItemText>Opção 2</Select.ItemText>
+      </Select.Item>
+    </Select.Viewport>
+  </Select.Content>
+</Select.Root>
+⛔ Evitar isso:
+tsx
+Copiar
+Editar
+<Select.Item value="">
+  <Select.ItemText>Selecione uma opção</Select.ItemText>
+</Select.Item>
+🧪 Dica extra
+Se você estiver carregando opções dinamicamente, garanta que nenhuma delas venha com value: "", como no exemplo abaixo:
+
+tsx
+Copiar
+Editar
+{opcoes.map(opcao => (
+  <Select.Item key={opcao.id} value={opcao.valor ?? ""}> // <-- isso pode causar erro
+    <Select.ItemText>{opcao.nome}</Select.ItemText>
+  </Select.Item>
+))}
+✅ Corrigir assim:
+
+tsx
+Copiar
+Editar
+{opcoes.map(opcao => (
+  <Select.Item key={opcao.id} value={opcao.valor || `id-${opcao.id}`}>
+    <Select.ItemText>{opcao.nome}</Select.ItemText>
+  </Select.Item>
+))}
