@@ -245,7 +245,7 @@ const UsersNew: React.FC = () => {
 
   // Atualizar o nome da base ao selecionar uma base
   const handleBaseChange = (baseId: string) => {
-    if (baseId === "0") {
+    if (baseId === "global") {
       setNewUser({
         ...newUser,
         baseId: null,
