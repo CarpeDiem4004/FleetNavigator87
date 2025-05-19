@@ -509,6 +509,77 @@ const NewTowingPartnerPage: React.FC = () => {
           
           <Card>
             <CardHeader>
+              <CardTitle>Dados Bancários</CardTitle>
+              <CardDescription>
+                Informações bancárias para pagamentos
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="bank_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Banco</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nome do banco" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="bank_agency"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Agência</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Número da agência" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="bank_account"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Conta</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Número da conta com dígito" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="pix_key"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Chave PIX</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Chave PIX para pagamentos" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        CPF, CNPJ, email, telefone ou chave aleatória
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>Configurações Adicionais</CardTitle>
               <CardDescription>
                 Configure status, opções adicionais e observações
