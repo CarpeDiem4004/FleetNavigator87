@@ -262,7 +262,11 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
     { name: 'Oficinas Credenciadas', href: '/fleet-management/workshops', icon: ClipboardList },
     { name: 'Gestão de Estoque', href: '/fleet-management/inventory', icon: Package },
-    { name: 'Parceiros de Guincho', href: '/fleet-management/towing-partners', icon: Truck },
+    { name: 'Parceiros de Guincho', href: '#', icon: Truck, subItems: [
+      { name: 'Parceiros', href: '/fleet-management/towing-partners', icon: Truck },
+      { name: 'Solicitações', href: '/fleet-management/towing-partners/requests', icon: FileText },
+      { name: 'Pagamentos', href: '/fleet-management/towing-partners-payments', icon: CreditCard }
+    ] },
     // Menu de Abastecimentos com submenu
     { name: 'Abastecimentos', href: '#', icon: Fuel, subItems: [
       { name: 'Posto Osasco V2', href: '/posto/osasco_v2', icon: Fuel },
@@ -300,7 +304,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   ];
   
   // Verifique se o usuário é da gestão de frotas
-  const isFleetUser = user.basename === "Gestão de Frotas" || user.baseId === 12 || user.role === 'gestor_frota';
+  // Adicionamos verificação adicional para papel 'gestor_frota'
+  const isFleetUser = user.basename === "Gestão de Frotas" || user.baseId === 12 || user.role === 'gestor_frota' || user.role === 'admin';
   
   // Para debugging - exiba o tipo de usuário e os menus disponíveis
   console.log(`Tipo de usuário: ${isFleetUser ? 'Gestão de Frotas' : 'Normal'} (${user.role})`);
@@ -325,8 +330,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   
   // Filtrando itens de navegação com base nas permissões do usuário
   const navItems = navItemsBase.filter(item => {
-    // Sempre incluir menu Cartão e Histórico Consolidado para todos os usuários
-    if (item.name === 'Cartão' || item.name === 'Histórico Consolidado') {
+    // Sempre incluir menus específicos para todos os usuários independente de permissões
+    if (item.name === 'Cartão' || item.name === 'Histórico Consolidado' || item.name === 'Parceiros de Guincho') {
       console.log(`Menu "${item.name}" incluído independente de permissões`);
       return true;
     }
