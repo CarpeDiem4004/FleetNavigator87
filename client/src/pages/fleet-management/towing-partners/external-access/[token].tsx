@@ -291,6 +291,11 @@ export default function TowingPartnerExternalAccess() {
       }
       
       // Para tokens reais, enviar ao servidor
+      console.log('[ExternalAccess] Enviando dados para o servidor:', {
+        token,
+        formData
+      });
+      
       const response = await fetch('/api/towing/simple-external/submit', {
         method: 'POST',
         headers: {
@@ -305,10 +310,10 @@ export default function TowingPartnerExternalAccess() {
           servico_realizado: formData.service_description,
           data_servico: formData.service_date,
           valor: parseFloat(formData.actual_cost) || 0,
-          km_percorrido: parseFloat(formData.km_traveled) || 0,
-          observacoes: formData.observation,
-          nome_contato: formData.driver_name,
-          telefone_contato: ""
+          km_percorrido: parseInt(formData.km_traveled) || 0,
+          observacoes: formData.observation || "",
+          nome_contato: formData.driver_name || "",
+          telefone_contato: formData.driver_phone || ""
         })
       });
 
@@ -403,6 +408,10 @@ export default function TowingPartnerExternalAccess() {
             setActiveTab(value);
             // Sempre carregar o histórico quando mudar para a aba de histórico
             if (value === "historico") {
+              console.log('[ExternalAccess] Mudou para aba de histórico, forçando atualização dos dados');
+              // Limpar histórico antes de recarregar para garantir dados atualizados
+              setServiceHistory([]);
+              // Forçar carregamento do histórico atualizado
               loadServiceHistory();
             }
           }} className="max-w-4xl mx-auto">
@@ -776,8 +785,15 @@ export default function TowingPartnerExternalAccess() {
                   km_traveled: '',
                   observation: ''
                 });
+                // Forçar limpeza do histórico antes de navegar para garantir dados atualizados
+                setServiceHistory([]);
                 // Mostrar a aba de histórico após o envio
                 setActiveTab("historico");
+                // Forçar carregamento após um pequeno delay para garantir que o backend processou
+                setTimeout(() => {
+                  console.log('[ExternalAccess] Botão "Ver Histórico" - Forçando nova consulta ao histórico');
+                  loadServiceHistory();
+                }, 500);
               }}
             >
               Ver Histórico
