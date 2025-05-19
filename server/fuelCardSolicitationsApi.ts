@@ -10,8 +10,8 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
       SELECT * FROM solicitacoes_fuel_card
       ORDER BY 
         CASE 
-          WHEN status = 'Pendente' THEN 1
-          WHEN status = 'Em Análise' THEN 2
+          WHEN status = 'pendente' THEN 1
+          WHEN status = 'em_analise' THEN 2
           ELSE 3
         END,
         data_solicitacao DESC
@@ -35,24 +35,171 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
 }
 
 /**
- * Obtém uma solicitação de cartão específica
+ * Cria uma nova solicitação de cartão de combustível
  */
-export async function getFuelCardSolicitation(req: Request, res: Response) {
+export async function createFuelCardSolicitation(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const { 
+      placa, 
+      km, 
+      tipo_cartao, 
+      provedor_cartao, 
+      numero_cartao, 
+      motorista, 
+      observacoes 
+    } = req.body;
     
-    if (!id || isNaN(parseInt(id))) {
+    // Validações básicas
+    if (!placa) {
       return res.status(400).json({
         success: false,
-        message: 'ID inválido'
+        message: 'A placa do veículo é obrigatória'
+      });
+    }
+    
+    if (!km) {
+      return res.status(400).json({
+        success: false,
+        message: 'A quilometragem (KM) é obrigatória'
+      });
+    }
+    
+    if (!motorista) {
+      return res.status(400).json({
+        success: false,
+        message: 'O nome do motorista é obrigatório'
+      });
+    }
+    
+    if (tipo_cartao === 'numero' && !numero_cartao) {
+      return res.status(400).json({
+        success: false,
+        message: 'O número do cartão é obrigatório quando o tipo de cartão é "número"'
       });
     }
     
     const query = `
-      SELECT * FROM solicitacoes_fuel_card
-      WHERE id = $1
+      INSERT INTO solicitacoes_fuel_card
+        (placa, km, tipo_cartao, provedor_cartao, numero_cartao, motorista, observacoes, status, data_solicitacao)
+      VALUES
+        ($1, $2, $3, $4, $5, $6, $7, 'pendente', NOW())
+      RETURNING *
     `;
     
+    const values = [
+      placa,
+      km,
+      tipo_cartao,
+      provedor_cartao,
+      numero_cartao || null,
+      motorista,
+      observacoes || null
+    ];
+    
+    const result = await pool.query(query, values);
+    
+    return res.status(201).json({
+      success: true,
+      message: 'Solicitação criada com sucesso',
+      data: result.rows[0]
+    });
+  } catch (error: any) {
+    console.error('Erro ao criar solicitação de cartão:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao criar solicitação',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Atualiza o status de uma solicitação de cartão de combustível
+ */
+export async function updateFuelCardSolicitationStatus(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const user = req.user as any;
+    
+    if (!id || !status) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID e status são obrigatórios'
+      });
+    }
+    
+    if (!['atendido', 'rejeitado', 'em_analise', 'pendente'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Status inválido. Use: pendente, em_analise, atendido ou rejeitado'
+      });
+    }
+    
+    // Verifica se a solicitação existe
+    const checkQuery = `SELECT * FROM solicitacoes_fuel_card WHERE id = $1`;
+    const checkResult = await pool.query(checkQuery, [id]);
+    
+    if (checkResult.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Solicitação não encontrada'
+      });
+    }
+    
+    // Se o status for 'atendido', atualiza os campos de atendimento
+    let query;
+    let values;
+    
+    if (status === 'atendido') {
+      query = `
+        UPDATE solicitacoes_fuel_card 
+        SET 
+          status = $1, 
+          atendido_por = $2, 
+          data_atendimento = NOW(),
+          updated_at = NOW()
+        WHERE id = $3
+        RETURNING *
+      `;
+      values = [status, user?.name || 'Sistema', id];
+    } else {
+      query = `
+        UPDATE solicitacoes_fuel_card 
+        SET 
+          status = $1,
+          updated_at = NOW()
+        WHERE id = $2
+        RETURNING *
+      `;
+      values = [status, id];
+    }
+    
+    const result = await pool.query(query, values);
+    
+    return res.status(200).json({
+      success: true,
+      message: `Status atualizado para ${status}`,
+      data: result.rows[0]
+    });
+  } catch (error: any) {
+    console.error('Erro ao atualizar status da solicitação:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao atualizar status',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Obtém uma solicitação de cartão de combustível pelo ID
+ */
+export async function getFuelCardSolicitationById(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    
+    const query = `SELECT * FROM solicitacoes_fuel_card WHERE id = $1`;
     const result = await pool.query(query, [id]);
     
     if (result.rowCount === 0) {
@@ -67,7 +214,7 @@ export async function getFuelCardSolicitation(req: Request, res: Response) {
       data: result.rows[0]
     });
   } catch (error: any) {
-    console.error('Erro ao buscar solicitação específica:', error);
+    console.error('Erro ao buscar solicitação:', error);
     return res.status(500).json({
       success: false,
       message: 'Erro ao buscar solicitação',
@@ -77,167 +224,93 @@ export async function getFuelCardSolicitation(req: Request, res: Response) {
 }
 
 /**
- * Cria uma nova solicitação de cartão
+ * Cria a tabela solicitacoes_fuel_card se não existir
  */
-export async function createFuelCardSolicitation(req: Request, res: Response) {
+export async function setupFuelCardTable() {
   try {
-    const {
-      placa,
-      motorista,
-      valor_solicitado,
-      km_veiculo,
-      tipo_cartao,
-      observacoes
-    } = req.body;
+    console.log("Verificando se a tabela solicitacoes_fuel_card existe...");
     
-    // Validação dos campos obrigatórios
-    if (!placa || !motorista || !valor_solicitado) {
-      return res.status(400).json({
-        success: false,
-        message: 'Campos obrigatórios: placa, motorista e valor_solicitado'
-      });
-    }
-    
-    const query = `
-      INSERT INTO solicitacoes_fuel_card
-      (placa, motorista, valor_solicitado, km_veiculo, tipo_cartao, observacoes)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING *
+    // Verificar se a tabela já existe
+    const checkQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'solicitacoes_fuel_card'
+      );
     `;
     
-    const result = await pool.query(query, [
-      placa,
-      motorista,
-      valor_solicitado,
-      km_veiculo || null,
-      tipo_cartao || null,
-      observacoes || null
-    ]);
+    const checkResult = await pool.query(checkQuery);
+    const tabelaExiste = checkResult.rows[0].exists;
     
-    return res.status(201).json({
-      success: true,
-      message: 'Solicitação criada com sucesso',
-      data: result.rows[0]
-    });
-  } catch (error: any) {
-    console.error('Erro ao criar solicitação:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Erro ao criar solicitação',
-      error: error.message
-    });
-  }
-}
-
-/**
- * Atualiza o status de uma solicitação de cartão
- */
-export async function updateFuelCardSolicitation(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-    const { status, atendido_por } = req.body;
-    
-    if (!id || isNaN(parseInt(id))) {
-      return res.status(400).json({
-        success: false,
-        message: 'ID inválido'
-      });
+    if (tabelaExiste) {
+      console.log("Tabela solicitacoes_fuel_card já existe, verificando estrutura...");
+      
+      // Verificar se todas as colunas necessárias existem, adicionando se necessário
+      const columns = [
+        { name: 'placa', type: 'VARCHAR(20)' },
+        { name: 'km', type: 'INTEGER' },
+        { name: 'tipo_cartao', type: 'VARCHAR(50)' },
+        { name: 'provedor_cartao', type: 'VARCHAR(50)' },
+        { name: 'numero_cartao', type: 'VARCHAR(100)' },
+        { name: 'motorista', type: 'VARCHAR(100)' },
+        { name: 'observacoes', type: 'TEXT' },
+        { name: 'status', type: 'VARCHAR(20)' },
+        { name: 'data_solicitacao', type: 'TIMESTAMP' },
+        { name: 'atendido_por', type: 'VARCHAR(100)' },
+        { name: 'data_atendimento', type: 'TIMESTAMP' },
+        { name: 'updated_at', type: 'TIMESTAMP' }
+      ];
+      
+      for (const column of columns) {
+        const checkColumnQuery = `
+          SELECT EXISTS (
+            SELECT FROM information_schema.columns 
+            WHERE table_name = 'solicitacoes_fuel_card' AND column_name = '${column.name}'
+          );
+        `;
+        
+        const checkColumnResult = await pool.query(checkColumnQuery);
+        const columnExists = checkColumnResult.rows[0].exists;
+        
+        if (!columnExists) {
+          console.log(`Adicionando coluna ${column.name} à tabela solicitacoes_fuel_card...`);
+          
+          const addColumnQuery = `
+            ALTER TABLE solicitacoes_fuel_card 
+            ADD COLUMN ${column.name} ${column.type}
+          `;
+          
+          await pool.query(addColumnQuery);
+        }
+      }
+      
+      return;
     }
     
-    // Validação do status
-    const validStatus = ['Pendente', 'Em Análise', 'Recarga Efetuada', 'Negado'];
-    if (!validStatus.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Status inválido. Opções válidas: ' + validStatus.join(', ')
-      });
-    }
+    console.log("Criando tabela solicitacoes_fuel_card...");
     
-    // Verifica se a solicitação existe
-    const checkQuery = `SELECT * FROM solicitacoes_fuel_card WHERE id = $1`;
-    const checkResult = await pool.query(checkQuery, [id]);
-    
-    if (checkResult.rowCount === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Solicitação não encontrada'
-      });
-    }
-    
-    // Atualiza o status e informações de atendimento
-    const updateQuery = `
-      UPDATE solicitacoes_fuel_card
-      SET 
-        status = $1,
-        atendido_por = $2,
-        data_atendimento = NOW(),
-        updated_at = NOW()
-      WHERE id = $3
-      RETURNING *
+    // Criar tabela
+    const createTableQuery = `
+      CREATE TABLE solicitacoes_fuel_card (
+        id SERIAL PRIMARY KEY,
+        placa VARCHAR(20) NOT NULL,
+        km INTEGER NOT NULL,
+        tipo_cartao VARCHAR(50) NOT NULL,
+        provedor_cartao VARCHAR(50) NOT NULL,
+        numero_cartao VARCHAR(100),
+        motorista VARCHAR(100) NOT NULL,
+        observacoes TEXT,
+        status VARCHAR(20) DEFAULT 'pendente',
+        data_solicitacao TIMESTAMP DEFAULT NOW(),
+        atendido_por VARCHAR(100),
+        data_atendimento TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
     `;
     
-    const updateResult = await pool.query(updateQuery, [status, atendido_por, id]);
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Solicitação atualizada com sucesso',
-      data: updateResult.rows[0]
-    });
-  } catch (error: any) {
-    console.error('Erro ao atualizar solicitação:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Erro ao atualizar solicitação',
-      error: error.message
-    });
+    await pool.query(createTableQuery);
+    console.log("Tabela solicitacoes_fuel_card criada com sucesso!");
+  } catch (error) {
+    console.error("Erro ao verificar/criar tabela solicitacoes_fuel_card:", error);
   }
-}
-
-/**
- * Exclui uma solicitação de cartão
- */
-export async function deleteFuelCardSolicitation(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-    
-    if (!id || isNaN(parseInt(id))) {
-      return res.status(400).json({
-        success: false,
-        message: 'ID inválido'
-      });
-    }
-    
-    // Verifica se a solicitação existe
-    const checkQuery = `SELECT * FROM solicitacoes_fuel_card WHERE id = $1`;
-    const checkResult = await pool.query(checkQuery, [id]);
-    
-    if (checkResult.rowCount === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Solicitação não encontrada'
-      });
-    }
-    
-    // Exclui a solicitação
-    const deleteQuery = `DELETE FROM solicitacoes_fuel_card WHERE id = $1`;
-    await pool.query(deleteQuery, [id]);
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Solicitação excluída com sucesso'
-    });
-  } catch (error: any) {
-    console.error('Erro ao excluir solicitação:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Erro ao excluir solicitação',
-      error: error.message
-    });
-  }
-}
-
-// Função para sincronizar com o Supabase
-export async function syncWithSupabase() {
-  // Implementação futura
-  console.log('Sincronização com Supabase será implementada futuramente');
 }

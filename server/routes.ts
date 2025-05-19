@@ -20,10 +20,10 @@ import { registerDashboardKpiRoutes } from "./dashboardKpiApi";
 import { getPostosResumo, getPostoDetalhes, registrarEntradaCombustivel, excluirPostoSaoPaulo } from "./postosApi";
 import { 
   getFuelCardSolicitations, 
-  getFuelCardSolicitation, 
+  getFuelCardSolicitationById, 
   createFuelCardSolicitation, 
-  updateFuelCardSolicitation, 
-  deleteFuelCardSolicitation 
+  updateFuelCardSolicitationStatus,
+  setupFuelCardTable
 } from "./fuelCardSolicitationsApi";
 import { runSupabaseDiagnostic } from "./supabaseDiagnostic";
 import { registerPneusRoutes } from "./pneusApi";
@@ -4941,10 +4941,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rotas para solicitações de cartão de combustível
   app.get('/api/fuel-card-solicitations', isAuthenticated, getFuelCardSolicitations);
-  app.get('/api/fuel-card-solicitations/:id', isAuthenticated, getFuelCardSolicitation);
-  app.post('/api/fuel-card-solicitations', isAuthenticated, createFuelCardSolicitation);
-  app.patch('/api/fuel-card-solicitations/:id', isAuthenticated, updateFuelCardSolicitation);
-  app.delete('/api/fuel-card-solicitations/:id', isAuthenticated, deleteFuelCardSolicitation);
+  app.get('/api/fuel-card-solicitations/:id', isAuthenticated, getFuelCardSolicitationById);
+  app.post('/api/fuel-card-solicitations', createFuelCardSolicitation);
+  app.put('/api/fuel-card-solicitations/:id/status', isAuthenticated, updateFuelCardSolicitationStatus);
+  
+  // Inicializar tabela de solicitações de cartão combustível
+  setupFuelCardTable().catch(err => console.error("Erro ao configurar tabela de solicitações de cartão:", err));
   
   // Solicitações de manutenção - API para página de solicitação de manutenção
   app.get("/api/solicitacoes-manutencao", hasMaintenanceAccess, async (req, res) => {

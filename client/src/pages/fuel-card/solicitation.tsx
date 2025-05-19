@@ -1,237 +1,309 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLocation } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, CreditCard, AlertCircle } from "lucide-react";
+
+// Schema de validação para solicitação de cartão combustível
+const solicitacaoSchema = z.object({
+  placa: z.string()
+    .min(7, { message: "A placa deve ter no mínimo 7 caracteres" })
+    .max(8, { message: "A placa deve ter no máximo 8 caracteres" }),
+  km: z.string()
+    .min(1, { message: "A quilometragem é obrigatória" })
+    .transform(val => parseInt(val, 10))
+    .refine(val => !isNaN(val) && val > 0, { 
+      message: "A quilometragem deve ser um número positivo",
+      path: ["km"]
+    }),
+  tipo_cartao: z.enum(["placa", "numero"], { 
+    required_error: "Selecione o tipo de cartão"
+  }),
+  provedor_cartao: z.enum(["Ticket", "Alelo"], { 
+    required_error: "Selecione o provedor do cartão"
+  }),
+  numero_cartao: z.string().optional(),
+  motorista: z.string()
+    .min(3, { message: "O nome do motorista deve ter no mínimo 3 caracteres" }),
+  observacoes: z.string().optional()
+});
+
+type SolicitacaoValues = z.infer<typeof solicitacaoSchema>;
 
 export default function FuelCardSolicitation() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  const [formData, setFormData] = useState({
-    placa: "",
-    km: "",
-    tipo_cartao: "placa", // placa ou numero
-    provedor_cartao: "ticket", // ticket ou alelo
-    numero_cartao: "",
-    motorista: "",
-    observacoes: ""
+  const form = useForm<SolicitacaoValues>({
+    resolver: zodResolver(solicitacaoSchema),
+    defaultValues: {
+      placa: "",
+      km: "",
+      tipo_cartao: "placa",
+      provedor_cartao: "Ticket",
+      numero_cartao: "",
+      motorista: "",
+      observacoes: ""
+    }
   });
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const tipoCartao = form.watch("tipo_cartao");
   
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validação básica
-    if (!formData.placa) {
-      toast({
-        title: "Campo obrigatório",
-        description: "Por favor, informe a placa do veículo.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (!formData.km) {
-      toast({
-        title: "Campo obrigatório",
-        description: "Por favor, informe a quilometragem atual do veículo.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (formData.tipo_cartao === "numero" && !formData.numero_cartao) {
-      toast({
-        title: "Campo obrigatório",
-        description: "Por favor, informe o número do cartão.",
-        variant: "destructive",
-      });
-      return;
-    }
+  async function onSubmit(values: SolicitacaoValues) {
+    setIsSubmitting(true);
+    setError(null);
     
     try {
-      setIsSubmitting(true);
+      const response = await fetch("/api/fuel-card-solicitations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(values)
+      });
       
-      const response = await apiRequest("POST", "/api/fuel-card-solicitations", formData);
+      const data = await response.json();
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Erro ao enviar solicitação");
+        throw new Error(data.message || "Erro ao enviar solicitação");
       }
       
       toast({
         title: "Solicitação enviada",
-        description: "Sua solicitação foi enviada com sucesso e está aguardando aprovação.",
+        description: "Sua solicitação de cartão combustível foi enviada com sucesso.",
       });
       
-      // Resetar o formulário
-      setFormData({
-        placa: "",
-        km: "",
-        tipo_cartao: "placa",
-        provedor_cartao: "ticket",
-        numero_cartao: "",
-        motorista: "",
-        observacoes: ""
-      });
-      
-      // Redirecionar para a página de confirmação ou outra página adequada
+      // Redirecionar para página de confirmação
       setLocation("/fuel-card/confirmation");
       
     } catch (error) {
       console.error("Erro ao enviar solicitação:", error);
+      setError(error instanceof Error ? error.message : "Ocorreu um erro ao enviar sua solicitação");
+      
       toast({
-        title: "Erro ao enviar solicitação",
-        description: error instanceof Error ? error.message : "Ocorreu um erro ao processar sua solicitação",
+        title: "Erro ao enviar",
+        description: "Não foi possível enviar sua solicitação. Por favor, tente novamente.",
         variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
     }
-  };
-
+  }
+  
   return (
     <div className="container mx-auto py-8">
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader className="bg-primary text-primary-foreground">
-          <CardTitle className="text-xl">Solicitação de Cartão Combustível</CardTitle>
-          <CardDescription className="text-primary-foreground/90">
-            Preencha os dados abaixo para solicitar seu cartão de combustível
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="placa">Placa do Veículo</Label>
-                  <Input 
-                    id="placa" 
-                    name="placa" 
-                    placeholder="AAA-0000" 
-                    value={formData.placa}
-                    onChange={handleChange}
+      <div className="max-w-3xl mx-auto">
+        <h1 className="text-3xl font-bold mb-2">Solicitação de Cartão Combustível</h1>
+        <p className="text-muted-foreground mb-6">Preencha o formulário abaixo para solicitar um cartão de combustível</p>
+        
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Erro</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Dados da Solicitação</CardTitle>
+            <CardDescription>
+              Informe os dados do veículo e do cartão desejado
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="placa"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Placa do Veículo</FormLabel>
+                        <FormControl>
+                          <Input placeholder="ABC1234" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Informe a placa do veículo sem traços ou espaços
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="km"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Quilometragem Atual</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="123456" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          KM atual do veículo
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="km">Quilometragem (KM)</Label>
-                  <Input 
-                    id="km" 
-                    name="km" 
-                    type="number" 
-                    placeholder="Km atual" 
-                    value={formData.km}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="tipo_cartao">Tipo de Cartão</Label>
-                  <Select
-                    value={formData.tipo_cartao}
-                    onValueChange={(value) => handleSelectChange("tipo_cartao", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="placa">Placa do Veículo</SelectItem>
-                      <SelectItem value="numero">Número do Cartão</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <FormField
+                  control={form.control}
+                  name="tipo_cartao"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>Tipo de Cartão</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="flex flex-col space-y-1"
+                        >
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="placa" />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                              Cartão vinculado à placa do veículo
+                            </FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="numero" />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                              Cartão específico por número
+                            </FormLabel>
+                          </FormItem>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
-                <div className="space-y-2">
-                  <Label htmlFor="provedor_cartao">Cartão</Label>
-                  <Select
-                    value={formData.provedor_cartao}
-                    onValueChange={(value) => handleSelectChange("provedor_cartao", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o cartão" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ticket">Ticket</SelectItem>
-                      <SelectItem value="alelo">Alelo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              {formData.tipo_cartao === "numero" && (
-                <div className="space-y-2">
-                  <Label htmlFor="numero_cartao">Número do Cartão</Label>
-                  <Input 
-                    id="numero_cartao" 
-                    name="numero_cartao" 
-                    placeholder="Digite o número do cartão" 
-                    value={formData.numero_cartao}
-                    onChange={handleChange}
+                <FormField
+                  control={form.control}
+                  name="provedor_cartao"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Provedor do Cartão</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o provedor do cartão" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Ticket">Ticket</SelectItem>
+                          <SelectItem value="Alelo">Alelo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Empresa que fornece o cartão de combustível
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                {tipoCartao === "numero" && (
+                  <FormField
+                    control={form.control}
+                    name="numero_cartao"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Número do Cartão</FormLabel>
+                        <FormControl>
+                          <Input placeholder="1234 5678 9012 3456" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Informe o número do cartão de combustível
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-              )}
-              
-              <div className="space-y-2">
-                <Label htmlFor="motorista">Nome do Motorista</Label>
-                <Input 
-                  id="motorista" 
-                  name="motorista" 
-                  placeholder="Seu nome completo" 
-                  value={formData.motorista}
-                  onChange={handleChange}
+                )}
+                
+                <FormField
+                  control={form.control}
+                  name="motorista"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome do Motorista</FormLabel>
+                      <FormControl>
+                        <Input placeholder="João da Silva" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Nome completo do motorista solicitante
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="observacoes">Observações (opcional)</Label>
-                <Input 
-                  id="observacoes" 
-                  name="observacoes" 
-                  placeholder="Informações adicionais" 
-                  value={formData.observacoes}
-                  onChange={handleChange}
+                
+                <FormField
+                  control={form.control}
+                  name="observacoes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Observações (opcional)</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Informe detalhes adicionais, se necessário" 
+                          className="resize-none" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-            </div>
-            
-            <Separator />
-            
-            <div className="flex justify-end gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setLocation("/")}
-              >
-                Cancelar
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Enviando..." : "Enviar Solicitação"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+                
+                <CardFooter className="px-0 flex justify-between">
+                  <Button 
+                    variant="outline" 
+                    type="button" 
+                    onClick={() => navigate("/dashboard")}
+                    disabled={isSubmitting}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        Solicitar Cartão
+                      </>
+                    )}
+                  </Button>
+                </CardFooter>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
