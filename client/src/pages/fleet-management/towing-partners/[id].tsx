@@ -259,19 +259,26 @@ const TowingPartnerDetailPage: React.FC = () => {
   const generateLinkMutation = useMutation({
     mutationFn: async (data: { partner_id: number, expiration_days: number }) => {
       try {
-        // Simulando a chamada para a API que gerararia um token
-        // Em uma implementação real, isso seria uma chamada para o backend
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simular delay de rede
+        // Chamada real à API para gerar o token
+        const response = await fetch('/api/towing/external-access/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+          credentials: 'include' // Importante para enviar cookies de autenticação
+        });
         
-        // Gerando um token para fins de demonstração
-        const demoToken = Math.random().toString(36).substring(2, 15) + 
-                         Math.random().toString(36).substring(2, 15);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Erro ao gerar link de acesso');
+        }
         
-        // Na implementação real, a URL viria do backend
-        const accessUrl = `${window.location.origin}/fleet-management/towing-partners/external-access/${demoToken}`;
-        
-        return { success: true, access_url: accessUrl, expires_at: new Date(Date.now() + data.expiration_days * 24 * 60 * 60 * 1000) };
+        return await response.json();
       } catch (error) {
+        if (error instanceof Error) {
+          throw error;
+        }
         throw new Error('Erro ao gerar link de acesso');
       }
     },
