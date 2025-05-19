@@ -13,9 +13,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import PageHeader from '@/components/layout/PageHeader';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useMutation } from '@tanstack/react-query';
 
 // Ícones
-import { Truck, Phone, MapPin, Star, ArrowLeft, Mail, FileText, AlertCircle, Calendar, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Truck, Phone, MapPin, Star, ArrowLeft, Mail, FileText, AlertCircle, Calendar, CheckCircle2, XCircle, Clock, Link, Copy, Check } from 'lucide-react';
 
 // Tipos
 interface TowingPartner {
@@ -128,6 +132,10 @@ const TowingPartnerDetailPage: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('info');
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [accessLink, setAccessLink] = useState('');
+  const [isLinkCopied, setIsLinkCopied] = useState(false);
+  const [linkExpirationDays, setLinkExpirationDays] = useState(30);
   
   // Função para adaptar formato antigo para o novo
   const adaptPartnerData = (data) => {
@@ -247,6 +255,67 @@ const TowingPartnerDetailPage: React.FC = () => {
     enabled: !!user && !!id,
   });
   
+  // Mutação para gerar link de acesso externo
+  const generateLinkMutation = useMutation({
+    mutationFn: async (data: { partner_id: number, expiration_days: number }) => {
+      try {
+        // Simulando a chamada para a API que gerararia um token
+        // Em uma implementação real, isso seria uma chamada para o backend
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Simular delay de rede
+        
+        // Gerando um token para fins de demonstração
+        const demoToken = Math.random().toString(36).substring(2, 15) + 
+                         Math.random().toString(36).substring(2, 15);
+        
+        // Na implementação real, a URL viria do backend
+        const accessUrl = `${window.location.origin}/fleet-management/towing-partners/external-access/${demoToken}`;
+        
+        return { success: true, access_url: accessUrl, expires_at: new Date(Date.now() + data.expiration_days * 24 * 60 * 60 * 1000) };
+      } catch (error) {
+        throw new Error('Erro ao gerar link de acesso');
+      }
+    },
+    onSuccess: (data) => {
+      setAccessLink(data.access_url);
+      setIsLinkModalOpen(true);
+    },
+    onError: (error) => {
+      toast({
+        title: 'Erro',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  });
+  
+  // Função para gerar link de acesso externo
+  const handleGenerateExternalAccessLink = () => {
+    if (!partner) return;
+    
+    generateLinkMutation.mutate({ 
+      partner_id: partner.id, 
+      expiration_days: linkExpirationDays 
+    });
+  };
+  
+  // Função para copiar link para a área de transferência
+  const copyLinkToClipboard = () => {
+    if (!accessLink) return;
+    
+    navigator.clipboard.writeText(accessLink)
+      .then(() => {
+        setIsLinkCopied(true);
+        setTimeout(() => setIsLinkCopied(false), 2000);
+      })
+      .catch(() => {
+        toast({
+          title: 'Erro',
+          description: 'Não foi possível copiar o link',
+          variant: 'destructive'
+        });
+      });
+  };
+  
   // Verifica se o usuário tem permissão para editar parceiros
   const canEditPartners = user && ['admin', 'gestor_frota'].includes(user.role);
   
@@ -292,6 +361,55 @@ const TowingPartnerDetailPage: React.FC = () => {
   
   return (
     <div className="container mx-auto py-6 space-y-8 max-w-7xl">
+      {/* Modal de link de acesso */}
+      <Dialog open={isLinkModalOpen} onOpenChange={setIsLinkModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Link de Acesso Externo</DialogTitle>
+            <DialogDescription>
+              Um link exclusivo para o parceiro {partner?.name} foi gerado. Compartilhe este link para que o parceiro possa registrar os serviços de guincho realizados.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center space-x-2 mt-4">
+            <div className="grid flex-1 gap-2">
+              <Label htmlFor="link" className="sr-only">Link</Label>
+              <Input
+                id="link"
+                value={accessLink}
+                readOnly
+                className="font-mono text-sm"
+              />
+            </div>
+            <Button 
+              type="button" 
+              size="icon"
+              variant="outline"
+              onClick={copyLinkToClipboard}
+              className="shrink-0"
+            >
+              {isLinkCopied ? (
+                <Check className="h-4 w-4" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+              <span className="sr-only">Copiar</span>
+            </Button>
+          </div>
+          <div className="mt-2 text-sm text-muted-foreground">
+            Este link expira em {linkExpirationDays} dias.
+          </div>
+          <DialogFooter className="sm:justify-start">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setIsLinkModalOpen(false)}
+            >
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="flex items-center gap-2 mb-4">
         <Link to="/fleet-management/towing-partners">
           <Button variant="ghost" size="sm">
@@ -404,19 +522,28 @@ const TowingPartnerDetailPage: React.FC = () => {
             </CardContent>
             <CardFooter className="pt-0">
               {canEditPartners && (
-                <div className="flex gap-2 w-full">
-                  <Button variant="outline" className="w-full">
-                    Editar
+                <div className="flex flex-col gap-2 w-full">
+                  <div className="flex gap-2 w-full">
+                    <Button variant="outline" className="w-full">
+                      Editar
+                    </Button>
+                    {partner.status === 'ativo' ? (
+                      <Button variant="destructive" className="w-full">
+                        Desativar
+                      </Button>
+                    ) : (
+                      <Button variant="default" className="w-full">
+                        Ativar
+                      </Button>
+                    )}
+                  </div>
+                  <Button 
+                    variant="default" 
+                    className="w-full bg-primary"
+                    onClick={() => handleGenerateExternalAccessLink()}
+                  >
+                    Gerar Link de Acesso Externo
                   </Button>
-                  {partner.status === 'ativo' ? (
-                    <Button variant="destructive" className="w-full">
-                      Desativar
-                    </Button>
-                  ) : (
-                    <Button variant="default" className="w-full">
-                      Ativar
-                    </Button>
-                  )}
                 </div>
               )}
             </CardFooter>
