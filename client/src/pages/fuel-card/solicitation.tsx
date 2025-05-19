@@ -74,12 +74,20 @@ export default function FuelCardSolicitation() {
     setError(null);
     
     try {
+      // Garantir que valor_solicitado seja um número para o backend
+      const processedValues = {
+        ...values,
+        valor_solicitado: parseFloat(values.valor_solicitado as unknown as string) || 0
+      };
+      
+      console.log("Enviando dados da solicitação:", processedValues);
+      
       const response = await fetch("/api/fuel-card-solicitations", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(values)
+        body: JSON.stringify(processedValues)
       });
       
       const data = await response.json();

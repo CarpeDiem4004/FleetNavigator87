@@ -123,8 +123,12 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
     
     const valores_padrao = 0; // Valor padrão quando não é informado
     
-    // Não precisamos mais desta conversão, pois já foi feita acima
-    console.log("Valor solicitado que será inserido no banco:", valor_solicitado);
+    // Faça uma verificação final antes de inserir no banco
+    const valorFinal = typeof valor_solicitado === 'number' && !isNaN(valor_solicitado) 
+      ? valor_solicitado 
+      : 0; // Valor padrão seguro
+    
+    console.log("Valor solicitado final que será inserido no banco:", valorFinal);
     
     const values = [
       placa,
@@ -134,7 +138,7 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       numero_cartao || null,
       motorista,
       observacoes || null,
-      valor_solicitado // Já convertido para número acima
+      valorFinal // Valor garantido como número
     ];
     
     const result = await pool.query(query, values);
