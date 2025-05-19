@@ -185,10 +185,10 @@ export default function FuelCardDashboard() {
                 {isLoading ? (
                   <Skeleton className="h-10 w-16" />
                 ) : (
-                  totalValueAttended.toLocaleString('pt-BR', {
+                  `R$ ${totalValueAttended.toLocaleString('pt-BR', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
-                  })
+                  })}`
                 )}
               </span>
             </div>
