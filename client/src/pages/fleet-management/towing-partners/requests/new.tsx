@@ -51,6 +51,10 @@ const formSchema = z.object({
   estimated_cost: z.coerce.number()
     .min(0, { message: 'O custo estimado deve ser maior ou igual a zero' })
     .optional(),
+  // Campo reason exigido pelo backend
+  reason: z.string()
+    .min(5, { message: 'O motivo deve ter pelo menos 5 caracteres' })
+    .max(200, { message: 'O motivo deve ter no máximo 200 caracteres' }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -102,6 +106,7 @@ const NewTowingRequestPage: React.FC = () => {
       partner_id: '',
       description: '',
       estimated_cost: undefined,
+      reason: '', // Campo obrigatório adicionado
     }
   });
   
@@ -359,6 +364,27 @@ const NewTowingRequestPage: React.FC = () => {
                   )}
                 />
                 
+                <FormField
+                  control={form.control}
+                  name="reason"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Motivo da Solicitação <span className="text-destructive">*</span></FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Informe o motivo pelo qual está solicitando o serviço de guincho"
+                          className="resize-y min-h-[80px]"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        O motivo é obrigatório para o processamento da solicitação
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="description"
