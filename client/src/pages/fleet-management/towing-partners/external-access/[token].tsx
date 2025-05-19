@@ -313,13 +313,21 @@ export default function TowingPartnerExternalAccess() {
       });
 
       const data = await response.json();
+      console.log('[ExternalAccess] Resposta da API ao enviar serviço:', {
+        status: response.status,
+        ok: response.ok,
+        data
+      });
 
       if (response.ok) {
         setSuccess(true);
         setShowSuccessDialog(true);
         
         // Após envio bem-sucedido, atualizar o histórico de serviços
-        loadServiceHistory();
+        console.log('[ExternalAccess] Recarregando histórico após serviço registrado');
+        setTimeout(() => {
+          loadServiceHistory();
+        }, 500); // Pequeno atraso para garantir que o banco de dados seja atualizado
       } else {
         toast({
           title: 'Erro ao enviar dados',
