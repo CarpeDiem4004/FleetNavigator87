@@ -27,6 +27,7 @@ import TowingPartnerDetailPage from "@/pages/fleet-management/towing-partners/[i
 import NewTowingPartnerPage from "@/pages/fleet-management/towing-partners/new";
 import TowingRequestsPage from "@/pages/fleet-management/towing-partners/requests";
 import NewTowingRequestPage from "@/pages/fleet-management/towing-partners/requests/new";
+import FordPartnerDetail from "@/pages/fleet-management/towing-partners/FordPartnerDetail";
 import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
 // LineHallRedirect removido conforme solicitação
 import FleetManagementRedirect from "@/components/permission/FleetManagementRedirect";
@@ -192,6 +193,7 @@ function App() {
           <ProtectedRoute path="/fleet-management/towing-partners/new" component={NewTowingPartnerPage} />
           <ProtectedRoute path="/fleet-management/towing-partners/requests" component={TowingRequestsPage} />
           <ProtectedRoute path="/fleet-management/towing-partners/requests/new" component={NewTowingRequestPage} />
+          <ProtectedRoute path="/fleet-management/towing-partners/6" component={FordPartnerDetail} />
           <ProtectedRoute path="/fleet-management/towing-partners/:id" component={TowingPartnerDetailPage} />
           <ProtectedRoute path="/accidents" component={Accidents} />
           <ProtectedRoute path="/work-safety" component={WorkSafety} />
