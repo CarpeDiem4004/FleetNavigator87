@@ -118,29 +118,47 @@ export async function getHistoricoPosto(req, res) {
       }
       
       querySource = tableName;
+      
+      // Verificar a estrutura da tabela para adaptar a consulta
+      const columnsQuery = `
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = $1
+      `;
+      
+      console.log(`Verificando colunas da tabela ${tableName}`);
+      const columnsResult = await pool.query(columnsQuery, [tableName]);
+      const tableColumns = columnsResult.rows.map(row => row.column_name);
+      
+      console.log(`Colunas disponíveis em ${tableName}:`, tableColumns);
+      
+      // Criar uma consulta que se adapta às colunas disponíveis na tabela
       dataQuery = `
         SELECT 
           id,
           placa,
-          km_atual as km,
-          hodometro_atual,
-          tipo_combustivel,
-          litros as quantidade_litros,
-          motorista as nome_motorista,
-          motorista_rg as rg_motorista,
-          operador as nome_operador,
-          valor_litro,
-          valor_total,
-          tipo_veiculo,
-          observacoes,
-          lavagem,
-          tipo_lavagem,
+          ${tableColumns.includes('km_atual') ? 'km_atual as km,' : 'NULL as km,'}
+          ${tableColumns.includes('hodometro_atual') ? 'hodometro_atual,' : 'NULL as hodometro_atual,'}
+          ${tableColumns.includes('tipo_combustivel') ? 'tipo_combustivel,' : "'Desconhecido' as tipo_combustivel,"}
+          ${tableColumns.includes('litros') ? 'litros as quantidade_litros,' : 'NULL as quantidade_litros,'}
+          ${tableColumns.includes('motorista') ? 'motorista as nome_motorista,' : "'Não informado' as nome_motorista,"}
+          ${tableColumns.includes('motorista_rg') ? 'motorista_rg as rg_motorista,' : "NULL as rg_motorista,"}
+          ${tableColumns.includes('operador') ? 'operador as nome_operador,' : "'Sistema' as nome_operador,"}
+          ${tableColumns.includes('valor_litro') ? 'valor_litro,' : '0 as valor_litro,'}
+          ${tableColumns.includes('valor_total') ? 'valor_total,' : '0 as valor_total,'}
+          ${tableColumns.includes('tipo_veiculo') ? 'tipo_veiculo,' : "'Não especificado' as tipo_veiculo,"}
+          ${tableColumns.includes('observacoes') ? 'observacoes,' : "'' as observacoes,"}
+          ${tableColumns.includes('lavagem') ? 'lavagem,' : 'false as lavagem,'}
+          ${tableColumns.includes('tipo_lavagem') ? 'tipo_lavagem,' : "NULL as tipo_lavagem,"}
           to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora,
           created_at
         FROM ${tableName}
         ORDER BY created_at DESC
         LIMIT ${req.query.limit || 50}
       `;
+      
+      console.log(`Consulta adaptada para tabela ${tableName}:`, dataQuery);
     } else {
       // Fluxo normal usando view consolidada
       const viewName = `abastecimentos_posto_${postoName.toLowerCase()}_consolidado`;
