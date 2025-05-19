@@ -19,6 +19,7 @@ import userApi from "./api/userApi";
 // Importar APIs híbridas (ambiente Replit e externo)
 import hybridUserApi from "../hybrid-user-api.js";
 import hybridBasesApi from "../hybrid-bases-api.js";
+// Removido import para towingPartnerExternalRoutes
 // Importar middleware de CORS personalizado
 import { corsMiddleware } from "./middleware/cors";
 // Importar middleware para corrigir cookies de sessão
@@ -117,6 +118,8 @@ app.use((req, res, next) => {
   // Registrar os roteadores de API híbrida (funcionam dentro e fora do Replit)
   app.use(hybridUserApi);
   app.use(hybridBasesApi);
+  
+  // Rota de acesso externo para parceiros de guincho será integrada em outro lugar
   
   // Registrar rota de diagnóstico para verificar autenticação no módulo de frota
   app.use('/api/frota', frotaDiagnosticoRoute);
