@@ -121,11 +121,10 @@ const NewTowingRequestPage: React.FC = () => {
         requested_by: user?.name || "Usuário do sistema",
         pickup_location: data.pickup_location,
         destination: data.destination,
-        reason: data.reason + ` (Motorista: ${data.driver_name})`, // Incluímos o motorista no motivo
+        // Incorporamos o tipo de serviço e motorista no motivo já que esses campos não existem na tabela
+        reason: `${data.reason} | Tipo de Serviço: ${data.service_type} | Motorista: ${data.driver_name} | Urgência: ${data.urgency}`, 
         vehicle_condition: data.description || '', // Mover descrição para campo correto
-        estimated_cost: data.estimated_cost || null,
-        service_type: data.service_type,
-        urgency: data.urgency
+        estimated_cost: data.estimated_cost || null
       };
       
       const response = await apiRequest('POST', '/api/towing/requests', requestData);
