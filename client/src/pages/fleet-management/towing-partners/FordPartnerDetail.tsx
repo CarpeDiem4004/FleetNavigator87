@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import SafeLink from '@/components/SafeLink';
+import { Switch } from '@/components/ui/switch';
 
 // Componentes UI
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,7 @@ const FordPartnerDetail: React.FC = () => {
   const [accessLink, setAccessLink] = useState('');
   const [isLinkCopied, setIsLinkCopied] = useState(false);
   const [linkExpirationDays, setLinkExpirationDays] = useState(30);
+  const [isPermanentLink, setIsPermanentLink] = useState(false);
 
   // Dados fixos do parceiro Ford
   const partner = {
