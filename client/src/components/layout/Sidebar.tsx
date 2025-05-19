@@ -111,12 +111,8 @@ const NavItemWithSubmenu: React.FC<{
               <Link 
                 href={subItem.href}
                 onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
                   console.log(`Clicou no subitem: ${subItem.name} (${subItem.href})`);
-                  // Usar wouter para navegação em vez de manipular history diretamente
-                  window.history.pushState(null, "", subItem.href);
-                  window.dispatchEvent(new PopStateEvent("popstate"));
+                  // Fechar o menu após a navegação
                   onClose();
                 }}
                 className={`flex items-center px-4 py-2 rounded-md group transition-all duration-200 cursor-pointer ${
