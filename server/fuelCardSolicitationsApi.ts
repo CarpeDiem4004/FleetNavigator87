@@ -80,11 +80,13 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
     
     const query = `
       INSERT INTO solicitacoes_fuel_card
-        (placa, km, tipo_cartao, provedor_cartao, numero_cartao, motorista, observacoes, status, data_solicitacao)
+        (placa, km, tipo_cartao, provedor_cartao, numero_cartao, motorista, observacoes, status, data_solicitacao, valor_solicitado)
       VALUES
-        ($1, $2, $3, $4, $5, $6, $7, 'pendente', NOW())
+        ($1, $2, $3, $4, $5, $6, $7, 'pendente', NOW(), $8)
       RETURNING *
     `;
+    
+    const valores_padrao = 0; // Valor padrão quando não é informado
     
     const values = [
       placa,
@@ -93,7 +95,8 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       provedor_cartao,
       numero_cartao || null,
       motorista,
-      observacoes || null
+      observacoes || null,
+      valores_padrao // Valor padrão para o campo valor_solicitado
     ];
     
     const result = await pool.query(query, values);

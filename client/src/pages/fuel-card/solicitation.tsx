@@ -26,6 +26,13 @@ const solicitacaoSchema = z.object({
       message: "A quilometragem deve ser um número positivo",
       path: ["km"]
     }),
+  valor_solicitado: z.string()
+    .min(1, { message: "O valor solicitado é obrigatório" })
+    .transform(val => parseFloat(val))
+    .refine(val => !isNaN(val) && val > 0, {
+      message: "O valor solicitado deve ser um número positivo",
+      path: ["valor_solicitado"]
+    }),
   tipo_cartao: z.enum(["placa", "numero"], { 
     required_error: "Selecione o tipo de cartão"
   }),
@@ -51,6 +58,7 @@ export default function FuelCardSolicitation() {
     defaultValues: {
       placa: "",
       km: "",
+      valor_solicitado: "",
       tipo_cartao: "placa",
       provedor_cartao: "Ticket",
       numero_cartao: "",
@@ -126,7 +134,7 @@ export default function FuelCardSolicitation() {
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <FormField
                     control={form.control}
                     name="placa"
@@ -155,6 +163,23 @@ export default function FuelCardSolicitation() {
                         </FormControl>
                         <FormDescription>
                           KM atual do veículo
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="valor_solicitado"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Valor Solicitado (R$)</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" placeholder="150.00" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Valor em reais para carregar no cartão
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
