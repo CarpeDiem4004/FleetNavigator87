@@ -206,10 +206,13 @@ const TowingRequestsPage: React.FC = () => {
                 <SelectValue placeholder="Filtrar parceiro" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos parceiros</SelectItem>
+                <SelectItem value="todos">Todos parceiros</SelectItem>
                 {partners?.map((partner) => (
-                  <SelectItem key={partner.id} value={partner.id.toString()}>
-                    {partner.name || `Parceiro #${partner.id}`}
+                  <SelectItem 
+                    key={partner.id} 
+                    value={partner.id.toString()}
+                  >
+                    {partner.name?.trim() || `Parceiro #${partner.id}`}
                   </SelectItem>
                 ))}
               </SelectContent>
