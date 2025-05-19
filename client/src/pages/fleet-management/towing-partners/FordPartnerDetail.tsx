@@ -55,7 +55,7 @@ const FordPartnerDetail: React.FC = () => {
   };
 
   // Dados de exemplo para solicitações
-  const requests = [
+  const [requests, setRequests] = useState([
     {
       id: 1,
       partner_id: 6,
@@ -69,7 +69,8 @@ const FordPartnerDetail: React.FC = () => {
       urgency: "media",
       estimated_cost: 350,
       rating: 5,
-      comments: "Ótimo serviço, muito rápido"
+      comments: "Ótimo serviço, muito rápido",
+      is_paid: false
     },
     {
       id: 2,
@@ -84,9 +85,10 @@ const FordPartnerDetail: React.FC = () => {
       urgency: "alta",
       estimated_cost: 420,
       rating: null,
-      comments: null
+      comments: null,
+      is_paid: false
     }
-  ];
+  ]);
 
   // Função para gerar link de acesso externo
   const handleGenerateLink = async () => {
@@ -126,8 +128,58 @@ const FordPartnerDetail: React.FC = () => {
     toast({
       title: "Link copiado",
       description: "Link copiado para a área de transferência",
-      variant: "success",
+      variant: "default",
     });
+  };
+  
+  // Função para marcar solicitação como paga
+  const handleMarkAsPaid = (requestId: number) => {
+    try {
+      // Aqui seria feita uma chamada à API para atualizar o status de pagamento
+      // Por enquanto, apenas atualizamos o estado local
+      const updatedRequests = requests.map(req => 
+        req.id === requestId ? { ...req, is_paid: true } : req
+      );
+      setRequests(updatedRequests);
+      
+      toast({
+        title: "Pagamento registrado",
+        description: `O pagamento da solicitação #${requestId} foi registrado com sucesso`,
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Erro ao registrar pagamento:", error);
+      toast({
+        title: "Erro ao registrar pagamento",
+        description: "Não foi possível registrar o pagamento. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Função para confirmar conclusão de serviço
+  const handleConfirmCompletion = (requestId: number) => {
+    try {
+      // Aqui seria feita uma chamada à API para atualizar o status
+      // Por enquanto, apenas atualizamos o estado local
+      const updatedRequests = requests.map(req => 
+        req.id === requestId ? { ...req, status: "concluido" } : req
+      );
+      setRequests(updatedRequests);
+      
+      toast({
+        title: "Serviço concluído",
+        description: `A solicitação #${requestId} foi marcada como concluída`,
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Erro ao confirmar conclusão:", error);
+      toast({
+        title: "Erro ao confirmar conclusão",
+        description: "Não foi possível confirmar a conclusão do serviço. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -392,12 +444,36 @@ const FordPartnerDetail: React.FC = () => {
                         <TableCell>{new Date(request.created_at).toLocaleDateString('pt-BR')}</TableCell>
                         <TableCell>R$ {request.estimated_cost.toFixed(2)}</TableCell>
                         <TableCell>
-                          <SafeLink to={`/fleet-management/towing-partners/requests/${request.id}`}>
-                            <Button variant="ghost" size="sm">
-                              <FileText className="h-4 w-4" />
-                              <span className="sr-only">Detalhes</span>
-                            </Button>
-                          </SafeLink>
+                          <div className="flex items-center space-x-2">
+                            <SafeLink to={`/fleet-management/towing-partners/requests/${request.id}`}>
+                              <Button variant="ghost" size="sm" title="Ver detalhes">
+                                <FileText className="h-4 w-4" />
+                                <span className="sr-only">Detalhes</span>
+                              </Button>
+                            </SafeLink>
+                            {request.status === 'concluido' && !request.is_paid && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                title="Marcar como pago"
+                                onClick={() => handleMarkAsPaid(request.id)}
+                              >
+                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                <span className="sr-only">Aprovar Pagamento</span>
+                              </Button>
+                            )}
+                            {request.status === 'em_andamento' && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                title="Confirmar conclusão"
+                                onClick={() => handleConfirmCompletion(request.id)}
+                              >
+                                <Check className="h-4 w-4 text-blue-500" />
+                                <span className="sr-only">Confirmar Conclusão</span>
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
