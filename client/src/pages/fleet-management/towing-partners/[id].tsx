@@ -293,6 +293,8 @@ const TowingPartnerDetailPage: React.FC = () => {
     },
     onSuccess: (data) => {
       setAccessLink(data.access_url);
+      // Se o link foi criado como permanente, salvamos esse status
+      setIsPermanentLink(data.is_permanent);
       setIsLinkModalOpen(true);
     },
     onError: (error) => {

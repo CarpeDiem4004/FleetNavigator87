@@ -83,6 +83,7 @@ router.post('/generate', async (req: Request, res: Response) => {
       token,
       partner,
       expires_at: expiresAt,
+      is_permanent: is_permanent,
       access_url: accessUrl
     });
   } catch (error) {
