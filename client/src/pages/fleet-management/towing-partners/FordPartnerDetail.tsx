@@ -193,7 +193,7 @@ const FordPartnerDetail: React.FC = () => {
         </SafeLink>
         <PageHeader
           title={`Parceiro: ${partner.name}`}
-          subtitle={`Detalhes e histórico do parceiro de guincho`}
+          description={`Detalhes e histórico do parceiro de guincho`}
           icon={<Truck className="h-6 w-6" />}
         />
       </div>
