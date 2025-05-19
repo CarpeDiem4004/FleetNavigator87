@@ -29,6 +29,7 @@ import TowingRequestsPage from "@/pages/fleet-management/towing-partners/request
 import NewTowingRequestPage from "@/pages/fleet-management/towing-partners/requests/new";
 import FordPartnerDetail from "@/pages/fleet-management/towing-partners/FordPartnerDetail";
 import TowingPartnerExternalAccess from "@/pages/fleet-management/towing-partners/external-access/[token]";
+import TowingPaymentsPage from "@/pages/fleet-management/towing-partners/payments";
 import { ProtectedRoute } from "@/components/permission/ProtectedRoute";
 // LineHallRedirect removido conforme solicitação
 import FleetManagementRedirect from "@/components/permission/FleetManagementRedirect";
