@@ -390,11 +390,11 @@ const TowingPartnersPage: React.FC = () => {
                             <StatusBadge status={partner.status} />
                           </TableCell>
                           <TableCell className="text-right">
-                            <Link to={`/fleet-management/towing-partners/${partner.id}`}>
+                            <SafeLink to={`/fleet-management/towing-partners/${partner.id}`}>
                               <Button variant="default" size="sm">
                                 Ver detalhes
                               </Button>
-                            </Link>
+                            </SafeLink>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -402,238 +402,147 @@ const TowingPartnersPage: React.FC = () => {
                   </Table>
                 ) : (
                   <div className="text-center py-10 text-muted-foreground">
-                    <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold">Nenhum parceiro encontrado</h3>
-                    <p className="mt-2">Tente ajustar os filtros ou adicione um novo parceiro.</p>
+                    <AlertCircle className="mx-auto h-12 w-12 mb-4 text-muted-foreground" />
+                    <h3 className="font-medium text-lg mb-2">Nenhum parceiro encontrado</h3>
+                    <p>Não foram encontrados parceiros com os filtros selecionados.</p>
                   </div>
                 )}
               </CardContent>
             </Card>
-            
-            {/* Visualização em cards (alternativa) */}
-            <div className="mt-8">
-              <h3 className="text-lg font-semibold mb-4">Parceiros Destacados</h3>
-              <Separator className="mb-6" />
-              
-              {isLoading ? (
-                renderSkeletonCards()
-              ) : filteredPartners.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredPartners
-                    .filter(p => p.status === 'ativo')
-                    .slice(0, 6)
-                    .map(partner => (
-                      <PartnerCard key={partner.id} partner={partner} />
-                    ))}
-                </div>
-              ) : null}
-            </div>
           </div>
         </TabsContent>
         
-        {/* Conteúdo duplicado para outras abas, usando o mesmo filtro */}
         <TabsContent value="ativo" className="mt-6">
-          <div className="my-4 grid gap-6">
-            {/* Tabela de parceiros ativos */}
-            {/* Mesma estrutura mas filtrada pelos status */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Parceiros Ativos</CardTitle>
-                <CardDescription>
-                  {filteredPartners.length} parceiros encontrados
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  renderSkeletonTable()
-                ) : filteredPartners.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Região</TableHead>
-                        <TableHead>Serviços</TableHead>
-                        <TableHead>Avaliação</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredPartners.map((partner) => (
-                        <TableRow key={partner.id}>
-                          <TableCell className="font-medium">{partner.name}</TableCell>
-                          <TableCell>{partner.city}, {partner.region}</TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap gap-1">
-                              {partner.service_types.slice(0, 2).map((type, i) => (
-                                <Badge key={i} variant="outline" className="font-normal text-xs">
-                                  {type}
-                                </Badge>
-                              ))}
-                              {partner.service_types.length > 2 && (
-                                <Badge variant="outline" className="font-normal text-xs">
-                                  +{partner.service_types.length - 2}
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center">
-                              <RatingStars rating={partner.rating} />
-                              <span className="ml-1 text-sm">{partner.rating.toFixed(1)}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Link to={`/fleet-management/towing-partners/${partner.id}`}>
-                              <Button variant="default" size="sm">
-                                Ver detalhes
-                              </Button>
-                            </Link>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-center py-10 text-muted-foreground">
-                    <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold">Nenhum parceiro ativo encontrado</h3>
-                    <p className="mt-2">Tente ajustar os filtros ou adicione um novo parceiro.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {isLoading ? (
+              renderSkeletonCards()
+            ) : filteredPartners.length > 0 ? (
+              filteredPartners.map((partner) => (
+                <PartnerCard key={partner.id} partner={partner} />
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-10 text-muted-foreground">
+                <AlertCircle className="mx-auto h-12 w-12 mb-4 text-muted-foreground" />
+                <h3 className="font-medium text-lg mb-2">Nenhum parceiro ativo encontrado</h3>
+                <p>Não foram encontrados parceiros ativos com os filtros selecionados.</p>
+              </div>
+            )}
           </div>
         </TabsContent>
         
         <TabsContent value="pendente" className="mt-6">
-          <div className="my-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Parceiros Pendentes</CardTitle>
-                <CardDescription>Parceiros aguardando aprovação ou em processo de credenciamento</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  renderSkeletonTable()
-                ) : filteredPartners.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Região</TableHead>
-                        <TableHead>Contato</TableHead>
-                        <TableHead>Serviços</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredPartners.map((partner) => (
-                        <TableRow key={partner.id}>
-                          <TableCell className="font-medium">{partner.name}</TableCell>
-                          <TableCell>{partner.city}, {partner.region}</TableCell>
-                          <TableCell>{partner.phone}</TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap gap-1">
-                              {partner.service_types.slice(0, 2).map((type, i) => (
-                                <Badge key={i} variant="outline" className="font-normal text-xs">
-                                  {type}
-                                </Badge>
-                              ))}
-                              {partner.service_types.length > 2 && (
-                                <Badge variant="outline" className="font-normal text-xs">
-                                  +{partner.service_types.length - 2}
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              {canAddPartners && (
-                                <Button variant="default" size="sm">
-                                  Aprovar
-                                </Button>
-                              )}
-                              <Link to={`/fleet-management/towing-partners/${partner.id}`}>
-                                <Button variant="default" size="sm">
-                                  Ver detalhes
-                                </Button>
-                              </Link>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-center py-10 text-muted-foreground">
-                    <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold">Nenhum parceiro pendente</h3>
-                    <p className="mt-2">Todos os parceiros estão com status definido.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {isLoading ? (
+              renderSkeletonCards()
+            ) : filteredPartners.length > 0 ? (
+              filteredPartners.map((partner) => (
+                <div key={partner.id} className="relative">
+                  <div className="absolute -top-1 -right-1 z-10">
+                    <Badge className="bg-amber-500 hover:bg-amber-600">Pendente</Badge>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                  <Card className="overflow-hidden">
+                    <CardHeader>
+                      <CardTitle>{partner.name}</CardTitle>
+                      <CardDescription>{partner.city}, {partner.region}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <div className="text-sm font-medium mb-1">Contato</div>
+                          <div className="text-sm text-muted-foreground">{partner.phone}</div>
+                          <div className="text-sm text-muted-foreground">{partner.email}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium mb-1">Serviços oferecidos</div>
+                          <div className="flex flex-wrap gap-1">
+                            {partner.service_types.map((type, i) => (
+                              <Badge key={i} variant="outline" className="font-normal">
+                                {type}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="flex justify-between">
+                      <Button variant="outline" size="sm">
+                        Aprovar
+                      </Button>
+                      <SafeLink to={`/fleet-management/towing-partners/${partner.id}`}>
+                        <Button variant="default" size="sm">
+                          Ver detalhes
+                        </Button>
+                      </SafeLink>
+                    </CardFooter>
+                  </Card>
+                </div>
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-10 text-muted-foreground">
+                <AlertCircle className="mx-auto h-12 w-12 mb-4 text-muted-foreground" />
+                <h3 className="font-medium text-lg mb-2">Nenhum parceiro pendente</h3>
+                <p>Não há parceiros pendentes de aprovação no momento.</p>
+              </div>
+            )}
           </div>
         </TabsContent>
         
         <TabsContent value="inativo" className="mt-6">
-          <div className="my-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Parceiros Inativos</CardTitle>
-                <CardDescription>Parceiros desativados ou com contrato suspenso</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  renderSkeletonTable()
-                ) : filteredPartners.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Região</TableHead>
-                        <TableHead>Contato</TableHead>
-                        <TableHead>Desde</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredPartners.map((partner) => (
-                        <TableRow key={partner.id}>
-                          <TableCell className="font-medium">{partner.name}</TableCell>
-                          <TableCell>{partner.city}, {partner.region}</TableCell>
-                          <TableCell>{partner.phone}</TableCell>
-                          <TableCell>01/05/2025</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              {canAddPartners && (
-                                <Button variant="outline" size="sm">
-                                  Reativar
-                                </Button>
-                              )}
-                              <Link to={`/fleet-management/towing-partners/${partner.id}`}>
-                                <Button variant="default" size="sm">
-                                  Ver detalhes
-                                </Button>
-                              </Link>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-center py-10 text-muted-foreground">
-                    <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold">Nenhum parceiro inativo</h3>
-                    <p className="mt-2">Todos os parceiros estão ativos no momento.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {isLoading ? (
+              renderSkeletonCards()
+            ) : filteredPartners.length > 0 ? (
+              filteredPartners.map((partner) => (
+                <div key={partner.id} className="relative">
+                  <div className="absolute -top-1 -right-1 z-10">
+                    <Badge variant="secondary" className="bg-gray-400 hover:bg-gray-500">Inativo</Badge>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                  <Card className="overflow-hidden opacity-80 hover:opacity-100 transition-opacity">
+                    <CardHeader>
+                      <CardTitle>{partner.name}</CardTitle>
+                      <CardDescription>{partner.city}, {partner.region}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <div className="text-sm font-medium mb-1">Contato</div>
+                          <div className="text-sm text-muted-foreground">{partner.phone}</div>
+                          <div className="text-sm text-muted-foreground">{partner.email}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium mb-1">Serviços oferecidos</div>
+                          <div className="flex flex-wrap gap-1">
+                            {partner.service_types.map((type, i) => (
+                              <Badge key={i} variant="outline" className="font-normal">
+                                {type}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="flex justify-between">
+                      <Button variant="outline" size="sm">
+                        Reativar
+                      </Button>
+                      <SafeLink to={`/fleet-management/towing-partners/${partner.id}`}>
+                        <Button variant="default" size="sm">
+                          Ver detalhes
+                        </Button>
+                      </SafeLink>
+                    </CardFooter>
+                  </Card>
+                </div>
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-10 text-muted-foreground">
+                <AlertCircle className="mx-auto h-12 w-12 mb-4 text-muted-foreground" />
+                <h3 className="font-medium text-lg mb-2">Nenhum parceiro inativo</h3>
+                <p>Não foram encontrados parceiros inativos com os filtros selecionados.</p>
+              </div>
+            )}
           </div>
         </TabsContent>
-        
       </Tabs>
     </div>
   );
