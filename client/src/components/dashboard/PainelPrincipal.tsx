@@ -193,28 +193,25 @@ export default function PainelPrincipal() {
     setKpis(newKpis);
   }, [vehiclesQuery.data, maintenanceQuery.data, tiresQuery.data, fuelQuery.data]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <span className="ml-2">Carregando painel...</span>
-      </div>
-    );
-  }
+  // Exibir indicador de carregamento apenas para o conteúdo relevante
+  const loadingIndicator = isLoading && (
+    <div className="flex items-center justify-center p-4 bg-gray-50 rounded-lg mb-4">
+      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+      <span className="ml-2 text-sm">Carregando dados do painel...</span>
+    </div>
+  );
 
-  // Verifique se temos pelo menos alguns dados para exibir
-  if (allFailed && !painel) {
-    return (
-      <div className="text-center p-6">
-        <p className="text-red-500 font-medium mb-2">
-          Não foi possível carregar os dados do painel principal.
-        </p>
-        <p className="text-gray-600">
-          Verifique sua conexão com a internet e tente novamente.
-        </p>
-      </div>
-    );
-  }
+  // Verificar se houve erro, mas ainda permitir a renderização dos novos painéis
+  const errorMessage = allFailed && !painel && (
+    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+      <p className="text-red-600 font-medium text-sm mb-1">
+        Não foi possível carregar alguns dados do painel principal.
+      </p>
+      <p className="text-gray-600 text-xs">
+        Os valores exibidos podem estar desatualizados. Recarregue a página para tentar novamente.
+      </p>
+    </div>
+  );
 
   // Obter a data atual formatada para o período de referência
   const currentDate = new Date();
@@ -230,6 +227,10 @@ export default function PainelPrincipal() {
         <h1 className="text-3xl font-bold mb-2 text-gray-800 tracking-tight">Dashboard Operacional</h1>
         <p className="text-gray-600 text-lg">Período de referência: {painel?.data_referencia || formattedDate}</p>
       </div>
+      
+      {/* Mostrar indicador de carregamento ou mensagem de erro se necessário */}
+      {loadingIndicator}
+      {errorMessage}
 
       {/* Seção de Veículos - CARD 1 */}
       <div className="space-y-4">
