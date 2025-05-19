@@ -293,6 +293,7 @@ function SolicitationsTable({
           <TableHead>Motorista</TableHead>
           <TableHead>Base</TableHead>
           <TableHead>ID Rota</TableHead>
+          <TableHead>Valor</TableHead>
           <TableHead>Tipo</TableHead>
           <TableHead>Cartão</TableHead>
           <TableHead>Data</TableHead>
@@ -309,6 +310,11 @@ function SolicitationsTable({
             <TableCell>{solicitation.motorista}</TableCell>
             <TableCell>{solicitation.base || '-'}</TableCell>
             <TableCell>{solicitation.id_rota || '-'}</TableCell>
+            <TableCell>
+              {solicitation.valor_solicitado 
+                ? `R$ ${solicitation.valor_solicitado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : 'R$ 150,00'}
+            </TableCell>
             <TableCell>{solicitation.tipo_cartao === 'placa' ? 'Placa' : 'Número'}</TableCell>
             <TableCell>
               {solicitation.provedor_cartao} 
