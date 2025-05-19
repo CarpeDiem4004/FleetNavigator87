@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useQuery } from '@tanstack/react-query';
@@ -545,7 +546,169 @@ export default function TiresPage() {
         </DialogContent>
       </Dialog>
       
-      {/* Dialog para adicionar novo pneu - será implementado posteriormente */}
+      {/* Dialog para adicionar novo pneu */}
+      <Dialog open={isCreateTireDialogOpen} onOpenChange={setIsCreateTireDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Adicionar Novo Pneu</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="codigo">Código/Serial*</Label>
+                <Input
+                  id="codigo"
+                  placeholder="Ex: P001"
+                  name="codigo"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="marca">Marca*</Label>
+                <Input
+                  id="marca"
+                  placeholder="Ex: Pirelli"
+                  name="marca"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="modelo">Modelo*</Label>
+                <Input
+                  id="modelo"
+                  placeholder="Ex: Scorpion ATR"
+                  name="modelo"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="medida">Medida*</Label>
+                <Input
+                  id="medida"
+                  placeholder="Ex: 265/70 R16"
+                  name="medida"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="aro">Aro</Label>
+                <Input
+                  id="aro"
+                  placeholder="Ex: 16"
+                  name="aro"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="valor_unitario">Valor Unitário (R$)*</Label>
+                <Input
+                  id="valor_unitario"
+                  placeholder="Ex: 950.00"
+                  name="valor_unitario"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="localizacao">Localização</Label>
+                <Select name="localizacao">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a localização" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Estoque Principal">Estoque Principal</SelectItem>
+                    <SelectItem value="Estoque Secundário">Estoque Secundário</SelectItem>
+                    <SelectItem value="Veículo">Veículo</SelectItem>
+                    <SelectItem value="Oficina">Oficina</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="status">Status</Label>
+                <Select name="status" defaultValue="disponivel">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="disponivel">Disponível</SelectItem>
+                    <SelectItem value="em_uso">Em Uso</SelectItem>
+                    <SelectItem value="descartado">Descartado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsCreateTireDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={async () => {
+                try {
+                  // Capturar os dados do formulário
+                  const formData = {
+                    codigo: (document.getElementById('codigo') as HTMLInputElement)?.value,
+                    marca: (document.getElementById('marca') as HTMLInputElement)?.value,
+                    modelo: (document.getElementById('modelo') as HTMLInputElement)?.value,
+                    medida: (document.getElementById('medida') as HTMLInputElement)?.value,
+                    aro: (document.getElementById('aro') as HTMLInputElement)?.value,
+                    valor_unitario: parseFloat((document.getElementById('valor_unitario') as HTMLInputElement)?.value || '0'),
+                    localizacao: document.querySelector('select[name="localizacao"]')?.value,
+                    status: document.querySelector('select[name="status"]')?.value || 'disponivel',
+                  };
+                  
+                  // Validação básica
+                  if (!formData.codigo || !formData.marca || !formData.modelo || !formData.medida) {
+                    toast({
+                      title: "Erro",
+                      description: "Preencha todos os campos obrigatórios",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  
+                  // Enviar os dados para o backend
+                  const response = await apiRequest('POST', '/api/pneus', formData);
+                  
+                  if (response.ok) {
+                    // Fechar o modal
+                    setIsCreateTireDialogOpen(false);
+                    
+                    // Mostrar mensagem de sucesso
+                    toast({
+                      title: "Sucesso",
+                      description: "Pneu cadastrado com sucesso",
+                    });
+                    
+                    // Recarregar os dados de pneus e estatísticas
+                    refetchTires();
+                    refetchStats();
+                  } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Erro ao cadastrar pneu');
+                  }
+                } catch (error: any) {
+                  toast({
+                    title: "Erro",
+                    description: error.message || 'Ocorreu um erro ao cadastrar o pneu',
+                    variant: "destructive",
+                  });
+                }
+              }}
+            >
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
