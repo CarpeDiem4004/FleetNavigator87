@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2 } from 'lucide-react';
+import { Loader2, History, Clock, MapPin, Truck, DollarSign, FileClock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import {
@@ -15,6 +15,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import Logo from '@/components/Logo';
 
 export default function TowingPartnerExternalAccess() {
@@ -27,6 +48,12 @@ export default function TowingPartnerExternalAccess() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  
+  // Estados para histórico de serviços
+  const [activeTab, setActiveTab] = useState("novo");
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [serviceHistory, setServiceHistory] = useState<any[]>([]);
+  const [historyError, setHistoryError] = useState<string | null>(null);
 
   // Formulário
   const [formData, setFormData] = useState({
@@ -42,6 +69,99 @@ export default function TowingPartnerExternalAccess() {
     observation: ''
   });
 
+  // Carregar histórico de serviços
+  const loadServiceHistory = async () => {
+    if (!token || !tokenValid) return;
+    
+    try {
+      setHistoryLoading(true);
+      setHistoryError(null);
+      
+      // Verificar se é um token de demonstração simulado
+      const isTestToken = token?.startsWith('ford_unique_token_') || token === 'ford_token_123456';
+      
+      if (isTestToken) {
+        // Simular histórico para tokens de teste
+        setTimeout(() => {
+          setServiceHistory([
+            {
+              id: 1,
+              plate: 'ABC1234',
+              pickup_location: 'São Paulo, SP',
+              delivery_location: 'Guarulhos, SP',
+              service_description: 'Reboque após pane elétrica',
+              service_date: '2025-05-15T10:30:00.000Z',
+              cost: '350.00',
+              mileage: 42,
+              status: 'approved',
+              payment_status: 'pending',
+              created_at: '2025-05-15T10:45:00.000Z'
+            },
+            {
+              id: 2,
+              plate: 'DEF5678',
+              pickup_location: 'Campinas, SP',
+              delivery_location: 'São Paulo, SP',
+              service_description: 'Reboque após acidente',
+              service_date: '2025-05-10T14:20:00.000Z',
+              cost: '480.00',
+              mileage: 95,
+              status: 'approved',
+              payment_status: 'paid',
+              created_at: '2025-05-10T14:35:00.000Z'
+            },
+            {
+              id: 3,
+              plate: 'GHI9012',
+              pickup_location: 'Osasco, SP',
+              delivery_location: 'São Paulo, SP',
+              service_description: 'Reboque após problema no motor',
+              service_date: '2025-05-19T09:15:00.000Z',
+              cost: '250.00',
+              mileage: 35,
+              status: 'pending',
+              payment_status: 'pending',
+              created_at: '2025-05-19T09:30:00.000Z'
+            }
+          ]);
+          setHistoryLoading(false);
+        }, 800);
+        return;
+      }
+      
+      // Para tokens reais, buscar do servidor
+      const response = await fetch(`/api/towing/simple-external/history/${token}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setServiceHistory(data.data.services || []);
+      } else {
+        setHistoryError(data.message || 'Erro ao carregar histórico de serviços');
+        toast({
+          title: 'Erro ao carregar histórico',
+          description: data.message || 'Não foi possível carregar o histórico de serviços',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao carregar histórico:', error);
+      setHistoryError('Erro de conexão ao buscar histórico');
+      toast({
+        title: 'Erro de conexão',
+        description: 'Não foi possível carregar o histórico de serviços',
+        variant: 'destructive'
+      });
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
   // Validar token ao carregar a página
   useEffect(() => {
     const validateToken = async () => {
@@ -49,7 +169,7 @@ export default function TowingPartnerExternalAccess() {
         setValidatingToken(true);
         
         // Verificar se é um token de demonstração simulado
-        const isTestToken = token?.startsWith('ford_unique_token_');
+        const isTestToken = token?.startsWith('ford_unique_token_') || token === 'ford_token_123456';
         
         if (isTestToken) {
           // Simular resposta positiva para tokens de demonstração
@@ -66,13 +186,16 @@ export default function TowingPartnerExternalAccess() {
             });
             setValidatingToken(false);
             setLoading(false);
+            
+            // Após validar token, carregar histórico
+            loadServiceHistory();
           }, 1000);
           
           return;
         }
         
         // Se não for token de teste, fazer validação normal no servidor
-        const response = await fetch(`/api/towing/simple-external/validate/${token}`, {
+        const response = await fetch(`/api/towing/simple-external/verify/${token}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -81,14 +204,17 @@ export default function TowingPartnerExternalAccess() {
 
         const data = await response.json();
 
-        if (response.ok && data.valid) {
+        if (response.ok && data.success) {
           setTokenValid(true);
-          setPartnerInfo(data.partner);
+          setPartnerInfo(data.data);
+          
+          // Após validar token, carregar histórico
+          loadServiceHistory();
         } else {
           setTokenValid(false);
           toast({
             title: 'Acesso negado',
-            description: data.error || 'Token inválido ou expirado',
+            description: data.message || 'Token inválido ou expirado',
             variant: 'destructive'
           });
         }
@@ -237,151 +363,310 @@ export default function TowingPartnerExternalAccess() {
 
       {/* Conteúdo principal */}
       <main className="flex-1 container py-8">
-        <Card className="max-w-3xl mx-auto">
-          <CardHeader>
-            <CardTitle>Registrar Serviço de Guincho Realizado</CardTitle>
-            <CardDescription>
-              Preencha as informações sobre o serviço de guincho que foi realizado.
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="vehicle_plate">Placa do Veículo *</Label>
-                  <Input
-                    id="vehicle_plate"
-                    name="vehicle_plate"
-                    value={formData.vehicle_plate}
-                    onChange={handleInputChange}
-                    placeholder="ABC1234"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="service_date">Data do Serviço *</Label>
-                  <Input
-                    id="service_date"
-                    name="service_date"
-                    type="date"
-                    value={formData.service_date}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="pickup_location">Local de Retirada *</Label>
-                  <Input
-                    id="pickup_location"
-                    name="pickup_location"
-                    value={formData.pickup_location}
-                    onChange={handleInputChange}
-                    placeholder="Ex: Av. Paulista, 1000, São Paulo"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="destination">Destino *</Label>
-                  <Input
-                    id="destination"
-                    name="destination"
-                    value={formData.destination}
-                    onChange={handleInputChange}
-                    placeholder="Ex: Rua Augusta, 500, São Paulo"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="service_type">Tipo de Serviço</Label>
-                  <select
-                    id="service_type"
-                    name="service_type"
-                    value={formData.service_type}
-                    onChange={handleInputChange}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <option value="reboque">Reboque</option>
-                    <option value="guincho">Guincho</option>
-                    <option value="plataforma">Plataforma</option>
-                    <option value="assistencia">Assistência na Estrada</option>
-                    <option value="outro">Outro</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="driver_name">Nome do Motorista</Label>
-                  <Input
-                    id="driver_name"
-                    name="driver_name"
-                    value={formData.driver_name}
-                    onChange={handleInputChange}
-                    placeholder="Nome do motorista que realizou o serviço"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="actual_cost">Custo do Serviço (R$)</Label>
-                  <Input
-                    id="actual_cost"
-                    name="actual_cost"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.actual_cost}
-                    onChange={handleInputChange}
-                    placeholder="0,00"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="km_traveled">Quilometragem Percorrida</Label>
-                  <Input
-                    id="km_traveled"
-                    name="km_traveled"
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    value={formData.km_traveled}
-                    onChange={handleInputChange}
-                    placeholder="0,0"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="service_description">Descrição do Serviço</Label>
-                <Textarea
-                  id="service_description"
-                  name="service_description"
-                  value={formData.service_description}
-                  onChange={handleInputChange}
-                  placeholder="Descreva os detalhes do serviço realizado"
-                  rows={3}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="observation">Observações</Label>
-                <Textarea
-                  id="observation"
-                  name="observation"
-                  value={formData.observation}
-                  onChange={handleInputChange}
-                  placeholder="Observações adicionais sobre o serviço"
-                  rows={3}
-                />
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <p className="text-sm text-muted-foreground">* Campos obrigatórios</p>
-              <Button type="submit" disabled={submitting}>
-                {submitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enviando...
-                  </>
+        <Tabs defaultValue="novo" value={activeTab} onValueChange={setActiveTab} className="max-w-4xl mx-auto">
+          <div className="flex justify-between items-center mb-6">
+            <TabsList className="grid grid-cols-2">
+              <TabsTrigger value="novo" className="px-8">
+                Novo Serviço
+              </TabsTrigger>
+              <TabsTrigger value="historico" className="px-8" onClick={() => !serviceHistory.length && loadServiceHistory()}>
+                Histórico de Serviços
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          
+          <TabsContent value="novo" className="mt-0">
+            <Card>
+              <CardHeader>
+                <CardTitle>Registrar Serviço de Guincho Realizado</CardTitle>
+                <CardDescription>
+                  Preencha as informações sobre o serviço de guincho que foi realizado.
+                </CardDescription>
+              </CardHeader>
+              <form onSubmit={handleSubmit}>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="vehicle_plate">Placa do Veículo *</Label>
+                      <Input
+                        id="vehicle_plate"
+                        name="vehicle_plate"
+                        value={formData.vehicle_plate}
+                        onChange={handleInputChange}
+                        placeholder="ABC1234"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="service_date">Data do Serviço *</Label>
+                      <Input
+                        id="service_date"
+                        name="service_date"
+                        type="date"
+                        value={formData.service_date}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="pickup_location">Local de Retirada *</Label>
+                      <Input
+                        id="pickup_location"
+                        name="pickup_location"
+                        value={formData.pickup_location}
+                        onChange={handleInputChange}
+                        placeholder="Ex: Av. Paulista, 1000, São Paulo"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="destination">Destino *</Label>
+                      <Input
+                        id="destination"
+                        name="destination"
+                        value={formData.destination}
+                        onChange={handleInputChange}
+                        placeholder="Ex: Rua Augusta, 500, São Paulo"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="service_type">Tipo de Serviço</Label>
+                      <select
+                        id="service_type"
+                        name="service_type"
+                        value={formData.service_type}
+                        onChange={handleInputChange}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <option value="reboque">Reboque</option>
+                        <option value="guincho">Guincho</option>
+                        <option value="plataforma">Plataforma</option>
+                        <option value="assistencia">Assistência na Estrada</option>
+                        <option value="outro">Outro</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="driver_name">Nome do Motorista</Label>
+                      <Input
+                        id="driver_name"
+                        name="driver_name"
+                        value={formData.driver_name}
+                        onChange={handleInputChange}
+                        placeholder="Nome do motorista que realizou o serviço"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="actual_cost">Custo do Serviço (R$)</Label>
+                      <Input
+                        id="actual_cost"
+                        name="actual_cost"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.actual_cost}
+                        onChange={handleInputChange}
+                        placeholder="0,00"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="km_traveled">Quilometragem Percorrida</Label>
+                      <Input
+                        id="km_traveled"
+                        name="km_traveled"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        value={formData.km_traveled}
+                        onChange={handleInputChange}
+                        placeholder="0,0"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="service_description">Descrição do Serviço</Label>
+                    <Textarea
+                      id="service_description"
+                      name="service_description"
+                      value={formData.service_description}
+                      onChange={handleInputChange}
+                      placeholder="Descreva os detalhes do serviço realizado"
+                      rows={3}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="observation">Observações</Label>
+                    <Textarea
+                      id="observation"
+                      name="observation"
+                      value={formData.observation}
+                      onChange={handleInputChange}
+                      placeholder="Observações adicionais sobre o serviço"
+                      rows={3}
+                    />
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                  <p className="text-sm text-muted-foreground">* Campos obrigatórios</p>
+                  <Button type="submit" disabled={submitting}>
+                    {submitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      'Enviar Serviço'
+                    )}
+                  </Button>
+                </CardFooter>
+              </form>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="historico" className="mt-0">
+            <Card>
+              <CardHeader>
+                <CardTitle>Histórico de Serviços Registrados</CardTitle>
+                <CardDescription>
+                  Lista de todos os serviços de guincho registrados por {partnerInfo?.name || 'sua empresa'}.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {historyLoading ? (
+                  <div className="flex flex-col items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <p className="mt-4 text-muted-foreground">Carregando histórico de serviços...</p>
+                  </div>
+                ) : historyError ? (
+                  <div className="flex flex-col items-center justify-center py-8">
+                    <AlertCircle className="h-12 w-12 text-destructive" />
+                    <h2 className="text-lg font-medium mt-4">Erro ao carregar histórico</h2>
+                    <p className="mt-2 text-muted-foreground">{historyError}</p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={loadServiceHistory}
+                    >
+                      Tentar novamente
+                    </Button>
+                  </div>
+                ) : serviceHistory.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8">
+                    <History className="h-12 w-12 text-muted-foreground" />
+                    <h2 className="text-lg font-medium mt-4">Nenhum serviço registrado</h2>
+                    <p className="mt-2 text-muted-foreground">
+                      Você ainda não registrou nenhum serviço de guincho. Registre um serviço na aba "Novo Serviço".
+                    </p>
+                  </div>
                 ) : (
-                  'Enviar Serviço'
+                  <div className="space-y-6">
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Placa</TableHead>
+                            <TableHead>Data</TableHead>
+                            <TableHead>Origem/Destino</TableHead>
+                            <TableHead>Valor</TableHead>
+                            <TableHead>Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {serviceHistory.map((service) => {
+                            // Formatar a data do serviço
+                            const serviceDate = new Date(service.service_date);
+                            const formattedDate = serviceDate.toLocaleDateString('pt-BR');
+                            
+                            // Determinar o status
+                            let statusBadge;
+                            if (service.status === 'approved') {
+                              statusBadge = <Badge className="bg-green-500">Aprovado</Badge>;
+                            } else if (service.status === 'rejected') {
+                              statusBadge = <Badge variant="destructive">Rejeitado</Badge>;
+                            } else {
+                              statusBadge = <Badge variant="outline">Pendente</Badge>;
+                            }
+                            
+                            // Determinar o status de pagamento
+                            let paymentBadge;
+                            if (service.payment_status === 'paid') {
+                              paymentBadge = <Badge className="bg-blue-500 ml-2">Pago</Badge>;
+                            }
+                            
+                            return (
+                              <TableRow key={service.id}>
+                                <TableCell className="font-medium">{service.plate}</TableCell>
+                                <TableCell>{formattedDate}</TableCell>
+                                <TableCell>
+                                  <div className="flex flex-col">
+                                    <span className="text-xs text-muted-foreground">De: {service.pickup_location}</span>
+                                    <span className="text-xs mt-1">Para: {service.delivery_location}</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  {typeof service.cost === 'string' 
+                                    ? `R$ ${parseFloat(service.cost).toFixed(2)}` 
+                                    : `R$ ${service.cost.toFixed(2)}`}
+                                </TableCell>
+                                <TableCell>
+                                  {statusBadge}
+                                  {paymentBadge}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    
+                    <Accordion type="single" collapsible className="mt-6">
+                      <AccordionItem value="details">
+                        <AccordionTrigger>Detalhes adicionais</AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-2 text-sm">
+                            <p className="text-muted-foreground">
+                              Os serviços registrados são enviados automaticamente para aprovação pela equipe de gestão de frotas.
+                              Serviços aprovados serão incluídos no relatório de pagamento no final do mês.
+                            </p>
+                            <p className="text-muted-foreground">
+                              Serviços com status "Pendente" estão aguardando análise. Serviços "Aprovados" já foram verificados
+                              e estão confirmados para pagamento. Serviços "Rejeitados" não serão incluídos no pagamento.
+                            </p>
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </div>
                 )}
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setActiveTab("novo")}
+                >
+                  Registrar Novo Serviço
+                </Button>
+                
+                {serviceHistory.length > 0 && (
+                  <Button 
+                    variant="outline" 
+                    onClick={loadServiceHistory}
+                    disabled={historyLoading}
+                  >
+                    {historyLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Atualizando...
+                      </>
+                    ) : (
+                      <>Atualizar Histórico</>
+                    )}
+                  </Button>
+                )}
+              </CardFooter>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Rodapé */}
