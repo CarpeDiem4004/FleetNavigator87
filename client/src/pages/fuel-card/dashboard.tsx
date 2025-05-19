@@ -117,9 +117,14 @@ export default function FuelCardDashboard() {
           <p className="text-muted-foreground">Gerencie as solicitações dos motoristas</p>
         </div>
         
-        <Button onClick={handleRefresh} variant="outline" size="sm">
-          <RefreshCw className="mr-2 h-4 w-4" /> Atualizar
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => window.location.href = '/fuel-card/solicitation'} variant="default" size="sm">
+            <CreditCard className="mr-2 h-4 w-4" /> Nova Solicitação
+          </Button>
+          <Button onClick={handleRefresh} variant="outline" size="sm">
+            <RefreshCw className="mr-2 h-4 w-4" /> Atualizar
+          </Button>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mb-8">
