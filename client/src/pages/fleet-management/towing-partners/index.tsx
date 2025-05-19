@@ -49,7 +49,9 @@ const PartnerCard: React.FC<{ partner: TowingPartner }> = ({ partner }) => {
   
   const handleViewDetails = () => {
     console.log(`Navegando para parceiro: ${partner.id}`);
-    setLocation(`/fleet-management/towing-partners/${partner.id}`);
+    // Garantir que não há barras duplicadas na URL
+    const path = `fleet-management/towing-partners/${partner.id}`.replace(/^\/+|\/+$/g, '');
+    setLocation(`/${path}`);
   };
   
   return (
