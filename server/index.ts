@@ -274,6 +274,10 @@ app.use((req, res, next) => {
     console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ABC V2 ====");
     // Forçar o parâmetro posto para garantir que seja tratado como abc_v2
     req.params = { ...req.params, posto: 'abc_v2' };
+    // Ignorar autenticação e permitir o registro de abastecimento
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     registrarAbastecimentoPosto(req, res);
   });
   
