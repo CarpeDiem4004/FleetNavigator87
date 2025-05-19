@@ -130,7 +130,7 @@ const FordPartnerDetail: React.FC = () => {
   return (
     <div className="container mx-auto p-4">
       <div className="flex items-center mb-6">
-        <SafeLink href="/fleet-management/towing-partners" className="mr-4">
+        <SafeLink to="/fleet-management/towing-partners" className="mr-4">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
@@ -211,7 +211,7 @@ const FordPartnerDetail: React.FC = () => {
               Gerar link externo
             </Button>
             
-            <SafeLink href={`/fleet-management/towing-partners/requests/new?partner=${partner.id}`} className="w-full">
+            <SafeLink to={`/fleet-management/towing-partners/requests/new?partner=${partner.id}`} className="w-full">
               <Button className="w-full">
                 <Plus className="h-4 w-4 mr-2" />
                 Nova solicitação
@@ -343,7 +343,7 @@ const FordPartnerDetail: React.FC = () => {
                 <CardTitle>Solicitações de Serviço</CardTitle>
                 <CardDescription>Histórico de solicitações para este parceiro</CardDescription>
               </div>
-              <SafeLink href={`/fleet-management/towing-partners/requests/new?partner=${partner.id}`}>
+              <SafeLink to={`/fleet-management/towing-partners/requests/new?partner=${partner.id}`}>
                 <Button size="sm">
                   <Plus className="h-4 w-4 mr-2" />
                   Nova solicitação
@@ -389,7 +389,7 @@ const FordPartnerDetail: React.FC = () => {
                         <TableCell>{new Date(request.created_at).toLocaleDateString('pt-BR')}</TableCell>
                         <TableCell>R$ {request.estimated_cost.toFixed(2)}</TableCell>
                         <TableCell>
-                          <SafeLink href={`/fleet-management/towing-partners/requests/${request.id}`}>
+                          <SafeLink to={`/fleet-management/towing-partners/requests/${request.id}`}>
                             <Button variant="ghost" size="sm">
                               <FileText className="h-4 w-4" />
                               <span className="sr-only">Detalhes</span>
