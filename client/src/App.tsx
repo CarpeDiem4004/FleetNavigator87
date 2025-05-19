@@ -195,6 +195,7 @@ function App() {
           <ProtectedRoute path="/fleet-management/towing-partners/new" component={NewTowingPartnerPage} />
           <ProtectedRoute path="/fleet-management/towing-partners/requests" component={TowingRequestsPage} />
           <ProtectedRoute path="/fleet-management/towing-partners/requests/new" component={NewTowingRequestPage} />
+          <ProtectedRoute path="/fleet-management/towing-partners/payments" component={TowingPaymentsPage} />
           <ProtectedRoute path="/fleet-management/towing-partners/6" component={FordPartnerDetail} />
           <ProtectedRoute path="/fleet-management/towing-partners/:id" component={TowingPartnerDetailPage} />
           <Route path="/fleet-management/towing-partners/external-access/:token" component={TowingPartnerExternalAccess} />
