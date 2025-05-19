@@ -297,11 +297,18 @@ export default function TowingPartnerExternalAccess() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...formData,
           token,
           partner_id: partnerInfo.id,
-          actual_cost: parseFloat(formData.actual_cost) || 0,
-          km_traveled: parseFloat(formData.km_traveled) || 0
+          placa: formData.vehicle_plate,
+          local_retirada: formData.pickup_location,
+          local_entrega: formData.destination,
+          servico_realizado: formData.service_description,
+          data_servico: formData.service_date,
+          valor: parseFloat(formData.actual_cost) || 0,
+          km_percorrido: parseFloat(formData.km_traveled) || 0,
+          observacoes: formData.observation,
+          nome_contato: formData.driver_name,
+          telefone_contato: ""
         })
       });
 
