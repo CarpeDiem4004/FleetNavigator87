@@ -3,10 +3,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
-import { Link, useLocation } from 'wouter';
+import { useLocation } from 'wouter';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import SafeLink from '@/components/SafeLink';
 
 // Componentes UI
 import { Button } from '@/components/ui/button';
@@ -183,11 +184,11 @@ const NewTowingPartnerPage: React.FC = () => {
     return (
       <div className="container mx-auto py-6 space-y-8 max-w-7xl">
         <div className="flex items-center gap-2 mb-4">
-          <Link to="/fleet-management/towing-partners">
+          <SafeLink to="/fleet-management/towing-partners">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
             </Button>
-          </Link>
+          </SafeLink>
         </div>
         <Card>
           <CardHeader>
@@ -200,11 +201,11 @@ const NewTowingPartnerPage: React.FC = () => {
             <p>Esta funcionalidade está disponível apenas para administradores e gestores de frota.</p>
           </CardContent>
           <CardFooter>
-            <Link to="/fleet-management/towing-partners">
+            <SafeLink to="/fleet-management/towing-partners">
               <Button variant="default">
                 Voltar para Parceiros
               </Button>
-            </Link>
+            </SafeLink>
           </CardFooter>
         </Card>
       </div>
@@ -214,11 +215,11 @@ const NewTowingPartnerPage: React.FC = () => {
   return (
     <div className="container mx-auto py-6 space-y-8 max-w-5xl">
       <div className="flex items-center gap-2 mb-4">
-        <Link to="/fleet-management/towing-partners">
+        <SafeLink to="/fleet-management/towing-partners">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
           </Button>
-        </Link>
+        </SafeLink>
       </div>
       
       <PageHeader
@@ -619,11 +620,11 @@ const NewTowingPartnerPage: React.FC = () => {
               />
             </CardContent>
             <CardFooter className="flex justify-between">
-              <Link to="/fleet-management/towing-partners">
+              <SafeLink to="/fleet-management/towing-partners">
                 <Button variant="outline" type="button">
                   Cancelar
                 </Button>
-              </Link>
+              </SafeLink>
               <Button 
                 type="submit" 
                 disabled={createPartnerMutation.isPending}
