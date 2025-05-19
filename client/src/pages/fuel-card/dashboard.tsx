@@ -47,12 +47,13 @@ export default function FuelCardDashboard() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("all");
   
-  const { data, isLoading, isError, error } = useQuery({
+  const { data: apiResponse, isLoading, isError, error } = useQuery({
     queryKey: ['/api/fuel-card-solicitations'],
     refetchInterval: 30000, // Atualiza a cada 30 segundos
+    retry: 3
   });
   
-  const solicitations: FuelCardSolicitation[] = data?.data || [];
+  const solicitations: FuelCardSolicitation[] = apiResponse?.solicitations || [];
   const pendingCount = solicitations.filter(s => s.status === 'pendente').length;
   const attendedCount = solicitations.filter(s => s.status === 'atendido').length;
   

@@ -87,6 +87,9 @@ import LineHallDriverPage from "@/pages/LineHallDriverPage";
 import FuelCardPage from "@/pages/FuelCardPage";
 import FuelCard from "@/pages/FuelCard";
 import FuelCardRequestsPanel from "@/pages/FuelCardRequestsPanel";
+import FuelCardSolicitation from "@/pages/fuel-card/solicitation";
+import FuelCardConfirmation from "@/pages/fuel-card/confirmation";
+import FuelCardDashboard from "@/pages/fuel-card/dashboard";
 import PostoRemediosPage from "@/pages/PostoRemediosPage";
 import PostoRemediosStandalone from "@/pages/PostoRemediosStandalone";
 import AbastecimentoPostoRemediosPage from "@/pages/AbastecimentoPostoRemediosPage";
@@ -367,6 +370,23 @@ function App() {
           <Route path="/abastecimento-posto-remedios">
             <AbastecimentoPostoRemediosPage />
           </Route>
+          
+          {/* Rotas para o Sistema de Solicitação de Cartão Combustível */}
+          <ProtectedRoute path="/fuel-card" component={() => (
+            <div className="mt-16 pl-4 pr-4 md:pl-64">
+              <FuelCardDashboard />
+            </div>
+          )} />
+          <ProtectedRoute path="/fuel-card/solicitation" component={() => (
+            <div className="mt-16 pl-4 pr-4 md:pl-64">
+              <FuelCardSolicitation />
+            </div>
+          )} />
+          <ProtectedRoute path="/fuel-card/confirmation" component={() => (
+            <div className="mt-16 pl-4 pr-4 md:pl-64">
+              <FuelCardConfirmation />
+            </div>
+          )} />
           
           <Route>
             <NotFound />

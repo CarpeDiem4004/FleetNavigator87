@@ -280,7 +280,7 @@ export default function FuelCardSolicitation() {
                   <Button 
                     variant="outline" 
                     type="button" 
-                    onClick={() => navigate("/dashboard")}
+                    onClick={() => setLocation("/dashboard")}
                     disabled={isSubmitting}
                   >
                     Cancelar
