@@ -137,6 +137,7 @@ const TowingPartnerDetailPage: React.FC = () => {
   const [accessLink, setAccessLink] = useState('');
   const [isLinkCopied, setIsLinkCopied] = useState(false);
   const [linkExpirationDays, setLinkExpirationDays] = useState(30);
+  const [isPermanentLink, setIsPermanentLink] = useState(false);
   
   // Função para adaptar formato antigo para o novo
   const adaptPartnerData = (data) => {
