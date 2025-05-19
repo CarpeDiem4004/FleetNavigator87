@@ -246,7 +246,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Parceiros de Guincho', href: '#', icon: Truck, subItems: [
       { name: 'Parceiros', href: '/fleet-management/towing-partners', icon: Truck },
       { name: 'Solicitações', href: '/fleet-management/towing-partners/requests', icon: FileText },
-      { name: 'Pagamentos', href: '/fleet-management/towing-partners/payments', icon: CreditCard }
+      { name: 'Pagamentos', href: '/fleet-management/towing-partners-payments', icon: CreditCard }
     ] },
     // Submenu para Bases com opções específicas para Campinas
     { name: 'Bases', href: '#', icon: Warehouse, subItems: baseItems },
@@ -289,7 +289,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Parceiros de Guincho', href: '#', icon: Truck, subItems: [
       { name: 'Parceiros', href: '/fleet-management/towing-partners', icon: Truck },
       { name: 'Solicitações', href: '/fleet-management/towing-partners/requests', icon: FileText },
-      { name: 'Pagamentos', href: '/fleet-management/towing-partners/payments', icon: CreditCard }
+      { name: 'Pagamentos', href: '/fleet-management/towing-partners-payments', icon: CreditCard }
     ] },
     { name: 'Análise da Operação', href: '/fleet-management/operational-analysis', icon: BarChart4 },
     { name: 'Visão Geral da Frota', href: '/fleet-management/fleet-overview', icon: Activity },
