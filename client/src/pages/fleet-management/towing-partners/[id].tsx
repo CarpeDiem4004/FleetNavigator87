@@ -266,7 +266,7 @@ const TowingPartnerDetailPage: React.FC = () => {
   
   // Mutação para gerar link de acesso externo
   const generateLinkMutation = useMutation({
-    mutationFn: async (data: { partner_id: number, expiration_days: number }) => {
+    mutationFn: async (data: { partner_id: number, expiration_days?: number, is_permanent?: boolean }) => {
       try {
         // Chamada à API simplificada para gerar o token
         const response = await fetch('/api/towing/simple-external/generate', {
@@ -308,10 +308,18 @@ const TowingPartnerDetailPage: React.FC = () => {
   const handleGenerateExternalAccessLink = () => {
     if (!partner) return;
     
-    generateLinkMutation.mutate({ 
-      partner_id: partner.id, 
-      expiration_days: linkExpirationDays 
-    });
+    // Prepara os dados com base na escolha do usuário (link permanente ou com expiração)
+    const linkData = isPermanentLink 
+      ? { 
+          partner_id: partner.id, 
+          is_permanent: true 
+        } 
+      : { 
+          partner_id: partner.id, 
+          expiration_days: linkExpirationDays 
+        };
+    
+    generateLinkMutation.mutate(linkData);
   };
   
   // Função para copiar link para a área de transferência
@@ -411,12 +419,42 @@ const TowingPartnerDetailPage: React.FC = () => {
               <span className="sr-only">Copiar</span>
             </Button>
           </div>
-          <div className="mt-2 text-sm text-muted-foreground">
-            Este link expira em {(() => {
-              const date = new Date();
-              date.setDate(date.getDate() + linkExpirationDays);
-              return date.toLocaleDateString('pt-BR');
-            })()}.
+          <div className="space-y-4 mt-4">
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="permanent-link"
+                checked={isPermanentLink}
+                onCheckedChange={setIsPermanentLink}
+              />
+              <Label htmlFor="permanent-link">Link definitivo (permanente)</Label>
+            </div>
+            
+            {!isPermanentLink && (
+              <div className="space-y-2">
+                <Label htmlFor="expiration">Expiração do link (em dias)</Label>
+                <Input 
+                  id="expiration" 
+                  type="number" 
+                  value={linkExpirationDays}
+                  onChange={(e) => setLinkExpirationDays(parseInt(e.target.value))}
+                  min="1"
+                  max="365"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Este link expira em {(() => {
+                    const date = new Date();
+                    date.setDate(date.getDate() + linkExpirationDays);
+                    return date.toLocaleDateString('pt-BR');
+                  })()}.
+                </p>
+              </div>
+            )}
+            
+            {isPermanentLink && (
+              <p className="text-sm text-muted-foreground">
+                Este link é <strong>permanente</strong> e não tem data de expiração.
+              </p>
+            )}
           </div>
           <DialogFooter className="sm:justify-start">
             <Button

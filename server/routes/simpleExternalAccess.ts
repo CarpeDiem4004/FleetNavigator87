@@ -41,7 +41,7 @@ router.post('/generate', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Não autorizado' });
     }
 
-    const { partner_id, expiration_days = 30 } = req.body;
+    const { partner_id, expiration_days = 30, is_permanent = false } = req.body;
 
     if (!partner_id) {
       return res.status(400).json({ error: 'ID do parceiro é obrigatório' });
@@ -50,9 +50,13 @@ router.post('/generate', async (req: Request, res: Response) => {
     // Gerar token único
     const token = crypto.randomBytes(16).toString('hex');
     
-    // Calcular data de expiração
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + Number(expiration_days));
+    // Definir data de expiração (null para links permanentes)
+    let expiresAt: Date | null = null;
+    
+    if (!is_permanent) {
+      expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + Number(expiration_days));
+    }
 
     // Inserir token no banco de dados
     const insertResult = await pool.query(
@@ -60,7 +64,7 @@ router.post('/generate', async (req: Request, res: Response) => {
       (token, partner_id, created_by, expires_at) 
       VALUES ($1, $2, $3, $4)
       RETURNING id`,
-      [token, partner_id, req.user?.id || 1, expiresAt.toISOString()]
+      [token, partner_id, req.user?.id || 1, expiresAt ? expiresAt.toISOString() : null]
     );
 
     // Buscar dados do parceiro
@@ -109,13 +113,16 @@ router.get('/validate/:token', async (req: Request, res: Response) => {
       return res.status(404).json({ valid: false, error: 'Token inválido ou expirado' });
     }
 
-    // Verificar se o token expirou
-    const expiresAt = new Date(tokenData.expires_at);
-    const now = new Date();
+    // Verificar se o token expirou (se tiver data de expiração)
+    if (tokenData.expires_at) {
+      const expiresAt = new Date(tokenData.expires_at);
+      const now = new Date();
 
-    if (now > expiresAt) {
-      return res.status(401).json({ valid: false, error: 'Token expirado' });
+      if (now > expiresAt) {
+        return res.status(401).json({ valid: false, error: 'Token expirado' });
+      }
     }
+    // Links permanentes não têm data de expiração (expires_at = null)
 
     // Buscar informações do parceiro
     const partnerResult = await pool.query(
@@ -176,13 +183,16 @@ router.post('/submit', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Token inválido ou expirado' });
     }
 
-    // Verificar se o token expirou
-    const expiresAt = new Date(tokenData.expires_at);
-    const now = new Date();
+    // Verificar se o token expirou (se tiver data de expiração)
+    if (tokenData.expires_at) {
+      const expiresAt = new Date(tokenData.expires_at);
+      const now = new Date();
 
-    if (now > expiresAt) {
-      return res.status(401).json({ error: 'Token expirado' });
+      if (now > expiresAt) {
+        return res.status(401).json({ error: 'Token expirado' });
+      }
     }
+    // Links permanentes não têm data de expiração (expires_at = null)
 
     // Verificar se o parceiro associado ao token corresponde ao parceiro_id fornecido
     if (tokenData.partner_id !== Number(partner_id)) {
