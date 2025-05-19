@@ -811,30 +811,69 @@ export async function registrarAbastecimentoPosto(req, res) {
       try {
         console.log(`Atualizando nível do tanque para ${postoName} após abastecimento de ${litros} litros`);
         
-        if (tipo_combustivel.toLowerCase() === 'arla') {
-          // Se for ARLA, diminui o nível do tanque de ARLA e incrementa consumo total
-          await pool.query(`
-            UPDATE configuracao_tanques 
-            SET arla_nivel = GREATEST(0, arla_nivel - $1),
-                arla_consumo_total = COALESCE(arla_consumo_total, 0) + $1,
-                arla_valor_total = COALESCE(arla_valor_total, 0) + $2,
-                updated_at = (NOW() AT TIME ZONE 'America/Sao_Paulo')
-            WHERE posto = $3
-          `, [parseFloat(litros), calculatedValorTotal, postoName]);
-          
-          console.log(`Tanque de ARLA atualizado: -${litros} litros, +${calculatedValorTotal} valor total`);
+        // Verificar primeiramente se existe uma tabela de configuração específica para este posto
+        const configTableName = `configuracao_tanques_${postoName.toLowerCase()}`;
+        const checkConfigTable = `
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = $1
+          ) as "exists";
+        `;
+        
+        const configTableResult = await pool.query(checkConfigTable, [configTableName]);
+        const hasSpecificConfigTable = configTableResult.rows[0].exists;
+        
+        console.log(`Verificando existência de tabela específica ${configTableName}: ${hasSpecificConfigTable ? 'Existe' : 'Não existe'}`);
+        
+        if (hasSpecificConfigTable) {
+          // Usar tabela específica de configuração para este posto
+          if (tipo_combustivel.toLowerCase() === 'arla') {
+            // Query específica para postos com configuração de tanque própria
+            await pool.query(`
+              UPDATE ${configTableName}
+              SET nivel_atual = GREATEST(0, nivel_atual - $1)
+              WHERE tipo_combustivel = 'ARLA'
+            `, [parseFloat(litros)]);
+            
+            console.log(`Tanque de ARLA atualizado em ${configTableName}: -${litros} litros`);
+          } else {
+            // Query específica para postos com configuração de tanque própria (DIESEL ou outro)
+            await pool.query(`
+              UPDATE ${configTableName}
+              SET nivel_atual = GREATEST(0, nivel_atual - $1)
+              WHERE tipo_combustivel = 'DIESEL'
+            `, [parseFloat(litros)]);
+            
+            console.log(`Tanque de ${tipo_combustivel} atualizado em ${configTableName}: -${litros} litros`);
+          }
         } else {
-          // Se for Diesel ou outro combustível, diminui o nível do tanque de diesel e incrementa consumo total
-          await pool.query(`
-            UPDATE configuracao_tanques 
-            SET diesel_nivel = GREATEST(0, diesel_nivel - $1),
-                diesel_consumo_total = COALESCE(diesel_consumo_total, 0) + $1,
-                diesel_valor_total = COALESCE(diesel_valor_total, 0) + $2,
-                updated_at = (NOW() AT TIME ZONE 'America/Sao_Paulo')
-            WHERE posto = $3
-          `, [parseFloat(litros), calculatedValorTotal, postoName]);
-          
-          console.log(`Tanque de Diesel atualizado: -${litros} litros, +${calculatedValorTotal} valor total`);
+          // Usar tabela genérica de configuração
+          if (tipo_combustivel.toLowerCase() === 'arla') {
+            // Se for ARLA, diminui o nível do tanque de ARLA e incrementa consumo total
+            await pool.query(`
+              UPDATE configuracao_tanques 
+              SET arla_nivel = GREATEST(0, arla_nivel - $1),
+                  arla_consumo_total = COALESCE(arla_consumo_total, 0) + $1,
+                  arla_valor_total = COALESCE(arla_valor_total, 0) + $2,
+                  updated_at = (NOW() AT TIME ZONE 'America/Sao_Paulo')
+              WHERE posto = $3
+            `, [parseFloat(litros), calculatedValorTotal, postoName]);
+            
+            console.log(`Tanque de ARLA atualizado na configuracao_tanques: -${litros} litros, +${calculatedValorTotal} valor total`);
+          } else {
+            // Se for Diesel ou outro combustível, diminui o nível do tanque de diesel e incrementa consumo total
+            await pool.query(`
+              UPDATE configuracao_tanques 
+              SET diesel_nivel = GREATEST(0, diesel_nivel - $1),
+                  diesel_consumo_total = COALESCE(diesel_consumo_total, 0) + $1,
+                  diesel_valor_total = COALESCE(diesel_valor_total, 0) + $2,
+                  updated_at = (NOW() AT TIME ZONE 'America/Sao_Paulo')
+              WHERE posto = $3
+            `, [parseFloat(litros), calculatedValorTotal, postoName]);
+            
+            console.log(`Tanque de Diesel atualizado na configuracao_tanques: -${litros} litros, +${calculatedValorTotal} valor total`);
+          }
         }
         
         console.log('Atualização de tanque concluída!');
