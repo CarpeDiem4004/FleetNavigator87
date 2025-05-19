@@ -393,7 +393,7 @@ const TowingPartnerDetailPage: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Link de Acesso Externo</DialogTitle>
             <DialogDescription>
-              Um link exclusivo para o parceiro {partner?.name} foi gerado. Compartilhe este link para que o parceiro possa registrar os serviços de guincho realizados.
+              Um link {isPermanentLink ? 'permanente' : 'temporário'} para o parceiro {partner?.name} foi gerado. Compartilhe este link para que o parceiro possa registrar os serviços de guincho realizados.
             </DialogDescription>
           </DialogHeader>
           <div className="flex items-center space-x-2 mt-4">
