@@ -39,6 +39,8 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
  */
 export async function createFuelCardSolicitation(req: Request, res: Response) {
   try {
+    console.log("Corpo da requisição completo:", req.body);
+    
     let { 
       placa, 
       km, 
@@ -50,18 +52,28 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       valor_solicitado 
     } = req.body;
     
-    // Assegurar que valor_solicitado seja um número
-    if (typeof valor_solicitado === 'string') {
-      valor_solicitado = parseFloat(valor_solicitado);
-    }
+    // Debug completo - verificando valores antes do processamento
+    console.log("Valor solicitado antes do processamento:", {
+      valor: valor_solicitado,
+      tipo: typeof valor_solicitado,
+      isNull: valor_solicitado === null,
+      isUndefined: valor_solicitado === undefined
+    });
     
-    // Se não for um número válido, usar um valor padrão
-    if (isNaN(valor_solicitado)) {
+    // Valor padrão se for null ou undefined
+    if (valor_solicitado === null || valor_solicitado === undefined) {
       valor_solicitado = 0;
+      console.log("Aplicando valor padrão para valor_solicitado:", valor_solicitado);
+    }
+    // Assegurar que seja um número quando for string
+    else if (typeof valor_solicitado === 'string') {
+      const valorParseado = parseFloat(valor_solicitado);
+      console.log("Convertendo string para número:", valor_solicitado, "->", valorParseado);
+      valor_solicitado = !isNaN(valorParseado) ? valorParseado : 0;
     }
     
     // Log para depuração
-    console.log("Dados recebidos na API:", {
+    console.log("Dados processados na API:", {
       placa, 
       km, 
       tipo_cartao, 
@@ -69,7 +81,7 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       numero_cartao, 
       motorista, 
       observacoes,
-      valor_solicitado: valor_solicitado // Já convertido para número
+      valor_solicitado // Já convertido para número
     });
     
     // Validações básicas
