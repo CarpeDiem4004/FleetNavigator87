@@ -259,8 +259,8 @@ const TowingPartnerDetailPage: React.FC = () => {
   const generateLinkMutation = useMutation({
     mutationFn: async (data: { partner_id: number, expiration_days: number }) => {
       try {
-        // Chamada real à API para gerar o token
-        const response = await fetch('/api/towing/external-access/generate', {
+        // Chamada à API simplificada para gerar o token
+        const response = await fetch('/api/towing/simple-external/generate', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

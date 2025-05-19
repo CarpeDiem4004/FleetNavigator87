@@ -1,409 +1,401 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'wouter';
-import { useToast } from '@/hooks/use-toast';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-
-// Componentes UI
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import Logo from '@/components/logo';
 
-// Ícones
-import { Truck, AlertCircle, Loader2 } from 'lucide-react';
-
-// Esquema de validação para o formulário
-const serviceSchema = z.object({
-  vehicle_plate: z.string().min(1, 'A placa do veículo é obrigatória'),
-  pickup_location: z.string().min(1, 'O local de coleta é obrigatório'),
-  destination: z.string().min(1, 'O destino é obrigatório'),
-  service_description: z.string().min(1, 'A descrição do serviço é obrigatória'),
-  service_type: z.string().min(1, 'O tipo de serviço é obrigatório'),
-  driver_name: z.string().min(1, 'O nome do motorista é obrigatório'),
-  service_date: z.string().min(1, 'A data do serviço é obrigatória'),
-  actual_cost: z.string().min(1, 'O custo real é obrigatório'),
-  km_traveled: z.string().optional(),
-  observation: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof serviceSchema>;
-
-// Interface para o parceiro de guincho
-interface TowingPartner {
-  id: number;
-  name: string;
-  company_name?: string;
-}
-
-// Página de acesso externo para parceiros de guincho
-const ExternalAccessPage: React.FC = () => {
+export default function TowingPartnerExternalAccess() {
   const { token } = useParams();
   const { toast } = useToast();
-  const [partner, setPartner] = useState<TowingPartner | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [tokenValid, setTokenValid] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [validatingToken, setValidatingToken] = useState(true);
+  const [tokenValid, setTokenValid] = useState(false);
+  const [partnerInfo, setPartnerInfo] = useState<any>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
-  // Formulário para envio de serviços realizados
-  const form = useForm<FormValues>({
-    resolver: zodResolver(serviceSchema),
-    defaultValues: {
-      vehicle_plate: '',
-      pickup_location: '',
-      destination: '',
-      service_description: '',
-      service_type: '',
-      driver_name: '',
-      service_date: new Date().toISOString().split('T')[0], // Data atual como padrão
-      actual_cost: '',
-      km_traveled: '',
-      observation: '',
-    },
+  // Formulário
+  const [formData, setFormData] = useState({
+    vehicle_plate: '',
+    pickup_location: '',
+    destination: '',
+    service_description: '',
+    service_type: 'reboque',
+    driver_name: '',
+    service_date: new Date().toISOString().split('T')[0],
+    actual_cost: '',
+    km_traveled: '',
+    observation: ''
   });
 
-  // Verificar a validade do token e buscar os dados do parceiro
+  // Validar token ao carregar a página
   useEffect(() => {
     const validateToken = async () => {
       try {
-        // Obter dados do parceiro pelo token de acesso
-        const response = await fetch(`/api/towing/external-access/validate/${token}`);
-        
-        if (!response.ok) {
-          setTokenValid(false);
-          setIsLoading(false);
-          return;
-        }
-        
+        setValidatingToken(true);
+        const response = await fetch(`/api/towing/simple-external/validate/${token}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
         const data = await response.json();
-        
-        if (data.valid && data.partner) {
-          setPartner(data.partner);
+
+        if (response.ok && data.valid) {
           setTokenValid(true);
+          setPartnerInfo(data.partner);
         } else {
           setTokenValid(false);
+          toast({
+            title: 'Acesso negado',
+            description: data.error || 'Token inválido ou expirado',
+            variant: 'destructive'
+          });
         }
       } catch (error) {
         console.error('Erro ao validar token:', error);
         setTokenValid(false);
+        toast({
+          title: 'Erro de conexão',
+          description: 'Não foi possível validar o token de acesso',
+          variant: 'destructive'
+        });
       } finally {
-        setIsLoading(false);
+        setValidatingToken(false);
+        setLoading(false);
       }
     };
+
+    if (token) {
+      validateToken();
+    }
+  }, [token, toast]);
+
+  // Lidar com alterações no formulário
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Enviar formulário
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    validateToken();
-  }, [token]);
-  
-  // Função para enviar os dados do serviço
-  const onSubmit = async (data: FormValues) => {
-    setIsSubmitting(true);
-    
+    if (!formData.vehicle_plate || !formData.pickup_location || !formData.destination) {
+      toast({
+        title: 'Campos obrigatórios',
+        description: 'Preencha todos os campos obrigatórios',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     try {
-      // Formatar os dados para envio
-      const serviceData = {
-        ...data,
-        partner_id: partner?.id,
-        token: token,
-        actual_cost: parseFloat(data.actual_cost),
-        km_traveled: data.km_traveled ? parseFloat(data.km_traveled) : undefined,
-        status: 'pendente'
-      };
+      setSubmitting(true);
       
-      // Enviar os dados para a API
-      const response = await fetch('/api/towing/external-access/submit', {
+      const response = await fetch('/api/towing/simple-external/submit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(serviceData),
+        body: JSON.stringify({
+          ...formData,
+          token,
+          partner_id: partnerInfo.id,
+          actual_cost: parseFloat(formData.actual_cost) || 0,
+          km_traveled: parseFloat(formData.km_traveled) || 0
+        })
       });
-      
-      if (!response.ok) {
-        throw new Error('Falha ao enviar os dados do serviço');
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccess(true);
+        setShowSuccessDialog(true);
+      } else {
+        toast({
+          title: 'Erro ao enviar dados',
+          description: data.error || 'Ocorreu um erro ao registrar o serviço',
+          variant: 'destructive'
+        });
       }
-      
-      // Resetar o formulário
-      form.reset();
-      
-      // Mostrar mensagem de sucesso
-      toast({
-        title: 'Serviço registrado com sucesso',
-        description: 'O serviço foi registrado e aguarda aprovação do gestor de frota.',
-        variant: 'default',
-      });
     } catch (error) {
-      console.error('Erro ao enviar os dados do serviço:', error);
-      
-      // Mostrar mensagem de erro
+      console.error('Erro ao enviar serviço:', error);
       toast({
-        title: 'Erro ao registrar serviço',
-        description: 'Ocorreu um erro ao registrar o serviço. Por favor, tente novamente.',
-        variant: 'destructive',
+        title: 'Erro de conexão',
+        description: 'Não foi possível enviar os dados do serviço',
+        variant: 'destructive'
       });
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
-  
-  // Exibir loading enquanto verifica o token
-  if (isLoading) {
+
+  // Se estiver carregando, mostrar spinner
+  if (loading || validatingToken) {
     return (
-      <div className="container mx-auto py-12 flex flex-col items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground">Verificando acesso...</p>
-      </div>
-    );
-  }
-  
-  // Exibir mensagem se o token for inválido
-  if (tokenValid === false) {
-    return (
-      <div className="container mx-auto py-12">
-        <Card className="max-w-md mx-auto">
-          <CardHeader>
-            <CardTitle className="text-center text-destructive">Acesso Inválido</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center">
-            <AlertCircle className="h-16 w-16 text-destructive mb-4" />
-            <p className="text-center mb-4">
-              O link de acesso é inválido ou expirou. Por favor, entre em contato com o gestor de frota para obter um novo link.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-  
-  return (
-    <div className="container mx-auto py-8">
-      <Card className="max-w-3xl mx-auto">
-        <CardHeader className="pb-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Truck className="h-6 w-6 text-primary" />
-            <CardTitle>Portal de Parceiros - Registro de Serviços</CardTitle>
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 space-y-4 bg-background">
+        <div className="w-full max-w-md p-6 bg-card rounded-lg shadow-lg text-center">
+          <Logo size="lg" />
+          <h1 className="text-xl font-semibold mt-4">Sistema de Gestão de Frotas</h1>
+          <div className="flex flex-col items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="mt-4 text-muted-foreground">Validando acesso...</p>
           </div>
-          <CardDescription>
-            Bem-vindo, {partner?.company_name || partner?.name}. Utilize este formulário para registrar os serviços de guincho realizados.
-          </CardDescription>
-        </CardHeader>
-        
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="vehicle_plate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Placa do Veículo*</FormLabel>
-                      <FormControl>
-                        <Input placeholder="ABC1234" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="service_type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo de Serviço*</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o tipo de serviço" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="guincho_leve">Guincho Leve</SelectItem>
-                          <SelectItem value="guincho_pesado">Guincho Pesado</SelectItem>
-                          <SelectItem value="assistencia_local">Assistência Local</SelectItem>
-                          <SelectItem value="troca_pneu">Troca de Pneu</SelectItem>
-                          <SelectItem value="resgate">Resgate</SelectItem>
-                          <SelectItem value="outro">Outro</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="driver_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome do Motorista*</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nome do motorista" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="service_date"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Data do Serviço*</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="pickup_location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Local de Coleta*</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Endereço de coleta" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="destination"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Destino*</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Endereço de destino" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="actual_cost"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Valor do Serviço (R$)*</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.01" 
-                          min="0" 
-                          placeholder="0.00" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="km_traveled"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Quilômetros Percorridos</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.1" 
-                          min="0" 
-                          placeholder="0" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+        </div>
+      </div>
+    );
+  }
+
+  // Se o token for inválido, mostrar erro
+  if (!tokenValid) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 space-y-4 bg-background">
+        <div className="w-full max-w-md p-6 bg-card rounded-lg shadow-lg text-center">
+          <Logo size="lg" />
+          <h1 className="text-xl font-semibold mt-4">Sistema de Gestão de Frotas</h1>
+          <div className="flex flex-col items-center justify-center py-8">
+            <AlertCircle className="h-12 w-12 text-destructive" />
+            <h2 className="text-lg font-medium mt-4">Link de acesso inválido ou expirado</h2>
+            <p className="mt-2 text-muted-foreground">
+              Entre em contato com o gerente de frota para obter um novo link de acesso.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen bg-background">
+      {/* Cabeçalho */}
+      <header className="p-4 border-b bg-card">
+        <div className="container flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Logo size="sm" />
+            <span className="font-semibold">Sistema de Gestão de Frotas</span>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Acesso para parceiro: <span className="font-medium">{partnerInfo?.name}</span>
+          </div>
+        </div>
+      </header>
+
+      {/* Conteúdo principal */}
+      <main className="flex-1 container py-8">
+        <Card className="max-w-3xl mx-auto">
+          <CardHeader>
+            <CardTitle>Registrar Serviço de Guincho Realizado</CardTitle>
+            <CardDescription>
+              Preencha as informações sobre o serviço de guincho que foi realizado.
+            </CardDescription>
+          </CardHeader>
+          <form onSubmit={handleSubmit}>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="vehicle_plate">Placa do Veículo *</Label>
+                  <Input
+                    id="vehicle_plate"
+                    name="vehicle_plate"
+                    value={formData.vehicle_plate}
+                    onChange={handleInputChange}
+                    placeholder="ABC1234"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="service_date">Data do Serviço *</Label>
+                  <Input
+                    id="service_date"
+                    name="service_date"
+                    type="date"
+                    value={formData.service_date}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pickup_location">Local de Retirada *</Label>
+                  <Input
+                    id="pickup_location"
+                    name="pickup_location"
+                    value={formData.pickup_location}
+                    onChange={handleInputChange}
+                    placeholder="Ex: Av. Paulista, 1000, São Paulo"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="destination">Destino *</Label>
+                  <Input
+                    id="destination"
+                    name="destination"
+                    value={formData.destination}
+                    onChange={handleInputChange}
+                    placeholder="Ex: Rua Augusta, 500, São Paulo"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="service_type">Tipo de Serviço</Label>
+                  <select
+                    id="service_type"
+                    name="service_type"
+                    value={formData.service_type}
+                    onChange={handleInputChange}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="reboque">Reboque</option>
+                    <option value="guincho">Guincho</option>
+                    <option value="plataforma">Plataforma</option>
+                    <option value="assistencia">Assistência na Estrada</option>
+                    <option value="outro">Outro</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="driver_name">Nome do Motorista</Label>
+                  <Input
+                    id="driver_name"
+                    name="driver_name"
+                    value={formData.driver_name}
+                    onChange={handleInputChange}
+                    placeholder="Nome do motorista que realizou o serviço"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="actual_cost">Custo do Serviço (R$)</Label>
+                  <Input
+                    id="actual_cost"
+                    name="actual_cost"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.actual_cost}
+                    onChange={handleInputChange}
+                    placeholder="0,00"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="km_traveled">Quilometragem Percorrida</Label>
+                  <Input
+                    id="km_traveled"
+                    name="km_traveled"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={formData.km_traveled}
+                    onChange={handleInputChange}
+                    placeholder="0,0"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="service_description">Descrição do Serviço</Label>
+                <Textarea
+                  id="service_description"
+                  name="service_description"
+                  value={formData.service_description}
+                  onChange={handleInputChange}
+                  placeholder="Descreva os detalhes do serviço realizado"
+                  rows={3}
                 />
               </div>
-              
-              <FormField
-                control={form.control}
-                name="service_description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descrição do Serviço*</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Descreva detalhes do serviço realizado"
-                        rows={3}
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="observation"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Observações</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Observações adicionais sobre o serviço"
-                        rows={2}
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="flex justify-end">
-                <Button type="submit" disabled={isSubmitting} className="w-full md:w-auto">
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Enviando...
-                    </>
-                  ) : 'Registrar Serviço'}
-                </Button>
+              <div className="space-y-2">
+                <Label htmlFor="observation">Observações</Label>
+                <Textarea
+                  id="observation"
+                  name="observation"
+                  value={formData.observation}
+                  onChange={handleInputChange}
+                  placeholder="Observações adicionais sobre o serviço"
+                  rows={3}
+                />
               </div>
-            </form>
-          </Form>
-        </CardContent>
-        
-        <CardFooter className="flex flex-col items-center text-center border-t pt-4">
-          <p className="text-sm text-muted-foreground">
-            Este portal é exclusivo para parceiros autorizados da Murici Logística.
-            Os serviços registrados aqui serão avaliados pelo setor de Gestão de Frota.
-          </p>
-        </CardFooter>
-      </Card>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <p className="text-sm text-muted-foreground">* Campos obrigatórios</p>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  'Enviar Serviço'
+                )}
+              </Button>
+            </CardFooter>
+          </form>
+        </Card>
+      </main>
+
+      {/* Rodapé */}
+      <footer className="py-4 border-t bg-card text-center text-sm text-muted-foreground">
+        <div className="container">
+          &copy; {new Date().getFullYear()} Muricion Gestão de Frotas - Todos os direitos reservados
+        </div>
+      </footer>
+
+      {/* Diálogo de sucesso */}
+      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-center gap-2">
+              <CheckCircle2 className="h-6 w-6 text-green-500" />
+              Serviço Registrado com Sucesso
+            </DialogTitle>
+            <DialogDescription className="text-center pt-2">
+              O serviço foi registrado e está aguardando aprovação pela equipe de gestão de frotas.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-4">
+            <p className="text-center text-sm">
+              Após a aprovação, o serviço será incluído no relatório de pagamento.
+            </p>
+            <p className="text-center text-sm text-muted-foreground">
+              Este link de acesso continuará válido para registro de outros serviços.
+            </p>
+          </div>
+          <div className="flex justify-center">
+            <Button 
+              onClick={() => {
+                setShowSuccessDialog(false);
+                // Limpar formulário para permitir novo envio
+                setFormData({
+                  vehicle_plate: '',
+                  pickup_location: '',
+                  destination: '',
+                  service_description: '',
+                  service_type: 'reboque',
+                  driver_name: '',
+                  service_date: new Date().toISOString().split('T')[0],
+                  actual_cost: '',
+                  km_traveled: '',
+                  observation: ''
+                });
+              }}
+            >
+              Fechar e Registrar Outro Serviço
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-};
-
-export default ExternalAccessPage;
+}
