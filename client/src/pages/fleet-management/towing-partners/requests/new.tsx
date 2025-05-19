@@ -114,14 +114,21 @@ const NewTowingRequestPage: React.FC = () => {
   const createRequestMutation = useMutation({
     mutationFn: async (data: FormValues) => {
       // Adaptar campos para o formato aceito pelo backend
-      // A tabela não tem campo "description", mas tem "vehicle_condition"
+      // Mapear os campos do formulário para a estrutura do banco de dados
       const requestData = {
-        ...data,
+        partner_id: data.partner_id,
+        vehicle_plate: data.vehicle_plate, // Placa como identificador do veículo
+        requested_by: user?.name || "Usuário do sistema",
+        pickup_location: data.pickup_location,
+        destination: data.destination,
+        reason: data.reason,
         vehicle_condition: data.description, // Mover descrição para campo correto
+        estimated_cost: data.estimated_cost || null,
+        service_type: data.service_type,
+        urgency: data.urgency,
+        // Armazenar o nome do motorista temporariamente em "notes" do backend
+        notes: `Motorista: ${data.driver_name}`
       };
-      
-      // Remover campo description que não existe na tabela
-      delete requestData.description;
       
       const response = await apiRequest('POST', '/api/towing/requests', requestData);
       return await response.json();
