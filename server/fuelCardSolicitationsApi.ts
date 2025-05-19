@@ -50,6 +50,18 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       valor_solicitado 
     } = req.body;
     
+    // Log para depuração
+    console.log("Dados recebidos na API:", {
+      placa, 
+      km, 
+      tipo_cartao, 
+      provedor_cartao, 
+      numero_cartao, 
+      motorista, 
+      observacoes,
+      valor_solicitado
+    });
+    
     // Validações básicas
     if (!placa) {
       return res.status(400).json({
@@ -89,6 +101,10 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
     
     const valores_padrao = 0; // Valor padrão quando não é informado
     
+    // Garantir que valor_solicitado não seja nulo
+    const valorSolicitadoFloat = parseFloat(valor_solicitado) || valores_padrao;
+    console.log("Valor solicitado após conversão:", valorSolicitadoFloat);
+    
     const values = [
       placa,
       km,
@@ -97,7 +113,7 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       numero_cartao || null,
       motorista,
       observacoes || null,
-      valor_solicitado || valores_padrao // Usa o valor informado ou o valor padrão
+      valorSolicitadoFloat // Usa o valor convertido
     ];
     
     const result = await pool.query(query, values);
