@@ -306,7 +306,14 @@ export const useBasePermission = (): BasePermissionHook => {
         '/postos/visao-geral',                        // Visão Geral dos Postos
         '/postos',                                    // Postos de Abastecimento
         '/postos/historico-consolidado',              // Histórico Consolidado de Abastecimentos
-        '/oficina/murici'                             // Oficina Murici
+        '/oficina/murici',                           // Oficina Murici
+        // Módulo de Parceiros de Guincho
+        '/fleet-management/towing-partners',          // Lista de parceiros de guincho 
+        '/fleet-management/towing-partners/requests', // Solicitações de serviço
+        '/fleet-management/towing-partners-payments', // Pagamentos de serviços
+        '/fleet-management/towing-partners/detail',   // Detalhes de parceiros
+        '/fleet-management/towing-partners/external', // Acesso externo
+        '/fleet-management/ford-partner'              // Detalhes do parceiro Ford
       ];
       
       const hasAccess = frotaRoutes.includes(route);
