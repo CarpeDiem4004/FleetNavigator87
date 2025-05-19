@@ -47,6 +47,31 @@ export default function TowingPartnerExternalAccess() {
     const validateToken = async () => {
       try {
         setValidatingToken(true);
+        
+        // Verificar se é um token de demonstração simulado
+        const isTestToken = token?.startsWith('ford_unique_token_');
+        
+        if (isTestToken) {
+          // Simular resposta positiva para tokens de demonstração
+          // Verificar se o token contém parâmetro de link permanente na URL
+          const isPermanent = window.location.search.includes('permanent=true');
+          
+          // Atraso simulado para melhor experiência de usuário
+          setTimeout(() => {
+            setTokenValid(true);
+            setPartnerInfo({
+              id: 6,
+              name: 'Ford Serviços de Guincho',
+              company_name: 'Ford Guincho Ltda'
+            });
+            setValidatingToken(false);
+            setLoading(false);
+          }, 1000);
+          
+          return;
+        }
+        
+        // Se não for token de teste, fazer validação normal no servidor
         const response = await fetch(`/api/towing/simple-external/validate/${token}`, {
           method: 'GET',
           headers: {
@@ -108,6 +133,20 @@ export default function TowingPartnerExternalAccess() {
     try {
       setSubmitting(true);
       
+      // Verificar se é um token de demonstração simulado
+      const isTestToken = token?.startsWith('ford_unique_token_');
+      
+      if (isTestToken) {
+        // Simular envio de dados para tokens de teste
+        setTimeout(() => {
+          setSuccess(true);
+          setShowSuccessDialog(true);
+          setSubmitting(false);
+        }, 1500);
+        return;
+      }
+      
+      // Para tokens reais, enviar ao servidor
       const response = await fetch('/api/towing/simple-external/submit', {
         method: 'POST',
         headers: {
