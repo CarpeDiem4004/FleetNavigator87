@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import Logo from '@/components/logo';
+import Logo from '@/components/Logo';
 
 export default function TowingPartnerExternalAccess() {
   const { token } = useParams();
