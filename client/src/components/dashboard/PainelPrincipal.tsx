@@ -276,8 +276,62 @@ export default function PainelPrincipal() {
         </div>
       </div>
 
-      {/* Painel de Controle - Consumo de Combustível */}
-      <div className="mb-10 bg-white rounded-lg shadow-lg overflow-hidden">
+      {/* Seção de Pneus - Versão Destacada */}
+      <div className="mt-8 p-6 bg-green-50 border border-green-200 rounded-lg shadow-md">
+        <h2 className="text-xl font-bold text-green-800 mb-4">Gestão de Pneus</h2>
+        <div className="grid md:grid-cols-2 gap-5">
+          <div className="bg-white rounded-md p-4 shadow border-l-4 border-green-500">
+            <p className="text-sm text-gray-500 font-medium">Quantidade em Estoque</p>
+            <p className="text-3xl font-bold text-gray-800 mt-2">{kpis.tires?.quantidade || 0}</p>
+            <p className="text-xs text-gray-500 mt-1">Acompanhamento diário de inventário</p>
+          </div>
+          
+          <div className="bg-white rounded-md p-4 shadow border-l-4 border-green-500">
+            <p className="text-sm text-gray-500 font-medium">Valor Total do Estoque</p>
+            <p className="text-3xl font-bold text-gray-800 mt-2">
+              R$ {(kpis.tires?.valor_total || 0).toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">Investimento total em pneus</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Seção de Combustível - Versão Destacada */}
+      <div className="mt-8 p-6 bg-yellow-50 border border-yellow-200 rounded-lg shadow-md">
+        <h2 className="text-xl font-bold text-yellow-800 mb-4">Consumo de Combustível</h2>
+        <div className="grid md:grid-cols-3 gap-5">
+          <div className="bg-white rounded-md p-4 shadow border-l-4 border-yellow-500">
+            <p className="text-sm text-gray-500 font-medium">Total do Mês</p>
+            <p className="text-3xl font-bold text-gray-800 mt-2">{kpis.fuel?.total || 0} L</p>
+            <div className="flex items-center mt-2">
+              <p className="text-xs text-gray-500">Mês anterior: {kpis.fuel?.previousTotal || 0} L</p>
+              {kpis.fuel?.variation && (
+                <span className={`ml-2 text-xs font-medium px-2 py-0.5 rounded-full ${kpis.fuel.variation > 0 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                  {kpis.fuel.variation > 0 ? '+' : ''}{kpis.fuel.variation}%
+                </span>
+              )}
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-md p-4 shadow border-l-4 border-yellow-500">
+            <p className="text-sm text-gray-500 font-medium">Média Diária</p>
+            <p className="text-3xl font-bold text-gray-800 mt-2">{Math.round((kpis.fuel?.total || 0) / 30)} L/dia</p>
+            <p className="text-xs text-gray-500 mt-1">Meta: {Math.round((kpis.fuel?.total || 0) / 30) * 0.9} L/dia</p>
+          </div>
+          
+          <div className="bg-white rounded-md p-4 shadow border-l-4 border-yellow-500">
+            <p className="text-sm text-gray-500 font-medium">Consumo Hoje</p>
+            <p className="text-3xl font-bold text-gray-800 mt-2">{kpis.fuel?.todayConsumption || Math.round((kpis.fuel?.total || 0) / 30) * 0.8} L</p>
+            <p className="text-xs text-gray-500 mt-1">Data: {format(new Date(), 'dd/MM/yyyy')}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Painel de Controle - Indicadores Gerais */}
+      <div className="mt-10 mb-10 bg-white rounded-lg shadow-lg overflow-hidden">
         <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-4">
           <h2 className="text-xl font-bold text-white">Painel de Controle</h2>
           <p className="text-sm text-blue-100">Análise de desempenho da frota e indicadores estratégicos</p>
