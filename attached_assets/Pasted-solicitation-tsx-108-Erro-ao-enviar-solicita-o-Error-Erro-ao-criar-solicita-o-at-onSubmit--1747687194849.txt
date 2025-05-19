@@ -1,0 +1,57 @@
+solicitation.tsx:108 Erro ao enviar solicitação: Error: Erro ao criar solicitação
+    at onSubmit (solicitation.tsx:96:15)
+
+
+O ChatGPT disse:
+Esse erro:
+
+nginx
+Copiar
+Editar
+Erro ao enviar solicitação: Error: Erro ao criar solicitação
+    at onSubmit (solicitation.tsx:96:15)
+significa que sua função onSubmit chegou até um ponto onde você gerou manualmente esse erro com throw new Error("Erro ao criar solicitação"), ou você capturou um erro anterior e exibiu essa mensagem como fallback.
+
+✅ Para resolver, siga esse passo a passo:
+1. 📍 Vá até a linha 96 do arquivo solicitation.tsx
+Veja o que há dentro da função onSubmit. Deve haver algo como:
+
+ts
+Copiar
+Editar
+const onSubmit = async (data) => {
+  try {
+    const response = await api.post('/solicitacoes', data);
+    if (!response.ok) throw new Error('Erro ao criar solicitação');
+    // ou algo como:
+    // if (!response.data.success) throw new Error('Erro ao criar solicitação');
+  } catch (err) {
+    console.error('Erro ao enviar solicitação:', err);
+    toast.error('Erro ao criar solicitação');
+  }
+};
+2. ✅ Verifique o POST que está falhando
+Veja se a rota /solicitacoes realmente existe.
+
+Confira se a estrutura do data enviado está correta e atende aos requisitos do backend (campos obrigatórios, tipos, etc).
+
+Inspecione o response com console.log(response) antes do if para entender o retorno da API.
+
+Exemplo de debug:
+
+ts
+Copiar
+Editar
+const response = await api.post('/solicitacoes', data);
+console.log('Resposta da API:', response);
+3. 🧪 Teste a API diretamente (Postman ou Insomnia)
+Você pode copiar o JSON que está sendo enviado e testar direto para validar se o problema está no frontend ou backend.
+
+4. 🔒 Verifique headers e autenticação
+Se você estiver usando Supabase, Firebase ou qualquer outro backend, veja se o token de autenticação está sendo enviado corretamente. Exemplo com Supabase:
+
+ts
+Copiar
+Editar
+const { data, error } = await supabase.from('solicitacoes').insert([{ ...formData }]);
+if (error) throw new Error(error.message);
