@@ -169,4 +169,80 @@ router.get('/verify/:token', async (req, res) => {
   }
 });
 
+// Rota para obter histórico de serviços para um token específico
+router.get('/history/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token não informado'
+      });
+    }
+    
+    // Primeiro verifica se o token é válido
+    const tokenQuery = `
+      SELECT t.*, p.name as partner_name, p.company_name
+      FROM towing_access_tokens t
+      JOIN towing_partners p ON t.partner_id = p.id
+      WHERE t.token = $1 AND (t.expires_at IS NULL OR t.expires_at > NOW())
+    `;
+    
+    const tokenResult = await pool.query(tokenQuery, [token]);
+    
+    if (tokenResult.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Token inválido ou expirado'
+      });
+    }
+    
+    const partnerId = tokenResult.rows[0].partner_id;
+    
+    // Busca os serviços desse parceiro
+    const historyQuery = `
+      SELECT 
+        id, 
+        plate, 
+        pickup_location, 
+        delivery_location, 
+        service_description, 
+        service_date, 
+        cost, 
+        mileage, 
+        status, 
+        payment_status,
+        approved_at,
+        created_at
+      FROM towing_service_notes
+      WHERE partner_id = $1
+      ORDER BY created_at DESC
+    `;
+    
+    const historyResult = await pool.query(historyQuery, [partnerId]);
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Histórico de serviços',
+      data: {
+        partnerId: partnerId,
+        partnerName: tokenResult.rows[0].partner_name,
+        companyName: tokenResult.rows[0].company_name,
+        serviceCount: historyResult.rowCount,
+        services: historyResult.rows
+      }
+    });
+    
+  } catch (error: any) {
+    console.error('[SimpleExternalAccess] Erro ao obter histórico:', error);
+    
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao obter histórico de serviços',
+      error: error.message
+    });
+  }
+});
+
 export default router;
