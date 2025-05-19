@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link, useLocation } from 'wouter';
+import { useLocation } from 'wouter';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import SafeLink from '@/components/SafeLink';
 
 // Componentes UI
 import { Button } from '@/components/ui/button';
@@ -254,20 +255,20 @@ const TowingPartnersPage: React.FC = () => {
           </Button>
           
           {canAddPartners && (
-            <Link to="/fleet-management/towing-partners/new">
+            <SafeLink to="/fleet-management/towing-partners/new">
               <Button size="sm" className="gap-2">
                 <Plus size={16} />
                 Novo Parceiro
               </Button>
-            </Link>
+            </SafeLink>
           )}
           
-          <Link to="/fleet-management/towing-partners/requests">
+          <SafeLink to="/fleet-management/towing-partners/requests">
             <Button variant="outline" size="sm" className="gap-2">
               <FileText size={16} />
               Solicitações
             </Button>
-          </Link>
+          </SafeLink>
         </div>
       </div>
       
