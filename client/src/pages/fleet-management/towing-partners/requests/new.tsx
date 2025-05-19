@@ -113,7 +113,17 @@ const NewTowingRequestPage: React.FC = () => {
   // Mutação para criar solicitação
   const createRequestMutation = useMutation({
     mutationFn: async (data: FormValues) => {
-      const response = await apiRequest('POST', '/api/towing/requests', data);
+      // Adaptar campos para o formato aceito pelo backend
+      // A tabela não tem campo "description", mas tem "vehicle_condition"
+      const requestData = {
+        ...data,
+        vehicle_condition: data.description, // Mover descrição para campo correto
+      };
+      
+      // Remover campo description que não existe na tabela
+      delete requestData.description;
+      
+      const response = await apiRequest('POST', '/api/towing/requests', requestData);
       return await response.json();
     },
     onSuccess: () => {
