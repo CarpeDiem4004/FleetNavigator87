@@ -384,13 +384,19 @@ export default function TowingPartnerExternalAccess() {
 
       {/* Conteúdo principal */}
       <main className="flex-1 container py-8">
-        <Tabs defaultValue="novo" value={activeTab} onValueChange={setActiveTab} className="max-w-4xl mx-auto">
+        <Tabs defaultValue="novo" value={activeTab} onValueChange={(value) => {
+            setActiveTab(value);
+            // Sempre carregar o histórico quando mudar para a aba de histórico
+            if (value === "historico") {
+              loadServiceHistory();
+            }
+          }} className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <TabsList className="grid grid-cols-2">
               <TabsTrigger value="novo" className="px-8">
                 Novo Serviço
               </TabsTrigger>
-              <TabsTrigger value="historico" className="px-8" onClick={() => !serviceHistory.length && loadServiceHistory()}>
+              <TabsTrigger value="historico" className="px-8">
                 Histórico de Serviços
               </TabsTrigger>
             </TabsList>
@@ -717,8 +723,9 @@ export default function TowingPartnerExternalAccess() {
               Este link de acesso continuará válido para registro de outros serviços.
             </p>
           </div>
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-3">
             <Button 
+              variant="outline"
               onClick={() => {
                 setShowSuccessDialog(false);
                 // Limpar formulário para permitir novo envio
@@ -736,7 +743,29 @@ export default function TowingPartnerExternalAccess() {
                 });
               }}
             >
-              Fechar e Registrar Outro Serviço
+              Registrar Outro Serviço
+            </Button>
+            <Button 
+              onClick={() => {
+                setShowSuccessDialog(false);
+                // Limpar formulário
+                setFormData({
+                  vehicle_plate: '',
+                  pickup_location: '',
+                  destination: '',
+                  service_description: '',
+                  service_type: 'reboque',
+                  driver_name: '',
+                  service_date: new Date().toISOString().split('T')[0],
+                  actual_cost: '',
+                  km_traveled: '',
+                  observation: ''
+                });
+                // Mostrar a aba de histórico após o envio
+                setActiveTab("historico");
+              }}
+            >
+              Ver Histórico
             </Button>
           </div>
         </DialogContent>
