@@ -406,6 +406,47 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
           </nav>
         </div>
 
+        {/* Quick Action Shortcuts */}
+        <div className="px-3 pb-2">
+          <h3 className="text-xs font-semibold text-primary-200 uppercase tracking-wider mb-2 px-2">
+            Ações Rápidas
+          </h3>
+          <div className="grid grid-cols-2 gap-2">
+            <Link 
+              href="/fleet-management/towing-partners/external-access/TESTE_FORD_TOKEN"
+              className="flex flex-col items-center justify-center p-3 bg-primary-700 hover:bg-primary-600 rounded-md transition-colors"
+              onClick={closeSidebar}
+            >
+              <Truck size={20} className="mb-1" />
+              <span className="text-xs text-center">Parceiro Ford</span>
+            </Link>
+            <Link 
+              href="/postos/historico-consolidado"
+              className="flex flex-col items-center justify-center p-3 bg-primary-700 hover:bg-primary-600 rounded-md transition-colors"
+              onClick={closeSidebar}
+            >
+              <BarChart4 size={20} className="mb-1" />
+              <span className="text-xs text-center">Histórico</span>
+            </Link>
+            <Link 
+              href="/manutencao"
+              className="flex flex-col items-center justify-center p-3 bg-primary-700 hover:bg-primary-600 rounded-md transition-colors"
+              onClick={closeSidebar}
+            >
+              <FileText size={20} className="mb-1" />
+              <span className="text-xs text-center">Manutenção</span>
+            </Link>
+            <Link 
+              href="/fleet-management/towing-partners-payments"
+              className="flex flex-col items-center justify-center p-3 bg-primary-700 hover:bg-primary-600 rounded-md transition-colors"
+              onClick={closeSidebar}
+            >
+              <CreditCard size={20} className="mb-1" />
+              <span className="text-xs text-center">Pagamentos</span>
+            </Link>
+          </div>
+        </div>
+
         {/* User profile */}
         <div className="border-t border-primary-900 p-4">
           <div className="flex items-center">
