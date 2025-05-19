@@ -277,7 +277,10 @@ function SolicitationsTable({
             <TableCell>{solicitation.km}</TableCell>
             <TableCell>{solicitation.motorista}</TableCell>
             <TableCell>{solicitation.tipo_cartao === 'placa' ? 'Placa' : 'Número'}</TableCell>
-            <TableCell>{solicitation.provedor_cartao}</TableCell>
+            <TableCell>
+              {solicitation.provedor_cartao} 
+              {solicitation.numero_cartao && <span className="ml-1 text-xs text-muted-foreground">({solicitation.numero_cartao})</span>}
+            </TableCell>
             <TableCell>{format(new Date(solicitation.data_solicitacao), 'dd/MM/yyyy HH:mm')}</TableCell>
             <TableCell>
               <StatusBadge status={solicitation.status} />
