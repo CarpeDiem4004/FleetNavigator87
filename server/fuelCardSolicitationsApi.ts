@@ -46,7 +46,8 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       provedor_cartao, 
       numero_cartao, 
       motorista, 
-      observacoes 
+      observacoes,
+      valor_solicitado 
     } = req.body;
     
     // Validações básicas
@@ -96,7 +97,7 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       numero_cartao || null,
       motorista,
       observacoes || null,
-      valores_padrao // Valor padrão para o campo valor_solicitado
+      valor_solicitado || valores_padrao // Usa o valor informado ou o valor padrão
     ];
     
     const result = await pool.query(query, values);
