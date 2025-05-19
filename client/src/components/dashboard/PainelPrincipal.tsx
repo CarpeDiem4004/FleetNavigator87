@@ -277,22 +277,32 @@ export default function PainelPrincipal() {
       </div>
 
       {/* Seção de Combustível - CARD 4 */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-gray-700 pl-2 border-l-4 border-yellow-500">Abastecimento</h2>
+      <div className="p-5 bg-amber-50 border border-amber-200 rounded-xl shadow-sm space-y-4">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-2xl font-bold text-amber-800 pl-2 border-l-4 border-amber-500">Consumo de Combustível</h2>
+          <span className="text-amber-600 text-sm font-medium bg-amber-100 px-3 py-1 rounded-full">
+            Dados em tempo real
+          </span>
+        </div>
+        
+        <p className="text-amber-700 mb-3">
+          Informações sobre o abastecimento da frota em litros por período
+        </p>
+        
         <div className="grid md:grid-cols-3 gap-5">
           <KpiCard 
-            label="Litros Abastecidos (Mês Atual)" 
+            label="Total do Mês" 
             value={`${kpis.fuel?.total || 0} L`} 
             color="yellow"
             changeValue={kpis.fuel?.variation || 0}
           />
           <KpiCard 
-            label="Média Diária de Abastecimento" 
+            label="Média Diária" 
             value={`${Math.round((kpis.fuel?.total || 0) / 30)} L/dia`} 
             color="yellow"
           />
           <KpiCard 
-            label="Abastecimento Hoje" 
+            label="Consumo Hoje" 
             value={`${kpis.fuel?.todayConsumption || Math.round((kpis.fuel?.total || 0) / 30) * 0.8} L`} 
             color="yellow"
           />
