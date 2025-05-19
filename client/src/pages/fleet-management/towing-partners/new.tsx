@@ -66,6 +66,11 @@ const formSchema = z.object({
   coverage_radius: z.coerce.number().min(1, { message: 'Raio de atendimento deve ser maior que 0' }).optional(),
   has_insurance: z.boolean().default(false),
   available_24h: z.boolean().default(false),
+  // Campos de dados bancários
+  bank_name: z.string().max(100, { message: 'Nome do banco deve ter no máximo 100 caracteres' }).optional().or(z.literal('')),
+  bank_agency: z.string().max(20, { message: 'Agência deve ter no máximo 20 caracteres' }).optional().or(z.literal('')),
+  bank_account: z.string().max(20, { message: 'Conta deve ter no máximo 20 caracteres' }).optional().or(z.literal('')),
+  pix_key: z.string().max(100, { message: 'Chave PIX deve ter no máximo 100 caracteres' }).optional().or(z.literal('')),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -148,6 +153,11 @@ const NewTowingPartnerPage: React.FC = () => {
       has_insurance: false,
       available_24h: false,
       coverage_radius: undefined,
+      // Dados bancários
+      bank_name: '',
+      bank_agency: '',
+      bank_account: '',
+      pix_key: '',
     }
   });
   
