@@ -87,6 +87,22 @@ const FordPartnerDetail: React.FC = () => {
       rating: null,
       comments: null,
       is_paid: false
+    },
+    {
+      id: 3,
+      partner_id: 6,
+      vehicle_plate: "GHI9012",
+      driver_name: "Carlos Mendes",
+      pickup_location: "Avenida Brasil, 500",
+      destination: "Oficina Central",
+      status: "concluido",
+      created_at: "2025-05-12T10:20:00Z",
+      service_type: "leve",
+      urgency: "baixa",
+      estimated_cost: 285,
+      rating: 4,
+      comments: "Bom serviço, pontual",
+      is_paid: true
     }
   ]);
 
@@ -199,6 +215,40 @@ const FordPartnerDetail: React.FC = () => {
       </div>
 
       {/* Primeira seção: Informações rápidas e ações */}
+      {/* Resumo financeiro */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Resumo Financeiro</CardTitle>
+          <CardDescription>Valores pagos e pendentes dos serviços</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Total de Serviços</p>
+              <p className="text-2xl font-bold">{requests.length}</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Valor Total</p>
+              <p className="text-2xl font-bold">
+                R$ {requests.reduce((total, req) => total + req.estimated_cost, 0).toFixed(2)}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Valor Pago</p>
+              <p className="text-2xl font-bold text-green-600">
+                R$ {requests.filter(req => req.is_paid).reduce((total, req) => total + req.estimated_cost, 0).toFixed(2)}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Valor Pendente</p>
+              <p className="text-2xl font-bold text-amber-600">
+                R$ {requests.filter(req => !req.is_paid && req.status === 'concluido').reduce((total, req) => total + req.estimated_cost, 0).toFixed(2)}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardContent className="pt-6">
