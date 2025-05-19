@@ -44,6 +44,8 @@ const solicitacaoSchema = z.object({
     .min(3, { message: "O nome do motorista deve ter no mínimo 3 caracteres" }),
   base: z.string()
     .min(2, { message: "A base do veículo é obrigatória" }),
+  id_rota: z.string()
+    .min(1, { message: "O ID da rota é obrigatório" }),  
   observacoes: z.string().optional()
 });
 
@@ -305,6 +307,23 @@ export default function FuelCardSolicitation() {
                       </FormControl>
                       <FormDescription>
                         Base onde o veículo está alocado
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="id_rota"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ID da Rota</FormLabel>
+                      <FormControl>
+                        <Input placeholder="R123" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Código de identificação da rota
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
