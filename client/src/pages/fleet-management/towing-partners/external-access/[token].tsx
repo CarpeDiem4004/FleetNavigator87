@@ -260,7 +260,7 @@ export default function TowingPartnerExternalAccess() {
       setSubmitting(true);
       
       // Verificar se é um token de demonstração simulado
-      const isTestToken = token?.startsWith('ford_unique_token_');
+      const isTestToken = token?.startsWith('ford_unique_token_') || token === 'ford_token_123456';
       
       if (isTestToken) {
         // Simular envio de dados para tokens de teste
@@ -268,6 +268,24 @@ export default function TowingPartnerExternalAccess() {
           setSuccess(true);
           setShowSuccessDialog(true);
           setSubmitting(false);
+          
+          // Adicionar o novo serviço ao histórico local para simulação
+          const newService = {
+            id: serviceHistory.length + 1,
+            plate: formData.vehicle_plate,
+            pickup_location: formData.pickup_location,
+            delivery_location: formData.destination,
+            service_description: formData.service_description,
+            service_date: new Date().toISOString(),
+            cost: formData.actual_cost,
+            mileage: parseInt(formData.km_traveled) || 0,
+            status: 'pending',
+            payment_status: 'pending',
+            created_at: new Date().toISOString()
+          };
+          
+          // Adicionar o novo serviço ao início do histórico (mais recente primeiro)
+          setServiceHistory(prev => [newService, ...prev]);
         }, 1500);
         return;
       }
@@ -292,6 +310,9 @@ export default function TowingPartnerExternalAccess() {
       if (response.ok) {
         setSuccess(true);
         setShowSuccessDialog(true);
+        
+        // Após envio bem-sucedido, atualizar o histórico de serviços
+        loadServiceHistory();
       } else {
         toast({
           title: 'Erro ao enviar dados',
