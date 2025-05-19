@@ -41,6 +41,8 @@ type FuelCardSolicitation = {
   data_solicitacao: string;
   data_atendimento?: string;
   atendido_por?: string;
+  valor_solicitado?: number;
+  base?: string;
 };
 
 export default function FuelCardDashboard() {
@@ -56,6 +58,11 @@ export default function FuelCardDashboard() {
   const solicitations: FuelCardSolicitation[] = apiResponse?.data || [];
   const pendingCount = solicitations.filter(s => s.status === 'pendente').length;
   const attendedCount = solicitations.filter(s => s.status === 'atendido').length;
+  
+  // Calcular o valor total dos cartões atendidos
+  const totalValueAttended = solicitations
+    .filter(s => s.status === 'atendido')
+    .reduce((sum, s) => sum + (s.valor_solicitado || 0), 0);
   
   const handleStatusChange = async (id: number, newStatus: 'atendido' | 'rejeitado') => {
     try {
@@ -127,7 +134,7 @@ export default function FuelCardDashboard() {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-xl">Aguardando</CardTitle>
@@ -160,6 +167,28 @@ export default function FuelCardDashboard() {
                   <Skeleton className="h-10 w-16" />
                 ) : (
                   attendedCount
+                )}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl">Valor Total</CardTitle>
+            <CardDescription>Cartões atendidos (R$)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center">
+              <CreditCard className="h-8 w-8 text-blue-500 mr-3" />
+              <span className="text-4xl font-bold">
+                {isLoading ? (
+                  <Skeleton className="h-10 w-16" />
+                ) : (
+                  totalValueAttended.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })
                 )}
               </span>
             </div>
