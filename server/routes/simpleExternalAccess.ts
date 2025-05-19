@@ -30,6 +30,15 @@ router.post('/submit', async (req, res) => {
 
     // Validação de campos obrigatórios
     if (!token || !placa || !local_retirada || !local_entrega || !servico_realizado || !valor) {
+      console.error('[SimpleExternalAccess] Erro de validação: campos obrigatórios ausentes', { 
+        token: !!token, 
+        placa: !!placa, 
+        local_retirada: !!local_retirada, 
+        local_entrega: !!local_entrega, 
+        servico_realizado: !!servico_realizado, 
+        valor: !!valor 
+      });
+      
       return res.status(400).json({
         success: false,
         message: 'Campos obrigatórios não informados'
@@ -45,6 +54,7 @@ router.post('/submit', async (req, res) => {
     const tokenResult = await pool.query(tokenCheckQuery, [token]);
     
     if (tokenResult.rowCount === 0) {
+      console.error('[SimpleExternalAccess] Token inválido ou expirado:', token);
       return res.status(401).json({
         success: false,
         message: 'Token inválido ou expirado'
@@ -52,6 +62,7 @@ router.post('/submit', async (req, res) => {
     }
 
     const partnerId = tokenResult.rows[0].partner_id;
+    console.log('[SimpleExternalAccess] Token válido para parceiro ID:', partnerId);
     
     // Registrar o serviço na tabela towing_service_notes
     const insertQuery = `
@@ -89,18 +100,23 @@ router.post('/submit', async (req, res) => {
       telefone_contato || null
     ];
     
+    console.log('[SimpleExternalAccess] Tentando inserir registro com valores:', values);
     const result = await pool.query(insertQuery, values);
+    console.log('[SimpleExternalAccess] Registro inserido com sucesso, ID:', result.rows[0].id);
     
     // Atualizar estatísticas do parceiro
     const updatePartnerStatsQuery = `
       UPDATE towing_partners
       SET 
-        service_count = service_count + 1,
+        service_count = COALESCE(service_count, 0) + 1,
         last_service_date = NOW()
       WHERE id = $1
+      RETURNING service_count
     `;
     
-    await pool.query(updatePartnerStatsQuery, [partnerId]);
+    const updateResult = await pool.query(updatePartnerStatsQuery, [partnerId]);
+    console.log('[SimpleExternalAccess] Estatísticas do parceiro atualizadas, total de serviços:', 
+      updateResult.rows[0]?.service_count || 'N/A');
     
     return res.status(201).json({
       success: true,
@@ -172,6 +188,7 @@ router.get('/verify/:token', async (req, res) => {
 // Rota para obter histórico de serviços para um token específico
 router.get('/history/:token', async (req, res) => {
   try {
+    console.log('[SimpleExternalAccess] Solicitação de histórico para token:', req.params.token);
     const { token } = req.params;
     
     if (!token) {
@@ -190,6 +207,10 @@ router.get('/history/:token', async (req, res) => {
     `;
     
     const tokenResult = await pool.query(tokenQuery, [token]);
+    console.log('[SimpleExternalAccess] Resultado da validação do token:', {
+      encontrado: tokenResult.rowCount > 0,
+      token: token.substring(0, 5) + '...'
+    });
     
     if (tokenResult.rowCount === 0) {
       return res.status(404).json({
@@ -199,6 +220,7 @@ router.get('/history/:token', async (req, res) => {
     }
     
     const partnerId = tokenResult.rows[0].partner_id;
+    console.log('[SimpleExternalAccess] Buscando histórico para parceiro ID:', partnerId);
     
     // Busca os serviços desse parceiro
     const historyQuery = `
@@ -221,6 +243,15 @@ router.get('/history/:token', async (req, res) => {
     `;
     
     const historyResult = await pool.query(historyQuery, [partnerId]);
+    console.log('[SimpleExternalAccess] Serviços encontrados:', historyResult.rowCount);
+    
+    // Verificar se os serviços estão no banco de dados
+    if (historyResult.rowCount === 0) {
+      console.log('[SimpleExternalAccess] Verificando todos os serviços na tabela:');
+      const allServicesQuery = `SELECT COUNT(*) as total FROM towing_service_notes`;
+      const allServicesResult = await pool.query(allServicesQuery);
+      console.log('[SimpleExternalAccess] Total de serviços na tabela:', allServicesResult.rows[0].total);
+    }
     
     return res.status(200).json({
       success: true,
