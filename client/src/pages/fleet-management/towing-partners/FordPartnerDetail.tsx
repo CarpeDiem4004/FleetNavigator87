@@ -580,24 +580,35 @@ const FordPartnerDetail: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Link de acesso externo</DialogTitle>
             <DialogDescription>
-              Compartilhe este link com o parceiro Ford para que ele possa registrar serviços prestados
+              Um link {isPermanentLink ? 'permanente' : 'temporário'} para o parceiro Ford foi gerado. Compartilhe este link para que o parceiro possa registrar serviços prestados.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="expiration">Expiração do link (em dias)</Label>
-              <Input 
-                id="expiration" 
-                type="number" 
-                value={linkExpirationDays}
-                onChange={(e) => setLinkExpirationDays(parseInt(e.target.value))}
-                min="1"
-                max="365"
+            <div className="flex items-center space-x-2 mb-4">
+              <Switch 
+                id="permanent-link"
+                checked={isPermanentLink}
+                onCheckedChange={setIsPermanentLink}
               />
-              <p className="text-sm text-muted-foreground">
-                Este link expirará após {linkExpirationDays} dias
-              </p>
+              <Label htmlFor="permanent-link">Link permanente (sem expiração)</Label>
             </div>
+
+            {!isPermanentLink && (
+              <div className="space-y-2">
+                <Label htmlFor="expiration">Expiração do link (em dias)</Label>
+                <Input 
+                  id="expiration" 
+                  type="number" 
+                  value={linkExpirationDays}
+                  onChange={(e) => setLinkExpirationDays(parseInt(e.target.value))}
+                  min="1"
+                  max="365"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Este link expirará após {linkExpirationDays} dias
+                </p>
+              </div>
+            )}
             
             <div className="space-y-2">
               <Label htmlFor="access-link">Link de acesso</Label>
