@@ -121,13 +121,11 @@ const NewTowingRequestPage: React.FC = () => {
         requested_by: user?.name || "Usuário do sistema",
         pickup_location: data.pickup_location,
         destination: data.destination,
-        reason: data.reason,
-        vehicle_condition: data.description, // Mover descrição para campo correto
+        reason: data.reason + ` (Motorista: ${data.driver_name})`, // Incluímos o motorista no motivo
+        vehicle_condition: data.description || '', // Mover descrição para campo correto
         estimated_cost: data.estimated_cost || null,
         service_type: data.service_type,
-        urgency: data.urgency,
-        // Armazenar o nome do motorista temporariamente em "notes" do backend
-        notes: `Motorista: ${data.driver_name}`
+        urgency: data.urgency
       };
       
       const response = await apiRequest('POST', '/api/towing/requests', requestData);
