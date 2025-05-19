@@ -209,7 +209,7 @@ const TowingRequestsPage: React.FC = () => {
                 <SelectItem value="">Todos parceiros</SelectItem>
                 {partners?.map((partner) => (
                   <SelectItem key={partner.id} value={partner.id.toString()}>
-                    {partner.name}
+                    {partner.name || `Parceiro #${partner.id}`}
                   </SelectItem>
                 ))}
               </SelectContent>

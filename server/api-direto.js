@@ -777,44 +777,81 @@ export async function registrarAbastecimentoPosto(req, res) {
     
     // Adaptação para os postos V2 - diferentes campos na tabela
     if (isV2Posto) {
+      // Verificar primeiro quais colunas existem na tabela para construir a query dinamicamente
+      const columnsQuery = `
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = $1
+      `;
+      
+      console.log(`Verificando colunas existentes na tabela ${tableName} antes de inserir`);
+      const columnsResult = await pool.query(columnsQuery, [tableName]);
+      const tableColumns = columnsResult.rows.map(row => row.column_name);
+      
+      console.log(`Colunas disponíveis em ${tableName} para inserção:`, tableColumns);
+      
+      // Construir dinamicamente os campos e valores para inserção
+      const insertFields = [];
+      const insertValues = [];
+      const placeholders = [];
+      let paramIndex = 1;
+      
+      // Sempre incluir a placa
+      insertFields.push('placa');
+      insertValues.push(placa.toUpperCase());
+      placeholders.push(`$${paramIndex++}`);
+      
+      // Verificar e adicionar km_atual se a coluna existir
+      if (tableColumns.includes('km_atual')) {
+        insertFields.push('km_atual');
+        insertValues.push(km_atual ? parseInt(km_atual, 10) : null);
+        placeholders.push(`$${paramIndex++}`);
+      }
+      
+      // Verificar e adicionar hodometro_atual se a coluna existir
+      if (tableColumns.includes('hodometro_atual')) {
+        insertFields.push('hodometro_atual');
+        insertValues.push(hodometro_atual ? parseInt(hodometro_atual, 10) : null);
+        placeholders.push(`$${paramIndex++}`);
+      }
+      
+      // Adicionar outros campos verificando se existem na tabela
+      const fieldsToAdd = [
+        { name: 'tipo_combustivel', value: tipo_combustivel },
+        { name: 'litros', value: litros ? parseFloat(litros) : null },
+        { name: 'motorista', value: motorista },
+        { name: 'motorista_rg', value: motorista_rg },
+        { name: 'operador', value: operador },
+        { name: 'valor_litro', value: valor_litro ? parseFloat(valor_litro) : null },
+        { name: 'valor_total', value: calculatedValorTotal },
+        { name: 'tipo_veiculo', value: tipo_veiculo },
+        { name: 'observacoes', value: observacoes },
+        { name: 'lavagem', value: lavagem === true },
+        { name: 'tipo_lavagem', value: tipo_lavagem }
+      ];
+      
+      fieldsToAdd.forEach(field => {
+        if (tableColumns.includes(field.name)) {
+          insertFields.push(field.name);
+          insertValues.push(field.value);
+          placeholders.push(`$${paramIndex++}`);
+        }
+      });
+      
+      // Sempre adicionar created_at
+      insertFields.push('created_at');
+      placeholders.push('(NOW() AT TIME ZONE \'America/Sao_Paulo\')');
+      
       const insertQueryV2 = `
         INSERT INTO "${tableName}" (
-          placa,
-          km_atual,
-          hodometro_atual,
-          tipo_combustivel,
-          litros,
-          motorista,
-          motorista_rg,
-          operador,
-          valor_litro,
-          valor_total,
-          tipo_veiculo,
-          observacoes,
-          lavagem,
-          tipo_lavagem,
-          created_at
+          ${insertFields.join(', ')}
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, (NOW() AT TIME ZONE 'America/Sao_Paulo')
+          ${placeholders.join(', ')}
         ) RETURNING *
       `;
       
-      const valuesV2 = [
-        placa.toUpperCase(),
-        km_atual ? parseInt(km_atual, 10) : null,
-        hodometro_atual ? parseInt(hodometro_atual, 10) : null,
-        tipo_combustivel,
-        litros ? parseFloat(litros) : null,
-        motorista,
-        motorista_rg,
-        operador,
-        valor_litro ? parseFloat(valor_litro) : null,
-        calculatedValorTotal,
-        tipo_veiculo,
-        observacoes,
-        lavagem === true,
-        tipo_lavagem
-      ];
+      const valuesV2 = insertValues;
       
       console.log('Query SQL V2 a ser executada:', insertQueryV2);
       console.log('Valores V2:', valuesV2);
