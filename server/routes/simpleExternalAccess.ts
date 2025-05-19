@@ -14,8 +14,11 @@ router.post('/submit', async (req, res) => {
   try {
     console.log('[SimpleExternalAccess] Recebendo submissão de serviço:', req.body);
     
+    // Suporte para diferentes formatos de API (v1 e v2)
+    // Isso permite compatibilidade com diferentes clientes
     const {
       token,
+      // Suporte para nomenclatura v1
       placa,
       local_retirada,
       local_entrega,
@@ -25,18 +28,48 @@ router.post('/submit', async (req, res) => {
       km_percorrido,
       observacoes,
       nome_contato,
-      telefone_contato
+      telefone_contato,
+      // Suporte para nomenclatura v2
+      vehicle_plate,
+      pickup_location,
+      delivery_location,
+      drop_off_location,
+      service_description,
+      service_date,
+      actual_cost,
+      km_traveled,
+      observation,
+      driver_name,
+      driver_phone
     } = req.body;
 
-    // Validação de campos obrigatórios
-    if (!token || !placa || !local_retirada || !local_entrega || !servico_realizado || !valor) {
+    console.log('[SimpleExternalAccess] Campos normalizados:', {
+      vehicle: vehicle_plate || placa,
+      pickup: pickup_location || local_retirada,
+      delivery: delivery_location || drop_off_location || local_entrega
+    });
+
+    // Normalizar campos para permitir qualquer formato de API
+    const normalizedPlate = vehicle_plate || placa;
+    const normalizedPickup = pickup_location || local_retirada;
+    const normalizedDelivery = delivery_location || drop_off_location || local_entrega;
+    const normalizedService = service_description || servico_realizado;
+    const normalizedDate = service_date || data_servico;
+    const normalizedCost = actual_cost || valor;
+    const normalizedMileage = km_traveled || km_percorrido;
+    const normalizedNotes = observation || observacoes;
+    const normalizedContactName = driver_name || nome_contato;
+    const normalizedContactPhone = driver_phone || telefone_contato;
+
+    // Validação de campos obrigatórios usando versão normalizada
+    if (!token || !normalizedPlate || !normalizedPickup || !normalizedDelivery || !normalizedService || !normalizedCost) {
       console.error('[SimpleExternalAccess] Erro de validação: campos obrigatórios ausentes', { 
         token: !!token, 
-        placa: !!placa, 
-        local_retirada: !!local_retirada, 
-        local_entrega: !!local_entrega, 
-        servico_realizado: !!servico_realizado, 
-        valor: !!valor 
+        placa: !!normalizedPlate, 
+        local_retirada: !!normalizedPickup, 
+        local_entrega: !!normalizedDelivery, 
+        servico_realizado: !!normalizedService, 
+        valor: !!normalizedCost 
       });
       
       return res.status(400).json({
@@ -88,16 +121,16 @@ router.post('/submit', async (req, res) => {
     
     const values = [
       partnerId,
-      placa.toUpperCase(),
-      local_retirada,
-      local_entrega,
-      servico_realizado,
-      data_servico || new Date(),
-      parseFloat(valor),
-      km_percorrido || null,
-      observacoes || null,
-      nome_contato || null,
-      telefone_contato || null
+      (normalizedPlate || '').toUpperCase(),
+      normalizedPickup,
+      normalizedDelivery,
+      normalizedService,
+      normalizedDate || new Date(),
+      parseFloat(normalizedCost.toString()),
+      normalizedMileage || null,
+      normalizedNotes || null,
+      normalizedContactName || null,
+      normalizedContactPhone || null
     ];
     
     console.log('[SimpleExternalAccess] Tentando inserir registro com valores:', values);

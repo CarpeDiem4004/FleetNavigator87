@@ -76,6 +76,7 @@ export default function TowingPartnerExternalAccess() {
     try {
       setHistoryLoading(true);
       setHistoryError(null);
+      console.log('[ExternalAccess] Iniciando carregamento do histórico para token:', token);
       
       // Verificar se é um token de demonstração simulado
       const isTestToken = token?.startsWith('ford_unique_token_') || token === 'ford_token_123456';
@@ -129,19 +130,29 @@ export default function TowingPartnerExternalAccess() {
         return;
       }
       
-      // Para tokens reais, buscar do servidor
-      const response = await fetch(`/api/towing/simple-external/history/${token}`, {
+      // Para tokens reais, buscar do servidor (sempre com cache-busting)
+      const timestamp = new Date().getTime(); // Adicionar timestamp para evitar cache
+      const response = await fetch(`/api/towing/simple-external/history/${token}?t=${timestamp}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-        }
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
+        },
+        cache: 'no-store'
       });
 
       const data = await response.json();
+      console.log('[ExternalAccess] Resposta do histórico recebida:', {
+        status: response.status,
+        success: data.success,
+        serviceCount: data.data?.serviceCount || 0
+      });
 
       if (response.ok && data.success) {
+        console.log('[ExternalAccess] Serviços carregados:', data.data.services?.length || 0);
         setServiceHistory(data.data.services || []);
       } else {
+        console.error('[ExternalAccess] Erro ao carregar histórico:', data);
         setHistoryError(data.message || 'Erro ao carregar histórico de serviços');
         toast({
           title: 'Erro ao carregar histórico',
@@ -150,7 +161,7 @@ export default function TowingPartnerExternalAccess() {
         });
       }
     } catch (error) {
-      console.error('Erro ao carregar histórico:', error);
+      console.error('[ExternalAccess] Exceção ao carregar histórico:', error);
       setHistoryError('Erro de conexão ao buscar histórico');
       toast({
         title: 'Erro de conexão',
@@ -170,8 +181,9 @@ export default function TowingPartnerExternalAccess() {
         
         // Verificar se é um token de demonstração simulado
         const isTestToken = token?.startsWith('ford_unique_token_') || token === 'ford_token_123456';
+        const isFordTestToken = token === 'TESTE_FORD_TOKEN';
         
-        if (isTestToken) {
+        if (isTestToken && !isFordTestToken) {
           // Simular resposta positiva para tokens de demonstração
           // Verificar se o token contém parâmetro de link permanente na URL
           const isPermanent = window.location.search.includes('permanent=true');
@@ -193,6 +205,8 @@ export default function TowingPartnerExternalAccess() {
           
           return;
         }
+        
+        // Caso específico para o token TESTE_FORD_TOKEN para testes reais
         
         // Se não for token de teste, fazer validação normal no servidor
         const response = await fetch(`/api/towing/simple-external/verify/${token}`, {
@@ -261,9 +275,10 @@ export default function TowingPartnerExternalAccess() {
       
       // Verificar se é um token de demonstração simulado
       const isTestToken = token?.startsWith('ford_unique_token_') || token === 'ford_token_123456';
+      const isFordTestToken = token === 'TESTE_FORD_TOKEN';
       
-      if (isTestToken) {
-        // Simular envio de dados para tokens de teste
+      if (isTestToken && !isFordTestToken) {
+        // Simular envio de dados para tokens de teste fictícios
         setTimeout(() => {
           setSuccess(true);
           setShowSuccessDialog(true);
@@ -290,31 +305,55 @@ export default function TowingPartnerExternalAccess() {
         return;
       }
       
+      // O token TESTE_FORD_TOKEN é um token real que deve usar a API
+      
       // Para tokens reais, enviar ao servidor
       console.log('[ExternalAccess] Enviando dados para o servidor:', {
         token,
         formData
       });
       
+      // Criando objeto de dados com todos os possíveis nomes de campos que o backend pode estar esperando
+      // Isso ajuda a garantir compatibilidade com diferentes versões da API
+      const serviceData = {
+        token,
+        partner_id: partnerInfo.id,
+        // Campos normalizados (compatíveis com API v2)
+        vehicle_plate: formData.vehicle_plate,
+        pickup_location: formData.pickup_location,
+        drop_off_location: formData.destination,
+        delivery_location: formData.destination, // Backup para compatibilidade
+        service_description: formData.service_description,
+        service_type: formData.service_type || 'reboque',
+        driver_name: formData.driver_name || '',
+        service_date: formData.service_date,
+        actual_cost: parseFloat(formData.actual_cost) || 0,
+        km_traveled: parseInt(formData.km_traveled) || 0,
+        observation: formData.observation || '',
+        status: 'pending',
+        
+        // Nomes de campos antigos (compatibilidade com API v1)
+        placa: formData.vehicle_plate,
+        local_retirada: formData.pickup_location,
+        local_entrega: formData.destination,
+        servico_realizado: formData.service_description,
+        data_servico: formData.service_date,
+        valor: parseFloat(formData.actual_cost) || 0,
+        km_percorrido: parseInt(formData.km_traveled) || 0,
+        observacoes: formData.observation || "",
+        nome_contato: formData.driver_name || "",
+        telefone_contato: formData.driver_phone || ""
+      };
+      
+      console.log('[ExternalAccess] Dados normalizados para envio:', serviceData);
+      
       const response = await fetch('/api/towing/simple-external/submit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
         },
-        body: JSON.stringify({
-          token,
-          partner_id: partnerInfo.id,
-          placa: formData.vehicle_plate,
-          local_retirada: formData.pickup_location,
-          local_entrega: formData.destination,
-          servico_realizado: formData.service_description,
-          data_servico: formData.service_date,
-          valor: parseFloat(formData.actual_cost) || 0,
-          km_percorrido: parseInt(formData.km_traveled) || 0,
-          observacoes: formData.observation || "",
-          nome_contato: formData.driver_name || "",
-          telefone_contato: formData.driver_phone || ""
-        })
+        body: JSON.stringify(serviceData)
       });
 
       const data = await response.json();
