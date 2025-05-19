@@ -292,6 +292,7 @@ function SolicitationsTable({
           <TableHead>KM</TableHead>
           <TableHead>Motorista</TableHead>
           <TableHead>Base</TableHead>
+          <TableHead>ID Rota</TableHead>
           <TableHead>Tipo</TableHead>
           <TableHead>Cartão</TableHead>
           <TableHead>Data</TableHead>
@@ -307,6 +308,7 @@ function SolicitationsTable({
             <TableCell>{solicitation.km}</TableCell>
             <TableCell>{solicitation.motorista}</TableCell>
             <TableCell>{solicitation.base || '-'}</TableCell>
+            <TableCell>{solicitation.id_rota || '-'}</TableCell>
             <TableCell>{solicitation.tipo_cartao === 'placa' ? 'Placa' : 'Número'}</TableCell>
             <TableCell>
               {solicitation.provedor_cartao} 
