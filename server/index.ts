@@ -21,6 +21,8 @@ import hybridUserApi from "../hybrid-user-api.js";
 import hybridBasesApi from "../hybrid-bases-api.js";
 // Importar rotas para acesso externo de parceiros de guincho
 import towingPartnerExternalRoutes from "./routes/towingPartnerExternalRoutes";
+// Importar rotas simplificadas para acesso externo de parceiros de guincho
+import simpleExternalAccess from "./routes/simpleExternalAccess";
 // Importar middleware de CORS personalizado
 import { corsMiddleware } from "./middleware/cors";
 // Importar middleware para corrigir cookies de sessão
@@ -122,6 +124,9 @@ app.use((req, res, next) => {
   
   // Registrar as rotas de acesso externo para parceiros de guincho
   app.use('/api/towing/external-access', towingPartnerExternalRoutes);
+  
+  // Registrar as rotas simplificadas para acesso externo de parceiros de guincho
+  app.use('/api/towing/simple-external', simpleExternalAccess);
   
   // Registrar rota de diagnóstico para verificar autenticação no módulo de frota
   app.use('/api/frota', frotaDiagnosticoRoute);
