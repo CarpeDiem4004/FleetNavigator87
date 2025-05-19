@@ -53,7 +53,7 @@ export default function FuelCardDashboard() {
     retry: 3
   });
   
-  const solicitations: FuelCardSolicitation[] = apiResponse?.solicitations || [];
+  const solicitations: FuelCardSolicitation[] = apiResponse?.data || [];
   const pendingCount = solicitations.filter(s => s.status === 'pendente').length;
   const attendedCount = solicitations.filter(s => s.status === 'atendido').length;
   

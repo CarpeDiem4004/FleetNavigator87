@@ -9091,6 +9091,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rotas para gestão de pneus
   app.use('/api/pneus', pneusRoutes);
   
+  // Inicializar tabela para o sistema de cartão combustível
+  await setupFuelCardTable();
+  
+  // Rotas para o sistema de solicitação de cartão combustível
+  app.get('/api/fuel-card-solicitations', getFuelCardSolicitations);
+  app.post('/api/fuel-card-solicitations', createFuelCardSolicitation);
+  app.get('/api/fuel-card-solicitations/:id', getFuelCardSolicitationById);
+  app.put('/api/fuel-card-solicitations/:id/status', updateFuelCardSolicitationStatus);
+  
   // Rota para criar tabela de demonstração para o AutoSave
   app.post('/api/create-demo-table', async (req, res) => {
     try {
