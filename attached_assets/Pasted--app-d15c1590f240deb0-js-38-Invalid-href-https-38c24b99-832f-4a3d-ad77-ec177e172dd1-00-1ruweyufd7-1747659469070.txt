@@ -1,0 +1,76 @@
+_app-d15c1590f240deb0.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//fleet-management/towing-partners' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+
+
+O ChatGPT disse:
+O erro que você está vendo ocorre porque a URL contém barras duplas (//) após o domínio, o que não é aceito pelo Next.js ao usar next/router ou <Link href="...">.
+
+✅ Explicando o problema:
+Você provavelmente tem algo como:
+
+js
+Copiar
+Editar
+const href = `https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/${rota}`;
+// onde rota = '/fleet-management/towing-partners'
+Isso gera:
+
+bash
+Copiar
+Editar
+https://...dev//fleet-management/towing-partners
+               ^^
+Esse // depois do domínio é inválido.
+
+✅ Soluções
+✅ 1. Use .replace() para limpar barras duplas (recomendado)
+js
+Copiar
+Editar
+const rota = '/fleet-management/towing-partners';
+const base = 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev';
+
+const href = `${base}/${rota}`.replace(/([^:]\/)\/+/g, '$1');
+Isso mantém o https:// intacto, mas remove barras duplicadas depois.
+
+✅ 2. Remova a barra inicial da rota
+js
+Copiar
+Editar
+const rota = 'fleet-management/towing-partners'; // sem a barra
+const href = `https://.../${rota}`;
+Em <Link> ou router.push
+Se estiver usando Next.js com rotas internas (sem domínio completo):
+
+js
+Copiar
+Editar
+<Link href="/fleet-management/towing-partners" />
+ou
+
+js
+Copiar
+Editar
+router.push('/fleet-management/towing-partners');
+✔️ Isso está ok.
+
+Mas se estiver passando URL externa (com domínio), não use <Link>, e sim:
+
+js
+Copiar
+Editar
+window.location.href = 'https://...';
+ou
+
+js
+Copiar
+Editar
+window.open('https://...', '_blank');
+⚠️ Atenção: Next.js espera rotas relativas no href
+Se você está usando:
+
+js
+Copiar
+Editar
+<Link href="https://meusite.com//rota">...</Link>
+🔴 Isso causará o erro. Use window.location.href para URLs absolutas.
+

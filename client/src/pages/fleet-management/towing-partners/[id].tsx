@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useParams, Link } from 'wouter';
+import { useParams } from 'wouter';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import SafeLink from '@/components/SafeLink';
 
 // Componentes UI
 import { Button } from '@/components/ui/button';
@@ -237,11 +238,11 @@ const TowingPartnerDetailPage: React.FC = () => {
     return (
       <div className="container mx-auto py-6 space-y-8 max-w-7xl">
         <div className="flex items-center gap-2 mb-4">
-          <Link to="/fleet-management/towing-partners">
+          <SafeLink to="/fleet-management/towing-partners">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
             </Button>
-          </Link>
+          </SafeLink>
         </div>
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-10">
@@ -250,9 +251,9 @@ const TowingPartnerDetailPage: React.FC = () => {
             <p className="text-muted-foreground mb-6">
               Não foi possível encontrar detalhes para o parceiro solicitado.
             </p>
-            <Link to="/fleet-management/towing-partners">
+            <SafeLink to="/fleet-management/towing-partners">
               <Button>Ver todos os parceiros</Button>
-            </Link>
+            </SafeLink>
           </CardContent>
         </Card>
       </div>
