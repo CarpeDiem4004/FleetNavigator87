@@ -117,12 +117,12 @@ const NewTowingRequestPage: React.FC = () => {
       // Mapear os campos do formulário para a estrutura do banco de dados
       const requestData = {
         partner_id: data.partner_id,
-        vehicle_plate: data.vehicle_plate, // Placa como identificador do veículo
+        // Note: incluímos placa do veículo no motivo já que não existe o campo vehicle_plate
         requested_by: user?.name || "Usuário do sistema",
         pickup_location: data.pickup_location,
         destination: data.destination,
-        // Incorporamos o tipo de serviço e motorista no motivo já que esses campos não existem na tabela
-        reason: `${data.reason} | Tipo de Serviço: ${data.service_type} | Motorista: ${data.driver_name} | Urgência: ${data.urgency}`, 
+        // Incorporamos todos os dados extras no campo reason já que os campos específicos não existem no banco
+        reason: `Motivo: ${data.reason} | Placa: ${data.vehicle_plate} | Tipo de Serviço: ${data.service_type} | Motorista: ${data.driver_name} | Urgência: ${data.urgency}`, 
         vehicle_condition: data.description || '', // Mover descrição para campo correto
         estimated_cost: data.estimated_cost || null
       };
