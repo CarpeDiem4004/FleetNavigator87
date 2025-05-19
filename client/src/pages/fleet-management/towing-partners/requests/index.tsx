@@ -131,9 +131,9 @@ const TowingRequestsPage: React.FC = () => {
     ? requests.filter(request => {
         // Filtro de pesquisa
         const matchesSearch = 
-          request.vehicle_plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          request.driver_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          request.partner_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          // Verificar se as propriedades existem antes de tentar acessá-las
+          (request.reason && request.reason.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (request.requested_by && request.requested_by.toLowerCase().includes(searchTerm.toLowerCase())) ||
           request.pickup_location.toLowerCase().includes(searchTerm.toLowerCase());
         
         // Filtro de status
