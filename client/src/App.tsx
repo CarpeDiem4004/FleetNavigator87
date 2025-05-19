@@ -255,7 +255,8 @@ function App() {
           <ProtectedRoute path="/limpar-dados" component={LimparDados} />
           <ProtectedRoute path="/line-hall-shopee" component={LineHallShopeePage} />
           <ProtectedRoute path="/fuel-card-old" component={FuelCardPage} />
-          <ProtectedRoute path="/fuel-card" component={FuelCard} />
+          {/* Rota antiga comentada para evitar conflito */}
+          {/* <ProtectedRoute path="/fuel-card" component={FuelCard} /> */}
           <ProtectedRoute path="/fuel-card-requests" component={FuelCardRequestsPanel} />
           <ProtectedRoute path="/posto-remedios" component={PostoRemediosPage} />
           <ProtectedRoute path="/cartao-abastecimento" component={CartaoAbastecimentoPage} />
