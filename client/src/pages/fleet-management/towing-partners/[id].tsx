@@ -410,7 +410,11 @@ const TowingPartnerDetailPage: React.FC = () => {
             </Button>
           </div>
           <div className="mt-2 text-sm text-muted-foreground">
-            Este link expira em {linkExpirationDays} dias.
+            Este link expira em {(() => {
+              const date = new Date();
+              date.setDate(date.getDate() + linkExpirationDays);
+              return date.toLocaleDateString('pt-BR');
+            })()}.
           </div>
           <DialogFooter className="sm:justify-start">
             <Button
