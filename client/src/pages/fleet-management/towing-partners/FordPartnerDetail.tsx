@@ -95,15 +95,16 @@ const FordPartnerDetail: React.FC = () => {
       setTimeout(() => {
         const token = "ford_unique_token_" + Date.now();
         const baseUrl = window.location.origin;
-        const externalUrl = `${baseUrl}/fleet-management/towing-partners/external-access/${token}`;
+        // Incluir parâmetro is_permanent na URL se o link for permanente
+        const externalUrl = `${baseUrl}/fleet-management/towing-partners/external-access/${token}${isPermanentLink ? '?permanent=true' : ''}`;
         
         setAccessLink(externalUrl);
         setIsLinkModalOpen(true);
         
         toast({
           title: "Link gerado com sucesso",
-          description: "O link de acesso foi gerado e está pronto para ser compartilhado",
-          variant: "success",
+          description: `O link ${isPermanentLink ? 'permanente' : 'temporário'} de acesso foi gerado e está pronto para ser compartilhado`,
+          variant: "default",
         });
       }, 500);
     } catch (error) {
