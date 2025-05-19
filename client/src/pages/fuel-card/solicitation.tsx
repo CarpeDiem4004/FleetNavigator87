@@ -42,6 +42,8 @@ const solicitacaoSchema = z.object({
   numero_cartao: z.string().optional(),
   motorista: z.string()
     .min(3, { message: "O nome do motorista deve ter no mínimo 3 caracteres" }),
+  base: z.string()
+    .min(2, { message: "A base do veículo é obrigatória" }),
   observacoes: z.string().optional()
 });
 
@@ -63,6 +65,7 @@ export default function FuelCardSolicitation() {
       provedor_cartao: "Ticket",
       numero_cartao: "",
       motorista: "",
+      base: "",
       observacoes: ""
     }
   });
@@ -285,6 +288,23 @@ export default function FuelCardSolicitation() {
                       </FormControl>
                       <FormDescription>
                         Nome completo do motorista solicitante
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="base"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Base do Veículo</FormLabel>
+                      <FormControl>
+                        <Input placeholder="São Paulo" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Base onde o veículo está alocado
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
