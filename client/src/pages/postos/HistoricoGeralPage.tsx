@@ -1124,7 +1124,7 @@ const HistoricoGeralPage: React.FC = () => {
                       <td className="py-3 px-4">{formatarNumero(abast.km_atual)}</td>
                       <td className="py-3 px-4">{abast.tipo_combustivel}</td>
                       <td className="py-3 px-4">{formatarNumero(abast.quantidade_litros || abast.litros || 0)}</td>
-                      <td className="py-3 px-4">{abast.project || '-'}</td>
+                      <td className="py-3 px-4">{abast.project || abast.projeto || '-'}</td>
                       <td className="py-3 px-4">{abast.nome_motorista}</td>
                       <td className="py-3 px-4">{abast.valor_total ? formatarPreco(abast.valor_total) : '-'}</td>
                     </tr>
