@@ -23,6 +23,8 @@ export interface FuelConsumptionData {
   total: number;
   previousTotal: number;
   variation: number;
+  dailyAverage?: number;
+  todayConsumption?: number;
 }
 
 // Interfaces para o Executive Dashboard

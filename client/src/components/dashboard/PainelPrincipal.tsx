@@ -11,6 +11,7 @@ import {
   type TireStockStats,
   type FuelConsumptionData
 } from '@/services/dashboardService';
+import { format } from 'date-fns';
 
 // Interface para os novos KPIs do dashboard
 interface DashboardKPIs {
@@ -278,12 +279,22 @@ export default function PainelPrincipal() {
       {/* Seção de Combustível - CARD 4 */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold text-gray-700 pl-2 border-l-4 border-yellow-500">Abastecimento</h2>
-        <div className="grid md:grid-cols-1 gap-5">
+        <div className="grid md:grid-cols-3 gap-5">
           <KpiCard 
             label="Litros Abastecidos (Mês Atual)" 
             value={`${kpis.fuel?.total || 0} L`} 
             color="yellow"
             changeValue={kpis.fuel?.variation || 0}
+          />
+          <KpiCard 
+            label="Média Diária de Abastecimento" 
+            value={`${Math.round((kpis.fuel?.total || 0) / 30)} L/dia`} 
+            color="yellow"
+          />
+          <KpiCard 
+            label="Abastecimento Hoje" 
+            value={`${kpis.fuel?.todayConsumption || Math.round((kpis.fuel?.total || 0) / 30) * 0.8} L`} 
+            color="yellow"
           />
         </div>
       </div>
