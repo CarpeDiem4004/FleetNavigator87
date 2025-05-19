@@ -39,7 +39,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
  */
 export async function createFuelCardSolicitation(req: Request, res: Response) {
   try {
-    const { 
+    let { 
       placa, 
       km, 
       tipo_cartao, 
@@ -50,6 +50,16 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       valor_solicitado 
     } = req.body;
     
+    // Assegurar que valor_solicitado seja um número
+    if (typeof valor_solicitado === 'string') {
+      valor_solicitado = parseFloat(valor_solicitado);
+    }
+    
+    // Se não for um número válido, usar um valor padrão
+    if (isNaN(valor_solicitado)) {
+      valor_solicitado = 0;
+    }
+    
     // Log para depuração
     console.log("Dados recebidos na API:", {
       placa, 
@@ -59,7 +69,7 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       numero_cartao, 
       motorista, 
       observacoes,
-      valor_solicitado
+      valor_solicitado: valor_solicitado // Já convertido para número
     });
     
     // Validações básicas
@@ -101,9 +111,8 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
     
     const valores_padrao = 0; // Valor padrão quando não é informado
     
-    // Garantir que valor_solicitado não seja nulo
-    const valorSolicitadoFloat = parseFloat(valor_solicitado) || valores_padrao;
-    console.log("Valor solicitado após conversão:", valorSolicitadoFloat);
+    // Não precisamos mais desta conversão, pois já foi feita acima
+    console.log("Valor solicitado que será inserido no banco:", valor_solicitado);
     
     const values = [
       placa,
@@ -113,7 +122,7 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       numero_cartao || null,
       motorista,
       observacoes || null,
-      valorSolicitadoFloat // Usa o valor convertido
+      valor_solicitado // Já convertido para número acima
     ];
     
     const result = await pool.query(query, values);
