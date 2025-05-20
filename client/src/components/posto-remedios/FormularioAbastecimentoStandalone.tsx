@@ -420,6 +420,7 @@ export default function FormularioAbastecimentoStandalone() {
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos de timeout
       
       try {
+        console.log("Tentando endpoint principal primeiro com dados de supabase...");
         const serverSideResponse = await fetch('/api/supabase-insert', {
           method: 'POST',
           headers: {
@@ -452,6 +453,7 @@ export default function FormularioAbastecimentoStandalone() {
         
         // Tentar API de fallback
         console.log("Tentando API de fallback...");
+        console.log("Dados para API fallback:", apiData);
         try {
           // Envie os dados diretamente para a API de fallback sem o formato aninhado
           const fallbackResponse = await fetch('/api/posto-remedios-standalone/abastecimentos', {
@@ -459,7 +461,7 @@ export default function FormularioAbastecimentoStandalone() {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify(formattedData.data), // Use os campos no formato esperado pela API
+            body: JSON.stringify(apiData), // Use os campos no formato esperado pela API
           });
           
           if (fallbackResponse.ok) {
