@@ -243,7 +243,7 @@ const EditableTowingPartnerDetailPage: React.FC = () => {
         
         return await response.json();
       } catch (error) {
-        console.error(`Erro ao buscar solicitações para parceiro ID=${id}:`, error);
+        console.error(`Erro ao buscar solicitacoes para parceiro ID=${id}`, error);
         return [];
       }
     }
