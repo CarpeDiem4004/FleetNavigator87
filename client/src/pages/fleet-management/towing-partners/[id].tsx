@@ -208,38 +208,13 @@ const TowingPartnerDetailPage: React.FC = () => {
       console.log(`Buscando dados do parceiro com ID: ${id}`);
       
       try {
-        console.log(`Verificando detalhes do parceiro ID=${id} no banco de dados`);
+        console.log(`Buscando detalhes do parceiro ID=${id} no banco de dados`);
         
-        // Primeiro obter um token fresco do servidor
-        console.log('Solicitando novo token JWT para autenticação...');
-        const tokenResponse = await fetch('/api/get-jwt-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include'
-        });
-        
-        if (!tokenResponse.ok) {
-          throw new Error('Falha ao obter token JWT');
-        }
-        
-        const tokenData = await tokenResponse.json();
-        const freshToken = tokenData.token;
-        
-        // Armazenar o token para uso futuro
-        localStorage.setItem('authToken', freshToken);
-        console.log('Token JWT obtido com sucesso');
-        
-        // Adicionar o token JWT ao cabeçalho Authorization
-        const headers: HeadersInit = {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${freshToken}`
-        };
-        
-        // Usar fetch diretamente com o novo token
-        console.log(`Usando fetch direto com novo token JWT para ID=${id}`);
+        // Agora a rota é pública, não precisamos mais de token JWT
+        console.log(`Usando fetch direto para ID=${id} (rota pública)`);
         const response = await fetch(`/api/towing/partners/${id}`, {
           method: 'GET',
-          headers,
+          headers: { 'Content-Type': 'application/json' },
           credentials: 'include'
         });
         

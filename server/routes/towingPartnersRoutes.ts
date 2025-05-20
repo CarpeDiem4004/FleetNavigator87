@@ -68,9 +68,13 @@ router.get('/partners/summary', authenticateJWT, async (req, res) => {
 /**
  * @route GET /api/towing/partners/:id
  * @desc Obter detalhes de um parceiro de guincho específico
- * @access Privado (usuários autenticados)
+ * @access Público - Todos os detalhes dos parceiros são expostos publicamente
  */
-router.get('/partners/:id', authenticateJWT, async (req, res) => {
+router.get('/partners/:id', (req, res, next) => {
+  // Rota pública para permitir acesso aos detalhes do parceiro sem autenticação
+  console.log(`GET /partners/:id - Solicitação recebida para ID=${req.params.id}`);
+  next();
+}, async (req, res) => {
   try {
     const { id } = req.params;
     
