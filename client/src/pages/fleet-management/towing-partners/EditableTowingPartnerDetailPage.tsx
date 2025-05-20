@@ -126,7 +126,10 @@ const RequestStatusBadge: React.FC<{ status: string }> = ({ status }) => {
 };
 
 const EditableTowingPartnerDetailPage: React.FC = () => {
-  const { id } = useParams();
+  // Extrair o ID da URL e remover caracteres estranhos que possam estar sendo adicionados
+  const params = useParams();
+  const id = params.id ? params.id.replace(/[^0-9]/g, '') : null;
+  console.log('ID do parceiro extraído:', id);
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
