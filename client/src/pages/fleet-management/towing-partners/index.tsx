@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import SafeLink from '@/components/SafeLink';
+import { apiRequest } from '@/lib/queryClient';
 
 // Componentes UI
 import { Button } from '@/components/ui/button';
@@ -146,8 +147,10 @@ const RatingStars: React.FC<{ rating: number }> = ({ rating }) => {
 const TowingPartnersPage: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('todos');
+  const [loadingApproval, setLoadingApproval] = useState<number | null>(null);
   
   // Buscar parceiros de guincho
   const {
@@ -166,6 +169,40 @@ const TowingPartnersPage: React.FC = () => {
   } = useQuery<TowingPartnerSummary[]>({
     queryKey: ['/api/towing/partners/summary'],
     enabled: !!user,
+  });
+  
+  // Mutação para aprovar parceiros
+  const approvePartnerMutation = useMutation({
+    mutationFn: async (partnerId: number) => {
+      setLoadingApproval(partnerId);
+      const response = await apiRequest(
+        'PUT', 
+        `/api/towing/partners/${partnerId}/status`, 
+        { status: 'ativo' }
+      );
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Parceiro aprovado",
+        description: `${data.data.name} foi aprovado com sucesso.`,
+        variant: "default"
+      });
+      
+      // Invalidar cache para recarregar os dados
+      queryClient.invalidateQueries({ queryKey: ['/api/towing/partners'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/towing/partners/summary'] });
+      
+      setLoadingApproval(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao aprovar parceiro",
+        description: error.message || "Ocorreu um erro ao aprovar o parceiro. Tente novamente.",
+        variant: "destructive"
+      });
+      setLoadingApproval(null);
+    }
   });
   
   // Filtrar parceiros com base na pesquisa e na aba ativa
@@ -465,8 +502,18 @@ const TowingPartnersPage: React.FC = () => {
                       </div>
                     </CardContent>
                     <CardFooter className="flex justify-between">
-                      <Button variant="outline" size="sm">
-                        Aprovar
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => approvePartnerMutation.mutate(partner.id)}
+                        disabled={loadingApproval === partner.id}
+                      >
+                        {loadingApproval === partner.id ? (
+                          <span className="flex items-center">
+                            <span className="animate-spin mr-2 h-4 w-4 border-t-2 border-b-2 border-primary rounded-full"></span>
+                            Aprovando...
+                          </span>
+                        ) : "Aprovar"}
                       </Button>
                       <SafeLink to={`/fleet-management/towing-partners/${partner.id}`}>
                         <Button variant="default" size="sm">
