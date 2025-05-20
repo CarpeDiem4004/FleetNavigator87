@@ -210,18 +210,29 @@ const TowingPartnerDetailPage: React.FC = () => {
       try {
         // Primeiro verifica se o parceiro existe
         console.log(`Verificando existência do parceiro ID=${id} no banco de dados`);
-        const checkResponse = await apiRequest('GET', `/api/towing/partners`);
-        const allPartners = await checkResponse.json();
-        
-        // Verifica se o parceiro existe na lista
-        const partnerExists = allPartners.some(p => p.id === parseInt(id as string));
-        if (!partnerExists) {
-          console.log(`Parceiro ID=${id} não encontrado na lista de parceiros`);
-          throw new Error(`Parceiro ID=${id} não encontrado na base de dados`);
-        }
-        
-        console.log(`Tentando buscar detalhes do parceiro ID=${id}`);
-        const response = await apiRequest('GET', `/api/towing/partners/${id}`);
+        try {
+          const checkResponse = await apiRequest('GET', `/api/towing/partners`);
+          if (!checkResponse.ok) {
+            console.error(`Erro ao obter lista de parceiros: ${checkResponse.status} ${checkResponse.statusText}`);
+            throw new Error('Erro de autenticação ao acessar a lista de parceiros');
+          }
+          
+          const allPartners = await checkResponse.json();
+          
+          // Verifica se o parceiro existe na lista
+          const partnerExists = allPartners.some(p => p.id === parseInt(id as string));
+          if (!partnerExists) {
+            console.log(`Parceiro ID=${id} não encontrado na lista de parceiros`);
+            throw new Error(`Parceiro ID=${id} não encontrado na base de dados`);
+          }
+          
+          console.log(`Tentando buscar detalhes do parceiro ID=${id}`);
+          const response = await apiRequest('GET', `/api/towing/partners/${id}`);
+        } catch (authError) {
+          console.error('Erro de autenticação:', authError);
+          // Tentar novamente com token atualizado
+          console.log('Tentando novamente com novo token...');
+          const response = await apiRequest('GET', `/api/towing/partners/${id}`, null, true);
         
         if (!response.ok) {
           console.error(`Erro ao buscar parceiro ID=${id}: ${response.status} ${response.statusText}`);
