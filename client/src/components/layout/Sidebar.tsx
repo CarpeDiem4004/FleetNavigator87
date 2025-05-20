@@ -310,9 +310,21 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Operações', href: '/fuel-card', icon: CreditCard },
       { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList }
     ]},
-    { name: 'Postos', href: '#', icon: Fuel, subItems: [
+    // Menu de Abastecimentos com acesso aos postos
+    { name: 'Abastecimentos', href: '#', icon: Fuel, subItems: [
+      { name: 'Posto Osasco V2', href: '/posto/osasco_v2', icon: Fuel },
+      { name: 'Posto Alair V2', href: '/posto/alair_v2', icon: Fuel },
+      { name: 'Posto Campinas V2', href: '/posto/campinas_v2', icon: Fuel },
+      { name: 'Posto ABC V2', href: '/posto/abc_v2', icon: Fuel },
+      { name: 'Posto Socorro V2', href: '/posto/socorro_v2', icon: Fuel },
+      { name: 'Posto Sorocaba V2', href: '/posto/sorocaba_v2', icon: Fuel },
+      { name: 'Histórico Geral', href: '/refueling', icon: ClipboardList },
+      { name: 'Histórico Pátio', href: '/abastecimentos', icon: Gauge },
       { name: 'Visão Geral dos Postos', href: '/postos/visao-geral', icon: BarChart4 },
       { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 }
+    ]},
+    { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
+      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
     ]},
   ];
   
