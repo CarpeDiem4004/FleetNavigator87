@@ -396,7 +396,7 @@ export default function FormularioAbastecimentoStandalone() {
         }
       };
       
-      // Versão simplificada para a API direta
+      // Versão simplificada para a API direta - sem o campo tipo_veiculo que não existe na tabela
       const apiData = {
         placa: data.placa.toUpperCase(),
         km: data.km,
@@ -409,8 +409,8 @@ export default function FormularioAbastecimentoStandalone() {
         valor_total: data.valor_total,
         lavagem: data.lavagem,
         tipo_lavagem: data.tipo_lavagem,
-        observacoes: data.observacoes,
-        tipo_veiculo: 'frota'
+        observacoes: data.observacoes
+        // removido tipo_veiculo que não existe na tabela
       };
       
       console.log("Enviando para API server-side:", formattedData);
