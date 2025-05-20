@@ -44,13 +44,7 @@ export default function FuelCardConfirmation() {
             </div>
           </CardContent>
           
-          <CardFooter className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button asChild variant="outline">
-              <Link href="/">
-                <Home className="mr-2 h-4 w-4" />
-                Ir para o Início
-              </Link>
-            </Button>
+          <CardFooter className="flex justify-center">
             <Button asChild>
               <Link href="/fuel-card/solicitation">
                 <CreditCard className="mr-2 h-4 w-4" />
