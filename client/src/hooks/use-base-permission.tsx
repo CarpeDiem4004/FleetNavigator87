@@ -363,6 +363,25 @@ export const useBasePermission = (): BasePermissionHook => {
       return hasAccess;
     }
     
+    // Perfil Posto - permite acesso às funcionalidades de gerenciamento de postos e solicitações de cartão combustível
+    if (user.role === 'posto') {
+      // Lista de rotas permitidas para usuários com perfil de Posto
+      const postoRoutes = [
+        '/',                               // Dashboard
+        '/fuel-card',                      // Cartão de Combustível
+        '/fuel-card/station-profile',      // Perfil da Estação
+        '/fuel-card/dashboard',            // Dashboard de Cartões
+        '/fuel-card/requests',             // Solicitações de Cartão
+        '/postos',                         // Postos de Abastecimento
+        '/postos/visao-geral',             // Visão Geral dos Postos
+        '/postos/historico-consolidado',   // Histórico Consolidado de Abastecimentos
+        '/posto-remedios'                  // Posto Remédios
+      ];
+      const hasAccess = postoRoutes.includes(route);
+      console.log(`Posto user permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
+      return hasAccess;
+    }
+
     // Usuário Micael - acesso específico para Goiânia SGO4
     if (user.email === "micael@muricionfleet.com" || 
         (user.name === "micael" && user.baseId === 101 && user.basename === "Goiânia SGO4")) {
