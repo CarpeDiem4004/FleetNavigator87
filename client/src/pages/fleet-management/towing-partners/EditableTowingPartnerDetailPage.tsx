@@ -152,7 +152,7 @@ const EditableTowingPartnerDetailPage: React.FC = () => {
     staleTime: 0,
     refetchOnWindowFocus: true,
     queryFn: async () => {
-      if (isNaN(parseInt(id as string))) {
+      if (!id || id === ':id' || isNaN(parseInt(id as string))) {
         console.error('ID de parceiro inválido:', id);
         throw new Error('ID de parceiro inválido');
       }
