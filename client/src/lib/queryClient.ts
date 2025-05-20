@@ -75,6 +75,7 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
+  forceAuth: boolean = false,
   isFormData: boolean = false,
 ): Promise<Response> {
   // If it's a Supabase endpoint, use Supabase client
