@@ -204,6 +204,10 @@ const TowingPartnersPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['/api/towing/partners'] });
       queryClient.invalidateQueries({ queryKey: ['/api/towing/partners/summary'] });
       
+      // Após aprovação, mudar para a aba de parceiros ativos
+      // em vez de tentar visualizar os detalhes
+      setActiveTab('ativo');
+      
       setLoadingApproval(null);
     },
     onError: (error: any) => {
