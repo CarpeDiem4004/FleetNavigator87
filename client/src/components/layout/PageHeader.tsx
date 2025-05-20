@@ -1,11 +1,16 @@
 import React, { ReactNode } from 'react';
 import { Separator } from '@/components/ui/separator';
+import SafeLink from '@/components/SafeLink';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 interface PageHeaderProps {
   title: string;
   description?: string;
   icon?: ReactNode;
   actions?: ReactNode;
+  backLink?: string;
+  backLabel?: string;
 }
 
 /**
@@ -16,10 +21,22 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   title, 
   description, 
   icon, 
-  actions 
+  actions,
+  backLink,
+  backLabel
 }) => {
   return (
     <div className="flex flex-col">
+      {backLink && (
+        <div className="mb-2">
+          <SafeLink to={backLink}>
+            <Button variant="ghost" size="sm" className="flex items-center gap-1">
+              <ArrowLeft size={16} />
+              {backLabel || 'Voltar'}
+            </Button>
+          </SafeLink>
+        </div>
+      )}
       <div className="flex justify-between items-start">
         <div className="flex items-center gap-3">
           {icon && (

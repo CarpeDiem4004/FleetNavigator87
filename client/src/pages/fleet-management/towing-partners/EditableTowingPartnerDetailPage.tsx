@@ -414,7 +414,7 @@ const EditableTowingPartnerDetailPage: React.FC = () => {
       <div className="container mx-auto py-6 px-4">
         <PageHeader 
           title={`Parceiro: ${partner.name}`}
-          subtitle={`${partner.city} - ${partner.region}`}
+          description={`${partner.city} - ${partner.region}`}
           backLink="/fleet-management/towing-partners"
           backLabel="Voltar para lista"
         />

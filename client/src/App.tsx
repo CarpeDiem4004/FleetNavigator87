@@ -24,6 +24,7 @@ import AccessDeniedPage from "@/pages/access-denied";
 //import TowingPartnersPage from "@/pages/TowingPartnersPage";
 import TowingPartnersPage from "@/pages/fleet-management/towing-partners";
 import TowingPartnerDetailPage from "@/pages/fleet-management/towing-partners/[id]";
+import EditableTowingPartnerDetailPage from "@/pages/fleet-management/towing-partners/EditableTowingPartnerDetailPage";
 import NewTowingPartnerPage from "@/pages/fleet-management/towing-partners/new";
 import TowingRequestsPage from "@/pages/fleet-management/towing-partners/requests";
 import NewTowingRequestPage from "@/pages/fleet-management/towing-partners/requests/new";
@@ -202,7 +203,7 @@ function App() {
           <ProtectedRoute path="/fleet-management/towing-partners-payments" component={TowingPaymentsPage} />
           <Route path="/fleet-management/towing-partners/external-access/:token" component={TowingPartnerExternalAccess} />
           <ProtectedRoute path="/fleet-management/towing-partners/6" component={FordPartnerDetail} />
-          <ProtectedRoute path="/fleet-management/towing-partners/:id" component={TowingPartnerDetailPage} />
+          <ProtectedRoute path="/fleet-management/towing-partners/:id" component={EditableTowingPartnerDetailPage} />
           <ProtectedRoute path="/accidents" component={Accidents} />
           <ProtectedRoute path="/work-safety" component={WorkSafety} />
           <ProtectedRoute path="/users" component={UsersNew} />
