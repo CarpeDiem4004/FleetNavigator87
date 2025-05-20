@@ -379,16 +379,20 @@ function App() {
               <FuelCardDashboard />
             </div>
           )} />
-          <ProtectedRoute path="/fuel-card/solicitation" component={() => (
-            <div className="mt-16 pl-4 pr-4 md:pl-64">
+          
+          {/* Rota pública para solicitação de cartão combustível - acessível sem login */}
+          <Route path="/fuel-card/solicitation">
+            <div className="mt-16 pl-4 pr-4 md:pl-16">
               <FuelCardSolicitation />
             </div>
-          )} />
-          <ProtectedRoute path="/fuel-card/confirmation" component={() => (
-            <div className="mt-16 pl-4 pr-4 md:pl-64">
+          </Route>
+          
+          {/* Rota pública para confirmação de solicitação de cartão combustível */}
+          <Route path="/fuel-card/confirmation">
+            <div className="mt-16 pl-4 pr-4 md:pl-16">
               <FuelCardConfirmation />
             </div>
-          )} />
+          </Route>
           
           <ProtectedRoute path="/fuel-card/station-profile" component={() => (
             <div className="mt-16 pl-4 pr-4 md:pl-64">
