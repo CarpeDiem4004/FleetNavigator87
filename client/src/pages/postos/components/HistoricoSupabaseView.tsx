@@ -426,6 +426,7 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
                   <TableHead className="w-[100px]">Data/Hora</TableHead>
                   <TableHead>Placa</TableHead>
                   <TableHead>Combustível</TableHead>
+                  <TableHead>Projeto</TableHead>
                   <TableHead className="text-right">Litros</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
                   <TableHead className="w-[50px] text-center">Ações</TableHead>
@@ -473,6 +474,13 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
                           <Badge variant="outline" className="ml-1 border-green-500 text-green-500">
                             Lavagem
                           </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {item.projeto ? (
+                          <Badge variant="outline" className="bg-blue-50">{item.projeto}</Badge>
+                        ) : (
+                          <span className="text-slate-400 text-xs">Não informado</span>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
