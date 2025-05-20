@@ -376,7 +376,7 @@ export default function FormularioAbastecimentoStandalone() {
     try {
       console.log("Preparando dados para envio:", data);
       
-      // Dados formatados para envio
+      // Dados formatados para envio - versão para Supabase
       const formattedData = {
         posto: 'POSTO REMÉDIOS',
         data: {
@@ -394,6 +394,23 @@ export default function FormularioAbastecimentoStandalone() {
           observacoes: data.observacoes,
           tipo_veiculo: 'frota'
         }
+      };
+      
+      // Versão simplificada para a API direta
+      const apiData = {
+        placa: data.placa.toUpperCase(),
+        km: data.km,
+        projeto: data.projeto,
+        motorista_nome: data.motorista_nome,
+        motorista_rg: data.motorista_rg || 'Não informado',
+        tipo_combustivel: data.tipo_combustivel,
+        quantidade_litros: data.quantidade_litros,
+        valor_litro: data.valor_litro || 6.39,
+        valor_total: data.valor_total,
+        lavagem: data.lavagem,
+        tipo_lavagem: data.tipo_lavagem,
+        observacoes: data.observacoes,
+        tipo_veiculo: 'frota'
       };
       
       console.log("Enviando para API server-side:", formattedData);
@@ -436,12 +453,13 @@ export default function FormularioAbastecimentoStandalone() {
         // Tentar API de fallback
         console.log("Tentando API de fallback...");
         try {
+          // Envie os dados diretamente para a API de fallback sem o formato aninhado
           const fallbackResponse = await fetch('/api/posto-remedios-standalone/abastecimentos', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify(data),
+            body: JSON.stringify(formattedData.data), // Use os campos no formato esperado pela API
           });
           
           if (fallbackResponse.ok) {
