@@ -343,6 +343,8 @@ const TowingPartnerDetailPage: React.FC = () => {
   };
   
   // Verifica se o usuário tem permissão para editar parceiros
+  // Todos os usuários com role gestor_frota podem visualizar, mas apenas alguns podem editar
+  const canViewPartners = user && ['admin', 'gestor_frota', 'gestor', 'operador'].includes(user.role);
   const canEditPartners = user && ['admin', 'gestor_frota'].includes(user.role);
   
   // Componente de carregamento
@@ -354,6 +356,40 @@ const TowingPartnerDetailPage: React.FC = () => {
           <Skeleton className="h-8 w-48" />
         </div>
         <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+  
+  // Verificar permissões no console para depuração
+  console.log(`[TowingPartnerDetail] Permissões do usuário:`, {
+    role: user?.role,
+    canViewPartners,
+    canEditPartners
+  });
+  
+  // Verifica se o usuário tem permissão para visualizar a página
+  if (!canViewPartners) {
+    return (
+      <div className="container mx-auto py-6 space-y-8 max-w-7xl">
+        <div className="flex items-center gap-2 mb-4">
+          <SafeLink to="/fleet-management/towing-partners">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+            </Button>
+          </SafeLink>
+        </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-10">
+            <AlertCircle className="h-16 w-16 text-amber-500 mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Acesso Negado</h2>
+            <p className="text-muted-foreground mb-6">
+              Você não tem permissão para acessar os detalhes deste parceiro de guincho.
+            </p>
+            <SafeLink to="/fleet-management/towing-partners">
+              <Button>Ver lista de parceiros</Button>
+            </SafeLink>
+          </CardContent>
+        </Card>
       </div>
     );
   }
