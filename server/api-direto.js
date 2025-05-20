@@ -151,6 +151,8 @@ export async function getHistoricoPosto(req, res) {
           ${tableColumns.includes('observacoes') ? 'observacoes,' : "'' as observacoes,"}
           ${tableColumns.includes('lavagem') ? 'lavagem,' : 'false as lavagem,'}
           ${tableColumns.includes('tipo_lavagem') ? 'tipo_lavagem,' : "NULL as tipo_lavagem,"}
+          ${tableColumns.includes('projeto') ? 'projeto,' : "NULL as projeto,"}
+          ${tableColumns.includes('project') ? 'project,' : "NULL as project,"}
           to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora,
           created_at
         FROM ${tableName}
