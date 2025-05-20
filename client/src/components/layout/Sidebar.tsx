@@ -307,8 +307,11 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   // Adicionamos verificação adicional para papel 'gestor_frota'
   const isFleetUser = user.basename === "Gestão de Frotas" || user.baseId === 12 || user.role === 'gestor_frota' || user.role === 'admin';
   
+  // Verifique se o usuário é gestor de combustível
+  const isFuelManager = user.role === 'gestor_combustivel';
+  
   // Para debugging - exiba o tipo de usuário e os menus disponíveis
-  console.log(`Tipo de usuário: ${isFleetUser ? 'Gestão de Frotas' : 'Normal'} (${user.role})`);
+  console.log(`Tipo de usuário: ${isFleetUser ? 'Gestão de Frotas' : isFuelManager ? 'Gestor de Combustível' : 'Normal'} (${user.role})`);
   console.log(`Menu principal: ${isFleetUser ? 'fleetManagementItems' : 'allNavItems'}`);
   
   // Selecionando os itens de navegação apropriados
