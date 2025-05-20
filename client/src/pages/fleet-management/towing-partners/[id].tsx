@@ -189,9 +189,13 @@ const TowingPartnerDetailPage: React.FC = () => {
     data: partner,
     isLoading,
     error,
+    refetch
   } = useQuery<TowingPartner>({
     queryKey: ['/api/towing/partners', id],
     enabled: !!id,
+    retry: 3,
+    staleTime: 0, // Sempre buscar dados frescos
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       // Verificação de ID inválido
       if (isNaN(parseInt(id as string))) {
@@ -210,12 +214,12 @@ const TowingPartnerDetailPage: React.FC = () => {
       try {
         console.log(`Buscando detalhes do parceiro ID=${id} no banco de dados`);
         
-        // Agora a rota é pública, não precisamos mais de token JWT
+        // Usar fetch diretamente sem JWT (rota pública)
         console.log(`Usando fetch direto para ID=${id} (rota pública)`);
         const response = await fetch(`/api/towing/partners/${id}`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
-          credentials: 'include'
+          cache: 'no-store' // Não usar cache de browser
         });
         
         if (!response.ok) {
@@ -226,23 +230,27 @@ const TowingPartnerDetailPage: React.FC = () => {
         const data = await response.json();
         console.log(`Dados recebidos para parceiro ID=${id}:`, data);
         
-        if (!data) {
+        if (!data || !data.id) {
           console.error(`Dados do parceiro ID=${id} não encontrados ou vazios`);
           throw new Error(`Não foi possível encontrar os dados do parceiro ID=${id}`);
         }
         
-        // Normalizando os dados do parceiro
+        // Log completo dos dados para depuração
+        console.log('Dados brutos do parceiro:', JSON.stringify(data, null, 2));
+        
+        // Normalizando os dados do parceiro (garantindo que todos os campos obrigatórios existam)
         const normalizedData = {
           ...data,
-          id: parseInt(id as string),
-          name: data.name || data.nome || "",
+          id: data.id || parseInt(id as string),
+          name: data.name || data.nome || "Parceiro ID " + id,
           phone: data.phone || data.telefone || "",
           email: data.email || "",
           city: data.city || data.cidade || "",
           region: data.region || data.regiao || "",
-          status: data.status || "pendente",
-          service_types: data.service_types || [],
-          payment_methods: data.payment_methods || []
+          status: data.status || "ativo",
+          service_types: Array.isArray(data.service_types) ? data.service_types : [],
+          payment_methods: Array.isArray(data.payment_methods) ? data.payment_methods : [],
+          company_name: data.company_name || data.nome_empresa || ""
         };
         
         console.log(`Dados normalizados para parceiro ID=${id}:`, normalizedData);
@@ -386,11 +394,17 @@ const TowingPartnerDetailPage: React.FC = () => {
           <AlertCircle size={48} className="text-amber-500 mb-4" />
           <h2 className="text-xl font-semibold mb-2">Parceiro não encontrado</h2>
           <p className="text-gray-600 mb-4">Não foi possível encontrar detalhes para o parceiro solicitado.</p>
-          <SafeLink to="/fleet-management/towing-partners">
-            <Button variant="default">
-              Ver todos os parceiros
+          <div className="flex gap-3 justify-center">
+            <Button onClick={() => refetch()} variant="outline" className="gap-2">
+              <RefreshCw size={16} />
+              Tentar novamente
             </Button>
-          </SafeLink>
+            <SafeLink to="/fleet-management/towing-partners">
+              <Button variant="default">
+                Ver todos os parceiros
+              </Button>
+            </SafeLink>
+          </div>
         </div>
       </div>
     );
