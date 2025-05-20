@@ -80,6 +80,7 @@ router.get('/historico-abastecimentos-supabase/:posto', async (req, res) => {
         observacoes,
         lavagem,
         tipo_lavagem,
+        COALESCE(projeto, project, '') AS projeto,
         created_at,
         data_registro
       FROM "${nomeTabela}"

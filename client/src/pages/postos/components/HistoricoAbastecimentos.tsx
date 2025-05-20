@@ -254,7 +254,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
       'Valor Total': item.valor_total,
       Motorista: item.nome_motorista,
       Operador: item.nome_operador,
-      Projeto: item.project || '',
+      Projeto: item.projeto || item.project || '',
       Posto: item.posto,
       RG: item.rg_motorista || '',
     }));
@@ -472,6 +472,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
                     <th className="py-3 px-4 text-left font-medium text-gray-700">Litros</th>
                     <th className="py-3 px-4 text-right font-medium text-gray-700">Valor</th>
                     <th className="py-3 px-4 text-left font-medium text-gray-700">Motorista</th>
+                    <th className="py-3 px-4 text-left font-medium text-gray-700">Projeto</th>
                     <th className="py-3 px-4 text-left font-medium text-gray-700">Operador</th>
                     {showLimparButton && <th className="py-3 px-4 text-center font-medium text-gray-700">Ações</th>}
                   </tr>
@@ -495,6 +496,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
                         {abast.valor_total ? formatarPreco(abast.valor_total) : '-'}
                       </td>
                       <td className="py-3 px-4 text-sm">{abast.nome_motorista}</td>
+                      <td className="py-3 px-4 text-sm text-gray-500">{abast.projeto || abast.project || '-'}</td>
                       <td className="py-3 px-4 text-sm text-gray-500">{abast.nome_operador}</td>
                       {showLimparButton && (
                         <td className="py-3 px-4 text-center">
@@ -546,6 +548,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
                         <th className="py-3 px-4 text-left font-medium text-gray-700">Litros</th>
                         <th className="py-3 px-4 text-right font-medium text-gray-700">Valor</th>
                         <th className="py-3 px-4 text-left font-medium text-gray-700">Motorista</th>
+                        <th className="py-3 px-4 text-left font-medium text-gray-700">Projeto</th>
                         <th className="py-3 px-4 text-left font-medium text-gray-700">Operador</th>
                         {showLimparButton && <th className="py-3 px-4 text-center font-medium text-gray-700">Ações</th>}
                       </tr>
@@ -568,6 +571,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
                             {abast.valor_total ? formatarPreco(abast.valor_total) : '-'}
                           </td>
                           <td className="py-3 px-4 text-sm">{abast.nome_motorista}</td>
+                          <td className="py-3 px-4 text-sm text-gray-500">{abast.projeto || abast.project || '-'}</td>
                           <td className="py-3 px-4 text-sm text-gray-500">{abast.nome_operador}</td>
                           {showLimparButton && (
                             <td className="py-3 px-4 text-center">
