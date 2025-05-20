@@ -174,18 +174,29 @@ const TowingPartnersPage: React.FC = () => {
   // Mutação para aprovar parceiros
   const approvePartnerMutation = useMutation({
     mutationFn: async (partnerId: number) => {
+      console.log(`Iniciando aprovação do parceiro ID: ${partnerId}`);
       setLoadingApproval(partnerId);
-      const response = await apiRequest(
-        'PUT', 
-        `/api/towing/partners/${partnerId}/status`, 
-        { status: 'ativo' }
-      );
-      return await response.json();
+      try {
+        const response = await apiRequest(
+          'PUT', 
+          `/api/towing/partners/${partnerId}/status`, 
+          { status: 'ativo' }
+        );
+        console.log(`Resposta da aprovação:`, response);
+        return await response.json();
+      } catch (error) {
+        console.error(`Erro ao aprovar parceiro ID ${partnerId}:`, error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
+      console.log("Dados retornados após aprovação:", data);
+      // Verificar a estrutura da resposta para extrair o nome corretamente
+      const partnerName = data.data?.name || data.name || "Parceiro";
+      
       toast({
         title: "Parceiro aprovado",
-        description: `${data.data.name} foi aprovado com sucesso.`,
+        description: `${partnerName} foi aprovado com sucesso.`,
         variant: "default"
       });
       
