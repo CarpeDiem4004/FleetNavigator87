@@ -134,33 +134,50 @@ export async function getHistoricoPosto(req, res) {
       console.log(`Colunas disponíveis em ${tableName}:`, tableColumns);
       
       // Criar uma consulta que se adapta às colunas disponíveis na tabela
+      // Consulta SQL limpa e corrigida
+      // Criar query completamente nova para resolver problemas de duplicação
+      let columns = [
+        `id`,
+        `placa`,
+        tableColumns.includes('km_atual') ? 'km_atual as km' : 'NULL as km',
+        tableColumns.includes('hodometro_atual') ? 'hodometro_atual' : 'NULL as hodometro_atual',
+        tableColumns.includes('tipo_combustivel') ? 'tipo_combustivel' : "'Desconhecido' as tipo_combustivel",
+        tableColumns.includes('litros') ? 'litros as quantidade_litros' : 'NULL as quantidade_litros',
+        tableColumns.includes('motorista') ? 'motorista as nome_motorista' : "'Não informado' as nome_motorista",
+        tableColumns.includes('motorista_rg') ? 'motorista_rg as rg_motorista' : "NULL as rg_motorista",
+        tableColumns.includes('operador') ? 'operador as nome_operador' : "'Sistema' as nome_operador",
+        tableColumns.includes('valor_litro') ? 'valor_litro' : '0 as valor_litro',
+        tableColumns.includes('valor_total') ? 'valor_total' : '0 as valor_total',
+        tableColumns.includes('tipo_veiculo') ? 'tipo_veiculo' : "'Não especificado' as tipo_veiculo",
+        tableColumns.includes('observacoes') ? 'observacoes' : "'' as observacoes",
+        tableColumns.includes('lavagem') ? 'lavagem' : 'false as lavagem',
+        tableColumns.includes('tipo_lavagem') ? 'tipo_lavagem' : "NULL as tipo_lavagem"
+      ];
+      
+      // Adicionar campo de projeto sem duplicação
+      if (tableColumns.includes('projeto')) {
+        columns.push('projeto');
+      } else if (tableColumns.includes('project')) {
+        columns.push('project as projeto');
+      } else {
+        columns.push("NULL as projeto");
+      }
+      
+      // Adicionar data_hora e created_at
+      columns.push("to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora");
+      columns.push("created_at");
+      
+      // Montar a consulta
       dataQuery = `
         SELECT 
-          id,
-          placa,
-          ${tableColumns.includes('km_atual') ? 'km_atual as km,' : 'NULL as km,'}
-          ${tableColumns.includes('hodometro_atual') ? 'hodometro_atual,' : 'NULL as hodometro_atual,'}
-          ${tableColumns.includes('tipo_combustivel') ? 'tipo_combustivel,' : "'Desconhecido' as tipo_combustivel,"}
-          ${tableColumns.includes('litros') ? 'litros as quantidade_litros,' : 'NULL as quantidade_litros,'}
-          ${tableColumns.includes('motorista') ? 'motorista as nome_motorista,' : "'Não informado' as nome_motorista,"}
-          ${tableColumns.includes('motorista_rg') ? 'motorista_rg as rg_motorista,' : "NULL as rg_motorista,"}
-          ${tableColumns.includes('operador') ? 'operador as nome_operador,' : "'Sistema' as nome_operador,"}
-          ${tableColumns.includes('valor_litro') ? 'valor_litro,' : '0 as valor_litro,'}
-          ${tableColumns.includes('valor_total') ? 'valor_total,' : '0 as valor_total,'}
-          ${tableColumns.includes('tipo_veiculo') ? 'tipo_veiculo,' : "'Não especificado' as tipo_veiculo,"}
-          ${tableColumns.includes('observacoes') ? 'observacoes,' : "'' as observacoes,"}
-          ${tableColumns.includes('lavagem') ? 'lavagem,' : 'false as lavagem,'}
-          ${tableColumns.includes('tipo_lavagem') ? 'tipo_lavagem,' : "NULL as tipo_lavagem,"}
-          ${tableColumns.includes('projeto') ? 'projeto,' : tableColumns.includes('project') ? 'project as projeto,' : "NULL as projeto,"}
-          to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora,
-          created_at
+          ${columns.join(',\n          ')}
         FROM ${tableName}
         ORDER BY created_at DESC
         LIMIT ${req.query.limit || 50}
       `;
       
       // Verificar se a modificação está funcionando
-      console.log(`Consulta final para ${postoName}:`, dataQuery);
+      // Removido o log de consulta final para evitar logs muito longos;
       
       console.log(`Consulta adaptada para tabela ${tableName}:`, dataQuery);
     } else {
