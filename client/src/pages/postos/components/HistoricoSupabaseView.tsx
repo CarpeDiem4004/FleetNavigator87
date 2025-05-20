@@ -68,6 +68,7 @@ interface HistoricoAbastecimento {
   observacoes?: string;
   lavagem: boolean;
   tipo_lavagem?: string;
+  projeto?: string;  // Campo projeto do abastecimento
   data_hora: string;
   created_at: string;
 }
@@ -269,6 +270,7 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
       'Valor por Litro': item.valor_litro,
       'Valor Total': item.valor_total,
       'Tipo de Veículo': item.tipo_veiculo || '-',
+      'Projeto': item.projeto || '-',
       'Lavagem': item.lavagem ? 'Sim' : 'Não',
       'Tipo de Lavagem': item.tipo_lavagem || '-',
       'Observações': item.observacoes || '-'
