@@ -171,6 +171,8 @@ router.post('/partners', authenticateJWT, verifyFleetManager, async (req, res) =
   try {
     let partnerData = req.body;
     
+    console.log('Dados recebidos para cadastro de parceiro:', JSON.stringify(partnerData, null, 2));
+    
     // Validação simples
     if (!partnerData.name || !partnerData.phone || !partnerData.city || !partnerData.region) {
       return res.status(400).json({ 
@@ -179,6 +181,27 @@ router.post('/partners', authenticateJWT, verifyFleetManager, async (req, res) =
       });
     }
 
+    // Garantir que todos os campos bancários estejam como string
+    if (partnerData.bank_account !== undefined) {
+      partnerData.bank_account = String(partnerData.bank_account);
+    }
+    
+    if (partnerData.bank_name !== undefined) {
+      partnerData.bank_name = String(partnerData.bank_name);
+    }
+    
+    if (partnerData.bank_agency !== undefined) {
+      partnerData.bank_agency = String(partnerData.bank_agency);
+    }
+    
+    if (partnerData.pix_key !== undefined) {
+      partnerData.pix_key = String(partnerData.pix_key);
+    }
+    
+    if (partnerData.pix_type !== undefined) {
+      partnerData.pix_type = String(partnerData.pix_type);
+    }
+    
     // Removendo campos que podem causar problemas com esquema do banco
     if (partnerData.cost_per_km !== undefined && partnerData.cost_per_km !== null) {
       // Convertendo para número para garantir formato correto
@@ -200,6 +223,8 @@ router.post('/partners', authenticateJWT, verifyFleetManager, async (req, res) =
       delete partnerData.coverage_radius;
     }
 
+    console.log('Dados após tratamento:', JSON.stringify(partnerData, null, 2));
+
     try {
       const { data, error } = await supabase
         .from('towing_partners')
@@ -207,23 +232,55 @@ router.post('/partners', authenticateJWT, verifyFleetManager, async (req, res) =
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro Supabase ao inserir parceiro:', error);
+        throw error;
+      }
 
+      console.log('Parceiro inserido com sucesso:', data);
       res.status(201).json(data);
     } catch (supabaseError: any) {
-      // Verificar se o erro está relacionado ao campo cost_per_km
-      if (supabaseError.message && supabaseError.message.includes('cost_per_km')) {
-        // Remover o campo problemático e tentar novamente
+      console.error('Detalhes do erro Supabase:', supabaseError);
+      
+      // Verificar se o erro está relacionado a problemas de coluna
+      if (supabaseError.message && 
+          (supabaseError.message.includes('cost_per_km') || 
+           supabaseError.message.includes('column') || 
+           supabaseError.message.includes('bank_'))) {
+        
+        console.log('Erro relacionado a colunas, tentando remover campos problemáticos');
+        
+        // Remover campos que podem estar causando problemas
         delete partnerData.cost_per_km;
+        
+        // Tentativa alternativa com apenas os campos essenciais
+        const essentialData = {
+          name: partnerData.name,
+          phone: partnerData.phone,
+          city: partnerData.city,
+          region: partnerData.region,
+          email: partnerData.email || '',
+          cnpj: partnerData.cnpj || '',
+          address: partnerData.address || '',
+          service_types: partnerData.service_types || [],
+          payment_methods: partnerData.payment_methods || [],
+          status: partnerData.status || 'pendente'
+        };
+        
+        console.log('Tentando com dados essenciais:', JSON.stringify(essentialData, null, 2));
         
         const { data, error } = await supabase
           .from('towing_partners')
-          .insert([partnerData])
+          .insert([essentialData])
           .select()
           .single();
           
-        if (error) throw error;
+        if (error) {
+          console.error('Segundo erro ao inserir parceiro:', error);
+          throw error;
+        }
         
+        console.log('Parceiro inserido com dados essenciais:', data);
         res.status(201).json(data);
       } else {
         throw supabaseError;
