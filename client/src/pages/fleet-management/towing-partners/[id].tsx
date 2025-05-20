@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'wouter';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import SafeLink from '@/components/SafeLink';
 import { Switch } from '@/components/ui/switch';
+import { apiRequest } from '@/lib/queryClient';
 
 // Componentes UI
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,6 @@ import PageHeader from '@/components/layout/PageHeader';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useMutation } from '@tanstack/react-query';
 
 // Ícones
 import { Truck, Phone, MapPin, Star, ArrowLeft, Mail, FileText, AlertCircle, Calendar, CheckCircle2, XCircle, Clock, Link, Copy, Check } from 'lucide-react';
@@ -30,19 +30,28 @@ interface TowingPartner {
   email: string;
   city: string;
   region: string;
-  status: 'ativo' | 'inativo' | 'pendente';
-  service_types: string[];
-  payment_methods: string[];
-  rating: number;
-  total_requests?: number;
-  completed_requests?: number;
+  address?: string;
+  company_name?: string;
+  cnpj?: string;
+  contact_person?: string;
+  rating?: number;
+  service_types?: string[];
+  payment_methods?: string[];
   cost_per_km?: number;
   available_24h?: boolean;
+  can_transport_multiple?: boolean;
   has_insurance?: boolean;
   coverage_radius?: number;
   notes?: string;
-  address?: string;
-  cnpj?: string;
+  status: 'ativo' | 'inativo' | 'pendente' | 'suspenso';
+  total_requests?: number;
+  completed_requests?: number;
+  average_response_time?: number;
+  bank_name?: string;
+  bank_account?: string;
+  bank_agency?: string;
+  pix_key?: string;
+  pix_type?: string;
 }
 
 interface TowingRequest {
@@ -101,37 +110,23 @@ const RequestStatusBadge: React.FC<{ status: string }> = ({ status }) => {
     case 'pendente':
       return <Badge variant="outline" className="text-amber-500 border-amber-500">Pendente</Badge>;
     case 'aprovado':
-      return <Badge className="bg-blue-500 hover:bg-blue-600">Aprovado</Badge>;
+      return <Badge variant="outline" className="text-blue-500 border-blue-500">Aprovado</Badge>;
     case 'em_andamento':
-      return <Badge className="bg-purple-500 hover:bg-purple-600">Em Andamento</Badge>;
+      return <Badge className="bg-blue-500 hover:bg-blue-600">Em andamento</Badge>;
     case 'concluido':
       return <Badge className="bg-green-500 hover:bg-green-600">Concluído</Badge>;
     case 'cancelado':
-      return <Badge variant="destructive">Cancelado</Badge>;
+      return <Badge variant="secondary" className="bg-gray-400 hover:bg-gray-500">Cancelado</Badge>;
     default:
       return <Badge variant="outline">Desconhecido</Badge>;
   }
 };
 
-// Componente para o selo de urgência
-const UrgencyBadge: React.FC<{ urgency: string }> = ({ urgency }) => {
-  switch (urgency) {
-    case 'baixa':
-      return <Badge variant="outline" className="text-green-600 border-green-600">Baixa</Badge>;
-    case 'media':
-      return <Badge variant="outline" className="text-amber-500 border-amber-500">Média</Badge>;
-    case 'alta':
-      return <Badge variant="outline" className="text-red-500 border-red-500">Alta</Badge>;
-    default:
-      return <Badge variant="outline">Desconhecida</Badge>;
-  }
-};
-
-// Página de detalhes do parceiro de guincho
 const TowingPartnerDetailPage: React.FC = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('info');
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [accessLink, setAccessLink] = useState('');
@@ -207,612 +202,668 @@ const TowingPartnerDetailPage: React.FC = () => {
       console.log(`Buscando dados do parceiro com ID: ${id}`);
       
       try {
-        // Obter token atual do localStorage ou sessionStorage
-        const authToken = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        console.log(`Tentando buscar em /api/towing/partners/${id}`);
+        const response = await apiRequest('GET', `/api/towing/partners/${id}`);
+        const data = await response.json();
+        console.log(`Dados recebidos para parceiro ID=${id}:`, data);
         
-        // Configuração padrão para as requisições
-        const requestConfig = {
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': authToken ? `Bearer ${authToken}` : '',
-            'X-Auth-Emergency': 'true', // Header de emergência para autenticação alternativa
-          },
-          credentials: 'include' as RequestCredentials // Para incluir cookies na requisição
+        if (!data) {
+          throw new Error(`Não foi possível encontrar os dados do parceiro ID=${id}`);
+        }
+        
+        // Normalizando os dados do parceiro
+        const normalizedData = {
+          ...data,
+          id: parseInt(id),
+          name: data.name || data.nome || "",
+          phone: data.phone || data.telefone || "",
+          email: data.email || "",
+          city: data.city || data.cidade || "",
+          region: data.region || data.regiao || "",
+          status: data.status || "pendente"
         };
         
-        // Tentar primeira rota (nova)
-        console.log(`Tentando buscar em /api/towing/partners/${id}`);
-        let response = await fetch(`/api/towing/partners/${id}`, requestConfig);
-        
-        // Se a primeira rota falhar, tentar rota alternativa
-        if (!response.ok) {
-          console.log(`Tentando rota alternativa /api/guincho/parceiros/${id}`);
-          response = await fetch(`/api/guincho/parceiros/${id}`, requestConfig);
-        }
-        
-        // Se as rotas tradicionais falharem, tentar nossa nova rota simplificada
-        if (!response.ok) {
-          console.log(`Tentando rota simplificada /api/towing/simple-external/partner/${id}`);
-          response = await fetch(`/api/towing/simple-external/partner/${id}`, requestConfig);
-        }
-        
-        if (!response.ok) {
-          console.error(`Erro ao buscar parceiro ID=${id} em todas as rotas:`, response.status);
-          throw new Error(`Falha ao carregar dados do parceiro: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log(`Dados recebidos:`, data);
-        
-        // Verificar se os dados precisam de adaptação (formato antigo vs. novo)
-        const adaptedData = data.error ? null : (data.name ? data : adaptPartnerData(data));
-        return adaptedData;
+        return normalizedData;
       } catch (error) {
-        console.error(`Erro na requisição do parceiro ID=${id}:`, error);
+        console.error(`Erro ao buscar parceiro ID=${id}:`, error);
         throw error;
       }
     }
   });
-  
-  // Busca as solicitações para este parceiro
+
+  // Busca as solicitações de serviço deste parceiro
   const {
     data: requests,
-    isLoading: isRequestsLoading,
-    error: requestsError,
+    isLoading: isLoadingRequests
   } = useQuery<TowingRequest[]>({
-    queryKey: ['/api/towing/requests', { partnerId: id }],
-    enabled: !!user && !!id,
-  });
-  
-  // Mutação para gerar link de acesso externo
-  const generateLinkMutation = useMutation({
-    mutationFn: async (data: { partner_id: number, expiration_days?: number, is_permanent?: boolean }) => {
+    queryKey: ['/api/towing/requests', id],
+    enabled: !!partner,
+    queryFn: async () => {
       try {
-        // Chamada à API simplificada para gerar o token
-        const response = await fetch('/api/towing/simple-external/generate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data),
-          credentials: 'include' // Importante para enviar cookies de autenticação
-        });
+        // Rota a utilizar depende do ambiente
+        console.log(`Buscando solicitações para parceiro ID=${id}`);
+        const response = await apiRequest('GET', `/api/towing/partners/${id}/requests`);
         
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Erro ao gerar link de acesso');
+          console.log(`Retornando lista vazia de solicitações, status=${response.status}`);
+          return [];
         }
         
-        return await response.json();
+        const data = await response.json();
+        console.log(`Solicitações encontradas para parceiro ID=${id}:`, data);
+        return data;
       } catch (error) {
-        if (error instanceof Error) {
-          throw error;
-        }
-        throw new Error('Erro ao gerar link de acesso');
+        console.error(`Erro ao buscar solicitações para parceiro ID=${id}:`, error);
+        return [];
       }
+    }
+  });
+
+  // Mutação para atualizar o status do parceiro
+  const updatePartnerStatusMutation = useMutation({
+    mutationFn: async (newStatus: string) => {
+      if (!partner) throw new Error('Parceiro não encontrado');
+      
+      const response = await apiRequest(
+        'PUT',
+        `/api/towing/partners/${id}/status`,
+        { status: newStatus }
+      );
+      
+      return await response.json();
     },
-    onSuccess: (data) => {
-      setAccessLink(data.access_url);
-      // Se o link foi criado como permanente, salvamos esse status
-      setIsPermanentLink(data.is_permanent);
-      setIsLinkModalOpen(true);
+    onSuccess: () => {
+      toast({
+        title: 'Status atualizado',
+        description: 'O status do parceiro foi atualizado com sucesso.',
+        variant: 'default',
+      });
+      
+      // Recarregar dados do parceiro
+      queryClient.invalidateQueries({ queryKey: ['/api/towing/partners', id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/towing/partners'] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: 'Erro',
-        description: error.message,
-        variant: 'destructive'
+        description: `Não foi possível atualizar o status: ${error.message}`,
+        variant: 'destructive',
       });
     }
   });
-  
+
   // Função para gerar link de acesso externo
-  const handleGenerateExternalAccessLink = () => {
-    if (!partner) return;
+  const generateAccessLink = () => {
+    // Gerar token simples (em produção, usaríamos algo mais seguro)
+    const token = `TESTE_${partner?.name.toUpperCase().replace(/\s+/g, '_')}_TOKEN`;
+    const baseUrl = window.location.origin;
+    const link = `${baseUrl}/fleet-management/towing-partners/external-access/${token}`;
     
-    // Prepara os dados com base na escolha do usuário (link permanente ou com expiração)
-    const linkData = isPermanentLink 
-      ? { 
-          partner_id: partner.id, 
-          is_permanent: true 
-        } 
-      : { 
-          partner_id: partner.id, 
-          expiration_days: linkExpirationDays 
-        };
-    
-    generateLinkMutation.mutate(linkData);
+    setAccessLink(link);
+    setIsLinkModalOpen(true);
   };
-  
+
   // Função para copiar link para a área de transferência
   const copyLinkToClipboard = () => {
-    if (!accessLink) return;
-    
     navigator.clipboard.writeText(accessLink)
       .then(() => {
         setIsLinkCopied(true);
         setTimeout(() => setIsLinkCopied(false), 2000);
       })
-      .catch(() => {
+      .catch(err => {
+        console.error('Erro ao copiar link:', err);
         toast({
           title: 'Erro',
-          description: 'Não foi possível copiar o link',
-          variant: 'destructive'
+          description: 'Não foi possível copiar o link.',
+          variant: 'destructive',
         });
       });
   };
-  
-  // Verifica se o usuário tem permissão para editar parceiros
-  // Todos os usuários com role gestor_frota podem visualizar, mas apenas alguns podem editar
-  const canViewPartners = user && ['admin', 'gestor_frota', 'gestor', 'operador'].includes(user.role);
-  const canEditPartners = user && ['admin', 'gestor_frota'].includes(user.role);
-  
-  // Componente de carregamento
+
+  // Renderização de estados de carregamento/erro
   if (isLoading) {
     return (
-      <div className="container mx-auto py-6 space-y-8 max-w-7xl">
-        <div className="flex items-center gap-2 mb-4">
-          <Skeleton className="h-8 w-8" />
-          <Skeleton className="h-8 w-48" />
-        </div>
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
-  }
-  
-  // Verificar permissões no console para depuração
-  console.log(`[TowingPartnerDetail] Permissões do usuário:`, {
-    role: user?.role,
-    canViewPartners,
-    canEditPartners
-  });
-  
-  // Verifica se o usuário tem permissão para visualizar a página
-  if (!canViewPartners) {
-    return (
-      <div className="container mx-auto py-6 space-y-8 max-w-7xl">
-        <div className="flex items-center gap-2 mb-4">
+      <div className="container mx-auto py-6 px-4">
+        <div className="flex items-center mb-6">
           <SafeLink to="/fleet-management/towing-partners">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+            <Button variant="ghost" size="sm" className="gap-1">
+              <ArrowLeft size={16} />
+              Voltar
             </Button>
           </SafeLink>
+          <Skeleton className="h-8 w-64 ml-2" />
         </div>
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-10">
-            <AlertCircle className="h-16 w-16 text-amber-500 mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Acesso Negado</h2>
-            <p className="text-muted-foreground mb-6">
-              Você não tem permissão para acessar os detalhes deste parceiro de guincho.
-            </p>
-            <SafeLink to="/fleet-management/towing-partners">
-              <Button>Ver lista de parceiros</Button>
-            </SafeLink>
-          </CardContent>
-        </Card>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2">
+            <Skeleton className="h-64 w-full rounded-lg" />
+          </div>
+          <div>
+            <Skeleton className="h-64 w-full rounded-lg" />
+          </div>
+        </div>
       </div>
     );
   }
-  
-  // Componente de erro
+
   if (error || !partner) {
     return (
-      <div className="container mx-auto py-6 space-y-8 max-w-7xl">
-        <div className="flex items-center gap-2 mb-4">
+      <div className="container mx-auto py-6 px-4">
+        <div className="flex items-center mb-6">
           <SafeLink to="/fleet-management/towing-partners">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+            <Button variant="ghost" size="sm" className="gap-1">
+              <ArrowLeft size={16} />
+              Voltar
+            </Button>
+          </SafeLink>
+          <h1 className="text-2xl font-bold ml-2">Parceiro não encontrado</h1>
+        </div>
+        
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 flex flex-col items-center justify-center text-center">
+          <AlertCircle size={48} className="text-amber-500 mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Parceiro não encontrado</h2>
+          <p className="text-gray-600 mb-4">Não foi possível encontrar detalhes para o parceiro solicitado.</p>
+          <SafeLink to="/fleet-management/towing-partners">
+            <Button variant="default">
+              Ver todos os parceiros
             </Button>
           </SafeLink>
         </div>
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-10">
-            <AlertCircle className="h-16 w-16 text-destructive mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Parceiro não encontrado</h2>
-            <p className="text-muted-foreground mb-6">
-              Não foi possível encontrar detalhes para o parceiro solicitado.
-            </p>
-            <SafeLink to="/fleet-management/towing-partners">
-              <Button>Ver todos os parceiros</Button>
-            </SafeLink>
-          </CardContent>
-        </Card>
       </div>
     );
   }
-  
+
   return (
-    <div className="container mx-auto py-6 space-y-8 max-w-7xl">
-      {/* Modal de link de acesso */}
+    <div className="container mx-auto py-6 px-4">
+      <PageHeader 
+        title={`Parceiro: ${partner.name}`}
+        subtitle={`${partner.city} - ${partner.region}`}
+        backLink="/fleet-management/towing-partners"
+        backLabel="Voltar para lista"
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
+        {/* Coluna principal */}
+        <div className="lg:col-span-2">
+          <Card className="mb-6">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <CardTitle className="text-2xl flex items-center gap-2">
+                    {partner.name}
+                    <StatusBadge status={partner.status} />
+                  </CardTitle>
+                  <CardDescription className="text-lg">
+                    {partner.company_name || 'Empresa de Guincho'}
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={generateAccessLink}
+                  >
+                    <Link size={16} className="mr-1" />
+                    Gerar Link
+                  </Button>
+                  
+                  <SafeLink to={`/fleet-management/towing-partners/${partner.id}/edit`}>
+                    <Button variant="default" size="sm">
+                      Editar
+                    </Button>
+                  </SafeLink>
+                </div>
+              </div>
+            </CardHeader>
+            
+            <CardContent>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="info">Informações</TabsTrigger>
+                  <TabsTrigger value="requests">Solicitações</TabsTrigger>
+                  <TabsTrigger value="banking">Dados Bancários</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="info" className="mt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500">Contato</h3>
+                        <div className="flex items-center mt-1">
+                          <Phone size={16} className="text-gray-400 mr-2" />
+                          <span>{partner.phone}</span>
+                        </div>
+                        <div className="flex items-center mt-1">
+                          <Mail size={16} className="text-gray-400 mr-2" />
+                          <span>{partner.email || 'Não informado'}</span>
+                        </div>
+                        <div className="flex items-center mt-1">
+                          <MapPin size={16} className="text-gray-400 mr-2" />
+                          <span>{partner.address || `${partner.city}, ${partner.region}`}</span>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500">Documentação</h3>
+                        <div className="flex items-center mt-1">
+                          <FileText size={16} className="text-gray-400 mr-2" />
+                          <span>{partner.cnpj || 'CNPJ não informado'}</span>
+                        </div>
+                      </div>
+                      
+                      {partner.contact_person && (
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-500">Pessoa de Contato</h3>
+                          <div className="mt-1">
+                            <span>{partner.contact_person}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500">Serviços</h3>
+                        <div className="mt-1">
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {(partner.service_types || []).map((type, index) => (
+                              <Badge key={index} variant="secondary">{type}</Badge>
+                            ))}
+                            {(!partner.service_types || partner.service_types.length === 0) && 
+                              <span className="text-gray-500">Nenhum serviço informado</span>
+                            }
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500">Formas de Pagamento</h3>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {(partner.payment_methods || []).map((method, index) => (
+                            <Badge key={index} variant="outline">{method}</Badge>
+                          ))}
+                          {(!partner.payment_methods || partner.payment_methods.length === 0) && 
+                            <span className="text-gray-500">Nenhuma forma de pagamento informada</span>
+                          }
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500">Detalhes Adicionais</h3>
+                        <div className="mt-1 grid grid-cols-2 gap-2">
+                          <div className="flex items-center">
+                            <Switch
+                              checked={partner.available_24h || false}
+                              disabled
+                            />
+                            <span className="ml-2 text-sm">Atende 24 horas</span>
+                          </div>
+                          <div className="flex items-center">
+                            <Switch
+                              checked={partner.has_insurance || false}
+                              disabled
+                            />
+                            <span className="ml-2 text-sm">Possui seguro</span>
+                          </div>
+                          <div className="flex items-center">
+                            <Switch
+                              checked={partner.can_transport_multiple || false}
+                              disabled
+                            />
+                            <span className="ml-2 text-sm">Transporte múltiplo</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {partner.notes && (
+                    <div className="mt-6">
+                      <h3 className="text-sm font-medium text-gray-500">Observações</h3>
+                      <div className="mt-1 p-3 bg-gray-50 rounded-lg text-sm">
+                        {partner.notes}
+                      </div>
+                    </div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="requests" className="mt-4">
+                  {isLoadingRequests ? (
+                    <div className="py-12 flex justify-center">
+                      <Skeleton className="h-32 w-full max-w-lg rounded-lg" />
+                    </div>
+                  ) : requests && requests.length > 0 ? (
+                    <div className="space-y-4">
+                      {requests.map((request) => (
+                        <Card key={request.id}>
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <div className="font-medium">{request.driver_name}</div>
+                                <div className="text-sm text-gray-500">Placa: {request.vehicle_plate}</div>
+                                <div className="text-sm flex items-center mt-1">
+                                  <MapPin size={14} className="text-gray-400 mr-1" />
+                                  {request.pickup_location} → {request.destination}
+                                </div>
+                                <div className="mt-2 flex items-center gap-2">
+                                  <RequestStatusBadge status={request.status} />
+                                  <Badge variant="outline" className="text-xs">
+                                    {request.service_type}
+                                  </Badge>
+                                  <span className="text-sm text-gray-500">
+                                    {new Date(request.created_at).toLocaleDateString()}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-medium">
+                                  {new Intl.NumberFormat('pt-BR', {
+                                    style: 'currency',
+                                    currency: 'BRL'
+                                  }).format(request.estimated_cost)}
+                                </div>
+                                {request.rating && (
+                                  <div className="flex justify-end mt-1">
+                                    <RatingStars rating={request.rating} />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            
+                            {request.comments && (
+                              <div className="mt-2 text-sm border-t pt-2">
+                                <span className="font-medium">Comentários:</span> {request.comments}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-12 text-center">
+                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+                        <Truck size={24} className="text-gray-400" />
+                      </div>
+                      <h3 className="text-lg font-medium">Nenhuma solicitação encontrada</h3>
+                      <p className="text-gray-500 mt-1">
+                        Este parceiro ainda não possui solicitações de serviço.
+                      </p>
+                    </div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="banking" className="mt-4">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500">Banco</h3>
+                        <div className="mt-1 p-2 border rounded-md">
+                          {partner.bank_name || 'Não informado'}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500">Agência</h3>
+                        <div className="mt-1 p-2 border rounded-md">
+                          {partner.bank_agency || 'Não informado'}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500">Conta</h3>
+                        <div className="mt-1 p-2 border rounded-md">
+                          {partner.bank_account || 'Não informado'}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500">Tipo de Chave PIX</h3>
+                        <div className="mt-1 p-2 border rounded-md">
+                          {partner.pix_type || 'Não informado'}
+                        </div>
+                      </div>
+                      
+                      <div className="md:col-span-2">
+                        <h3 className="text-sm font-medium text-gray-500">Chave PIX</h3>
+                        <div className="mt-1 p-2 border rounded-md">
+                          {partner.pix_key || 'Não informado'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Coluna lateral */}
+        <div>
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Status do Parceiro</CardTitle>
+              <CardDescription>
+                Gerencie o status de atividade deste parceiro
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${partner.status === 'ativo' ? 'bg-green-500' : 'bg-gray-300'}`} />
+                    <span>Ativo</span>
+                  </div>
+                  <Button 
+                    variant={partner.status === 'ativo' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => updatePartnerStatusMutation.mutate('ativo')}
+                    disabled={partner.status === 'ativo'}
+                  >
+                    {partner.status === 'ativo' ? 'Atual' : 'Ativar'}
+                  </Button>
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${partner.status === 'inativo' ? 'bg-gray-500' : 'bg-gray-300'}`} />
+                    <span>Inativo</span>
+                  </div>
+                  <Button 
+                    variant={partner.status === 'inativo' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => updatePartnerStatusMutation.mutate('inativo')}
+                    disabled={partner.status === 'inativo'}
+                  >
+                    {partner.status === 'inativo' ? 'Atual' : 'Inativar'}
+                  </Button>
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${partner.status === 'pendente' ? 'bg-amber-500' : 'bg-gray-300'}`} />
+                    <span>Pendente</span>
+                  </div>
+                  {partner.status === 'pendente' ? (
+                    <Badge>Aguardando Aprovação</Badge>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => updatePartnerStatusMutation.mutate('pendente')}
+                      disabled={true}
+                    >
+                      Reverter
+                    </Button>
+                  )}
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${partner.status === 'suspenso' ? 'bg-red-500' : 'bg-gray-300'}`} />
+                    <span>Suspenso</span>
+                  </div>
+                  <Button 
+                    variant={partner.status === 'suspenso' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => updatePartnerStatusMutation.mutate('suspenso')}
+                    disabled={partner.status === 'suspenso'}
+                  >
+                    {partner.status === 'suspenso' ? 'Atual' : 'Suspender'}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Desempenho</CardTitle>
+              <CardDescription>
+                Métricas de desempenho do parceiro
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm text-gray-500">Avaliação média</span>
+                    <div className="flex items-center">
+                      <span className="font-medium mr-1">{partner.rating?.toFixed(1) || 'N/A'}</span>
+                      <Star size={14} className="text-yellow-400 fill-yellow-400" />
+                    </div>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-yellow-400 h-2 rounded-full" 
+                      style={{ width: `${((partner.rating || 0) / 5) * 100}%` }}
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm text-gray-500">Atendimentos concluídos</span>
+                    <span className="font-medium">
+                      {partner.completed_requests || 0} / {partner.total_requests || 0}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-green-500 h-2 rounded-full" 
+                      style={{ 
+                        width: `${partner.total_requests ? 
+                          ((partner.completed_requests || 0) / partner.total_requests) * 100 : 0}%` 
+                      }}
+                    />
+                  </div>
+                </div>
+                
+                {partner.average_response_time && (
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm text-gray-500">Tempo médio de resposta</span>
+                      <span className="font-medium">{partner.average_response_time} min</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-500 h-2 rounded-full" 
+                        style={{ 
+                          width: `${Math.min((partner.average_response_time / 60) * 100, 100)}%` 
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="mt-6 pt-4 border-t flex justify-between">
+                <div>
+                  <h4 className="text-sm font-medium">Status geral</h4>
+                  <span className="text-gray-500 text-sm">Baseado no desempenho</span>
+                </div>
+                <Badge className="bg-green-500 hover:bg-green-600">Bom</Badge>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+      
+      {/* Modal para link de acesso externo */}
       <Dialog open={isLinkModalOpen} onOpenChange={setIsLinkModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Link de Acesso Externo</DialogTitle>
+            <DialogTitle>Link de acesso externo</DialogTitle>
             <DialogDescription>
-              Um link {isPermanentLink ? 'permanente' : 'temporário'} para o parceiro {partner?.name} foi gerado. Compartilhe este link para que o parceiro possa registrar os serviços de guincho realizados.
+              Compartilhe este link com o parceiro para permitir acesso ao sistema.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex items-center space-x-2 mt-4">
-            <div className="grid flex-1 gap-2">
-              <Label htmlFor="link" className="sr-only">Link</Label>
-              <Input
-                id="link"
-                value={accessLink}
-                readOnly
-                className="font-mono text-sm"
-              />
+          
+          <div className="space-y-4 py-2">
+            <div className="flex flex-col space-y-1">
+              <Label>Link de acesso</Label>
+              <div className="flex">
+                <Input 
+                  value={accessLink} 
+                  readOnly 
+                  className="flex-1 rounded-r-none"
+                />
+                <Button 
+                  onClick={copyLinkToClipboard}
+                  className="rounded-l-none"
+                  variant="secondary"
+                >
+                  {isLinkCopied ? (
+                    <Check size={16} className="mr-1" />
+                  ) : (
+                    <Copy size={16} className="mr-1" />
+                  )}
+                  {isLinkCopied ? 'Copiado' : 'Copiar'}
+                </Button>
+              </div>
             </div>
-            <Button 
-              type="button" 
-              size="icon"
-              variant="outline"
-              onClick={copyLinkToClipboard}
-              className="shrink-0"
-            >
-              {isLinkCopied ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-              <span className="sr-only">Copiar</span>
-            </Button>
-          </div>
-          <div className="space-y-4 mt-4">
+            
             <div className="flex items-center space-x-2">
               <Switch
                 id="permanent-link"
                 checked={isPermanentLink}
                 onCheckedChange={setIsPermanentLink}
               />
-              <Label htmlFor="permanent-link">Link definitivo (permanente)</Label>
+              <Label htmlFor="permanent-link">Link permanente</Label>
             </div>
             
             {!isPermanentLink && (
-              <div className="space-y-2">
-                <Label htmlFor="expiration">Expiração do link (em dias)</Label>
+              <div className="flex flex-col space-y-1">
+                <Label>Expiração (dias)</Label>
                 <Input 
-                  id="expiration" 
                   type="number" 
                   value={linkExpirationDays}
                   onChange={(e) => setLinkExpirationDays(parseInt(e.target.value))}
-                  min="1"
-                  max="365"
+                  min={1}
+                  max={365}
                 />
-                <p className="text-sm text-muted-foreground">
-                  Este link expira em {(() => {
-                    const date = new Date();
-                    date.setDate(date.getDate() + linkExpirationDays);
-                    return date.toLocaleDateString('pt-BR');
-                  })()}.
-                </p>
               </div>
             )}
-            
-            {isPermanentLink && (
-              <p className="text-sm text-muted-foreground">
-                Este link é <strong>permanente</strong> e não tem data de expiração.
-              </p>
-            )}
           </div>
-          <DialogFooter className="sm:justify-start">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setIsLinkModalOpen(false)}
-            >
-              Fechar
-            </Button>
+          
+          <DialogFooter>
+            <div className="flex justify-between items-center w-full">
+              <div className="flex items-center text-gray-500 text-sm">
+                <Clock size={14} className="mr-1" />
+                {isPermanentLink ? 'Não expira' : `Expira em ${linkExpirationDays} dias`}
+              </div>
+              <Button onClick={() => setIsLinkModalOpen(false)}>
+                Fechar
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <div className="flex items-center gap-2 mb-4">
-        <Link to="/fleet-management/towing-partners">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-          </Button>
-        </Link>
-      </div>
-      
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Coluna esquerda - Informações do parceiro */}
-        <div className="w-full lg:w-1/3 space-y-6">
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-start">
-                <CardTitle className="text-xl font-bold">{partner.name}</CardTitle>
-                <StatusBadge status={partner.status} />
-              </div>
-              <CardDescription className="flex items-center gap-1 mt-1">
-                <MapPin size={14} className="text-muted-foreground" />
-                {partner.city}, {partner.region}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pb-3 space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Phone size={16} className="text-primary" />
-                  <span className="text-sm">{partner.phone}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Mail size={16} className="text-primary" />
-                  <span className="text-sm">{partner.email}</span>
-                </div>
-                {partner.cnpj && (
-                  <div className="flex items-center gap-2">
-                    <FileText size={16} className="text-primary" />
-                    <span className="text-sm">CNPJ: {partner.cnpj}</span>
-                  </div>
-                )}
-              </div>
-              
-              <Separator />
-              
-              <div>
-                <h4 className="font-medium mb-2">Serviços oferecidos</h4>
-                <div className="flex flex-wrap gap-1.5">
-                  {partner.service_types.map((type, i) => (
-                    <Badge key={i} variant="outline" className="font-normal">
-                      {type}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              
-              <div>
-                <h4 className="font-medium mb-2">Métodos de pagamento</h4>
-                <div className="flex flex-wrap gap-1.5">
-                  {partner.payment_methods.map((method, i) => (
-                    <Badge key={i} variant="secondary" className="font-normal bg-gray-100 text-gray-800">
-                      {method}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              
-              <div>
-                <h4 className="font-medium mb-2">Valor do Serviço</h4>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-primary text-lg">
-                    {partner.cost_per_km 
-                      ? `R$ ${partner.cost_per_km.toFixed(2)}/km`
-                      : <span className="text-muted-foreground text-sm">Valor não informado</span>
-                    }
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-medium mb-2">Informações adicionais</h4>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    {partner.available_24h 
-                      ? <CheckCircle2 size={16} className="text-green-600" />
-                      : <XCircle size={16} className="text-red-500" />
-                    }
-                    <span className="text-sm">Atendimento 24 horas</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {partner.has_insurance 
-                      ? <CheckCircle2 size={16} className="text-green-600" />
-                      : <XCircle size={16} className="text-red-500" />
-                    }
-                    <span className="text-sm">Seguro para carga e veículos</span>
-                  </div>
-                  {partner.coverage_radius && (
-                    <div className="flex items-center gap-2">
-                      <MapPin size={16} className="text-primary" />
-                      <span className="text-sm">Raio de cobertura: {partner.coverage_radius} km</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div>
-                <h4 className="font-medium mb-2">Avaliação</h4>
-                <div className="flex items-center gap-2">
-                  <RatingStars rating={partner.rating} />
-                  <span className="font-medium">{partner.rating.toFixed(1)}</span>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="pt-0">
-              {canEditPartners && (
-                <div className="flex flex-col gap-2 w-full">
-                  <div className="flex gap-2 w-full">
-                    <Button variant="outline" className="w-full">
-                      Editar
-                    </Button>
-                    {partner.status === 'ativo' ? (
-                      <Button variant="destructive" className="w-full">
-                        Desativar
-                      </Button>
-                    ) : (
-                      <Button variant="default" className="w-full">
-                        Ativar
-                      </Button>
-                    )}
-                  </div>
-                  <Button 
-                    variant="default" 
-                    className="w-full bg-primary"
-                    onClick={() => handleGenerateExternalAccessLink()}
-                  >
-                    Gerar Link de Acesso Externo
-                  </Button>
-                </div>
-              )}
-            </CardFooter>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Estatísticas</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Total de Solicitações</p>
-                  <p className="text-2xl font-bold">{partner.total_requests || 0}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Concluídas</p>
-                  <p className="text-2xl font-bold">{partner.completed_requests || 0}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Taxa de Conclusão</p>
-                  <p className="text-2xl font-bold">
-                    {partner.total_requests ? 
-                      Math.round((partner.completed_requests || 0) / partner.total_requests * 100) : 0}%
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Tempo Médio</p>
-                  <p className="text-2xl font-bold">2h 30m</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        {/* Coluna direita - Tabs com solicitações e avaliações */}
-        <div className="w-full lg:w-2/3">
-          <Card>
-            <CardHeader className="pb-3">
-              <Tabs defaultValue="requests" value={activeTab} onValueChange={setActiveTab}>
-                <TabsList>
-                  <TabsTrigger value="requests">Solicitações</TabsTrigger>
-                  <TabsTrigger value="ratings">Avaliações</TabsTrigger>
-                  <TabsTrigger value="docs">Documentos</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </CardHeader>
-            
-            <CardContent>
-              <TabsContent value="requests" className="mt-0">
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold">Solicitações Recentes</h3>
-                    <Button variant="outline" size="sm">
-                      <FileText className="h-4 w-4 mr-2" /> Nova Solicitação
-                    </Button>
-                  </div>
-                  
-                  {isRequestsLoading ? (
-                    <div className="space-y-4">
-                      {[...Array(3)].map((_, i) => (
-                        <Card key={i}>
-                          <CardContent className="p-4">
-                            <div className="space-y-3">
-                              <div className="flex justify-between">
-                                <Skeleton className="h-5 w-48" />
-                                <Skeleton className="h-5 w-24" />
-                              </div>
-                              <Skeleton className="h-4 w-full" />
-                              <div className="flex justify-between">
-                                <Skeleton className="h-4 w-32" />
-                                <Skeleton className="h-4 w-32" />
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : requests && requests.length > 0 ? (
-                    <div className="space-y-4">
-                      {requests.map((request) => (
-                        <Card key={request.id} className="hover:shadow-md transition-shadow">
-                          <CardContent className="p-4">
-                            <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <h4 className="font-semibold">Veículo: {request.vehicle_plate}</h4>
-                                <p className="text-sm text-muted-foreground">Motorista: {request.driver_name}</p>
-                              </div>
-                              <RequestStatusBadge status={request.status} />
-                            </div>
-                            
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 my-3">
-                              <div className="flex items-center gap-1.5">
-                                <MapPin size={16} className="text-primary" />
-                                <span className="text-sm">{request.pickup_location}</span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <Truck size={16} className="text-primary" />
-                                <span className="text-sm">{request.service_type}</span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <Calendar size={16} className="text-primary" />
-                                <span className="text-sm">
-                                  {new Date(request.created_at).toLocaleDateString('pt-BR')}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <UrgencyBadge urgency={request.urgency} />
-                              </div>
-                            </div>
-                            
-                            <div className="flex justify-between items-center mt-2">
-                              <div className="flex items-center gap-1">
-                                <span className="text-sm font-medium">
-                                  R$ {request.estimated_cost.toFixed(2).replace('.', ',')}
-                                </span>
-                              </div>
-                              <div className="flex gap-2">
-                                {request.status === 'pendente' && (
-                                  <>
-                                    <Button variant="outline" size="sm">
-                                      <XCircle className="h-4 w-4 mr-1" /> Recusar
-                                    </Button>
-                                    <Button size="sm">
-                                      <CheckCircle2 className="h-4 w-4 mr-1" /> Aprovar
-                                    </Button>
-                                  </>
-                                )}
-                                {request.status === 'aprovado' && (
-                                  <Button variant="outline" size="sm">
-                                    <Clock className="h-4 w-4 mr-1" /> Em Andamento
-                                  </Button>
-                                )}
-                                <Link to={`/fleet-management/towing-partners/requests/${request.id}`}>
-                                  <Button variant="ghost" size="sm">
-                                    Detalhes
-                                  </Button>
-                                </Link>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-10 text-muted-foreground">
-                      <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-semibold">Nenhuma solicitação encontrada</h3>
-                      <p className="mt-2">Este parceiro ainda não possui solicitações de guincho.</p>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="ratings" className="mt-0">
-                <div className="text-center py-10 text-muted-foreground">
-                  <Star className="mx-auto h-12 w-12 text-yellow-400 mb-4" />
-                  <h3 className="text-lg font-semibold">Avaliações e Comentários</h3>
-                  <p className="mt-2">Implementação em andamento. Disponível em breve.</p>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="docs" className="mt-0">
-                <div className="text-center py-10 text-muted-foreground">
-                  <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold">Documentos e Contratos</h3>
-                  <p className="mt-2">Implementação em andamento. Disponível em breve.</p>
-                </div>
-              </TabsContent>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
     </div>
   );
 };
