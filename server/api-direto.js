@@ -152,13 +152,17 @@ export async function getHistoricoPosto(req, res) {
           ${tableColumns.includes('lavagem') ? 'lavagem,' : 'false as lavagem,'}
           ${tableColumns.includes('tipo_lavagem') ? 'tipo_lavagem,' : "NULL as tipo_lavagem,"}
           ${tableColumns.includes('projeto') ? 'projeto,' : "NULL as projeto,"}
-          ${tableColumns.includes('project') ? 'project,' : "NULL as project,"}
+          ${tableColumns.includes('project') ? 'project as projeto,' : "NULL as projeto,"}
           to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora,
-          created_at
+          created_at,
+          projeto
         FROM ${tableName}
         ORDER BY created_at DESC
         LIMIT ${req.query.limit || 50}
       `;
+      
+      // Verificar se a modificação está funcionando
+      console.log(`Consulta final para ${postoName}:`, dataQuery);
       
       console.log(`Consulta adaptada para tabela ${tableName}:`, dataQuery);
     } else {
