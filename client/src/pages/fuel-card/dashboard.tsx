@@ -43,6 +43,7 @@ type FuelCardSolicitation = {
   atendido_por?: string;
   valor_solicitado?: number;
   base?: string;
+  id_rota?: string;
 };
 
 export default function FuelCardDashboard() {
