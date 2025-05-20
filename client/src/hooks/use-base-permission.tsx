@@ -313,10 +313,25 @@ export const useBasePermission = (): BasePermissionHook => {
         '/fleet-management/towing-partners-payments', // Pagamentos de serviços
         '/fleet-management/towing-partners/detail',   // Detalhes de parceiros
         '/fleet-management/towing-partners/external', // Acesso externo
-        '/fleet-management/ford-partner'              // Detalhes do parceiro Ford
+        '/fleet-management/ford-partner',             // Detalhes do parceiro Ford
+        // Padrão para qualquer ID de parceiro de guincho
+        '/fleet-management/towing-partners/' // Rota base que permite acesso a qualquer subpágina
       ];
       
-      const hasAccess = frotaRoutes.includes(route);
+      // Verificação melhorada para rotas com parâmetros dinâmicos (como IDs)
+      let hasAccess = frotaRoutes.includes(route);
+      
+      // Se não encontrou correspondência exata, verificar se a rota começa com alguma rota base permitida
+      if (!hasAccess) {
+        hasAccess = frotaRoutes.some(allowedRoute => {
+          // Verificar se a rota termina com '/' para indicar que é uma rota base
+          if (allowedRoute.endsWith('/') && route.startsWith(allowedRoute)) {
+            console.log(`Rota ${route} permitida por corresponder ao padrão base: ${allowedRoute}`);
+            return true;
+          }
+          return false;
+        });
+      }
       
       // Se estiver tentando acessar o dashboard, redirecionar para página de redirecionamento
       if (route === '/') {
