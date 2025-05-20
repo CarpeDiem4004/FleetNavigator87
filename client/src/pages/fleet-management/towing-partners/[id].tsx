@@ -129,10 +129,12 @@ const TowingPartnerDetailPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('info');
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [accessLink, setAccessLink] = useState('');
   const [isLinkCopied, setIsLinkCopied] = useState(false);
   const [linkExpirationDays, setLinkExpirationDays] = useState(30);
   const [isPermanentLink, setIsPermanentLink] = useState(false);
+  const [editFormData, setEditFormData] = useState<Partial<TowingPartner>>({}); 
   
   // Função para adaptar formato antigo para o novo
   const adaptPartnerData = (data) => {
@@ -426,10 +428,24 @@ const TowingPartnerDetailPage: React.FC = () => {
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <CardTitle className="text-2xl flex items-center gap-2">
-                    {partner.name}
-                    <StatusBadge status={partner.status} />
-                  </CardTitle>
+                  <div className="flex justify-between w-full">
+                    <CardTitle className="text-2xl flex items-center gap-2">
+                      {partner.name}
+                      <StatusBadge status={partner.status} />
+                    </CardTitle>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center gap-1"
+                      onClick={() => {
+                        setEditFormData({...partner});
+                        setIsEditModalOpen(true);
+                      }}
+                    >
+                      <Edit size={16} />
+                      Editar
+                    </Button>
+                  </div>
                   <CardDescription className="text-lg">
                     {partner.company_name || 'Empresa de Guincho'}
                   </CardDescription>
@@ -904,5 +920,338 @@ const TowingPartnerDetailPage: React.FC = () => {
     </div>
   );
 };
+
+  // Implementar a mutação para atualizar os dados do parceiro
+  const updatePartnerMutation = useMutation({
+    mutationFn: async (data: Partial<TowingPartner>) => {
+      const response = await apiRequest('PUT', `/api/towing/partners/${id}`, data);
+      if (!response.ok) {
+        throw new Error(`Erro ao atualizar parceiro: ${response.status} ${response.statusText}`);
+      }
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Parceiro atualizado",
+        description: "Os dados do parceiro foram atualizados com sucesso.",
+      });
+      // Atualizar os dados da query
+      queryClient.setQueryData(['/api/towing/partners', id], data);
+      queryClient.invalidateQueries({ queryKey: ['/api/towing/partners'] });
+      setIsEditModalOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao atualizar",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Função para lidar com o envio do formulário de edição
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updatePartnerMutation.mutate(editFormData);
+  };
+
+  // Função para atualizar os campos do formulário
+  const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    
+    // Para campos do tipo checkbox, usar o checked
+    if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked;
+      setEditFormData(prev => ({ ...prev, [name]: checked }));
+      return;
+    }
+    
+    setEditFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  return (
+    <>
+      <div className="container mx-auto py-6 px-4">
+        <PageHeader 
+          title={`Parceiro: ${partner.name}`}
+          subtitle={`${partner.city} - ${partner.region}`}
+          backLink="/fleet-management/towing-partners"
+          backLabel="Voltar para lista"
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
+          {/* Coluna principal - permanece o mesmo */}
+          {/* ... restante do componente ... */}
+        </div>
+      </div>
+
+      {/* Modal de Edição de Parceiro */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Editar Parceiro de Guincho</DialogTitle>
+          </DialogHeader>
+          
+          <form onSubmit={handleEditSubmit} className="space-y-4 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome</Label>
+                <Input 
+                  id="name" 
+                  name="name" 
+                  value={editFormData.name || ''}
+                  onChange={handleEditFormChange}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="company_name">Nome da Empresa</Label>
+                <Input 
+                  id="company_name" 
+                  name="company_name" 
+                  value={editFormData.company_name || ''}
+                  onChange={handleEditFormChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input 
+                  id="email" 
+                  name="email" 
+                  type="email"
+                  value={editFormData.email || ''}
+                  onChange={handleEditFormChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="phone">Telefone</Label>
+                <Input 
+                  id="phone" 
+                  name="phone" 
+                  value={editFormData.phone || ''}
+                  onChange={handleEditFormChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="city">Cidade</Label>
+                <Input 
+                  id="city" 
+                  name="city" 
+                  value={editFormData.city || ''}
+                  onChange={handleEditFormChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="region">Região/Estado</Label>
+                <Input 
+                  id="region" 
+                  name="region" 
+                  value={editFormData.region || ''}
+                  onChange={handleEditFormChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="address">Endereço</Label>
+                <Input 
+                  id="address" 
+                  name="address" 
+                  value={editFormData.address || ''}
+                  onChange={handleEditFormChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="cnpj">CNPJ</Label>
+                <Input 
+                  id="cnpj" 
+                  name="cnpj" 
+                  value={editFormData.cnpj || ''}
+                  onChange={handleEditFormChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <select 
+                  id="status" 
+                  name="status" 
+                  className="w-full px-3 py-2 border rounded-md"
+                  value={editFormData.status || 'ativo'}
+                  onChange={handleEditFormChange}
+                >
+                  <option value="ativo">Ativo</option>
+                  <option value="inativo">Inativo</option>
+                  <option value="pendente">Pendente</option>
+                  <option value="suspenso">Suspenso</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="text-lg font-medium">Configurações Bancárias</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bank_name">Nome do Banco</Label>
+                  <Input 
+                    id="bank_name" 
+                    name="bank_name" 
+                    value={editFormData.bank_name || ''}
+                    onChange={handleEditFormChange}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="bank_account">Conta Bancária</Label>
+                  <Input 
+                    id="bank_account" 
+                    name="bank_account" 
+                    value={editFormData.bank_account || ''}
+                    onChange={handleEditFormChange}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="bank_agency">Agência</Label>
+                  <Input 
+                    id="bank_agency" 
+                    name="bank_agency" 
+                    value={editFormData.bank_agency || ''}
+                    onChange={handleEditFormChange}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="pix_key">Chave PIX</Label>
+                  <Input 
+                    id="pix_key" 
+                    name="pix_key" 
+                    value={editFormData.pix_key || ''}
+                    onChange={handleEditFormChange}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="text-lg font-medium">Opções</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <input 
+                    type="checkbox" 
+                    id="available_24h" 
+                    name="available_24h"
+                    checked={editFormData.available_24h || false}
+                    onChange={handleEditFormChange}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="available_24h">Disponível 24 horas</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <input 
+                    type="checkbox" 
+                    id="can_transport_multiple" 
+                    name="can_transport_multiple"
+                    checked={editFormData.can_transport_multiple || false}
+                    onChange={handleEditFormChange}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="can_transport_multiple">Pode transportar múltiplos veículos</Label>
+                </div>
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsEditModalOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                type="submit"
+                disabled={updatePartnerMutation.isPending}
+              >
+                {updatePartnerMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : "Salvar Alterações"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Link de Acesso - existente */}
+      <Dialog open={isLinkModalOpen} onOpenChange={setIsLinkModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Link de Acesso do Parceiro</DialogTitle>
+            <DialogDescription>
+              Compartilhe este link com o parceiro para que ele possa acessar a plataforma de forma limitada.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-col space-y-4 py-4">
+            <div className="grid gap-2">
+              <Label>Link de acesso</Label>
+              <div className="flex items-center space-x-2">
+                <Input value={accessLink} readOnly />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={copyLinkToClipboard}
+                >
+                  {isLinkCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {isPermanentLink ? "Este link não expira" : `Este link expira em ${linkExpirationDays} dias.`}
+              </p>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label>Expiração do link</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  type="number"
+                  min="1"
+                  max="365"
+                  value={linkExpirationDays}
+                  onChange={(e) => setLinkExpirationDays(parseInt(e.target.value))}
+                  disabled={isPermanentLink}
+                />
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="permanent-link"
+                    checked={isPermanentLink}
+                    onChange={(e) => setIsPermanentLink(e.target.checked)}
+                  />
+                  <Label htmlFor="permanent-link">Link permanente</Label>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsLinkModalOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
 
 export default TowingPartnerDetailPage;
