@@ -90,6 +90,7 @@ import FuelCardRequestsPanel from "@/pages/FuelCardRequestsPanel";
 import FuelCardSolicitation from "@/pages/fuel-card/solicitation";
 import FuelCardConfirmation from "@/pages/fuel-card/confirmation";
 import FuelCardDashboard from "@/pages/fuel-card/dashboard";
+import StationProfile from "@/pages/fuel-card/station-profile";
 import PostoRemediosPage from "@/pages/PostoRemediosPage";
 import PostoRemediosStandalone from "@/pages/PostoRemediosStandalone";
 import AbastecimentoPostoRemediosPage from "@/pages/AbastecimentoPostoRemediosPage";
@@ -386,6 +387,12 @@ function App() {
           <ProtectedRoute path="/fuel-card/confirmation" component={() => (
             <div className="mt-16 pl-4 pr-4 md:pl-64">
               <FuelCardConfirmation />
+            </div>
+          )} />
+          
+          <ProtectedRoute path="/fuel-card/station-profile" component={() => (
+            <div className="mt-16 pl-4 pr-4 md:pl-64">
+              <StationProfile />
             </div>
           )} />
           
