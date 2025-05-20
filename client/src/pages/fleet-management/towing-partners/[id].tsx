@@ -193,6 +193,12 @@ const TowingPartnerDetailPage: React.FC = () => {
     queryKey: ['/api/towing/partners', id],
     enabled: !!id,
     queryFn: async () => {
+      // Verificação de ID inválido
+      if (isNaN(parseInt(id as string))) {
+        console.error('ID de parceiro inválido:', id);
+        throw new Error('ID de parceiro inválido');
+      }
+      
       // Tratamento especial para o parceiro Ford (ID 6)
       if (id === '6') {
         console.log('Retornando dados fixos para o parceiro Ford (ID 6)');
@@ -202,27 +208,49 @@ const TowingPartnerDetailPage: React.FC = () => {
       console.log(`Buscando dados do parceiro com ID: ${id}`);
       
       try {
-        console.log(`Tentando buscar em /api/towing/partners/${id}`);
+        // Primeiro verifica se o parceiro existe
+        console.log(`Verificando existência do parceiro ID=${id} no banco de dados`);
+        const checkResponse = await apiRequest('GET', `/api/towing/partners`);
+        const allPartners = await checkResponse.json();
+        
+        // Verifica se o parceiro existe na lista
+        const partnerExists = allPartners.some(p => p.id === parseInt(id as string));
+        if (!partnerExists) {
+          console.log(`Parceiro ID=${id} não encontrado na lista de parceiros`);
+          throw new Error(`Parceiro ID=${id} não encontrado na base de dados`);
+        }
+        
+        console.log(`Tentando buscar detalhes do parceiro ID=${id}`);
         const response = await apiRequest('GET', `/api/towing/partners/${id}`);
+        
+        if (!response.ok) {
+          console.error(`Erro ao buscar parceiro ID=${id}: ${response.status} ${response.statusText}`);
+          throw new Error(`Erro ao buscar parceiro: ${response.status} ${response.statusText}`);
+        }
+        
         const data = await response.json();
         console.log(`Dados recebidos para parceiro ID=${id}:`, data);
         
         if (!data) {
+          console.error(`Dados do parceiro ID=${id} não encontrados ou vazios`);
           throw new Error(`Não foi possível encontrar os dados do parceiro ID=${id}`);
         }
         
         // Normalizando os dados do parceiro
         const normalizedData = {
           ...data,
-          id: parseInt(id),
+          id: parseInt(id as string),
           name: data.name || data.nome || "",
           phone: data.phone || data.telefone || "",
           email: data.email || "",
           city: data.city || data.cidade || "",
           region: data.region || data.regiao || "",
-          status: data.status || "pendente"
+          status: data.status || "pendente",
+          service_types: data.service_types || [],
+          payment_methods: data.payment_methods || []
         };
         
+        console.log(`Dados normalizados para parceiro ID=${id}:`, normalizedData);
         return normalizedData;
       } catch (error) {
         console.error(`Erro ao buscar parceiro ID=${id}:`, error);
