@@ -468,16 +468,7 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
                       </TableCell>
                       <TableCell className="font-semibold">{item.placa}</TableCell>
                       <TableCell>
-                        <Badge
-                          variant={item.tipo_combustivel === 'ARLA' ? "outline" : "default"}
-                          className={
-                            item.tipo_combustivel === 'DIESEL' ? "bg-amber-500 hover:bg-amber-600" :
-                            item.tipo_combustivel === 'ARLA' ? "border-blue-500 text-blue-500" :
-                            undefined
-                          }
-                        >
-                          {item.tipo_combustivel}
-                        </Badge>
+                        {item.tipo_combustivel}
                         {item.lavagem && (
                           <Badge variant="outline" className="ml-1 border-green-500 text-green-500">
                             Lavagem
