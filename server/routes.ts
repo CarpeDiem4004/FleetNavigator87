@@ -5408,8 +5408,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const query = `
         INSERT INTO posto_remedios_abastecimentos
-        (placa, km, projeto, motorista_nome, motorista_rg, tipo_combustivel, quantidade_litros, valor_litro, valor_total, lavagem, tipo_lavagem, observacoes, tipo_veiculo)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        (placa, km, projeto, motorista_nome, motorista_rg, tipo_combustivel, quantidade_litros, valor_litro, valor_total, lavagem, tipo_lavagem, observacoes)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
       `;
       
@@ -5425,8 +5425,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         valor_total || null,
         lavagem || false,
         tipo_lavagem || null,
-        observacoes || null,
-        tipo_veiculo || 'frota' // Usar 'frota' como valor padrão se não for especificado
+        observacoes || null
+        // Campo tipo_veiculo removido pois não existe na tabela
       ];
       
       const result = await pool.query(query, values);
