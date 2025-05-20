@@ -303,6 +303,19 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     { name: 'Bases', href: '#', icon: Warehouse, subItems: baseItems },
   ];
   
+  // Itens específicos para Gestor de Combustível
+  const fuelManagerItems: NavItem[] = [
+    { name: 'Dashboard', href: '/', icon: Gauge },
+    { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
+      { name: 'Operações', href: '/fuel-card', icon: CreditCard },
+      { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList }
+    ]},
+    { name: 'Postos', href: '#', icon: Fuel, subItems: [
+      { name: 'Visão Geral dos Postos', href: '/postos/visao-geral', icon: BarChart4 },
+      { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 }
+    ]},
+  ];
+  
   // Verifique se o usuário é da gestão de frotas
   // Adicionamos verificação adicional para papel 'gestor_frota'
   const isFleetUser = user.basename === "Gestão de Frotas" || user.baseId === 12 || user.role === 'gestor_frota' || user.role === 'admin';
@@ -312,10 +325,17 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   
   // Para debugging - exiba o tipo de usuário e os menus disponíveis
   console.log(`Tipo de usuário: ${isFleetUser ? 'Gestão de Frotas' : isFuelManager ? 'Gestor de Combustível' : 'Normal'} (${user.role})`);
-  console.log(`Menu principal: ${isFleetUser ? 'fleetManagementItems' : 'allNavItems'}`);
+  console.log(`Menu principal: ${isFleetUser ? 'fleetManagementItems' : isFuelManager ? 'fuelManagerItems' : 'allNavItems'}`);
   
   // Selecionando os itens de navegação apropriados
-  const navItemsBase = isFleetUser ? fleetManagementItems : allNavItems;
+  let navItemsBase;
+  if (isFleetUser) {
+    navItemsBase = fleetManagementItems;
+  } else if (isFuelManager) {
+    navItemsBase = fuelManagerItems;
+  } else {
+    navItemsBase = allNavItems;
+  }
   
   // Adicionamos explicitamente o item de Histórico Consolidado em ambos os menus para garantir que seja visível
   // Ele foi adicionado em ambos os conjuntos de itens, mas vamos garantir
