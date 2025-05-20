@@ -49,7 +49,9 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       numero_cartao, 
       motorista, 
       observacoes,
-      valor_solicitado 
+      valor_solicitado,
+      base,
+      id_rota
     } = req.body;
     
     // Debug completo - verificando valores antes do processamento
@@ -119,9 +121,9 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
 
     const query = `
       INSERT INTO solicitacoes_fuel_card
-        (placa, km, tipo_cartao, provedor_cartao, numero_cartao, motorista, observacoes, status, data_solicitacao, valor_solicitado)
+        (placa, km, tipo_cartao, provedor_cartao, numero_cartao, motorista, observacoes, status, data_solicitacao, valor_solicitado, base, id_rota)
       VALUES
-        ($1, $2, $3, $4, $5, $6, $7, 'pendente', NOW(), $8)
+        ($1, $2, $3, $4, $5, $6, $7, 'pendente', NOW(), $8, $9, $10)
       RETURNING *
     `;
     
@@ -141,7 +143,9 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       numero_cartao || null,
       motorista,
       observacoes || null,
-      valorFinal // Valor garantido como número fixo
+      valorFinal, // Valor garantido como número fixo
+      base || null,
+      id_rota || null
     ];
     
     const result = await pool.query(query, values);
