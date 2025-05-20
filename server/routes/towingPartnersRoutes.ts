@@ -376,6 +376,57 @@ router.put('/partners/:id', authenticateJWT, verifyFleetManager, async (req, res
 });
 
 /**
+ * @route PUT /api/towing/partners/:id/status
+ * @desc Atualizar o status de um parceiro de guincho (aprovar, inativar, etc)
+ * @access Privado (apenas administradores e gestores de frota)
+ */
+router.put('/partners/:id/status', authenticateJWT, verifyFleetManager, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    console.log(`Atualizando status do parceiro ID ${id} para: ${status}`);
+    
+    // Validar o status
+    if (!status || !['ativo', 'inativo', 'pendente', 'suspenso'].includes(status)) {
+      return res.status(400).json({ 
+        error: 'Status inválido', 
+        details: 'O status deve ser um dos seguintes: ativo, inativo, pendente ou suspenso' 
+      });
+    }
+    
+    const { data, error } = await supabase
+      .from('towing_partners')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Erro ao atualizar status do parceiro:', error);
+      throw error;
+    }
+    
+    if (!data) {
+      return res.status(404).json({ error: 'Parceiro de guincho não encontrado' });
+    }
+    
+    console.log(`Status do parceiro ${data.name} atualizado com sucesso para ${status}`);
+    res.json({ 
+      success: true, 
+      message: `Status do parceiro atualizado para ${status}`,
+      data 
+    });
+  } catch (error: any) {
+    console.error(`Erro ao atualizar status do parceiro de guincho (ID: ${req.params.id}):`, error);
+    res.status(500).json({ 
+      error: 'Erro ao atualizar status do parceiro de guincho', 
+      details: error.message 
+    });
+  }
+});
+
+/**
  * @route DELETE /api/towing/partners/:id
  * @desc Excluir um parceiro de guincho
  * @access Privado (apenas administradores)
