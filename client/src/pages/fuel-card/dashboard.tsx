@@ -60,9 +60,19 @@ export default function FuelCardDashboard() {
   const attendedCount = solicitations.filter(s => s.status === 'atendido').length;
   
   // Calcular o valor total dos cartões atendidos
-  const totalValueAttended = solicitations
-    .filter(s => s.status === 'atendido')
-    .reduce((sum, s) => sum + (s.valor_solicitado || 0), 0);
+  // Verificar os valores antes de somar
+  const attendedSolicitations = solicitations.filter(s => s.status === 'atendido');
+  console.log("Solicitações atendidas:", attendedSolicitations);
+  
+  // Garantir que todos os valores são números antes de somar
+  const totalValueAttended = attendedSolicitations.reduce((sum, s) => {
+    // Converter para número e verificar se é válido
+    const valor = s.valor_solicitado ? 
+      parseFloat(String(s.valor_solicitado).replace(',', '.')) : 0;
+    
+    console.log("Valor sendo somado:", s.valor_solicitado, "->", valor);
+    return sum + valor;
+  }, 0);
   
   const handleStatusChange = async (id: number, newStatus: 'atendido' | 'rejeitado') => {
     try {
@@ -185,7 +195,7 @@ export default function FuelCardDashboard() {
                 {isLoading ? (
                   <Skeleton className="h-10 w-16" />
                 ) : (
-                  `R$ ${Number(totalValueAttended).toFixed(2).replace('.', ',')}`
+                  `R$ ${isNaN(totalValueAttended) ? '0,00' : totalValueAttended.toFixed(2).replace('.', ',')}`
                 )}
               </span>
             </div>
