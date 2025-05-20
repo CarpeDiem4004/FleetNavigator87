@@ -429,20 +429,20 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
               <span className="text-xs text-center">Histórico</span>
             </Link>
             <Link 
-              href="/manutencao"
+              href="/fuel-card/station-profile"
               className="flex flex-col items-center justify-center p-3 bg-primary-700 hover:bg-primary-600 rounded-md transition-colors"
               onClick={closeSidebar}
             >
-              <FileText size={20} className="mb-1" />
-              <span className="text-xs text-center">Manutenção</span>
+              <Fuel size={20} className="mb-1" />
+              <span className="text-xs text-center">Perfil Posto</span>
             </Link>
             <Link 
-              href="/fleet-management/towing-partners-payments"
+              href="/fuel-card/dashboard"
               className="flex flex-col items-center justify-center p-3 bg-primary-700 hover:bg-primary-600 rounded-md transition-colors"
               onClick={closeSidebar}
             >
               <CreditCard size={20} className="mb-1" />
-              <span className="text-xs text-center">Pagamentos</span>
+              <span className="text-xs text-center">Cartões</span>
             </Link>
           </div>
         </div>

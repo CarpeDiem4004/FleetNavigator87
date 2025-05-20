@@ -34,7 +34,31 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { queryClient } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-import { FuelStation, StationTank } from "@/types/fuel-stations"; 
+// Importando tipos diretamente no arquivo para garantir disponibilidade
+interface FuelStation {
+  id: number;
+  nome: string;
+  endereco: string;
+  telefone: string;
+  responsavel: string;
+  status: string;
+  capacidade_total: number;
+  volume_atual: number;
+  ultima_medicao: string;
+  tipo: 'próprio' | 'parceiro';
+  latitude: number;
+  longitude: number;
+}
+
+interface StationTank {
+  id: number;
+  posto_id: number;
+  tipo_combustivel: string;
+  capacidade: number;
+  nivel_atual: number;
+  ultima_medicao: string;
+  status: 'operacional' | 'em_manutenção' | 'inativo';
+} 
 import { Progress } from "@/components/ui/progress";
 import { 
   Select, 
