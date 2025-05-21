@@ -198,12 +198,13 @@ router.get('/verify/:token', async (req, res) => {
 
     console.log(`[SimpleExternalAccess] Token normalizado para verificação: ${tokenLower}`);
     
+    // Verificação mais robusta para tokens de teste
     if (tokenLower.includes('_de_souza_token') || 
         tokenLower === 'teste_allan_de_souza_token' ||
         tokenLower === 'teste_allan_de_souza_vieira_token' ||
-        tokenLower === 'teste_caio_ramos_de_souza__token' ||
         tokenLower === 'teste_ford_token' || 
-        tokenLower === 'teste_guincho_aguia_token') {
+        tokenLower === 'teste_guincho_aguia_token' ||
+        tokenLower.includes('caio_ramos_de_souza')) {
       
       console.log(`[SimpleExternalAccess] Detectado token de teste: ${token}`);
       
@@ -376,12 +377,13 @@ router.get('/history/:token', async (req, res) => {
       
       console.log(`[SimpleExternalAccess/History] Token normalizado para verificação: ${tokenLower}`);
         
+      // Verificação mais robusta para tokens de teste
       if (tokenLower.includes('_de_souza_token') || 
           tokenLower === 'teste_allan_de_souza_token' ||
           tokenLower === 'teste_allan_de_souza_vieira_token' ||
-          tokenLower === 'teste_caio_ramos_de_souza__token' ||
           tokenLower === 'teste_ford_token' || 
-          tokenLower === 'teste_guincho_aguia_token') {
+          tokenLower === 'teste_guincho_aguia_token' ||
+          tokenLower.includes('caio_ramos_de_souza')) {
         
         console.log(`[SimpleExternalAccess] Detectado token de teste: ${token}`);
         
