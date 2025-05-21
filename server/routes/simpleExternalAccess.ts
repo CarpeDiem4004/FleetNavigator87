@@ -9,6 +9,24 @@ import { pool } from '../db';
 
 const router = express.Router();
 
+// Armazenamento temporário de serviços de teste (apenas em memória)
+// Estrutura: { partnerId: [serviços] }
+const testServices = new Map<number, any[]>();
+
+// Função para adicionar um novo serviço de teste
+function addTestService(partnerId: number, service: any) {
+  if (!testServices.has(partnerId)) {
+    testServices.set(partnerId, []);
+  }
+  const services = testServices.get(partnerId);
+  services?.push(service);
+  
+  // Limitar a 20 serviços por parceiro para evitar consumo excessivo de memória
+  if (services && services.length > 20) {
+    services.shift(); // Remove o mais antigo
+  }
+}
+
 // Rota para envio de notificações de serviço (form simples)
 router.post('/submit', async (req, res) => {
   try {
@@ -191,26 +209,34 @@ router.post('/submit', async (req, res) => {
       const mockServiceId = Math.floor(Math.random() * 10000) + 1000;
       const mockServiceDate = new Date();
       
+      // Criar objeto do serviço simulado
+      const mockService = {
+        id: mockServiceId,
+        partner_id: partnerId,
+        plate: (normalizedPlate || '').toUpperCase(),
+        pickup_location: normalizedPickup,
+        delivery_location: normalizedDelivery,
+        service_description: normalizedService || "Reboque",
+        service_date: normalizedDate || mockServiceDate,
+        cost: parseFloat(normalizedCost.toString()),
+        mileage: parseInt(normalizedMileage?.toString() || "0"),
+        notes: normalizedNotes || "",
+        contact_name: normalizedContactName || "",
+        contact_phone: normalizedContactPhone || "",
+        status: "pending",
+        created_at: mockServiceDate,
+        payment_status: "pending"
+      };
+      
+      // Salvar o serviço no nosso armazenamento temporário
+      addTestService(partnerId, mockService);
+      
+      console.log(`[SimpleExternalAccess] Serviço de teste ID:${mockServiceId} salvo para parceiro ID:${partnerId}`);
+      
       return res.status(201).json({
         success: true,
         message: 'Serviço registrado com sucesso (modo de teste)',
-        data: {
-          id: mockServiceId,
-          partner_id: partnerId,
-          plate: (normalizedPlate || '').toUpperCase(),
-          pickup_location: normalizedPickup,
-          delivery_location: normalizedDelivery,
-          service_description: normalizedService || "Reboque",
-          service_date: normalizedDate || mockServiceDate,
-          cost: parseFloat(normalizedCost.toString()),
-          mileage: parseInt(normalizedMileage?.toString() || "0"),
-          notes: normalizedNotes || "",
-          contact_name: normalizedContactName || "",
-          contact_phone: normalizedContactPhone || "",
-          status: "pending",
-          created_at: mockServiceDate,
-          payment_status: "pending"
-        }
+        data: mockService
       });
     }
     
