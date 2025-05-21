@@ -626,30 +626,24 @@ const HistoricoGeralPage: React.FC = () => {
       return isNaN(litros) ? 0 : litros;
     };
     
-    // Calcular consumo por projeto com tratamento adequado
+    // Calcular consumo por projeto com tratamento adequado e melhorado
     const consumoPorProjeto = filteredData.reduce((acc, item) => {
       // Unificar campo de projeto (pode estar como project ou projeto dependendo do posto)
-      // Detectar apenas os campos que estão definidos na interface Abastecimento
-      const projetoRaw = item.project || item.projeto;
+      // Verificar todos os possíveis campos que podem conter o nome do projeto
+      const projetoRaw = item.project || item.projeto || item.nome_projeto || '';
       
-      // Usar a função de normalização com debugging adicional
-      const projeto = normalizarNomeProjeto(projetoRaw);
+      // Usar a função de normalização com tratamento aprimorado
+      const projeto = normalizarNomeProjeto(projetoRaw) || "NÃO ESPECIFICADO";
       
-      // Extrair litros com segurança
+      // Extrair litros com segurança, garantindo que valores numéricos sejam tratados corretamente
       const litros = extrairLitros(item);
       
-      // Debug para ver campos de projeto problemáticos
-      if (litros > 0 && !projeto) {
-        console.log("[DEBUG] Item com litros mas sem projeto:", {
-          id: item.id,
-          placa: item.placa,
-          litros,
-          projetoRaw,
-          item
-        });
+      // Log de diagnóstico apenas para valores significativos (mais de 10 litros)
+      if (litros > 10) {
+        console.log(`[INFO] Abastecimento computado: ${item.placa} - ${litros.toFixed(2)}L - Projeto: ${projeto}`);
       }
       
-      // Adicionar ao acumulador apenas se tiver um valor válido e um projeto detectado
+      // Registrar todos os abastecimentos, mesmo com projetos não especificados
       if (litros > 0) {
         acc[projeto] = (acc[projeto] || 0) + litros;
       }
@@ -657,8 +651,8 @@ const HistoricoGeralPage: React.FC = () => {
       return acc;
     }, {} as Record<string, number>);
     
-    // Adicionar logs para debug
-    console.log("[DEBUG] Consumo por projeto antes de ordenar:", consumoPorProjeto);
+    // Log detalhado do consumo por projeto
+    console.log("[RELATÓRIO] Total de litros por projeto:", consumoPorProjeto);
     
     // Ordenar projetos por consumo (do maior para o menor)
     const projetosOrdenados = Object.entries(consumoPorProjeto)
