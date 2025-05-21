@@ -195,7 +195,8 @@ router.get('/verify/:token', async (req, res) => {
     // Melhorar detecção de tokens normalizando espaços e underscores múltiplos
     tokenLower = tokenLower.replace(/_{2,}/g, '_'); // Substitui múltiplos underscores por um único
     tokenLower = tokenLower.replace(/\s+/g, '_');   // Substitui espaços por underscores
-
+    tokenLower = tokenLower.replace(/__+/g, '_'); // Substitui múltiplos underscores por um só
+    
     console.log(`[SimpleExternalAccess] Token normalizado para verificação: ${tokenLower}`);
     
     // Verificação mais robusta para tokens de teste
@@ -207,7 +208,9 @@ router.get('/verify/:token', async (req, res) => {
         tokenLower.includes('caio_ramos_de_souza') ||
         tokenLower.includes('claudio_de_oliveira_silva') ||
         tokenLower === 'teste_claudio_de_oliveira_silva_token' ||
-        tokenLower.includes('daiane_do_vale_amaral')) {
+        tokenLower.includes('daiane_do_vale_amaral') ||
+        tokenLower.includes('deloes_guinchos') ||
+        tokenLower === 'teste_deloes_guinchos_e_munck_token') {
       
       console.log(`[SimpleExternalAccess] Detectado token de teste: ${token}`);
       
@@ -241,6 +244,10 @@ router.get('/verify/:token', async (req, res) => {
         partnerId = 10;
         partnerName = 'Daiane do Vale Amaral';
         companyName = 'Daiane do Vale Amaral Serviços de Guincho LTDA';
+      } else if (tokenLower.includes('deloes_guinchos_e_munck')) {
+        partnerId = 11;
+        partnerName = 'Delões Guinchos e Munck';
+        companyName = 'Delões Guinchos e Munck LTDA';
       }
       
       return res.status(200).json({
@@ -431,6 +438,10 @@ router.get('/history/:token', async (req, res) => {
           partnerId = 10;
           partnerName = 'Daiane do Vale Amaral';
           companyName = 'Daiane do Vale Amaral Serviços de Guincho LTDA';
+        } else if (tokenLower.includes('deloes_guinchos_e_munck')) {
+          partnerId = 11;
+          partnerName = 'Delões Guinchos e Munck';
+          companyName = 'Delões Guinchos e Munck LTDA';
         }
         
         // Criar dados de histórico fictícios
