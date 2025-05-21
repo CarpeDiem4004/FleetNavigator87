@@ -51,12 +51,28 @@ export async function enviarAbastecimentoSupabase(dadosAbastecimento: any) {
     try {
       console.log('Dados formatados para envio:', JSON.stringify(dadosFormatados));
       
+      // Verificação adicional para garantir que os dados não estão undefined
+      if (!dadosFormatados) {
+        console.error('Dados formatados são undefined!');
+        return { 
+          success: false, 
+          error: 'Dados formatados são undefined ou null' 
+        };
+      }
+      
+      // Verificar e remover propriedades undefined que podem causar erro no servidor
+      const dadosLimpos = Object.fromEntries(
+        Object.entries(dadosFormatados).filter(([_, value]) => value !== undefined)
+      );
+      
+      console.log('Dados limpos para envio:', dadosLimpos);
+      
       const apiResponse = await fetch('/api/supabase-insert', {
         method: 'POST',
         headers,
         body: JSON.stringify({
           table: 'abastecimentos_supabase',
-          data: dadosFormatados
+          data: dadosLimpos
         })
       });
       
