@@ -6858,7 +6858,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           nome_motorista || 'Não informado',
           nome_operador || 'Não informado',
           postoIdFormatado, // Usar posto formatado
-          project || 'Não informado',
+          project || req.body.projeto || null, // Usar req.body.projeto como fallback
           preco_litro || 0,
           calculatedValor || 0,
           rg_motorista || 'Não informado'
