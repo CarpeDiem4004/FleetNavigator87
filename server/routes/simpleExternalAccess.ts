@@ -583,8 +583,12 @@ router.get('/history/:token', async (req, res) => {
           companyName = 'Delões Guinchos e Munck LTDA';
         }
         
-        // Criar dados de histórico fictícios
-        const demoServices = [
+        // Verificar se temos serviços simulados salvos para este parceiro
+        let demoServices = testServices.get(partnerId) || [];
+        
+        // Se não tivermos serviços salvos, criar alguns exemplos padrão
+        if (demoServices.length === 0) {
+        demoServices = [
           {
             id: 12345,
             plate: 'ABC1234',
@@ -612,6 +616,9 @@ router.get('/history/:token', async (req, res) => {
             created_at: new Date(new Date().setDate(new Date().getDate() - 10))
           }
         ];
+      }
+      
+      console.log(`[SimpleExternalAccess] Retornando ${demoServices.length} serviços simulados para parceiro ID: ${partnerId}`);
         
         return res.status(200).json({
           success: true,
