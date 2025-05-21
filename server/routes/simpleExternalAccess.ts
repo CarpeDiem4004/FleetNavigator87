@@ -188,11 +188,14 @@ router.get('/verify/:token', async (req, res) => {
     }
     
     // Verificar imediatamente se é um token de teste especial
-    // Usamos toLowerCase() para evitar problemas com diferentes capitalizações
-    const tokenLower = token.toLowerCase();
+    // Usamos toLowerCase() para evitar problemas com diferentes capitalizações e removemos acentos
+    const tokenLower = token.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Remove acentos
+
+    console.log(`[SimpleExternalAccess] Token normalizado para verificação: ${tokenLower}`);
+    
     if (tokenLower.includes('_de_souza_token') || 
         tokenLower === 'teste_ford_token' || 
-        tokenLower === 'teste_guincho_águia_token' ||
         tokenLower === 'teste_guincho_aguia_token') {
       
       console.log(`[SimpleExternalAccess] Detectado token de teste: ${token}`);
@@ -327,14 +330,21 @@ router.get('/verify/:token', async (req, res) => {
 // Rota para obter histórico de serviços para um token específico
 router.get('/history/:token', async (req, res) => {
   try {
-    console.log('[SimpleExternalAccess] Solicitação de histórico para token:', req.params.token);
-    const { token } = req.params;
+    let { token } = req.params;
+    console.log('[SimpleExternalAccess] Solicitação de histórico para token:', token);
     
     if (!token) {
       return res.status(400).json({
         success: false,
         message: 'Token não informado'
       });
+    }
+    
+    // Decodificar token para lidar com caracteres especiais na URL
+    try {
+      token = decodeURIComponent(token);
+    } catch (e) {
+      console.log('[SimpleExternalAccess] Erro ao decodificar token, usando como está');
     }
     
     // Primeiro verifica se o token é válido
@@ -358,10 +368,15 @@ router.get('/history/:token', async (req, res) => {
     // Se o token não foi encontrado no banco de dados, mas é um token especial para testes
     if (!tokenResult.rowCount || tokenResult.rowCount === 0) {
       // Verificar se é um token de teste (formato especial)
-      if (token.includes('_DE_SOUZA_TOKEN') || 
-          token === 'TESTE_FORD_TOKEN' || 
-          token === 'TESTE_GUINCHO_ÁGUIA_TOKEN' ||
-          decodeURIComponent(token) === 'TESTE_GUINCHO_ÁGUIA_TOKEN') {
+      // Usamos toLowerCase() para evitar problemas com diferentes capitalizações e removemos acentos
+      const tokenLower = token.toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Remove acentos
+      
+      console.log(`[SimpleExternalAccess/History] Token normalizado para verificação: ${tokenLower}`);
+        
+      if (tokenLower.includes('_de_souza_token') || 
+          tokenLower === 'teste_ford_token' || 
+          tokenLower === 'teste_guincho_aguia_token') {
         
         console.log(`[SimpleExternalAccess] Detectado token de teste: ${token}`);
         
@@ -370,11 +385,11 @@ router.get('/history/:token', async (req, res) => {
         let partnerName = 'S de Souza Guincho';
         let companyName = 'S de Souza Serviços de Guincho LTDA';
         
-        if (token === 'TESTE_FORD_TOKEN') {
+        if (tokenLower === 'teste_ford_token') {
           partnerId = 6;
           partnerName = 'Ford';
           companyName = 'Ford Serviços de Guincho Ltda';
-        } else if (token === 'TESTE_GUINCHO_ÁGUIA_TOKEN' || decodeURIComponent(token) === 'TESTE_GUINCHO_ÁGUIA_TOKEN') {
+        } else if (tokenLower === 'teste_guincho_aguia_token') {
           partnerId = 5;
           partnerName = 'Guincho Águia';
           companyName = 'Guincho Águia LTDA';
