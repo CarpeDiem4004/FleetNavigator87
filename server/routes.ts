@@ -37,6 +37,7 @@ import { registerPostosMapeamentoRoutes } from "./routes/postosMapeamentoRoutes"
 import { registerUsuariosSupabaseRoutes } from "./routes/usuariosSupabaseRoutes";
 import { supabaseInsertHandler } from "./routes/supabaseInsertRoute";
 import postoSupabaseRoutes from "./routes/postoSupabaseRoutes";
+import postoRoutes from "./routes/postoRoutes.js";
 import frotaEstoqueRoutes from "./routes/frotaEstoqueRoutes";
 import parceirosGuinchoRoutes from "./routes/parceirosGuinchoRoutes";
 import towingPartnersRoutes from "./routes/towingPartnersRoutes";
@@ -8808,6 +8809,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar as rotas do Supabase específicas para postos
   // Usamos /api/posto-supabase como caminho para evitar conflitos com o Vite
   app.use('/api/posto-supabase', postoSupabaseRoutes);
+  app.use('/api/posto-special', postoRoutes); // Adicionando novas rotas especiais para atualização de histórico
 
   // Para debugging, adicionar rota para listar todas as tabelas relacionadas a postos
   app.get("/api/debug/list-posto-tables", async (req, res) => {
