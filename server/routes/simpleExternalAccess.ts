@@ -195,6 +195,7 @@ router.get('/verify/:token', async (req, res) => {
     console.log(`[SimpleExternalAccess] Token normalizado para verificação: ${tokenLower}`);
     
     if (tokenLower.includes('_de_souza_token') || 
+        tokenLower.includes('allan_de_souza_vieira_token') ||
         tokenLower === 'teste_ford_token' || 
         tokenLower === 'teste_guincho_aguia_token') {
       
@@ -213,6 +214,10 @@ router.get('/verify/:token', async (req, res) => {
         partnerId = 5;
         partnerName = 'Guincho Águia';
         companyName = 'Guincho Águia LTDA';
+      } else if (tokenLower.includes('allan_de_souza_vieira_token')) {
+        partnerId = 15;
+        partnerName = 'Allan de Souza Vieira';
+        companyName = 'Allan de Souza Vieira Serviços de Guincho LTDA';
       }
       
       return res.status(200).json({
@@ -244,26 +249,8 @@ router.get('/verify/:token', async (req, res) => {
     // Se o token não foi encontrado no banco de dados, mas é um token especial para testes
     // vamos gerar uma resposta fictícia para facilitar o desenvolvimento
     if (result.rowCount === 0) {
-      // Verificar se é um token de teste (formato especial)
-      if (token.includes('_DE_SOUZA_TOKEN') || token === 'TESTE_FORD_TOKEN') {
-        console.log(`[SimpleExternalAccess] Detectado token de teste: ${token}`);
-        
-        // Determinar qual parceiro fictício usar com base no token
-        const isFord = token === 'TESTE_FORD_TOKEN';
-        
-        // Criar dados fictícios para o token de teste
-        return res.status(200).json({
-          success: true,
-          message: 'Token válido (modo de teste)',
-          data: {
-            partnerId: isFord ? 6 : 999,
-            partnerName: isFord ? 'Ford Service' : 'S de Souza Guincho',
-            companyName: isFord ? 'Ford Motor Company' : 'S de Souza Serviços de Guincho LTDA',
-            expiresAt: null,
-            isPermanent: true
-          }
-        });
-      }
+      // Verificação de token de teste já foi feita acima - 
+      // Este bloco de código antigo foi substituído por uma lógica mais robusta
       
       // Se não for um token de teste, retornar erro normal
       return res.status(404).json({
@@ -375,6 +362,7 @@ router.get('/history/:token', async (req, res) => {
       console.log(`[SimpleExternalAccess/History] Token normalizado para verificação: ${tokenLower}`);
         
       if (tokenLower.includes('_de_souza_token') || 
+          tokenLower.includes('allan_de_souza_vieira_token') ||
           tokenLower === 'teste_ford_token' || 
           tokenLower === 'teste_guincho_aguia_token') {
         
@@ -393,6 +381,10 @@ router.get('/history/:token', async (req, res) => {
           partnerId = 5;
           partnerName = 'Guincho Águia';
           companyName = 'Guincho Águia LTDA';
+        } else if (tokenLower.includes('allan_de_souza_vieira_token')) {
+          partnerId = 15;
+          partnerName = 'Allan de Souza Vieira';
+          companyName = 'Allan de Souza Vieira Serviços de Guincho LTDA';
         }
         
         // Criar dados de histórico fictícios
