@@ -294,17 +294,14 @@ router.get('/history/:token', async (req, res) => {
     }
     
     // Primeiro verifica se o token é válido
-    // Query modificada para também aceitar tokens permanentes ou tokens específicos
+    // Query para verificar apenas tokens válidos que estão no banco de dados
     const tokenQuery = `
       SELECT t.*, p.name as partner_name, p.company_name
       FROM towing_access_tokens t
       JOIN towing_partners p ON t.partner_id = p.id
       WHERE t.token = $1 AND (
         t.expires_at IS NULL 
-        OR t.expires_at > NOW() 
-        OR t.is_permanent = true
-        OR t.token = 'TESTE_FORD_TOKEN'
-        OR t.token LIKE '%_DE_SOUZA_TOKEN%'
+        OR t.expires_at > NOW()
       )
     `;
     
