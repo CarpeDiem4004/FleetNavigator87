@@ -48,23 +48,51 @@ export async function enviarAbastecimentoSupabase(dadosAbastecimento: any) {
       headers['Authorization'] = `Bearer ${accessToken}`;
     }
     
-    const apiResponse = await fetch('/api/supabase-insert', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        table: 'abastecimentos_supabase',
-        data: dadosFormatados
-      })
-    });
-    
-    if (apiResponse.ok) {
-      const result = await apiResponse.json();
-      console.log('Inserção via API do servidor bem-sucedida:', result);
-      return { success: true, data: result.data };
-    } else {
-      const errorText = await apiResponse.text();
-      console.error('Erro na resposta da API:', errorText);
-      throw new Error(`Erro na API: ${apiResponse.status} - ${errorText}`);
+    try {
+      console.log('Dados formatados para envio:', JSON.stringify(dadosFormatados));
+      
+      const apiResponse = await fetch('/api/supabase-insert', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          table: 'abastecimentos_supabase',
+          data: dadosFormatados
+        })
+      });
+      
+      let responseData;
+      let errorText = '';
+      
+      try {
+        // Tentar fazer parse da resposta como JSON primeiro
+        responseData = await apiResponse.json();
+        errorText = responseData.message || responseData.error || 'Erro desconhecido';
+      } catch (parseError) {
+        // Se não for JSON, ler como texto
+        errorText = await apiResponse.text();
+      }
+      
+      if (apiResponse.ok) {
+        console.log('Inserção via API do servidor bem-sucedida:', responseData);
+        return { success: true, data: responseData.data };
+      } else {
+        console.error('Erro na resposta da API:', {
+          status: apiResponse.status,
+          statusText: apiResponse.statusText,
+          body: errorText
+        });
+        
+        return { 
+          success: false, 
+          error: `Erro na API: ${apiResponse.status} - ${errorText.slice(0, 100)}${errorText.length > 100 ? '...' : ''}` 
+        };
+      }
+    } catch (networkError) {
+      console.error('Erro de rede ao conectar à API:', networkError);
+      return { 
+        success: false, 
+        error: `Erro de conexão: ${networkError instanceof Error ? networkError.message : String(networkError)}` 
+      };
     }
   } catch (error) {
     console.error('Erro ao enviar abastecimento para o Supabase:', error);

@@ -668,13 +668,26 @@ const FormularioAbastecimento: React.FC<
             console.warn(`A tabela para o posto ${postId} não existe no Supabase ainda. Tentando método antigo.`);
             
             // Tenta o método antigo como fallback
-            const supabaseResult = await enviarAbastecimentoSupabase(dadosAbastecimento);
-            if (!supabaseResult.success) {
-              console.error("Erro no Supabase (método antigo):", supabaseResult.error);
+            try {
+              const supabaseResult = await enviarAbastecimentoSupabase(dadosAbastecimento);
+              if (!supabaseResult.success) {
+                console.error("Erro no Supabase (método antigo):", supabaseResult.error);
+                
+                // Toast com detalhes mais específicos do erro
+                toast({
+                  title: "Aviso",
+                  description: `Registro salvo localmente, mas houve erro ao enviar para o backup: ${supabaseResult.error}`,
+                  variant: "destructive",
+                  duration: 7000,
+                });
+              }
+            } catch (supabaseFallbackError) {
+              console.error("Erro crítico ao usar método antigo do Supabase:", supabaseFallbackError);
               toast({
-                title: "Aviso",
-                description: "Registro salvo, mas houve erro ao enviar para o backup",
-                variant: "default",
+                title: "Erro de conexão",
+                description: `Falha na comunicação com o servidor Supabase: ${supabaseFallbackError instanceof Error ? supabaseFallbackError.message : String(supabaseFallbackError)}`,
+                variant: "destructive",
+                duration: 7000,
               });
             }
           }
