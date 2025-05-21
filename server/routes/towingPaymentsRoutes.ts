@@ -5,13 +5,14 @@
 import express, { Request, Response } from 'express';
 import { pool } from '../db';
 import { unifiedAuthMiddleware, requireRoles } from '../utils/auth-utils';
+import { getTestServices } from './simpleExternalAccess';
 
 const router = express.Router();
 
 // Listar todos os serviços de guincho para pagamento
 router.get('/services', unifiedAuthMiddleware, async (req: Request, res: Response) => {
   try {
-    const { status, partner_id, payment_status, date_from, date_to } = req.query;
+    const { status, partner_id, payment_status, date_from, date_to, include_test } = req.query;
     
     let query = `
       SELECT 
@@ -68,8 +69,42 @@ router.get('/services', unifiedAuthMiddleware, async (req: Request, res: Respons
     query += ` ORDER BY ts.service_date DESC, ts.id DESC`;
     
     const result = await pool.query(query, queryParams);
+    let services = result.rows;
     
-    res.status(200).json(result.rows);
+    // Incluir serviços de teste armazenados em memória, se solicitado
+    // ou se não houver nenhum filtro especificado (para garantir retrocompatibilidade)
+    const shouldIncludeTestServices = include_test === 'true' || (!include_test && !status && !payment_status);
+    
+    if (shouldIncludeTestServices && partner_id) {
+      // Buscar serviços de teste para o parceiro específico
+      const partnerIdNum = parseInt(partner_id as string);
+      if (!isNaN(partnerIdNum)) {
+        console.log(`[TowingPaymentsRoutes] Buscando serviços de teste para parceiro ID: ${partnerIdNum}`);
+        const testServicesList = getTestServices(partnerIdNum);
+        
+        if (testServicesList && testServicesList.length > 0) {
+          console.log(`[TowingPaymentsRoutes] Encontrados ${testServicesList.length} serviços de teste para o parceiro ID: ${partnerIdNum}`);
+          
+          // Formatar os serviços de teste para corresponder ao formato esperado pela UI
+          const formattedTestServices = testServicesList.map(service => {
+            return {
+              ...service,
+              partner_name: service.partner_name || "Parceiro Teste",
+              company_name: service.company_name || "Empresa Teste",
+              is_paid: service.payment_status === "paid",
+              is_test_service: true  // Marca para identificar serviços de teste
+            };
+          });
+          
+          // Combinar os resultados
+          services = [...formattedTestServices, ...services];
+        } else {
+          console.log(`[TowingPaymentsRoutes] Nenhum serviço de teste encontrado para o parceiro ID: ${partnerIdNum}`);
+        }
+      }
+    }
+    
+    res.status(200).json(services);
   } catch (error) {
     console.error('Erro ao listar serviços de guincho:', error);
     res.status(500).json({ error: 'Erro ao listar serviços de guincho' });

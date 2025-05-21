@@ -11,7 +11,7 @@ const router = express.Router();
 
 // Armazenamento temporário de serviços de teste (apenas em memória)
 // Estrutura: { partnerId: [serviços] }
-const testServices = new Map<number, any[]>();
+export const testServices = new Map<number, any[]>();
 
 // Função para adicionar um novo serviço de teste
 function addTestService(partnerId: number, service: any) {
@@ -25,6 +25,11 @@ function addTestService(partnerId: number, service: any) {
   if (services && services.length > 20) {
     services.shift(); // Remove o mais antigo
   }
+}
+
+// Função para acessar os serviços de teste de um parceiro específico
+export function getTestServices(partnerId: number) {
+  return testServices.get(partnerId) || [];
 }
 
 // Rota para envio de notificações de serviço (form simples)
