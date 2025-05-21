@@ -180,17 +180,14 @@ router.get('/verify/:token', async (req, res) => {
       });
     }
     
-    // Query modificada para também aceitar tokens permanentes (marcados como is_permanent=true)
+    // Query para buscar tokens válidos (sem expirar ou NULL = sem data de expiração)
     const query = `
       SELECT t.*, p.name as partner_name, p.company_name
       FROM towing_access_tokens t
       JOIN towing_partners p ON t.partner_id = p.id
       WHERE t.token = $1 AND (
         t.expires_at IS NULL 
-        OR t.expires_at > NOW() 
-        OR t.is_permanent = true
-        OR t.token = 'TESTE_FORD_TOKEN'
-        OR t.token LIKE '%_DE_SOUZA_TOKEN%'
+        OR t.expires_at > NOW()
       )
     `;
     
@@ -227,9 +224,9 @@ router.get('/verify/:token', async (req, res) => {
       });
     }
     
-    // Verificar se o token não é permanente e está próximo de expirar (menos de 30 dias)
+    // Verificar se o token está próximo de expirar (menos de 30 dias)
     const tokenData = result.rows[0];
-    if (tokenData.expires_at && !tokenData.is_permanent) {
+    if (tokenData.expires_at) {
       const expiresAt = new Date(tokenData.expires_at);
       const now = new Date();
       const daysUntilExpiration = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
@@ -268,8 +265,7 @@ router.get('/verify/:token', async (req, res) => {
         partnerId: tokenData.partner_id,
         partnerName: tokenData.partner_name,
         companyName: tokenData.company_name,
-        expiresAt: tokenData.expires_at,
-        isPermanent: tokenData.is_permanent
+        expiresAt: tokenData.expires_at
       }
     });
     
