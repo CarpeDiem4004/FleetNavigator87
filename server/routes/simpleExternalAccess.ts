@@ -206,7 +206,8 @@ router.get('/verify/:token', async (req, res) => {
         tokenLower === 'teste_guincho_aguia_token' ||
         tokenLower.includes('caio_ramos_de_souza') ||
         tokenLower.includes('claudio_de_oliveira_silva') ||
-        tokenLower === 'teste_claudio_de_oliveira_silva_token') {
+        tokenLower === 'teste_claudio_de_oliveira_silva_token' ||
+        tokenLower.includes('daiane_do_vale_amaral')) {
       
       console.log(`[SimpleExternalAccess] Detectado token de teste: ${token}`);
       
@@ -236,6 +237,10 @@ router.get('/verify/:token', async (req, res) => {
         partnerId = 9;
         partnerName = 'Claudio de Oliveira Silva';
         companyName = 'Claudio de Oliveira Silva Serviços de Guincho LTDA';
+      } else if (tokenLower.includes('daiane_do_vale_amaral')) {
+        partnerId = 10;
+        partnerName = 'Daiane do Vale Amaral';
+        companyName = 'Daiane do Vale Amaral Serviços de Guincho LTDA';
       }
       
       return res.status(200).json({
@@ -391,7 +396,8 @@ router.get('/history/:token', async (req, res) => {
           tokenLower === 'teste_guincho_aguia_token' ||
           tokenLower.includes('caio_ramos_de_souza') ||
           tokenLower.includes('claudio_de_oliveira_silva') ||
-          tokenLower === 'teste_claudio_de_oliveira_silva_token') {
+          tokenLower === 'teste_claudio_de_oliveira_silva_token' ||
+          tokenLower.includes('daiane_do_vale_amaral')) {
         
         console.log(`[SimpleExternalAccess] Detectado token de teste: ${token}`);
         
@@ -421,6 +427,10 @@ router.get('/history/:token', async (req, res) => {
           partnerId = 9;
           partnerName = 'Claudio de Oliveira Silva';
           companyName = 'Claudio de Oliveira Silva Serviços de Guincho LTDA';
+        } else if (tokenLower.includes('daiane_do_vale_amaral')) {
+          partnerId = 10;
+          partnerName = 'Daiane do Vale Amaral';
+          companyName = 'Daiane do Vale Amaral Serviços de Guincho LTDA';
         }
         
         // Criar dados de histórico fictícios
