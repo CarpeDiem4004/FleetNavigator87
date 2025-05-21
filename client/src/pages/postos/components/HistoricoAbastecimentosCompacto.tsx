@@ -113,6 +113,7 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
       return;
     }
     
+    console.log(`Aplicando filtros em ${historico.length} registros`);
     let resultados = [...historico];
     
     // Filtrar por data inicial
@@ -145,10 +146,15 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
       );
     }
     
-    // Ordenar por data (mais recente primeiro)
+    // Forçar ordenação por data (mais recente primeiro)
     resultados.sort((a, b) => {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
+    
+    // Debug
+    if (resultados.length > 0) {
+      console.log(`Registro mais recente: ${resultados[0].placa} - ${resultados[0].data_hora}`);
+    }
     
     setHistoricoFiltrado(resultados);
   }, [historico, dataInicio, dataFim, placaFiltro]);
@@ -180,6 +186,15 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
   };
 
   // Ordenar histórico (mais recente primeiro)
+  useEffect(() => {
+    // Forçar atualização periódica do histórico a cada 10s para garantir exibição de novos registros
+    const forceUpdateTimer = setInterval(() => {
+      loadHistorico();
+    }, 10000);
+    
+    return () => clearInterval(forceUpdateTimer);
+  }, []);
+
   const historicoParaExibir = historicoFiltrado.length > 0 ? historicoFiltrado : historico;
   const historicoOrdenado = [...historicoParaExibir].sort((a, b) => {
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
