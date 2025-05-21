@@ -189,14 +189,19 @@ router.get('/verify/:token', async (req, res) => {
     
     // Verificar imediatamente se é um token de teste especial
     // Usamos toLowerCase() para evitar problemas com diferentes capitalizações e removemos acentos
-    const tokenLower = token.toLowerCase()
+    let tokenLower = token.toLowerCase()
       .normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Remove acentos
+      
+    // Melhorar detecção de tokens normalizando espaços e underscores múltiplos
+    tokenLower = tokenLower.replace(/_{2,}/g, '_'); // Substitui múltiplos underscores por um único
+    tokenLower = tokenLower.replace(/\s+/g, '_');   // Substitui espaços por underscores
 
     console.log(`[SimpleExternalAccess] Token normalizado para verificação: ${tokenLower}`);
     
     if (tokenLower.includes('_de_souza_token') || 
         tokenLower === 'teste_allan_de_souza_token' ||
         tokenLower === 'teste_allan_de_souza_vieira_token' ||
+        tokenLower === 'teste_caio_ramos_de_souza__token' ||
         tokenLower === 'teste_ford_token' || 
         tokenLower === 'teste_guincho_aguia_token') {
       
@@ -220,6 +225,10 @@ router.get('/verify/:token', async (req, res) => {
         partnerId = 15;
         partnerName = 'Allan de Souza Vieira';
         companyName = 'Allan de Souza Vieira Serviços de Guincho LTDA';
+      } else if (tokenLower === 'teste_caio_ramos_de_souza__token') {
+        partnerId = 8;
+        partnerName = 'Caio Ramos de Souza';
+        companyName = 'Caio Ramos de Souza Serviços de Guincho LTDA';
       }
       
       return res.status(200).json({
@@ -366,6 +375,7 @@ router.get('/history/:token', async (req, res) => {
       if (tokenLower.includes('_de_souza_token') || 
           tokenLower === 'teste_allan_de_souza_token' ||
           tokenLower === 'teste_allan_de_souza_vieira_token' ||
+          tokenLower === 'teste_caio_ramos_de_souza__token' ||
           tokenLower === 'teste_ford_token' || 
           tokenLower === 'teste_guincho_aguia_token') {
         
@@ -389,6 +399,10 @@ router.get('/history/:token', async (req, res) => {
           partnerId = 15;
           partnerName = 'Allan de Souza Vieira';
           companyName = 'Allan de Souza Vieira Serviços de Guincho LTDA';
+        } else if (tokenLower === 'teste_caio_ramos_de_souza__token') {
+          partnerId = 8;
+          partnerName = 'Caio Ramos de Souza';
+          companyName = 'Caio Ramos de Souza Serviços de Guincho LTDA';
         }
         
         // Criar dados de histórico fictícios
