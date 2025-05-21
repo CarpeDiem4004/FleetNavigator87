@@ -154,8 +154,10 @@ export async function getHistoricoPosto(req, res) {
         tableColumns.includes('tipo_lavagem') ? 'tipo_lavagem' : "NULL as tipo_lavagem"
       ];
       
-      // Adicionar campo de projeto sem duplicação e com valor padrão melhor
-      if (tableColumns.includes('projeto')) {
+      // Adicionar campo de projeto considerando ambos os nomes possíveis (projeto e project)
+      if (tableColumns.includes('projeto') && tableColumns.includes('project')) {
+        columns.push("COALESCE(projeto, project, 'Não definido') as projeto");
+      } else if (tableColumns.includes('projeto')) {
         columns.push("COALESCE(projeto, 'Não definido') as projeto");
       } else if (tableColumns.includes('project')) {
         columns.push("COALESCE(project, 'Não definido') as projeto");

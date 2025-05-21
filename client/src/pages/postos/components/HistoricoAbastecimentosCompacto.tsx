@@ -466,6 +466,7 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
                 <th className="py-1 px-2 text-center border-b border-blue-200">Combustível</th>
                 <th className="py-1 px-2 text-right border-b border-blue-200">Litros</th>
                 <th className="py-1 px-2 text-right border-b border-blue-200">Valor</th>
+                <th className="py-1 px-2 text-left border-b border-blue-200">Projeto</th>
               </tr>
             </thead>
             <tbody>
@@ -491,6 +492,9 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
                     R$ {typeof item.valor_total === 'string'
                       ? parseFloat(item.valor_total).toFixed(2)
                       : item.valor_total.toFixed(2)}
+                  </td>
+                  <td className="py-1 px-2 text-left whitespace-nowrap">
+                    {item.projeto || "Não definido"}
                   </td>
                 </tr>
               ))}
