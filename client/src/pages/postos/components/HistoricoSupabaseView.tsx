@@ -479,8 +479,8 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
                         )}
                       </TableCell>
                       <TableCell>
-                        {item.projeto ? (
-                          <Badge variant="outline" className="bg-blue-50">{item.projeto}</Badge>
+                        {item.projeto || item.project ? (
+                          <Badge variant="outline" className="bg-blue-50">{item.projeto || item.project}</Badge>
                         ) : (
                           <span className="text-slate-400 text-xs">Não informado</span>
                         )}
