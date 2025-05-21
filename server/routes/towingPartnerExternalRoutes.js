@@ -32,7 +32,7 @@ router.post('/generate', async (req, res) => {
       return res.status(401).json({ error: 'Não autorizado' });
     }
 
-    const { partner_id, expiration_days = 30 } = req.body;
+    const { partner_id, expiration_days = 365 } = req.body;
 
     if (!partner_id) {
       return res.status(400).json({ error: 'ID do parceiro é obrigatório' });
