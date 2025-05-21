@@ -119,7 +119,33 @@ router.get('/validate/:token', async (req, res) => {
     const expiresAt = new Date(tokenData.expires_at);
     const now = new Date();
 
-    if (now > expiresAt) {
+    // Se o token estiver expirado, mas ainda estiver ativo, estender sua validade
+    if (now > expiresAt && tokenData.active) {
+      console.log(`Token ${token} expirado, mas ainda ativo. Estendendo validade por 365 dias.`);
+      
+      // Estender a validade por 365 dias a partir de agora
+      const newExpiresAt = new Date();
+      newExpiresAt.setDate(newExpiresAt.getDate() + 365);
+      
+      // Atualizar a data de expiração no banco de dados
+      const { error: updateError } = await supabase
+        .from(TOKENS_TABLE)
+        .update({ 
+          expires_at: newExpiresAt.toISOString(),
+          extended_at: new Date().toISOString(),
+          extended_count: (tokenData.extended_count || 0) + 1
+        })
+        .eq('token', token);
+      
+      if (!updateError) {
+        // Usar a nova data de expiração
+        tokenData.expires_at = newExpiresAt.toISOString();
+        console.log(`Token ${token} estendido com sucesso para ${newExpiresAt.toISOString()}`);
+      } else {
+        console.error('Erro ao estender token:', updateError);
+      }
+    } else if (now > expiresAt) {
+      // Se o token estiver expirado e inativo, retornar erro
       return res.status(401).json({ valid: false, error: 'Token expirado' });
     }
 
@@ -186,7 +212,33 @@ router.post('/submit', async (req, res) => {
     const expiresAt = new Date(tokenData.expires_at);
     const now = new Date();
 
-    if (now > expiresAt) {
+    // Se o token estiver expirado, mas ainda estiver ativo, estender sua validade
+    if (now > expiresAt && tokenData.active) {
+      console.log(`Token ${token} expirado, mas ainda ativo. Estendendo validade por 365 dias na submissão.`);
+      
+      // Estender a validade por 365 dias a partir de agora
+      const newExpiresAt = new Date();
+      newExpiresAt.setDate(newExpiresAt.getDate() + 365);
+      
+      // Atualizar a data de expiração no banco de dados
+      const { error: updateError } = await supabase
+        .from(TOKENS_TABLE)
+        .update({ 
+          expires_at: newExpiresAt.toISOString(),
+          extended_at: new Date().toISOString(),
+          extended_count: (tokenData.extended_count || 0) + 1
+        })
+        .eq('token', token);
+      
+      if (!updateError) {
+        // Usar a nova data de expiração
+        tokenData.expires_at = newExpiresAt.toISOString();
+        console.log(`Token ${token} estendido com sucesso para ${newExpiresAt.toISOString()} na submissão`);
+      } else {
+        console.error('Erro ao estender token na submissão:', updateError);
+      }
+    } else if (now > expiresAt) {
+      // Se o token estiver expirado e inativo, retornar erro
       return res.status(401).json({ error: 'Token expirado' });
     }
 
