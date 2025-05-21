@@ -242,8 +242,7 @@ router.get('/verify/:token', async (req, res) => {
         
         const updateQuery = `
           UPDATE towing_access_tokens
-          SET expires_at = $1, 
-              updated_at = NOW()
+          SET expires_at = $1
           WHERE token = $2
           RETURNING *
         `;
@@ -307,12 +306,12 @@ router.get('/history/:token', async (req, res) => {
     
     const tokenResult = await pool.query(tokenQuery, [token]);
     console.log('[SimpleExternalAccess] Resultado da validação do token:', {
-      encontrado: tokenResult.rowCount > 0,
+      encontrado: tokenResult.rowCount && tokenResult.rowCount > 0,
       token: token.substring(0, 5) + '...'
     });
     
     // Se o token não foi encontrado no banco de dados, mas é um token especial para testes
-    if (tokenResult.rowCount === 0) {
+    if (!tokenResult.rowCount || tokenResult.rowCount === 0) {
       // Verificar se é um token de teste (formato especial)
       if (token.includes('_DE_SOUZA_TOKEN') || token === 'TESTE_FORD_TOKEN') {
         console.log(`[SimpleExternalAccess/History] Detectado token de teste: ${token}`);
