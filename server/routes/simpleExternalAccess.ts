@@ -225,7 +225,7 @@ router.get('/verify/:token', async (req, res) => {
         partnerId = 15;
         partnerName = 'Allan de Souza Vieira';
         companyName = 'Allan de Souza Vieira Serviços de Guincho LTDA';
-      } else if (tokenLower === 'teste_caio_ramos_de_souza__token') {
+      } else if (tokenLower === 'teste_caio_ramos_de_souza_token') {
         partnerId = 8;
         partnerName = 'Caio Ramos de Souza';
         companyName = 'Caio Ramos de Souza Serviços de Guincho LTDA';
@@ -367,8 +367,12 @@ router.get('/history/:token', async (req, res) => {
     if (!tokenResult.rowCount || tokenResult.rowCount === 0) {
       // Verificar se é um token de teste (formato especial)
       // Usamos toLowerCase() para evitar problemas com diferentes capitalizações e removemos acentos
-      const tokenLower = token.toLowerCase()
+      let tokenLower = token.toLowerCase()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Remove acentos
+      
+      // Melhorar detecção de tokens normalizando espaços e underscores múltiplos
+      tokenLower = tokenLower.replace(/_{2,}/g, '_'); // Substitui múltiplos underscores por um único
+      tokenLower = tokenLower.replace(/\s+/g, '_');   // Substitui espaços por underscores
       
       console.log(`[SimpleExternalAccess/History] Token normalizado para verificação: ${tokenLower}`);
         
@@ -399,7 +403,7 @@ router.get('/history/:token', async (req, res) => {
           partnerId = 15;
           partnerName = 'Allan de Souza Vieira';
           companyName = 'Allan de Souza Vieira Serviços de Guincho LTDA';
-        } else if (tokenLower === 'teste_caio_ramos_de_souza__token') {
+        } else if (tokenLower === 'teste_caio_ramos_de_souza_token') {
           partnerId = 8;
           partnerName = 'Caio Ramos de Souza';
           companyName = 'Caio Ramos de Souza Serviços de Guincho LTDA';
