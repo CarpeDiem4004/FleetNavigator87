@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
@@ -50,14 +50,61 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
       let postoProcessado = posto;
       
       // Normalizar o formato do nome do posto para compatibilidade com a API
-      if (posto.toLowerCase().includes("guarulhos v2") || posto === "Posto Guarulhos V2") {
+      // Regra geral: nome do posto deve ser minúsculo com _ em vez de espaços
+      postoProcessado = posto.toLowerCase().replace(/ /g, '_');
+      
+      // Casos específicos de normalização
+      if (posto.toLowerCase().includes("guarulhos v2") || posto === "Posto Guarulhos V2" || posto === "guarulhos_v2") {
         postoProcessado = "guarulhos_v2";
         console.log("Normalizando nome do posto para guarulhos_v2");
       }
       
       console.log(`Carregando histórico para posto '${postoProcessado}' com timestamp ${timestamp} e nonce ${randomParam}`);
       
-      // Adicionar múltiplos parâmetros anti-cache
+      // Usar axios diretamente na rota SQL para evitar qualquer cache ou camada de middleware
+      const diretaSqlResponse = await axios.post('/api/execute-sql', {
+        sql: `
+          SELECT 
+            id,
+            placa,
+            km_atual as km,
+            NULL as hodometro_atual,
+            tipo_combustivel,
+            litros as quantidade_litros,
+            'Não informado' as nome_motorista,
+            NULL as rg_motorista,
+            'Sistema' as nome_operador,
+            valor_litro,
+            valor_total,
+            tipo_veiculo,
+            observacoes,
+            false as lavagem,
+            NULL as tipo_lavagem,
+            COALESCE(project, 'Não definido') as projeto,
+            to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora,
+            created_at
+          FROM abastecimentos_posto_guarulhos_v2
+          ORDER BY created_at DESC
+          LIMIT 50
+        `,
+        params: []
+      }, {
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+      
+      if (diretaSqlResponse.data && diretaSqlResponse.data.rows) {
+        console.log(`Histórico carregado diretamente do SQL: ${diretaSqlResponse.data.rows.length} registros`);
+        const dados = diretaSqlResponse.data.rows || [];
+        setHistorico(dados);
+        return;
+      }
+      
+      // Tenta a rota normal como fallback
       const response = await axios.get(
         `/api/historico-direto/${encodeURIComponent(postoProcessado)}?t=${timestamp}&nocache=${randomParam}`, 
         {
@@ -76,6 +123,38 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
         setHistorico(dados);
       } else {
         setError(response.data?.error || 'Erro ao carregar o histórico');
+        
+        // Tenta segundo fallback
+        const fallback2Response = await axios.get(
+          `/api/diagnostico/historico/${encodeURIComponent(postoProcessado)}?t=${timestamp}&nocache=${randomParam}`,
+          {
+            headers: {
+              'Accept': 'application/json',
+              'Cache-Control': 'no-cache, no-store, must-revalidate'
+            }
+          }
+        );
+        
+        if (fallback2Response.data && fallback2Response.data.success) {
+          console.log(`Segundo fallback bem-sucedido, ${fallback2Response.data.data?.length || 0} registros`);
+          const dados = fallback2Response.data.data || [];
+          setHistorico(dados);
+          return;
+        }
+        
+        // Ainda um terceiro fallback para garantir
+        try {
+          const direta2Response = await axios.get(`/api/posto-supabase/abastecimentos-direto/${postoProcessado}`);
+          if (direta2Response.data) {
+            const dados = Array.isArray(direta2Response.data) ? direta2Response.data : 
+                         direta2Response.data.data || [];
+            console.log(`Terceiro fallback bem-sucedido, ${dados.length} registros`);
+            setHistorico(dados);
+            return;
+          }
+        } catch (direta2Err) {
+          console.log('Terceiro fallback falhou, continuando com outros métodos');
+        }
       }
     } catch (err: any) {
       console.error('Erro ao carregar histórico:', err);
@@ -86,7 +165,7 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
         const timestamp = new Date().getTime();
         // Usar constante para nome do posto
         const nomePostoNormalizado = posto.toLowerCase().replace(/ /g, '_').replace(/v2/i, 'v2');
-        console.log(`Tentando fallback com nome normalizado: ${nomePostoNormalizado}`);
+        console.log(`Tentando fallback final com nome normalizado: ${nomePostoNormalizado}`);
         
         const fallbackResponse = await axios.get(`/api/posto-supabase/historico/${nomePostoNormalizado}?t=${timestamp}`);
         
@@ -97,28 +176,78 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
         }
       } catch (fallbackErr) {
         // Manter o erro original
-        console.error('Fallback também falhou:', fallbackErr);
+        console.error('Todos os fallbacks falharam:', fallbackErr);
       }
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Referência para controlar se o componente está montado
+  const isMountedRef = useRef(true);
+  
+  // Efeito para ciclo de vida do componente
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+  
+  // Função para carregar dados com garantia de segurança
+  const forceLoadHistorico = () => {
+    if (!isMountedRef.current) return;
+    console.log(`Atualizando histórico forçadamente para posto ${posto}`);
+    loadHistorico();
+  };
+  
   // Carregar dados ao montar o componente ou quando o refreshTrigger mudar
   useEffect(() => {
     console.log(`Carregando histórico do posto ${posto}, refreshTrigger: ${refreshTrigger}`);
     
-    // Forçar uma pausa rápida antes de recarregar (permite que a transação seja concluída no banco)
-    setTimeout(() => {
-      loadHistorico();
-    }, 300);
+    // Série de atualizações para garantir dados mais recentes
+    // Primeiro imediatamente
+    forceLoadHistorico();
     
+    // Segunda tentativa após breve pausa para garantir que a transação foi concluída
+    const timer1 = setTimeout(() => {
+      if (isMountedRef.current) {
+        console.log(`Atualizando histórico novamente após 500ms para posto ${posto}`);
+        forceLoadHistorico();
+      }
+    }, 500);
+    
+    // Terceira tentativa após pausa mais longa (para operações mais lentas)
+    const timer2 = setTimeout(() => {
+      if (isMountedRef.current) {
+        console.log(`Atualizando histórico novamente após 1500ms para posto ${posto}`);
+        forceLoadHistorico();
+      }
+    }, 1500);
+    
+    // Quarta tentativa após pausa ainda maior (para garantir sincronização completa)
+    const timer3 = setTimeout(() => {
+      if (isMountedRef.current) {
+        console.log(`Atualizando histórico novamente após 3000ms para posto ${posto}`);
+        forceLoadHistorico();
+      }
+    }, 3000);
+    
+    // Configurar atualização periódica a cada 30 segundos
     const intervalId = setInterval(() => {
-      console.log(`Atualizando histórico automaticamente para ${posto}`);
-      loadHistorico();
-    }, 45000);
+      if (isMountedRef.current) {
+        console.log(`Atualizando histórico automaticamente para ${posto}`);
+        forceLoadHistorico();
+      }
+    }, 30000);
     
-    return () => clearInterval(intervalId);
+    // Limpar todos os timers ao desmontar
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+      clearInterval(intervalId);
+    };
   }, [posto, refreshTrigger]);
   
   // Aplicar filtros quando os parâmetros mudarem
