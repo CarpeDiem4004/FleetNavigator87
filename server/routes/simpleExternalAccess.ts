@@ -196,6 +196,7 @@ router.get('/verify/:token', async (req, res) => {
     
     if (tokenLower.includes('_de_souza_token') || 
         tokenLower === 'teste_allan_de_souza_token' ||
+        tokenLower === 'teste_allan_de_souza_vieira_token' ||
         tokenLower === 'teste_ford_token' || 
         tokenLower === 'teste_guincho_aguia_token') {
       
@@ -214,7 +215,8 @@ router.get('/verify/:token', async (req, res) => {
         partnerId = 5;
         partnerName = 'Guincho Águia';
         companyName = 'Guincho Águia LTDA';
-      } else if (tokenLower === 'teste_allan_de_souza_token') {
+      } else if (tokenLower === 'teste_allan_de_souza_token' ||
+                 tokenLower === 'teste_allan_de_souza_vieira_token') {
         partnerId = 15;
         partnerName = 'Allan de Souza Vieira';
         companyName = 'Allan de Souza Vieira Serviços de Guincho LTDA';
@@ -363,6 +365,7 @@ router.get('/history/:token', async (req, res) => {
         
       if (tokenLower.includes('_de_souza_token') || 
           tokenLower === 'teste_allan_de_souza_token' ||
+          tokenLower === 'teste_allan_de_souza_vieira_token' ||
           tokenLower === 'teste_ford_token' || 
           tokenLower === 'teste_guincho_aguia_token') {
         
@@ -381,7 +384,8 @@ router.get('/history/:token', async (req, res) => {
           partnerId = 5;
           partnerName = 'Guincho Águia';
           companyName = 'Guincho Águia LTDA';
-        } else if (tokenLower === 'teste_allan_de_souza_token') {
+        } else if (tokenLower === 'teste_allan_de_souza_token' || 
+                  tokenLower === 'teste_allan_de_souza_vieira_token') {
           partnerId = 15;
           partnerName = 'Allan de Souza Vieira';
           companyName = 'Allan de Souza Vieira Serviços de Guincho LTDA';
