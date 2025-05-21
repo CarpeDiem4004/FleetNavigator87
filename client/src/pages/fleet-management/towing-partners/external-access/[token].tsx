@@ -206,14 +206,31 @@ export default function TowingPartnerExternalAccess() {
           return;
         }
         
-        // Caso específico para o token TESTE_FORD_TOKEN para testes reais
-        if (token === 'TESTE_FORD_TOKEN') {
-          // Tratar o token TESTE_FORD_TOKEN como válido diretamente
+        // Caso específico para tokens de teste especiais
+        if (token === 'TESTE_FORD_TOKEN' || 
+            token === 'TESTE_GUINCHO_ÁGUIA_TOKEN' ||
+            token.includes('_DE_SOUZA_TOKEN')) {
+          // Determinar qual parceiro mostrar com base no token
+          let partnerId = 6;
+          let partnerName = 'Ford Service';
+          let companyName = 'Ford Motor Company';
+          
+          if (token === 'TESTE_GUINCHO_ÁGUIA_TOKEN') {
+            partnerId = 5;
+            partnerName = 'Guincho Águia';
+            companyName = 'Guincho Águia LTDA';
+          } else if (token.includes('_DE_SOUZA_TOKEN')) {
+            partnerId = 999;
+            partnerName = 'S de Souza Guincho';
+            companyName = 'S de Souza Serviços de Guincho LTDA';
+          }
+          
+          // Tratar o token como válido diretamente
           setTokenValid(true);
           setPartnerInfo({
-            partnerId: 6,
-            partnerName: 'Ford Service',
-            companyName: 'Ford Motor Company',
+            partnerId,
+            partnerName,
+            companyName,
             expiresAt: null,
             isPermanent: true
           });
