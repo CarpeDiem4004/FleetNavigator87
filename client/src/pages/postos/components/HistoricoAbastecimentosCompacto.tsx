@@ -185,6 +185,7 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
 
   // Referência para controlar se o componente está montado
   const isMountedRef = useRef(true);
+  const lastSuccessfulUpdateRef = useRef<Date | null>(null);
   
   // Efeito para ciclo de vida do componente
   useEffect(() => {
@@ -195,58 +196,74 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
   }, []);
   
   // Função para carregar dados com garantia de segurança
-  const forceLoadHistorico = () => {
+  const forceLoadHistorico = async (forceMsg = '') => {
     if (!isMountedRef.current) return;
-    console.log(`Atualizando histórico forçadamente para posto ${posto}`);
-    loadHistorico();
+    
+    console.log(`${forceMsg ? `[${forceMsg}] ` : ''}Atualizando histórico forçadamente para posto ${posto}`);
+    
+    try {
+      // Primeiro tenta o método normal
+      await loadHistorico();
+      
+      // Registra a última atualização bem-sucedida
+      lastSuccessfulUpdateRef.current = new Date();
+      
+    } catch (error) {
+      console.error("Erro ao forçar atualização do histórico:", error);
+    }
   };
   
   // Carregar dados ao montar o componente ou quando o refreshTrigger mudar
   useEffect(() => {
     console.log(`Carregando histórico do posto ${posto}, refreshTrigger: ${refreshTrigger}`);
     
-    // Série de atualizações para garantir dados mais recentes
-    // Primeiro imediatamente
-    forceLoadHistorico();
+    // SEQUÊNCIA DE ATUALIZAÇÕES AGRESSIVA:
     
-    // Segunda tentativa após breve pausa para garantir que a transação foi concluída
-    const timer1 = setTimeout(() => {
-      if (isMountedRef.current) {
-        console.log(`Atualizando histórico novamente após 500ms para posto ${posto}`);
-        forceLoadHistorico();
-      }
-    }, 500);
+    // 1. ATUALIZAÇÃO IMEDIATA
+    forceLoadHistorico('IMEDIATO');
     
-    // Terceira tentativa após pausa mais longa (para operações mais lentas)
-    const timer2 = setTimeout(() => {
-      if (isMountedRef.current) {
-        console.log(`Atualizando histórico novamente após 1500ms para posto ${posto}`);
-        forceLoadHistorico();
-      }
-    }, 1500);
+    // 2. SEQUÊNCIA DE TENTATIVAS MÚLTIPLAS EM INTERVALOS CRESCENTES
+    // Matriz de intervalos de tempo (em ms)
+    const updateIntervals = [300, 800, 1500, 3000, 5000, 7000];
     
-    // Quarta tentativa após pausa ainda maior (para garantir sincronização completa)
-    const timer3 = setTimeout(() => {
-      if (isMountedRef.current) {
-        console.log(`Atualizando histórico novamente após 3000ms para posto ${posto}`);
-        forceLoadHistorico();
-      }
-    }, 3000);
+    // Criar timers para cada intervalo
+    const timers = updateIntervals.map((interval, index) => {
+      return setTimeout(() => {
+        if (isMountedRef.current) {
+          forceLoadHistorico(`TENTATIVA ${index+1} - ${interval}ms`);
+        }
+      }, interval);
+    });
     
-    // Configurar atualização periódica a cada 30 segundos
-    const intervalId = setInterval(() => {
-      if (isMountedRef.current) {
-        console.log(`Atualizando histórico automaticamente para ${posto}`);
-        forceLoadHistorico();
+    // 3. VERIFICAÇÃO DE DADOS A CADA 10 SEGUNDOS PARA GARANTIR ATUALIZAÇÕES
+    const checkDataIntervalId = setInterval(() => {
+      if (!isMountedRef.current) return;
+      
+      // Se não houver dados ou se a última atualização for muito antiga (+ de 20s), força uma nova
+      const currentTime = new Date();
+      const needsUpdate = 
+        historico.length === 0 || 
+        !lastSuccessfulUpdateRef.current ||
+        (currentTime.getTime() - lastSuccessfulUpdateRef.current.getTime() > 20000);
+      
+      if (needsUpdate) {
+        console.log(`[VERIFICAÇÃO] Histórico precisa de atualização, forçando nova consulta...`);
+        forceLoadHistorico('VERIFICAÇÃO');
       }
-    }, 30000);
+    }, 10000);
+    
+    // 4. ATUALIZAÇÃO PERIÓDICA PARA MANTER DADOS FRESCOS
+    const regularUpdateId = setInterval(() => {
+      if (isMountedRef.current) {
+        forceLoadHistorico('PERIÓDICA');
+      }
+    }, 45000);
     
     // Limpar todos os timers ao desmontar
     return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-      clearInterval(intervalId);
+      timers.forEach(timer => clearTimeout(timer));
+      clearInterval(checkDataIntervalId);
+      clearInterval(regularUpdateId);
     };
   }, [posto, refreshTrigger]);
   
