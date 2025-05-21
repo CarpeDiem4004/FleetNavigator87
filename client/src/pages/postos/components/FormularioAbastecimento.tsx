@@ -710,12 +710,43 @@ const FormularioAbastecimento: React.FC<
         if (mountedRef.current) {
           setRegistroSucesso(true);
 
-          // Chama a callback para atualizar o histórico no componente pai
+          // SOLUÇÃO DIRETA: Forçar consulta ao banco usando fetch com SQL direto
+          console.log("Iniciando mecanismo ULTRA de atualização do histórico");
+          
+          // Força a consulta direta ao banco para garantir que os dados mais recentes sejam mostrados
+          setTimeout(async () => {
+            try {
+              if (mountedRef.current) {
+                console.log("Forçando atualização com SQL direto para garantir dados recentes");
+                
+                // Chamar um fetch direto para garantir que os dados mais recentes sejam obtidos
+                await fetch(`/api/execute-sql-direct`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'X-Force-Update': 'true'
+                  },
+                  body: JSON.stringify({
+                    sql: `SELECT * FROM abastecimentos_posto_${postoFormatado} ORDER BY created_at DESC LIMIT 50`,
+                    refreshCache: true
+                  })
+                });
+                
+                console.log("Consulta SQL direta concluída");
+              }
+            } catch (sqlErr) {
+              console.warn("Erro na atualização direta com SQL:", sqlErr);
+            }
+          }, 300);
+          
+          // Chama a callback para atualizar o histórico no componente pai com múltiplas tentativas
           if (onRegistroSucesso) {
             console.log("Chamando onRegistroSucesso para atualizar histórico");
-            onRegistroSucesso();
-
-            // Força uma segunda atualização após breve delay para garantir que os dados estejam atualizados
+            onRegistroSucesso(); // Imediato
+            
+            // Segunda atualização após 500ms
             setTimeout(() => {
               if (onRegistroSucesso && mountedRef.current) {
                 onRegistroSucesso();
@@ -723,13 +754,29 @@ const FormularioAbastecimento: React.FC<
               }
             }, 500);
             
-            // E uma terceira atualização após tempo maior para dados mais lentos
+            // Terceira atualização após 1200ms
             setTimeout(() => {
               if (onRegistroSucesso && mountedRef.current) {
                 onRegistroSucesso();
-                console.log("Histórico atualizado pela terceira vez após 2000ms");
+                console.log("Histórico atualizado pela terceira vez após 1200ms");
               }
-            }, 2000);
+            }, 1200);
+            
+            // Quarta atualização após delay maior para garantir
+            setTimeout(() => {
+              if (onRegistroSucesso && mountedRef.current) {
+                onRegistroSucesso();
+                console.log("Histórico atualizado pela quarta vez após 2500ms");
+              }
+            }, 2500);
+            
+            // Quinta e última atualização após delay ainda maior
+            setTimeout(() => {
+              if (onRegistroSucesso && mountedRef.current) {
+                onRegistroSucesso();
+                console.log("Atualização final do histórico após 4000ms");
+              }
+            }, 4000);
           }
 
           // Scroll para o histórico após 1s
