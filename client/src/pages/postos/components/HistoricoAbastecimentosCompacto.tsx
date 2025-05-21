@@ -46,11 +46,20 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
       const timestamp = new Date().getTime();
       const randomParam = Math.random().toString(36).substring(7);
       
-      console.log(`Carregando histórico com timestamp ${timestamp} e nonce ${randomParam}`);
+      // Processa o nome do posto para garantir consistência
+      let postoProcessado = posto;
+      
+      // Normalizar o formato do nome do posto para compatibilidade com a API
+      if (posto.toLowerCase().includes("guarulhos v2") || posto === "Posto Guarulhos V2") {
+        postoProcessado = "guarulhos_v2";
+        console.log("Normalizando nome do posto para guarulhos_v2");
+      }
+      
+      console.log(`Carregando histórico para posto '${postoProcessado}' com timestamp ${timestamp} e nonce ${randomParam}`);
       
       // Adicionar múltiplos parâmetros anti-cache
       const response = await axios.get(
-        `/api/historico-direto/${encodeURIComponent(posto)}?t=${timestamp}&nocache=${randomParam}`, 
+        `/api/historico-direto/${encodeURIComponent(postoProcessado)}?t=${timestamp}&nocache=${randomParam}`, 
         {
           headers: {
             'Accept': 'application/json',
@@ -62,7 +71,7 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
       );
       
       if (response.data && response.data.success) {
-        console.log(`Histórico carregado: ${response.data.count} registros`);
+        console.log(`Histórico carregado: ${response.data.data?.length || 0} registros para ${postoProcessado}`);
         const dados = response.data.data || [];
         setHistorico(dados);
       } else {
@@ -75,14 +84,20 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
       // Tentar a rota alternativa
       try {
         const timestamp = new Date().getTime();
-        const fallbackResponse = await axios.get(`/api/posto-supabase/historico/${posto.toLowerCase()}?t=${timestamp}`);
+        // Usar constante para nome do posto
+        const nomePostoNormalizado = posto.toLowerCase().replace(/ /g, '_').replace(/v2/i, 'v2');
+        console.log(`Tentando fallback com nome normalizado: ${nomePostoNormalizado}`);
+        
+        const fallbackResponse = await axios.get(`/api/posto-supabase/historico/${nomePostoNormalizado}?t=${timestamp}`);
         
         if (fallbackResponse.data && fallbackResponse.data.success) {
+          console.log(`Fallback bem-sucedido, ${fallbackResponse.data.data?.length || 0} registros obtidos`);
           const dados = fallbackResponse.data.data || [];
           setHistorico(dados);
         }
       } catch (fallbackErr) {
         // Manter o erro original
+        console.error('Fallback também falhou:', fallbackErr);
       }
     } finally {
       setIsLoading(false);
