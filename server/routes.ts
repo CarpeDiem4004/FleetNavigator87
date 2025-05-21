@@ -6557,13 +6557,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const projetoColumnExists = await pool.query(checkProjetoColumn);
           const hasProjetoColumn = projetoColumnExists.rows[0].exists;
           
-          // Consulta na tabela específica do posto v2
+          // Primeiro, verificamos se a tabela tem uma coluna 'hodometro_atual'
+          const checkHodometroColumn = `
+            SELECT EXISTS (
+              SELECT FROM information_schema.columns 
+              WHERE table_name = '${tabelaPosto}' 
+              AND column_name = 'hodometro_atual'
+            );
+          `;
+          
+          const hodometroColumnExists = await pool.query(checkHodometroColumn);
+          const hasHodometroColumn = hodometroColumnExists.rows[0].exists;
+          
+          // Consulta na tabela específica do posto v2 com tratamento seguro para a coluna hodometro_atual
           const queryV2 = `
             SELECT 
               id,
               placa,
               km_atual,
-              hodometro_atual,
+              ${hasHodometroColumn ? 'hodometro_atual' : 'NULL as hodometro_atual'},
               tipo_combustivel,
               litros as quantidade_litros,
               motorista as nome_motorista,
