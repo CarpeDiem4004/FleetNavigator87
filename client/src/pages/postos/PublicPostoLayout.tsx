@@ -119,7 +119,7 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Usar o componente simplificado para todos os postos */}
             <HistoricoAbastecimentosCompacto
-              posto={id}
+              posto={id.toLowerCase().replace(/ /g, '_')}
               refreshTrigger={refreshTrigger}
             />
             <HistoricoMovimentacoes 
