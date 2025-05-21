@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { RefreshCw, Download } from "lucide-react";
+import eventosBus, { EVENTOS } from '@/lib/eventosBus';
 
 interface HistoricoAbastecimentosCompactoProps {
   posto: string;
@@ -259,11 +260,25 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
       }
     }, 45000);
     
-    // Limpar todos os timers ao desmontar
+    // Subscrever ao evento de abastecimento registrado
+    const handleAbastecimentoRegistrado = (data: any) => {
+      console.log(`[EventBus] Recebido evento de abastecimento registrado para posto: ${data?.posto}`, data);
+      
+      if (data?.posto && data.posto.toLowerCase().replace(/\s+/g, '_') === posto.toLowerCase().replace(/\s+/g, '_')) {
+        console.log(`[EventBus] Atualizando histórico devido a novo abastecimento em ${posto}`);
+        forceLoadHistorico('EVENTO-REGISTRADO');
+      }
+    };
+    
+    // Inscrever no evento de abastecimento registrado
+    eventosBus.subscribe(EVENTOS.ABASTECIMENTO_REGISTRADO, handleAbastecimentoRegistrado);
+    
+    // Limpar todos os timers e inscrições ao desmontar
     return () => {
       timers.forEach(timer => clearTimeout(timer));
       clearInterval(checkDataIntervalId);
       clearInterval(regularUpdateId);
+      eventosBus.unsubscribe(EVENTOS.ABASTECIMENTO_REGISTRADO, handleAbastecimentoRegistrado);
     };
   }, [posto, refreshTrigger]);
   

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { CheckCircle2, Fuel } from "lucide-react";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSafeState } from "@/hooks/useSafeState"; // 👈 Importando o novo hook
+import eventosBus, { EVENTOS } from "@/lib/eventosBus";
 
 import { Button } from "@/components/ui/button";
 import {
