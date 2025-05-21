@@ -156,7 +156,7 @@ export async function getHistoricoPosto(req, res) {
       
       // Adicionar campo de projeto sem duplicação
       if (tableColumns.includes('projeto')) {
-        columns.push('projeto');
+        columns.push('projeto as projeto');
       } else if (tableColumns.includes('project')) {
         columns.push('project as projeto');
       } else {
