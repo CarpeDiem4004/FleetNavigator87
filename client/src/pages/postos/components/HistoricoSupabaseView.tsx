@@ -437,7 +437,7 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
               <TableBody>
                 {historico.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center h-24">
+                    <TableCell colSpan={7} className="text-center h-24">
                       {isLoading ? (
                         <div className="flex justify-center items-center">
                           <Loader2 className="h-6 w-6 animate-spin mr-2" />
@@ -450,7 +450,7 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
                   </TableRow>
                 ) : historicoFiltrado.length === 0 && (dataInicio || dataFim || placaFiltro) ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center h-24">
+                    <TableCell colSpan={7} className="text-center h-24">
                       <div className="flex flex-col items-center justify-center text-slate-500">
                         <Search className="h-8 w-8 mb-2 text-slate-400" />
                         <p>Nenhum registro encontrado com os filtros aplicados</p>
