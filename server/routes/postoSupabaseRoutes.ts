@@ -437,17 +437,33 @@ function normalizarCamposAbastecimento(dados: any, posto: string): any {
   // Normalização de campos de projeto
   // Para Guarulhos_V2 e outros postos que usam 'project' em vez de 'projeto'
   if (posto.toLowerCase() === 'guarulhos_v2' || posto.toLowerCase().includes('guarulhos v2')) {
-    // Se tivermos o campo 'projeto', salvar como 'project'
-    if (normalizado.projeto && !normalizado.project) {
-      normalizado.project = normalizado.projeto;
-      delete normalizado.projeto; // Remover para evitar duplicação
+    // Garantir que o campo project seja salvo, independente de como chegou
+    if (normalizado.projeto || normalizado.project) {
+      // Usar o valor que existir, dando preferência para projeto se ambos existirem
+      normalizado.project = normalizado.projeto || normalizado.project;
+      
+      // Remover campo projeto para evitar duplicação
+      if (normalizado.projeto) {
+        delete normalizado.projeto;
+      }
+      
+      // Log para depuração
+      console.log(`Normalizando campo projeto para Guarulhos_V2. Valor salvo em project: ${normalizado.project}`);
     }
   } else {
     // Para outros postos que usam 'projeto'
-    // Se tivermos o campo 'project', salvar como 'projeto'
-    if (normalizado.project && !normalizado.projeto) {
-      normalizado.projeto = normalizado.project;
-      delete normalizado.project; // Remover para evitar duplicação
+    // Garantir que o campo projeto seja salvo, independente de como chegou
+    if (normalizado.projeto || normalizado.project) {
+      // Usar o valor que existir, dando preferência para project se ambos existirem
+      normalizado.projeto = normalizado.project || normalizado.projeto;
+      
+      // Remover campo project para evitar duplicação
+      if (normalizado.project) {
+        delete normalizado.project;
+      }
+      
+      // Log para depuração
+      console.log(`Normalizando campo projeto para ${posto}. Valor salvo em projeto: ${normalizado.projeto}`);
     }
   }
   
