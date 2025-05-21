@@ -388,8 +388,10 @@ router.get('/history/:token', async (req, res) => {
       // Melhorar detecção de tokens normalizando espaços e underscores múltiplos
       tokenLower = tokenLower.replace(/_{2,}/g, '_'); // Substitui múltiplos underscores por um único
       tokenLower = tokenLower.replace(/\s+/g, '_');   // Substitui espaços por underscores
+      tokenLower = tokenLower.replace(/__+/g, '_');   // Substitui múltiplos underscores por um só (segunda verificação)
       
       console.log(`[SimpleExternalAccess/History] Token normalizado para verificação: ${tokenLower}`);
+      console.log(`[SimpleExternalAccess/History] Token original: ${token}`);
         
       // Verificação simplificada para tokens de teste - Abordagem eficiente para diversos formatos de token
       if (tokenLower.includes('allan') || 
