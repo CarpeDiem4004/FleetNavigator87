@@ -73,6 +73,54 @@ interface TowingRequest {
   comments?: string;
 }
 
+// Componente para contabilizar serviços de teste e do banco de dados
+const PartnerServicesCounter: React.FC<{ partnerId: number, dbCompleted: number, dbTotal: number }> = ({ partnerId, dbCompleted, dbTotal }) => {
+  const [testServices, setTestServices] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchTestServices = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(`/api/towing/test-services/${partnerId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setTestServices(data.services || []);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar serviços de teste:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchTestServices();
+  }, [partnerId]);
+  
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2">
+        <Loader2 size={16} className="animate-spin text-primary" />
+        <span>Carregando serviços...</span>
+      </div>
+    );
+  }
+  
+  const testCompleted = testServices.filter(service => 
+    service.status === 'concluido' || service.status === 'completed'
+  ).length;
+  
+  const totalCompleted = dbCompleted + testCompleted;
+  const totalServices = dbTotal + testServices.length;
+  
+  return (
+    <div className="flex items-center gap-2">
+      <CheckCircle2 size={16} className="text-green-500" />
+      <span>{totalCompleted} de {totalServices}</span>
+    </div>
+  );
+};
+
 // Componente para exibir as estrelas de avaliação
 const RatingStars: React.FC<{ rating: number }> = ({ rating }) => {
   const fullStars = Math.floor(rating);
@@ -490,10 +538,9 @@ const EditableTowingPartnerDetailPage: React.FC = () => {
                     
                     <div>
                       <h3 className="text-sm font-medium text-gray-500 mb-1">Serviços Realizados</h3>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 size={16} className="text-green-500" />
-                        <span>{partner.completed_requests || 0} de {partner.total_requests || 0}</span>
-                      </div>
+                      <PartnerServicesCounter partnerId={partner.id} 
+                        dbCompleted={partner.completed_requests || 0}
+                        dbTotal={partner.total_requests || 0} />
                     </div>
                   </div>
                 </div>

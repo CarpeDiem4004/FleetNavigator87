@@ -6,7 +6,7 @@ import { createClient } from '@supabase/supabase-js';
 import { unifiedAuthMiddleware as authenticateJWT } from '../utils/auth-utils';
 import { verifyAdmin, verifyFleetManager } from '../middleware/roleMiddleware';
 import { pool } from '../db';
-import { getTestServices } from './simpleExternalAccess';
+import { getTestServices, testServices } from './simpleExternalAccess';
 
 // Configuração do Supabase
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
