@@ -5,6 +5,8 @@ import { Router } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import { unifiedAuthMiddleware as authenticateJWT } from '../utils/auth-utils';
 import { verifyAdmin, verifyFleetManager } from '../middleware/roleMiddleware';
+import { pool } from '../db';
+import { getTestServices } from './simpleExternalAccess';
 
 // Configuração do Supabase
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
@@ -427,6 +429,80 @@ router.put('/partners/:id/status', authenticateJWT, verifyFleetManager, async (r
       error: 'Erro ao atualizar status do parceiro de guincho', 
       details: error.message 
     });
+  }
+});
+
+/**
+ * @route GET /api/towing/partners/:id/requests
+ * @desc Listar todas as solicitações de serviço de um parceiro, incluindo serviços de teste
+ * @access Privado (usuários autenticados)
+ */
+router.get('/partners/:id/requests', authenticateJWT, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const partnerId = parseInt(id);
+    
+    if (isNaN(partnerId)) {
+      return res.status(400).json({ error: 'ID inválido', details: 'O ID do parceiro deve ser um número' });
+    }
+    
+    console.log(`[TowingPartnersRoutes] Buscando solicitações para parceiro ID: ${partnerId}`);
+    
+    // Buscar serviços reais do banco de dados
+    const query = `
+      SELECT 
+        ts.*, 
+        tp.name as partner_name, 
+        tp.company_name,
+        (CASE 
+          WHEN ts.payment_date IS NOT NULL THEN true 
+          ELSE false 
+        END) as is_paid
+      FROM towing_services ts
+      JOIN towing_partners tp ON ts.partner_id = tp.id
+      WHERE ts.partner_id = $1
+      ORDER BY ts.service_date DESC, ts.id DESC
+    `;
+    
+    let services = [];
+    try {
+      const result = await pool.query(query, [partnerId]);
+      services = result.rows;
+      console.log(`[TowingPartnersRoutes] Encontrados ${services.length} serviços reais no banco para parceiro ID: ${partnerId}`);
+    } catch (dbError: any) {
+      console.error(`[TowingPartnersRoutes] Erro ao buscar serviços no banco: ${dbError.message}`);
+      // Continuamos mesmo com erro para buscar serviços de teste
+    }
+    
+    // Buscar serviços de teste armazenados em memória
+    const testServices = getTestServices(partnerId);
+    
+    if (testServices && testServices.length > 0) {
+      console.log(`[TowingPartnersRoutes] Encontrados ${testServices.length} serviços de teste para parceiro ID: ${partnerId}`);
+      
+      // Formatar serviços de teste para corresponder ao formato esperado
+      const formattedTestServices = testServices.map(service => {
+        return {
+          ...service,
+          partner_name: service.partner_name || "Parceiro Teste",
+          company_name: service.company_name || "Empresa Teste",
+          is_paid: service.payment_status === "paid",
+          is_test_service: true,  // Marca para identificação
+          status: service.status || "pendente"
+        };
+      });
+      
+      // Combinar resultados
+      services = [...formattedTestServices, ...services];
+      console.log(`[TowingPartnersRoutes] Total de serviços retornados (reais + teste): ${services.length}`);
+    } else {
+      console.log(`[TowingPartnersRoutes] Nenhum serviço de teste encontrado para parceiro ID: ${partnerId}`);
+    }
+    
+    res.json(services);
+  } catch (error: any) {
+    console.error('Erro ao buscar solicitações do parceiro:', error);
+    res.status(500).json({ error: 'Erro ao buscar solicitações do parceiro de guincho', details: error.message });
   }
 });
 
