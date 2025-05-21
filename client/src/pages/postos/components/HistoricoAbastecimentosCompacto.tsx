@@ -42,10 +42,27 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
     setError(null);
     
     try {
+      // Usar timestamp mais específico (incluindo milissegundos) para evitar cache
       const timestamp = new Date().getTime();
-      const response = await axios.get(`/api/historico-direto/${encodeURIComponent(posto)}?t=${timestamp}`);
+      const randomParam = Math.random().toString(36).substring(7);
+      
+      console.log(`Carregando histórico com timestamp ${timestamp} e nonce ${randomParam}`);
+      
+      // Adicionar múltiplos parâmetros anti-cache
+      const response = await axios.get(
+        `/api/historico-direto/${encodeURIComponent(posto)}?t=${timestamp}&nocache=${randomParam}`, 
+        {
+          headers: {
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        }
+      );
       
       if (response.data && response.data.success) {
+        console.log(`Histórico carregado: ${response.data.count} registros`);
         const dados = response.data.data || [];
         setHistorico(dados);
       } else {
@@ -72,9 +89,14 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
     }
   };
 
-  // Carregar dados ao montar o componente
+  // Carregar dados ao montar o componente ou quando o refreshTrigger mudar
   useEffect(() => {
-    loadHistorico();
+    console.log(`Carregando histórico do posto ${posto}, refreshTrigger: ${refreshTrigger}`);
+    
+    // Forçar uma pausa rápida antes de recarregar (permite que a transação seja concluída no banco)
+    setTimeout(() => {
+      loadHistorico();
+    }, 300);
     
     const intervalId = setInterval(() => {
       console.log(`Atualizando histórico automaticamente para ${posto}`);
