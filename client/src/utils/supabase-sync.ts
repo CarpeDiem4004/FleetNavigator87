@@ -23,7 +23,7 @@ export async function enviarAbastecimentoSupabase(dadosAbastecimento: any) {
       quantidade_litros: Number(dadosAbastecimento.quantidade_litros || dadosAbastecimento.litros) || 0,
       preco_litro: Number(dadosAbastecimento.preco_litro) || 0,
       valor_total: Number(dadosAbastecimento.valor_total) || 0,
-      projeto: dadosAbastecimento.project || 'Não informado',
+      projeto: dadosAbastecimento.projeto || dadosAbastecimento.project || 'Não informado',
       observacoes: dadosAbastecimento.observacoes || '',
       operador: dadosAbastecimento.nome_operador || 'Não informado',
       origem: 'replit',
