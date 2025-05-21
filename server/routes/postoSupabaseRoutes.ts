@@ -434,6 +434,23 @@ function normalizarCamposAbastecimento(dados: any, posto: string): any {
     delete normalizado.preco; // Remover campo não usado na tabela
   }
   
+  // Normalização de campos de projeto
+  // Para Guarulhos_V2 e outros postos que usam 'project' em vez de 'projeto'
+  if (posto.toLowerCase() === 'guarulhos_v2' || posto.toLowerCase().includes('guarulhos v2')) {
+    // Se tivermos o campo 'projeto', salvar como 'project'
+    if (normalizado.projeto && !normalizado.project) {
+      normalizado.project = normalizado.projeto;
+      delete normalizado.projeto; // Remover para evitar duplicação
+    }
+  } else {
+    // Para outros postos que usam 'projeto'
+    // Se tivermos o campo 'project', salvar como 'projeto'
+    if (normalizado.project && !normalizado.projeto) {
+      normalizado.projeto = normalizado.project;
+      delete normalizado.project; // Remover para evitar duplicação
+    }
+  }
+  
   // Data de registro padrão
   if (!normalizado.data_registro) {
     normalizado.data_registro = new Date();
