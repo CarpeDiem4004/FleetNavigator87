@@ -62,19 +62,19 @@ router.post('/submit', async (req, res) => {
     const normalizedContactPhone = driver_phone || telefone_contato;
 
     // Validação de campos obrigatórios usando versão normalizada
-    if (!token || !normalizedPlate || !normalizedPickup || !normalizedDelivery || !normalizedService || !normalizedCost) {
+    // Removido normalizedService da validação para tornar o campo não obrigatório
+    if (!token || !normalizedPlate || !normalizedPickup || !normalizedDelivery || !normalizedCost) {
       console.error('[SimpleExternalAccess] Erro de validação: campos obrigatórios ausentes', { 
         token: !!token, 
         placa: !!normalizedPlate, 
         local_retirada: !!normalizedPickup, 
         local_entrega: !!normalizedDelivery, 
-        servico_realizado: !!normalizedService, 
         valor: !!normalizedCost 
       });
       
       return res.status(400).json({
         success: false,
-        message: 'Campos obrigatórios não informados'
+        message: 'Campos obrigatórios não informados: token, placa, locais de retirada/entrega, e valor'
       });
     }
 
