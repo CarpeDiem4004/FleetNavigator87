@@ -171,12 +171,57 @@ router.post('/submit', async (req, res) => {
 // Rota para verificar se um token é válido
 router.get('/verify/:token', async (req, res) => {
   try {
-    const { token } = req.params;
+    let { token } = req.params;
     
     if (!token) {
       return res.status(400).json({
         success: false,
         message: 'Token não informado'
+      });
+    }
+    
+    // Decodificar token para lidar com caracteres especiais na URL
+    try {
+      token = decodeURIComponent(token);
+    } catch (e) {
+      console.log('[SimpleExternalAccess] Erro ao decodificar token, usando como está');
+    }
+    
+    // Verificar imediatamente se é um token de teste especial
+    // Usamos toLowerCase() para evitar problemas com diferentes capitalizações
+    const tokenLower = token.toLowerCase();
+    if (tokenLower.includes('_de_souza_token') || 
+        tokenLower === 'teste_ford_token' || 
+        tokenLower === 'teste_guincho_águia_token' ||
+        tokenLower === 'teste_guincho_aguia_token') {
+      
+      console.log(`[SimpleExternalAccess] Detectado token de teste: ${token}`);
+      
+      // Determinar qual parceiro fictício usar
+      let partnerId = 999;
+      let partnerName = 'S de Souza Guincho';
+      let companyName = 'S de Souza Serviços de Guincho LTDA';
+      
+      if (tokenLower === 'teste_ford_token') {
+        partnerId = 6;
+        partnerName = 'Ford';
+        companyName = 'Ford Serviços de Guincho Ltda';
+      } else if (tokenLower === 'teste_guincho_águia_token' || tokenLower === 'teste_guincho_aguia_token') {
+        partnerId = 5;
+        partnerName = 'Guincho Águia';
+        companyName = 'Guincho Águia LTDA';
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Token válido (modo de teste)',
+        data: {
+          partnerId,
+          partnerName,
+          companyName,
+          expiresAt: null,
+          isPermanent: true
+        }
       });
     }
     
@@ -313,14 +358,27 @@ router.get('/history/:token', async (req, res) => {
     // Se o token não foi encontrado no banco de dados, mas é um token especial para testes
     if (!tokenResult.rowCount || tokenResult.rowCount === 0) {
       // Verificar se é um token de teste (formato especial)
-      if (token.includes('_DE_SOUZA_TOKEN') || token === 'TESTE_FORD_TOKEN') {
-        console.log(`[SimpleExternalAccess/History] Detectado token de teste: ${token}`);
+      if (token.includes('_DE_SOUZA_TOKEN') || 
+          token === 'TESTE_FORD_TOKEN' || 
+          token === 'TESTE_GUINCHO_ÁGUIA_TOKEN' ||
+          decodeURIComponent(token) === 'TESTE_GUINCHO_ÁGUIA_TOKEN') {
+        
+        console.log(`[SimpleExternalAccess] Detectado token de teste: ${token}`);
         
         // Determinar qual parceiro fictício usar com base no token
-        const isFord = token === 'TESTE_FORD_TOKEN';
-        const partnerId = isFord ? 6 : 999;
-        const partnerName = isFord ? 'Ford Service' : 'S de Souza Guincho';
-        const companyName = isFord ? 'Ford Motor Company' : 'S de Souza Serviços de Guincho LTDA';
+        let partnerId = 999;
+        let partnerName = 'S de Souza Guincho';
+        let companyName = 'S de Souza Serviços de Guincho LTDA';
+        
+        if (token === 'TESTE_FORD_TOKEN') {
+          partnerId = 6;
+          partnerName = 'Ford';
+          companyName = 'Ford Serviços de Guincho Ltda';
+        } else if (token === 'TESTE_GUINCHO_ÁGUIA_TOKEN' || decodeURIComponent(token) === 'TESTE_GUINCHO_ÁGUIA_TOKEN') {
+          partnerId = 5;
+          partnerName = 'Guincho Águia';
+          companyName = 'Guincho Águia LTDA';
+        }
         
         // Criar dados de histórico fictícios
         const demoServices = [
