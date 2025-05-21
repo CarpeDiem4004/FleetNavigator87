@@ -46,12 +46,30 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
     
     // Verificar se o componente ainda está montado antes de atualizar estado
     if (isMountedRef.current) {
-      // Usar setTimeout para garantir que atualizações de DOM sejam seguras
+      // Forçar múltiplas atualizações com diferentes intervalos para garantir que
+      // o histórico seja atualizado após a conclusão da gravação no banco
       setTimeout(() => {
         if (isMountedRef.current) {
+          console.log("[HISTORICO] Primeira atualização imediata");
           setRefreshTrigger(prev => prev + 1);
         }
       }, 0);
+      
+      // Segunda atualização após 800ms
+      setTimeout(() => {
+        if (isMountedRef.current) {
+          console.log("[HISTORICO] Segunda atualização após 800ms");
+          setRefreshTrigger(prev => prev + 1);
+        }
+      }, 800);
+      
+      // Terceira atualização após 2000ms
+      setTimeout(() => {
+        if (isMountedRef.current) {
+          console.log("[HISTORICO] Terceira atualização após 2000ms");
+          setRefreshTrigger(prev => prev + 1);
+        }
+      }, 2000);
     }
   };
   
