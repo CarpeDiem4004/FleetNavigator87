@@ -710,6 +710,16 @@ const FormularioAbastecimento: React.FC<
         // Garante que está montado antes de atualizar estados
         if (mountedRef.current) {
           setRegistroSucesso(true);
+          
+          // Publicar evento para atualização em tempo real
+          console.log(`[EventBus] Publicando evento de abastecimento registrado para posto: ${postId}`);
+          eventosBus.publish(EVENTOS.ABASTECIMENTO_REGISTRADO, {
+            posto: postId,
+            data: new Date().toISOString(),
+            placa: valores.placa,
+            tipo_combustivel: valores.tipo_combustivel,
+            quantidade_litros: valores.quantidade_litros
+          });
 
           // SOLUÇÃO DIRETA: Forçar consulta ao banco usando fetch com SQL direto
           console.log("Iniciando mecanismo ULTRA de atualização do histórico");
