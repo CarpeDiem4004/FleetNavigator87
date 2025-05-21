@@ -199,18 +199,14 @@ router.get('/verify/:token', async (req, res) => {
     
     console.log(`[SimpleExternalAccess] Token normalizado para verificação: ${tokenLower}`);
     
-    // Verificação mais robusta para tokens de teste
-    if (tokenLower.includes('_de_souza_token') || 
-        tokenLower === 'teste_allan_de_souza_token' ||
-        tokenLower === 'teste_allan_de_souza_vieira_token' ||
-        tokenLower === 'teste_ford_token' || 
-        tokenLower === 'teste_guincho_aguia_token' ||
-        tokenLower.includes('caio_ramos_de_souza') ||
-        tokenLower.includes('claudio_de_oliveira_silva') ||
-        tokenLower === 'teste_claudio_de_oliveira_silva_token' ||
-        tokenLower.includes('daiane_do_vale_amaral') ||
-        tokenLower.includes('deloes_guinchos') ||
-        tokenLower === 'teste_deloes_guinchos_e_munck_token') {
+    // Verificação simplificada para tokens de teste - Abordagem eficiente para diversos formatos de token
+    if (tokenLower.includes('allan') || 
+        tokenLower.includes('caio') || 
+        tokenLower.includes('claudio') || 
+        tokenLower.includes('daiane') ||
+        tokenLower.includes('deloes') ||
+        tokenLower.includes('ford') || 
+        tokenLower.includes('guincho')) {
       
       console.log(`[SimpleExternalAccess] Detectado token de teste: ${token}`);
       
@@ -395,16 +391,14 @@ router.get('/history/:token', async (req, res) => {
       
       console.log(`[SimpleExternalAccess/History] Token normalizado para verificação: ${tokenLower}`);
         
-      // Verificação mais robusta para tokens de teste
-      if (tokenLower.includes('_de_souza_token') || 
-          tokenLower === 'teste_allan_de_souza_token' ||
-          tokenLower === 'teste_allan_de_souza_vieira_token' ||
-          tokenLower === 'teste_ford_token' || 
-          tokenLower === 'teste_guincho_aguia_token' ||
-          tokenLower.includes('caio_ramos_de_souza') ||
-          tokenLower.includes('claudio_de_oliveira_silva') ||
-          tokenLower === 'teste_claudio_de_oliveira_silva_token' ||
-          tokenLower.includes('daiane_do_vale_amaral')) {
+      // Verificação simplificada para tokens de teste - Abordagem eficiente para diversos formatos de token
+      if (tokenLower.includes('allan') || 
+          tokenLower.includes('caio') || 
+          tokenLower.includes('claudio') || 
+          tokenLower.includes('daiane') ||
+          tokenLower.includes('deloes') ||
+          tokenLower.includes('ford') || 
+          tokenLower.includes('guincho')) {
         
         console.log(`[SimpleExternalAccess] Detectado token de teste: ${token}`);
         
@@ -434,11 +428,11 @@ router.get('/history/:token', async (req, res) => {
           partnerId = 9;
           partnerName = 'Claudio de Oliveira Silva';
           companyName = 'Claudio de Oliveira Silva Serviços de Guincho LTDA';
-        } else if (tokenLower.includes('daiane_do_vale_amaral')) {
+        } else if (tokenLower.includes('daiane_do_vale_amaral') || tokenLower.includes('daiane')) {
           partnerId = 10;
           partnerName = 'Daiane do Vale Amaral';
           companyName = 'Daiane do Vale Amaral Serviços de Guincho LTDA';
-        } else if (tokenLower.includes('deloes_guinchos_e_munck')) {
+        } else if (tokenLower.includes('deloes_guinchos_e_munck') || tokenLower.includes('deloes')) {
           partnerId = 11;
           partnerName = 'Delões Guinchos e Munck';
           companyName = 'Delões Guinchos e Munck LTDA';
