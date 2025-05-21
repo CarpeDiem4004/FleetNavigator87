@@ -389,7 +389,9 @@ router.get('/history/:token', async (req, res) => {
           tokenLower === 'teste_allan_de_souza_vieira_token' ||
           tokenLower === 'teste_ford_token' || 
           tokenLower === 'teste_guincho_aguia_token' ||
-          tokenLower.includes('caio_ramos_de_souza')) {
+          tokenLower.includes('caio_ramos_de_souza') ||
+          tokenLower.includes('claudio_de_oliveira_silva') ||
+          tokenLower === 'teste_claudio_de_oliveira_silva_token') {
         
         console.log(`[SimpleExternalAccess] Detectado token de teste: ${token}`);
         
@@ -411,10 +413,14 @@ router.get('/history/:token', async (req, res) => {
           partnerId = 15;
           partnerName = 'Allan de Souza Vieira';
           companyName = 'Allan de Souza Vieira Serviços de Guincho LTDA';
-        } else if (tokenLower === 'teste_caio_ramos_de_souza_token') {
+        } else if (tokenLower === 'teste_caio_ramos_de_souza_token' || tokenLower.includes('caio_ramos_de_souza')) {
           partnerId = 8;
           partnerName = 'Caio Ramos de Souza';
           companyName = 'Caio Ramos de Souza Serviços de Guincho LTDA';
+        } else if (tokenLower === 'teste_claudio_de_oliveira_silva_token' || tokenLower.includes('claudio_de_oliveira_silva')) {
+          partnerId = 9;
+          partnerName = 'Claudio de Oliveira Silva';
+          companyName = 'Claudio de Oliveira Silva Serviços de Guincho LTDA';
         }
         
         // Criar dados de histórico fictícios
