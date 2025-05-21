@@ -43,33 +43,53 @@ router.post('/submit', async (req, res) => {
       driver_phone
     } = req.body;
 
+    // Normalizar campos para permitir qualquer formato de API
+    const normalizedPlate = vehicle_plate || placa || '';
+    const normalizedPickup = pickup_location || local_retirada || '';
+    const normalizedDelivery = delivery_location || drop_off_location || local_entrega || '';
+    const normalizedService = service_description || servico_realizado || '';
+    const normalizedDate = service_date || data_servico || '';
+    const normalizedCost = actual_cost || valor || 0;
+    const normalizedMileage = km_traveled || km_percorrido || 0;
+    const normalizedNotes = observation || observacoes || '';
+    const normalizedContactName = driver_name || nome_contato || '';
+    const normalizedContactPhone = driver_phone || telefone_contato || '';
+
     console.log('[SimpleExternalAccess] Campos normalizados:', {
-      vehicle: vehicle_plate || placa,
-      pickup: pickup_location || local_retirada,
-      delivery: delivery_location || drop_off_location || local_entrega
+      vehicle: normalizedPlate,
+      pickup: normalizedPickup,
+      delivery: normalizedDelivery,
+      cost: normalizedCost,
+      token: token
     });
 
-    // Normalizar campos para permitir qualquer formato de API
-    const normalizedPlate = vehicle_plate || placa;
-    const normalizedPickup = pickup_location || local_retirada;
-    const normalizedDelivery = delivery_location || drop_off_location || local_entrega;
-    const normalizedService = service_description || servico_realizado;
-    const normalizedDate = service_date || data_servico;
-    const normalizedCost = actual_cost || valor;
-    const normalizedMileage = km_traveled || km_percorrido;
-    const normalizedNotes = observation || observacoes;
-    const normalizedContactName = driver_name || nome_contato;
-    const normalizedContactPhone = driver_phone || telefone_contato;
+    // Debugging para entender o problema
+    console.log('[SimpleExternalAccess] Valores originais dos campos críticos:', {
+      token_original: token,
+      placa_original: placa,
+      vehicle_plate_original: vehicle_plate,
+      pickup_original: pickup_location,
+      local_retirada_original: local_retirada,
+      delivery_original: delivery_location,
+      local_entrega_original: local_entrega,
+      valor_original: valor,
+      actual_cost_original: actual_cost
+    });
 
-    // Validação de campos obrigatórios usando versão normalizada
-    // Removido normalizedService da validação para tornar o campo não obrigatório
-    if (!token || !normalizedPlate || !normalizedPickup || !normalizedDelivery || !normalizedCost) {
-      console.error('[SimpleExternalAccess] Erro de validação: campos obrigatórios ausentes', { 
-        token: !!token, 
-        placa: !!normalizedPlate, 
-        local_retirada: !!normalizedPickup, 
-        local_entrega: !!normalizedDelivery, 
-        valor: !!normalizedCost 
+    // Simplificar validação - testes manuais indicam um problema com a validação anterior
+    const validToken = !!token;
+    const validPlate = !!normalizedPlate;
+    const validPickup = !!normalizedPickup;
+    const validDelivery = !!normalizedDelivery;
+    const validCost = normalizedCost > 0;
+
+    if (!validToken || !validPlate || !validPickup || !validDelivery || !validCost) {
+      console.error('[SimpleExternalAccess] Erro de validação simplificada:', { 
+        validToken,
+        validPlate,
+        validPickup,
+        validDelivery,
+        validCost
       });
       
       return res.status(400).json({
