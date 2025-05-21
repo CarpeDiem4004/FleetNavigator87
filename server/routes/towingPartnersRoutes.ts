@@ -25,6 +25,36 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const router = Router();
 
+// Rota para buscar serviços de teste para um parceiro específico
+router.get('/test-services/:id', async (req, res) => {
+  try {
+    const partnerId = parseInt(req.params.id);
+    
+    if (isNaN(partnerId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID do parceiro inválido'
+      });
+    }
+    
+    // Buscar serviços de teste deste parceiro
+    const testServicesList = getTestServices(partnerId);
+    
+    console.log(`[TowingPartners] Serviços de teste encontrados para parceiro ${partnerId}:`, testServicesList.length);
+    
+    return res.status(200).json({
+      success: true,
+      services: testServicesList
+    });
+  } catch (error) {
+    console.error('[TowingPartners] Erro ao buscar serviços de teste:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao buscar serviços de teste'
+    });
+  }
+});
+
 /**
  * @route GET /api/towing/partners
  * @desc Listar todos os parceiros de guincho
