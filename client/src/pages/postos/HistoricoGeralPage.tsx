@@ -939,23 +939,26 @@ const HistoricoGeralPage: React.FC = () => {
               </div>
             </div>
             
-            {/* Card para projetos que mais consumiram combustível */}
-            <div className="mt-6 bg-blue-50 p-5 rounded-lg shadow-sm">
+            {/* Card para projetos que mais consumiram combustível - Versão aprimorada */}
+            <div className="mt-6 bg-blue-50 p-5 rounded-lg shadow-sm border border-blue-200">
               <div className="flex items-center mb-4">
                 <div className="mr-3 bg-blue-100 p-3 rounded-full">
                   <FaProjectDiagram className="h-5 w-5 text-blue-700" />
                 </div>
-                <h3 className="font-medium text-lg text-gray-700">Projetos que mais consumiram combustível</h3>
+                <div>
+                  <h3 className="font-medium text-lg text-gray-700">Consumo de Combustível por Projeto</h3>
+                  <p className="text-xs text-gray-500">Relatório detalhado mostrando litros abastecidos por projeto e porcentagem em relação ao total</p>
+                </div>
               </div>
               
               {dadosConsolidados.projetosOrdenados.length > 0 ? (
                 <div className="space-y-3">
-                  {/* Cabeçalho */}
-                  <div className="flex items-center text-sm font-medium text-gray-500 pb-2 border-b border-blue-200">
+                  {/* Cabeçalho aprimorado */}
+                  <div className="flex items-center text-sm font-medium text-white bg-blue-600 py-2 px-3 rounded-t-md">
                     <div className="w-12 text-center">#</div>
                     <div className="flex-1">Projeto</div>
-                    <div className="w-32 text-right">Litros</div>
-                    <div className="w-24 text-right">% do Total</div>
+                    <div className="w-36 text-right">Litros</div>
+                    <div className="w-28 text-right">% do Total</div>
                   </div>
                   
                   {/* Lista de projetos com dados */}
@@ -978,21 +981,23 @@ const HistoricoGeralPage: React.FC = () => {
                           : 'bg-blue-300';
                           
                     return (
-                      <div key={index} className="flex items-center justify-between py-2 border-b border-blue-100">
+                      <div key={index} className="flex items-center justify-between py-3 border-b border-blue-100 hover:bg-blue-50 transition-colors">
                         <div className="w-12 flex justify-center">
-                          <span className={`${corPosicao} text-white rounded-full w-7 h-7 flex items-center justify-center font-bold`}>
+                          <span className={`${corPosicao} text-white rounded-full w-7 h-7 flex items-center justify-center font-bold shadow-sm`}>
                             {index + 1}
                           </span>
                         </div>
                         <div className="flex-1">
                           <span className="font-medium text-gray-800">{projeto}</span>
                         </div>
-                        <div className="w-32 text-right">
+                        <div className="w-36 text-right">
                           <span className="font-bold text-blue-700">{formatarNumero(litros)}</span>
                           <span className="text-sm text-gray-500 ml-1">L</span>
                         </div>
-                        <div className="w-24 text-right">
-                          <span className="font-semibold text-blue-600">{porcentagem.toFixed(1)}%</span>
+                        <div className="w-28 text-right">
+                          <span className="inline-block min-w-[3rem] bg-blue-100 text-blue-800 font-semibold py-1 px-2 rounded-full text-xs">
+                            {porcentagem.toFixed(1)}%
+                          </span>
                         </div>
                       </div>
                     );
@@ -1027,36 +1032,40 @@ const HistoricoGeralPage: React.FC = () => {
                     
                     // Renderizar projetos não utilizados em cinza
                     return projetosNaoUtilizados.map((projeto, index) => (
-                      <div key={`unused-${index}`} className="flex items-center justify-between py-2 border-b border-blue-100 text-gray-400">
+                      <div key={`unused-${index}`} className="flex items-center justify-between py-2 border-b border-blue-100 text-gray-400 hover:bg-gray-50 transition-colors">
                         <div className="w-12 flex justify-center">
-                          <span className="bg-gray-300 text-white rounded-full w-7 h-7 flex items-center justify-center font-bold">
+                          <span className="bg-gray-200 text-gray-500 rounded-full w-7 h-7 flex items-center justify-center font-bold">
                             -
                           </span>
                         </div>
                         <div className="flex-1">
                           <span className="font-medium">{projeto}</span>
                         </div>
-                        <div className="w-32 text-right">
+                        <div className="w-36 text-right">
                           <span className="font-bold">0</span>
                           <span className="text-sm ml-1">L</span>
                         </div>
-                        <div className="w-24 text-right">
-                          <span className="font-semibold">0.0%</span>
+                        <div className="w-28 text-right">
+                          <span className="inline-block min-w-[3rem] bg-gray-100 text-gray-400 font-semibold py-1 px-2 rounded-full text-xs">
+                            0.0%
+                          </span>
                         </div>
                       </div>
                     ));
                   })()}
                   
-                  {/* Total */}
-                  <div className="flex items-center justify-between pt-2">
+                  {/* Linha de Total com design destacado */}
+                  <div className="flex items-center justify-between py-3 px-3 mt-2 bg-blue-600 text-white rounded-b-md">
                     <div className="w-12"></div>
-                    <div className="flex-1 font-bold text-gray-700">Total</div>
-                    <div className="w-32 text-right">
-                      <span className="font-bold text-blue-800">{formatarNumero(dadosConsolidados.totalLitros)}</span>
-                      <span className="text-sm text-gray-500 ml-1">L</span>
+                    <div className="flex-1 font-bold">Total Geral</div>
+                    <div className="w-36 text-right">
+                      <span className="font-bold text-white text-lg">{formatarNumero(dadosConsolidados.totalLitros)}</span>
+                      <span className="text-xs text-blue-100 ml-1">Litros</span>
                     </div>
-                    <div className="w-24 text-right">
-                      <span className="font-bold text-blue-800">100%</span>
+                    <div className="w-28 text-right">
+                      <span className="inline-block min-w-[3rem] bg-white text-blue-800 font-bold py-1 px-3 rounded-full text-xs">
+                        100%
+                      </span>
                     </div>
                   </div>
                 </div>
