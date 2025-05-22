@@ -1,26 +1,9 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React from 'react';
 import { useParams } from 'wouter';
-import { useAuth } from '@/context/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import SafeLink from '@/components/SafeLink';
-import { Switch } from '@/components/ui/switch';
-import { apiRequest } from '@/lib/queryClient';
-
-// Componentes UI
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
-import PageHeader from '@/components/layout/PageHeader';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import TowingPartnerDetail from './TowingPartnerDetail';
 
 // Ícones
-import { Truck, Phone, MapPin, Star, ArrowLeft, Mail, FileText, AlertCircle, Calendar, CheckCircle2, XCircle, Clock, Link, Copy, Check, RefreshCw, Loader2 } from 'lucide-react';
+import { Truck, AlertCircle, RefreshCw } from 'lucide-react';
 
 // Tipos
 interface TowingPartner {
