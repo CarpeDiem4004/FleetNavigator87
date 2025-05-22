@@ -98,63 +98,127 @@ emergencyRouter.post('/submit', async (req, res) => {
     if (result.rowCount && result.rowCount > 0) {
       const insertedData = result.rows[0];
       
-      // Opcional: tentar sincronizar com a tabela towing_services para o histórico
+      // Sincronizar com a tabela principal do histórico
       try {
-        // Método simplificado de sincronização sem campos específicos
-        const fieldsQuery = `
-          INSERT INTO towing_service_notes (
-            id, partner_id, driver_name, vehicle_plate, 
-            pickup_location, delivery_location, service_type,
-            service_date, service_description, 
-            km_traveled, actual_cost, 
-            observation, status, created_at
-          ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW()
+        // Primeiro, vamos garantir que a tabela exista
+        const checkTableQuery = `
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = 'towing_partner_services'
           )
-          ON CONFLICT (id) DO NOTHING
         `;
         
-        await pool.query(fieldsQuery, [
-          insertedData.id,
+        const tableCheck = await pool.query(checkTableQuery);
+        if (!tableCheck.rows[0].exists) {
+          console.log('[EmergencyRouter] Tabela towing_partner_services não existe, criando...');
+          
+          // Criar tabela se não existir
+          const createTableQuery = `
+            CREATE TABLE IF NOT EXISTS towing_partner_services (
+              id SERIAL PRIMARY KEY,
+              partner_id INTEGER NOT NULL,
+              plate VARCHAR(20) NOT NULL,
+              origin VARCHAR(255) NOT NULL,
+              destination VARCHAR(255) NOT NULL,
+              service_date DATE NOT NULL,
+              service_type VARCHAR(100) NOT NULL,
+              cost NUMERIC(10,2) NOT NULL,
+              km_traveled INTEGER,
+              status VARCHAR(50) DEFAULT 'pending',
+              notes TEXT,
+              driver_name VARCHAR(255),
+              contact_phone VARCHAR(50),
+              created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            )
+          `;
+          
+          await pool.query(createTableQuery);
+        }
+        
+        // Inserir na tabela de serviços
+        const insertQuery = `
+          INSERT INTO towing_partner_services (
+            partner_id, plate, origin, destination,
+            service_date, service_type, cost, km_traveled,
+            status, notes, driver_name, contact_phone
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+          )
+          RETURNING id
+        `;
+        
+        const insertResult = await pool.query(insertQuery, [
           partnerId,
-          normalizedContactName,
           normalizedPlate.toUpperCase(),
           normalizedPickup,
           normalizedDelivery,
-          'GUINCHO',
           normalizedDate,
-          normalizedService,
-          parseInt(normalizedMileage.toString()),
+          'GUINCHO',
           parseFloat(normalizedCost.toString()),
+          parseInt(normalizedMileage.toString()),
+          'pending',
           normalizedNotes,
-          'PENDENTE'
+          normalizedContactName,
+          normalizedContactPhone
         ]);
         
-        console.log('[EmergencyRouter] Sincronização adicional com towing_service_notes realizada');
+        if (insertResult.rows && insertResult.rows.length > 0) {
+          console.log('[EmergencyRouter] Serviço registrado na tabela principal:', insertResult.rows[0].id);
+        }
         
-        // Copiar para tabela histórica
-        const copyQuery = `
-          INSERT INTO towing_service_history (
-            service_id, partner_id, vehicle_plate, 
-            pickup_location, delivery_location, status, 
-            service_date, created_at
-          ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, NOW()
-          )
-          ON CONFLICT (service_id) DO NOTHING
-        `;
-        
-        await pool.query(copyQuery, [
-          insertedData.id,
-          partnerId,
-          normalizedPlate.toUpperCase(),
-          normalizedPickup,
-          normalizedDelivery,
-          'PENDENTE',
-          normalizedDate
-        ]);
-        
-        console.log('[EmergencyRouter] Registro adicionado ao histórico');
+        // Adicionar também na tabela de histórico
+        try {
+          // Criar tabela de histórico se não existir
+          const createHistoryQuery = `
+            CREATE TABLE IF NOT EXISTS towing_service_history (
+              id SERIAL PRIMARY KEY,
+              service_id INTEGER,
+              partner_id INTEGER NOT NULL,
+              vehicle_plate VARCHAR(20) NOT NULL,
+              pickup_location VARCHAR(255) NOT NULL,
+              delivery_location VARCHAR(255) NOT NULL,
+              status VARCHAR(50) DEFAULT 'pending',
+              service_date DATE NOT NULL,
+              created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+              UNIQUE(service_id)
+            )
+          `;
+          
+          await pool.query(createHistoryQuery);
+          
+          // Inserir no histórico
+          const historyQuery = `
+            INSERT INTO towing_service_history (
+              service_id, partner_id, vehicle_plate, 
+              pickup_location, delivery_location, status, service_date
+            ) VALUES (
+              $1, $2, $3, $4, $5, $6, $7
+            )
+            ON CONFLICT (service_id) DO NOTHING
+            RETURNING id
+          `;
+          
+          // Usar o id do registro principal como service_id
+          const historyResult = await pool.query(historyQuery, [
+            insertResult.rows[0].id,
+            partnerId,
+            normalizedPlate.toUpperCase(),
+            normalizedPickup,
+            normalizedDelivery,
+            'pending',
+            normalizedDate
+          ]);
+          
+          if (historyResult.rows && historyResult.rows.length > 0) {
+            console.log('[EmergencyRouter] Serviço adicionado ao histórico:', historyResult.rows[0].id);
+          }
+          
+          // Atualizar a rota de histórico para buscar da tabela correta
+          console.log('[EmergencyRouter] Sincronização de histórico completa!');
+        } catch (historyError) {
+          console.error('[EmergencyRouter] Erro ao sincronizar com tabela de histórico:', historyError);
+        }
         
       } catch (syncError) {
         console.error('[EmergencyRouter] Erro ao sincronizar com histórico:', syncError);
@@ -266,18 +330,105 @@ emergencyRouter.get('/history/:token', async (req, res) => {
       });
     }
     
-    // Buscar serviços do parceiro
-    const servicesQuery = `
-      SELECT * FROM towing_service_notes
-      WHERE partner_id = $1
-      ORDER BY service_date DESC, created_at DESC
-    `;
+    // Verificar qual tabela usar para o histórico
+    try {
+      // Tentar primeiro a tabela nova
+      const checkTableQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'towing_partner_services'
+        )
+      `;
+      
+      const tableCheck = await pool.query(checkTableQuery);
+      console.log('[EmergencyRouter] Verificação de tabelas históricas disponíveis:', tableCheck.rows[0]);
+      
+      let servicesQuery;
+      if (tableCheck.rows[0].exists) {
+        console.log('[EmergencyRouter] Usando tabela principal towing_partner_services para histórico');
+        servicesQuery = `
+          SELECT * FROM towing_partner_services
+          WHERE partner_id = $1
+          ORDER BY service_date DESC, created_at DESC
+        `;
+      } else {
+        console.log('[EmergencyRouter] Usando tabela alternativa towing_service_notes para histórico');
+        servicesQuery = `
+          SELECT * FROM towing_service_notes
+          WHERE partner_id = $1
+          ORDER BY service_date DESC, created_at DESC
+        `;
+      }
+      
+      console.log('[EmergencyRouter] Buscando serviços para parceiro ID:', partnerId);
+      const servicesResult = await pool.query(servicesQuery, [partnerId]);
+      console.log('[EmergencyRouter] Serviços encontrados:', servicesResult.rowCount || 0);
+    } catch (queryError) {
+      console.error('[EmergencyRouter] Erro ao buscar serviços:', queryError);
+      return res.status(200).json({
+        success: true,
+        message: 'Erro ao buscar serviços, retornando lista vazia',
+        data: { serviceCount: 0, services: [] }
+      });
+    }
     
-    const servicesResult = await pool.query(servicesQuery, [partnerId]);
+    // Verificar também na tabela de histórico
+    try {
+      const historyCheckQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'towing_service_history'
+        )
+      `;
+      
+      const historyCheck = await pool.query(historyCheckQuery);
+      console.log('[EmergencyRouter] Verificação de tabela de histórico disponível:', historyCheck.rows[0]);
+      
+      if (historyCheck.rows[0].exists) {
+        console.log('[EmergencyRouter] Tabela de histórico encontrada, verificando serviços');
+        
+        const historyQuery = `
+          SELECT * FROM towing_service_history
+          WHERE partner_id = $1
+          ORDER BY service_date DESC, created_at DESC
+        `;
+        
+        const historyResult = await pool.query(historyQuery, [partnerId]);
+        console.log('[EmergencyRouter] Serviços no histórico:', historyResult.rowCount || 0);
+        
+        // Se houver registros no histórico, combinar com os resultados principais
+        if (historyResult.rowCount && historyResult.rowCount > 0) {
+          console.log('[EmergencyRouter] Combinando resultados de histórico');
+          // Adicionar cada serviço do histórico aos resultados principais
+          for (const historyRow of historyResult.rows) {
+            const existsInResults = servicesResult.rows.some(r => 
+              r.id === historyRow.service_id || r.id === historyRow.id);
+            
+            if (!existsInResults) {
+              servicesResult.rows.push({
+                id: historyRow.service_id || historyRow.id,
+                plate: historyRow.vehicle_plate,
+                pickup_location: historyRow.pickup_location,
+                delivery_location: historyRow.delivery_location,
+                service_date: historyRow.service_date,
+                status: historyRow.status,
+                created_at: historyRow.created_at
+              });
+            }
+          }
+          
+          console.log('[EmergencyRouter] Total após combinar histórico:', servicesResult.rows.length);
+        }
+      }
+    } catch (historyError) {
+      console.error('[EmergencyRouter] Erro ao verificar tabela de histórico:', historyError);
+    }
     
     const services = servicesResult.rows.map(row => ({
       id: row.id,
-      plate: row.plate,
+      plate: row.vehicle_plate || row.plate,
       pickup_location: row.pickup_location,
       delivery_location: row.delivery_location,
       service_description: row.service_description,
