@@ -228,7 +228,8 @@ export default function TowingPartnerExternalAccess() {
         if (token === 'TESTE_FORD_TOKEN' || 
             token === 'TESTE_GUINCHO_ÁGUIA_TOKEN' ||
             token.includes('_DE_SOUZA') ||
-            token.includes('CAIO_RAMOS')) {
+            token.includes('CAIO_RAMOS') ||
+            token.includes('CLAUDIO_DE_OLIVEIRA')) {
           // Determinar qual parceiro mostrar com base no token
           let partnerId = 6;
           let partnerName = 'Ford Service';
@@ -242,6 +243,10 @@ export default function TowingPartnerExternalAccess() {
             partnerId = 8;
             partnerName = 'Caio Ramos Guincho';
             companyName = 'Caio Ramos Serviços de Guincho LTDA';
+          } else if (token.includes('CLAUDIO_DE_OLIVEIRA')) {
+            partnerId = 9;
+            partnerName = 'Claudio de Oliveira Silva';
+            companyName = 'Claudio Oliveira Guinchos LTDA';
           }
           
           // Tratar o token como válido diretamente
@@ -387,13 +392,26 @@ export default function TowingPartnerExternalAccess() {
       if (!partnerInfo || !partnerInfo.id) {
         console.error('[ExternalAccess] Erro: Informações do parceiro não disponíveis', { partnerInfo });
         
-        // Caso específico para o token do Caio Ramos
-        if (token && (token.includes('CAIO_RAMOS') || token.includes('_DE_SOUZA'))) {
+        // Caso específico para tokens especiais de teste
+        if (token && (token.includes('CAIO_RAMOS') || token.includes('_DE_SOUZA') || token.includes('CLAUDIO_DE_OLIVEIRA'))) {
           console.log('[ExternalAccess] Usando dados de parceiro temporários para token de teste especial');
+          
+          // Determinar qual parceiro mostrar com base no token
+          let tempId = 8;
+          let tempName = 'Caio Ramos Guincho';
+          let tempCompanyName = 'Caio Ramos Serviços de Guincho LTDA';
+          
+          // Para o token do Claudio
+          if (token.includes('CLAUDIO_DE_OLIVEIRA')) {
+            tempId = 9;
+            tempName = 'Claudio de Oliveira Silva';
+            tempCompanyName = 'Claudio Oliveira Guinchos LTDA';
+          }
+          
           const tempPartnerInfo = {
-            id: 8,
-            name: 'Caio Ramos Guincho',
-            company_name: 'Caio Ramos Serviços de Guincho LTDA'
+            id: tempId,
+            name: tempName,
+            company_name: tempCompanyName
           };
           console.log('[ExternalAccess] Dados temporários:', tempPartnerInfo);
           
