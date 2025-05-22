@@ -100,13 +100,26 @@ emergencyRouter.post('/submit', async (req, res) => {
       
       // Opcional: tentar sincronizar com a tabela servicos_guincho
       try {
+        // Primeiro verificar a estrutura da tabela servicos_guincho
+        const checkTableQuery = `
+          SELECT column_name 
+          FROM information_schema.columns 
+          WHERE table_name = 'servicos_guincho' 
+          ORDER BY ordinal_position
+        `;
+        
+        const tableResult = await pool.query(checkTableQuery);
+        console.log('[EmergencyRouter] Estrutura da tabela servicos_guincho:', 
+          tableResult.rows.map(row => row.column_name));
+        
+        // Usar a estrutura correta da tabela servicos_guincho
         const syncQuery = `
           INSERT INTO servicos_guincho (
-            id, parceiro_id, placa, origem, destino, 
-            tipo_servico, data_lancamento, valor, km_reboque,
-            observacoes, contato_nome, contato_telefone, status, data_criacao
+            id, partner_id, plate, pickup_location, delivery_location, 
+            service_description, service_date, cost, mileage,
+            notes, contact_name, contact_phone, status
           ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW()
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
           )
           ON CONFLICT (id) DO NOTHING
         `;
@@ -126,9 +139,44 @@ emergencyRouter.post('/submit', async (req, res) => {
           normalizedContactPhone,
           'pending'
         ]);
+        
+        console.log('[EmergencyRouter] Sincronização com servicos_guincho bem-sucedida');
       } catch (syncError) {
         console.error('[EmergencyRouter] Erro ao sincronizar com servicos_guincho:', syncError);
-        // Ignorar erro de sincronização, o registro principal já foi salvo
+        // Tentar sincronização alternativa com nomes de colunas em português
+        try {
+          const syncQueryPt = `
+            INSERT INTO servicos_guincho (
+              id, parceiro_id, plate, origem, destino, 
+              tipo_servico, data_servico, valor, km_percorrido,
+              observacoes, nome_contato, telefone_contato, status
+            ) VALUES (
+              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+            )
+            ON CONFLICT (id) DO NOTHING
+          `;
+          
+          await pool.query(syncQueryPt, [
+            insertedData.id,
+            partnerId,
+            normalizedPlate.toUpperCase(),
+            normalizedPickup,
+            normalizedDelivery,
+            normalizedService,
+            normalizedDate,
+            parseFloat(normalizedCost.toString()),
+            parseInt(normalizedMileage.toString()),
+            normalizedNotes,
+            normalizedContactName,
+            normalizedContactPhone,
+            'pending'
+          ]);
+          
+          console.log('[EmergencyRouter] Sincronização alternativa com servicos_guincho bem-sucedida');
+        } catch (syncErrorPt) {
+          console.error('[EmergencyRouter] Erro na sincronização alternativa:', syncErrorPt);
+          // Ignorar erro de sincronização, o registro principal já foi salvo
+        }
       }
       
       return res.status(201).json({
