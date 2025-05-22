@@ -94,8 +94,21 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
       }
       
       // EXISTENTE: Continua com a API normal se não conseguiu dados do Supabase
-      // Usar o timestamp único na requisição
-      const url = `/api/abastecimentos/${postId}?t=${uniqueTimestamp}`;
+      // Verificar se estamos lidando com o posto Guarulhos V2 para usar a rota especializada
+      const isGuarulhosV2 = postId.toLowerCase().includes('guarulhos_v2') || 
+                           postId.toLowerCase().includes('guarulhos v2');
+      
+      let url = '';
+      
+      if (isGuarulhosV2) {
+        // Usar a rota especializada para Guarulhos V2 que mantém os valores reais
+        console.log("[HISTÓRICO] Usando rota especializada para Guarulhos V2");
+        url = `/api/guarulhos-v2/historico?t=${uniqueTimestamp}`;
+      } else {
+        // Usar timestamp único na requisição para outros postos
+        url = `/api/abastecimentos/${postId}?t=${uniqueTimestamp}`;
+      }
+      
       console.log(`[HISTÓRICO] Fazendo requisição para API: ${url}`);
       
       const response = await fetch(url, {
