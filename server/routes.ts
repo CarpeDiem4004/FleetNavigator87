@@ -9225,7 +9225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         RETURNING *
       `;
       
-      const result = await pool.query(updateQuery, [req.user.name, servicoId]);
+      const result = await pool.query(updateQuery, [req.user.id, servicoId]);
       
       if (result.rowCount === 0) {
         return res.status(404).json({ message: "Serviço não encontrado" });
@@ -9267,7 +9267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         RETURNING *
       `;
       
-      const result = await pool.query(updateQuery, [req.user.name, servicoId]);
+      const result = await pool.query(updateQuery, [req.user.id, servicoId]);
       
       if (result.rowCount === 0) {
         return res.status(404).json({ message: "Serviço não encontrado" });
