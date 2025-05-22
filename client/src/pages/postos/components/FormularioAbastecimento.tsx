@@ -639,6 +639,17 @@ const FormularioAbastecimento: React.FC<
             // Usar a rota especializada para Osasco V2
             endpoint = `/api/osasco-v2/abastecimento`;
             
+            // Garantir que o projeto esteja sendo enviado
+            const dadosOsasco = {
+              ...dadosAbastecimento,
+              // Garantir que o projeto seja enviado de forma explícita
+              projeto: formValues.projeto || "COCA COLA",
+              // Também manter compatibilidade com project
+              project: formValues.projeto || "COCA COLA"
+            };
+            
+            console.log(">>> Dados enviados para Osasco V2:", dadosOsasco);
+            
             // Enviar diretamente para a rota especializada
             const response = await fetch(endpoint, {
               method: "POST",
@@ -646,7 +657,7 @@ const FormularioAbastecimento: React.FC<
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${localStorage.getItem("authToken")}`
               },
-              body: JSON.stringify(dadosAbastecimento)
+              body: JSON.stringify(dadosOsasco)
             });
             
             const resultado = await response.json();

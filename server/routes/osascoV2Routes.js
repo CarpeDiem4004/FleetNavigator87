@@ -73,12 +73,19 @@ router.post('/abastecimento', async (req, res) => {
       motorista: dados.motorista || dados.nome_motorista || 'Não informado',
       motorista_rg: dados.rg_motorista || dados.motorista_rg || 'Não informado',
       operador: dados.operador || dados.nome_operador || 'Sistema',
-      projeto: dados.projeto || dados.project || 'Não informado',
+      // Garantir que o projeto seja salvo corretamente, incluindo valor padrão específico
+      projeto: dados.projeto || dados.project || 'PROJETO NÃO INFORMADO',
       tipo_veiculo: dados.tipo_veiculo || 'frota',
       observacoes: dados.observacoes || null,
       lavagem: dados.lavagem === true,
       tipo_lavagem: dados.tipo_lavagem || null
     };
+    
+    // Verificar se o projeto está vazio e definir um valor explícito
+    if (!dadosInserir.projeto || dadosInserir.projeto.trim() === '') {
+      dadosInserir.projeto = 'PROJETO NÃO INFORMADO';
+      console.log('[OsascoV2] Projeto vazio, definindo valor padrão:', dadosInserir.projeto);
+    }
     
     console.log('[OsascoV2] Dados que serão inseridos:', dadosInserir);
     
