@@ -35,8 +35,8 @@ export async function inserirAbastecimentoGuarulhosV2(dadosAbastecimento: any): 
       nome_motorista: dadosAbastecimento.motorista || dadosAbastecimento.nome_motorista || 'Não informado',
       rg_motorista: dadosAbastecimento.rg_motorista || dadosAbastecimento.motorista_rg || 'Não informado',
       nome_operador: dadosAbastecimento.operador || dadosAbastecimento.nome_operador || 'Sistema',
-      // Aqui está o campo que estava causando problemas
-      project: dadosAbastecimento.projeto || dadosAbastecimento.project || 'Não informado',
+      // Campo padronizado para usar "projeto"
+      projeto: dadosAbastecimento.projeto || dadosAbastecimento.project || 'Não informado',
       tipo_veiculo: dadosAbastecimento.tipo_veiculo || 'frota'
     };
     
@@ -48,7 +48,7 @@ export async function inserirAbastecimentoGuarulhosV2(dadosAbastecimento: any): 
       INSERT INTO abastecimentos_posto_guarulhos_v2 (
         placa, km_atual, tipo_combustivel, litros, quantity_litros,
         valor_litro, valor_total, nome_motorista, rg_motorista,
-        nome_operador, project, tipo_veiculo, created_at
+        nome_operador, projeto, tipo_veiculo, created_at
       ) VALUES (
         '${dados.placa}', ${dados.km_atual}, '${dados.tipo_combustivel}',
         ${dados.litros}, ${dados.quantity_litros}, ${dados.valor_litro},
@@ -56,7 +56,7 @@ export async function inserirAbastecimentoGuarulhosV2(dadosAbastecimento: any): 
         '${dados.nome_motorista.replace(/'/g, "''")}', 
         '${dados.rg_motorista.replace(/'/g, "''")}',
         '${dados.nome_operador.replace(/'/g, "''")}', 
-        '${dados.project.replace(/'/g, "''")}', 
+        '${dados.projeto.replace(/'/g, "''")}', 
         '${dados.tipo_veiculo}',
         NOW() at time zone 'America/Sao_Paulo'
       ) RETURNING *;

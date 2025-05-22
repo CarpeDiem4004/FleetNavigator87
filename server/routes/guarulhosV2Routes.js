@@ -31,7 +31,7 @@ router.get('/historico', async (req, res) => {
         observacoes,
         false as lavagem,
         NULL as tipo_lavagem,
-        COALESCE(project, 'Não definido') as projeto,
+        COALESCE(projeto, 'Não definido') as projeto,
         to_char(created_at AT TIME ZONE 'America/Sao_Paulo', 'DD/MM/YYYY HH24:MI') as data_hora,
         created_at
       FROM abastecimentos_posto_guarulhos_v2
