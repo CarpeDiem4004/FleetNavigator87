@@ -9143,12 +9143,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('Iniciando sincronização de serviços de guincho...');
       
+      // Verificar a estrutura da tabela servicos_guincho
+      const tableInfo = await pool.query(`
+        SELECT column_name, data_type 
+        FROM information_schema.columns 
+        WHERE table_name = 'servicos_guincho'
+      `);
+      
+      console.log('Estrutura da tabela servicos_guincho:', tableInfo.rows);
+      
+      // Verificar se as colunas necessárias existem
+      const columns = tableInfo.rows.map(row => row.column_name);
+      console.log('Colunas disponíveis:', columns);
+      
+      // Adaptamos os nomes das colunas conforme existem na tabela
+      const plateColumn = columns.includes('placa') ? 'placa' : 'vehicle_plate';
+      const vehicleColumn = columns.includes('veiculo') ? 'veiculo' : 'vehicle_model';
+      const serviceTypeColumn = columns.includes('tipo_servico') ? 'tipo_servico' : 'service_type';
+      const valueColumn = columns.includes('valor') ? 'valor' : 'value';
+      const dateColumn = columns.includes('data_servico') ? 'data_servico' : 'service_date';
+      const notesColumn = columns.includes('observacoes') ? 'observacoes' : 'notes';
+      const locationColumn = columns.includes('local_atendimento') ? 'local_atendimento' : 'service_location';
+      const kmColumn = columns.includes('km_reboque') ? 'km_reboque' : 'towing_km';
+      const photosColumn = columns.includes('fotos_servico') ? 'fotos_servico' : 'service_photos';
+      
       // 1. Buscar todos os registros na tabela towing_service_notes que não estão em servicos_guincho
-      const result = await pool.query(`
+      const query = `
         WITH inseridos AS (
           INSERT INTO servicos_guincho (
-            parceiro_id, placa, veiculo, tipo_servico, valor, data_servico, 
-            status, observacoes, local_atendimento, km_reboque, fotos_servico, towing_note_id
+            parceiro_id, ${plateColumn}, ${vehicleColumn}, ${serviceTypeColumn}, ${valueColumn}, ${dateColumn}, 
+            status, ${notesColumn}, ${locationColumn}, ${kmColumn}, ${photosColumn}, towing_note_id
           )
           SELECT 
             t.partner_id, t.plate, t.vehicle_model, t.service_type, t.value, t.service_date,
@@ -9162,7 +9186,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           RETURNING id
         )
         SELECT COUNT(*) as count FROM inseridos
-      `);
+      `;
+      
+      console.log('Executando query de sincronização:', query);
+      
+      const result = await pool.query(query);
       
       const count = parseInt(result.rows[0].count, 10);
       
