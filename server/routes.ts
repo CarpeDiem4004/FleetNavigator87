@@ -9163,7 +9163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           p.name as parceiro_nome,
           p.company_name as parceiro_empresa,
           p.city as parceiro_cidade,
-          p.state as parceiro_estado
+          p.status as parceiro_estado
         FROM towing_service_notes s
         JOIN towing_partners p ON s.partner_id = p.id
         ORDER BY s.created_at DESC

@@ -732,7 +732,7 @@ const EditableTowingPartnerDetailPage: React.FC = () => {
                             
                             <div className="mt-2 flex justify-between items-center">
                               <div className="text-sm">
-                                <span className="text-gray-500">Valor Estimado:</span> R$ {request.estimated_cost.toFixed(2)}
+                                <span className="text-gray-500">Valor Estimado:</span> R$ {request.estimated_cost ? request.estimated_cost.toFixed(2) : '0.00'}
                               </div>
                               
                               <div className="flex gap-2">
