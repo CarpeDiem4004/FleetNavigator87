@@ -141,6 +141,18 @@ export default function TowingPartnerExternalAccess() {
         cache: 'no-store'
       });
 
+      // Verificar se a resposta é um JSON válido
+      const contentType = response.headers.get("content-type");
+      if (!response.ok || !contentType?.includes("application/json")) {
+        const textResponse = await response.text();
+        console.error("[ExternalAccess] Resposta inesperada (esperava JSON):", {
+          status: response.status,
+          contentType,
+          responseStart: textResponse.substring(0, 100) // Mostra apenas o início do texto
+        });
+        throw new Error("Resposta inválida do servidor");
+      }
+      
       const data = await response.json();
       console.log('[ExternalAccess] Resposta do histórico recebida:', {
         status: response.status,

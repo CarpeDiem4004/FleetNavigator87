@@ -1,0 +1,75 @@
+[token].tsx:164 [ExternalAccess] Exceção ao carregar histórico: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+
+
+O ChatGPT disse:
+Esse erro:
+
+javascript
+Copiar
+Editar
+SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+significa que seu código esperava receber um JSON de uma API, mas na verdade recebeu um HTML como resposta. Isso normalmente acontece quando:
+
+🔍 Causas mais comuns:
+URL incorreta ou mal configurada:
+
+Ex: Você tentou buscar dados de uma rota /api/historico mas acabou recebendo o HTML da página inicial, porque a rota não existe ou está errada.
+
+O servidor retornou uma página de erro (como 404 ou 500)
+
+Mas você tentou fazer response.json() mesmo assim.
+
+Está tentando acessar um arquivo estático como JSON, mas ele é HTML.
+
+✅ Como corrigir:
+1. Verifique a URL da requisição:
+Confirme que a URL que você está usando realmente retorna um JSON.
+
+Exemplo:
+
+tsx
+Copiar
+Editar
+const res = await fetch('/api/historico');
+const data = await res.json(); // Isso falha se a resposta for HTML
+2. Adicione um check de status antes de fazer res.json():
+tsx
+Copiar
+Editar
+const res = await fetch('/api/historico');
+
+if (!res.ok) {
+  const text = await res.text();
+  console.error('Erro na resposta:', res.status, text);
+  throw new Error('Erro ao carregar histórico');
+}
+
+const data = await res.json();
+3. Faça um console.log(await res.text()) para ver o que está vindo na resposta:
+Isso vai mostrar o HTML que está chegando.
+
+🛠 Exemplo completo de tratamento:
+tsx
+Copiar
+Editar
+useEffect(() => {
+  const loadHistorico = async () => {
+    try {
+      const res = await fetch('/api/historico');
+
+      const contentType = res.headers.get("content-type");
+      if (!res.ok || !contentType?.includes("application/json")) {
+        const html = await res.text();
+        console.error("Resposta inesperada (esperava JSON):", html);
+        throw new Error("Resposta inválida");
+      }
+
+      const data = await res.json();
+      setHistorico(data);
+    } catch (err) {
+      console.error("[ExternalAccess] Exceção ao carregar histórico:", err);
+    }
+  };
+
+  loadHistorico();
+}, []);
