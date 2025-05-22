@@ -9138,6 +9138,154 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rotas para acesso externo simplificado de parceiros de guincho
   app.use('/api/towing/simple-external', simpleExternalAccess);
   
+  // Rota para obter serviços de guincho para aprovação
+  app.get('/api/towing/servicos', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Usuário não autenticado" });
+      }
+      
+      // Consulta SQL para buscar serviços pendentes
+      const query = `
+        SELECT 
+          s.id,
+          s.partner_id,
+          s.plate as placa,
+          s.pickup_location,
+          s.delivery_location,
+          s.service_description as tipo_servico,
+          s.service_date as data_servico,
+          s.cost as valor,
+          s.mileage as km_reboque,
+          s.notes as observacoes,
+          s.status,
+          s.created_at,
+          p.name as parceiro_nome,
+          p.company_name as parceiro_empresa,
+          p.city as parceiro_cidade,
+          p.state as parceiro_estado
+        FROM towing_service_notes s
+        JOIN towing_partners p ON s.partner_id = p.id
+        ORDER BY s.created_at DESC
+      `;
+      
+      const result = await pool.query(query);
+      
+      // Formatar os dados para o formato esperado pelo frontend
+      const servicos = result.rows.map(row => ({
+        id: row.id,
+        parceiro: {
+          id: row.partner_id,
+          nome: row.parceiro_nome || row.parceiro_empresa,
+          cidade: row.parceiro_cidade || 'N/A',
+          estado: row.parceiro_estado || 'N/A',
+          avaliacao: 4.0 // Valor padrão, implementar avaliação real no futuro
+        },
+        placa: row.placa,
+        veiculo: 'Não especificado', // Campo a ser adicionado no futuro
+        tipo_servico: row.tipo_servico || 'Reboque',
+        valor: parseFloat(row.valor) || 0,
+        data_servico: row.data_servico,
+        status: row.status === 'pending' ? 'pendente' : (row.status === 'approved' ? 'aprovado' : 'rejeitado'),
+        observacoes: row.observacoes,
+        local_atendimento: row.pickup_location,
+        km_reboque: row.km_reboque || 0
+      }));
+      
+      return res.status(200).json(servicos);
+    } catch (error: any) {
+      console.error('Erro ao buscar serviços de guincho:', error);
+      return res.status(500).json({ 
+        message: 'Erro ao buscar serviços', 
+        error: error.message 
+      });
+    }
+  });
+  
+  // Rota para aprovar um serviço
+  app.patch('/api/towing/servicos/:id/aprovar', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Usuário não autenticado" });
+      }
+      
+      const servicoId = parseInt(req.params.id);
+      if (isNaN(servicoId)) {
+        return res.status(400).json({ message: "ID do serviço inválido" });
+      }
+      
+      const updateQuery = `
+        UPDATE towing_service_notes
+        SET 
+          status = 'approved',
+          approved_at = NOW(),
+          updated_at = NOW(),
+          approved_by = $1
+        WHERE id = $2
+        RETURNING *
+      `;
+      
+      const result = await pool.query(updateQuery, [req.user.name, servicoId]);
+      
+      if (result.rowCount === 0) {
+        return res.status(404).json({ message: "Serviço não encontrado" });
+      }
+      
+      return res.status(200).json({
+        message: "Serviço aprovado com sucesso",
+        data: result.rows[0]
+      });
+    } catch (error: any) {
+      console.error('Erro ao aprovar serviço:', error);
+      return res.status(500).json({ 
+        message: 'Erro ao aprovar serviço', 
+        error: error.message 
+      });
+    }
+  });
+  
+  // Rota para rejeitar um serviço
+  app.patch('/api/towing/servicos/:id/rejeitar', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Usuário não autenticado" });
+      }
+      
+      const servicoId = parseInt(req.params.id);
+      if (isNaN(servicoId)) {
+        return res.status(400).json({ message: "ID do serviço inválido" });
+      }
+      
+      const updateQuery = `
+        UPDATE towing_service_notes
+        SET 
+          status = 'rejected',
+          updated_at = NOW(),
+          rejected_by = $1,
+          rejected_at = NOW()
+        WHERE id = $2
+        RETURNING *
+      `;
+      
+      const result = await pool.query(updateQuery, [req.user.name, servicoId]);
+      
+      if (result.rowCount === 0) {
+        return res.status(404).json({ message: "Serviço não encontrado" });
+      }
+      
+      return res.status(200).json({
+        message: "Serviço rejeitado com sucesso",
+        data: result.rows[0]
+      });
+    } catch (error: any) {
+      console.error('Erro ao rejeitar serviço:', error);
+      return res.status(500).json({ 
+        message: 'Erro ao rejeitar serviço', 
+        error: error.message 
+      });
+    }
+  });
+  
   // Registrar rotas para o novo módulo de parceiros de guincho
   app.use('/api/towing', towingPartnersRoutes);
   

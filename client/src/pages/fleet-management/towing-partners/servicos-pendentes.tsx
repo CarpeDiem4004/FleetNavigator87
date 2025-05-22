@@ -54,85 +54,22 @@ export default function ServicosPendentesPage() {
   // Consulta para obter serviços prestados
   const { data: servicos, isLoading, error } = useQuery<ServicoPrestado[]>({
     queryKey: ['/api/towing/servicos'],
-    // Em produção, substitua os dados simulados pela chamada API real
     queryFn: async () => {
       try {
-        // Dados simulados para demonstração, na implementação final deverá ser substituído pela chamada API real
-        return [
-          {
-            id: 1,
-            parceiro: {
-              id: 1,
-              nome: "Auto Socorro Express",
-              cidade: "São Paulo",
-              estado: "SP",
-              avaliacao: 4.5
-            },
-            placa: "ABC1234",
-            veiculo: "Ford F-4000",
-            tipo_servico: "Reboque por pane mecânica",
-            valor: 350.00,
-            data_servico: "2025-05-15T14:30:00",
-            status: "pendente",
-            observacoes: "Veículo com problemas no motor, rebocado da Marginal Tietê até a oficina da zona norte.",
-            local_atendimento: "Marginal Tietê, altura do Km 15",
-            km_reboque: 25
+        const response = await fetch('/api/towing/servicos', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
           },
-          {
-            id: 2,
-            parceiro: {
-              id: 2,
-              nome: "Guincho Rápido Ltda",
-              cidade: "Guarulhos",
-              estado: "SP",
-              avaliacao: 4.2
-            },
-            placa: "DEF5678",
-            veiculo: "Mercedes-Benz Sprinter",
-            tipo_servico: "Reboque por acidente",
-            valor: 580.00,
-            data_servico: "2025-05-16T09:15:00",
-            status: "pendente",
-            local_atendimento: "Rodovia Presidente Dutra, Km 230",
-            km_reboque: 40
-          },
-          {
-            id: 3,
-            parceiro: {
-              id: 3,
-              nome: "Pronto Socorro Veicular",
-              cidade: "Campinas",
-              estado: "SP",
-              avaliacao: 4.8
-            },
-            placa: "GHI9012",
-            veiculo: "Volkswagen Delivery",
-            tipo_servico: "Troca de pneus",
-            valor: 180.00,
-            data_servico: "2025-05-14T16:45:00",
-            status: "aprovado",
-            observacoes: "Troca de dois pneus dianteiros realizada no local."
-          },
-          {
-            id: 4,
-            parceiro: {
-              id: 4,
-              nome: "Resgate Veicular 24h",
-              cidade: "Osasco",
-              estado: "SP",
-              avaliacao: 3.9
-            },
-            placa: "JKL3456",
-            veiculo: "Iveco Daily",
-            tipo_servico: "Reboque por problema elétrico",
-            valor: 420.00,
-            data_servico: "2025-05-13T22:10:00",
-            status: "rejeitado",
-            observacoes: "Serviço rejeitado por divergência no valor cobrado.",
-            local_atendimento: "Av. dos Autonomistas, próximo ao Shopping União",
-            km_reboque: 18
-          }
-        ];
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erro ao buscar serviços');
+        }
+        
+        return await response.json();
       } catch (error: any) {
         toast({
           title: "Erro ao carregar serviços",
@@ -148,11 +85,20 @@ export default function ServicosPendentesPage() {
   const aprovarServicoMutation = useMutation({
     mutationFn: async (id: number) => {
       setLoadingServico(id);
-      // Na implementação final, chame a API real
-      // await apiRequest('PATCH', `/api/towing/servicos/${id}/aprovar`);
       
-      // Simulando delay de resposta da API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch(`/api/towing/servicos/${id}/aprovar`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao aprovar serviço');
+      }
+      
       return id;
     },
     onSuccess: (id) => {
@@ -181,11 +127,20 @@ export default function ServicosPendentesPage() {
   const rejeitarServicoMutation = useMutation({
     mutationFn: async (id: number) => {
       setLoadingServico(id);
-      // Na implementação final, chame a API real
-      // await apiRequest('PATCH', `/api/towing/servicos/${id}/rejeitar`);
       
-      // Simulando delay de resposta da API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch(`/api/towing/servicos/${id}/rejeitar`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao rejeitar serviço');
+      }
+      
       return id;
     },
     onSuccess: (id) => {
