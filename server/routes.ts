@@ -9138,6 +9138,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rotas para acesso externo simplificado de parceiros de guincho
   app.use('/api/towing/simple-external', simpleExternalAccess);
   
+  // Rota para sincronizar serviços de guincho entre tabelas
+  app.post('/api/sincronizacao/sincronizar-servicos-guincho', async (req, res) => {
+    try {
+      logger.info('Iniciando sincronização de serviços de guincho...');
+      
+      // 1. Buscar todos os registros na tabela towing_service_notes que não estão em servicos_guincho
+      const result = await pool.query(`
+        WITH inseridos AS (
+          INSERT INTO servicos_guincho (
+            parceiro_id, placa, veiculo, tipo_servico, valor, data_servico, 
+            status, observacoes, local_atendimento, km_reboque, fotos_servico, towing_note_id
+          )
+          SELECT 
+            t.partner_id, t.plate, t.vehicle_model, t.service_type, t.value, t.service_date,
+            'pendente', t.notes, t.service_location, t.towing_km, t.service_photos, t.id
+          FROM 
+            towing_service_notes t
+          LEFT JOIN 
+            servicos_guincho s ON t.id = s.towing_note_id
+          WHERE 
+            s.id IS NULL
+          RETURNING id
+        )
+        SELECT COUNT(*) as count FROM inseridos
+      `);
+      
+      const count = parseInt(result.rows[0].count, 10);
+      
+      // 2. Atualizar a view para incluir os novos registros
+      try {
+        await pool.query(`
+          REFRESH MATERIALIZED VIEW IF EXISTS vw_servicos_guincho
+        `);
+      } catch (viewError) {
+        logger.warn('A view materializada não existe ou não pôde ser atualizada:', viewError);
+      }
+      
+      logger.info(`Sincronização concluída. ${count} serviços sincronizados.`);
+      
+      res.json({ 
+        success: true, 
+        message: 'Sincronização concluída com sucesso',
+        count: count 
+      });
+    } catch (error) {
+      logger.error('Erro ao sincronizar serviços de guincho:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao sincronizar serviços de guincho',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+  });
+  
   // Rota para obter serviços de guincho para aprovação
   app.get('/api/towing/servicos', async (req, res) => {
     try {

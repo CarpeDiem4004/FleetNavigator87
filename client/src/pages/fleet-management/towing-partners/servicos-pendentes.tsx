@@ -14,9 +14,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import PageHeader from '@/components/layout/PageHeader';
 import ServicoPrestadoCard from '@/components/ServicoPrestadoCard';
 import AppLayout from '@/components/AppLayout';
+import { SincronizarServicosButton } from '@/components/SincronizarServicosButton';
 
 // Ícones
-import { Search, AlertCircle, FileText, CheckCircle, XCircle } from 'lucide-react';
+import { Search, AlertCircle, FileText, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
 // Tipos
@@ -221,6 +222,19 @@ export default function ServicosPendentesPage() {
         <PageHeader
           title="Serviços Prestados por Parceiros"
           description="Gerencie e aprove os serviços prestados pelos parceiros de guincho"
+          actions={
+            <SincronizarServicosButton 
+              onSuccess={() => {
+                queryClient.invalidateQueries({ queryKey: ['/api/towing/servicos'] });
+                toast({
+                  title: "Serviços sincronizados",
+                  description: "Os serviços de guincho foram atualizados no sistema",
+                });
+              }}
+            >
+              Sincronizar Serviços
+            </SincronizarServicosButton>
+          }
         />
 
         <div className="flex flex-col md:flex-row justify-between gap-4 mb-6 items-start md:items-center">
