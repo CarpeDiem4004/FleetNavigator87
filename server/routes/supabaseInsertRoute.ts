@@ -119,20 +119,44 @@ export async function supabaseInsertHandler(req: Request, res: Response) {
       }
     } else {
       // Para outras tabelas, usamos a inserção padrão do Supabase
-      const result = await supabase
-        .from(table)
-        .insert([data])
-        .select();
+      // Adicionar mais logs para diagnóstico detalhado
+      console.log(`Tentando inserir dados na tabela ${table} do Supabase com os seguintes dados:`, data);
+      
+      try {
+        const result = await supabase
+          .from(table)
+          .insert([data])
+          .select();
         
-      insertedData = result.data;
-      error = result.error;
+        // Log do resultado da inserção
+        console.log(`Resultado da inserção na tabela ${table}:`, result);
+        
+        // Se não tiver dados retornados, pode ser um erro
+        if (!result.data || result.data.length === 0) {
+          console.warn(`Nenhum dado retornado após inserção na tabela ${table}, possível erro.`);
+        }
+        
+        insertedData = result.data;
+        error = result.error;
+      } catch (insertError) {
+        console.error(`Erro ao inserir na tabela ${table}:`, insertError);
+        error = {
+          message: insertError instanceof Error ? insertError.message : 'Erro desconhecido na inserção',
+          details: JSON.stringify(insertError)
+        };
+      }
     }
     
     if (error) {
       console.error(`Erro ao inserir dados no Supabase (tabela ${table}):`, error);
+      // Melhoria na mensagem de erro para evitar "undefined"
+      const errorMessage = error.message 
+        ? `Erro ao inserir dados: ${error.message}` 
+        : `Erro ao inserir dados no Supabase (detalhes: ${JSON.stringify(error)})`;
+      
       return res.status(500).json({
         success: false,
-        message: `Erro ao inserir dados: ${error.message}`,
+        message: errorMessage,
         error
       });
     }

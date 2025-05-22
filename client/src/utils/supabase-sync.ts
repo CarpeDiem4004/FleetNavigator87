@@ -67,12 +67,20 @@ export async function enviarAbastecimentoSupabase(dadosAbastecimento: any) {
       
       console.log('Dados limpos para envio:', dadosLimpos);
       
+      // Adiciona posto_id aos dados para facilitar identificação do posto
+      if (!dadosLimpos.posto_id && dadosLimpos.codigo_posto) {
+        dadosLimpos.posto_id = dadosLimpos.codigo_posto;
+      }
+      
+      // Importante: adiciona o parâmetro posto no corpo da requisição
+      // para que o servidor identifique corretamente como requisição de posto
       const apiResponse = await fetch('/api/supabase-insert', {
         method: 'POST',
         headers,
         body: JSON.stringify({
           table: 'abastecimentos_supabase',
-          data: dadosLimpos
+          data: dadosLimpos,
+          posto: dadosLimpos.posto_id || dadosLimpos.codigo_posto || dadosLimpos.nome_posto
         })
       });
       
@@ -83,9 +91,13 @@ export async function enviarAbastecimentoSupabase(dadosAbastecimento: any) {
         // Tentar fazer parse da resposta como JSON primeiro
         responseData = await apiResponse.json();
         errorText = responseData.message || responseData.error || 'Erro desconhecido';
+        
+        // Log detalhado para ajudar no diagnóstico
+        console.log('Resposta da API de inserção Supabase:', responseData);
       } catch (parseError) {
         // Se não for JSON, ler como texto
         errorText = await apiResponse.text();
+        console.error('Erro ao processar resposta JSON:', parseError);
       }
       
       if (apiResponse.ok) {
