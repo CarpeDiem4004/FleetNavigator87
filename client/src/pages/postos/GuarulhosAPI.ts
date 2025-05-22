@@ -40,6 +40,9 @@ export async function inserirAbastecimentoGuarulhosV2(dadosAbastecimento: any): 
       tipo_veiculo: dadosAbastecimento.tipo_veiculo || 'frota'
     };
     
+    // Imprimir dados que estão sendo enviados para debug
+    console.log('>>> Dados que serão enviados para Guarulhos V2:', dados);
+    
     // Construir a SQL de forma segura, sem usar comentários JavaScript
     const sql = `
       INSERT INTO abastecimentos_posto_guarulhos_v2 (
@@ -49,8 +52,12 @@ export async function inserirAbastecimentoGuarulhosV2(dadosAbastecimento: any): 
       ) VALUES (
         '${dados.placa}', ${dados.km_atual}, '${dados.tipo_combustivel}',
         ${dados.litros}, ${dados.quantity_litros}, ${dados.valor_litro},
-        ${dados.valor_total}, '${dados.nome_motorista}', '${dados.rg_motorista}',
-        '${dados.nome_operador}', '${dados.project}', '${dados.tipo_veiculo}',
+        ${dados.valor_total}, 
+        '${dados.nome_motorista.replace(/'/g, "''")}', 
+        '${dados.rg_motorista.replace(/'/g, "''")}',
+        '${dados.nome_operador.replace(/'/g, "''")}', 
+        '${dados.project.replace(/'/g, "''")}', 
+        '${dados.tipo_veiculo}',
         NOW()
       ) RETURNING *;
     `;
