@@ -724,6 +724,30 @@ router.get('/history/:token', async (req, res) => {
       ORDER BY created_at DESC
     `;
     
+    // Sincronizar com a view de serviços para garantir consistência
+    const syncWithViewQuery = `
+      INSERT INTO servicos_guincho (
+        id, parceiro_id, placa, origem, destino, 
+        tipo_servico, data_lancamento, valor, km_percorrido, 
+        observacoes, status, prioridade
+      )
+      SELECT 
+        id, partner_id, plate, pickup_location, delivery_location,
+        service_description, service_date, cost, mileage,
+        notes, status, priority
+      FROM towing_service_notes 
+      WHERE partner_id = $1
+      ON CONFLICT (id) DO NOTHING
+    `;
+    
+    try {
+      await pool.query(syncWithViewQuery, [partnerId]);
+      console.log('[SimpleExternalAccess] Sincronização com view de serviços realizada');
+    } catch (syncError) {
+      console.error('[SimpleExternalAccess] Erro ao sincronizar com view:', syncError);
+      // Continuar mesmo com erro na sincronização
+    }
+    
     const historyResult = await pool.query(historyQuery, [partnerId]);
     console.log('[SimpleExternalAccess] Serviços encontrados:', historyResult.rowCount);
     

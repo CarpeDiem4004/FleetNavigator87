@@ -361,18 +361,52 @@ router.delete('/parceiros/:id', isAuthenticated, async (req, res) => {
   }
 });
 
+// Função para sincronizar serviços entre as tabelas
+async function sincronizarServicosGuincho() {
+  try {
+    console.log("[ParceirosGuincho] Iniciando sincronização de serviços de guincho...");
+    
+    // Primeiro, verificamos se existem serviços na tabela towing_service_notes que ainda não estão na tabela servicos_guincho
+    const syncQuery = `
+      INSERT INTO servicos_guincho (
+        id, parceiro_id, placa, origem, destino, 
+        tipo_servico, data_lancamento, valor, km_percorrido, 
+        observacoes, status, prioridade
+      )
+      SELECT 
+        tsn.id, tsn.partner_id, tsn.plate, tsn.pickup_location, tsn.delivery_location,
+        tsn.service_description, tsn.service_date, tsn.cost, tsn.mileage,
+        tsn.notes, tsn.status, tsn.priority
+      FROM towing_service_notes tsn
+      LEFT JOIN servicos_guincho sg ON tsn.id = sg.id
+      WHERE sg.id IS NULL
+      ON CONFLICT (id) DO NOTHING
+    `;
+    
+    const syncResult = await pool.query(syncQuery);
+    console.log(`[ParceirosGuincho] Sincronização concluída: ${syncResult.rowCount || 0} serviços sincronizados`);
+    
+    return true;
+  } catch (error) {
+    console.error("[ParceirosGuincho] Erro ao sincronizar serviços de guincho:", error);
+    return false;
+  }
+}
+
 // Rota para listar serviços de guincho
 router.get('/servicos', isAuthenticated, async (req, res) => {
   try {
     await criarTabelasParceirosGuincho();
     
+    // Sempre sincronizar os serviços antes de listar
+    await sincronizarServicosGuincho();
+    
     // Obter filtros da query string
     const { status, parceiro_id } = req.query;
     
+    // Consulta principal - usando a view para garantir dados mais completos
     let query = `
-      SELECT s.*, p.nome as parceiro_nome 
-      FROM servicos_guincho s
-      JOIN parceiros_guincho p ON s.parceiro_id = p.id
+      SELECT * FROM vw_servicos_guincho 
       WHERE 1=1
     `;
     
@@ -381,16 +415,16 @@ router.get('/servicos', isAuthenticated, async (req, res) => {
     // Aplicar filtros se fornecidos
     if (status) {
       params.push(status);
-      query += ` AND s.status = $${params.length}`;
+      query += ` AND status = $${params.length}`;
     }
     
     if (parceiro_id) {
       params.push(parceiro_id);
-      query += ` AND s.parceiro_id = $${params.length}`;
+      query += ` AND partner_id = $${params.length}`;
     }
     
-    // Ordenar por data de lançamento (mais recentes primeiro)
-    query += ` ORDER BY s.data_lancamento DESC`;
+    // Ordenar por data de serviço (mais recentes primeiro)
+    query += ` ORDER BY data_servico DESC`;
     
     const result = await pool.query(query, params);
     
