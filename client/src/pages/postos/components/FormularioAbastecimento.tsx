@@ -606,10 +606,60 @@ const FormularioAbastecimento: React.FC<
         } else if (postId.toLowerCase() === "guarulhos_v2" || 
             postId.toLowerCase().includes("guarulhos_v2") || 
             postId.toLowerCase().includes("guarulhos v2")) {
-          // Usar a rota direta para Guarulhos V2
+          // Usar API específica para Guarulhos V2 para garantir que o campo projeto seja salvo corretamente
+          try {
+            console.log(">>> Usando API específica para Guarulhos V2");
+            
+            // Importar dinamicamente a API específica do Guarulhos V2
+            const { inserirAbastecimentoGuarulhosV2 } = await import("@/pages/postos/GuarulhosAPI");
+            
+            // Enviar diretamente através da API especializada que trata o campo projeto corretamente
+            const resultado = await inserirAbastecimentoGuarulhosV2(dadosAbastecimento);
+            
+            console.log("Resultado da API GuarulhosV2:", resultado);
+            
+            // Simulando o fluxo normal para não quebrar o restante do código
+            endpoint = `/api/abastecimento-direto/guarulhos_v2`;
+            usarRotaDireta = false; // Marca como FALSE pois não vamos fazer a chamada normal
+            
+            // Já temos o resultado, podemos pular para a atualização no frontend
+            if (mountedRef.current) {
+              setRegistroSucesso(true);
+              setIsSubmitting(false);
+              processingRef.current = false;
+              
+              // Notificar historico para atualizar
+              eventosBus.emit(EVENTOS.ATUALIZAR_HISTORICO, { posto: "posto guarulhos v2" });
+              
+              if (onRegistroSucesso) {
+                onRegistroSucesso();
+              }
+              
+              // Evitar o resto do fluxo normal
+              return;
+            }
+            
+            return; // Importante: retornar aqui para evitar o fluxo padrão
+          } catch (guarulhosError) {
+            console.error("Erro na API específica de Guarulhos V2:", guarulhosError);
+            toast({
+              title: "Erro ao processar abastecimento",
+              description: "Ocorreu um erro ao tentar registrar o abastecimento em Guarulhos V2. Tente novamente ou contate o suporte.",
+              variant: "destructive",
+            });
+            
+            if (mountedRef.current) {
+              setIsSubmitting(false);
+              processingRef.current = false;
+            }
+            
+            return; // Retornar para evitar tentar o fluxo normal
+          }
+          
+          // Se chegarmos aqui (não deveria acontecer), usaremos o fluxo padrão como fallback
           endpoint = `/api/abastecimento-direto/guarulhos_v2`;
           usarRotaDireta = true;
-          console.log(">>> Usando rota específica para Guarulhos V2");
+          console.log(">>> Usando rota específica para Guarulhos V2 como fallback");
         } else if (postId.toLowerCase() === "alair_v2" || 
             postId.toLowerCase().includes("alair_v2") || 
             postId.toLowerCase().includes("alair v2")) {

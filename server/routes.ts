@@ -881,6 +881,9 @@ async function criarTabelaDemoForms() {
   }
 }
 
+// Importar a rota SQL segura
+import sqlSeguroRouter from './routes/sql-seguro';
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Inicializar rotas de ressincronização
   initResyncRoutes(pool);
@@ -902,6 +905,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await atualizarTabelaPneus();
   await setupTireActivityTable();
   await criarTabelaDemoForms();
+  
+  // Registrar rota SQL segura (novo)
+  app.use('/api', sqlSeguroRouter);
   
   // Registrar rotas de diagnóstico
   app.use('/api/diagnostico', diagnosticoRoutes);
