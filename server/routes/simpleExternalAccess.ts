@@ -102,10 +102,10 @@ async function ensureTestPartnerExists(partnerId: number): Promise<boolean> {
     // Inserir o parceiro no banco de dados
     const insertQuery = `
       INSERT INTO towing_partners (
-        id, name, company_name, contact_name, contact_phone, 
-        address, isactive, created_at
+        id, name, company_name, contact_person, phone, 
+        address, status, created_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, true, NOW())
+      VALUES ($1, $2, $3, $4, $5, $6, 'ativo', NOW())
       ON CONFLICT (id) DO NOTHING
       RETURNING id
     `;
