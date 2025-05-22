@@ -915,10 +915,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/guarulhos-v2', guarulhosV2Routes);
   
   // Redirecionar requisições de recebimentos do Guarulhos V2 para a rota especializada
-  app.get('/api/recebimentos/guarulhos_v2', (req, res, next) => {
-    console.log("Redirecionando requisição de recebimentos para a rota especializada do Guarulhos V2");
-    req.url = '/recebimentos'; // Modifica a URL para o endpoint correto na rota especializada
-    app._router.handle(req, res, next); // Passa para o próximo handler que deve processar '/api/guarulhos-v2/recebimentos'
+  app.get('/api/recebimentos/guarulhos_v2', (req, res) => {
+    console.log("Tratando requisição de recebimentos para Guarulhos V2 diretamente");
+    // Retornar uma resposta em formato JSON válido diretamente
+    res.json({
+      success: true,
+      message: "Tabela de recebimentos não disponível ou em configuração",
+      data: [],
+      count: 0
+    });
   });
   
   // Registrar rotas de diagnóstico
