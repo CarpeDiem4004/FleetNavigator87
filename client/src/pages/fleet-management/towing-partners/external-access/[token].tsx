@@ -381,7 +381,8 @@ export default function TowingPartnerExternalAccess() {
       
       console.log('[ExternalAccess] Dados normalizados para envio:', serviceData);
       
-      const response = await fetch('/api/towing/simple-external/submit', {
+      // Usando a rota de emergência que funciona corretamente
+      const response = await fetch('/api/towing/emergency/submit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
