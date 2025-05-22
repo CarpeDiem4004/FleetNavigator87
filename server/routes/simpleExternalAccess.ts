@@ -214,7 +214,7 @@ router.post('/submit', async (req, res) => {
       const mockServiceId = Math.floor(Math.random() * 10000) + 1000;
       const mockServiceDate = new Date();
       
-      // Criar objeto do serviço simulado
+      // Criar objeto do serviço simulado para resposta
       const mockService = {
         id: mockServiceId,
         partner_id: partnerId,
@@ -233,16 +233,71 @@ router.post('/submit', async (req, res) => {
         payment_status: "pending"
       };
       
-      // Salvar o serviço no nosso armazenamento temporário
-      addTestService(partnerId, mockService);
+      // IMPORTANTE: Salvar no banco de dados real para que apareça na tela de aprovação
+      const insertQuery = `
+        INSERT INTO towing_service_notes (
+          partner_id, 
+          plate, 
+          pickup_location, 
+          delivery_location, 
+          service_description, 
+          service_date, 
+          cost, 
+          mileage, 
+          notes,
+          contact_name,
+          contact_phone,
+          status,
+          created_at,
+          payment_status
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending', NOW(), 'pending')
+        RETURNING *
+      `;
       
-      console.log(`[SimpleExternalAccess] Serviço de teste ID:${mockServiceId} salvo para parceiro ID:${partnerId}`);
+      const values = [
+        partnerId,
+        (normalizedPlate || '').toUpperCase(),
+        normalizedPickup,
+        normalizedDelivery,
+        normalizedService || "Reboque",
+        normalizedDate || mockServiceDate,
+        parseFloat(normalizedCost.toString()),
+        normalizedMileage || null,
+        normalizedNotes || null,
+        normalizedContactName || null,
+        normalizedContactPhone || null
+      ];
       
-      return res.status(201).json({
-        success: true,
-        message: 'Serviço registrado com sucesso (modo de teste)',
-        data: mockService
-      });
+      try {
+        console.log('[SimpleExternalAccess] Salvando serviço de teste no banco de dados com valores:', values);
+        const result = await pool.query(insertQuery, values);
+        
+        // Atualizar o mockService com o ID real do banco de dados
+        mockService.id = result.rows[0].id;
+        
+        console.log(`[SimpleExternalAccess] Serviço de teste ID:${result.rows[0].id} salvo no banco para parceiro ID:${partnerId}`);
+        
+        // Também salvar no armazenamento temporário para compatibilidade
+        addTestService(partnerId, mockService);
+        
+        return res.status(201).json({
+          success: true,
+          message: 'Serviço registrado com sucesso (modo de teste)',
+          data: mockService
+        });
+      } catch (insertError) {
+        console.error('[SimpleExternalAccess] Erro ao salvar serviço de teste no banco:', insertError);
+        
+        // Fallback para o comportamento anterior
+        addTestService(partnerId, mockService);
+        
+        return res.status(201).json({
+          success: true,
+          message: 'Serviço registrado com sucesso (modo de teste - apenas memória)',
+          data: mockService
+        });
+      }
     }
     
     // Para tokens reais, registrar efetivamente no banco de dados
