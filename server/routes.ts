@@ -47,6 +47,7 @@ import patioRoutes from "./routes/patioRoutes";
 import pneusRoutes from "./routes/pneusRoutes";
 import sqlSeguroRouter from "./routes/sql-seguro";
 import guarulhosV2Routes from "./routes/guarulhosV2Routes";
+import osascoV2Routes from "./routes/osascoV2Routes";
 import { db, pool } from "./db";
 import authHybridRoutes from "./routes/authHybridRoutes";
 import * as userHandler from "./handlers/userHandler";
@@ -913,6 +914,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registrar rotas especializadas para o posto Guarulhos V2
   app.use('/api/guarulhos-v2', guarulhosV2Routes);
+  
+  // Registrar rotas especializadas para o posto Osasco V2
+  app.use('/api/osasco-v2', osascoV2Routes);
   
   // Redirecionar requisições de recebimentos do Guarulhos V2 para a rota especializada
   app.get('/api/recebimentos/guarulhos_v2', (req, res) => {
