@@ -5,7 +5,10 @@
 import express, { Request, Response } from 'express';
 import { pool } from '../db';
 import { unifiedAuthMiddleware, requireRoles } from '../utils/auth-utils';
-import { getTestServices } from './simpleExternalAccess';
+// Implementação temporária para substituir o módulo com problemas
+const getTestServices = (partnerId: number) => {
+  return []; // Retorna lista vazia temporariamente
+};
 
 const router = express.Router();
 

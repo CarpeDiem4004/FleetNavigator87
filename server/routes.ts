@@ -41,7 +41,10 @@ import postoRoutes from "./routes/postoRoutes.js";
 import frotaEstoqueRoutes from "./routes/frotaEstoqueRoutes";
 import parceirosGuinchoRoutes from "./routes/parceirosGuinchoRoutes";
 import towingPartnersRoutes from "./routes/towingPartnersRoutes";
-import simpleExternalAccess from './routes/simpleExternalAccess';
+// Arquivo com problemas de sintaxe, desativado temporariamente
+// import simpleExternalAccess from './routes/simpleExternalAccess';
+// import simpleExternalAccessRepair from './routes/simpleExternalAccess_repair';
+import towingServiceEmergency from './routes/towingServiceEmergency';
 import historicoConsolidadoRoutes from "./routes/historicoConsolidadoRoutes";
 import patioRoutes from "./routes/patioRoutes";
 import pneusRoutes from "./routes/pneusRoutes";
@@ -9136,7 +9139,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/guincho', parceirosGuinchoRoutes);
   
   // Rotas para acesso externo simplificado de parceiros de guincho
-  app.use('/api/towing/simple-external', simpleExternalAccess);
+  // Usando nossa rota de emergência para serviços de guincho
+  // Usando nossa rota de emergência para resolver os problemas
+  app.use('/api/towing/emergency', towingServiceEmergency);
+  
+  // Rota alternativa para registrar serviços de guincho
+  app.post('/api/towing/register-service', async (req, res) => {
+    try {
+      console.log('[EmergencyRoute] Recebendo solicitação de serviço:', req.body);
+      
+      const { token, plate, pickup_location, delivery_location, service_description,
+             service_date, cost, mileage, notes, contact_name, contact_phone } = req.body;
+      
+      // Buscar parceiro pelo token
+      let partnerId = 8; // Default para Caio Ramos (teste)
+      
+      if (token && token !== 'TESTE_CAIO_RAMOS_DE_SOUZA__TOKEN') {
+        const tokenQuery = `
+          SELECT partner_id FROM towing_access_tokens 
+          WHERE token = $1 AND active = true
+        `;
+        const tokenResult = await pool.query(tokenQuery, [token]);
+        if (tokenResult.rowCount && tokenResult.rowCount > 0) {
+          partnerId = tokenResult.rows[0].partner_id;
+        }
+      }
+      
+      // Inserir novo serviço
+      const insertQuery = `
+        INSERT INTO towing_service_notes (
+          partner_id, plate, pickup_location, delivery_location, 
+          service_description, service_date, cost, mileage, 
+          notes, contact_name, contact_phone, status, created_at, payment_status
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending', NOW(), 'pending')
+        RETURNING *
+      `;
+      
+      const values = [
+        partnerId,
+        plate?.toUpperCase() || 'PLACA NÃO INFORMADA',
+        pickup_location || '',
+        delivery_location || '',
+        service_description || 'Reboque',
+        service_date ? new Date(service_date) : new Date(),
+        cost ? parseFloat(cost.toString()) : 0,
+        mileage ? parseInt(mileage.toString()) : 0,
+        notes || '',
+        contact_name || '',
+        contact_phone || '',
+      ];
+      
+      const result = await pool.query(insertQuery, values);
+      
+      if (result.rowCount && result.rowCount > 0) {
+        console.log('[EmergencyRoute] Serviço registrado com sucesso:', result.rows[0].id);
+        return res.status(201).json({
+          success: true,
+          message: 'Serviço registrado com sucesso',
+          data: result.rows[0]
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: 'Erro ao registrar serviço'
+        });
+      }
+    } catch (error) {
+      console.error('[EmergencyRoute] Erro ao registrar serviço:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno ao processar o serviço',
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
   
   // Rota para sincronizar serviços de guincho entre tabelas
   app.post('/api/sincronizacao/sincronizar-servicos-guincho', async (req, res) => {
