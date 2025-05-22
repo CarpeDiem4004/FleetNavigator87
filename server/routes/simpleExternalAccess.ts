@@ -32,6 +32,251 @@ export function getTestServices(partnerId: number) {
   return testServices.get(partnerId) || [];
 }
 
+// Lista de parceiros de teste para facilitar a geração de dados e a consistência
+export const TEST_PARTNERS = [
+  { id: 5, name: "Guincho Águia", company: "Guincho Águia LTDA", tokens: ["teste_guincho_aguia_token"] },
+  { id: 6, name: "Ford", company: "Ford Serviços de Guincho Ltda", tokens: ["teste_ford_token"] },
+  { id: 8, name: "Caio Ramos de Souza", company: "Ramos Guincho Express", tokens: ["teste_caio_ramos_de_souza_token"] },
+  { id: 9, name: "Claudio de Oliveira Silva", company: "Oliveira Auto Socorro", tokens: ["teste_claudio_de_oliveira_token"] },
+  { id: 10, name: "Daiane do Vale Amaral", company: "Vale Serviços de Guincho", tokens: ["teste_daiane_do_vale_token"] },
+  { id: 11, name: "Delões Guinchos e Munck", company: "Delões Guinchos e Munck LTDA", tokens: ["teste_deloes_guinchos_token"] },
+  { id: 12, name: "Fluxo Guinchos", company: "Fluxo Guinchos e Serviços LTDA", tokens: ["teste_fluxo_guinchos_token"] },
+  { id: 15, name: "Allan de Souza Vieira", company: "Vieira Serviços Automotivos", tokens: ["teste_allan_de_souza_vieira_token"] }
+];
+
+// Função para encontrar o ID do parceiro pelo token
+function findPartnerIdByToken(token: string): number | null {
+  const normalizedToken = token.toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/_{2,}/g, '_')
+    .replace(/\s+/g, '_')
+    .replace(/__+/g, '_');
+  
+  for (const partner of TEST_PARTNERS) {
+    // Verificar tokens exatos
+    if (partner.tokens.some(t => normalizedToken === t.toLowerCase())) {
+      return partner.id;
+    }
+    
+    // Verificar correspondências parciais de nomes no token
+    const partnerNameNormalized = partner.name.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, '_');
+    
+    if (normalizedToken.includes(partnerNameNormalized) || 
+        normalizedToken.includes(partner.name.toLowerCase().split(' ')[0])) {
+      return partner.id;
+    }
+  }
+  
+  return null;
+}
+
+// Função para verificar e criar o parceiro de teste no banco de dados
+async function ensureTestPartnerExists(partnerId: number): Promise<boolean> {
+  try {
+    // Verificar se o parceiro já existe
+    const checkQuery = `
+      SELECT COUNT(*) as count 
+      FROM towing_partners 
+      WHERE id = $1
+    `;
+    
+    const checkResult = await pool.query(checkQuery, [partnerId]);
+    const partnerExists = parseInt(checkResult.rows[0].count, 10) > 0;
+    
+    if (partnerExists) {
+      console.log(`[TestServices] Parceiro ID ${partnerId} já existe no banco de dados.`);
+      return true;
+    }
+    
+    // Buscar informações do parceiro
+    const partnerInfo = TEST_PARTNERS.find(p => p.id === partnerId);
+    if (!partnerInfo) {
+      console.log(`[TestServices] Não foi possível encontrar informações para o parceiro ID ${partnerId}.`);
+      return false;
+    }
+    
+    console.log(`[TestServices] Criando parceiro de teste ID ${partnerId} (${partnerInfo.name})...`);
+    
+    // Inserir o parceiro no banco de dados
+    const insertQuery = `
+      INSERT INTO towing_partners (
+        id, name, company_name, contact_name, contact_phone, 
+        address, created_at, is_active
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, NOW(), true)
+      ON CONFLICT (id) DO NOTHING
+      RETURNING id
+    `;
+    
+    const insertResult = await pool.query(insertQuery, [
+      partnerId,
+      partnerInfo.name,
+      partnerInfo.company,
+      `Contato ${partnerInfo.name}`,
+      '11999999999',
+      'Endereço não disponível'
+    ]);
+    
+    if (insertResult.rowCount && insertResult.rowCount > 0) {
+      console.log(`[TestServices] Parceiro ID ${partnerId} criado com sucesso.`);
+      return true;
+    } else {
+      console.log(`[TestServices] Parceiro ID ${partnerId} já existia ou não pôde ser criado.`);
+      return partnerExists;
+    }
+  } catch (error) {
+    console.error(`[TestServices] Erro ao verificar/criar parceiro ID ${partnerId}:`, error);
+    return false;
+  }
+}
+
+// Função para gerar serviços de teste para um parceiro específico
+async function ensureTestServicesExist(partnerId: number): Promise<void> {
+  try {
+    // Primeiro, garantir que o parceiro existe
+    const partnerExists = await ensureTestPartnerExists(partnerId);
+    if (!partnerExists) {
+      console.log(`[TestServices] Não foi possível criar serviços para parceiro ID ${partnerId} pois ele não existe.`);
+      return;
+    }
+    
+    // Verificar se já existem serviços para este parceiro no banco de dados
+    const checkQuery = `
+      SELECT COUNT(*) as count 
+      FROM towing_service_notes 
+      WHERE partner_id = $1
+    `;
+    
+    const checkResult = await pool.query(checkQuery, [partnerId]);
+    const serviceCount = parseInt(checkResult.rows[0].count, 10);
+    
+    // Se já existirem serviços, não precisamos criar novos
+    if (serviceCount > 0) {
+      console.log(`[TestServices] Parceiro ID ${partnerId} já possui ${serviceCount} serviços no banco de dados.`);
+      return;
+    }
+    
+    console.log(`[TestServices] Criando serviços de teste para parceiro ID ${partnerId}...`);
+    
+    // Buscar informações do parceiro
+    const partnerInfo = TEST_PARTNERS.find(p => p.id === partnerId);
+    const partnerName = partnerInfo ? partnerInfo.name : `Parceiro ID ${partnerId}`;
+    // Dados para serviços de teste variados
+    const plates = ['ABC1234', 'DEF5678', 'GHI9012', 'JKL3456', 'MNO7890'];
+    const pickupLocations = [
+      'Av. Paulista, 1000, São Paulo, SP',
+      'Rua Augusta, 500, São Paulo, SP',
+      'Av. Anhanguera, km 15, Goiânia, GO',
+      'Rod. Pres. Dutra, km 230, São José dos Campos, SP',
+      'Av. Brasil, 2500, Rio de Janeiro, RJ'
+    ];
+    const deliveryLocations = [
+      'Oficina Central, Rua dos Mecânicos, 123, São Paulo, SP',
+      'Concessionária AutoStar, Av. Rebouças, 789, São Paulo, SP',
+      'Centro Automotivo Silva, Rua da Industria, 456, Campinas, SP',
+      'Estacionamento Shopping Center, Av. Comercial, 1000, Rio de Janeiro, RJ',
+      'Base Muricion Logística, Rua Transportadora, 555, Guarulhos, SP'
+    ];
+    const serviceTypes = ['Reboque', 'Guincho', 'Reboque de veículo quebrado', 'Transporte de veículo', 'Socorro mecânico'];
+    const statuses = ['aprovado', 'pendente', 'rejeitado'];
+    const paymentStatuses = ['pago', 'pendente', 'cancelado'];
+    
+    // Criar entre 2 e 4 serviços para cada parceiro
+    const numServices = Math.floor(Math.random() * 3) + 2; // 2 a 4 serviços
+    const insertValues = [];
+    const insertParams = [];
+    
+    for (let i = 0; i < numServices; i++) {
+      const randomDays = Math.floor(Math.random() * 30) + 1; // 1 a 30 dias atrás
+      const serviceDate = new Date(Date.now() - (randomDays * 86400000));
+      const createdAt = new Date(serviceDate.getTime() - (Math.random() * 86400000)); // Criado antes da data do serviço
+      
+      const plate = plates[Math.floor(Math.random() * plates.length)];
+      const pickup = pickupLocations[Math.floor(Math.random() * pickupLocations.length)];
+      const delivery = deliveryLocations[Math.floor(Math.random() * deliveryLocations.length)];
+      const serviceType = serviceTypes[Math.floor(Math.random() * serviceTypes.length)];
+      const status = statuses[Math.floor(Math.random() * statuses.length)];
+      const paymentStatus = status === 'aprovado' ? 
+        paymentStatuses[Math.floor(Math.random() * 2)] : // só pode ser pago ou pendente se aprovado
+        'pendente';
+      
+      const kmDistance = Math.floor(Math.random() * 50) + 5; // 5 a 55 km
+      const baseCost = 150;
+      const costPerKm = 3.5;
+      const serviceCost = baseCost + (kmDistance * costPerKm);
+      
+      // Aprovado há algumas horas atrás se o status for aprovado
+      const approvedAt = status === 'aprovado' ? 
+        new Date(serviceDate.getTime() + (Math.random() * 43200000)) : // até 12h depois
+        null;
+      
+      insertValues.push(`($${insertParams.length + 1}, $${insertParams.length + 2}, $${insertParams.length + 3}, 
+                           $${insertParams.length + 4}, $${insertParams.length + 5}, $${insertParams.length + 6}, 
+                           $${insertParams.length + 7}, $${insertParams.length + 8}, $${insertParams.length + 9}, 
+                           $${insertParams.length + 10}, $${insertParams.length + 11}, $${insertParams.length + 12},
+                           $${insertParams.length + 13})`);
+                           
+      insertParams.push(
+        partnerId,           // partner_id
+        plate,               // plate
+        pickup,              // pickup_location
+        delivery,            // delivery_location
+        serviceType,         // service_description
+        serviceDate,         // service_date
+        serviceCost,         // cost
+        kmDistance,          // mileage
+        `Serviço de teste para ${partnerName}`, // notes
+        status,              // status
+        paymentStatus,       // payment_status
+        approvedAt,          // approved_at
+        createdAt            // created_at
+      );
+    }
+    
+    // Inserir todos os serviços de uma vez
+    const insertQuery = `
+      INSERT INTO towing_service_notes (
+        partner_id, plate, pickup_location, delivery_location, 
+        service_description, service_date, cost, mileage, notes,
+        status, payment_status, approved_at, created_at
+      )
+      VALUES ${insertValues.join(', ')}
+      ON CONFLICT DO NOTHING
+      RETURNING id
+    `;
+    
+    const insertResult = await pool.query(insertQuery, insertParams);
+    console.log(`[TestServices] Criados ${insertResult.rowCount} serviços de teste para parceiro ID ${partnerId}.`);
+    
+    // Sincronizar com a tabela de serviços guincho para garantir visibilidade em todas as views
+    try {
+      const syncQuery = `
+        INSERT INTO servicos_guincho (
+          id, parceiro_id, placa, origem, destino, 
+          tipo_servico, data_lancamento, valor, km_reboque, 
+          observacoes, status, data_aprovacao
+        )
+        SELECT 
+          id, partner_id, plate, pickup_location, delivery_location,
+          service_description, service_date, cost, mileage,
+          notes, status, approved_at
+        FROM towing_service_notes 
+        WHERE partner_id = $1
+        ON CONFLICT (id) DO NOTHING
+      `;
+      
+      await pool.query(syncQuery, [partnerId]);
+      console.log(`[TestServices] Serviços sincronizados com a tabela de serviços guincho para parceiro ID ${partnerId}.`);
+    } catch (syncError) {
+      console.error(`[TestServices] Erro ao sincronizar serviços para parceiro ID ${partnerId}:`, syncError);
+    }
+  } catch (error) {
+    console.error(`[TestServices] Erro ao criar serviços de teste para parceiro ID ${partnerId}:`, error);
+  }
+}
+
 // Rota para envio de notificações de serviço (form simples)
 router.post('/submit', async (req, res) => {
   try {
@@ -402,66 +647,32 @@ router.get('/verify/:token', async (req, res) => {
     
     console.log(`[SimpleExternalAccess] Token normalizado para verificação: ${tokenLower}`);
     
-    // Verificação simplificada para tokens de teste - Abordagem eficiente para diversos formatos de token
-    if (tokenLower.includes('allan') || 
-        tokenLower.includes('caio') || 
-        tokenLower.includes('claudio') || 
-        tokenLower.includes('daiane') ||
-        tokenLower.includes('deloes') ||
-        tokenLower.includes('ford') || 
-        tokenLower.includes('guincho')) {
+    // Verificação para tokens de teste usando nossa função unificada
+    const testPartnerId = findPartnerIdByToken(token);
+    
+    if (testPartnerId) {
+      // Encontrar informações do parceiro na lista de parceiros de teste
+      const partnerInfo = TEST_PARTNERS.find(p => p.id === testPartnerId);
       
-      console.log(`[SimpleExternalAccess] Detectado token de teste: ${token}`);
-      
-      // Determinar qual parceiro fictício usar
-      let partnerId = 999;
-      let partnerName = 'S de Souza Guincho';
-      let companyName = 'S de Souza Serviços de Guincho LTDA';
-      
-      if (tokenLower === 'teste_ford_token') {
-        partnerId = 6;
-        partnerName = 'Ford';
-        companyName = 'Ford Serviços de Guincho Ltda';
-      } else if (tokenLower === 'teste_guincho_águia_token' || tokenLower === 'teste_guincho_aguia_token') {
-        partnerId = 5;
-        partnerName = 'Guincho Águia';
-        companyName = 'Guincho Águia LTDA';
-      } else if (tokenLower === 'teste_allan_de_souza_token' ||
-                 tokenLower === 'teste_allan_de_souza_vieira_token') {
-        partnerId = 15;
-        partnerName = 'Allan de Souza Vieira';
-        companyName = 'Allan de Souza Vieira Serviços de Guincho LTDA';
-      } else if (tokenLower === 'teste_caio_ramos_de_souza_token' || 
-                tokenLower.includes('caio_ramos') || 
-                tokenLower.includes('caio_de_souza')) {
-        partnerId = 8;
-        partnerName = 'Caio Ramos de Souza';
-        companyName = 'Caio Ramos de Souza Serviços de Guincho LTDA';
-      } else if (tokenLower.includes('claudio_de_oliveira_silva')) {
-        partnerId = 9;
-        partnerName = 'Claudio de Oliveira Silva';
-        companyName = 'Claudio de Oliveira Silva Serviços de Guincho LTDA';
-      } else if (tokenLower.includes('daiane_do_vale_amaral')) {
-        partnerId = 10;
-        partnerName = 'Daiane do Vale Amaral';
-        companyName = 'Daiane do Vale Amaral Serviços de Guincho LTDA';
-      } else if (tokenLower.includes('deloes_guinchos_e_munck')) {
-        partnerId = 11;
-        partnerName = 'Delões Guinchos e Munck';
-        companyName = 'Delões Guinchos e Munck LTDA';
+      if (partnerInfo) {
+        console.log(`[SimpleExternalAccess] Detectado token de teste: ${token}`);
+        console.log(`[SimpleExternalAccess] Parceiro de teste identificado: ${partnerInfo.name} (ID ${testPartnerId})`);
+        
+        // Garantir que existem serviços para este parceiro
+        await ensureTestServicesExist(testPartnerId);
+        
+        return res.status(200).json({
+          success: true,
+          message: 'Token válido (modo de teste)',
+          data: {
+            partnerId: testPartnerId,
+            partnerName: partnerInfo.name,
+            companyName: partnerInfo.company,
+            expiresAt: null,
+            isPermanent: true
+          }
+        });
       }
-      
-      return res.status(200).json({
-        success: true,
-        message: 'Token válido (modo de teste)',
-        data: {
-          partnerId,
-          partnerName,
-          companyName,
-          expiresAt: null,
-          isPermanent: true
-        }
-      });
     }
     
     // Query para buscar tokens válidos (sem expirar ou NULL = sem data de expiração)
@@ -546,6 +757,24 @@ router.get('/verify/:token', async (req, res) => {
 });
 
 // Rota para obter histórico de serviços para um token específico
+// Inicializar serviços de teste para todos os parceiros
+async function initializeTestServices() {
+  console.log('[TestServices] Inicializando serviços de teste para todos os parceiros...');
+  for (const partner of TEST_PARTNERS) {
+    await ensureTestServicesExist(partner.id);
+  }
+  console.log('[TestServices] Inicialização de serviços de teste concluída.');
+}
+
+// Executar a inicialização em segundo plano sem bloquear o servidor
+setTimeout(async () => {
+  try {
+    await initializeTestServices();
+  } catch (error) {
+    console.error('[TestServices] Erro na inicialização de serviços de teste:', error);
+  }
+}, 5000); // Aguardar 5 segundos após o início do servidor
+
 router.get('/history/:token', async (req, res) => {
   try {
     let { token } = req.params;
@@ -598,53 +827,35 @@ router.get('/history/:token', async (req, res) => {
       console.log(`[SimpleExternalAccess/History] Token normalizado para verificação: ${tokenLower}`);
       console.log(`[SimpleExternalAccess/History] Token original: ${token}`);
         
-      // Verificação simplificada para tokens de teste - Abordagem eficiente para diversos formatos de token
-      if (tokenLower.includes('allan') || 
-          tokenLower.includes('caio') || 
-          tokenLower.includes('claudio') || 
-          tokenLower.includes('daiane') ||
-          tokenLower.includes('deloes') ||
-          tokenLower.includes('ford') || 
-          tokenLower.includes('guincho')) {
+      // Utilizar nossa função centralizada para detectar parceiros de teste
+      const testPartnerId = findPartnerIdByToken(token);
+      
+      if (testPartnerId) {
+        // Buscar informações do parceiro na nossa lista de parceiros de teste
+        const partnerInfo = TEST_PARTNERS.find(p => p.id === testPartnerId);
         
-        console.log(`[SimpleExternalAccess] Detectado token de teste: ${token}`);
-        
-        // Determinar qual parceiro fictício usar com base no token
-        let partnerId = 999;
-        let partnerName = 'S de Souza Guincho';
-        let companyName = 'S de Souza Serviços de Guincho LTDA';
-        
-        if (tokenLower === 'teste_ford_token') {
-          partnerId = 6;
-          partnerName = 'Ford';
-          companyName = 'Ford Serviços de Guincho Ltda';
-        } else if (tokenLower === 'teste_guincho_aguia_token') {
-          partnerId = 5;
-          partnerName = 'Guincho Águia';
-          companyName = 'Guincho Águia LTDA';
-        } else if (tokenLower === 'teste_allan_de_souza_token' || 
-                  tokenLower === 'teste_allan_de_souza_vieira_token' ||
-                  tokenLower.includes('allan_de_souza_vieira')) {
-          partnerId = 15;
-          partnerName = 'Allan de Souza Vieira';
-          companyName = 'Allan de Souza Vieira Serviços de Guincho LTDA';
-        } else if (tokenLower === 'teste_caio_ramos_de_souza_token' || tokenLower.includes('caio_ramos_de_souza')) {
-          partnerId = 8;
-          partnerName = 'Caio Ramos de Souza';
-          companyName = 'Caio Ramos de Souza Serviços de Guincho LTDA';
-        } else if (tokenLower === 'teste_claudio_de_oliveira_silva_token' || tokenLower.includes('claudio_de_oliveira_silva')) {
-          partnerId = 9;
-          partnerName = 'Claudio de Oliveira Silva';
-          companyName = 'Claudio de Oliveira Silva Serviços de Guincho LTDA';
-        } else if (tokenLower.includes('daiane_do_vale_amaral') || tokenLower.includes('daiane')) {
-          partnerId = 10;
-          partnerName = 'Daiane do Vale Amaral';
-          companyName = 'Daiane do Vale Amaral Serviços de Guincho LTDA';
-        } else if (tokenLower.includes('deloes_guinchos_e_munck') || tokenLower.includes('deloes')) {
-          partnerId = 11;
-          partnerName = 'Delões Guinchos e Munck';
-          companyName = 'Delões Guinchos e Munck LTDA';
+        if (partnerInfo) {
+          console.log(`[SimpleExternalAccess/History] Detectado token de teste: ${token}`);
+          console.log(`[SimpleExternalAccess/History] Parceiro identificado: ${partnerInfo.name} (ID ${testPartnerId})`);
+          
+          partnerId = testPartnerId;
+          partnerName = partnerInfo.name;
+          companyName = partnerInfo.company;
+          
+          // Garantir que existem serviços para este parceiro
+          await ensureTestServicesExist(partnerId);
+        } else {
+          return res.status(401).json({
+            success: false,
+            message: 'Token inválido ou expirado'
+          });
         }
+      } else {
+        return res.status(401).json({
+          success: false,
+          message: 'Token inválido ou expirado'
+        });
+      }
         
         // Verificar se temos serviços simulados salvos para este parceiro
         let demoServices = testServices.get(partnerId) || [];
