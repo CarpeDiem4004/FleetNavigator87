@@ -427,6 +427,7 @@ export default function TowingPartnerExternalAccess() {
       if (response.ok) {
         setSuccess(true);
         setShowSuccessDialog(true);
+        setSubmitError(null); // Limpar qualquer erro anterior
         
         // Após envio bem-sucedido, atualizar o histórico de serviços
         console.log('[ExternalAccess] Recarregando histórico após serviço registrado');
@@ -434,9 +435,11 @@ export default function TowingPartnerExternalAccess() {
           loadServiceHistory();
         }, 500); // Pequeno atraso para garantir que o banco de dados seja atualizado
       } else {
+        const errorMsg = data.error || 'Ocorreu um erro ao registrar o serviço';
+        setSubmitError(errorMsg);
         toast({
           title: 'Erro ao enviar dados',
-          description: data.error || 'Ocorreu um erro ao registrar o serviço',
+          description: errorMsg,
           variant: 'destructive'
         });
       }
@@ -657,18 +660,30 @@ export default function TowingPartnerExternalAccess() {
                     />
                   </div>
                 </CardContent>
-                <CardFooter className="flex justify-between">
-                  <p className="text-sm text-muted-foreground">* Campos obrigatórios</p>
-                  <Button type="submit" disabled={submitting}>
-                    {submitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Enviando...
-                      </>
-                    ) : (
-                      'Enviar Serviço'
-                    )}
-                  </Button>
+                <CardFooter className="flex flex-col space-y-3">
+                  <div className="flex justify-between w-full">
+                    <p className="text-sm text-muted-foreground">* Campos obrigatórios</p>
+                    <Button type="submit" disabled={submitting}>
+                      {submitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        'Enviar Serviço'
+                      )}
+                    </Button>
+                  </div>
+                  
+                  {submitError && (
+                    <div className="bg-destructive/15 text-destructive p-3 rounded-md w-full flex items-start">
+                      <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium">Erro ao enviar serviço</p>
+                        <p className="text-sm">{submitError}</p>
+                      </div>
+                    </div>
+                  )}
                 </CardFooter>
               </form>
             </Card>
