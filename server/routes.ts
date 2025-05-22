@@ -909,7 +909,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await criarTabelaDemoForms();
   
   // Registrar rota SQL segura (novo)
-  app.use('/api', sqlSeguroRouter);
+  app.use('/api/sql-seguro', sqlSeguroRouter);
   
   // Registrar rotas de diagnóstico
   app.use('/api/diagnostico', diagnosticoRoutes);
