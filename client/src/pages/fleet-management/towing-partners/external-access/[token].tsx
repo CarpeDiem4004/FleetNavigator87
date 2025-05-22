@@ -364,6 +364,14 @@ export default function TowingPartnerExternalAccess() {
         formData
       });
       
+      // Verificar se as informações do parceiro estão disponíveis
+      if (!partnerInfo || !partnerInfo.id) {
+        console.error('[ExternalAccess] Erro: Informações do parceiro não disponíveis', { partnerInfo });
+        setSubmitError('Não foi possível determinar o parceiro associado a este token. Por favor, tente novamente ou contate o suporte.');
+        setSubmitting(false);
+        return;
+      }
+      
       // Criando objeto de dados com todos os possíveis nomes de campos que o backend pode estar esperando
       // Isso ajuda a garantir compatibilidade com diferentes versões da API
       const serviceData = {

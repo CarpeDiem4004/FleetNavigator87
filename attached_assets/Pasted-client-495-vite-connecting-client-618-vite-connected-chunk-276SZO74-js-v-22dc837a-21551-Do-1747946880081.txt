@@ -1,0 +1,195 @@
+client:495 [vite] connecting...
+client:618 [vite] connected.
+chunk-276SZO74.js?v=22dc837a:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+supabaseClient.js:34 Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+_GoTrueClient @ @supabase_supabase-js.js?v=22dc837a:5040
+SupabaseAuthClient @ @supabase_supabase-js.js?v=22dc837a:6906
+_initSupabaseAuthClient @ @supabase_supabase-js.js?v=22dc837a:7102
+SupabaseClient @ @supabase_supabase-js.js?v=22dc837a:6975
+createClient @ @supabase_supabase-js.js?v=22dc837a:7142
+getSupabaseAdminClient @ supabaseClient.js:34
+(anonymous) @ supabaseClient.js:41
+supabase-compat.ts:18 [supabase-compat] Verificando variáveis de ambiente do Supabase:
+supabase-compat.ts:19 - VITE_SUPABASE_URL disponível: true
+supabase-compat.ts:20 - VITE_SUPABASE_ANON_KEY disponível: true
+supabase-compat.ts:21 - VITE_SUPABASE_SERVICE_KEY disponível: true
+supabase-compat.ts:60 [supabase-compat] Criando nova instância do cliente Supabase
+supabase-compat.ts:61 Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+_GoTrueClient @ @supabase_supabase-js.js?v=22dc837a:5040
+SupabaseAuthClient @ @supabase_supabase-js.js?v=22dc837a:6906
+_initSupabaseAuthClient @ @supabase_supabase-js.js?v=22dc837a:7102
+SupabaseClient @ @supabase_supabase-js.js?v=22dc837a:6975
+createClient @ @supabase_supabase-js.js?v=22dc837a:7142
+getSupabaseClient @ supabase-compat.ts:61
+(anonymous) @ supabase-compat.ts:101
+supabase-compat.ts:84 [supabase-compat] Criando nova instância do cliente Supabase Admin
+supabase-compat.ts:85 Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+_GoTrueClient @ @supabase_supabase-js.js?v=22dc837a:5040
+SupabaseAuthClient @ @supabase_supabase-js.js?v=22dc837a:6906
+_initSupabaseAuthClient @ @supabase_supabase-js.js?v=22dc837a:7102
+SupabaseClient @ @supabase_supabase-js.js?v=22dc837a:6975
+createClient @ @supabase_supabase-js.js?v=22dc837a:7142
+getSupabaseAdminClient @ supabase-compat.ts:85
+(anonymous) @ supabase-compat.ts:102
+supabase.ts:17 Verificando variáveis de ambiente do Supabase:
+supabase.ts:18 - VITE_SUPABASE_URL disponível: true
+supabase.ts:19 - VITE_SUPABASE_ANON_KEY disponível: true
+supabase.ts:20 - VITE_SUPABASE_SERVICE_KEY disponível: true
+supabase.ts:24 Supabase Service Key (primeiros 10 caracteres): eyJhbGciOi...
+supabase.ts:34 Configuração Supabase Cliente: {url: 'https://hvsmxxqkuyjhpsiojupb.supabase.co', anonKeyAvailable: true, serviceKeyAvailable: true}
+RegisterPostoUser.tsx:23 Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+_GoTrueClient @ @supabase_supabase-js.js?v=22dc837a:5040
+SupabaseAuthClient @ @supabase_supabase-js.js?v=22dc837a:6906
+_initSupabaseAuthClient @ @supabase_supabase-js.js?v=22dc837a:7102
+SupabaseClient @ @supabase_supabase-js.js?v=22dc837a:6975
+createClient @ @supabase_supabase-js.js?v=22dc837a:7142
+(anonymous) @ RegisterPostoUser.tsx:23
+AuthContext.tsx:539 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+AuthContext.tsx:71 Verificando estado de autenticação inicial...
+AuthContext.tsx:141 Verificando autenticação tradicional...
+AuthContext.tsx:151 Token JWT encontrado, tentando verificar...
+SupabaseAuthContext.tsx:147 Supabase: Usuário não autenticado, limpando dados
+useFetchWithAuth.ts:19 [FetchWithAuth] Modo de autenticação de emergência ativado
+useFetchWithAuth.ts:126 [FetchWithAuth] Usando token de emergência existente
+chunk-276SZO74.js?v=22dc837a:377 [Violation] 'message' handler took 217ms
+useFetchWithAuth.ts:218 [FetchWithAuth] Token JWT inicializado com sucesso
+AuthContext.tsx:539 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+useFetchWithAuth.ts:238 [FetchWithAuth] Substituindo fetch global para injetar JWT automaticamente
+AuthContext.tsx:167 Token JWT verificado com sucesso: {success: true, message: 'Token válido', user: {…}, verifiedAt: '2025-05-22T20:44:49.551Z', expiresAt: null}
+AuthContext.tsx:208 Usuário autenticado via token: {id: 1, name: 'Administrador', email: 'admin@muricionfleet.com', password: 'MuricionAdmin2025', role: 'admin', …}
+AuthContext.tsx:218 Verificação de autenticação completa, isLoading=false
+AuthContext.tsx:539 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+AuthContext.tsx:539 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+AuthContext.tsx:71 Verificando estado de autenticação inicial...
+AuthContext.tsx:141 Verificando autenticação tradicional...
+AuthContext.tsx:151 Token JWT encontrado, tentando verificar...
+useFetchWithAuth.ts:311 [FetchWithAuth] Requisição para /api/hybrid/auth/verify {hasAuthHeader: true, credentials: 'include'}
+AuthContext.tsx:539 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+AuthContext.tsx:167 Token JWT verificado com sucesso: {success: true, message: 'Token válido', user: {…}, verifiedAt: '2025-05-22T20:44:50.757Z', expiresAt: null}
+AuthContext.tsx:208 Usuário autenticado via token: {id: 1, name: 'Administrador', email: 'admin@muricionfleet.com', password: 'MuricionAdmin2025', role: 'admin', …}
+AuthContext.tsx:218 Verificação de autenticação completa, isLoading=false
+AuthContext.tsx:539 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+[token].tsx:502 [ExternalAccess] Mudou para aba de histórico, forçando atualização dos dados
+[token].tsx:79 [ExternalAccess] Iniciando carregamento do histórico para token: TESTE_CAIO_RAMOS_DE_SOUZA__TOKEN
+[token].tsx:136 [ExternalAccess] Usando token formatado para histórico: TESTE_CAIO_RAMOS_DE_SOUZA__TOKEN
+useFetchWithAuth.ts:19 [FetchWithAuth] Modo de autenticação de emergência ativado
+useFetchWithAuth.ts:126 [FetchWithAuth] Usando token de emergência existente
+useFetchWithAuth.ts:285 [FetchWithAuth] Token JWT adicionado automaticamente a: /api/towing/emergency/history/TESTE_CAIO_RAMOS_DE_SOUZA__TOKEN?t=1747946745867
+useFetchWithAuth.ts:311 [FetchWithAuth] Requisição para /api/towing/emergency/history/TESTE_CAIO_RAMOS_DE_SOUZA__TOKEN?t=1747946745867 {hasAuthHeader: true, credentials: 'include'}
+[token].tsx:162 [ExternalAccess] Resposta do histórico recebida: {status: 200, success: true, serviceCount: 4}
+[token].tsx:169 [ExternalAccess] Serviços carregados: 4
+[token].tsx:362 [ExternalAccess] Enviando dados para o servidor: {token: 'TESTE_CAIO_RAMOS_DE_SOUZA__TOKEN', formData: {…}}
+[token].tsx:435 Erro ao enviar serviço: TypeError: Cannot read properties of undefined (reading 'id')
+    at handleSubmit ([token].tsx:371:33)
+    at HTMLUnknownElement.callCallback2 (chunk-276SZO74.js?v=22dc837a:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-276SZO74.js?v=22dc837a:3699:24)
+    at invokeGuardedCallback (chunk-276SZO74.js?v=22dc837a:3733:39)
+    at invokeGuardedCallbackAndCatchFirstError (chunk-276SZO74.js?v=22dc837a:3736:33)
+    at executeDispatch (chunk-276SZO74.js?v=22dc837a:7014:11)
+    at processDispatchQueueItemsInOrder (chunk-276SZO74.js?v=22dc837a:7034:15)
+    at processDispatchQueue (chunk-276SZO74.js?v=22dc837a:7043:13)
+    at dispatchEventsForPlugins (chunk-276SZO74.js?v=22dc837a:7051:11)
+    at chunk-276SZO74.js?v=22dc837a:7174:20
+handleSubmit @ [token].tsx:435
+callCallback2 @ chunk-276SZO74.js?v=22dc837a:3674
+invokeGuardedCallbackDev @ chunk-276SZO74.js?v=22dc837a:3699
+invokeGuardedCallback @ chunk-276SZO74.js?v=22dc837a:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-276SZO74.js?v=22dc837a:3736
+executeDispatch @ chunk-276SZO74.js?v=22dc837a:7014
+processDispatchQueueItemsInOrder @ chunk-276SZO74.js?v=22dc837a:7034
+processDispatchQueue @ chunk-276SZO74.js?v=22dc837a:7043
+dispatchEventsForPlugins @ chunk-276SZO74.js?v=22dc837a:7051
+(anonymous) @ chunk-276SZO74.js?v=22dc837a:7174
+batchedUpdates$1 @ chunk-276SZO74.js?v=22dc837a:18913
+batchedUpdates @ chunk-276SZO74.js?v=22dc837a:3579
+dispatchEventForPluginEventSystem @ chunk-276SZO74.js?v=22dc837a:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-276SZO74.js?v=22dc837a:5478
+dispatchEvent @ chunk-276SZO74.js?v=22dc837a:5472
+dispatchDiscreteEvent @ chunk-276SZO74.js?v=22dc837a:5449
+AuthContext.tsx:539 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+AuthContext.tsx:539 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+
+
+O ChatGPT disse:
+Obrigado por compartilhar o log — ele mostra que o sistema está funcionando em boa parte, mas tem um erro crítico ao enviar um serviço via link externo com token.
+
+✅ O que está funcionando:
+A conexão Vite + React está ok.
+
+Autenticação via Supabase (com JWT) está sendo verificada corretamente.
+
+As variáveis de ambiente (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_SUPABASE_SERVICE_KEY) estão presentes.
+
+O token TESTE_CAIO_RAMOS_DE_SOUZA__TOKEN foi aceito e carregou o histórico corretamente.
+
+O contexto de autenticação (AuthContext) está funcionando.
+
+⚠️ Avisos importantes:
+Múltiplas instâncias do Supabase Client estão sendo criadas. Isso pode causar instabilidade. Recomendo garantir que createClient só seja chamado uma vez por tipo (anon/admin).
+
+Isso geralmente acontece se createClient ou getSupabaseClient() é chamado fora de um useEffect ou função isolada, ou mais de uma vez por componente/page.
+
+❌ Erro principal:
+java
+Copiar
+Editar
+Erro ao enviar serviço: TypeError: Cannot read properties of undefined (reading 'id')
+at handleSubmit ([token].tsx:371:33)
+🔍 Causa provável:
+No trecho da função handleSubmit, você está tentando acessar algo como:
+
+tsx
+Copiar
+Editar
+const id = algumObjeto.id;
+Mas algumObjeto está undefined naquele momento.
+
+📌 Linha exata apontada:
+tsx
+Copiar
+Editar
+[token].tsx:371:33
+✅ Como corrigir:
+Encontre o trecho exato da linha 371 em [token].tsx, por exemplo:
+
+tsx
+Copiar
+Editar
+const userId = user.id; // se "user" estiver undefined, isso causará erro
+Adicione uma verificação de segurança antes de acessar .id, por exemplo:
+
+tsx
+Copiar
+Editar
+if (!user || !user.id) {
+  console.error("Usuário inválido ou não autenticado");
+  return;
+}
+Ou, se for outro objeto:
+
+tsx
+Copiar
+Editar
+if (!formData?.algumaPropriedade?.id) {
+  console.error("ID não encontrado na estrutura enviada");
+  return;
+}
+Se você estiver usando dados recebidos de um fetch, certifique-se de que eles estão realmente carregados antes de acessar propriedades.
+
+💡 Sugestão extra: evitar múltiplas instâncias do Supabase
+Na sua supabaseClient.ts ou supabase.ts:
+
+ts
+Copiar
+Editar
+let supabase: SupabaseClient | null = null;
+
+export function getSupabaseClient() {
+  if (!supabase) {
+    supabase = createClient(
+      import.meta.env.VITE_SUPABASE_URL,
+      import.meta.env.VITE_SUPABASE_ANON_KEY
+    );
+  }
+  return supabase;
+}
