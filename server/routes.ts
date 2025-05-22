@@ -9141,7 +9141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rota para sincronizar serviços de guincho entre tabelas
   app.post('/api/sincronizacao/sincronizar-servicos-guincho', async (req, res) => {
     try {
-      logger.info('Iniciando sincronização de serviços de guincho...');
+      console.log('Iniciando sincronização de serviços de guincho...');
       
       // 1. Buscar todos os registros na tabela towing_service_notes que não estão em servicos_guincho
       const result = await pool.query(`
@@ -9172,10 +9172,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           REFRESH MATERIALIZED VIEW IF EXISTS vw_servicos_guincho
         `);
       } catch (viewError) {
-        logger.warn('A view materializada não existe ou não pôde ser atualizada:', viewError);
+        console.warn('A view materializada não existe ou não pôde ser atualizada:', viewError);
       }
       
-      logger.info(`Sincronização concluída. ${count} serviços sincronizados.`);
+      console.log(`Sincronização concluída. ${count} serviços sincronizados.`);
       
       res.json({ 
         success: true, 
@@ -9183,7 +9183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         count: count 
       });
     } catch (error) {
-      logger.error('Erro ao sincronizar serviços de guincho:', error);
+      console.error('Erro ao sincronizar serviços de guincho:', error);
       res.status(500).json({
         success: false,
         message: 'Erro ao sincronizar serviços de guincho',

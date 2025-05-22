@@ -238,13 +238,15 @@ export default function ServicosPendentesPage() {
         />
 
         <div className="flex flex-col md:flex-row justify-between gap-4 mb-6 items-start md:items-center">
-          <Input
-            placeholder="Buscar por parceiro, placa ou tipo de serviço..."
-            className="max-w-md"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            startIcon={<Search className="h-4 w-4 text-muted-foreground" />}
-          />
+          <div className="relative max-w-md">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por parceiro, placa ou tipo de serviço..."
+              className="w-full pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
           
           <div className="flex gap-2">
             <Button 
