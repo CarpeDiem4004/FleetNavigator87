@@ -16,7 +16,7 @@ const router = Router();
  * Esta rota é protegida e deve ser usada apenas para operações específicas
  * relacionadas ao posto Guarulhos V2.
  */
-router.post('/sql-seguro', async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { sql } = req.body;
     
