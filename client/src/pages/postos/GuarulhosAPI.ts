@@ -58,7 +58,7 @@ export async function inserirAbastecimentoGuarulhosV2(dadosAbastecimento: any): 
         '${dados.nome_operador.replace(/'/g, "''")}', 
         '${dados.project.replace(/'/g, "''")}', 
         '${dados.tipo_veiculo}',
-        NOW()
+        NOW() at time zone 'America/Sao_Paulo'
       ) RETURNING *;
     `;
     
