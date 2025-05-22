@@ -98,85 +98,67 @@ emergencyRouter.post('/submit', async (req, res) => {
     if (result.rowCount && result.rowCount > 0) {
       const insertedData = result.rows[0];
       
-      // Opcional: tentar sincronizar com a tabela servicos_guincho
+      // Opcional: tentar sincronizar com a tabela towing_services para o histórico
       try {
-        // Primeiro verificar a estrutura da tabela servicos_guincho
-        const checkTableQuery = `
-          SELECT column_name 
-          FROM information_schema.columns 
-          WHERE table_name = 'servicos_guincho' 
-          ORDER BY ordinal_position
-        `;
-        
-        const tableResult = await pool.query(checkTableQuery);
-        console.log('[EmergencyRouter] Estrutura da tabela servicos_guincho:', 
-          tableResult.rows.map(row => row.column_name));
-        
-        // Usar a estrutura correta da tabela servicos_guincho
-        const syncQuery = `
-          INSERT INTO servicos_guincho (
-            id, partner_id, plate, pickup_location, delivery_location, 
-            service_description, service_date, cost, mileage,
-            notes, contact_name, contact_phone, status
+        // Método simplificado de sincronização sem campos específicos
+        const fieldsQuery = `
+          INSERT INTO towing_service_notes (
+            id, partner_id, driver_name, vehicle_plate, 
+            pickup_location, delivery_location, service_type,
+            service_date, service_description, 
+            km_traveled, actual_cost, 
+            observation, status, created_at
           ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW()
           )
           ON CONFLICT (id) DO NOTHING
         `;
         
-        await pool.query(syncQuery, [
+        await pool.query(fieldsQuery, [
+          insertedData.id,
+          partnerId,
+          normalizedContactName,
+          normalizedPlate.toUpperCase(),
+          normalizedPickup,
+          normalizedDelivery,
+          'GUINCHO',
+          normalizedDate,
+          normalizedService,
+          parseInt(normalizedMileage.toString()),
+          parseFloat(normalizedCost.toString()),
+          normalizedNotes,
+          'PENDENTE'
+        ]);
+        
+        console.log('[EmergencyRouter] Sincronização adicional com towing_service_notes realizada');
+        
+        // Copiar para tabela histórica
+        const copyQuery = `
+          INSERT INTO towing_service_history (
+            service_id, partner_id, vehicle_plate, 
+            pickup_location, delivery_location, status, 
+            service_date, created_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, NOW()
+          )
+          ON CONFLICT (service_id) DO NOTHING
+        `;
+        
+        await pool.query(copyQuery, [
           insertedData.id,
           partnerId,
           normalizedPlate.toUpperCase(),
           normalizedPickup,
           normalizedDelivery,
-          normalizedService,
-          normalizedDate,
-          parseFloat(normalizedCost.toString()),
-          parseInt(normalizedMileage.toString()),
-          normalizedNotes,
-          normalizedContactName,
-          normalizedContactPhone,
-          'pending'
+          'PENDENTE',
+          normalizedDate
         ]);
         
-        console.log('[EmergencyRouter] Sincronização com servicos_guincho bem-sucedida');
+        console.log('[EmergencyRouter] Registro adicionado ao histórico');
+        
       } catch (syncError) {
-        console.error('[EmergencyRouter] Erro ao sincronizar com servicos_guincho:', syncError);
-        // Tentar sincronização alternativa com nomes de colunas em português
-        try {
-          const syncQueryPt = `
-            INSERT INTO servicos_guincho (
-              id, parceiro_id, plate, origem, destino, 
-              tipo_servico, data_servico, valor, km_percorrido,
-              observacoes, nome_contato, telefone_contato, status
-            ) VALUES (
-              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
-            )
-            ON CONFLICT (id) DO NOTHING
-          `;
-          
-          await pool.query(syncQueryPt, [
-            insertedData.id,
-            partnerId,
-            normalizedPlate.toUpperCase(),
-            normalizedPickup,
-            normalizedDelivery,
-            normalizedService,
-            normalizedDate,
-            parseFloat(normalizedCost.toString()),
-            parseInt(normalizedMileage.toString()),
-            normalizedNotes,
-            normalizedContactName,
-            normalizedContactPhone,
-            'pending'
-          ]);
-          
-          console.log('[EmergencyRouter] Sincronização alternativa com servicos_guincho bem-sucedida');
-        } catch (syncErrorPt) {
-          console.error('[EmergencyRouter] Erro na sincronização alternativa:', syncErrorPt);
-          // Ignorar erro de sincronização, o registro principal já foi salvo
-        }
+        console.error('[EmergencyRouter] Erro ao sincronizar com histórico:', syncError);
+        // Ignorar erro de sincronização, o registro principal já foi salvo
       }
       
       return res.status(201).json({
