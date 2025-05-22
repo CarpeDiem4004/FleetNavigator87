@@ -371,6 +371,16 @@ function App() {
             <PostoRemediosStandalone />
           </Route>
           
+          {/* Acesso externo para o Posto Remédios */}
+          <Route path="/posto-remedios-externo">
+            <PostoRemediosStandalone />
+          </Route>
+          
+          {/* URL que o usuário estava tentando acessar */}
+          <Route path="/postos/remedios/externo">
+            <PostoRemediosStandalone />
+          </Route>
+          
           {/* Formulário simplificado para Abastecimento do Posto Remédios */}
           <Route path="/abastecimento-posto-remedios">
             <AbastecimentoPostoRemediosPage />

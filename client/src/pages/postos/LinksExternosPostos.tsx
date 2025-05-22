@@ -64,6 +64,12 @@ const externosPostos = [
     nome: 'Sorocaba V2',
     descricao: 'Link externo para operadores do posto de Sorocaba',
     url: '/posto/sorocaba_v2/public'
+  },
+  {
+    id: 'remedios',
+    nome: 'Posto Remédios',
+    descricao: 'Link externo para operadores do Posto Remédios',
+    url: '/posto-remedios-externo'
   }
 ];
 
