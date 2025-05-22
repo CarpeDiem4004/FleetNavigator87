@@ -130,9 +130,14 @@ export default function TowingPartnerExternalAccess() {
         return;
       }
       
+      // Token padrão vem com 1 underscore, mas o servidor espera token com 2 underscores
+      // Garantir formato correto do token aqui para compatibilidade
+      const tokenFormatado = token.includes('__') ? token : token.replace('_token', '__token');
+      console.log(`[ExternalAccess] Usando token formatado para histórico: ${tokenFormatado}`);
+      
       // Usando a rota de emergência para buscar o histórico (com cache-busting)
       const timestamp = new Date().getTime(); // Adicionar timestamp para evitar cache
-      const response = await fetch(`/api/towing/emergency/history/${token}?t=${timestamp}`, {
+      const response = await fetch(`/api/towing/emergency/history/${tokenFormatado}?t=${timestamp}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

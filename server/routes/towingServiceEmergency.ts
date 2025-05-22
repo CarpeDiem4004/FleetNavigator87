@@ -180,11 +180,18 @@ emergencyRouter.get('/history/:token', async (req, res) => {
     const { token } = req.params;
     console.log('[EmergencyRouter] Solicitação de histórico para token:', token);
     
+    // Configurar cabeçalhos para garantir resposta JSON
+    res.setHeader('Content-Type', 'application/json');
+    
     // Para token de teste do Caio Ramos
     let partnerId = null;
     
-    if (token && token.toLowerCase() === 'teste_caio_ramos_de_souza__token') {
+    // Adicionando verificação mais flexível (com underscore duplo ou único)
+    if (token && 
+        (token.toLowerCase() === 'teste_caio_ramos_de_souza__token' || 
+         token.toLowerCase() === 'teste_caio_ramos_de_souza_token')) {
       partnerId = 8; // ID fixo do Caio Ramos para teste
+      console.log('[EmergencyRouter] Token de teste identificado para Caio Ramos (ID: 8)');
     } else {
       // Verificar token no banco de dados
       try {
