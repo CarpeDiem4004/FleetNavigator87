@@ -449,22 +449,37 @@ const TowingPartnerDetailPage: React.FC = () => {
           <Card>
             <CardContent className="p-4">
               <h3 className="text-lg font-semibold mb-3">Resumo Financeiro</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <p className="text-sm">Total de Serviços</p>
-                  <p className="font-semibold">{financialSummary.total}</p>
+              
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+                  <p className="text-xs text-gray-500 mb-1">Total de Serviços</p>
+                  <p className="text-2xl font-bold">{financialSummary.total}</p>
                 </div>
-                <div className="flex justify-between">
-                  <p className="text-sm">Valor Total</p>
-                  <p className="font-semibold">R$ {financialSummary.totalValue.toFixed(2)}</p>
+                <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
+                  <p className="text-xs text-gray-500 mb-1">Valor Total</p>
+                  <p className="text-2xl font-bold">R$ {financialSummary.totalValue.toFixed(2)}</p>
                 </div>
-                <div className="flex justify-between">
-                  <p className="text-sm">Valor Pago</p>
-                  <p className="font-semibold text-green-600">R$ {financialSummary.paidValue.toFixed(2)}</p>
+                <div className="bg-green-50 p-3 rounded-md border border-green-100">
+                  <p className="text-xs text-gray-500 mb-1">Valor Pago</p>
+                  <p className="text-2xl font-bold text-green-600">R$ {financialSummary.paidValue.toFixed(2)}</p>
                 </div>
-                <div className="flex justify-between">
-                  <p className="text-sm">Valor Pendente</p>
-                  <p className="font-semibold text-orange-500">R$ {financialSummary.pendingValue.toFixed(2)}</p>
+                <div className="bg-orange-50 p-3 rounded-md border border-orange-100">
+                  <p className="text-xs text-gray-500 mb-1">Valor Pendente</p>
+                  <p className="text-2xl font-bold text-orange-500">R$ {financialSummary.pendingValue.toFixed(2)}</p>
+                </div>
+              </div>
+              
+              {/* Gráfico simples de progresso */}
+              <div className="mt-2">
+                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                  <span>Progresso de Pagamento</span>
+                  <span>{Math.round((financialSummary.paidValue / financialSummary.totalValue) * 100)}% concluído</span>
+                </div>
+                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-green-500" 
+                    style={{ width: `${(financialSummary.paidValue / financialSummary.totalValue) * 100}%` }}
+                  ></div>
                 </div>
               </div>
             </CardContent>
