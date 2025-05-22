@@ -48,6 +48,7 @@ export default function TowingPartnerExternalAccess() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   
   // Estados para histórico de serviços
   const [activeTab, setActiveTab] = useState("novo");
@@ -245,9 +246,9 @@ export default function TowingPartnerExternalAccess() {
           // Tratar o token como válido diretamente
           setTokenValid(true);
           setPartnerInfo({
-            partnerId,
-            partnerName,
-            companyName,
+            id: partnerId,
+            name: partnerName,
+            company_name: companyName,
             expiresAt: null,
             isPermanent: true
           });
