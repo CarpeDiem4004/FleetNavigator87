@@ -227,19 +227,20 @@ ON CONFLICT (id) DO UPDATE SET
   payment_methods = EXCLUDED.payment_methods;
 
 -- Inserir tokens de teste para os parceiros criados
-INSERT INTO towing_access_tokens (partner_id, token, active)
+INSERT INTO towing_access_tokens (partner_id, token, active, expires_at)
 VALUES 
-  (5, 'teste_guincho_aguia_token', TRUE),
-  (6, 'teste_ford_token', TRUE),
-  (8, 'teste_caio_ramos_de_souza_token', TRUE),
-  (9, 'teste_claudio_de_oliveira_token', TRUE),
-  (10, 'teste_daiane_do_vale_token', TRUE),
-  (11, 'teste_deloes_guinchos_token', TRUE),
-  (12, 'teste_fluxo_guinchos_token', TRUE),
-  (15, 'teste_allan_de_souza_vieira_token', TRUE)
+  (5, 'teste_guincho_aguia_token', TRUE, NOW() + INTERVAL '10 years'),
+  (6, 'teste_ford_token', TRUE, NOW() + INTERVAL '10 years'),
+  (8, 'teste_caio_ramos_de_souza_token', TRUE, NOW() + INTERVAL '10 years'),
+  (9, 'teste_claudio_de_oliveira_token', TRUE, NOW() + INTERVAL '10 years'),
+  (10, 'teste_daiane_do_vale_token', TRUE, NOW() + INTERVAL '10 years'),
+  (11, 'teste_deloes_guinchos_token', TRUE, NOW() + INTERVAL '10 years'),
+  (12, 'teste_fluxo_guinchos_token', TRUE, NOW() + INTERVAL '10 years'),
+  (15, 'teste_allan_de_souza_vieira_token', TRUE, NOW() + INTERVAL '10 years')
 ON CONFLICT (token) DO UPDATE SET
   partner_id = EXCLUDED.partner_id,
-  active = EXCLUDED.active;
+  active = EXCLUDED.active,
+  expires_at = EXCLUDED.expires_at;
 
 -- Criar função para inserir serviços de teste automaticamente
 CREATE OR REPLACE FUNCTION insert_test_services(partner_id INTEGER, num_services INTEGER DEFAULT 3)
