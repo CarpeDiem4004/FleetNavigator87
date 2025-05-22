@@ -280,12 +280,12 @@ DECLARE
   i INTEGER;
 BEGIN
   -- Verificar se o parceiro existe
-  IF NOT EXISTS (SELECT 1 FROM towing_partners WHERE id = partner_id) THEN
-    RAISE EXCEPTION 'Parceiro com ID % não encontrado', partner_id;
+  IF NOT EXISTS (SELECT 1 FROM towing_partners WHERE id = $1) THEN
+    RAISE EXCEPTION 'Parceiro com ID % não encontrado', $1;
   END IF;
   
   -- Verificar se já existem serviços para este parceiro
-  IF EXISTS (SELECT 1 FROM towing_service_notes WHERE partner_id = partner_id) THEN
+  IF EXISTS (SELECT 1 FROM towing_service_notes WHERE partner_id = $1) THEN
     RETURN; -- Não criar novos serviços se já existirem
   END IF;
   
