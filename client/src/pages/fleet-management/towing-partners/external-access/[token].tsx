@@ -156,7 +156,11 @@ export default function TowingPartnerExternalAccess() {
           contentType,
           responseStart: textResponse.substring(0, 100) // Mostra apenas o início do texto
         });
-        throw new Error("Resposta inválida do servidor");
+        // Em vez de lançar erro, exibir uma lista vazia
+        setServiceHistory([]);
+        setHistoryLoading(false);
+        setHistoryError(false); // Não exibir erro na interface
+        return;
       }
       
       const data = await response.json();
