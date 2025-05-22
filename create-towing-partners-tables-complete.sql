@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS public.towing_partners (
   contact_name VARCHAR(255),
   contact_phone VARCHAR(20),
   address TEXT,
-  is_active BOOLEAN DEFAULT true,
+  isactive BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE
 );
@@ -19,7 +19,7 @@ COMMENT ON TABLE public.towing_partners IS 'Cadastro de parceiros que fornecem s
 COMMENT ON COLUMN public.towing_partners.id IS 'Identificador único do parceiro';
 COMMENT ON COLUMN public.towing_partners.name IS 'Nome do parceiro (pessoa física)';
 COMMENT ON COLUMN public.towing_partners.company_name IS 'Nome da empresa ou razão social';
-COMMENT ON COLUMN public.towing_partners.is_active IS 'Indica se o parceiro está ativo para receber solicitações';
+COMMENT ON COLUMN public.towing_partners.isactive IS 'Indica se o parceiro está ativo para receber solicitações';
 
 -- Tabela de tokens de acesso para parceiros
 CREATE TABLE IF NOT EXISTS public.towing_access_tokens (
@@ -128,7 +128,7 @@ GROUP BY p.id, p.name, p.company_name, p.contact_name, p.contact_phone, p.addres
 
 -- Inserir parceiros de teste
 INSERT INTO public.towing_partners 
-  (id, name, company_name, contact_name, contact_phone, address, is_active, created_at)
+  (id, name, company_name, contact_name, contact_phone, address, isactive, created_at)
 VALUES
   (5, 'Guincho Águia', 'Guincho Águia LTDA', 'João Silva', '11988887777', 'Av. Brasil, 1500, São Paulo, SP', true, NOW()),
   (6, 'Ford', 'Ford Serviços de Guincho Ltda', 'Maria Ford', '11977776666', 'Rua das Concessionárias, 500, São Paulo, SP', true, NOW()),
