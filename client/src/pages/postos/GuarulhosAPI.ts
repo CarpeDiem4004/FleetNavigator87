@@ -79,6 +79,31 @@ export async function inserirAbastecimentoGuarulhosV2(dadosAbastecimento: any): 
     
     console.log('>>> Abastecimento inserido com sucesso em Guarulhos V2:', result);
     
+    // Forçar atualização do histórico
+    try {
+      // Primeira tentativa: atualizar via endpoint histórico-direto
+      fetch(`/api/historico-direto/posto guarulhos v2?t=${new Date().getTime()}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      }).catch(err => console.log("Erro ao atualizar histórico na primeira tentativa:", err));
+      
+      // Segunda tentativa após um pequeno atraso
+      setTimeout(() => {
+        fetch(`/api/historico-direto/posto guarulhos v2?t=${new Date().getTime()}`, {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        }).catch(err => console.log("Erro ao atualizar histórico na segunda tentativa:", err));
+      }, 500);
+    } catch (err) {
+      console.log("Erro ao forçar atualização do histórico:", err);
+    }
+    
     // Atualizar o nível do tanque (opcional, apenas para manter o sistema consistente)
     try {
       const updateTanqueResponse = await fetch(`/api/configuracao-tanques/atualizar-consumo`, {
