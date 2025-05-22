@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
-import { eventosBus, EVENTOS } from '@/lib/events';
 
 interface HistoricoAbastecimentosProps {
   postId: string;

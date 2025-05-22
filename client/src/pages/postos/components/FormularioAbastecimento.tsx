@@ -628,17 +628,14 @@ const FormularioAbastecimento: React.FC<
               setIsSubmitting(false);
               processingRef.current = false;
               
-              // Notificar historico para atualizar (verificando primeiro se o método existe)
-              if (typeof eventosBus.emit === 'function') {
-                eventosBus.emit(EVENTOS.ATUALIZAR_HISTORICO, { posto: "posto guarulhos v2" });
-              } else {
-                console.log("Atualizando histórico manualmente para posto guarulhos v2");
-                // Alternativa: carregar o histórico usando outro método
-                setTimeout(() => {
-                  // Forçar atualização da página para exibir o novo registro
-                  window.location.reload();
-                }, 1500);
-              }
+              console.log("Atualizando histórico manualmente para posto guarulhos v2");
+              
+              // Solução definitiva: forçar atualização da página para mostrar os registros mais recentes
+              // Isso garante que o histórico estará sempre atualizado após um novo registro
+              setTimeout(() => {
+                console.log("Recarregando página para exibir o novo registro de Guarulhos V2");
+                window.location.reload();
+              }, 1000);
               
               if (onRegistroSucesso) {
                 onRegistroSucesso();
