@@ -1,22 +1,25 @@
-import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Filter, Check, X, ArrowDown, ArrowUp } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Link } from "wouter";
-import AppLayout from "@/components/AppLayout";
-import ServicoPrestadoCard from "@/components/ServicoPrestadoCard";
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
+import { useToast } from '@/hooks/use-toast';
 
+// Componentes UI
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+import PageHeader from '@/components/layout/PageHeader';
+import ServicoPrestadoCard from '@/components/ServicoPrestadoCard';
+import AppLayout from '@/components/AppLayout';
+
+// Ícones
+import { Search, AlertCircle, FileText, CheckCircle, XCircle } from 'lucide-react';
+import { apiRequest } from '@/lib/queryClient';
+
+// Tipos
 interface Parceiro {
   id: number;
   nome: string;
@@ -40,387 +43,291 @@ interface ServicoPrestado {
   fotos_servico?: string[];
 }
 
-// Dados simulados para demonstração - Em produção, esses dados viriam da API
-const servicosSimulados: ServicoPrestado[] = [
-  {
-    id: 1,
-    parceiro: {
-      id: 15,
-      nome: "Allan de Souza Vieira",
-      cidade: "Barueri",
-      estado: "SP",
-      avaliacao: 5.0
-    },
-    placa: "ABC1D23",
-    veiculo: "Scania R440",
-    tipo_servico: "Reboque",
-    valor: 750.00,
-    data_servico: "2025-05-20T14:30:00",
-    status: "pendente",
-    observacoes: "Veículo com problema no sistema de freios. Rebocado da Rod. Castello Branco ao pátio da empresa.",
-    local_atendimento: "Rod. Castello Branco, km 23",
-    km_reboque: 42
-  },
-  {
-    id: 2,
-    parceiro: {
-      id: 15,
-      nome: "Allan de Souza Vieira",
-      cidade: "Barueri",
-      estado: "SP",
-      avaliacao: 5.0
-    },
-    placa: "DEF5G67",
-    veiculo: "Mercedes-Benz Actros",
-    tipo_servico: "Socorro Mecânico",
-    valor: 450.00,
-    data_servico: "2025-05-21T09:15:00",
-    status: "pendente",
-    observacoes: "Troca de pneu furado e recalibração da pressão em todos os pneus.",
-    local_atendimento: "Av. Marginal Tietê, 1500",
-    km_reboque: 0
-  },
-  {
-    id: 3,
-    parceiro: {
-      id: 16,
-      nome: "Roberto Guincho Express",
-      cidade: "São Paulo",
-      estado: "SP",
-      avaliacao: 4.2
-    },
-    placa: "GHI8J90",
-    veiculo: "Volkswagen Delivery",
-    tipo_servico: "Reboque",
-    valor: 580.00,
-    data_servico: "2025-05-19T18:40:00",
-    status: "pendente",
-    observacoes: "Problema no sistema de injeção eletrônica. Veículo não liga.",
-    local_atendimento: "Rod. Anhanguera, km 15",
-    km_reboque: 28
-  },
-  {
-    id: 4,
-    parceiro: {
-      id: 17,
-      nome: "SOS Caminhões",
-      cidade: "Guarulhos",
-      estado: "SP",
-      avaliacao: 4.8
-    },
-    placa: "KLM1N23",
-    veiculo: "Ford Cargo 2428",
-    tipo_servico: "Reboque",
-    valor: 690.00,
-    data_servico: "2025-05-18T11:20:00",
-    status: "aprovado",
-    observacoes: "Quebra do eixo cardan. Necessário guincho especial.",
-    local_atendimento: "Rod. Presidente Dutra, km 210",
-    km_reboque: 35
-  },
-  {
-    id: 5,
-    parceiro: {
-      id: 18,
-      nome: "Reboque Expresso Paulista",
-      cidade: "Campinas",
-      estado: "SP",
-      avaliacao: 3.9
-    },
-    placa: "OPQ4R56",
-    veiculo: "Iveco Daily",
-    tipo_servico: "Socorro Mecânico",
-    valor: 320.00,
-    data_servico: "2025-05-17T16:05:00",
-    status: "rejeitado",
-    observacoes: "Problema na bomba de combustível. Resolvido no local.",
-    local_atendimento: "Rod. Bandeirantes, km 87",
-    km_reboque: 0
-  }
-];
-
 export default function ServicosPendentesPage() {
+  const [_, navigate] = useLocation();
   const { toast } = useToast();
-  const [servicos, setServicos] = useState<ServicoPrestado[]>(servicosSimulados);
-  const [filtroStatus, setFiltroStatus] = useState<string>("pendente");
-  const [filtroData, setFiltroData] = useState<string>("recentes");
-  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState<'todos' | 'pendente' | 'aprovado' | 'rejeitado'>('todos');
+  const [loadingServico, setLoadingServico] = useState<number | null>(null);
 
-  useEffect(() => {
-    // Em produção, aqui seria feita uma chamada à API para buscar os serviços
-    // Simulando um carregamento inicial
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-  }, []);
+  // Consulta para obter serviços prestados
+  const { data: servicos, isLoading, error } = useQuery<ServicoPrestado[]>({
+    queryKey: ['/api/towing/servicos'],
+    // Em produção, substitua os dados simulados pela chamada API real
+    queryFn: async () => {
+      try {
+        // Dados simulados para demonstração, na implementação final deverá ser substituído pela chamada API real
+        return [
+          {
+            id: 1,
+            parceiro: {
+              id: 1,
+              nome: "Auto Socorro Express",
+              cidade: "São Paulo",
+              estado: "SP",
+              avaliacao: 4.5
+            },
+            placa: "ABC1234",
+            veiculo: "Ford F-4000",
+            tipo_servico: "Reboque por pane mecânica",
+            valor: 350.00,
+            data_servico: "2025-05-15T14:30:00",
+            status: "pendente",
+            observacoes: "Veículo com problemas no motor, rebocado da Marginal Tietê até a oficina da zona norte.",
+            local_atendimento: "Marginal Tietê, altura do Km 15",
+            km_reboque: 25
+          },
+          {
+            id: 2,
+            parceiro: {
+              id: 2,
+              nome: "Guincho Rápido Ltda",
+              cidade: "Guarulhos",
+              estado: "SP",
+              avaliacao: 4.2
+            },
+            placa: "DEF5678",
+            veiculo: "Mercedes-Benz Sprinter",
+            tipo_servico: "Reboque por acidente",
+            valor: 580.00,
+            data_servico: "2025-05-16T09:15:00",
+            status: "pendente",
+            local_atendimento: "Rodovia Presidente Dutra, Km 230",
+            km_reboque: 40
+          },
+          {
+            id: 3,
+            parceiro: {
+              id: 3,
+              nome: "Pronto Socorro Veicular",
+              cidade: "Campinas",
+              estado: "SP",
+              avaliacao: 4.8
+            },
+            placa: "GHI9012",
+            veiculo: "Volkswagen Delivery",
+            tipo_servico: "Troca de pneus",
+            valor: 180.00,
+            data_servico: "2025-05-14T16:45:00",
+            status: "aprovado",
+            observacoes: "Troca de dois pneus dianteiros realizada no local."
+          },
+          {
+            id: 4,
+            parceiro: {
+              id: 4,
+              nome: "Resgate Veicular 24h",
+              cidade: "Osasco",
+              estado: "SP",
+              avaliacao: 3.9
+            },
+            placa: "JKL3456",
+            veiculo: "Iveco Daily",
+            tipo_servico: "Reboque por problema elétrico",
+            valor: 420.00,
+            data_servico: "2025-05-13T22:10:00",
+            status: "rejeitado",
+            observacoes: "Serviço rejeitado por divergência no valor cobrado.",
+            local_atendimento: "Av. dos Autonomistas, próximo ao Shopping União",
+            km_reboque: 18
+          }
+        ];
+      } catch (error: any) {
+        toast({
+          title: "Erro ao carregar serviços",
+          description: error.message || "Não foi possível carregar os serviços prestados.",
+          variant: "destructive"
+        });
+        return [];
+      }
+    }
+  });
 
-  const handleAprovarServico = async (id: number) => {
-    // Em produção, aqui seria feita uma chamada à API para aprovar o serviço
-    setIsLoading(true);
-    
-    try {
-      // Simulando uma chamada à API com timeout
-      await new Promise(resolve => setTimeout(resolve, 800));
+  // Aprovar serviço
+  const aprovarServicoMutation = useMutation({
+    mutationFn: async (id: number) => {
+      setLoadingServico(id);
+      // Na implementação final, chame a API real
+      // await apiRequest('PATCH', `/api/towing/servicos/${id}/aprovar`);
       
-      // Atualiza o estado local após "aprovação"
-      setServicos(prevServicos => 
-        prevServicos.map(servico => 
-          servico.id === id ? { ...servico, status: "aprovado" } : servico
-        )
-      );
-      
+      // Simulando delay de resposta da API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return id;
+    },
+    onSuccess: (id) => {
       toast({
         title: "Serviço aprovado",
-        description: "O serviço foi aprovado com sucesso.",
-        variant: "default",
-        className: "bg-green-50 border-green-200",
+        description: `O serviço #${id} foi aprovado com sucesso.`,
+        variant: "default"
       });
-    } catch (error) {
+      
+      // Invalidar cache para recarregar os dados
+      queryClient.invalidateQueries({ queryKey: ['/api/towing/servicos'] });
+      
+      setLoadingServico(null);
+    },
+    onError: (error: any) => {
       toast({
-        title: "Erro ao aprovar",
-        description: "Ocorreu um erro ao aprovar o serviço.",
-        variant: "destructive",
+        title: "Erro ao aprovar serviço",
+        description: error.message || "Ocorreu um erro ao aprovar o serviço. Tente novamente.",
+        variant: "destructive"
       });
-    } finally {
-      setIsLoading(false);
+      setLoadingServico(null);
     }
-  };
+  });
 
-  const handleRejeitarServico = async (id: number) => {
-    // Em produção, aqui seria feita uma chamada à API para rejeitar o serviço
-    setIsLoading(true);
-    
-    try {
-      // Simulando uma chamada à API com timeout
-      await new Promise(resolve => setTimeout(resolve, 800));
+  // Rejeitar serviço
+  const rejeitarServicoMutation = useMutation({
+    mutationFn: async (id: number) => {
+      setLoadingServico(id);
+      // Na implementação final, chame a API real
+      // await apiRequest('PATCH', `/api/towing/servicos/${id}/rejeitar`);
       
-      // Atualiza o estado local após "rejeição"
-      setServicos(prevServicos => 
-        prevServicos.map(servico => 
-          servico.id === id ? { ...servico, status: "rejeitado" } : servico
-        )
-      );
-      
+      // Simulando delay de resposta da API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return id;
+    },
+    onSuccess: (id) => {
       toast({
         title: "Serviço rejeitado",
-        description: "O serviço foi rejeitado.",
-        variant: "default",
+        description: `O serviço #${id} foi rejeitado.`,
+        variant: "default"
       });
-    } catch (error) {
+      
+      // Invalidar cache para recarregar os dados
+      queryClient.invalidateQueries({ queryKey: ['/api/towing/servicos'] });
+      
+      setLoadingServico(null);
+    },
+    onError: (error: any) => {
       toast({
-        title: "Erro ao rejeitar",
-        description: "Ocorreu um erro ao rejeitar o serviço.",
-        variant: "destructive",
+        title: "Erro ao rejeitar serviço",
+        description: error.message || "Ocorreu um erro ao rejeitar o serviço. Tente novamente.",
+        variant: "destructive"
       });
-    } finally {
-      setIsLoading(false);
+      setLoadingServico(null);
     }
-  };
-
-  const handleDetalharServico = (id: number) => {
-    // Em produção, aqui redirecionaria para a página de detalhes do serviço
-    // Por enquanto, apenas mostra um toast
-    toast({
-      title: "Detalhes do serviço",
-      description: `Visualizando detalhes do serviço #${id}`,
-    });
-  };
-
-  // Função para filtrar serviços por status
-  const servicosFiltrados = servicos.filter(servico => {
-    if (filtroStatus === "todos") return true;
-    return servico.status === filtroStatus;
   });
 
-  // Função para ordenar serviços por data
-  const servicosOrdenados = [...servicosFiltrados].sort((a, b) => {
-    const dateA = new Date(a.data_servico).getTime();
-    const dateB = new Date(b.data_servico).getTime();
-    return filtroData === "recentes" ? dateB - dateA : dateA - dateB;
-  });
+  // Filtrar serviços com base na pesquisa e na aba ativa
+  const filteredServicos = servicos
+    ? servicos.filter(servico => {
+        // Filtro de pesquisa
+        const matchesSearch = 
+          servico.parceiro.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          servico.placa.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          servico.veiculo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          servico.tipo_servico.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        // Filtro de status
+        const matchesStatus = 
+          activeTab === 'todos' || 
+          servico.status === activeTab;
+        
+        return matchesSearch && matchesStatus;
+      })
+    : [];
 
-  // Contagem de serviços por status para os badges
-  const contarServicosPorStatus = (status: string) => {
-    return servicos.filter(servico => servico.status === status).length;
-  };
+  // Verificar se há erro na busca
+  if (error) {
+    console.error('Erro ao buscar serviços prestados:', error);
+  }
+
+  // Componentes de carregamento para diferentes partes da UI
+  const renderSkeletonCards = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <Card key={i} className="overflow-hidden">
+          <CardHeader className="pb-2">
+            <Skeleton className="h-6 w-3/4 mb-2" />
+            <Skeleton className="h-4 w-1/2" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          </CardContent>
+          <div className="px-6 py-4 border-t flex justify-between">
+            <Skeleton className="h-9 w-24" />
+            <Skeleton className="h-9 w-24" />
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
 
   return (
     <AppLayout>
-      <div className="container mx-auto py-6">
-        <div className="flex items-center mb-6">
-          <Link href="/fleet-management/towing-partners">
-            <Button variant="ghost" size="sm" className="mr-2">
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Voltar
+      <div className="container px-4 py-6 max-w-7xl mx-auto">
+        <PageHeader
+          title="Serviços Prestados por Parceiros"
+          description="Gerencie e aprove os serviços prestados pelos parceiros de guincho"
+        />
+
+        <div className="flex flex-col md:flex-row justify-between gap-4 mb-6 items-start md:items-center">
+          <Input
+            placeholder="Buscar por parceiro, placa ou tipo de serviço..."
+            className="max-w-md"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            startIcon={<Search className="h-4 w-4 text-muted-foreground" />}
+          />
+          
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate('/fleet-management/towing-partners')}
+              className="gap-2"
+            >
+              <FileText size={16} />
+              Voltar para Parceiros
             </Button>
-          </Link>
-          <h1 className="text-2xl font-bold">Serviços Prestados por Parceiros</h1>
-        </div>
-
-        <Tabs defaultValue="todos" className="space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <TabsList>
-              <TabsTrigger value="todos" onClick={() => setFiltroStatus("todos")}>
-                Todos 
-                <Badge variant="outline" className="ml-2 bg-gray-100">
-                  {servicos.length}
-                </Badge>
-              </TabsTrigger>
-              <TabsTrigger value="pendente" onClick={() => setFiltroStatus("pendente")}>
-                Pendentes
-                <Badge variant="outline" className="ml-2 bg-yellow-50 text-yellow-800 border-yellow-200">
-                  {contarServicosPorStatus("pendente")}
-                </Badge>
-              </TabsTrigger>
-              <TabsTrigger value="aprovado" onClick={() => setFiltroStatus("aprovado")}>
-                Aprovados
-                <Badge variant="outline" className="ml-2 bg-green-50 text-green-800 border-green-200">
-                  {contarServicosPorStatus("aprovado")}
-                </Badge>
-              </TabsTrigger>
-              <TabsTrigger value="rejeitado" onClick={() => setFiltroStatus("rejeitado")}>
-                Rejeitados
-                <Badge variant="outline" className="ml-2 bg-red-50 text-red-800 border-red-200">
-                  {contarServicosPorStatus("rejeitado")}
-                </Badge>
-              </TabsTrigger>
-            </TabsList>
-
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select
-                value={filtroData}
-                onValueChange={setFiltroData}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Ordenar por data" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="recentes">
-                    <div className="flex items-center">
-                      <ArrowDown className="h-4 w-4 mr-2" />
-                      Mais recentes primeiro
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="antigos">
-                    <div className="flex items-center">
-                      <ArrowUp className="h-4 w-4 mr-2" />
-                      Mais antigos primeiro
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
-
-          <Separator />
-
-          <TabsContent value="todos" className="space-y-4">
+        </div>
+        
+        {/* Abas para filtrar por status */}
+        <Tabs defaultValue="todos" value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
+          <TabsList>
+            <TabsTrigger value="todos">Todos</TabsTrigger>
+            <TabsTrigger value="pendente">Pendentes</TabsTrigger>
+            <TabsTrigger value="aprovado">Aprovados</TabsTrigger>
+            <TabsTrigger value="rejeitado">Rejeitados</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value={activeTab} className="mt-6">
             {isLoading ? (
-              <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
-              </div>
-            ) : servicosOrdenados.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {servicosOrdenados.map((servico) => (
+              renderSkeletonCards()
+            ) : filteredServicos.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredServicos.map(servico => (
                   <ServicoPrestadoCard
                     key={servico.id}
                     servico={servico}
-                    onAprovar={handleAprovarServico}
-                    onRejeitar={handleRejeitarServico}
-                    onDetalhar={handleDetalharServico}
+                    onAprovar={() => aprovarServicoMutation.mutate(servico.id)}
+                    onRejeitar={() => rejeitarServicoMutation.mutate(servico.id)}
+                    onDetalhar={(id) => {
+                      // Na implementação final, navegue para a página de detalhes do serviço
+                      toast({
+                        title: "Visualizando detalhes",
+                        description: `Detalhes do serviço #${id}`,
+                      });
+                    }}
                   />
                 ))}
               </div>
             ) : (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-10">
-                  <p className="text-muted-foreground mb-2">Nenhum serviço encontrado.</p>
-                  <p className="text-sm text-muted-foreground">Não existem serviços com os filtros selecionados.</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="pendente" className="space-y-4">
-            {isLoading ? (
-              <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
-              </div>
-            ) : servicosOrdenados.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {servicosOrdenados.map((servico) => (
-                  <ServicoPrestadoCard
-                    key={servico.id}
-                    servico={servico}
-                    onAprovar={handleAprovarServico}
-                    onRejeitar={handleRejeitarServico}
-                    onDetalhar={handleDetalharServico}
-                  />
-                ))}
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-10">
-                  <p className="text-muted-foreground mb-2">Nenhum serviço pendente.</p>
-                  <p className="text-sm text-muted-foreground">Todos os serviços já foram analisados.</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="aprovado" className="space-y-4">
-            {isLoading ? (
-              <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
-              </div>
-            ) : servicosOrdenados.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {servicosOrdenados.map((servico) => (
-                  <ServicoPrestadoCard
-                    key={servico.id}
-                    servico={servico}
-                    onAprovar={handleAprovarServico}
-                    onRejeitar={handleRejeitarServico}
-                    onDetalhar={handleDetalharServico}
-                  />
-                ))}
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-10">
-                  <p className="text-muted-foreground mb-2">Nenhum serviço aprovado.</p>
-                  <p className="text-sm text-muted-foreground">Não há serviços aprovados no momento.</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="rejeitado" className="space-y-4">
-            {isLoading ? (
-              <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
-              </div>
-            ) : servicosOrdenados.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {servicosOrdenados.map((servico) => (
-                  <ServicoPrestadoCard
-                    key={servico.id}
-                    servico={servico}
-                    onAprovar={handleAprovarServico}
-                    onRejeitar={handleRejeitarServico}
-                    onDetalhar={handleDetalharServico}
-                  />
-                ))}
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-10">
-                  <p className="text-muted-foreground mb-2">Nenhum serviço rejeitado.</p>
-                  <p className="text-sm text-muted-foreground">Não há serviços rejeitados no momento.</p>
-                </CardContent>
-              </Card>
+              <Alert variant="default" className="bg-muted/30">
+                <AlertCircle className="h-5 w-5" />
+                <AlertTitle>Nenhum serviço encontrado</AlertTitle>
+                <AlertDescription>
+                  Não foram encontrados serviços com os filtros aplicados.
+                </AlertDescription>
+              </Alert>
             )}
           </TabsContent>
         </Tabs>

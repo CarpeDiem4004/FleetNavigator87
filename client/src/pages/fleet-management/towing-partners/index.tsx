@@ -320,6 +320,13 @@ const TowingPartnersPage: React.FC = () => {
               Solicitações
             </Button>
           </SafeLink>
+
+          <SafeLink to="/fleet-management/towing-partners/servicos-pendentes">
+            <Button variant="secondary" size="sm" className="gap-2">
+              <FileText size={16} />
+              Serviços Pendentes
+            </Button>
+          </SafeLink>
         </div>
       </div>
       
