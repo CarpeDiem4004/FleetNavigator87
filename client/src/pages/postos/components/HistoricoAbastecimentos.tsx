@@ -191,6 +191,7 @@ const HistoricoAbastecimentos: React.FC<HistoricoAbastecimentosProps> = ({
           (item.nome_motorista && item.nome_motorista.toLowerCase().includes(term)) ||
           (item.tipo_combustivel && item.tipo_combustivel.toLowerCase().includes(term)) ||
           (item.nome_operador && item.nome_operador.toLowerCase().includes(term)) ||
+          (item.projeto && item.projeto.toLowerCase().includes(term)) ||
           (item.project && item.project.toLowerCase().includes(term))
         );
       });
