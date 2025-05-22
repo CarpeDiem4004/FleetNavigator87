@@ -17,7 +17,7 @@ import AppLayout from '@/components/AppLayout';
 import { SincronizarServicosButton } from '@/components/SincronizarServicosButton';
 
 // Ícones
-import { Search, AlertCircle, FileText, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { Search, AlertCircle, FileText, CheckCircle, XCircle, RefreshCw, Check, X, Eye } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
 // Tipos
