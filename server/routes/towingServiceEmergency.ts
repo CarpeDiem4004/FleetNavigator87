@@ -174,6 +174,96 @@ emergencyRouter.get('/verify/:token', (req, res) => {
   });
 });
 
+// Rota para histórico de serviços por token
+emergencyRouter.get('/history/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    console.log('[EmergencyRouter] Solicitação de histórico para token:', token);
+    
+    // Para token de teste do Caio Ramos
+    let partnerId = null;
+    
+    if (token && token.toLowerCase() === 'teste_caio_ramos_de_souza__token') {
+      partnerId = 8; // ID fixo do Caio Ramos para teste
+    } else {
+      // Verificar token no banco de dados
+      try {
+        const tokenQuery = `
+          SELECT partner_id FROM towing_access_tokens 
+          WHERE token = $1 AND active = true
+        `;
+        
+        const tokenResult = await pool.query(tokenQuery, [token]);
+        
+        if (tokenResult.rowCount && tokenResult.rowCount > 0) {
+          partnerId = tokenResult.rows[0].partner_id;
+        } else {
+          return res.status(404).json({
+            success: false,
+            message: 'Token inválido ou expirado',
+            data: { serviceCount: 0, services: [] }
+          });
+        }
+      } catch (tokenError) {
+        console.error('[EmergencyRouter] Erro ao verificar token:', tokenError);
+        return res.status(500).json({
+          success: false,
+          message: 'Erro ao verificar token',
+          data: { serviceCount: 0, services: [] }
+        });
+      }
+    }
+    
+    if (!partnerId) {
+      return res.status(404).json({
+        success: false,
+        message: 'Token inválido',
+        data: { serviceCount: 0, services: [] }
+      });
+    }
+    
+    // Buscar serviços do parceiro
+    const servicesQuery = `
+      SELECT * FROM towing_service_notes
+      WHERE partner_id = $1
+      ORDER BY service_date DESC, created_at DESC
+    `;
+    
+    const servicesResult = await pool.query(servicesQuery, [partnerId]);
+    
+    const services = servicesResult.rows.map(row => ({
+      id: row.id,
+      plate: row.plate,
+      pickup_location: row.pickup_location,
+      delivery_location: row.delivery_location,
+      service_description: row.service_description,
+      service_date: row.service_date,
+      cost: row.cost ? row.cost.toString() : '0',
+      mileage: row.mileage || 0,
+      status: row.status || 'pending',
+      payment_status: row.payment_status || 'pending',
+      created_at: row.created_at
+    }));
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Histórico de serviços recuperado com sucesso',
+      data: {
+        serviceCount: services.length,
+        services
+      }
+    });
+  } catch (error) {
+    console.error('[EmergencyRouter] Erro ao buscar histórico de serviços:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro interno ao buscar histórico',
+      error: error instanceof Error ? error.message : String(error),
+      data: { serviceCount: 0, services: [] }
+    });
+  }
+});
+
 // Rota para teste de conexão
 emergencyRouter.get('/ping', (req, res) => {
   return res.status(200).json({

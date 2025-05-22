@@ -130,9 +130,9 @@ export default function TowingPartnerExternalAccess() {
         return;
       }
       
-      // Para tokens reais, buscar do servidor (sempre com cache-busting)
+      // Usando a rota de emergência para buscar o histórico (com cache-busting)
       const timestamp = new Date().getTime(); // Adicionar timestamp para evitar cache
-      const response = await fetch(`/api/towing/simple-external/history/${token}?t=${timestamp}`, {
+      const response = await fetch(`/api/towing/emergency/history/${token}?t=${timestamp}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
