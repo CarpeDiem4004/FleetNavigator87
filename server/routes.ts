@@ -930,6 +930,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
+  // Redirecionar requisições de recebimentos do Osasco V2 para a rota especializada
+  app.get('/api/recebimentos/osasco_v2', (req, res) => {
+    console.log("Tratando requisição de recebimentos para Osasco V2 diretamente");
+    // Retornar uma resposta em formato JSON válido diretamente
+    res.json({
+      success: true,
+      message: "Tabela de recebimentos não disponível ou em configuração",
+      data: [],
+      count: 0
+    });
+  });
+  
   // Registrar rotas de diagnóstico
   app.use('/api/diagnostico', diagnosticoRoutes);
   

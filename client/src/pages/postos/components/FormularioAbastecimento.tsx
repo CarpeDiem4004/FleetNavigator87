@@ -623,17 +623,51 @@ const FormularioAbastecimento: React.FC<
             usarRotaDireta = false; // Marca como FALSE pois não vamos fazer a chamada normal
             
             // Já temos o resultado, podemos pular para a atualização no frontend
+          } catch (error) {
+            console.error("Erro ao usar API específica para Guarulhos V2:", error);
+            // Fallback para API padrão
+            endpoint = `/api/abastecimento-direto/guarulhos_v2`;
+            usarRotaDireta = true;
+          }
+        } else if (postId.toLowerCase() === "osasco_v2" || 
+            postId.toLowerCase().includes("osasco_v2") || 
+            postId.toLowerCase().includes("osasco v2")) {
+          // Usar API específica para Osasco V2 para garantir que o campo projeto seja salvo corretamente
+          try {
+            console.log(">>> Usando API específica para Osasco V2");
+            
+            // Usar a rota especializada para Osasco V2
+            endpoint = `/api/osasco-v2/abastecimento`;
+            
+            // Enviar diretamente para a rota especializada
+            const response = await fetch(endpoint, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("authToken")}`
+              },
+              body: JSON.stringify(dadosAbastecimento)
+            });
+            
+            const resultado = await response.json();
+            console.log("Resultado da API Osasco V2:", resultado);
+            
+            // Simulando o fluxo normal para não quebrar o restante do código
+            endpoint = `/api/abastecimento-direto/osasco_v2`;
+            usarRotaDireta = false; // Marca como FALSE pois já fizemos a chamada API
+            
+            // Já temos o resultado, podemos pular para a atualização no frontend
             if (mountedRef.current) {
               setRegistroSucesso(true);
               setIsSubmitting(false);
               processingRef.current = false;
               
-              console.log("Atualizando histórico manualmente para posto guarulhos v2");
+              console.log("Atualizando histórico manualmente para posto osasco v2");
               
               // Solução definitiva: forçar atualização da página para mostrar os registros mais recentes
               // Isso garante que o histórico estará sempre atualizado após um novo registro
               setTimeout(() => {
-                console.log("Recarregando página para exibir o novo registro de Guarulhos V2");
+                console.log("Recarregando página para exibir o novo registro de Osasco V2");
                 window.location.reload();
               }, 1000);
               
