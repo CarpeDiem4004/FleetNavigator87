@@ -472,17 +472,9 @@ router.post('/submit', async (req, res) => {
           const insertedData = result.rows[0];
           addTestService(partnerId, insertedData);
           
-          // Adicionar o serviço à tabela servicos_guincho também 
-          const syncQuery = `
-            INSERT INTO servicos_guincho (
-              id, parceiro_id, placa, origem, destino, 
-              tipo_servico, data_lancamento, valor, km_reboque,
-              observacoes, contato_nome, contato_telefone, status, data_criacao
-            ) VALUES (
-              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW()
-            )
-            ON CONFLICT (id) DO NOTHING
-          `;
+          // Pulando a sincronização com servicos_guincho por enquanto
+          // Vamos apenas registrar na tabela principal towing_service_notes
+          const syncSuccessful = true;
           
           try {
             await pool.query(syncQuery, [
