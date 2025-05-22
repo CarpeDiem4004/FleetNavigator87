@@ -566,7 +566,8 @@ router.get('/history/:token', async (req, res) => {
           partnerName = 'Guincho Águia';
           companyName = 'Guincho Águia LTDA';
         } else if (tokenLower === 'teste_allan_de_souza_token' || 
-                  tokenLower === 'teste_allan_de_souza_vieira_token') {
+                  tokenLower === 'teste_allan_de_souza_vieira_token' ||
+                  tokenLower.includes('allan_de_souza_vieira')) {
           partnerId = 15;
           partnerName = 'Allan de Souza Vieira';
           companyName = 'Allan de Souza Vieira Serviços de Guincho LTDA';
