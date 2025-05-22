@@ -628,8 +628,17 @@ const FormularioAbastecimento: React.FC<
               setIsSubmitting(false);
               processingRef.current = false;
               
-              // Notificar historico para atualizar
-              eventosBus.emit(EVENTOS.ATUALIZAR_HISTORICO, { posto: "posto guarulhos v2" });
+              // Notificar historico para atualizar (verificando primeiro se o método existe)
+              if (typeof eventosBus.emit === 'function') {
+                eventosBus.emit(EVENTOS.ATUALIZAR_HISTORICO, { posto: "posto guarulhos v2" });
+              } else {
+                console.log("Atualizando histórico manualmente para posto guarulhos v2");
+                // Alternativa: carregar o histórico usando outro método
+                setTimeout(() => {
+                  // Forçar atualização da página para exibir o novo registro
+                  window.location.reload();
+                }, 1500);
+              }
               
               if (onRegistroSucesso) {
                 onRegistroSucesso();
