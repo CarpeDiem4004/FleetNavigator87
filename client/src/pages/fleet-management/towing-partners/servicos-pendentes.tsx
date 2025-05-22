@@ -274,22 +274,89 @@ export default function ServicosPendentesPage() {
             {isLoading ? (
               renderSkeletonCards()
             ) : filteredServicos.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredServicos.map(servico => (
-                  <ServicoPrestadoCard
-                    key={servico.id}
-                    servico={servico}
-                    onAprovar={() => aprovarServicoMutation.mutate(servico.id)}
-                    onRejeitar={() => rejeitarServicoMutation.mutate(servico.id)}
-                    onDetalhar={(id) => {
-                      // Na implementação final, navegue para a página de detalhes do serviço
-                      toast({
-                        title: "Visualizando detalhes",
-                        description: `Detalhes do serviço #${id}`,
-                      });
-                    }}
-                  />
-                ))}
+              <div className="w-full overflow-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-muted/50">
+                      <th className="py-3 px-4 text-left font-medium">Parceiro</th>
+                      <th className="py-3 px-4 text-left font-medium">Veículo</th>
+                      <th className="py-3 px-4 text-left font-medium">Tipo</th>
+                      <th className="py-3 px-4 text-left font-medium">Data</th>
+                      <th className="py-3 px-4 text-left font-medium">Valor</th>
+                      <th className="py-3 px-4 text-left font-medium">KM</th>
+                      <th className="py-3 px-4 text-left font-medium">Local</th>
+                      <th className="py-3 px-4 text-center font-medium">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredServicos.map((servico, index) => (
+                      <tr 
+                        key={servico.id} 
+                        className={`border-b hover:bg-muted/20 transition-colors ${
+                          index % 2 === 0 ? 'bg-background' : 'bg-muted/10'
+                        }`}
+                      >
+                        <td className="py-3 px-4">
+                          <div className="font-medium">{servico.parceiro.nome}</div>
+                          <div className="text-xs text-muted-foreground">{servico.parceiro.cidade}</div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div>{servico.veiculo || 'Não especificado'}</div>
+                          <div className="text-xs text-muted-foreground">{servico.placa}</div>
+                        </td>
+                        <td className="py-3 px-4">{servico.tipo_servico}</td>
+                        <td className="py-3 px-4">{new Date(servico.data_servico).toLocaleDateString()}</td>
+                        <td className="py-3 px-4 font-medium">R$ {parseFloat(servico.valor).toFixed(2)}</td>
+                        <td className="py-3 px-4">{servico.km_reboque ? `${servico.km_reboque} km` : '-'}</td>
+                        <td className="py-3 px-4">
+                          <div className="text-xs max-w-[150px] truncate" title={servico.local_atendimento}>
+                            {servico.local_atendimento}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex justify-center gap-2">
+                            {servico.status === 'pendente' && (
+                              <>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                  onClick={() => aprovarServicoMutation.mutate(servico.id)}
+                                >
+                                  <Check className="h-4 w-4 mr-1" />
+                                  Aprovar
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => rejeitarServicoMutation.mutate(servico.id)}
+                                >
+                                  <X className="h-4 w-4 mr-1" />
+                                  Rejeitar
+                                </Button>
+                              </>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 px-2"
+                              onClick={() => {
+                                toast({
+                                  title: "Visualizando detalhes",
+                                  description: `Detalhes do serviço #${servico.id}`,
+                                });
+                              }}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Detalhes
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             ) : (
               <Alert variant="default" className="bg-muted/30">
