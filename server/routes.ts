@@ -911,6 +911,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rota SQL segura (novo)
   app.use('/api/sql-seguro', sqlSeguroRouter);
   
+  // Registrar rotas especializadas para o posto Guarulhos V2
+  app.use('/api/guarulhos-v2', guarulhosV2Routes);
+  
   // Registrar rotas de diagnóstico
   app.use('/api/diagnostico', diagnosticoRoutes);
   
