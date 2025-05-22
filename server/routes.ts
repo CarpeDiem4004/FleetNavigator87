@@ -46,6 +46,7 @@ import historicoConsolidadoRoutes from "./routes/historicoConsolidadoRoutes";
 import patioRoutes from "./routes/patioRoutes";
 import pneusRoutes from "./routes/pneusRoutes";
 import sqlSeguroRouter from "./routes/sql-seguro";
+import guarulhosV2Routes from "./routes/guarulhosV2Routes";
 import { db, pool } from "./db";
 import authHybridRoutes from "./routes/authHybridRoutes";
 import * as userHandler from "./handlers/userHandler";
@@ -9111,6 +9112,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registrar rotas para gestão de pneus
   app.use('/api/pneus', pneusRoutes);
+  
+  // Rota especializada para Guarulhos V2 que preserva os valores reais dos campos 
+  app.use('/api/guarulhos-v2', guarulhosV2Routes);
   
   // Inicializar tabela para o sistema de cartão combustível
   await setupFuelCardTable();

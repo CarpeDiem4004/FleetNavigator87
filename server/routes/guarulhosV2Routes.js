@@ -1,0 +1,60 @@
+/**
+ * Rotas especializadas para o posto Guarulhos V2
+ * 
+ * Este arquivo contém rotas otimizadas para o posto Guarulhos V2 que mantêm
+ * todos os campos originais, incluindo nome_motorista e rg_motorista.
+ */
+
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// Rota otimizada para histórico de Guarulhos V2
+router.get('/historico', async (req, res) => {
+  try {
+    // Consulta SQL otimizada para Guarulhos V2 que mantém os campos originais
+    const query = `
+      SELECT 
+        id,
+        placa,
+        km_atual as km,
+        NULL as hodometro_atual,
+        tipo_combustivel,
+        litros as quantidade_litros,
+        nome_motorista,
+        rg_motorista,
+        nome_operador,
+        valor_litro,
+        valor_total,
+        tipo_veiculo,
+        observacoes,
+        false as lavagem,
+        NULL as tipo_lavagem,
+        COALESCE(project, 'Não definido') as projeto,
+        to_char(created_at AT TIME ZONE 'America/Sao_Paulo', 'DD/MM/YYYY HH24:MI') as data_hora,
+        created_at
+      FROM abastecimentos_posto_guarulhos_v2
+      ORDER BY created_at DESC
+      LIMIT ${req.query.limit || 50}
+    `;
+    
+    console.log("[GuarulhosV2] Executando consulta especializada de histórico que preserva valores reais dos campos");
+    const result = await pool.query(query);
+    
+    res.json({
+      success: true,
+      data: result.rows,
+      count: result.rowCount
+    });
+  } catch (error) {
+    console.error("[GuarulhosV2] Erro ao consultar histórico especializado:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || "Erro ao consultar histórico especializado" 
+    });
+  }
+});
+
+// Exportar o router para ser usado em routes.ts
+export default router;
