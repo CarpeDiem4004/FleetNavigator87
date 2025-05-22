@@ -45,6 +45,7 @@ import simpleExternalAccess from './routes/simpleExternalAccess';
 import historicoConsolidadoRoutes from "./routes/historicoConsolidadoRoutes";
 import patioRoutes from "./routes/patioRoutes";
 import pneusRoutes from "./routes/pneusRoutes";
+import sqlSeguroRouter from "./routes/sql-seguro";
 import { db, pool } from "./db";
 import authHybridRoutes from "./routes/authHybridRoutes";
 import * as userHandler from "./handlers/userHandler";
