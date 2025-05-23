@@ -7,7 +7,26 @@ const { pool } = require('../db');
 const router = express.Router();
 
 // Middleware de autenticação unificada
-const { isAuthenticated, hasPostoAccess } = require('../middleware/auth');
+const { isAuthenticated } = require('../middleware/auth');
+
+// Debug inicial para verificar a estrutura da tabela
+async function verificarEstruturaTabelaRecebimentos() {
+  try {
+    console.log("[OsascoV2RecebimentosDirecto] Verificando estrutura da tabela recebimentos_posto_osasco_v2...");
+    const query = `
+      SELECT column_name, data_type
+      FROM information_schema.columns
+      WHERE table_name = 'recebimentos_posto_osasco_v2'
+      ORDER BY ordinal_position;
+    `;
+    const result = await pool.query(query);
+    console.log("[OsascoV2RecebimentosDirecto] Colunas disponíveis:", result.rows);
+    return result.rows;
+  } catch (error) {
+    console.error("[OsascoV2RecebimentosDirecto] Erro ao verificar estrutura da tabela:", error);
+    return [];
+  }
+}
 
 // Verificar se a tabela existe
 async function verificaTabelaRecebimentos() {
@@ -30,7 +49,10 @@ async function verificaTabelaRecebimentos() {
 // Obter todos os recebimentos
 router.get('/', isAuthenticated, async (req, res) => {
   try {
-    console.log('Consultando recebimentos do posto Osasco V2 diretamente');
+    console.log('[OsascoV2RecebimentosDirecto] Consultando recebimentos do posto Osasco V2 diretamente');
+    
+    // Verificar estrutura da tabela antes de prosseguir
+    await verificarEstruturaTabelaRecebimentos();
     
     const tabelaExiste = await verificaTabelaRecebimentos();
     if (!tabelaExiste) {
@@ -59,9 +81,14 @@ router.get('/', isAuthenticated, async (req, res) => {
       LIMIT 50
     `;
     
+    console.log('[OsascoV2RecebimentosDirecto] Executando query:', query);
+    
     const { rows } = await pool.query(query);
     
-    console.log(`Recebimentos encontrados no posto Osasco V2: ${rows.length}`);
+    console.log(`[OsascoV2RecebimentosDirecto] Recebimentos encontrados: ${rows.length}`);
+    if (rows.length > 0) {
+      console.log('[OsascoV2RecebimentosDirecto] Exemplo primeiro resultado:', rows[0]);
+    }
     
     return res.json({
       success: true,
@@ -69,7 +96,7 @@ router.get('/', isAuthenticated, async (req, res) => {
       data: rows
     });
   } catch (error) {
-    console.error('Erro ao consultar recebimentos do posto Osasco V2:', error);
+    console.error('[OsascoV2RecebimentosDirecto] Erro ao consultar recebimentos:', error);
     return res.status(500).json({
       success: false,
       message: 'Erro ao consultar recebimentos',
@@ -81,6 +108,11 @@ router.get('/', isAuthenticated, async (req, res) => {
 // Adicionar um novo recebimento
 router.post('/', isAuthenticated, async (req, res) => {
   try {
+    console.log('[OsascoV2RecebimentosDirecto] Recebendo pedido para adicionar recebimento:', req.body);
+    
+    // Verificar estrutura da tabela antes de prosseguir
+    await verificarEstruturaTabelaRecebimentos();
+    
     // Validar dados
     const {
       nome_fornecedor,
@@ -103,6 +135,23 @@ router.post('/', isAuthenticated, async (req, res) => {
     
     // Calcular valor por litro
     const valor_litro = parseFloat(valor_total) / parseFloat(litros_recebidos);
+    
+    // Preparar data em formato correto
+    let dataEntrega = data_entrega || null;
+    if (dataEntrega && typeof dataEntrega === 'string') {
+      // Tentar formatar a data se ela estiver num formato diferente
+      try {
+        // Se for DD/MM/YYYY
+        if (dataEntrega.includes('/')) {
+          const parts = dataEntrega.split('/');
+          if (parts.length === 3) {
+            dataEntrega = `${parts[2]}-${parts[1]}-${parts[0]}`;
+          }
+        }
+      } catch (err) {
+        console.warn('[OsascoV2RecebimentosDirecto] Erro ao processar data, usando original:', err);
+      }
+    }
     
     // Inserir na tabela
     const query = `
@@ -127,12 +176,16 @@ router.post('/', isAuthenticated, async (req, res) => {
       valor_litro.toFixed(3),  // Formatar com 3 casas decimais
       valor_total,
       numero_nota || null,
-      data_entrega || null,
+      dataEntrega,
       nome_operador,
       observacoes || null
     ];
     
+    console.log('[OsascoV2RecebimentosDirecto] Executando query com valores:', values);
+    
     const { rows } = await pool.query(query, values);
+    
+    console.log('[OsascoV2RecebimentosDirecto] Recebimento registrado com sucesso:', rows[0]);
     
     return res.status(201).json({
       success: true,
@@ -140,7 +193,7 @@ router.post('/', isAuthenticated, async (req, res) => {
       data: rows[0]
     });
   } catch (error) {
-    console.error('Erro ao adicionar recebimento para Osasco V2:', error);
+    console.error('[OsascoV2RecebimentosDirecto] Erro ao adicionar recebimento:', error);
     return res.status(500).json({
       success: false,
       message: 'Erro ao registrar recebimento',

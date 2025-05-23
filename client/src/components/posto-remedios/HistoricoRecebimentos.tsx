@@ -50,62 +50,85 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
     enabled: postoId.toLowerCase() !== 'osasco_v2' // Desabilitar para Osasco
   });
 
-  // Estado local para armazenar dados de SQL direto
-  const [recebimentosSQL, setRecebimentosSQL] = useState<any[]>([]);
+  // Estado local para armazenar dados de recebimentos
+  const [recebimentosDirectos, setRecebimentosDirectos] = useState<any[]>([]);
   
-  // Efeito para buscar recebimentos diretamente via SQL quando for Osasco V2
+  // Efeito para buscar recebimentos diretamente do endpoint especializado para Osasco V2
   React.useEffect(() => {
     if (postoId.toLowerCase() === 'osasco_v2') {
-      const fetchDirectFromDB = async () => {
+      const fetchFromDirectEndpoint = async () => {
         try {
-          console.log("Buscando recebimentos do Osasco V2 via SQL direta...");
-          const response = await fetch('/api/sql-seguro', {
-            method: 'POST',
+          console.log("Buscando recebimentos do Osasco V2 via endpoint especializado...");
+          
+          // Usar o endpoint dedicado para recebimentos do Osasco V2
+          const response = await fetch('/api/osasco-v2/recebimentos', {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
             },
-            body: JSON.stringify({
-              query: `
-                SELECT 
-                  id,
-                  nome_fornecedor as fornecedor,
-                  tipo_produto as tipo_combustivel,
-                  litros_recebidos as quantidade_litros,
-                  COALESCE(valor_litro, 0) as valor_litro,
-                  valor_total,
-                  COALESCE(numero_nota, '-') as numero_nota,
-                  COALESCE(TO_CHAR(data_entrega, 'DD/MM/YYYY'), TO_CHAR(created_at, 'DD/MM/YYYY')) as data_entrega,
-                  nome_operador as operador,
-                  observacoes,
-                  TO_CHAR(created_at, 'DD/MM/YYYY') as data_formatada,
-                  created_at
-                FROM recebimentos_posto_osasco_v2
-                ORDER BY created_at DESC
-                LIMIT 50
-              `
-            }),
             credentials: 'include'
           });
           
           if (!response.ok) {
-            throw new Error(`Erro ao consultar SQL direta: ${response.status}`);
+            throw new Error(`Erro ao buscar recebimentos: ${response.status}`);
           }
           
           const data = await response.json();
           
-          if (data.success && data.rows) {
-            console.log("Recebimentos encontrados via SQL direta:", data.rows.length);
-            setRecebimentosSQL(data.rows);
+          if (data.success && data.data && data.data.length > 0) {
+            console.log("Recebimentos encontrados via endpoint especializado:", data.data.length);
+            setRecebimentosDirectos(data.data);
+          } else {
+            // Fallback para SQL direto se o endpoint não retornar dados
+            console.log("Tentando SQL direto como fallback...");
+            const sqlResponse = await fetch('/api/sql-seguro', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
+              },
+              body: JSON.stringify({
+                query: `
+                  SELECT 
+                    id,
+                    nome_fornecedor as fornecedor,
+                    tipo_produto as tipo_combustivel,
+                    litros_recebidos as quantidade_litros,
+                    COALESCE(valor_litro, 0) as valor_litro,
+                    valor_total,
+                    COALESCE(numero_nota, '-') as numero_nota,
+                    COALESCE(TO_CHAR(data_entrega, 'DD/MM/YYYY'), TO_CHAR(created_at, 'DD/MM/YYYY')) as data_entrega,
+                    nome_operador as operador,
+                    observacoes,
+                    TO_CHAR(created_at, 'DD/MM/YYYY') as data_formatada,
+                    created_at
+                  FROM recebimentos_posto_osasco_v2
+                  ORDER BY created_at DESC
+                  LIMIT 50
+                `
+              }),
+              credentials: 'include'
+            });
+            
+            if (!sqlResponse.ok) {
+              throw new Error(`Erro ao consultar SQL direta: ${sqlResponse.status}`);
+            }
+            
+            const sqlData = await sqlResponse.json();
+            
+            if (sqlData.success && sqlData.rows) {
+              console.log("Recebimentos encontrados via SQL direta:", sqlData.rows.length);
+              setRecebimentosDirectos(sqlData.rows);
+            }
           }
         } catch (err) {
-          console.error("Erro ao buscar diretamente via SQL:", err);
+          console.error("Erro ao buscar recebimentos do Osasco V2:", err);
         }
       };
       
-      fetchDirectFromDB();
+      fetchFromDirectEndpoint();
     }
-  }, [postoId]);
+  }, [postoId, osascoV2Recebimentos?.length]);
   
   // Processar os dados dependendo do posto
   const recebimentos = React.useMemo(() => {

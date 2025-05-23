@@ -928,6 +928,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/debug-osasco', debugOsascoRoutes);
   
   // Versão corrigida para recebimentos do posto Osasco
+  app.use('/api/recebimentos-osasco-v2', recebimentosOsascoHandler);
+  
+  // Nova rota direta para recebimentos do posto Osasco V2
+  const osascoV2RecebimentosDirecto = require('./routes/osascoV2RecebimentosDirecto');
+  app.use('/api/osasco-v2/recebimentos', osascoV2RecebimentosDirecto);
   app.use('/api/fix-osasco/recebimentos', fixOsascoRecebimentos);
   
   // Manipulador especializado para o posto Osasco
