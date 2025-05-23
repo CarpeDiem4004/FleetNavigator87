@@ -62,29 +62,31 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
       
       console.log(`Carregando histórico para posto '${postoProcessado}' com timestamp ${timestamp} e nonce ${randomParam}`);
       
+      // Determinar o nome da tabela com base no posto
+      const tabelaNome = `abastecimentos_posto_${postoProcessado.toLowerCase()}`;
+      
       // Usar axios diretamente na rota SQL para evitar qualquer cache ou camada de middleware
       const diretaSqlResponse = await axios.post('/api/execute-sql', {
         sql: `
           SELECT 
             id,
             placa,
-            km_atual as km,
-            NULL as hodometro_atual,
+            COALESCE(km_atual, hodometro_atual) as km,
             tipo_combustivel,
-            litros as quantidade_litros,
-            'Não informado' as nome_motorista,
-            NULL as rg_motorista,
-            'Sistema' as nome_operador,
-            valor_litro,
+            COALESCE(litros, quantidade_litros, quantity_litros) as quantidade_litros,
+            COALESCE(motorista, nome_motorista, 'Não informado') as nome_motorista,
+            COALESCE(motorista_rg, rg_motorista) as rg_motorista,
+            COALESCE(operador, nome_operador, 'Sistema') as nome_operador,
+            COALESCE(valor_litro, preco_litro) as valor_litro,
             valor_total,
             tipo_veiculo,
             observacoes,
-            false as lavagem,
-            NULL as tipo_lavagem,
-            COALESCE(project, 'Não definido') as projeto,
+            COALESCE(lavagem, false) as lavagem,
+            tipo_lavagem,
+            COALESCE(projeto, project, 'Não definido') as projeto,
             to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora,
             created_at
-          FROM abastecimentos_posto_guarulhos_v2
+          FROM "${tabelaNome}"
           ORDER BY created_at DESC
           LIMIT 50
         `,
