@@ -130,55 +130,43 @@ router.post('/recebimentos/:posto', unifiedAuthMiddleware, requireRoles(['admin'
     
     // Coletar dados do corpo da requisição
     const {
-      tipo_combustivel,
-      quantidade_litros,
-      valor_litro,
+      tipo_produto,
+      litros_recebidos,
       valor_total,
-      nota_fiscal,
-      fornecedor,
-      data_recebimento,
-      usuario_operador,
+      nome_fornecedor,
+      nome_operador,
       observacoes
     } = req.body;
     
     // Validar dados essenciais
-    if (!tipo_combustivel || !quantidade_litros || !valor_litro) {
+    if (!tipo_produto || !litros_recebidos || !valor_total) {
       return res.status(400).json({
         success: false,
-        error: 'Dados obrigatórios faltando: tipo_combustivel, quantidade_litros, valor_litro'
+        error: 'Dados obrigatórios faltando: tipo_produto, litros_recebidos, valor_total'
       });
     }
-    
-    // Calcular o valor total se não fornecido
-    const calculatedValorTotal = valor_total || (quantidade_litros * valor_litro);
     
     // Inserir dados na tabela
     const insertQuery = `
       INSERT INTO "${tableName}" (
-        tipo_combustivel,
-        quantidade_litros,
-        valor_litro,
+        tipo_produto,
+        litros_recebidos,
         valor_total,
-        nota_fiscal,
-        fornecedor,
-        data_recebimento,
-        usuario_operador,
+        nome_fornecedor,
+        nome_operador,
         observacoes,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
       RETURNING *;
     `;
     
     const values = [
-      tipo_combustivel,
-      quantidade_litros,
-      valor_litro,
-      calculatedValorTotal,
-      nota_fiscal || null,
-      fornecedor || null,
-      data_recebimento || new Date(),
-      usuario_operador || 'Sistema',
+      tipo_produto,
+      litros_recebidos,
+      valor_total,
+      nome_fornecedor || 'Não informado',
+      nome_operador || 'Sistema',
       observacoes || null
     ];
     
@@ -198,16 +186,16 @@ router.post('/recebimentos/:posto', unifiedAuthMiddleware, requireRoles(['admin'
       let updateQuery, updateValues;
       
       // Atualizar o nível do tanque conforme o tipo de combustível
-      if (tipo_combustivel.toUpperCase() === 'DIESEL') {
-        const novoNivel = parseFloat(tanqueConfig.diesel_nivel) + parseFloat(quantidade_litros);
+      if (tipo_produto.toUpperCase() === 'DIESEL') {
+        const novoNivel = parseFloat(tanqueConfig.diesel_nivel) + parseFloat(litros_recebidos);
         updateQuery = `
           UPDATE configuracao_tanques 
           SET diesel_nivel = $1, updated_at = NOW() 
           WHERE posto = $2
         `;
         updateValues = [novoNivel, postoName];
-      } else if (tipo_combustivel.toUpperCase() === 'ARLA') {
-        const novoNivel = parseFloat(tanqueConfig.arla_nivel) + parseFloat(quantidade_litros);
+      } else if (tipo_produto.toUpperCase() === 'ARLA' || tipo_produto.toUpperCase() === 'ARLA 32') {
+        const novoNivel = parseFloat(tanqueConfig.arla_nivel) + parseFloat(litros_recebidos);
         updateQuery = `
           UPDATE configuracao_tanques 
           SET arla_nivel = $1, updated_at = NOW() 
@@ -218,13 +206,13 @@ router.post('/recebimentos/:posto', unifiedAuthMiddleware, requireRoles(['admin'
       
       if (updateQuery && updateValues) {
         await pool.query(updateQuery, updateValues);
-        console.log(`Nível do tanque de ${tipo_combustivel} atualizado para o posto ${postoName}`);
+        console.log(`Nível do tanque de ${tipo_produto} atualizado para o posto ${postoName}`);
       }
     }
     
     res.status(201).json({
       success: true,
-      message: `Recebimento de ${quantidade_litros} litros de ${tipo_combustivel} registrado com sucesso.`,
+      message: `Recebimento de ${litros_recebidos} litros de ${tipo_produto} registrado com sucesso.`,
       data: result.rows[0]
     });
   } catch (error: any) {
