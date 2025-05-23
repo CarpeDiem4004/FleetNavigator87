@@ -63,12 +63,36 @@ router.get('/:posto', async (req, res) => {
     }
     
     // Consultar dados da tabela
-    const query = `
-      SELECT *
-      FROM ${nomeTabela}
-      ORDER BY created_at DESC
-      LIMIT $1
-    `;
+    let query;
+    
+    // Tratamento especial para o posto Osasco V2 que usa nomenclatura diferente
+    if (posto.toLowerCase() === 'osasco_v2') {
+      console.log(`[Recebimentos] Tratando requisição de recebimentos para Osasco V2 com mapeamento de colunas`);
+      query = `
+        SELECT 
+          id,
+          nome_fornecedor as fornecedor,
+          tipo_produto as tipo_combustivel,
+          litros_recebidos as quantidade_litros,
+          COALESCE(valor_litro, valor_total / NULLIF(litros_recebidos, 0)) as valor_litro,
+          valor_total,
+          COALESCE(numero_nota, '') as numero_nota,
+          nome_operador as operador,
+          COALESCE(data_entrega, created_at::date) as data_entrega,
+          observacoes,
+          created_at
+        FROM ${nomeTabela}
+        ORDER BY created_at DESC
+        LIMIT $1
+      `;
+    } else {
+      query = `
+        SELECT *
+        FROM ${nomeTabela}
+        ORDER BY created_at DESC
+        LIMIT $1
+      `;
+    }
     
     const result = await pool.query(query, [limit]);
     
@@ -123,10 +147,79 @@ router.post('/:posto', async (req, res) => {
     
     const tableCheck = await pool.query(checkTableQuery, [nomeTabela]);
     
+    // Caso especial para Osasco_v2 que tem estrutura diferente
+    if (posto.toLowerCase() === 'osasco_v2') {
+      console.log(`[Recebimentos] Utilizando estrutura específica para Osasco_v2`);
+      
+      if (!tableCheck.rows[0].exists) {
+        // Criar tabela usando a estrutura específica do Osasco_v2
+        const createTableQuery = `
+          CREATE TABLE IF NOT EXISTS ${nomeTabela} (
+            id SERIAL PRIMARY KEY,
+            nome_fornecedor VARCHAR(255) NOT NULL,
+            tipo_produto VARCHAR(50) NOT NULL,
+            litros_recebidos NUMERIC(10, 2) NOT NULL,
+            valor_litro NUMERIC(10, 3),
+            valor_total NUMERIC(10, 2) NOT NULL,
+            numero_nota VARCHAR(50),
+            nome_operador VARCHAR(255) NOT NULL,
+            data_entrega DATE,
+            observacoes TEXT,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+        `;
+        
+        await pool.query(createTableQuery);
+      }
+      
+      // Inserir usando colunas específicas do Osasco_v2
+      const insertQuery = `
+        INSERT INTO ${nomeTabela} (
+          nome_fornecedor,
+          tipo_produto,
+          litros_recebidos,
+          valor_litro,
+          valor_total,
+          numero_nota,
+          nome_operador,
+          data_entrega,
+          observacoes
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING *;
+      `;
+      
+      const values = [
+        recebimentoData.fornecedor,
+        recebimentoData.tipo_combustivel,
+        recebimentoData.quantidade_litros,
+        recebimentoData.valor_litro,
+        recebimentoData.valor_total,
+        recebimentoData.numero_nota || '',
+        recebimentoData.operador,
+        recebimentoData.data_entrega || new Date(),
+        recebimentoData.observacoes || ''
+      ];
+      
+      const result = await pool.query(insertQuery, values);
+      
+      // Retornar após o processamento específico para Osasco_v2
+      res.status(201).json({
+        success: true,
+        message: 'Recebimento registrado com sucesso',
+        data: result.rows[0]
+      });
+      
+      // Atualizar configuração de tanques (código comum fora deste bloco)
+      return;
+    }
+    
+    // Para outros postos, usar estrutura padrão
     if (!tableCheck.rows[0].exists) {
       console.log(`[Recebimentos] Tabela ${nomeTabela} não existe, criando...`);
       
-      // Criar tabela se não existir
+      // Criar tabela se não existir (padrão)
       const createTableQuery = `
         CREATE TABLE IF NOT EXISTS ${nomeTabela} (
           id SERIAL PRIMARY KEY,
@@ -146,7 +239,7 @@ router.post('/:posto', async (req, res) => {
       await pool.query(createTableQuery);
     }
     
-    // Preparar consulta SQL para inserir recebimento
+    // Preparar consulta SQL para inserir recebimento (padrão)
     const insertQuery = `
       INSERT INTO ${nomeTabela} (
         fornecedor,
