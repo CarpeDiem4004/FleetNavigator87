@@ -16,55 +16,69 @@ const { pool } = require('../db');
  */
 async function getRecebimentosOsascoV2(limit = 50) {
   try {
-    const nomeTabela = 'recebimentos_posto_osasco_v2';
+    // Consulta direta para verificar se existem registros e obter os dados
+    const query = `
+      SELECT COUNT(*) FROM recebimentos_posto_osasco_v2
+    `;
     
-    // Verificar se a tabela existe
-    const tableExists = await pool.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = $1
-      ) as "exists";
-    `, [nomeTabela]);
+    const countResult = await pool.query(query);
+    const count = parseInt(countResult.rows[0].count);
     
-    if (!tableExists.rows[0].exists) {
+    console.log(`[RecebimentosOsasco] Contagem de registros em recebimentos_posto_osasco_v2: ${count}`);
+    
+    if (count === 0) {
+      console.log(`[RecebimentosOsasco] Nenhum registro encontrado na tabela.`);
       return {
         success: true,
-        message: `Tabela ${nomeTabela} não existe, sem dados de recebimentos.`,
         data: [],
-        count: 0
       };
     }
     
-    // Consulta especializada que mapeia as colunas específicas de Osasco V2
-    // para o formato padronizado esperado pelo frontend
-    const query = `
-      SELECT 
-        id,
-        nome_fornecedor as fornecedor,
-        tipo_produto as tipo_combustivel,
-        litros_recebidos as quantidade_litros,
-        COALESCE(valor_litro, valor_total / NULLIF(litros_recebidos, 0)) as valor_litro,
-        valor_total,
-        COALESCE(numero_nota, '') as numero_nota,
-        nome_operador as operador,
-        COALESCE(data_entrega, created_at::date) as data_entrega,
-        observacoes,
-        created_at
-      FROM ${nomeTabela}
+    // Se existirem registros, buscar os dados
+    const selectQuery = `
+      SELECT * FROM recebimentos_posto_osasco_v2
       ORDER BY created_at DESC
       LIMIT $1
     `;
     
-    const result = await pool.query(query, [limit]);
+    const result = await pool.query(selectQuery, [limit]);
+    console.log(`[RecebimentosOsasco] Registros obtidos: ${result.rowCount}`);
     
-    console.log(`[RecebimentosOsasco] Encontrados ${result.rowCount} recebimentos para o posto Osasco V2`);
+    // Criar array de dados manualmente
+    const recebimentosData = [];
     
+    for (const row of result.rows) {
+      // Calcular valor por litro se não existir
+      let valorLitro = 0;
+      if (row.valor_litro) {
+        valorLitro = parseFloat(row.valor_litro);
+      } else if (parseFloat(row.litros_recebidos) > 0) {
+        valorLitro = parseFloat(row.valor_total) / parseFloat(row.litros_recebidos);
+      }
+      
+      recebimentosData.push({
+        id: row.id,
+        fornecedor: row.nome_fornecedor,
+        tipo_combustivel: row.tipo_produto,
+        quantidade_litros: parseFloat(row.litros_recebidos),
+        valor_litro: valorLitro,
+        valor_total: parseFloat(row.valor_total),
+        numero_nota: '(Não informado)',
+        operador: row.nome_operador,
+        data_entrega: new Date().toISOString().split('T')[0], // Usar data atual como fallback
+        observacoes: row.observacoes || '',
+        created_at: new Date(row.created_at).toISOString()
+      });
+    }
+    
+    console.log(`[RecebimentosOsasco] Dados mapeados: ${recebimentosData.length} registros`);
+    
+    // Retornar os dados formatados
     return {
       success: true,
-      data: result.rows,
-      count: result.rowCount
+      data: recebimentosData
     };
+    
   } catch (error) {
     console.error(`[RecebimentosOsasco] Erro ao buscar recebimentos:`, error);
     

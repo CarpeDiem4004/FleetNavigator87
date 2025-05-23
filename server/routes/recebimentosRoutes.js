@@ -90,8 +90,19 @@ router.get('/:posto', async (req, res) => {
     // Caso especial: usar manipulador específico para Osasco_v2
     if (posto.toLowerCase() === 'osasco_v2') {
       console.log(`[Recebimentos] Tratando requisição de recebimentos para Osasco V2 diretamente`);
-      const result = await osascoHandler.getRecebimentosOsascoV2(limit);
-      return res.json(result);
+      try {
+        const result = await osascoHandler.getRecebimentosOsascoV2(limit);
+        // Adicionar debug para visualizar os dados que estão sendo retornados
+        console.log(`[Recebimentos] Dados obtidos para Osasco: ${result.data?.length || 0} registros`);
+        return res.json(result);
+      } catch (error) {
+        console.error('[Recebimentos] Erro ao processar recebimentos do Osasco:', error);
+        return res.status(500).json({
+          success: false,
+          message: 'Erro ao processar recebimentos do posto Osasco',
+          error: error.message
+        });
+      }
     }
     
     // Para outros postos, usar fluxo padrão
