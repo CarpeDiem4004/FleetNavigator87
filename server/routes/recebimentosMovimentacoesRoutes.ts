@@ -124,9 +124,11 @@ router.post('/recebimentos/:posto', unifiedAuthMiddleware, requireRoles(['admin'
     const checkResult = await pool.query(checkQuery, [tableName]);
     
     if (!checkResult.rows[0].exists) {
-      return res.status(404).json({ 
-        success: false, 
-        error: `Tabela de recebimentos para o posto ${postoName} não existe.` 
+      return res.status(200).json({ 
+        success: true, 
+        message: `Tabela de recebimentos para o posto ${postoName} não existe.`,
+        data: [],
+        count: 0
       });
     }
     

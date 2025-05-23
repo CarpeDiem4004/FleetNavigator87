@@ -8,13 +8,19 @@ import { formatCurrency } from '@/lib/utils';
 
 interface RecebimentoItem {
   id: number;
-  tipo_produto: string;
-  litros_recebidos: number;
+  tipo_produto?: string;
+  tipo_combustivel?: string; // Campo alternativo usado em alguns postos
+  litros_recebidos?: number;
+  quantidade_litros?: number; // Campo alternativo usado em alguns postos
   valor_total: number;
-  nome_fornecedor: string;
-  nome_operador: string;
+  nome_fornecedor?: string;
+  fornecedor?: string; // Campo alternativo usado em alguns postos
+  nome_operador?: string;
+  operador?: string; // Campo alternativo usado em alguns postos
+  usuario_operador?: string; // Campo alternativo usado em alguns postos
   observacoes?: string;
   created_at: string;
+  data_hora?: string; // Campo formatado que pode estar presente
 }
 
 interface HistoricoRecebimentosProps {
@@ -140,7 +146,7 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
             {recebimentos.map((recebimento) => (
               <TableRow key={recebimento.id}>
                 <TableCell className="font-medium">
-                  {new Date(recebimento.created_at).toLocaleString('pt-BR', {
+                  {recebimento.data_hora ? recebimento.data_hora : new Date(recebimento.created_at).toLocaleString('pt-BR', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric',
@@ -149,21 +155,34 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
                   })}
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
-                  <span className={recebimento.tipo_produto === 'Diesel' ? 'text-amber-600' : 'text-blue-600'}>
-                    {recebimento.tipo_produto}
+                  <span 
+                    className={
+                      (recebimento.tipo_produto === 'Diesel' || recebimento.tipo_combustivel === 'Diesel') 
+                      ? 'text-amber-600' 
+                      : 'text-blue-600'
+                    }
+                  >
+                    {recebimento.tipo_produto || recebimento.tipo_combustivel || 'N/D'}
                   </span>
                 </TableCell>
                 <TableCell className="text-right font-medium">
-                  {recebimento.litros_recebidos.toLocaleString('pt-BR')}
+                  {recebimento.litros_recebidos
+                    ? recebimento.litros_recebidos.toLocaleString('pt-BR')
+                    : recebimento.quantidade_litros
+                      ? Number(recebimento.quantidade_litros).toLocaleString('pt-BR')
+                      : 'N/D'
+                  }
                 </TableCell>
                 <TableCell className="text-right">
                   {formatCurrency(recebimento.valor_total)}
                 </TableCell>
-                <TableCell className="max-w-[180px] truncate" title={recebimento.nome_fornecedor}>
-                  {recebimento.nome_fornecedor}
+                <TableCell className="max-w-[180px] truncate" 
+                  title={recebimento.nome_fornecedor || recebimento.fornecedor || ''}>
+                  {recebimento.nome_fornecedor || recebimento.fornecedor || 'N/D'}
                 </TableCell>
-                <TableCell className="max-w-[180px] truncate" title={recebimento.nome_operador}>
-                  {recebimento.nome_operador}
+                <TableCell className="max-w-[180px] truncate" 
+                  title={recebimento.nome_operador || recebimento.operador || recebimento.usuario_operador || ''}>
+                  {recebimento.nome_operador || recebimento.operador || recebimento.usuario_operador || 'N/D'}
                 </TableCell>
               </TableRow>
             ))}
