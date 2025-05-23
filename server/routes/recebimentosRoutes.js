@@ -5,7 +5,7 @@ import express from 'express';
 const router = express.Router();
 import { pool } from '../db.js';
 import { checkAuthAndRoles } from '../utils/auth-utils.js';
-import * as osascoHandler from './recebimentosOsascoHandler.js';
+import { getRecebimentosOsascoV2, registrarRecebimentoOsascoV2 } from './recebimentosOsascoHandler.js';
 
 /**
  * Atualiza o nível do tanque de combustível após um recebimento
@@ -91,7 +91,7 @@ router.get('/:posto', async (req, res) => {
     if (posto.toLowerCase() === 'osasco_v2') {
       console.log(`[Recebimentos] Tratando requisição de recebimentos para Osasco V2 diretamente`);
       try {
-        const result = await osascoHandler.getRecebimentosOsascoV2(limit);
+        const result = await getRecebimentosOsascoV2(limit);
         console.log(`[Recebimentos] Dados obtidos para Osasco: ${result.data?.length || 0} registros`);
         return res.json(result);
       } catch (error) {
@@ -201,7 +201,7 @@ router.post('/:posto', async (req, res) => {
     // Caso especial para Osasco_v2 que tem estrutura diferente
     if (posto.toLowerCase() === 'osasco_v2') {
       console.log(`[Recebimentos] Utilizando manipulador específico para Osasco_v2`);
-      const result = await osascoHandler.registrarRecebimentoOsascoV2(recebimentoData);
+      const result = await registrarRecebimentoOsascoV2(recebimentoData);
       
       // Se o registro foi bem-sucedido, também atualizar nível do tanque
       if (result.success) {

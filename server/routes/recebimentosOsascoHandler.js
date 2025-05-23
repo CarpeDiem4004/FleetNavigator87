@@ -161,8 +161,8 @@ router.post('/api/recebimentos/osasco_v2', async (req, res) => {
   }
 });
 
-// Exportar funções específicas para uso em outros módulos
-export const getRecebimentosOsascoV2 = async (limit = 50) => {
+// Funções específicas para uso em outros módulos
+const getRecebimentosOsascoV2 = async (limit = 50) => {
   try {
     // Verificar se a tabela existe
     const checkTableQuery = `
@@ -213,7 +213,7 @@ export const getRecebimentosOsascoV2 = async (limit = 50) => {
 };
 
 // Função para registrar recebimento do posto Osasco V2
-export const registrarRecebimentoOsascoV2 = async (dados) => {
+const registrarRecebimentoOsascoV2 = async (dados) => {
   try {
     const {
       fornecedor,
@@ -282,4 +282,6 @@ export const registrarRecebimentoOsascoV2 = async (dados) => {
   }
 };
 
+// Export router as default and named functions as separate exports
+export { getRecebimentosOsascoV2, registrarRecebimentoOsascoV2 };
 export default router;

@@ -55,7 +55,7 @@ import abastecimentoUnificadoRoutes from "./routes/abastecimentoUnificado.js";
 import recebimentosRoutes from "./routes/recebimentosRoutes.js";
 import debugOsascoRoutes from "./routes/debugOsascoRoutes.js";
 import fixOsascoRecebimentos from "./routes/fixOsascoRecebimentos.js";
-import recebimentosOsascoHandler from "./routes/recebimentosOsascoHandler.js";
+import recebimentosOsascoHandler, { getRecebimentosOsascoV2, registrarRecebimentoOsascoV2 } from "./routes/recebimentosOsascoHandler.js";
 import testeOsascoRecebimentos from "./routes/testeOsascoRecebimentos.js";
 import osascoV2Direto from "./routes/osascoV2Direto.js";
 import osascoDiretoRoutes from "./routes/osascoDiretoRoutes.js";
