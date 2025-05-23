@@ -21,7 +21,8 @@ const EntradaCombustivelPage: React.FC = () => {
     { id: 'campinas_v2', nome: 'Posto Campinas V2' },
     { id: 'abc_v2', nome: 'Posto ABC V2' },
     { id: 'socorro_v2', nome: 'Posto Socorro V2' },
-    { id: 'sorocaba_v2', nome: 'Posto Sorocaba V2' }
+    { id: 'sorocaba_v2', nome: 'Posto Sorocaba V2' },
+    { id: 'guarulhos_v2', nome: 'Posto Guarulhos V2' }
   ];
 
   // Verificar se o usuário está autenticado
