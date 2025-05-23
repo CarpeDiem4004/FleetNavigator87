@@ -52,6 +52,7 @@ import sqlSeguroRouter from "./routes/sql-seguro";
 import guarulhosV2Routes from "./routes/guarulhosV2Routes";
 import osascoV2Routes from "./routes/osascoV2Routes";
 import abastecimentoUnificadoRoutes from "./routes/abastecimentoUnificado.js";
+import recebimentosRoutes from "./routes/recebimentosRoutes";
 import { db, pool } from "./db";
 import authHybridRoutes from "./routes/authHybridRoutes";
 import * as userHandler from "./handlers/userHandler";
@@ -1003,6 +1004,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registrar rotas de diagnóstico
   app.use('/api/diagnostico', diagnosticoRoutes);
+  
+  // Registrar rotas de recebimentos
+  app.use('/api/recebimentos', recebimentosRoutes);
   
   // Registrar rotas de autenticação JWT
   app.use('/api', jwtAuthRoutes);
