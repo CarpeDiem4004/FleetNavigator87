@@ -79,19 +79,8 @@ router.get('/recebimentos/:posto', unifiedAuthMiddleware, async (req, res) => {
       });
     }
     
-    // Obter dados da tabela
-    const dataQuery = `SELECT 
-      id, 
-      "tipo_produto", 
-      "litros_recebidos", 
-      "valor_total", 
-      "nome_fornecedor", 
-      "nome_operador", 
-      "observacoes", 
-      "created_at", 
-      "updated_at"
-    FROM "${tableName}" 
-    ORDER BY "created_at" DESC`;
+    // Obter dados da tabela - usando SELECT * para evitar problemas de case
+    const dataQuery = `SELECT * FROM "${tableName}" ORDER BY created_at DESC`;
     
     console.log(`Executando consulta: ${dataQuery}`);
     const result = await pool.query(dataQuery);
@@ -162,14 +151,14 @@ router.post('/recebimentos/:posto', unifiedAuthMiddleware, requireRoles(['admin'
     // Inserir dados na tabela
     const insertQuery = `
       INSERT INTO "${tableName}" (
-        "tipo_produto",
-        "litros_recebidos",
-        "valor_total",
-        "nome_fornecedor",
-        "nome_operador",
-        "observacoes",
-        "created_at",
-        "updated_at"
+        tipo_produto,
+        litros_recebidos,
+        valor_total,
+        nome_fornecedor,
+        nome_operador,
+        observacoes,
+        created_at,
+        updated_at
       ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
       RETURNING *;
     `;
