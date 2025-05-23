@@ -626,7 +626,20 @@ const HistoricoGeralPage: React.FC = () => {
 
   // Cálculos para os mostradores
   const calcularConsolidado = () => {
-    const totalLitros = filteredData.reduce((sum, item) => sum + (item.quantidade_litros || item.litros || 0), 0);
+    // Função para extrair litros com segurança de qualquer formato
+    const extrairLitrosSeguro = (item: Abastecimento): number => {
+      // Verificar todos os possíveis campos que podem conter quantidade em litros
+      const litrosRaw = item.quantidade_litros || item.litros || 0;
+      // Converter para número se for string
+      const litros = typeof litrosRaw === 'string' ? parseFloat(litrosRaw) : litrosRaw;
+      // Retornar 0 se não for um número válido
+      return isNaN(litros) ? 0 : litros;
+    };
+    
+    // Calcular total de litros com extração segura
+    const totalLitros = filteredData.reduce((sum, item) => sum + extrairLitrosSeguro(item), 0);
+    
+    // Calcular valor total considerando todos os formatos possíveis
     const totalValor = filteredData.reduce((sum, item) => sum + (item.valor_total || 0), 0);
     
     // Contar postos distintos
@@ -671,11 +684,11 @@ const HistoricoGeralPage: React.FC = () => {
     // Total de recebimentos (contagem)
     const totalRecebimentos = recebimentos.length;
     
-    // Somas totais de litros (considerando quantidade_litros ou litros, conforme disponível)
-    const litrosDiesel = abastecimentosDiesel.reduce((sum, item) => sum + (item.quantidade_litros || item.litros || 0), 0);
-    const litrosGasolina = abastecimentosGasolina.reduce((sum, item) => sum + (item.quantidade_litros || item.litros || 0), 0);
-    const litrosAlcool = abastecimentosAlcool.reduce((sum, item) => sum + (item.quantidade_litros || item.litros || 0), 0);
-    const litrosArla = abastecimentosArla.reduce((sum, item) => sum + (item.quantidade_litros || item.litros || 0), 0);
+    // Somas totais de litros usando a função segura de extração de litros
+    const litrosDiesel = abastecimentosDiesel.reduce((sum, item) => sum + extrairLitrosSeguro(item), 0);
+    const litrosGasolina = abastecimentosGasolina.reduce((sum, item) => sum + extrairLitrosSeguro(item), 0);
+    const litrosAlcool = abastecimentosAlcool.reduce((sum, item) => sum + extrairLitrosSeguro(item), 0);
+    const litrosArla = abastecimentosArla.reduce((sum, item) => sum + extrairLitrosSeguro(item), 0);
       
     // Valores por tipo de combustível  
     const valorDiesel = abastecimentosDiesel.reduce((sum, item) => sum + (item.valor_total || 0), 0);
@@ -755,12 +768,7 @@ const HistoricoGeralPage: React.FC = () => {
       return projeto;
     };
     
-    // Função para extrair litros com segurança
-    const extrairLitros = (item: Abastecimento): number => {
-      const litrosRaw = item.quantidade_litros || item.litros || 0;
-      const litros = typeof litrosRaw === 'string' ? parseFloat(litrosRaw) : litrosRaw;
-      return isNaN(litros) ? 0 : litros;
-    };
+    // Usando a função extrairLitrosSeguro já definida acima
     
     // Calcular consumo por projeto com tratamento adequado e melhorado
     const consumoPorProjeto = filteredData.reduce((acc, item) => {
