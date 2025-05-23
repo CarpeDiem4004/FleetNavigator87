@@ -779,7 +779,8 @@ export async function registrarAbastecimentoPosto(req, res) {
       observacoes = req.body.observacao,
       tipo_veiculo = req.body.tipo_veiculo || 'frota',
       lavagem = req.body.lavagem || false,
-      tipo_lavagem = req.body.tipo_lavagem
+      tipo_lavagem = req.body.tipo_lavagem,
+      projeto = req.body.projeto || req.body.project || 'Não definido' // Tratamento especial para o campo projeto
     } = req.body;
     
     // Validar campos obrigatórios
