@@ -84,7 +84,8 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
   }, [data, osascoRecebimentos, osascoV2Recebimentos, postoId]);
 
   // Mostrar carregamento quando qualquer um dos dados estiver carregando
-  if (isLoading || (postoId.toLowerCase() === 'osasco_v2' && osascoLoading)) {
+  if (isLoading || 
+      (postoId.toLowerCase() === 'osasco_v2' && (osascoLoading || osascoV2Loading))) {
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
@@ -93,7 +94,11 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
   }
 
   // Mostrar erros de qualquer origem
-  const finalError = postoId.toLowerCase() === 'osasco_v2' ? osascoError : error;
+  let finalError = error;
+  if (postoId.toLowerCase() === 'osasco_v2') {
+    // Priorizar o novo hook, mas mostrar erro do antigo se o novo não tiver erro
+    finalError = osascoV2Error || osascoError;
+  }
   if (finalError) {
     return (
       <Alert variant="destructive" className="mb-4">

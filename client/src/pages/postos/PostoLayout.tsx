@@ -11,6 +11,7 @@ import HistoricoAbastecimentos from './components/HistoricoAbastecimentos';
 import HistoricoSupabaseView from './components/HistoricoSupabaseView';
 import HistoricoRecebimentos from './components/HistoricoRecebimentos';
 import RecebimentosOsasco from '@/components/posto-remedios/RecebimentosOsasco';
+import RecebimentosOsascoV2 from '@/components/posto-remedios/RecebimentosOsascoV2';
 import SupabaseConnectionTest from './components/SupabaseConnectionTest';
 
 interface PostoLayoutProps {
@@ -148,7 +149,10 @@ export const PostoLayout: React.FC<PostoLayoutProps> = ({ id, nomePosto }) => {
             Entradas de Combustível
           </h2>
           {id.toLowerCase() === 'osasco_v2' ? 
-            <RecebimentosOsasco /> 
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <RecebimentosOsascoV2 /> 
+              <HistoricoRecebimentos postId={id} className="bg-white" />
+            </div>
             : 
             <HistoricoRecebimentos postId={id} />
           }

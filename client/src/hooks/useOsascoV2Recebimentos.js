@@ -1,100 +1,72 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect, useCallback } from 'react';
+import { apiRequest } from "@/lib/queryClient";
 
 /**
- * Hook personalizado para lidar com os recebimentos do posto Osasco V2
- * Esta implementação resolve o problema de incompatibilidade de estrutura da tabela
+ * Hook personalizado para gerenciar os recebimentos do posto Osasco V2
+ * Esta implementação se conecta diretamente à API personalizada para o posto Osasco
+ * que possui uma estrutura de tabela diferente dos outros postos
  */
-export function useOsascoV2Recebimentos() {
+function useOsascoV2Recebimentos() {
   const [recebimentos, setRecebimentos] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [reloadTrigger, setReloadTrigger] = useState(0);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Força uma recarga dos dados
-  const reloadData = () => {
-    setReloadTrigger(prev => prev + 1);
-  };
+  // Função para recarregar os dados
+  const reloadData = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
 
-  // Busca os recebimentos
+  // Efeito para carregar os dados dos recebimentos
   useEffect(() => {
-    async function fetchRecebimentos() {
+    const fetchRecebimentos = async () => {
       setIsLoading(true);
       setError(null);
       
       try {
-        // Tentar API direta específica para o Osasco V2
-        const response = await axios.get('/api/osasco/recebimentos');
+        console.log("[FETCH] Buscando recebimentos para o posto Osasco V2...");
+        const res = await apiRequest('GET', '/api/recebimentos-osasco-v2');
+        const data = await res.json();
         
-        if (response.data && response.data.success && response.data.data) {
-          console.log("Recebimentos Osasco V2 carregados:", response.data.data.length);
-          setRecebimentos(response.data.data);
+        if (data.success) {
+          console.log("Dados recebidos do Osasco V2:", data.data.length, "recebimentos");
+          setRecebimentos(data.data);
         } else {
-          throw new Error("Formato de resposta inválido");
+          throw new Error(data.message || 'Erro ao buscar recebimentos');
         }
       } catch (err) {
-        console.error("Erro ao carregar recebimentos Osasco V2:", err);
-        setError(err.message || "Erro ao carregar os recebimentos");
-        
-        try {
-          // Fallback para a API genérica
-          console.log("Tentando API genérica como fallback");
-          const fallbackResponse = await axios.get('/api/recebimentos/osasco_v2');
-          
-          if (fallbackResponse.data && fallbackResponse.data.success && fallbackResponse.data.data) {
-            console.log("Recebimentos carregados via fallback:", fallbackResponse.data.data.length);
-            setRecebimentos(fallbackResponse.data.data);
-            setError(null); // Limpa o erro anterior se o fallback funcionar
-          }
-        } catch (fallbackErr) {
-          console.error("Falha também no fallback:", fallbackErr);
-          setError("Não foi possível carregar os recebimentos. Tente novamente mais tarde.");
-        }
+        console.error("Erro ao buscar recebimentos do posto Osasco V2:", err);
+        setError(err.message || 'Erro ao carregar recebimentos');
       } finally {
         setIsLoading(false);
       }
-    }
+    };
     
     fetchRecebimentos();
-  }, [reloadTrigger]);
+  }, [refreshTrigger]);
 
-  // Adiciona um novo recebimento
-  const adicionarRecebimento = async (dados) => {
+  // Função para adicionar um novo recebimento
+  const adicionarRecebimento = async (formData) => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // Tenta a API direta
-      const response = await axios.post('/api/osasco/recebimentos', dados);
+      const res = await apiRequest('POST', '/api/recebimentos-osasco-v2', formData);
+      const data = await res.json();
       
-      if (response.data && response.data.success) {
-        // Adiciona o novo recebimento à lista
-        setRecebimentos(prev => [response.data.data, ...prev]);
-        return { success: true, message: "Recebimento registrado com sucesso!" };
+      if (data.success) {
+        // Adicionar novo recebimento ao estado e ordenar por data
+        setRecebimentos(prev => [data.data, ...prev].sort((a, b) => 
+          new Date(b.created_at) - new Date(a.created_at)
+        ));
+        return { success: true, data: data.data };
       } else {
-        throw new Error(response.data?.message || "Erro ao registrar recebimento");
+        throw new Error(data.message || 'Erro ao registrar recebimento');
       }
     } catch (err) {
       console.error("Erro ao adicionar recebimento:", err);
-      
-      try {
-        // Tenta o fallback para a API genérica
-        const fallbackResponse = await axios.post('/api/recebimentos/osasco_v2', dados);
-        
-        if (fallbackResponse.data && fallbackResponse.data.success) {
-          // Recarrega os dados completamente após sucesso no fallback
-          reloadData();
-          return { success: true, message: "Recebimento registrado com sucesso!" };
-        } else {
-          throw new Error(fallbackResponse.data?.message || "Erro ao registrar recebimento");
-        }
-      } catch (fallbackErr) {
-        setError(fallbackErr.message || "Não foi possível registrar o recebimento");
-        return { 
-          success: false, 
-          message: fallbackErr.message || "Não foi possível registrar o recebimento. Tente novamente mais tarde." 
-        };
-      }
+      setError(err.message || 'Erro ao registrar recebimento');
+      return { success: false, message: err.message };
     } finally {
       setIsLoading(false);
     }
