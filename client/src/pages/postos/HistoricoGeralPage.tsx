@@ -226,7 +226,8 @@ const HistoricoGeralPage: React.FC = () => {
         "campinas_v2",
         "abc_v2",
         "socorro_v2",
-        "sorocaba_v2"
+        "sorocaba_v2",
+        "guarulhos_v2"  // Adicionando posto Guarulhos para incluir abastecimentos com projeto MANUTENÇÃO
       ];
       
       // Buscar abastecimentos para cada posto
