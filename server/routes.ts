@@ -928,10 +928,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/fix-osasco/recebimentos', fixOsascoRecebimentos);
   
   // Manipulador especializado para o posto Osasco
-  app.use('/api/recebimentos-osasco', recebimentosOsascoHandler);
+  app.use('/', recebimentosOsascoHandler);
   
   // Rota de teste com dados simulados para Osasco V2
-  app.use('/api/teste-osasco-recebimentos', testeOsascoRecebimentos);
+  app.use('/', testeOsascoRecebimentos);
   
   // Registrar rota unificada de abastecimento (NOVA - corrige inconsistências de schema)
   app.use('/api/abastecimento', abastecimentoUnificadoRoutes);
