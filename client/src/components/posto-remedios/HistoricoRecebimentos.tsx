@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, AlertCircle, Droplet } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useOsascoRecebimentos } from '@/hooks/useOsascoRecebimentos';
 
 interface RecebimentoItem {
   id: number;
@@ -27,18 +28,29 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
   postoId,
   className = ''
 }) => {
-  // Usar endpoint especial para o posto Osasco
-  const endpoint = postoId.toLowerCase() === 'osasco_v2' 
-    ? '/api/fix-osasco/recebimentos'
-    : `/api/recebimentos/${postoId.toLowerCase()}`;
-    
+  // Hook especializado para o Posto Osasco
+  const { recebimentos: osascoRecebimentos, isLoading: osascoLoading, error: osascoError } = 
+    postoId.toLowerCase() === 'osasco_v2' 
+      ? useOsascoRecebimentos() 
+      : { recebimentos: [], isLoading: false, error: null };
+      
+  // Para outros postos, usar a API normal
+  const endpoint = `/api/recebimentos/${postoId.toLowerCase()}`;
+  
   const { data, isLoading, error } = useQuery({
     queryKey: [endpoint],
-    staleTime: 1000 * 60 * 5 // 5 minutos
+    staleTime: 1000 * 60 * 5, // 5 minutos
+    enabled: postoId.toLowerCase() !== 'osasco_v2' // Desabilitar para Osasco
   });
 
-  // Processar os dados da resposta da API
+  // Processar os dados dependendo do posto
   const recebimentos = React.useMemo(() => {
+    // Se for Osasco, usar dados do hook especializado
+    if (postoId.toLowerCase() === 'osasco_v2') {
+      return osascoRecebimentos;
+    }
+    
+    // Para outros postos, processar normalmente
     if (!data) return [];
     
     // Se a API retornar os dados em um formato diferente, adapte aqui
@@ -54,9 +66,10 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
     
     console.log("Dados recebidos na consulta:", responseData);
     return [];
-  }, [data]);
+  }, [data, osascoRecebimentos, postoId]);
 
-  if (isLoading) {
+  // Mostrar carregamento quando qualquer um dos dados estiver carregando
+  if (isLoading || (postoId.toLowerCase() === 'osasco_v2' && osascoLoading)) {
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
@@ -64,12 +77,14 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
     );
   }
 
-  if (error) {
+  // Mostrar erros de qualquer origem
+  const finalError = postoId.toLowerCase() === 'osasco_v2' ? osascoError : error;
+  if (finalError) {
     return (
       <Alert variant="destructive" className="mb-4">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Erro ao carregar o histórico de recebimentos: {(error as Error).message}
+          Erro ao carregar o histórico de recebimentos: {(finalError as Error).message}
         </AlertDescription>
       </Alert>
     );
