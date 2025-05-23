@@ -41,6 +41,12 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
       return responseData.data as RecebimentoItem[];
     }
     
+    // Verificar se o data é um array diretamente (útil para testes e ambientes de desenvolvimento)
+    if (Array.isArray(responseData)) {
+      return responseData as RecebimentoItem[];
+    }
+    
+    console.log("Dados recebidos na consulta:", responseData);
     return [];
   }, [data]);
 
