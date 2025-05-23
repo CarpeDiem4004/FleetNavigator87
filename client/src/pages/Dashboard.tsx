@@ -2,6 +2,7 @@ import React from 'react';
 import { BarChart3, TrendingUp, Calendar, RefreshCw } from 'lucide-react';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import PainelPrincipal from '@/components/dashboard/PainelPrincipal';
+import RecebimentosSummary from '@/components/dashboard/RecebimentosSummary';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -41,8 +42,9 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
       
-      <div className="p-6 bg-gray-50">
+      <div className="p-6 bg-gray-50 space-y-6">
         <PainelPrincipal />
+        <RecebimentosSummary />
       </div>
     </MainLayoutSimple>
   );
