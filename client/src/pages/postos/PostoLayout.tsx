@@ -9,6 +9,7 @@ import { StatusTanqueWrapper } from './components/StatusTanqueWrapper';
 import HistoricoMovimentacoes from './components/HistoricoMovimentacoes';
 import HistoricoAbastecimentos from './components/HistoricoAbastecimentos';
 import HistoricoSupabaseView from './components/HistoricoSupabaseView';
+import HistoricoRecebimentos from './components/HistoricoRecebimentos';
 import SupabaseConnectionTest from './components/SupabaseConnectionTest';
 
 interface PostoLayoutProps {
@@ -64,12 +65,10 @@ export const PostoLayout: React.FC<PostoLayoutProps> = ({ id, nomePosto }) => {
                     <Fuel className="h-4 w-4" />
                     <span>Abastecimento</span>
                   </TabsTrigger>
-                  {/* Temporariamente desativado 
-                <TabsTrigger value="recebimento" className="flex items-center gap-2">
+                  <TabsTrigger value="recebimento" className="flex items-center gap-2">
                     <TruckIcon className="h-4 w-4" />
                     <span>Recebimento</span>
                   </TabsTrigger>
-                */}
                   <TabsTrigger value="patio" className="flex items-center gap-2">
                     <Truck className="h-4 w-4" />
                     <span>Controle de Pátio</span>
@@ -77,13 +76,50 @@ export const PostoLayout: React.FC<PostoLayoutProps> = ({ id, nomePosto }) => {
                 </TabsList>
                 
                 <FormularioAbastecimento postId={id} onRegistroSucesso={handleNovoAbastecimento} />
-                {/* Temporariamente desativado 
                 <FormularioRecebimento postId={id} />
-                */}
                 <FormularioControlePatio postId={id} />
               </Tabs>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Preços do Combustível - Card específico para esta seção */}
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold mb-3">Preços do Combustível</h2>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle>Valores por litro</CardTitle>
+              <CardDescription>
+                Preços atuais por litro para abastecimento
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Conteúdo de preços aqui */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-amber-50 p-4 rounded-md border border-amber-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Fuel className="h-5 w-5 text-amber-600" />
+                    <h3 className="font-medium text-amber-800">Diesel</h3>
+                  </div>
+                  <p className="text-2xl font-bold text-amber-900">R$ 5,00</p>
+                  <p className="text-xs text-muted-foreground">Atualizado em: {new Date().toLocaleDateString('pt-BR')}</p>
+                </div>
+                <div className="bg-blue-50 p-4 rounded-md border border-blue-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Fuel className="h-5 w-5 text-blue-600" />
+                    <h3 className="font-medium text-blue-800">ARLA 32</h3>
+                  </div>
+                  <p className="text-2xl font-bold text-blue-900">R$ 3,00</p>
+                  <p className="text-xs text-muted-foreground">Atualizado em: {new Date().toLocaleDateString('pt-BR')}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Histórico de Entradas de Combustível - Exatamente abaixo de Preços do Combustível */}
+        <div className="mb-6">
+          <HistoricoRecebimentos postId={id} />
         </div>
         
         {/* Históricos */}
