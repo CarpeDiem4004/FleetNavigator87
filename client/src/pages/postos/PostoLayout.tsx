@@ -60,7 +60,8 @@ export const PostoLayout: React.FC<PostoLayoutProps> = ({ id, nomePosto }) => {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="abastecimento" className="w-full">
-                <TabsList className="grid w-full grid-cols-1 md:grid-cols-3">
+                {/* Versão para desktop - grade de 3 colunas */}
+                <TabsList className="hidden md:grid w-full md:grid-cols-3">
                   <TabsTrigger value="abastecimento" className="flex items-center gap-2">
                     <Fuel className="h-4 w-4" />
                     <span>Abastecimento</span>
@@ -74,6 +75,28 @@ export const PostoLayout: React.FC<PostoLayoutProps> = ({ id, nomePosto }) => {
                     <span>Controle de Pátio</span>
                   </TabsTrigger>
                 </TabsList>
+                
+                {/* Versão para celular - mostrar todos os botões um abaixo do outro */}
+                <div className="grid grid-cols-1 gap-2 mb-4 md:hidden">
+                  <TabsList className="grid w-full grid-cols-1">
+                    <TabsTrigger value="abastecimento" className="flex items-center justify-center gap-2 py-3">
+                      <Fuel className="h-4 w-4" />
+                      <span>Abastecimento</span>
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsList className="grid w-full grid-cols-1">
+                    <TabsTrigger value="recebimento" className="flex items-center justify-center gap-2 py-3">
+                      <TruckIcon className="h-4 w-4" />
+                      <span>Entrada de Combustível</span>
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsList className="grid w-full grid-cols-1">
+                    <TabsTrigger value="patio" className="flex items-center justify-center gap-2 py-3">
+                      <Truck className="h-4 w-4" />
+                      <span>Entrada de Veículo</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
                 
                 <FormularioAbastecimento postId={id} onRegistroSucesso={handleNovoAbastecimento} />
                 <FormularioRecebimento postId={id} />
