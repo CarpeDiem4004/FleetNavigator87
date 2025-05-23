@@ -167,9 +167,13 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
                 </TableCell>
                 <TableCell className="text-right font-medium">
                   {recebimento.litros_recebidos
-                    ? recebimento.litros_recebidos.toLocaleString('pt-BR')
+                    ? (typeof recebimento.litros_recebidos === 'number' 
+                        ? recebimento.litros_recebidos.toLocaleString('pt-BR')
+                        : Number(recebimento.litros_recebidos).toLocaleString('pt-BR'))
                     : recebimento.quantidade_litros
-                      ? Number(recebimento.quantidade_litros).toLocaleString('pt-BR')
+                      ? (typeof recebimento.quantidade_litros === 'number'
+                          ? recebimento.quantidade_litros.toLocaleString('pt-BR')
+                          : Number(recebimento.quantidade_litros).toLocaleString('pt-BR'))
                       : 'N/D'
                   }
                 </TableCell>
