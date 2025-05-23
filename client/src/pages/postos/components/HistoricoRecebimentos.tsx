@@ -1,26 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { 
-  Table, 
-  TableBody, 
-  TableCaption, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { DownloadIcon, RefreshCw } from 'lucide-react';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DropletIcon, TruckIcon, AlertCircleIcon } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/utils';
-import * as XLSX from 'xlsx';
 
 interface RecebimentoItem {
   id: number;
@@ -29,161 +13,155 @@ interface RecebimentoItem {
   valor_total: number;
   nome_fornecedor: string;
   nome_operador: string;
-  data_hora?: string;
+  observacoes?: string;
   created_at: string;
 }
 
 interface HistoricoRecebimentosProps {
   postId: string;
+  className?: string;
 }
 
-const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({ postId }) => {
-  const [recebimentos, setRecebimentos] = useState<RecebimentoItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({ 
+  postId,
+  className = ''
+}) => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: [`/api/recebimentos/${postId.toLowerCase()}`],
+    staleTime: 1000 * 60 * 5 // 5 minutos
+  });
 
-  const fetchRecebimentos = async () => {
-    setIsLoading(true);
-    setError(null);
+  // Processar os dados da resposta da API
+  const recebimentos = React.useMemo(() => {
+    if (!data) return [];
     
-    try {
-      const response = await fetch(`/api/recebimentos/${postId.toLowerCase().replace(/\s+/g, '_')}`);
-      
-      if (!response.ok) {
-        throw new Error(`Erro ao carregar recebimentos: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        setRecebimentos(data.data || []);
-      } else {
-        throw new Error(data.message || 'Erro desconhecido ao carregar recebimentos');
-      }
-    } catch (err: any) {
-      console.error('Erro ao carregar recebimentos:', err);
-      setError(err.message || 'Ocorreu um erro ao carregar os recebimentos. Tente novamente mais tarde.');
-    } finally {
-      setIsLoading(false);
+    // Se a API retornar os dados em um formato diferente, adapte aqui
+    if (data.data && Array.isArray(data.data)) {
+      return data.data as RecebimentoItem[];
     }
-  };
+    
+    return [];
+  }, [data]);
 
-  useEffect(() => {
-    fetchRecebimentos();
-  }, [postId]);
-
-  const handleExportExcel = () => {
-    if (recebimentos.length === 0) return;
-
-    // Prepara os dados para o Excel
-    const worksheetData = recebimentos.map(item => ({
-      'ID': item.id,
-      'Tipo de Combustível': item.tipo_produto,
-      'Quantidade (Litros)': item.litros_recebidos,
-      'Valor Total (R$)': item.valor_total,
-      'Fornecedor': item.nome_fornecedor,
-      'Operador': item.nome_operador,
-      'Data/Hora': item.data_hora || new Date(item.created_at).toLocaleString('pt-BR')
-    }));
-
-    // Cria a planilha
-    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Recebimentos');
-
-    // Gera o arquivo e faz o download
-    const fileName = `recebimentos_${postId.toLowerCase()}_${new Date().toISOString().split('T')[0]}.xlsx`;
-    XLSX.writeFile(workbook, fileName);
-  };
-
-  return (
-    <Card className="w-full">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <div>
-          <CardTitle className="text-xl font-bold">Histórico de Entradas de Combustível</CardTitle>
+  // Se estiver carregando, mostrar esqueletos
+  if (isLoading) {
+    return (
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TruckIcon className="h-5 w-5" /> 
+            <Skeleton className="h-6 w-40" />
+          </CardTitle>
           <CardDescription>
-            Registro de todas as entradas de combustível do posto {postId}
+            <Skeleton className="h-4 w-60" />
           </CardDescription>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={fetchRecebimentos}
-            disabled={isLoading}
-          >
-            <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
-            Atualizar
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleExportExcel}
-            disabled={isLoading || recebimentos.length === 0}
-          >
-            <DownloadIcon className="h-4 w-4 mr-1" />
-            Exportar
-          </Button>
-        </div>
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-64 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Se ocorrer um erro, mostrar mensagem de erro
+  if (error) {
+    return (
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <AlertCircleIcon className="h-5 w-5" />
+            Erro ao Carregar Recebimentos
+          </CardTitle>
+          <CardDescription>
+            Não foi possível carregar o histórico de recebimentos. {error instanceof Error ? error.message : 'Tente novamente mais tarde.'}
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  // Se não houver dados, mostrar mensagem
+  if (!recebimentos || recebimentos.length === 0) {
+    return (
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TruckIcon className="h-5 w-5" />
+            Histórico de Entradas de Combustível
+          </CardTitle>
+          <CardDescription>
+            Não há registros de recebimentos para este posto.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+            <DropletIcon className="h-12 w-12 mb-4 opacity-40" />
+            <p>Nenhum recebimento de combustível registrado ainda.</p>
+            <p className="text-sm">Os recebimentos registrados aparecerão aqui.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Renderizar a tabela com os dados
+  return (
+    <Card className={className}>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <TruckIcon className="h-5 w-5" />
+          Histórico de Entradas de Combustível
+        </CardTitle>
+        <CardDescription>
+          Histórico de recebimentos de combustível para o posto {postId}.
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        {error && (
-          <div className="rounded-md bg-destructive/15 p-4 mb-4">
-            <p className="text-destructive text-sm">{error}</p>
-          </div>
-        )}
-        
-        {isLoading ? (
-          // Estado de carregamento
-          <div className="space-y-2">
-            <Skeleton className="h-6 w-full" />
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-          </div>
-        ) : recebimentos.length === 0 ? (
-          // Estado vazio
-          <div className="text-center py-6">
-            <p className="text-muted-foreground">
-              Nenhum registro de entrada de combustível encontrado para este posto.
-            </p>
-          </div>
-        ) : (
-          // Tabela de recebimentos
-          <div className="overflow-x-auto">
-            <Table>
-              <TableCaption>Histórico de entradas de combustível no posto {postId}</TableCaption>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Data/Hora</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Quantidade (L)</TableHead>
-                  <TableHead>Valor Total</TableHead>
-                  <TableHead>Fornecedor</TableHead>
-                  <TableHead>Operador</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recebimentos.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      {item.data_hora || new Date(item.created_at).toLocaleString('pt-BR')}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={item.tipo_produto === 'Diesel' ? 'default' : 'outline'}>
-                        {item.tipo_produto}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{item.litros_recebidos.toLocaleString('pt-BR')}</TableCell>
-                    <TableCell>{formatCurrency(item.valor_total)}</TableCell>
-                    <TableCell>{item.nome_fornecedor}</TableCell>
-                    <TableCell>{item.nome_operador}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+        <Table>
+          <TableCaption>Última atualização: {new Date().toLocaleString()}</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Data/Hora</TableHead>
+              <TableHead>Tipo</TableHead>
+              <TableHead>Litros</TableHead>
+              <TableHead>Valor Total</TableHead>
+              <TableHead>Fornecedor</TableHead>
+              <TableHead>Operador</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {recebimentos.map((recebimento) => (
+              <TableRow key={recebimento.id}>
+                <TableCell className="font-medium">
+                  {new Date(recebimento.created_at).toLocaleString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </TableCell>
+                <TableCell className="whitespace-nowrap">
+                  <span className={recebimento.tipo_produto === 'Diesel' ? 'text-amber-600' : 'text-blue-600'}>
+                    {recebimento.tipo_produto}
+                  </span>
+                </TableCell>
+                <TableCell className="text-right font-medium">
+                  {recebimento.litros_recebidos.toLocaleString('pt-BR')}
+                </TableCell>
+                <TableCell className="text-right">
+                  {formatarNumeroMoeda(recebimento.valor_total)}
+                </TableCell>
+                <TableCell className="max-w-[180px] truncate" title={recebimento.nome_fornecedor}>
+                  {recebimento.nome_fornecedor}
+                </TableCell>
+                <TableCell className="max-w-[180px] truncate" title={recebimento.nome_operador}>
+                  {recebimento.nome_operador}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );

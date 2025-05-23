@@ -10,115 +10,91 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { TruckIcon } from 'lucide-react';
 import { TabsContent } from '@/components/ui/tabs';
-import { insertData, checkConnection } from '@/lib/supabaseClient';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 
 // Schema de validação para o formulário de recebimento de combustível
 const recebimentoSchema = z.object({
-  tipo: z.enum(['Diesel', 'ARLA'], {
+  tipo_produto: z.enum(['Diesel', 'ARLA'], {
     required_error: 'Selecione o tipo de produto',
   }),
-  quantidade: z.string().min(1, 'A quantidade é obrigatória').refine((val) => !isNaN(Number(val)), {
+  litros_recebidos: z.string().min(1, 'A quantidade é obrigatória').refine((val) => !isNaN(Number(val)), {
     message: 'Quantidade deve ser um número válido',
   }),
   valor_total: z.string().min(1, 'O valor total é obrigatório').refine((val) => !isNaN(Number(val)), {
     message: 'Valor total deve ser um número válido',
   }),
-  fornecedor: z.string().min(3, 'O nome do fornecedor deve ter no mínimo 3 caracteres'),
-  operador: z.string().min(3, 'O nome do operador deve ter no mínimo 3 caracteres'),
+  nome_fornecedor: z.string().min(3, 'O nome do fornecedor deve ter no mínimo 3 caracteres'),
+  nome_operador: z.string().min(3, 'O nome do operador deve ter no mínimo 3 caracteres'),
+  observacoes: z.string().optional(),
 });
 
 type RecebimentoValues = z.infer<typeof recebimentoSchema>;
 
 interface FormularioRecebimentoProps {
   postId: string;
+  onSuccess?: () => void;
 }
 
-export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ postId }) => {
+export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ postId, onSuccess }) => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const form = useForm<RecebimentoValues>({
     resolver: zodResolver(recebimentoSchema),
     defaultValues: {
-      tipo: undefined,
-      quantidade: '',
+      tipo_produto: undefined,
+      litros_recebidos: '',
       valor_total: '',
-      fornecedor: '',
-      operador: '',
+      nome_fornecedor: '',
+      nome_operador: '',
+      observacoes: '',
     },
   });
 
-  async function onSubmit(data: RecebimentoValues) {
-    try {
-      // Prepara os dados no formato esperado pela API
-      const recebimentoData = {
-        tipo_produto: data.tipo,
-        litros_recebidos: Number(data.quantidade),
+  // Usando TanStack Query para mutação
+  const mutation = useMutation({
+    mutationFn: async (data: RecebimentoValues) => {
+      const formattedData = {
+        ...data,
+        litros_recebidos: Number(data.litros_recebidos),
         valor_total: Number(data.valor_total),
-        nome_fornecedor: data.fornecedor,
-        nome_operador: data.operador,
-        posto: postId
       };
       
-      console.log('Dados a enviar:', recebimentoData);
+      const response = await apiRequest('POST', `/api/recebimentos/${postId.toLowerCase()}`, formattedData);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      console.log('Recebimento registrado com sucesso:', data);
       
-      // Verifica conexão com Supabase antes de tentar enviar
-      toast({
-        title: 'Verificando conexão',
-        description: 'Aguarde enquanto verificamos a conexão com o servidor...',
-      });
-      
-      const conexaoSupabase = await checkConnection();
-      if (!conexaoSupabase) {
-        throw new Error('Não foi possível conectar ao servidor Supabase. Verifique sua conexão e tente novamente mais tarde.');
-      }
-      
-      // Tenta criar a tabela, se necessário, usando localStorage como fallback
-      try {
-        // Envia os dados para o Supabase usando o cliente de serviço (contorna RLS)
-        const response = await insertData('recebimentos_combustivel', recebimentoData);
-        console.log('Resposta do servidor:', response);
-      } catch (error: any) {
-        console.error('Erro ao inserir no Supabase:', error);
-        
-        // Se a tabela não existir, salvamos localmente e mostramos uma mensagem
-        if (error.code === '42P01' || (error.message && error.message.includes("relation") && error.message.includes("does not exist"))) {
-          // Salvar no localStorage como fallback
-          const localKey = `recebimentos_combustivel_${postId}`;
-          const storedData = localStorage.getItem(localKey);
-          const recebimentos = storedData ? JSON.parse(storedData) : [];
-          
-          // Adicionar o novo recebimento com um ID gerado e timestamp
-          recebimentos.push({
-            ...recebimentoData,
-            id: Date.now(),
-            created_at: new Date().toISOString()
-          });
-          
-          // Salvar de volta no localStorage
-          localStorage.setItem(localKey, JSON.stringify(recebimentos));
-          
-          console.log('Dados salvos localmente como fallback:', recebimentos);
-          throw new Error('A tabela de recebimentos não existe no servidor. Os dados foram salvos localmente como fallback.');
-        } else {
-          throw error; // Propagar outros erros
-        }
-      }
+      // Invalidar queries relevantes para atualizar dados na UI
+      queryClient.invalidateQueries({ queryKey: [`/api/recebimentos/${postId.toLowerCase()}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/configuracao-tanques/${postId}`] });
       
       toast({
         title: 'Recebimento registrado!',
-        description: `${data.quantidade} litros de ${data.tipo} recebidos com sucesso.`,
+        description: `${form.getValues().litros_recebidos} litros de ${form.getValues().tipo_produto} recebidos com sucesso.`,
       });
       
       form.reset();
-    } catch (error) {
+      
+      // Chamar callback de sucesso, se fornecido
+      if (onSuccess) onSuccess();
+    },
+    onError: (error: any) => {
       console.error('Erro ao registrar recebimento:', error);
       toast({
         title: 'Erro ao registrar recebimento',
-        description: error instanceof Error ? error.message : 'Verifique sua conexão e tente novamente.',
+        description: error.message || 'Verifique sua conexão e tente novamente.',
         variant: 'destructive',
       });
     }
-  }
+  });
+
+  const onSubmit = (data: RecebimentoValues) => {
+    console.log('Enviando dados:', data);
+    mutation.mutate(data);
+  };
 
   return (
     <TabsContent value="recebimento" className="mt-4">
@@ -138,7 +114,7 @@ export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ po
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
-                  name="tipo"
+                  name="tipo_produto"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipo de Produto Recebido</FormLabel>
@@ -163,7 +139,7 @@ export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ po
                 
                 <FormField
                   control={form.control}
-                  name="quantidade"
+                  name="litros_recebidos"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Quantidade Recebida (Litros)</FormLabel>
@@ -197,7 +173,7 @@ export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ po
 
                 <FormField
                   control={form.control}
-                  name="fornecedor"
+                  name="nome_fornecedor"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Nome do Fornecedor</FormLabel>
@@ -214,15 +190,32 @@ export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ po
                 
                 <FormField
                   control={form.control}
-                  name="operador"
+                  name="nome_operador"
                   render={({ field }) => (
-                    <FormItem className="md:col-span-2">
+                    <FormItem>
                       <FormLabel>Nome do Operador</FormLabel>
                       <FormControl>
                         <Input placeholder="Carlos Oliveira" {...field} />
                       </FormControl>
                       <FormDescription>
                         Digite o nome do operador responsável pelo recebimento
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="observacoes"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Observações (Opcional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Observações adicionais sobre o recebimento..." {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Informações adicionais relevantes
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

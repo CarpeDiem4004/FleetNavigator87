@@ -119,6 +119,10 @@ export const PostoLayout: React.FC<PostoLayoutProps> = ({ id, nomePosto }) => {
 
         {/* Histórico de Entradas de Combustível - Exatamente abaixo de Preços do Combustível */}
         <div className="mb-6">
+          <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+            <TruckIcon className="h-5 w-5" />
+            Entradas de Combustível
+          </h2>
           <HistoricoRecebimentos postId={id} />
         </div>
         
