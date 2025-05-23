@@ -59,6 +59,7 @@ import recebimentosOsascoHandler from "./routes/recebimentosOsascoHandler";
 import testeOsascoRecebimentos from "./routes/testeOsascoRecebimentos";
 import osascoV2Direto from "./routes/osascoV2Direto";
 import osascoDiretoRoutes from "./routes/osascoDiretoRoutes";
+import recebimentosOsascoV2 from "./routes/recebimentosOsascoV2";
 import { db, pool } from "./db";
 import authHybridRoutes from "./routes/authHybridRoutes";
 import * as userHandler from "./handlers/userHandler";
@@ -939,7 +940,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/', osascoV2Direto);
   
   // Registrar a nova rota direta para os recebimentos do posto Osasco V2
-  app.use('/', require('./routes/osascoV2Direto'));
+  app.use('/', recebimentosOsascoV2);
   
   // Registrar rota unificada de abastecimento (NOVA - corrige inconsistências de schema)
   app.use('/api/abastecimento', abastecimentoUnificadoRoutes);

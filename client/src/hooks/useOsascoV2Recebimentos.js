@@ -1,84 +1,113 @@
 import { useState, useEffect, useCallback } from 'react';
-import { apiRequest } from "@/lib/queryClient";
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * Hook personalizado para gerenciar os recebimentos do posto Osasco V2
- * Esta implementação se conecta diretamente à API personalizada para o posto Osasco
- * que possui uma estrutura de tabela diferente dos outros postos
+ * Este hook lida com a estrutura de tabela específica deste posto
  */
-function useOsascoV2Recebimentos() {
+export default function useOsascoV2Recebimentos() {
   const [recebimentos, setRecebimentos] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [reload, setReload] = useState(0);
 
-  // Função para recarregar os dados
-  const reloadData = useCallback(() => {
-    setRefreshTrigger(prev => prev + 1);
-  }, []);
+  // Função para forçar recarga dos dados
+  const recarregarDados = () => setReload(prev => prev + 1);
 
-  // Efeito para carregar os dados dos recebimentos
+  // Buscar recebimentos da API
   useEffect(() => {
     const fetchRecebimentos = async () => {
-      setIsLoading(true);
-      setError(null);
-      
       try {
-        console.log("[FETCH] Buscando recebimentos para o posto Osasco V2...");
-        const res = await apiRequest('GET', '/api/recebimentos-osasco-v2');
-        const data = await res.json();
+        setLoading(true);
+        setError(null);
+
+        const response = await fetch('/api/recebimentos-osasco-v2', {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
+          },
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          throw new Error(`Erro ao buscar recebimentos: ${response.status}`);
+        }
+
+        const data = await response.json();
         
         if (data.success) {
-          console.log("Dados recebidos do Osasco V2:", data.data.length, "recebimentos");
-          setRecebimentos(data.data);
+          setRecebimentos(data.data || []);
         } else {
-          throw new Error(data.message || 'Erro ao buscar recebimentos');
+          throw new Error(data.message || 'Erro desconhecido ao buscar recebimentos');
         }
       } catch (err) {
-        console.error("Erro ao buscar recebimentos do posto Osasco V2:", err);
-        setError(err.message || 'Erro ao carregar recebimentos');
+        console.error('Erro ao buscar recebimentos do posto Osasco V2:', err);
+        setError(err.message);
+        // Não mostrar toast por erro na busca inicial
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
-    
+
     fetchRecebimentos();
-  }, [refreshTrigger]);
+  }, [reload]);
 
   // Função para adicionar um novo recebimento
-  const adicionarRecebimento = async (formData) => {
-    setIsLoading(true);
-    setError(null);
-    
+  const adicionarRecebimento = async (dadosRecebimento) => {
     try {
-      const res = await apiRequest('POST', '/api/recebimentos-osasco-v2', formData);
-      const data = await res.json();
+      setLoading(true);
+      
+      const response = await fetch('/api/recebimentos-osasco-v2', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
+        },
+        credentials: 'include',
+        body: JSON.stringify(dadosRecebimento)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao registrar recebimento: ${response.status}`);
+      }
+
+      const data = await response.json();
       
       if (data.success) {
-        // Adicionar novo recebimento ao estado e ordenar por data
-        setRecebimentos(prev => [data.data, ...prev].sort((a, b) => 
-          new Date(b.created_at) - new Date(a.created_at)
-        ));
+        // Adicionar o novo recebimento ao estado
+        setRecebimentos(prev => [data.data, ...prev]);
+        
+        toast({
+          title: "Sucesso!",
+          description: "Recebimento registrado com sucesso.",
+          variant: "success",
+        });
+        
         return { success: true, data: data.data };
       } else {
-        throw new Error(data.message || 'Erro ao registrar recebimento');
+        throw new Error(data.message || 'Erro desconhecido ao registrar recebimento');
       }
     } catch (err) {
-      console.error("Erro ao adicionar recebimento:", err);
-      setError(err.message || 'Erro ao registrar recebimento');
-      return { success: false, message: err.message };
+      console.error('Erro ao registrar recebimento:', err);
+      setError(err.message);
+      
+      toast({
+        title: "Erro ao registrar recebimento",
+        description: err.message,
+        variant: "destructive",
+      });
+      
+      return { success: false, error: err.message };
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return {
     recebimentos,
-    isLoading,
+    loading,
     error,
     adicionarRecebimento,
-    reloadData
+    recarregarDados
   };
 }
-
-export default useOsascoV2Recebimentos;
