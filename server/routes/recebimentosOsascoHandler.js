@@ -3,8 +3,8 @@
  * Esta implementação considera a estrutura específica da tabela recebimentos_posto_osasco_v2
  */
 
-const express = require('express');
-const { pool } = require('../db');
+import express from 'express';
+import { pool } from '../db.js';
 
 const router = express.Router();
 
@@ -282,4 +282,4 @@ router.registrarRecebimentoOsascoV2 = async (dados) => {
   }
 };
 
-module.exports = router;
+export default router;

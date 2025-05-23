@@ -60,6 +60,7 @@ import testeOsascoRecebimentos from "./routes/testeOsascoRecebimentos";
 import osascoV2Direto from "./routes/osascoV2Direto";
 import osascoDiretoRoutes from "./routes/osascoDiretoRoutes";
 import recebimentosOsascoV2Routes from "./routes/recebimentosOsascoV2.js";
+import osascoV2RecebimentosDirecto from "./routes/osascoV2RecebimentosDirecto.js";
 import { db, pool } from "./db";
 import authHybridRoutes from "./routes/authHybridRoutes";
 import * as userHandler from "./handlers/userHandler";
@@ -931,7 +932,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/recebimentos-osasco-v2', recebimentosOsascoHandler);
   
   // Nova rota direta para recebimentos do posto Osasco V2
-  import osascoV2RecebimentosDirecto from './routes/osascoV2RecebimentosDirecto.js';
   app.use('/api/osasco-v2/recebimentos', osascoV2RecebimentosDirecto);
   app.use('/api/fix-osasco/recebimentos', fixOsascoRecebimentos);
   

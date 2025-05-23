@@ -1,199 +1,179 @@
 /**
- * Rota especializada para os recebimentos do posto Osasco V2
- * Esta implementação acessa diretamente a tabela recebimentos_posto_osasco_v2
+ * Rotas diretas para recebimentos do posto Osasco V2
+ * Esta versão utiliza conexão direta com o banco de dados
  */
-const express = require('express');
-const { pool } = require('../db');
+import express from 'express';
+import { pool } from '../db.js';
+
 const router = express.Router();
 
-// Middleware de autenticação unificada
-const { isAuthenticated } = require('../middleware/auth');
-
-// Debug inicial para verificar a estrutura da tabela
-async function verificarEstruturaTabelaRecebimentos() {
+// Endpoint para verificar se a tabela existe
+router.get('/check-table', async (req, res) => {
   try {
-    console.log("[OsascoV2RecebimentosDirecto] Verificando estrutura da tabela recebimentos_posto_osasco_v2...");
-    const query = `
-      SELECT column_name, data_type
-      FROM information_schema.columns
-      WHERE table_name = 'recebimentos_posto_osasco_v2'
-      ORDER BY ordinal_position;
-    `;
-    const result = await pool.query(query);
-    console.log("[OsascoV2RecebimentosDirecto] Colunas disponíveis:", result.rows);
-    return result.rows;
-  } catch (error) {
-    console.error("[OsascoV2RecebimentosDirecto] Erro ao verificar estrutura da tabela:", error);
-    return [];
-  }
-}
-
-// Verificar se a tabela existe
-async function verificaTabelaRecebimentos() {
-  try {
-    const query = `
+    const result = await pool.query(`
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = 'recebimentos_posto_osasco_v2'
+        WHERE table_name = 'recebimentos_posto_osasco_v2'
       );
-    `;
-    const result = await pool.query(query);
-    return result.rows[0].exists;
-  } catch (error) {
-    console.error('Erro ao verificar tabela de recebimentos Osasco V2:', error);
-    return false;
-  }
-}
-
-// Obter todos os recebimentos
-router.get('/', isAuthenticated, async (req, res) => {
-  try {
-    console.log('[OsascoV2RecebimentosDirecto] Consultando recebimentos do posto Osasco V2 diretamente');
-    
-    // Verificar estrutura da tabela antes de prosseguir
-    await verificarEstruturaTabelaRecebimentos();
-    
-    const tabelaExiste = await verificaTabelaRecebimentos();
-    if (!tabelaExiste) {
-      return res.status(404).json({
-        success: false,
-        message: 'Tabela de recebimentos para Osasco V2 não encontrada'
-      });
-    }
-    
-    // Consulta todos os recebimentos com mapeamento de campos correto
-    const query = `
-      SELECT 
-        id,
-        nome_fornecedor as fornecedor,
-        tipo_produto as tipo_combustivel,
-        litros_recebidos as quantidade_litros,
-        COALESCE(valor_litro, 0) as valor_litro,
-        valor_total,
-        COALESCE(numero_nota, '-') as numero_nota,
-        COALESCE(TO_CHAR(data_entrega, 'DD/MM/YYYY'), TO_CHAR(created_at, 'DD/MM/YYYY')) as data_entrega,
-        nome_operador as operador,
-        observacoes,
-        created_at
-      FROM recebimentos_posto_osasco_v2
-      ORDER BY created_at DESC
-      LIMIT 50
-    `;
-    
-    console.log('[OsascoV2RecebimentosDirecto] Executando query:', query);
-    
-    const { rows } = await pool.query(query);
-    
-    console.log(`[OsascoV2RecebimentosDirecto] Recebimentos encontrados: ${rows.length}`);
-    if (rows.length > 0) {
-      console.log('[OsascoV2RecebimentosDirecto] Exemplo primeiro resultado:', rows[0]);
-    }
+    `);
     
     return res.json({
       success: true,
-      count: rows.length,
-      data: rows
+      exists: result.rows[0].exists
     });
   } catch (error) {
-    console.error('[OsascoV2RecebimentosDirecto] Erro ao consultar recebimentos:', error);
+    console.error('[OsascoV2Direto] Erro ao verificar tabela:', error);
     return res.status(500).json({
       success: false,
-      message: 'Erro ao consultar recebimentos',
+      message: 'Erro ao verificar existência da tabela',
       error: error.message
     });
   }
 });
 
-// Adicionar um novo recebimento
-router.post('/', isAuthenticated, async (req, res) => {
+// Endpoint para buscar todos recebimentos
+router.get('/', async (req, res) => {
   try {
-    console.log('[OsascoV2RecebimentosDirecto] Recebendo pedido para adicionar recebimento:', req.body);
+    // Verificar se a tabela existe
+    const tableExists = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'recebimentos_posto_osasco_v2'
+      );
+    `);
     
-    // Verificar estrutura da tabela antes de prosseguir
-    await verificarEstruturaTabelaRecebimentos();
+    if (!tableExists.rows[0].exists) {
+      return res.json({
+        success: true,
+        message: 'Tabela não encontrada',
+        data: []
+      });
+    }
     
-    // Validar dados
-    const {
-      nome_fornecedor,
-      tipo_produto,
-      litros_recebidos,
-      valor_total,
-      numero_nota,
-      data_entrega,
-      nome_operador,
-      observacoes
-    } = req.body;
+    // Consultar registros 
+    const result = await pool.query(`
+      SELECT *
+      FROM recebimentos_posto_osasco_v2
+      ORDER BY created_at DESC
+      LIMIT 50
+    `);
     
-    // Validação básica
-    if (!nome_fornecedor || !tipo_produto || !litros_recebidos || !valor_total || !nome_operador) {
+    console.log(`[OsascoV2Direto] Encontrados ${result.rowCount} recebimentos`);
+    
+    // Mapear para o formato esperado pelo frontend
+    const mappedRecebimentos = result.rows.map(row => ({
+      id: row.id,
+      fornecedor: row.nome_fornecedor || 'Não informado',
+      tipo_combustivel: row.tipo_produto || 'Diesel',
+      quantidade_litros: parseFloat(row.litros_recebidos || 0),
+      valor_litro: parseFloat(row.valor_litro || 0),
+      valor_total: parseFloat(row.valor_total || 0),
+      numero_nota: row.numero_nota || 'Não informado',
+      data_entrega: row.data_entrega || new Date().toISOString().split('T')[0],
+      operador: row.nome_operador || 'Sistema',
+      observacoes: row.observacoes || '',
+      created_at: row.created_at ? row.created_at.toISOString() : new Date().toISOString()
+    }));
+    
+    return res.json({
+      success: true,
+      data: mappedRecebimentos
+    });
+  } catch (error) {
+    console.error('[OsascoV2Direto] Erro:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao buscar recebimentos do posto Osasco',
+      error: error.message
+    });
+  }
+});
+
+// Endpoint para inserir um novo recebimento
+router.post('/', async (req, res) => {
+  try {
+    const recebimentoData = req.body;
+    
+    if (!recebimentoData || 
+        !recebimentoData.nome_fornecedor || 
+        !recebimentoData.tipo_produto || 
+        !recebimentoData.litros_recebidos || 
+        !recebimentoData.valor_litro || 
+        !recebimentoData.valor_total) {
       return res.status(400).json({
         success: false,
         message: 'Dados incompletos para registrar recebimento'
       });
     }
     
-    // Calcular valor por litro
-    const valor_litro = parseFloat(valor_total) / parseFloat(litros_recebidos);
+    // Verificar se a tabela existe e criar se não existir
+    const tableExists = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'recebimentos_posto_osasco_v2'
+      );
+    `);
     
-    // Preparar data em formato correto
-    let dataEntrega = data_entrega || null;
-    if (dataEntrega && typeof dataEntrega === 'string') {
-      // Tentar formatar a data se ela estiver num formato diferente
-      try {
-        // Se for DD/MM/YYYY
-        if (dataEntrega.includes('/')) {
-          const parts = dataEntrega.split('/');
-          if (parts.length === 3) {
-            dataEntrega = `${parts[2]}-${parts[1]}-${parts[0]}`;
-          }
-        }
-      } catch (err) {
-        console.warn('[OsascoV2RecebimentosDirecto] Erro ao processar data, usando original:', err);
-      }
+    if (!tableExists.rows[0].exists) {
+      console.log('[OsascoV2Direto] Tabela não encontrada, criando...');
+      
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS recebimentos_posto_osasco_v2 (
+          id SERIAL PRIMARY KEY,
+          nome_fornecedor VARCHAR(255) NOT NULL,
+          tipo_produto VARCHAR(100) NOT NULL,
+          litros_recebidos NUMERIC(10,2) NOT NULL,
+          valor_litro NUMERIC(10,3) NOT NULL,
+          valor_total NUMERIC(10,2) NOT NULL,
+          numero_nota VARCHAR(100),
+          data_entrega DATE,
+          nome_operador VARCHAR(255),
+          observacoes TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      
+      console.log('[OsascoV2Direto] Tabela criada com sucesso!');
     }
     
-    // Inserir na tabela
-    const query = `
+    // Inserir o novo recebimento
+    const insertQuery = `
       INSERT INTO recebimentos_posto_osasco_v2 (
-        nome_fornecedor, 
-        tipo_produto, 
-        litros_recebidos, 
-        valor_litro, 
-        valor_total, 
-        numero_nota, 
-        data_entrega, 
-        nome_operador, 
+        nome_fornecedor,
+        tipo_produto,
+        litros_recebidos,
+        valor_litro,
+        valor_total,
+        numero_nota,
+        nome_operador,
+        data_entrega,
         observacoes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      RETURNING *
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *;
     `;
     
     const values = [
-      nome_fornecedor,
-      tipo_produto,
-      litros_recebidos,
-      valor_litro.toFixed(3),  // Formatar com 3 casas decimais
-      valor_total,
-      numero_nota || null,
-      dataEntrega,
-      nome_operador,
-      observacoes || null
+      recebimentoData.nome_fornecedor,
+      recebimentoData.tipo_produto,
+      recebimentoData.litros_recebidos,
+      recebimentoData.valor_litro,
+      recebimentoData.valor_total,
+      recebimentoData.numero_nota || '',
+      recebimentoData.nome_operador || 'Sistema',
+      recebimentoData.data_entrega || new Date(),
+      recebimentoData.observacoes || ''
     ];
     
-    console.log('[OsascoV2RecebimentosDirecto] Executando query com valores:', values);
-    
-    const { rows } = await pool.query(query, values);
-    
-    console.log('[OsascoV2RecebimentosDirecto] Recebimento registrado com sucesso:', rows[0]);
+    const result = await pool.query(insertQuery, values);
     
     return res.status(201).json({
       success: true,
       message: 'Recebimento registrado com sucesso',
-      data: rows[0]
+      data: result.rows[0]
     });
   } catch (error) {
-    console.error('[OsascoV2RecebimentosDirecto] Erro ao adicionar recebimento:', error);
+    console.error('[OsascoV2Direto] Erro ao registrar recebimento:', error);
     return res.status(500).json({
       success: false,
       message: 'Erro ao registrar recebimento',
@@ -202,4 +182,4 @@ router.post('/', isAuthenticated, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

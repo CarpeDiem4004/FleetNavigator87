@@ -2,8 +2,8 @@
  * Script para corrigir problemas na tabela de recebimentos do posto Osasco V2
  */
 
-const express = require('express');
-const { pool } = require('../db');
+import express from 'express';
+import { pool } from '../db.js';
 
 const router = express.Router();
 
@@ -206,4 +206,4 @@ router.get('/corrigir', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
