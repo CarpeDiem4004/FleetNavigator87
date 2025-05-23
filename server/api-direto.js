@@ -852,7 +852,9 @@ export async function registrarAbastecimentoPosto(req, res) {
         { name: 'tipo_veiculo', value: tipo_veiculo },
         { name: 'observacoes', value: observacoes },
         { name: 'lavagem', value: lavagem === true },
-        { name: 'tipo_lavagem', value: tipo_lavagem }
+        { name: 'tipo_lavagem', value: tipo_lavagem },
+        { name: 'projeto', value: projeto },
+        { name: 'project', value: projeto } // Adicionando também o campo project para compatibilidade
       ];
       
       fieldsToAdd.forEach(field => {
