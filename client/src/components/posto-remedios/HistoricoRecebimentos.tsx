@@ -53,6 +53,9 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
   // Estado local para armazenar dados de recebimentos
   const [recebimentosDirectos, setRecebimentosDirectos] = useState<any[]>([]);
   
+  // Estado local para recebimentos via SQL direto (fallback)
+  const [recebimentosSQL, setRecebimentosSQL] = useState<any[]>([]);
+  
   // Efeito para buscar recebimentos diretamente do endpoint especializado para Osasco V2
   React.useEffect(() => {
     if (postoId.toLowerCase() === 'osasco_v2') {
@@ -118,7 +121,7 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
             
             if (sqlData.success && sqlData.rows) {
               console.log("Recebimentos encontrados via SQL direta:", sqlData.rows.length);
-              setRecebimentosDirectos(sqlData.rows);
+              setRecebimentosSQL(sqlData.rows);
             }
           }
         } catch (err) {
@@ -134,24 +137,34 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
   const recebimentos = React.useMemo(() => {
     // Se for Osasco, usar dados do hook especializado
     if (postoId.toLowerCase() === 'osasco_v2') {
-      // Primeiro tentar os dados do SQL direto
+      // Estratégia de fallback em ordem de prioridade
+      
+      // 1. Primeiro tentar os dados do endpoint dedicado
+      if (recebimentosDirectos && recebimentosDirectos.length > 0) {
+        console.log("Usando dados do endpoint dedicado para Osasco V2:", recebimentosDirectos.length);
+        return recebimentosDirectos;
+      }
+      
+      // 2. Depois tentar os dados SQL direto
       if (recebimentosSQL && recebimentosSQL.length > 0) {
         console.log("Usando dados SQL direto para Osasco V2:", recebimentosSQL.length);
         return recebimentosSQL;
       }
       
-      // Depois tentar os hooks
+      // 3. Depois tentar os hooks especializados
       if (osascoV2Recebimentos && osascoV2Recebimentos.length > 0) {
         console.log("Usando dados do hook para Osasco V2:", osascoV2Recebimentos.length);
         return osascoV2Recebimentos;
       }
       
+      // 4. Por último, tentar o hook antigo (compatibilidade)
       if (osascoRecebimentos && osascoRecebimentos.length > 0) {
         console.log("Usando dados do hook antigo para Osasco V2:", osascoRecebimentos.length);
         return osascoRecebimentos;
       }
       
       // Se não houver dados
+      console.log("Nenhum dado de recebimento encontrado para Osasco V2");
       return [];
     }
     
@@ -231,18 +244,30 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {recebimentos.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">{item.fornecedor}</td>
-                    <td className="px-4 py-3">{item.tipo_combustivel}</td>
-                    <td className="px-4 py-3">{item.quantidade_litros.toFixed(2)}</td>
-                    <td className="px-4 py-3">R$ {item.valor_litro.toFixed(3)}</td>
-                    <td className="px-4 py-3">R$ {item.valor_total.toFixed(2)}</td>
-                    <td className="px-4 py-3">{item.numero_nota}</td>
-                    <td className="px-4 py-3">{item.data_entrega || new Date(item.created_at).toLocaleDateString('pt-BR')}</td>
-                    <td className="px-4 py-3">{item.operador}</td>
-                  </tr>
-                ))}
+                {recebimentos.map((item) => {
+                  // Mapear campos para formato padronizado - necessário para Osasco V2
+                  const fornecedor = item.fornecedor || item.nome_fornecedor || '-';
+                  const tipoCombustivel = item.tipo_combustivel || item.tipo_produto || '-';
+                  const quantidadeLitros = parseFloat(item.quantidade_litros || item.litros_recebidos || 0);
+                  const valorLitro = parseFloat(item.valor_litro || 0);
+                  const valorTotal = parseFloat(item.valor_total || 0);
+                  const numeroNota = item.numero_nota || '-';
+                  const dataEntrega = item.data_entrega || (item.created_at ? new Date(item.created_at).toLocaleDateString('pt-BR') : '-');
+                  const operador = item.operador || item.nome_operador || '-';
+                  
+                  return (
+                    <tr key={item.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">{fornecedor}</td>
+                      <td className="px-4 py-3">{tipoCombustivel}</td>
+                      <td className="px-4 py-3">{isNaN(quantidadeLitros) ? '-' : quantidadeLitros.toFixed(2)}</td>
+                      <td className="px-4 py-3">R$ {isNaN(valorLitro) ? '-' : valorLitro.toFixed(3)}</td>
+                      <td className="px-4 py-3">R$ {isNaN(valorTotal) ? '-' : valorTotal.toFixed(2)}</td>
+                      <td className="px-4 py-3">{numeroNota}</td>
+                      <td className="px-4 py-3">{dataEntrega}</td>
+                      <td className="px-4 py-3">{operador}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
