@@ -19,6 +19,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useLocation } from 'wouter';
 import HistoricoAbastecimentosTabela from '@/components/posto-remedios/HistoricoAbastecimentosTabela';
 import FormularioAbastecimentoStandalone from '@/components/posto-remedios/FormularioAbastecimentoStandalone';
+import FormularioRecebimentoStandalone from '@/components/posto-remedios/FormularioRecebimentoStandalone';
 
 export default function PostoRemediosStandalone() {
   const { toast } = useToast();
@@ -163,8 +164,9 @@ export default function PostoRemediosStandalone() {
       </div>
 
       <Tabs defaultValue="novo" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="novo">Novo Registro</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="novo">Abastecimento</TabsTrigger>
+          <TabsTrigger value="recebimento">Recebimento</TabsTrigger>
           <TabsTrigger value="historico">Histórico</TabsTrigger>
         </TabsList>
 
@@ -178,6 +180,20 @@ export default function PostoRemediosStandalone() {
             </CardHeader>
             <CardContent>
               <FormularioAbastecimentoStandalone />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="recebimento" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Registrar Recebimento de Combustível</CardTitle>
+              <CardDescription>
+                Registre a entrega de combustível no tanque do posto. Esta função é para operadores registrarem quando combustível é recebido dos fornecedores.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <FormularioRecebimentoStandalone />
             </CardContent>
           </Card>
         </TabsContent>
