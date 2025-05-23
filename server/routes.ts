@@ -48,33 +48,33 @@ import towingServiceEmergency from './routes/towingServiceEmergency';
 import historicoConsolidadoRoutes from "./routes/historicoConsolidadoRoutes";
 import patioRoutes from "./routes/patioRoutes";
 import pneusRoutes from "./routes/pneusRoutes";
-import sqlSeguroRouter from "./routes/sql-seguro";
-import guarulhosV2Routes from "./routes/guarulhosV2Routes";
-import osascoV2Routes from "./routes/osascoV2Routes";
+import sqlSeguroRouter from "./routes/sql-seguro.js";
+import guarulhosV2Routes from "./routes/guarulhosV2Routes.js";
+import osascoV2Routes from "./routes/osascoV2Routes.js";
 import abastecimentoUnificadoRoutes from "./routes/abastecimentoUnificado.js";
-import recebimentosRoutes from "./routes/recebimentosRoutes";
-import debugOsascoRoutes from "./routes/debugOsascoRoutes";
-import fixOsascoRecebimentos from "./routes/fixOsascoRecebimentos";
-import recebimentosOsascoHandler from "./routes/recebimentosOsascoHandler";
-import testeOsascoRecebimentos from "./routes/testeOsascoRecebimentos";
-import osascoV2Direto from "./routes/osascoV2Direto";
-import osascoDiretoRoutes from "./routes/osascoDiretoRoutes";
+import recebimentosRoutes from "./routes/recebimentosRoutes.js";
+import debugOsascoRoutes from "./routes/debugOsascoRoutes.js";
+import fixOsascoRecebimentos from "./routes/fixOsascoRecebimentos.js";
+import recebimentosOsascoHandler from "./routes/recebimentosOsascoHandler.js";
+import testeOsascoRecebimentos from "./routes/testeOsascoRecebimentos.js";
+import osascoV2Direto from "./routes/osascoV2Direto.js";
+import osascoDiretoRoutes from "./routes/osascoDiretoRoutes.js";
 import recebimentosOsascoV2Routes from "./routes/recebimentosOsascoV2.js";
 import osascoV2RecebimentosDirecto from "./routes/osascoV2RecebimentosDirecto.js";
-import { db, pool } from "./db";
-import authHybridRoutes from "./routes/authHybridRoutes";
-import * as userHandler from "./handlers/userHandler";
-import { atualizarTabelaPneus } from "./updatePneus";
+import { db, pool } from "./db.js";
+import authHybridRoutes from "./routes/authHybridRoutes.js";
+import * as userHandler from "./handlers/userHandler.js";
+import { atualizarTabelaPneus } from "./updatePneus.js";
 import { randomBytes, scrypt } from "crypto";
 import { promisify } from "util";
-import { setupTireActivityRoutes, setupTireActivityTable } from "./tireActivityApi";
-import { consultarUsuarios, consultarUsuarioPorId } from "./handlers/userHandler";
+import { setupTireActivityRoutes, setupTireActivityTable } from "./tireActivityApi.js";
+import { consultarUsuarios, consultarUsuarioPorId } from "./handlers/userHandler.js";
 // Importação das rotas de teste de autenticação híbrida
-import authTestRoutes from './routes/authTest';
+import authTestRoutes from './routes/authTest.js';
 // Importação da rota de ressincronização de sessão
-import { resyncSession } from './routes/sessionResyncRoute';
+import { resyncSession } from './routes/sessionResyncRoute.js';
 // Importação das novas rotas de JWT
-import jwtAuthRoutes from './jwtAuthRoutes';
+import jwtAuthRoutes from './jwtAuthRoutes.js';
 // Importação do cliente Supabase para armazenamento de arquivos
 import { createClient } from '@supabase/supabase-js';
 // Importação das rotas de diagnóstico já feita acima

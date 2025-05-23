@@ -3,9 +3,9 @@
  * Esta implementação acessa diretamente a tabela de recebimentos
  */
 
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { pool } = require('../db');
+import { pool } from '../db.js';
 
 // Obter recebimentos para o posto Osasco V2
 router.get('/recebimentos', async (req, res) => {
