@@ -92,7 +92,6 @@ router.get('/:posto', async (req, res) => {
       console.log(`[Recebimentos] Tratando requisição de recebimentos para Osasco V2 diretamente`);
       try {
         const result = await osascoHandler.getRecebimentosOsascoV2(limit);
-        // Adicionar debug para visualizar os dados que estão sendo retornados
         console.log(`[Recebimentos] Dados obtidos para Osasco: ${result.data?.length || 0} registros`);
         return res.json(result);
       } catch (error) {
