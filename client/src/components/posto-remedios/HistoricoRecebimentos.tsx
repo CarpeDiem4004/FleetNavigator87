@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, AlertCircle, Droplet } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useOsascoRecebimentos } from '@/hooks/useOsascoRecebimentos';
+import useOsascoV2Recebimentos from '@/hooks/useOsascoV2Recebimentos';
 
 interface RecebimentoItem {
   id: number;
@@ -28,7 +29,13 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
   postoId,
   className = ''
 }) => {
-  // Hook especializado para o Posto Osasco
+  // Hook especializado para o Posto Osasco V2 (versão atualizada)
+  const { recebimentos: osascoV2Recebimentos, isLoading: osascoV2Loading, error: osascoV2Error } = 
+    postoId.toLowerCase() === 'osasco_v2' 
+      ? useOsascoV2Recebimentos() 
+      : { recebimentos: [], isLoading: false, error: null };
+      
+  // Hook antigo (mantido para compatibilidade)
   const { recebimentos: osascoRecebimentos, isLoading: osascoLoading, error: osascoError } = 
     postoId.toLowerCase() === 'osasco_v2' 
       ? useOsascoRecebimentos() 
@@ -47,6 +54,14 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
   const recebimentos = React.useMemo(() => {
     // Se for Osasco, usar dados do hook especializado
     if (postoId.toLowerCase() === 'osasco_v2') {
+      // Priorizar dados do novo hook, mas usar o antigo como fallback
+      if (osascoV2Recebimentos && osascoV2Recebimentos.length > 0) {
+        console.log("Usando dados do novo hook para Osasco V2:", osascoV2Recebimentos.length);
+        return osascoV2Recebimentos;
+      }
+      
+      // Se o novo hook não retornar dados, usar o hook antigo
+      console.log("Usando dados do hook antigo para Osasco V2:", osascoRecebimentos.length);
       return osascoRecebimentos;
     }
     
@@ -66,7 +81,7 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
     
     console.log("Dados recebidos na consulta:", responseData);
     return [];
-  }, [data, osascoRecebimentos, postoId]);
+  }, [data, osascoRecebimentos, osascoV2Recebimentos, postoId]);
 
   // Mostrar carregamento quando qualquer um dos dados estiver carregando
   if (isLoading || (postoId.toLowerCase() === 'osasco_v2' && osascoLoading)) {
