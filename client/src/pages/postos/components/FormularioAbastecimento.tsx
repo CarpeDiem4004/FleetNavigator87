@@ -18,6 +18,8 @@ import {
 // Importando o cliente Supabase para buscar os postos
 import { supabase } from "@/lib/supabase-client";
 import { enviarAbastecimentoSupabase } from "@/utils/supabase-sync";
+// Importando o componente de seleção de projetos padronizados
+import SeletorProjetos from "@/components/projetos/SeletorProjetos";
 import {
   Form,
   FormControl,
@@ -338,29 +340,11 @@ const FormularioForm = ({
                   <FormItem>
                     <FormLabel>Projeto</FormLabel>
                     <FormControl>
-                      <select
-                        className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-background px-4 py-2 text-lg font-medium ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      <SeletorProjetos
                         value={field.value}
                         onChange={field.onChange}
-                        onBlur={field.onBlur}
-                      >
-                        <option value="">Selecione o projeto</option>
-                        <option value="GRUPO PEREIRA">GRUPO PEREIRA</option>
-                        <option value="COCA COLA">COCA COLA</option>
-                        <option value="SHOPEE">SHOPEE</option>
-                        <option value="MERCADO LIVRE">MERCADO LIVRE</option>
-                        <option value="LINE HALL SHOPEE">
-                          LINE HALL SHOPEE
-                        </option>
-                        <option value="FULL MELI">FULL MELI</option>
-                        <option value="MADEIRA MADEIRA">MADEIRA MADEIRA</option>
-                        <option value="MAGALU">MAGALU</option>
-                        <option value="NATURA">NATURA</option>
-                        <option value="OXXO">OXXO</option>
-                        <option value="PETLOVE">PETLOVE</option>
-                        <option value="REMÉDIOS">REMÉDIOS</option>
-                        <option value="Outro">Outro</option>
-                      </select>
+                        required={true}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
