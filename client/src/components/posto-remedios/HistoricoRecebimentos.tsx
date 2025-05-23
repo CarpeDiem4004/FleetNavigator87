@@ -50,45 +50,86 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
     enabled: postoId.toLowerCase() !== 'osasco_v2' // Desabilitar para Osasco
   });
 
-  // Processar os dados dependendo do posto
-  const recebimentos = React.useMemo(() => {
-    // Se for Osasco, usar dados do hook especializado
+  // Estado local para armazenar dados de SQL direto
+  const [recebimentosSQL, setRecebimentosSQL] = useState<any[]>([]);
+  
+  // Efeito para buscar recebimentos diretamente via SQL quando for Osasco V2
+  React.useEffect(() => {
     if (postoId.toLowerCase() === 'osasco_v2') {
-      // Buscar diretamente da tabela
-      const fetchDB = async () => {
+      const fetchDirectFromDB = async () => {
         try {
-          const response = await fetch('/api/recebimentos/osasco_v2/todos', {
+          console.log("Buscando recebimentos do Osasco V2 via SQL direta...");
+          const response = await fetch('/api/sql-seguro', {
+            method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
             },
+            body: JSON.stringify({
+              query: `
+                SELECT 
+                  id,
+                  nome_fornecedor as fornecedor,
+                  tipo_produto as tipo_combustivel,
+                  litros_recebidos as quantidade_litros,
+                  COALESCE(valor_litro, 0) as valor_litro,
+                  valor_total,
+                  COALESCE(numero_nota, '-') as numero_nota,
+                  COALESCE(TO_CHAR(data_entrega, 'DD/MM/YYYY'), TO_CHAR(created_at, 'DD/MM/YYYY')) as data_entrega,
+                  nome_operador as operador,
+                  observacoes,
+                  TO_CHAR(created_at, 'DD/MM/YYYY') as data_formatada,
+                  created_at
+                FROM recebimentos_posto_osasco_v2
+                ORDER BY created_at DESC
+                LIMIT 50
+              `
+            }),
             credentials: 'include'
           });
-          const responseData = await response.json();
-          console.log("Dados recuperados direto da DB:", responseData);
+          
+          if (!response.ok) {
+            throw new Error(`Erro ao consultar SQL direta: ${response.status}`);
+          }
+          
+          const data = await response.json();
+          
+          if (data.success && data.rows) {
+            console.log("Recebimentos encontrados via SQL direta:", data.rows.length);
+            setRecebimentosSQL(data.rows);
+          }
         } catch (err) {
-          console.error("Erro ao buscar diretamente:", err);
+          console.error("Erro ao buscar diretamente via SQL:", err);
         }
       };
-      fetchDB();
       
-      // Adaptar dados do banco para o formato esperado pelo componente
-      const adaptedRecebimentos = [];
+      fetchDirectFromDB();
+    }
+  }, [postoId]);
+  
+  // Processar os dados dependendo do posto
+  const recebimentos = React.useMemo(() => {
+    // Se for Osasco, usar dados do hook especializado
+    if (postoId.toLowerCase() === 'osasco_v2') {
+      // Primeiro tentar os dados do SQL direto
+      if (recebimentosSQL && recebimentosSQL.length > 0) {
+        console.log("Usando dados SQL direto para Osasco V2:", recebimentosSQL.length);
+        return recebimentosSQL;
+      }
       
-      const result = fetch('/api/recebimentos/osasco_v2/raw')
-        .then(response => response.json())
-        .then(data => console.log("Dados brutos:", data))
-        .catch(err => console.error("Erro ao buscar dados brutos:", err));
-      
-      // Priorizar dados do novo hook, mas usar o antigo como fallback
+      // Depois tentar os hooks
       if (osascoV2Recebimentos && osascoV2Recebimentos.length > 0) {
-        console.log("Usando dados do novo hook para Osasco V2:", osascoV2Recebimentos.length);
+        console.log("Usando dados do hook para Osasco V2:", osascoV2Recebimentos.length);
         return osascoV2Recebimentos;
       }
       
-      // Se o novo hook não retornar dados, usar o hook antigo
-      console.log("Usando dados do hook antigo para Osasco V2:", osascoRecebimentos.length);
-      return osascoRecebimentos;
+      if (osascoRecebimentos && osascoRecebimentos.length > 0) {
+        console.log("Usando dados do hook antigo para Osasco V2:", osascoRecebimentos.length);
+        return osascoRecebimentos;
+      }
+      
+      // Se não houver dados
+      return [];
     }
     
     // Para outros postos, processar normalmente
