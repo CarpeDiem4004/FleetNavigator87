@@ -221,7 +221,6 @@ function SimpleFormularioAbastecimento() {
             <option value="OXXO">OXXO</option>
             <option value="PETLOVE">PETLOVE</option>
             <option value="REMÉDIOS">REMÉDIOS</option>
-            <option value="Outro">Outro</option>
           </select>
         </div>
         
@@ -641,8 +640,7 @@ export default function FormularioAbastecimentoStandalone() {
     'NATURA',
     'OXXO',
     'PETLOVE',
-    'REMÉDIOS',
-    'Outro'
+    'REMÉDIOS'
   ];
 
   // Função segura para submissão do formulário
