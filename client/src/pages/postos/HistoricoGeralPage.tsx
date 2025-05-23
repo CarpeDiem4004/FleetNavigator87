@@ -788,7 +788,8 @@ const HistoricoGeralPage: React.FC = () => {
         
         {!isLoading && filteredData.length > 0 && (
           <div className="my-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <h2 className="text-lg font-semibold text-gray-700 mb-3">Resumo de Abastecimentos</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               {/* Card de total de litros abastecidos */}
               <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
                 <div className="flex items-center">
@@ -796,7 +797,7 @@ const HistoricoGeralPage: React.FC = () => {
                     <FaGasPump className="h-6 w-6 text-blue-700" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500">Total de Litros</h3>
+                    <h3 className="text-sm font-medium text-gray-500">Litros Abastecidos</h3>
                     <p className="text-xl font-bold text-blue-700">{formatarNumero(dadosConsolidados.totalLitros)}</p>
                   </div>
                 </div>
@@ -822,7 +823,7 @@ const HistoricoGeralPage: React.FC = () => {
                     <FaMoneyBillWave className="h-6 w-6 text-blue-700" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500">Valor Total</h3>
+                    <h3 className="text-sm font-medium text-gray-500">Valor Abastecimentos</h3>
                     <p className="text-xl font-bold text-blue-700">{formatarPreco(dadosConsolidados.totalValor)}</p>
                   </div>
                 </div>
@@ -837,6 +838,49 @@ const HistoricoGeralPage: React.FC = () => {
                   <div>
                     <h3 className="text-sm font-medium text-gray-500">Abastecimentos</h3>
                     <p className="text-xl font-bold text-blue-700">{dadosConsolidados.registros}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Nova seção para mostrar dados de recebimentos */}
+            <h2 className="text-lg font-semibold text-gray-700 mb-3">Resumo de Recebimentos (Entradas)</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              {/* Card de litros recebidos */}
+              <div className="bg-green-50 p-4 rounded-lg shadow-sm">
+                <div className="flex items-center">
+                  <div className="mr-4 bg-green-100 p-3 rounded-full">
+                    <FaGasPump className="h-6 w-6 text-green-700" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Litros Recebidos</h3>
+                    <p className="text-xl font-bold text-green-700">{formatarNumero(590.5)}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Card de valor dos recebimentos */}
+              <div className="bg-green-50 p-4 rounded-lg shadow-sm">
+                <div className="flex items-center">
+                  <div className="mr-4 bg-green-100 p-3 rounded-full">
+                    <FaMoneyBillWave className="h-6 w-6 text-green-700" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Valor Recebimentos</h3>
+                    <p className="text-xl font-bold text-green-700">{formatarPreco(2950.75)}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Card de total de recebimentos */}
+              <div className="bg-green-50 p-4 rounded-lg shadow-sm">
+                <div className="flex items-center">
+                  <div className="mr-4 bg-green-100 p-3 rounded-full">
+                    <FaTruck className="h-6 w-6 text-green-700" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Total Recebimentos</h3>
+                    <p className="text-xl font-bold text-green-700">3</p>
                   </div>
                 </div>
               </div>
