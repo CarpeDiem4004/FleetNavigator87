@@ -1,11 +1,11 @@
 /**
  * Rotas unificadas para gerenciamento de recebimentos de combustível
  */
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { pool } = require('../db');
-const { checkAuthAndRoles } = require('../utils/auth-utils');
-const osascoHandler = require('./recebimentosOsascoHandler');
+import { pool } from '../db.js';
+import { checkAuthAndRoles } from '../utils/auth-utils.js';
+import * as osascoHandler from './recebimentosOsascoHandler.js';
 
 /**
  * Atualiza o nível do tanque de combustível após um recebimento
@@ -366,4 +366,4 @@ router.post('/:posto', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

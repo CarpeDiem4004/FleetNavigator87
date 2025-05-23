@@ -3,7 +3,7 @@
  * Esta implementação resolve a incompatibilidade de estrutura da tabela
  */
 import express from 'express';
-import { pool } from '../database.js';
+import { pool } from '../db.js';
 import { verifyJWT } from '../utils/jwt-utils.js';
 
 const router = express.Router();

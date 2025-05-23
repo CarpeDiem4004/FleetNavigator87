@@ -3,9 +3,9 @@
  * Esta implementação acessa diretamente a tabela recebimentos_posto_osasco_v2
  */
 
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { pool } = require('../db');
+import { pool } from '../db.js';
 
 // Rota GET para buscar recebimentos do posto Osasco V2
 router.get('/api/osasco/recebimentos', async (req, res) => {
@@ -218,4 +218,4 @@ router.post('/api/osasco/recebimentos', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
