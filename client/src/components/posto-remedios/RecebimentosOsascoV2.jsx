@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Fuel } from "lucide-react";
 import useOsascoV2Recebimentos from '@/hooks/useOsascoV2Recebimentos';
+import { Textarea } from "@/components/ui/textarea";
 
 /**
  * Componente especializado para o registro de recebimentos do posto Osasco V2
@@ -18,14 +19,11 @@ export default function RecebimentosOsascoV2() {
   
   // Estado local para o formulário
   const [formData, setFormData] = useState({
-    fornecedor: '',
-    tipo_combustivel: '',
-    quantidade_litros: '',
-    valor_litro: '',
+    tipo_produto: 'Diesel',
+    litros_recebidos: '',
     valor_total: '',
-    numero_nota: '',
-    data_entrega: new Date().toISOString().split('T')[0],
-    operador: '',
+    nome_fornecedor: '',
+    nome_operador: '',
     observacoes: ''
   });
   
@@ -35,21 +33,7 @@ export default function RecebimentosOsascoV2() {
   // Manipulador de campos de entrada
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => {
-      const updatedData = { ...prev, [name]: value };
-      
-      // Calcular valor total automaticamente quando quantidade e valor unitário são fornecidos
-      if ((name === 'quantidade_litros' || name === 'valor_litro') && 
-          updatedData.quantidade_litros && updatedData.valor_litro) {
-        const qtd = parseFloat(updatedData.quantidade_litros);
-        const valor = parseFloat(updatedData.valor_litro);
-        if (!isNaN(qtd) && !isNaN(valor)) {
-          updatedData.valor_total = (qtd * valor).toFixed(2);
-        }
-      }
-      
-      return updatedData;
-    });
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
   
   // Manipulador de campos de seleção
@@ -59,8 +43,8 @@ export default function RecebimentosOsascoV2() {
   
   // Validação básica do formulário
   const isFormValid = () => {
-    const requiredFields = ['fornecedor', 'tipo_combustivel', 'quantidade_litros', 'valor_litro', 'numero_nota', 'data_entrega', 'operador'];
-    return requiredFields.every(field => formData[field] && formData[field].trim() !== '');
+    const requiredFields = ['tipo_produto', 'litros_recebidos', 'valor_total', 'nome_fornecedor', 'nome_operador'];
+    return requiredFields.every(field => formData[field] && String(formData[field]).trim() !== '');
   };
   
   // Manipulador de envio do formulário
@@ -78,35 +62,46 @@ export default function RecebimentosOsascoV2() {
     try {
       setSubmitting(true);
       
-      // Converter valores numéricos
-      const dataToSubmit = {
-        ...formData,
-        quantidade_litros: parseFloat(formData.quantidade_litros),
-        valor_litro: parseFloat(formData.valor_litro),
-        valor_total: parseFloat(formData.valor_total || 0)
+      // Calcular o valor do litro a partir do valor total e litros recebidos
+      const litros = parseFloat(formData.litros_recebidos);
+      const valorTotal = parseFloat(formData.valor_total);
+      const valorLitro = valorTotal / litros;
+      
+      // Montar os dados no formato esperado
+      const dados = {
+        nome_fornecedor: formData.nome_fornecedor,
+        tipo_produto: formData.tipo_produto,
+        litros_recebidos: litros,
+        valor_litro: valorLitro.toFixed(2),
+        valor_total: valorTotal,
+        numero_nota: 'NF ' + new Date().toISOString().split('T')[0].replace(/-/g, ''), // Número automático baseado na data
+        data_entrega: new Date().toISOString().split('T')[0],  // Data atual
+        nome_operador: formData.nome_operador,
+        observacoes: formData.observacoes || ''
       };
       
-      // Enviar dados para a API
-      const result = await adicionarRecebimento(dataToSubmit);
+      const resultado = await adicionarRecebimento(dados);
       
-      if (result.success) {
-        // Limpar formulário após sucesso
+      if (resultado.success) {
+        toast({
+          title: "Sucesso!",
+          description: "Recebimento registrado com sucesso."
+        });
+        
+        // Limpar formulário
         setFormData({
-          fornecedor: '',
-          tipo_combustivel: '',
-          quantidade_litros: '',
-          valor_litro: '',
+          tipo_produto: 'Diesel',
+          litros_recebidos: '',
           valor_total: '',
-          numero_nota: '',
-          data_entrega: new Date().toISOString().split('T')[0],
-          operador: '',
+          nome_fornecedor: '',
+          nome_operador: '',
           observacoes: ''
         });
       }
     } catch (error) {
-      console.error("Erro ao enviar formulário:", error);
+      console.error("Erro ao registrar recebimento:", error);
       toast({
-        title: "Erro ao registrar recebimento",
+        title: "Erro",
         description: error.message || "Ocorreu um erro ao tentar registrar o recebimento."
       });
     } finally {
@@ -116,37 +111,29 @@ export default function RecebimentosOsascoV2() {
   
   return (
     <Card className="w-full max-w-3xl mx-auto">
-      <CardHeader>
-        <CardTitle>Registrar Recebimento de Combustível</CardTitle>
-        <CardDescription>
-          Posto Osasco V2 - Preencha os dados do recebimento de combustível
-        </CardDescription>
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-2">
+          <Fuel className="h-5 w-5 text-primary" />
+          <CardTitle>Recebimento de Combustível no Tanque</CardTitle>
+        </div>
+        <p className="text-sm text-muted-foreground mt-1">
+          Registre o recebimento de combustível no tanque do posto osasco_v2.
+        </p>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="fornecedor">Fornecedor *</Label>
-              <Input
-                id="fornecedor"
-                name="fornecedor"
-                value={formData.fornecedor}
-                onChange={handleChange}
-                placeholder="Nome do fornecedor"
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="tipo_combustivel">Tipo de Combustível *</Label>
+              <Label htmlFor="tipo_produto">Tipo de Produto Recebido</Label>
               <Select 
-                value={formData.tipo_combustivel} 
-                onValueChange={(value) => handleSelectChange(value, 'tipo_combustivel')}
+                value={formData.tipo_produto} 
+                onValueChange={(value) => handleSelectChange(value, 'tipo_produto')}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo" />
+                  <SelectValue placeholder="Selecione o tipo de produto recebido" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="Diesel">Diesel</SelectItem>
                   <SelectItem value="DIESEL S10">DIESEL S10</SelectItem>
                   <SelectItem value="DIESEL S500">DIESEL S500</SelectItem>
                   <SelectItem value="ARLA 32">ARLA 32</SelectItem>
@@ -155,31 +142,16 @@ export default function RecebimentosOsascoV2() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="quantidade_litros">Quantidade em Litros *</Label>
+              <Label htmlFor="litros_recebidos">Quantidade Recebida (Litros)</Label>
               <Input
-                id="quantidade_litros"
-                name="quantidade_litros"
+                id="litros_recebidos"
+                name="litros_recebidos"
                 type="number"
                 step="0.01"
                 min="0"
-                value={formData.quantidade_litros}
+                value={formData.litros_recebidos}
                 onChange={handleChange}
-                placeholder="0.00"
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="valor_litro">Valor por Litro (R$) *</Label>
-              <Input
-                id="valor_litro"
-                name="valor_litro"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.valor_litro}
-                onChange={handleChange}
-                placeholder="0.00"
+                placeholder="Digite a quantidade em litros"
                 required
               />
             </div>
@@ -194,56 +166,45 @@ export default function RecebimentosOsascoV2() {
                 min="0"
                 value={formData.valor_total}
                 onChange={handleChange}
-                placeholder="Calculado automaticamente"
-                readOnly
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="numero_nota">Número da Nota Fiscal *</Label>
-              <Input
-                id="numero_nota"
-                name="numero_nota"
-                value={formData.numero_nota}
-                onChange={handleChange}
-                placeholder="Número da NF"
+                placeholder="Digite o valor total da compra"
                 required
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="data_entrega">Data de Entrega *</Label>
+              <Label htmlFor="nome_fornecedor">Nome do Fornecedor</Label>
               <Input
-                id="data_entrega"
-                name="data_entrega"
-                type="date"
-                value={formData.data_entrega}
+                id="nome_fornecedor"
+                name="nome_fornecedor"
+                value={formData.nome_fornecedor}
                 onChange={handleChange}
+                placeholder="Digite o nome do fornecedor"
                 required
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="operador">Nome do Operador *</Label>
+              <Label htmlFor="nome_operador">Nome do Operador</Label>
               <Input
-                id="operador"
-                name="operador"
-                value={formData.operador}
+                id="nome_operador"
+                name="nome_operador"
+                value={formData.nome_operador}
                 onChange={handleChange}
-                placeholder="Nome do operador"
+                placeholder="Digite o nome do operador responsável pelo recebimento"
                 required
               />
             </div>
           </div>
           
-          <div className="space-y-2 mb-4">
-            <Label htmlFor="observacoes">Observações</Label>
-            <Input
+          <div className="space-y-2">
+            <Label htmlFor="observacoes">Observações (Opcional)</Label>
+            <Textarea
               id="observacoes"
               name="observacoes"
               value={formData.observacoes}
               onChange={handleChange}
-              placeholder="Observações adicionais (opcional)"
+              placeholder="Informações adicionais relevantes"
+              rows={3}
             />
           </div>
           
@@ -257,20 +218,10 @@ export default function RecebimentosOsascoV2() {
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Registrando...
               </>
-            ) : "Registrar Recebimento"}
+            ) : "Registrar Recebimento no Tanque"}
           </Button>
         </form>
       </CardContent>
-      <CardFooter className="flex justify-between flex-col sm:flex-row">
-        <p className="text-sm text-muted-foreground mb-2 sm:mb-0">
-          * Campos obrigatórios
-        </p>
-        <p className="text-sm text-muted-foreground">
-          Registros hoje: {recebimentos.filter(r => 
-            new Date(r.created_at).toDateString() === new Date().toDateString()
-          ).length}
-        </p>
-      </CardFooter>
     </Card>
   );
 }
