@@ -147,7 +147,11 @@ export const PostoLayout: React.FC<PostoLayoutProps> = ({ id, nomePosto }) => {
             <TruckIcon className="h-5 w-5" />
             Entradas de Combustível
           </h2>
-          <HistoricoRecebimentos postId={id} />
+          {id.toLowerCase() === 'osasco_v2' ? 
+            <RecebimentosOsasco /> 
+            : 
+            <HistoricoRecebimentos postId={id} />
+          }
         </div>
         
         {/* Históricos */}

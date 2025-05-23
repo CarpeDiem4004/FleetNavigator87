@@ -1,161 +1,167 @@
 /**
  * Hook personalizado para gerenciar recebimentos do posto Osasco V2
- * Lida com a API especializada que adapta os nomes dos campos
+ * Utiliza uma API especializada devido à estrutura diferente da tabela
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { apiRequest } from '../lib/queryClient';
-import { useToast } from './use-toast';
+import { toast } from '@/hooks/use-toast';
 
+// Definição do tipo para recebimentos específicos do posto Osasco
 export interface RecebimentoOsasco {
   id?: number;
-  fornecedor: string;
-  tipo_combustivel: string;
-  quantidade_litros: string | number;
+  fornecedor: string;              // nome_fornecedor na tabela
+  tipo_combustivel: string;        // tipo_produto na tabela
+  quantidade_litros: string | number;  // litros_recebidos na tabela
   valor_litro: string | number;
   valor_total: string | number;
   numero_nota: string;
   data_entrega: string;
   nome_operador: string;
-  observacoes?: string;
-  data_registro?: Date;
+  observacoes: string;
   data_formatada?: string;
 }
 
-interface UseOsascoRecebimentosResult {
-  recebimentos: RecebimentoOsasco[];
-  isLoading: boolean;
-  error: string | null;
-  refreshRecebimentos: () => Promise<void>;
-  adicionarRecebimento: (dados: RecebimentoOsasco) => Promise<RecebimentoOsasco | null>;
-  limparErro: () => void;
-}
-
-export function useOsascoRecebimentos(): UseOsascoRecebimentosResult {
+export function useOsascoRecebimentos() {
   const [recebimentos, setRecebimentos] = useState<RecebimentoOsasco[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
 
-  // Função para buscar recebimentos com fallback para rota de teste
+  // Função para buscar recebimentos do posto Osasco V2
   const fetchRecebimentos = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Primeiro, tenta a API real
-      const response = await apiRequest('GET', '/api/recebimentos-osasco');
-      const data = await response.json();
+      const token = localStorage.getItem('jwtToken');
+      const response = await fetch('/api/recebimentos/osasco_v2', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
 
-      if (data.success) {
-        setRecebimentos(data.data || []);
-        return;
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Erro ao buscar recebimentos');
+      }
+
+      if (data.data && Array.isArray(data.data)) {
+        // Mapear os dados para o formato esperado
+        const formattedData = data.data.map((item: any) => ({
+          id: item.id,
+          fornecedor: item.nome_fornecedor,
+          tipo_combustivel: item.tipo_produto,
+          quantidade_litros: item.litros_recebidos,
+          valor_litro: item.valor_litro,
+          valor_total: item.valor_total,
+          numero_nota: item.numero_nota,
+          data_entrega: item.data_entrega ? new Date(item.data_entrega).toISOString().split('T')[0] : '',
+          nome_operador: item.nome_operador,
+          observacoes: item.observacoes || '',
+          data_formatada: formatarDataBR(item.data_entrega || item.created_at)
+        }));
+        
+        setRecebimentos(formattedData);
       } else {
-        console.warn('Rota principal falhou, tentando rota de teste:', data.message);
-        
-        // Se a primeira falhar, tenta a rota de teste
-        const testResponse = await apiRequest('GET', '/api/teste-osasco-recebimentos');
-        const testData = await testResponse.json();
-        
-        if (testData.success) {
-          setRecebimentos(testData.data || []);
-          console.log('Usando dados de teste para recebimentos Osasco');
-        } else {
-          throw new Error('Não foi possível obter dados de recebimentos');
-        }
+        // Se não houver dados, definir como array vazio
+        setRecebimentos([]);
       }
     } catch (err: any) {
-      const errorMsg = err.message || 'Erro ao buscar recebimentos';
-      console.error('Erro ao buscar recebimentos Osasco:', errorMsg);
-      setError(errorMsg);
-      
-      // Mostrar toast de erro
-      toast({
-        title: 'Erro',
-        description: `Não foi possível carregar os recebimentos: ${errorMsg}`,
-        variant: 'destructive',
-      });
+      console.error('Erro ao buscar recebimentos Osasco V2:', err);
+      setError(err.message || 'Falha ao carregar recebimentos');
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, []);
 
-  // Função para adicionar um novo recebimento
-  const adicionarRecebimento = useCallback(async (dados: RecebimentoOsasco): Promise<RecebimentoOsasco | null> => {
+  // Formatar data para o formato brasileiro (DD/MM/YYYY)
+  const formatarDataBR = (dataStr: string) => {
+    if (!dataStr) return '';
+    
+    try {
+      const data = new Date(dataStr);
+      return data.toLocaleDateString('pt-BR');
+    } catch (error) {
+      return dataStr;
+    }
+  };
+
+  // Função para adicionar novo recebimento
+  const adicionarRecebimento = async (dados: RecebimentoOsasco) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Calcular valor total caso não fornecido
-      if (!dados.valor_total && dados.valor_litro && dados.quantidade_litros) {
-        dados.valor_total = (
-          parseFloat(dados.valor_litro.toString()) * 
-          parseFloat(dados.quantidade_litros.toString())
-        ).toFixed(2);
-      }
+      // Mapear os dados para o formato esperado pela API
+      const payload = {
+        nome_fornecedor: dados.fornecedor,
+        tipo_produto: dados.tipo_combustivel,
+        litros_recebidos: typeof dados.quantidade_litros === 'string' 
+          ? parseFloat(dados.quantidade_litros) 
+          : dados.quantidade_litros,
+        valor_litro: typeof dados.valor_litro === 'string' 
+          ? parseFloat(dados.valor_litro) 
+          : dados.valor_litro,
+        valor_total: typeof dados.valor_total === 'string' 
+          ? parseFloat(dados.valor_total) 
+          : dados.valor_total,
+        numero_nota: dados.numero_nota,
+        data_entrega: dados.data_entrega,
+        nome_operador: dados.nome_operador,
+        observacoes: dados.observacoes
+      };
 
-      // Primeiro, tenta a API real
-      const response = await apiRequest('POST', '/api/recebimentos-osasco', dados);
-      const data = await response.json();
+      const token = localStorage.getItem('jwtToken');
+      const response = await fetch('/api/recebimentos/osasco_v2', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
 
-      if (data.success) {
-        // Atualizar lista de recebimentos
-        await fetchRecebimentos();
-        
-        // Notificar sucesso
-        toast({
-          title: 'Sucesso',
-          description: 'Recebimento registrado com sucesso',
-        });
-        
-        return data.data;
-      } else {
-        console.warn('API principal falhou, tentando rota de teste:', data.message);
-        
-        // Se a primeira falhar, tenta a rota de teste
-        const testResponse = await apiRequest('POST', '/api/teste-osasco-recebimentos', dados);
-        const testData = await testResponse.json();
-        
-        if (testData.success) {
-          // Atualizar lista com dados de teste
-          await fetchRecebimentos();
-          
-          // Notificar usando dados de teste
-          toast({
-            title: 'Sucesso (Modo Teste)',
-            description: 'Simulação de recebimento registrada com sucesso',
-          });
-          
-          return testData.data;
-        } else {
-          throw new Error(testData.message || 'Falha ao registrar recebimento');
-        }
-      }
-    } catch (err: any) {
-      const errorMsg = err.message || 'Erro ao registrar recebimento';
-      console.error('Erro ao adicionar recebimento Osasco:', errorMsg);
-      setError(errorMsg);
+      const result = await response.json();
       
-      // Mostrar toast de erro
+      if (!response.ok) {
+        throw new Error(result.message || 'Erro ao registrar recebimento');
+      }
+
+      // Atualizar a lista de recebimentos após adicionar um novo
+      await fetchRecebimentos();
+      
       toast({
-        title: 'Erro',
-        description: `Não foi possível registrar o recebimento: ${errorMsg}`,
+        title: 'Recebimento registrado com sucesso',
+        description: 'O novo recebimento foi registrado e os níveis do tanque foram atualizados.',
+      });
+      
+      return true;
+    } catch (err: any) {
+      console.error('Erro ao adicionar recebimento:', err);
+      setError(err.message || 'Falha ao registrar recebimento');
+      
+      toast({
+        title: 'Erro ao registrar recebimento',
+        description: err.message || 'Ocorreu um problema ao registrar o recebimento.',
         variant: 'destructive',
       });
       
-      return null;
+      return false;
     } finally {
       setIsLoading(false);
     }
-  }, [fetchRecebimentos, toast]);
+  };
 
-  // Função para limpar erros
-  const limparErro = useCallback(() => {
-    setError(null);
-  }, []);
-
-  // Carregar dados quando o componente é montado
+  // Carregar recebimentos ao montar o componente
   useEffect(() => {
+    fetchRecebimentos();
+  }, [fetchRecebimentos]);
+
+  // Função para atualizar manualmente os recebimentos
+  const refreshRecebimentos = useCallback(() => {
     fetchRecebimentos();
   }, [fetchRecebimentos]);
 
@@ -163,8 +169,7 @@ export function useOsascoRecebimentos(): UseOsascoRecebimentosResult {
     recebimentos,
     isLoading,
     error,
-    refreshRecebimentos: fetchRecebimentos,
-    adicionarRecebimento,
-    limparErro,
+    refreshRecebimentos,
+    adicionarRecebimento
   };
 }
