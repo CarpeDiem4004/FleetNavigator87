@@ -922,15 +922,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/osasco-v2', osascoV2Routes);
   
   // Redirecionar requisições de recebimentos do Guarulhos V2 para a rota especializada
-  app.get('/api/recebimentos/guarulhos_v2', (req, res) => {
-    console.log("Tratando requisição de recebimentos para Guarulhos V2 diretamente");
-    // Retornar uma resposta em formato JSON válido diretamente
-    res.json({
-      success: true,
-      message: "Tabela de recebimentos não disponível ou em configuração",
-      data: [],
-      count: 0
-    });
+  app.get('/api/recebimentos/guarulhos_v2', async (req, res) => {
+    console.log("Tratando requisição de recebimentos para Guarulhos V2");
+    
+    try {
+      // Verificar se a tabela recebimentos_posto_guarulhos_v2 existe
+      const checkTableQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'recebimentos_posto_guarulhos_v2'
+        );
+      `;
+      
+      const tableCheck = await pool.query(checkTableQuery);
+      const tableExists = tableCheck.rows[0].exists;
+      
+      if (!tableExists) {
+        return res.json({
+          success: true,
+          message: "Tabela de recebimentos ainda não configurada para este posto",
+          data: [],
+          count: 0
+        });
+      }
+      
+      // Consulta SQL para recebimentos do posto Guarulhos V2 com mapeamento correto de colunas
+      const query = `
+        SELECT 
+          id,
+          tipo_produto as tipo_combustivel,
+          litros_recebidos as quantidade_litros,
+          valor_total,
+          nome_fornecedor as fornecedor,
+          nome_operador as operador,
+          observacoes,
+          to_char(created_at AT TIME ZONE 'America/Sao_Paulo', 'DD/MM/YYYY HH24:MI') as data_hora,
+          created_at
+        FROM recebimentos_posto_guarulhos_v2
+        ORDER BY created_at DESC
+        LIMIT ${req.query.limit || 50}
+      `;
+      
+      console.log("[GuarulhosV2] Executando consulta especializada de recebimentos");
+      const result = await pool.query(query);
+      
+      res.json({
+        success: true,
+        data: result.rows,
+        count: result.rowCount,
+        posto: "Guarulhos_v2"
+      });
+    } catch (error) {
+      console.error("[GuarulhosV2] Erro ao consultar recebimentos:", error);
+      
+      // Retornar uma resposta com dados vazios para evitar quebra da interface
+      res.json({ 
+        success: true, 
+        message: "Tabela de recebimentos não disponível ou erro na consulta",
+        data: [],
+        count: 0
+      });
+    }
   });
   
   // Redirecionar requisições de recebimentos do Osasco V2 para a rota especializada

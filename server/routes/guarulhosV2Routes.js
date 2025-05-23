@@ -84,13 +84,11 @@ router.get('/recebimentos', async (req, res) => {
     const query = `
       SELECT 
         id,
-        placa,
-        tipo_combustivel,
-        quantidade_litros,
-        valor_litro,
+        tipo_produto as tipo_combustivel,
+        litros_recebidos as quantidade_litros,
         valor_total,
-        motorista,
-        operador,
+        nome_fornecedor as fornecedor,
+        nome_operador as operador,
         observacoes,
         to_char(created_at AT TIME ZONE 'America/Sao_Paulo', 'DD/MM/YYYY HH24:MI') as data_hora,
         created_at
@@ -105,7 +103,8 @@ router.get('/recebimentos', async (req, res) => {
     res.json({
       success: true,
       data: result.rows,
-      count: result.rowCount
+      count: result.rowCount,
+      posto: "Guarulhos_v2"
     });
   } catch (error) {
     console.error("[GuarulhosV2] Erro ao consultar recebimentos:", error);
