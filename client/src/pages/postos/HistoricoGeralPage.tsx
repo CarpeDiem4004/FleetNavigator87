@@ -98,6 +98,45 @@ const HistoricoGeralPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateStart, setDateStart] = useState<string>('');
   const [dateEnd, setDateEnd] = useState<string>('');
+  
+  // Estado para armazenar dados consolidados incluindo recebimentos
+  const [dadosConsolidados, setDadosConsolidados] = useState({
+    registros: 0,
+    totalLitros: 0,
+    totalValor: 0,
+    postos: 0,
+    motoristas: 0,
+    veiculos: 0,
+    consumoPorTipo: {} as Record<string, number>,
+    
+    // Dados de diesel
+    litrosDiesel: 0,
+    valorDiesel: 0,
+    veiculosDiesel: 0,
+    
+    // Dados de gasolina
+    litrosGasolina: 0,
+    valorGasolina: 0,
+    veiculosGasolina: 0,
+    
+    // Dados de álcool
+    litrosAlcool: 0,
+    valorAlcool: 0,
+    veiculosAlcool: 0,
+    
+    // Dados de arla
+    litrosArla: 0,
+    valorArla: 0,
+    veiculosArla: 0,
+    
+    // Dados de recebimentos (entradas)
+    litrosRecebidos: 0,
+    valorRecebimentos: 0,
+    totalRecebimentos: 0,
+    
+    // Projetos ordenados por consumo
+    projetosOrdenados: [] as [string, number][]
+  });
 
   const fetchAllAbastecimentos = async () => {
     try {
@@ -696,15 +735,24 @@ const HistoricoGeralPage: React.FC = () => {
     };
   };
   
-  const dadosConsolidados = calcularConsolidado();
+  // Atualizar o estado com os dados calculados
+  useEffect(() => {
+    const dados = calcularConsolidado();
+    setDadosConsolidados(prev => ({
+      ...prev,
+      ...dados
+    }));
+  }, [abastecimentos]);
   
   // Log para debug da exibição de projetos
-  console.log("[DEBUG] Projetos ordenados:", dadosConsolidados.projetosOrdenados);
-  console.log("[DEBUG] Verificando dados dos projetos:", {
-    temProjetos: dadosConsolidados.projetosOrdenados && dadosConsolidados.projetosOrdenados.length > 0,
-    qtdProjetos: dadosConsolidados.projetosOrdenados ? dadosConsolidados.projetosOrdenados.length : 0,
-    tipoVariavel: typeof dadosConsolidados.projetosOrdenados
-  });
+  useEffect(() => {
+    console.log("[DEBUG] Projetos ordenados:", dadosConsolidados.projetosOrdenados);
+    console.log("[DEBUG] Verificando dados dos projetos:", {
+      temProjetos: dadosConsolidados.projetosOrdenados && dadosConsolidados.projetosOrdenados.length > 0,
+      qtdProjetos: dadosConsolidados.projetosOrdenados ? dadosConsolidados.projetosOrdenados.length : 0,
+      tipoVariavel: typeof dadosConsolidados.projetosOrdenados
+    });
+  }, [dadosConsolidados.projetosOrdenados]);
 
   return (
     <div className="container mx-auto p-4">
