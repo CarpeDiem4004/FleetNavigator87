@@ -207,7 +207,17 @@ function SimpleFormularioAbastecimento() {
         
         <div>
           <label className="block text-sm font-medium mb-1">Projeto*</label>
-          <select name="projeto" required className="w-full border rounded p-2">
+          <select 
+            name="projeto" 
+            required 
+            className="w-full border rounded p-2 text-base bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            style={{
+              minHeight: '44px',
+              fontSize: '16px',
+              appearance: 'menulist',
+              WebkitAppearance: 'menulist'
+            }}
+          >
             <option value="">Selecione o projeto</option>
             <option value="GRUPO PEREIRA">GRUPO PEREIRA</option>
             <option value="COCA COLA">COCA COLA</option>
