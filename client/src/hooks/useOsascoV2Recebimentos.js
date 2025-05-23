@@ -58,14 +58,27 @@ export default function useOsascoV2Recebimentos() {
     try {
       setLoading(true);
       
-      const response = await fetch('/api/recebimentos-osasco-v2', {
+      // Mapear os campos do formulário para os nomes de campos esperados pela API
+      const dadosConvertidos = {
+        fornecedor: dadosRecebimento.nome_fornecedor,
+        tipo_combustivel: dadosRecebimento.tipo_produto,
+        quantidade_litros: dadosRecebimento.litros_recebidos,
+        valor_litro: dadosRecebimento.valor_litro,
+        valor_total: dadosRecebimento.valor_total,
+        numero_nota: dadosRecebimento.numero_nota,
+        data_entrega: dadosRecebimento.data_entrega,
+        operador: dadosRecebimento.nome_operador,
+        observacoes: dadosRecebimento.observacoes
+      };
+      
+      const response = await fetch('/api/recebimentos/osasco_v2', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
         },
         credentials: 'include',
-        body: JSON.stringify(dadosRecebimento)
+        body: JSON.stringify(dadosConvertidos)
       });
 
       if (!response.ok) {
@@ -75,12 +88,12 @@ export default function useOsascoV2Recebimentos() {
       const data = await response.json();
       
       if (data.success) {
-        // Adicionar o novo recebimento ao estado
-        setRecebimentos(prev => [data.data, ...prev]);
+        // Adicionar o novo recebimento ao estado e recarregar os dados
+        recarregarDados();
         
         toast({
           title: "Sucesso!",
-          description: "Recebimento registrado com sucesso.",
+          description: "Recebimento registrado com sucesso."
         });
         
         return { success: true, data: data.data };
@@ -93,8 +106,7 @@ export default function useOsascoV2Recebimentos() {
       
       toast({
         title: "Erro ao registrar recebimento",
-        description: err.message,
-        variant: "destructive",
+        description: err.message
       });
       
       return { success: false, error: err.message };
