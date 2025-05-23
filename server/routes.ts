@@ -51,6 +51,7 @@ import pneusRoutes from "./routes/pneusRoutes";
 import sqlSeguroRouter from "./routes/sql-seguro";
 import guarulhosV2Routes from "./routes/guarulhosV2Routes";
 import osascoV2Routes from "./routes/osascoV2Routes";
+import abastecimentoUnificadoRoutes from "./routes/abastecimentoUnificado.js";
 import { db, pool } from "./db";
 import authHybridRoutes from "./routes/authHybridRoutes";
 import * as userHandler from "./handlers/userHandler";
@@ -914,6 +915,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registrar rota SQL segura (novo)
   app.use('/api/sql-seguro', sqlSeguroRouter);
+  
+  // Registrar rota unificada de abastecimento (NOVA - corrige inconsistências de schema)
+  app.use('/api/abastecimento', abastecimentoUnificadoRoutes);
   
   // Registrar rotas especializadas para o posto Guarulhos V2
   app.use('/api/guarulhos-v2', guarulhosV2Routes);
