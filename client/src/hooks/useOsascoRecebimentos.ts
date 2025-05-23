@@ -28,7 +28,17 @@ export function useOsascoRecebimentos() {
     queryKey: ['/api/recebimentos-osasco'],
     queryFn: async () => {
       try {
+        console.log('Buscando recebimentos específicos para Osasco V2...');
+        // Primeiro tentamos a rota especializada
         const response = await apiRequest('GET', '/api/recebimentos-osasco');
+        
+        if (!response.ok) {
+          // Se falhar, tentamos o endpoint alternativo como fallback
+          const fallbackResponse = await apiRequest('GET', '/api/fix-osasco/recebimentos');
+          console.log('Usando endpoint alternativo para Osasco V2');
+          return await fallbackResponse.json();
+        }
+        
         return await response.json();
       } catch (err) {
         console.error('Erro ao buscar recebimentos de Osasco:', err);
