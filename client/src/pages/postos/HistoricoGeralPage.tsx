@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase, fetchRecords } from '@/lib/supabase-compat';
 import { format } from 'date-fns';
-import { FaGasPump, FaMoneyBillWave, FaCar, FaWater, FaProjectDiagram } from 'react-icons/fa';
+import { FaGasPump, FaMoneyBillWave, FaCar, FaWater, FaProjectDiagram, FaTruck } from 'react-icons/fa';
 import { BsFillFuelPumpFill } from 'react-icons/bs';
 import { RiOilFill, RiGasStationFill } from 'react-icons/ri';
 import { GiGasPump, GiWaterTank } from 'react-icons/gi';
@@ -854,7 +854,7 @@ const HistoricoGeralPage: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="text-sm font-medium text-gray-500">Litros Recebidos</h3>
-                    <p className="text-xl font-bold text-green-700">{formatarNumero(590.5)}</p>
+                    <p className="text-xl font-bold text-green-700">{formatarNumero(dadosConsolidados.litrosRecebidos || 0)}</p>
                   </div>
                 </div>
               </div>
@@ -867,7 +867,7 @@ const HistoricoGeralPage: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="text-sm font-medium text-gray-500">Valor Recebimentos</h3>
-                    <p className="text-xl font-bold text-green-700">{formatarPreco(2950.75)}</p>
+                    <p className="text-xl font-bold text-green-700">{formatarPreco(dadosConsolidados.valorRecebimentos || 0)}</p>
                   </div>
                 </div>
               </div>
@@ -880,7 +880,7 @@ const HistoricoGeralPage: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="text-sm font-medium text-gray-500">Total Recebimentos</h3>
-                    <p className="text-xl font-bold text-green-700">3</p>
+                    <p className="text-xl font-bold text-green-700">{dadosConsolidados.totalRecebimentos || 0}</p>
                   </div>
                 </div>
               </div>
