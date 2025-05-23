@@ -2,10 +2,11 @@
  * Rotas específicas para os recebimentos do posto Osasco V2
  * Esta implementação resolve a incompatibilidade de estrutura da tabela
  */
-const express = require('express');
+import express from 'express';
+import { pool } from '../database.js';
+import { verifyJWT } from '../utils/jwt-utils.js';
+
 const router = express.Router();
-const pool = require('../database');
-const { verifyJWT } = require('../utils/jwt-utils');
 
 // Obter todos os recebimentos do posto Osasco V2
 router.get('/api/recebimentos-osasco-v2', verifyJWT, async (req, res) => {
@@ -224,4 +225,4 @@ router.post('/api/recebimentos-osasco-v2', verifyJWT, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

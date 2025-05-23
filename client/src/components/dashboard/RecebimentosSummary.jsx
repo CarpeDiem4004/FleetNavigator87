@@ -19,43 +19,82 @@ const RecebimentosSummary = () => {
     const fetchAllRecebimentos = async () => {
       try {
         // Buscar recebimentos de todos os postos
-        const recebimentosPorPosto = await Promise.all(
-          POSTOS.map(async (posto) => {
-            try {
-              const response = await fetch(`/api/recebimentos/${posto}`, {
-                headers: {
-                  'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
-                }
-              });
-              
-              if (!response.ok) {
-                console.warn(`Não foi possível buscar recebimentos para o posto ${posto}`);
-                return [];
-              }
-              
-              const data = await response.json();
-              return data.data || [];
-            } catch (error) {
-              console.warn(`Erro ao buscar recebimentos para ${posto}:`, error);
-              return [];
+        let totalRecebimentos = [];
+        let errorCount = 0;
+        let authToken = localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
+        
+        for (const posto of POSTOS) {
+          try {
+            console.log(`[FETCH] Buscando recebimentos do posto ${posto}...`);
+            const response = await fetch(`/api/recebimentos/${posto}`, {
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              },
+              credentials: 'include'
+            });
+            
+            if (!response.ok) {
+              errorCount++;
+              console.warn(`[FETCH] Erro ao buscar recebimentos para ${posto}:`, response.status);
+              continue;
             }
-          })
-        );
+            
+            const data = await response.json();
+            console.log(`[FETCH] Encontrados ${data.data?.length || 0} recebimentos em ${posto}`);
+            
+            if (data.data && Array.isArray(data.data)) {
+              data.data.forEach(item => {
+                // Adiciona a informação do posto
+                item.posto = posto;
+              });
+              totalRecebimentos = [...totalRecebimentos, ...data.data];
+            }
+          } catch (err) {
+            errorCount++;
+            console.error(`[FETCH] Erro na requisição para ${posto}:`, err);
+          }
+        }
+        
+        // Tentar método alternativo se todos os métodos anteriores falharem
+        if (totalRecebimentos.length === 0 && errorCount >= POSTOS.length) {
+          console.log(`[FETCH] Tentando método de fallback para obter recebimentos...`);
+          try {
+            const response = await fetch('/api/historico-recebimentos', {
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              },
+              credentials: 'include'
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              if (data.data && Array.isArray(data.data)) {
+                totalRecebimentos = data.data;
+                console.log(`[FETCH] Recuperados ${totalRecebimentos.length} recebimentos via histórico consolidado`);
+              }
+            }
+          } catch (fallbackError) {
+            console.error(`[FETCH] Erro no método de fallback:`, fallbackError);
+          }
+        }
 
-        // Consolidar todos os recebimentos em um único array
-        const todosRecebimentos = recebimentosPorPosto.flat();
-        console.log(`[FETCH] Total de ${todosRecebimentos.length} recebimentos encontrados`);
+        console.log(`[FETCH] Total de ${totalRecebimentos.length} recebimentos encontrados`);
 
         // Calcular totais - mapeando diferentes nomenclaturas de campos
         let litrosTotal = 0;
         let valorTotal = 0;
 
-        todosRecebimentos.forEach(item => {
+        totalRecebimentos.forEach(item => {
           // Mapear diferentes nomenclaturas para quantidade de litros
           const litros = parseFloat(
             item.quantidade_litros || 
             item.litros_recebidos || 
             item.quantidade ||
+            item.litros ||
             0
           );
           
@@ -63,18 +102,24 @@ const RecebimentosSummary = () => {
           const valor = parseFloat(
             item.valor_total || 
             item.valor || 
-            (item.valor_litro && item.quantidade_litros ? 
-              parseFloat(item.valor_litro) * parseFloat(item.quantidade_litros) : 0)
+            (item.valor_litro && (item.quantidade_litros || item.litros_recebidos || item.litros) ? 
+              parseFloat(item.valor_litro) * parseFloat(item.quantidade_litros || item.litros_recebidos || item.litros) : 0)
           );
 
-          if (!isNaN(litros)) litrosTotal += litros;
-          if (!isNaN(valor)) valorTotal += valor;
+          if (!isNaN(litros)) {
+            litrosTotal += litros;
+            console.log(`[DEBUG] Adicionando ${litros} litros de ${item.posto || 'desconhecido'}`);
+          }
+          if (!isNaN(valor)) {
+            valorTotal += valor;
+            console.log(`[DEBUG] Adicionando R$ ${valor.toFixed(2)} de ${item.posto || 'desconhecido'}`);
+          }
         });
 
         setRecebimentosData({
           litrosRecebidos: litrosTotal,
           valorRecebimentos: valorTotal,
-          totalRecebimentos: todosRecebimentos.length,
+          totalRecebimentos: totalRecebimentos.length,
           isLoading: false,
           error: null
         });
