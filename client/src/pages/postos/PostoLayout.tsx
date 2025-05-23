@@ -10,6 +10,7 @@ import HistoricoMovimentacoes from './components/HistoricoMovimentacoes';
 import HistoricoAbastecimentos from './components/HistoricoAbastecimentos';
 import HistoricoSupabaseView from './components/HistoricoSupabaseView';
 import HistoricoRecebimentos from './components/HistoricoRecebimentos';
+import RecebimentosOsasco from '@/components/posto-remedios/RecebimentosOsasco';
 import SupabaseConnectionTest from './components/SupabaseConnectionTest';
 
 interface PostoLayoutProps {
