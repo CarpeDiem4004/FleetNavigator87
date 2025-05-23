@@ -100,12 +100,10 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
                     <Fuel className="h-4 w-4" />
                     <span>Abastecimento</span>
                   </TabsTrigger>
-                  {/* Temporariamente desativado 
                   <TabsTrigger value="recebimento" className="flex items-center gap-2">
                     <TruckIcon className="h-4 w-4" />
-                    <span>Recebimento</span>
+                    <span>Entrada de Combustível</span>
                   </TabsTrigger>
-                  */}
                   <TabsTrigger value="patio" className="flex items-center gap-2">
                     <Truck className="h-4 w-4" />
                     <span>Controle de Pátio</span>
@@ -116,9 +114,9 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
                   postId={id} 
                   onRegistroSucesso={atualizarHistoricos} 
                 />
-                {/* Temporariamente desativado 
-                <FormularioRecebimento postId={id} />
-                */}
+                <FormularioRecebimento 
+                  postId={id} 
+                />
                 <FormularioControlePatio 
                   postId={id} 
                   onRegistroSucesso={atualizarHistoricos} 

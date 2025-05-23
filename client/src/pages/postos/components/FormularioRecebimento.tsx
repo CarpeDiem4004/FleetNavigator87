@@ -20,6 +20,10 @@ const recebimentoSchema = z.object({
   quantidade: z.string().min(1, 'A quantidade é obrigatória').refine((val) => !isNaN(Number(val)), {
     message: 'Quantidade deve ser um número válido',
   }),
+  valor_total: z.string().min(1, 'O valor total é obrigatório').refine((val) => !isNaN(Number(val)), {
+    message: 'Valor total deve ser um número válido',
+  }),
+  fornecedor: z.string().min(3, 'O nome do fornecedor deve ter no mínimo 3 caracteres'),
   operador: z.string().min(3, 'O nome do operador deve ter no mínimo 3 caracteres'),
 });
 
@@ -37,6 +41,8 @@ export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ po
     defaultValues: {
       tipo: undefined,
       quantidade: '',
+      valor_total: '',
+      fornecedor: '',
       operador: '',
     },
   });
@@ -47,6 +53,8 @@ export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ po
       const recebimentoData = {
         tipo_produto: data.tipo,
         litros_recebidos: Number(data.quantidade),
+        valor_total: Number(data.valor_total),
+        nome_fornecedor: data.fornecedor,
         nome_operador: data.operador,
         posto: postId
       };
@@ -164,6 +172,40 @@ export const FormularioRecebimento: React.FC<FormularioRecebimentoProps> = ({ po
                       </FormControl>
                       <FormDescription>
                         Digite a quantidade em litros
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="valor_total"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor Total (R$)</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="5000.00" step="0.01" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Digite o valor total da compra
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="fornecedor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome do Fornecedor</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Petrobras, Shell, etc" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Digite o nome do fornecedor
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
