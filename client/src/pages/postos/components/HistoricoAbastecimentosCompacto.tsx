@@ -345,13 +345,26 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
     const workbookData = dadosParaExportar.map(item => ({
       'Data/Hora': item.data_hora,
       'Placa': item.placa,
-      'Combustível': item.tipo_combustivel,
+      'KM': item.km || '',
+      'Hodômetro': item.hodometro_atual || '',
+      'Tipo Combustível': item.tipo_combustivel || '',
       'Litros': typeof item.quantidade_litros === 'string' 
         ? item.quantidade_litros 
-        : item.quantidade_litros.toFixed(2),
+        : item.quantidade_litros?.toFixed(2) || '',
+      'Valor Litro': typeof item.valor_litro === 'string'
+        ? `R$ ${item.valor_litro}`
+        : item.valor_litro ? `R$ ${item.valor_litro.toFixed(2)}` : '',
       'Valor Total': typeof item.valor_total === 'string'
         ? `R$ ${item.valor_total}`
-        : `R$ ${item.valor_total.toFixed(2)}`
+        : item.valor_total ? `R$ ${item.valor_total.toFixed(2)}` : '',
+      'Motorista': item.nome_motorista || '',
+      'RG Motorista': item.rg_motorista || '',
+      'Operador': item.nome_operador || '',
+      'Tipo Veículo': item.tipo_veiculo || '',
+      'Observações': item.observacoes || '',
+      'Lavagem': item.lavagem ? 'Sim' : 'Não',
+      'Tipo Lavagem': item.tipo_lavagem || '',
+      'Projeto': item.projeto || 'Não definido'
     }));
     
     const worksheet = XLSX.utils.json_to_sheet(workbookData);
