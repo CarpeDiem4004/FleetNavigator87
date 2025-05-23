@@ -29,7 +29,7 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
 }) => {
   // Usar endpoint especial para o posto Osasco
   const endpoint = postoId.toLowerCase() === 'osasco_v2' 
-    ? '/api/debug-osasco/recebimentos'
+    ? '/api/fix-osasco/recebimentos'
     : `/api/recebimentos/${postoId.toLowerCase()}`;
     
   const { data, isLoading, error } = useQuery({

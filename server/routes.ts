@@ -54,6 +54,7 @@ import osascoV2Routes from "./routes/osascoV2Routes";
 import abastecimentoUnificadoRoutes from "./routes/abastecimentoUnificado.js";
 import recebimentosRoutes from "./routes/recebimentosRoutes";
 import debugOsascoRoutes from "./routes/debugOsascoRoutes";
+import fixOsascoRecebimentos from "./routes/fixOsascoRecebimentos";
 import { db, pool } from "./db";
 import authHybridRoutes from "./routes/authHybridRoutes";
 import * as userHandler from "./handlers/userHandler";
@@ -920,6 +921,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rota de debug para Osasco
   app.use('/api/debug-osasco', debugOsascoRoutes);
+  
+  // Versão corrigida para recebimentos do posto Osasco
+  app.use('/api/fix-osasco/recebimentos', fixOsascoRecebimentos);
   
   // Registrar rota unificada de abastecimento (NOVA - corrige inconsistências de schema)
   app.use('/api/abastecimento', abastecimentoUnificadoRoutes);
