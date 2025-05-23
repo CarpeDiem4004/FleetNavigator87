@@ -477,9 +477,9 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
                   <td className="py-1 px-2 whitespace-nowrap">{item.data_hora}</td>
                   <td className="py-1 px-2 whitespace-nowrap font-medium">{item.placa}</td>
                   <td className="py-1 px-2 whitespace-nowrap text-center">
-                    {item.tipo_combustivel === 'ARLA' ? (
+                    {item.tipo_combustivel ? (
                       <span className="inline-block bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full text-[10px]">
-                        ARLA
+                        {item.tipo_combustivel}
                       </span>
                     ) : (
                       <div className="bg-blue-200 rounded-full mx-auto w-12 h-4"></div>
