@@ -768,8 +768,6 @@ const HistoricoGeralPage: React.FC = () => {
       return projeto;
     };
     
-    // Usando a função extrairLitrosSeguro já definida acima
-    
     // Calcular consumo por projeto com tratamento adequado e melhorado
     const consumoPorProjeto = filteredData.reduce((acc, item) => {
       // Unificar campo de projeto (pode estar como project ou projeto dependendo do posto)
@@ -783,16 +781,19 @@ const HistoricoGeralPage: React.FC = () => {
       }
       
       // Extrair litros com segurança, garantindo que valores numéricos sejam tratados corretamente
-      const litros = extrairLitros(item);
+      // Usando a mesma lógica da função extrairLitrosSeguro
+      const litrosRaw = item.quantidade_litros || item.litros || 0;
+      const litros = typeof litrosRaw === 'string' ? parseFloat(litrosRaw) : litrosRaw;
+      const litrosValidos = isNaN(litros) ? 0 : litros;
       
       // Log de diagnóstico apenas para valores significativos (mais de 10 litros)
-      if (litros > 10) {
-        console.log(`[INFO] Abastecimento computado: ${item.placa} - ${litros.toFixed(2)}L - Projeto: ${projeto}`);
+      if (litrosValidos > 10) {
+        console.log(`[INFO] Abastecimento computado: ${item.placa} - ${litrosValidos.toFixed(2)}L - Projeto: ${projeto}`);
       }
       
       // Registrar todos os abastecimentos com litros > 0
-      if (litros > 0) {
-        acc[projeto] = (acc[projeto] || 0) + litros;
+      if (litrosValidos > 0) {
+        acc[projeto] = (acc[projeto] || 0) + litrosValidos;
       }
       
       return acc;
