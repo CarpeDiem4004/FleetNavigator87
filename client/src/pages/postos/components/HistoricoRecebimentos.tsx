@@ -36,8 +36,9 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
     if (!data) return [];
     
     // Se a API retornar os dados em um formato diferente, adapte aqui
-    if (data.data && Array.isArray(data.data)) {
-      return data.data as RecebimentoItem[];
+    const responseData = data as any;
+    if (responseData?.data && Array.isArray(responseData.data)) {
+      return responseData.data as RecebimentoItem[];
     }
     
     return [];
@@ -150,7 +151,7 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
                   {recebimento.litros_recebidos.toLocaleString('pt-BR')}
                 </TableCell>
                 <TableCell className="text-right">
-                  {formatarNumeroMoeda(recebimento.valor_total)}
+                  {formatCurrency(recebimento.valor_total)}
                 </TableCell>
                 <TableCell className="max-w-[180px] truncate" title={recebimento.nome_fornecedor}>
                   {recebimento.nome_fornecedor}
