@@ -652,6 +652,74 @@ const FormularioAbastecimento: React.FC<
             endpoint = `/api/abastecimento-direto/guarulhos_v2`;
             usarRotaDireta = true;
           }
+        } else if (postId.toLowerCase() === "campinas_v2" || 
+            postId.toLowerCase().includes("campinas_v2") || 
+            postId.toLowerCase().includes("campinas v2")) {
+          // Usar API específica para Campinas V2 para garantir que o campo projeto seja salvo corretamente
+          try {
+            console.log(">>> Usando API específica para Campinas V2");
+            
+            // Usar a rota direta para Campinas V2
+            endpoint = `/api/abastecimento-direto/campinas_v2`;
+            
+            // Garantir que o projeto esteja sendo enviado
+            const dadosCampinas = {
+              ...dadosAbastecimento,
+              // Garantir que o projeto seja enviado de forma explícita
+              projeto: dadosAbastecimento.projeto || "Não definido",
+              // Também manter compatibilidade com project
+              project: dadosAbastecimento.projeto || "Não definido"
+            };
+            
+            console.log(">>> Dados enviados para Campinas V2:", dadosCampinas);
+            
+            // Enviar diretamente para a rota especializada
+            const response = await fetch(endpoint, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("authToken")}`
+              },
+              body: JSON.stringify(dadosCampinas)
+            });
+            
+            const resultado = await response.json();
+            console.log("Resultado da API Campinas V2:", resultado);
+            
+            // Simulando o fluxo normal para não quebrar o restante do código
+            endpoint = `/api/abastecimento-direto/campinas_v2`;
+            usarRotaDireta = false; // Marca como FALSE pois já fizemos a chamada API
+            
+            // Já temos o resultado, podemos pular para a atualização no frontend
+            if (mountedRef.current) {
+              setRegistroSucesso(true);
+              setIsSubmitting(false);
+              processingRef.current = false;
+              
+              console.log("Atualizando histórico manualmente para posto campinas v2");
+              
+              // Solução definitiva: forçar atualização da página para mostrar os registros mais recentes
+              // Isso garante que o histórico estará sempre atualizado após um novo registro
+              setTimeout(() => {
+                console.log("Recarregando página para exibir o novo registro de Campinas V2");
+                window.location.reload();
+              }, 1000);
+              
+              if (onRegistroSucesso) {
+                onRegistroSucesso();
+              }
+              
+              // Evitar o resto do fluxo normal
+              return;
+            }
+            
+            return; // Importante: retornar aqui para evitar o fluxo padrão
+          } catch (error) {
+            console.error("Erro ao usar API específica para Campinas V2:", error);
+            // Fallback para API padrão
+            endpoint = `/api/abastecimento-direto/campinas_v2`;
+            usarRotaDireta = true;
+          }
         } else if (postId.toLowerCase() === "osasco_v2" || 
             postId.toLowerCase().includes("osasco_v2") || 
             postId.toLowerCase().includes("osasco v2")) {
@@ -666,9 +734,9 @@ const FormularioAbastecimento: React.FC<
             const dadosOsasco = {
               ...dadosAbastecimento,
               // Garantir que o projeto seja enviado de forma explícita
-              projeto: formValues.projeto || "COCA COLA",
+              projeto: dadosAbastecimento.projeto || "COCA COLA",
               // Também manter compatibilidade com project
-              project: formValues.projeto || "COCA COLA"
+              project: dadosAbastecimento.projeto || "COCA COLA"
             };
             
             console.log(">>> Dados enviados para Osasco V2:", dadosOsasco);
