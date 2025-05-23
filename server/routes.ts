@@ -9602,5 +9602,137 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  // ===========================================
+  // ROTAS PARA RECEBIMENTO DE COMBUSTÍVEL (EXTERNOS)
+  // ===========================================
+  
+  // Rota para registrar recebimento de combustível nos postos (sem autenticação para links externos)
+  app.post('/api/recebimentos/:posto', async (req, res) => {
+    console.log('[RECEBIMENTO] Recebendo requisição para posto:', req.params.posto);
+    console.log('[RECEBIMENTO] Dados recebidos:', req.body);
+    
+    try {
+      const { posto } = req.params;
+      const {
+        fornecedor,
+        tipo_combustivel,
+        quantidade_litros,
+        valor_litro,
+        valor_total,
+        numero_nota,
+        data_entrega,
+        operador,
+        observacoes
+      } = req.body;
+
+      // Validação dos campos obrigatórios
+      if (!fornecedor || !tipo_combustivel || !quantidade_litros || !valor_litro || !numero_nota || !operador) {
+        return res.status(400).json({
+          success: false,
+          message: 'Campos obrigatórios: fornecedor, tipo_combustivel, quantidade_litros, valor_litro, numero_nota, operador'
+        });
+      }
+
+      // Determinar a tabela correta baseada no posto
+      let tableName = '';
+      if (posto.toLowerCase().includes('remedios') || posto.toLowerCase() === 'posto_remedios') {
+        tableName = 'recebimentos_posto_remedios';
+      } else {
+        // Para outros postos, usar o padrão: recebimentos_posto_{nome}_v2
+        const postoFormatted = posto.toLowerCase().replace(/[^a-z0-9]/g, '_');
+        tableName = `recebimentos_posto_${postoFormatted}_v2`;
+      }
+
+      console.log('[RECEBIMENTO] Usando tabela:', tableName);
+
+      // Primeiro verificar se a tabela existe, se não criar
+      const checkTableQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = $1
+        );
+      `;
+      
+      const tableExists = await pool.query(checkTableQuery, [tableName]);
+      
+      if (!tableExists.rows[0].exists) {
+        console.log('[RECEBIMENTO] Criando tabela:', tableName);
+        
+        const createTableQuery = `
+          CREATE TABLE ${tableName} (
+            id SERIAL PRIMARY KEY,
+            fornecedor VARCHAR(255) NOT NULL,
+            tipo_combustivel VARCHAR(50) NOT NULL,
+            quantidade_litros DECIMAL(10,2) NOT NULL,
+            valor_litro DECIMAL(10,3) NOT NULL,
+            valor_total DECIMAL(10,2) NOT NULL,
+            numero_nota VARCHAR(100) NOT NULL,
+            data_entrega DATE,
+            operador VARCHAR(255) NOT NULL,
+            observacoes TEXT,
+            created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'America/Sao_Paulo')
+          );
+        `;
+        
+        await pool.query(createTableQuery);
+        console.log('[RECEBIMENTO] Tabela criada com sucesso:', tableName);
+      }
+
+      // Inserir o recebimento
+      const insertQuery = `
+        INSERT INTO ${tableName} (
+          fornecedor,
+          tipo_combustivel,
+          quantidade_litros,
+          valor_litro,
+          valor_total,
+          numero_nota,
+          data_entrega,
+          operador,
+          observacoes,
+          created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW() AT TIME ZONE 'America/Sao_Paulo')
+        RETURNING id
+      `;
+
+      const result = await pool.query(insertQuery, [
+        fornecedor,
+        tipo_combustivel,
+        parseFloat(quantidade_litros),
+        parseFloat(valor_litro),
+        parseFloat(valor_total || (quantidade_litros * valor_litro)),
+        numero_nota,
+        data_entrega || new Date().toISOString().split('T')[0],
+        operador,
+        observacoes || ''
+      ]);
+
+      console.log('[RECEBIMENTO] Recebimento registrado com ID:', result.rows[0].id);
+
+      res.json({
+        success: true,
+        message: 'Recebimento de combustível registrado com sucesso',
+        data: {
+          id: result.rows[0].id,
+          posto: posto,
+          tabela: tableName,
+          fornecedor: fornecedor,
+          tipo_combustivel: tipo_combustivel,
+          quantidade_litros: parseFloat(quantidade_litros),
+          valor_total: parseFloat(valor_total || (quantidade_litros * valor_litro))
+        }
+      });
+
+    } catch (error) {
+      console.error('[RECEBIMENTO] Erro ao registrar recebimento:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor ao registrar recebimento',
+        error: error.message
+      });
+    }
+  });
+
   return httpServer;
 }
