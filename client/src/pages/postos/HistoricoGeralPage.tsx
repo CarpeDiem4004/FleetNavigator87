@@ -366,7 +366,7 @@ const HistoricoGeralPage: React.FC = () => {
           const nomeMotorista = formatarTextoExcel(item.nome_motorista);
           const nomeOperador = formatarTextoExcel(item.nome_operador);
           // Considerar tanto o campo project quanto o campo projeto
-          const projeto = formatarTextoExcel(item.project || (item as any).projeto || 'NÃO ESPECIFICADO');
+          const projeto = formatarTextoExcel(item.project || (item as any).projeto || 'OUTRO');
           const posto = formatarTextoExcel(item.posto);
           
           // Garantir data válida
@@ -563,7 +563,7 @@ const HistoricoGeralPage: React.FC = () => {
     // Função para normalizar nomes de projetos
     const normalizarNomeProjeto = (projetoRaw: string | null | undefined): string => {
       if (projetoRaw === null || projetoRaw === undefined || projetoRaw === '' || projetoRaw === '-') {
-        return 'NÃO ESPECIFICADO';
+        return 'OUTRO';
       }
       
       // Converter para string caso seja outro tipo
@@ -633,7 +633,7 @@ const HistoricoGeralPage: React.FC = () => {
       const projetoRaw = item.project || item.projeto || item.nome_projeto || '';
       
       // Usar a função de normalização com tratamento aprimorado
-      const projeto = normalizarNomeProjeto(projetoRaw) || "NÃO ESPECIFICADO";
+      const projeto = normalizarNomeProjeto(projetoRaw) || "OUTRO";
       
       // Extrair litros com segurança, garantindo que valores numéricos sejam tratados corretamente
       const litros = extrairLitros(item);
