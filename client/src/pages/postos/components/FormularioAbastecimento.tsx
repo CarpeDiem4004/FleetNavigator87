@@ -623,6 +623,29 @@ const FormularioAbastecimento: React.FC<
             usarRotaDireta = false; // Marca como FALSE pois não vamos fazer a chamada normal
             
             // Já temos o resultado, podemos pular para a atualização no frontend
+            if (mountedRef.current) {
+              setRegistroSucesso(true);
+              setIsSubmitting(false);
+              processingRef.current = false;
+              
+              console.log("Atualizando histórico manualmente para posto guarulhos v2");
+              
+              // Solução definitiva: forçar atualização da página para mostrar os registros mais recentes
+              // Isso garante que o histórico estará sempre atualizado após um novo registro
+              setTimeout(() => {
+                console.log("Recarregando página para exibir o novo registro de Guarulhos V2");
+                window.location.reload();
+              }, 1000);
+              
+              if (onRegistroSucesso) {
+                onRegistroSucesso();
+              }
+              
+              // Evitar o resto do fluxo normal
+              return;
+            }
+            
+            return; // Importante: retornar aqui para evitar o fluxo padrão
           } catch (error) {
             console.error("Erro ao usar API específica para Guarulhos V2:", error);
             // Fallback para API padrão
