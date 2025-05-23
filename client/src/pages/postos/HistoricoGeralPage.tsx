@@ -632,8 +632,11 @@ const HistoricoGeralPage: React.FC = () => {
       // Verificar todos os possíveis campos que podem conter o nome do projeto
       const projetoRaw = item.project || item.projeto || item.nome_projeto || '';
       
-      // Usar a função de normalização com tratamento aprimorado
-      const projeto = normalizarNomeProjeto(projetoRaw) || "OUTRO";
+      // Substituir "NÃO ESPECIFICADO" por "OUTRO" e tratar outros casos com normalização
+      let projeto = "OUTRO";
+      if (projetoRaw && projetoRaw !== "" && projetoRaw !== "NÃO ESPECIFICADO") {
+        projeto = normalizarNomeProjeto(projetoRaw);
+      }
       
       // Extrair litros com segurança, garantindo que valores numéricos sejam tratados corretamente
       const litros = extrairLitros(item);
@@ -643,7 +646,7 @@ const HistoricoGeralPage: React.FC = () => {
         console.log(`[INFO] Abastecimento computado: ${item.placa} - ${litros.toFixed(2)}L - Projeto: ${projeto}`);
       }
       
-      // Registrar todos os abastecimentos, mesmo com projetos não especificados
+      // Registrar todos os abastecimentos com litros > 0
       if (litros > 0) {
         acc[projeto] = (acc[projeto] || 0) + litros;
       }
