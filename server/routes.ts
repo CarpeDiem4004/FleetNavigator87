@@ -6633,7 +6633,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 NULL as tipo_lavagem,
                 ${hasProjetoColumn ? 'projeto as project' : "NULL as project"},
                 created_at,
-                updated_at,
+                created_at as updated_at,
                 '${posto}' as posto
               FROM ${tabelaPosto}
               ORDER BY created_at DESC

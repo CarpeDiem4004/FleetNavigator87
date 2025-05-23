@@ -753,6 +753,16 @@ const HistoricoGeralPage: React.FC = () => {
         'OPERACIONAL'
       ];
       
+      // Log para diagnóstico
+      console.log(`[NORMALIZAÇÃO] Tentando normalizar projeto: "${projeto}"`);
+      
+      // Verificação específica para "MANUTENÇÃO" com diferentes variações
+      if (projeto === "MANUTENÇÃO" || projeto === "MANUTENCAO" || 
+          projeto.includes("MANUTEN") || projeto.includes("MANUTEN")) {
+        console.log(`[NORMALIZAÇÃO] Correspondência para MANUTENÇÃO: ${projeto}`);
+        return "MANUTENÇÃO";
+      }
+      
       // Verificar se o projeto é similar a algum conhecido
       for (const projetoConhecido of projetosConhecidos) {
         // Verificar similaridade (contém parte do nome ou é muito similar)
@@ -762,6 +772,7 @@ const HistoricoGeralPage: React.FC = () => {
           // Para casos como "SHOP", "COCACOLA" etc.
           (projetoConhecido.replace(/\s+/g, '').includes(projeto) || projeto.includes(projetoConhecido.replace(/\s+/g, '')))
         ) {
+          console.log(`[NORMALIZAÇÃO] Correspondência para ${projetoConhecido}: ${projeto}`);
           return projetoConhecido;
         }
       }
