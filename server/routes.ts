@@ -6611,6 +6611,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const hodometroColumnExists = await pool.query(checkHodometroColumn);
           const hasHodometroColumn = hodometroColumnExists.rows[0].exists;
           
+          // Verificar se é o posto Guarulhos que tem estrutura diferente
+          if (posto.toLowerCase() === 'guarulhos_v2') {
+            // Consulta específica para o posto Guarulhos que já tem colunas nome_motorista, etc.
+            const queryGuarulhosV2 = `
+              SELECT 
+                id,
+                placa,
+                km_atual,
+                ${hasHodometroColumn ? 'hodometro_atual' : 'NULL as hodometro_atual'},
+                tipo_combustivel,
+                litros as quantidade_litros,
+                nome_motorista,
+                rg_motorista,
+                nome_operador,
+                valor_litro,
+                valor_total,
+                tipo_veiculo,
+                observacoes,
+                NULL as lavagem,
+                NULL as tipo_lavagem,
+                ${hasProjetoColumn ? 'projeto as project' : "NULL as project"},
+                created_at,
+                updated_at,
+                '${posto}' as posto
+              FROM ${tabelaPosto}
+              ORDER BY created_at DESC
+            `;
+            
+            console.log(`Executando consulta SQL para Guarulhos: ${queryGuarulhosV2.replace(/\s+/g, ' ')}`);
+            const resultGuarulhosV2 = await pool.query(queryGuarulhosV2);
+            
+            console.log(`Abastecimentos encontrados na tabela Guarulhos: ${resultGuarulhosV2.rows.length}`);
+            if (resultGuarulhosV2.rows.length > 0) {
+              const ultimoRegistro = resultGuarulhosV2.rows[0];
+              console.log(`Último abastecimento Guarulhos: ID=${ultimoRegistro.id}, Placa=${ultimoRegistro.placa}, Projeto=${ultimoRegistro.project}`);
+            }
+            
+            return res.status(200).json({
+              success: true,
+              count: resultGuarulhosV2.rows.length,
+              data: resultGuarulhosV2.rows,
+              requestTimestamp: timestamp,
+              source: 'tabela_guarulhos_v2'
+            });
+          }
+
           // Consulta na tabela específica do posto v2 com tratamento seguro para a coluna hodometro_atual
           const queryV2 = `
             SELECT 
