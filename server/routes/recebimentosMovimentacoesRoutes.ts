@@ -105,9 +105,9 @@ router.get('/recebimentos/:posto', unifiedAuthMiddleware, async (req, res) => {
 /**
  * Rota para registrar um novo recebimento de combustível
  * POST /api/recebimentos/:posto
- * Requer autenticação e permissão de admin ou gestor via middleware unificado
+ * Requer autenticação e permissão de admin, gestor ou posto via middleware unificado
  */
-router.post('/recebimentos/:posto', unifiedAuthMiddleware, requireRoles(['admin', 'gestor']), async (req, res) => {
+router.post('/recebimentos/:posto', unifiedAuthMiddleware, requireRoles(['admin', 'gestor', 'posto']), async (req, res) => {
   try {
     const postoName = formatPostoName(req.params.posto);
     const tableName = `recebimentos_posto_${postoName.toLowerCase()}`;
