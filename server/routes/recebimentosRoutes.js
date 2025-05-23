@@ -5,6 +5,7 @@ const express = require('express');
 const router = express.Router();
 const { pool } = require('../db');
 const { checkAuthAndRoles } = require('../utils/auth-utils');
+const osascoHandler = require('./recebimentosOsascoHandler');
 
 /**
  * GET /api/recebimentos/:posto
@@ -68,6 +69,26 @@ router.get('/:posto', async (req, res) => {
     // Tratamento especial para o posto Osasco V2 que usa nomenclatura diferente
     if (posto.toLowerCase() === 'osasco_v2') {
       console.log(`[Recebimentos] Tratando requisição de recebimentos para Osasco V2 com mapeamento de colunas`);
+      
+      // Verificar se a tabela existe
+      const tableExists = await pool.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = $1
+        ) as "exists";
+      `, [nomeTabela]);
+      
+      if (!tableExists.rows[0].exists) {
+        return res.json({
+          success: true,
+          message: `Tabela ${nomeTabela} não existe, sem dados de recebimentos.`,
+          data: [],
+          count: 0
+        });
+      }
+      
+      // Consulta adaptada para o formato da tabela de Osasco V2
       query = `
         SELECT 
           id,
@@ -85,6 +106,25 @@ router.get('/:posto', async (req, res) => {
         ORDER BY created_at DESC
         LIMIT $1
       `;
+      
+      // Executar consulta personalizada para Osasco V2
+      try {
+        const result = await pool.query(query, [limit]);
+        console.log(`[Recebimentos] Encontrados ${result.rowCount} recebimentos para o posto Osasco V2`);
+        
+        return res.json({
+          success: true,
+          data: result.rows,
+          count: result.rowCount
+        });
+      } catch (error) {
+        console.error(`[Recebimentos] Erro ao buscar recebimentos Osasco V2:`, error);
+        return res.status(500).json({
+          success: false,
+          message: 'Erro ao buscar recebimentos do posto Osasco V2',
+          error: error.message
+        });
+      }
     } else {
       query = `
         SELECT *
