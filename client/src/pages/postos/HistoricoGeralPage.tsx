@@ -374,11 +374,21 @@ const HistoricoGeralPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchAllAbastecimentos();
+    const carregarDados = async () => {
+      try {
+        await fetchAllAbastecimentos();
+        await fetchAllRecebimentos();
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+      }
+    };
+    
+    carregarDados();
     
     // Atualiza os dados a cada 5 minutos
     const interval = setInterval(() => {
       fetchAllAbastecimentos();
+      fetchAllRecebimentos();
     }, 300000);
     
     return () => clearInterval(interval);
