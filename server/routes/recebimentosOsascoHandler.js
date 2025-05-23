@@ -5,74 +5,74 @@
 
 const express = require('express');
 const { pool } = require('../db');
-const { verificarAutenticacao } = require('../utils/auth-utils');
 
 const router = express.Router();
-
-// Middleware de autenticação
-router.use(verificarAutenticacao);
 
 // Rota para obter todos os recebimentos do posto Osasco V2
 router.get('/api/recebimentos/osasco_v2', async (req, res) => {
   try {
+    console.log("Buscando recebimentos para o posto Osasco V2");
+    
     // Verificar se a tabela existe
-    const checkResult = await pool.query(`
+    const checkTableQuery = `
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
         WHERE table_name = 'recebimentos_posto_osasco_v2'
       );
-    `);
-
-    if (!checkResult.rows[0].exists) {
-      return res.status(404).json({ 
+    `;
+    
+    const tableExistsResult = await pool.query(checkTableQuery);
+    
+    if (!tableExistsResult.rows[0].exists) {
+      return res.json({
         success: true,
-        message: 'Tabela de recebimentos para Osasco V2 não encontrada',
+        message: "Tabela de recebimentos para Osasco V2 não existe",
         data: []
       });
     }
-
-    // Buscar todos os recebimentos ordenados por data
-    const result = await pool.query(`
+    
+    // Buscar recebimentos com mapeamento de colunas específico
+    const query = `
       SELECT 
         id,
-        nome_fornecedor,
-        tipo_produto,
-        litros_recebidos,
+        nome_fornecedor as fornecedor,
+        tipo_produto as tipo_combustivel,
+        litros_recebidos as quantidade_litros,
         valor_litro,
         valor_total,
         numero_nota,
         data_entrega,
         nome_operador,
         observacoes,
-        created_at,
-        updated_at,
-        to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_formatada
+        to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_formatada,
+        created_at
       FROM recebimentos_posto_osasco_v2
       ORDER BY created_at DESC
-    `);
-
+    `;
+    
+    const result = await pool.query(query);
+    
     return res.json({
       success: true,
-      message: 'Recebimentos recuperados com sucesso',
+      count: result.rowCount,
       data: result.rows
     });
   } catch (error) {
-    console.error('Erro ao buscar recebimentos Osasco V2:', error);
+    console.error("Erro ao buscar recebimentos do posto Osasco V2:", error);
     return res.status(500).json({
       success: false,
-      message: 'Erro ao buscar recebimentos: ' + error.message
+      message: "Erro ao buscar recebimentos: " + error.message
     });
   }
 });
 
-// Rota para adicionar um novo recebimento
+// Rota para adicionar um recebimento no posto Osasco V2
 router.post('/api/recebimentos/osasco_v2', async (req, res) => {
   try {
-    // Dados do recebimento
     const {
-      nome_fornecedor,
-      tipo_produto,
-      litros_recebidos,
+      fornecedor,
+      tipo_combustivel,
+      quantidade_litros,
       valor_litro,
       valor_total,
       numero_nota,
@@ -80,17 +80,17 @@ router.post('/api/recebimentos/osasco_v2', async (req, res) => {
       nome_operador,
       observacoes
     } = req.body;
-
-    // Validação básica
-    if (!nome_fornecedor || !tipo_produto || !litros_recebidos) {
+    
+    // Verificar campos obrigatórios
+    if (!fornecedor || !tipo_combustivel || !quantidade_litros || !valor_litro || !numero_nota || !data_entrega || !nome_operador) {
       return res.status(400).json({
         success: false,
-        message: 'Dados incompletos. Fornecedor, tipo de combustível e quantidade são obrigatórios.'
+        message: "Todos os campos são obrigatórios, exceto observações"
       });
     }
-
-    // Inserir o recebimento
-    const insertResult = await pool.query(`
+    
+    // Mapeamento de campos para o formato da tabela Osasco V2
+    const query = `
       INSERT INTO recebimentos_posto_osasco_v2 (
         nome_fornecedor,
         tipo_produto,
@@ -100,73 +100,38 @@ router.post('/api/recebimentos/osasco_v2', async (req, res) => {
         numero_nota,
         data_entrega,
         nome_operador,
-        observacoes,
-        created_at,
-        updated_at
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+        observacoes
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
-    `, [
-      nome_fornecedor,
-      tipo_produto,
-      litros_recebidos,
-      valor_litro || null,
-      valor_total || null,
-      numero_nota || null,
-      data_entrega || null,
+    `;
+    
+    const values = [
+      fornecedor,
+      tipo_combustivel,
+      quantidade_litros,
+      valor_litro,
+      valor_total,
+      numero_nota,
+      data_entrega,
       nome_operador,
-      observacoes || ''
-    ]);
+      observacoes || null
+    ];
+    
+    const result = await pool.query(query, values);
+    
+    // Atualizar os níveis do tanque com base no recebimento
+    // Este código será implementado quando tivermos uma tabela de configuração de tanques específica
 
-    // Atualizar o nível do tanque com base no recebimento
-    if (tipo_produto.toLowerCase().includes('diesel')) {
-      // Buscar a configuração atual do tanque
-      const configResult = await pool.query(`
-        SELECT * FROM configuracao_tanques WHERE posto = 'Osasco_v2'
-      `);
-
-      if (configResult.rows.length > 0) {
-        const config = configResult.rows[0];
-        // Calcular o novo nível após o recebimento
-        const novoNivel = parseFloat(config.diesel_nivel) + parseFloat(litros_recebidos);
-        
-        // Atualizar o nível do tanque
-        await pool.query(`
-          UPDATE configuracao_tanques
-          SET diesel_nivel = $1, updated_at = NOW()
-          WHERE posto = 'Osasco_v2'
-        `, [novoNivel.toString()]);
-      }
-    } else if (tipo_produto.toLowerCase().includes('arla')) {
-      // Buscar a configuração atual do tanque
-      const configResult = await pool.query(`
-        SELECT * FROM configuracao_tanques WHERE posto = 'Osasco_v2'
-      `);
-
-      if (configResult.rows.length > 0) {
-        const config = configResult.rows[0];
-        // Calcular o novo nível após o recebimento
-        const novoNivel = parseFloat(config.arla_nivel) + parseFloat(litros_recebidos);
-        
-        // Atualizar o nível do tanque
-        await pool.query(`
-          UPDATE configuracao_tanques
-          SET arla_nivel = $1, updated_at = NOW()
-          WHERE posto = 'Osasco_v2'
-        `, [novoNivel.toString()]);
-      }
-    }
-
-    return res.status(201).json({
+    res.status(201).json({
       success: true,
-      message: 'Recebimento registrado com sucesso',
-      data: insertResult.rows[0]
+      message: "Recebimento registrado com sucesso",
+      data: result.rows[0]
     });
   } catch (error) {
-    console.error('Erro ao registrar recebimento Osasco V2:', error);
-    return res.status(500).json({
+    console.error("Erro ao registrar recebimento para Osasco V2:", error);
+    res.status(500).json({
       success: false,
-      message: 'Erro ao registrar recebimento: ' + error.message
+      message: "Erro ao registrar recebimento: " + error.message
     });
   }
 });

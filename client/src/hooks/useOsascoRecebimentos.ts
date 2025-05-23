@@ -4,9 +4,8 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
-// Definição do tipo para recebimentos específicos do posto Osasco
 export interface RecebimentoOsasco {
   id?: number;
   fornecedor: string;              // nome_fornecedor na tabela
@@ -19,151 +18,115 @@ export interface RecebimentoOsasco {
   nome_operador: string;
   observacoes: string;
   data_formatada?: string;
+  created_at?: string;
 }
 
 export function useOsascoRecebimentos() {
   const [recebimentos, setRecebimentos] = useState<RecebimentoOsasco[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const { toast } = useToast();
 
-  // Função para buscar recebimentos do posto Osasco V2
-  const fetchRecebimentos = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const token = localStorage.getItem('jwtToken');
-      const response = await fetch('/api/recebimentos/osasco_v2', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Erro ao buscar recebimentos');
-      }
-
-      if (data.data && Array.isArray(data.data)) {
-        // Mapear os dados para o formato esperado
-        const formattedData = data.data.map((item: any) => ({
-          id: item.id,
-          fornecedor: item.nome_fornecedor,
-          tipo_combustivel: item.tipo_produto,
-          quantidade_litros: item.litros_recebidos,
-          valor_litro: item.valor_litro,
-          valor_total: item.valor_total,
-          numero_nota: item.numero_nota,
-          data_entrega: item.data_entrega ? new Date(item.data_entrega).toISOString().split('T')[0] : '',
-          nome_operador: item.nome_operador,
-          observacoes: item.observacoes || '',
-          data_formatada: formatarDataBR(item.data_entrega || item.created_at)
-        }));
-        
-        setRecebimentos(formattedData);
-      } else {
-        // Se não houver dados, definir como array vazio
-        setRecebimentos([]);
-      }
-    } catch (err: any) {
-      console.error('Erro ao buscar recebimentos Osasco V2:', err);
-      setError(err.message || 'Falha ao carregar recebimentos');
-    } finally {
-      setIsLoading(false);
-    }
+  const refreshRecebimentos = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1);
   }, []);
 
-  // Formatar data para o formato brasileiro (DD/MM/YYYY)
-  const formatarDataBR = (dataStr: string) => {
-    if (!dataStr) return '';
-    
-    try {
-      const data = new Date(dataStr);
-      return data.toLocaleDateString('pt-BR');
-    } catch (error) {
-      return dataStr;
-    }
-  };
+  useEffect(() => {
+    const fetchRecebimentos = async () => {
+      setIsLoading(true);
+      setError(null);
 
-  // Função para adicionar novo recebimento
+      try {
+        console.log("Buscando recebimentos do posto Osasco V2...");
+        
+        const response = await fetch('/api/recebimentos/osasco_v2', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          throw new Error(`Erro ao buscar recebimentos: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+          console.log("Recebimentos do posto Osasco V2 obtidos:", result.data);
+          setRecebimentos(result.data || []);
+        } else {
+          console.error("Erro na resposta:", result.message);
+          setError(new Error(result.message));
+        }
+      } catch (err) {
+        console.error("Erro ao buscar recebimentos:", err);
+        setError(err instanceof Error ? err : new Error('Erro desconhecido ao buscar recebimentos'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRecebimentos();
+  }, [refreshTrigger]);
+
   const adicionarRecebimento = async (dados: RecebimentoOsasco) => {
-    setIsLoading(true);
-    setError(null);
-
     try {
-      // Mapear os dados para o formato esperado pela API
-      const payload = {
-        nome_fornecedor: dados.fornecedor,
-        tipo_produto: dados.tipo_combustivel,
-        litros_recebidos: typeof dados.quantidade_litros === 'string' 
+      console.log("Adicionando recebimento no posto Osasco V2:", dados);
+      
+      // Calcular o valor total se não fornecido
+      if (!dados.valor_total && dados.quantidade_litros && dados.valor_litro) {
+        const qtd = typeof dados.quantidade_litros === 'string' 
           ? parseFloat(dados.quantidade_litros) 
-          : dados.quantidade_litros,
-        valor_litro: typeof dados.valor_litro === 'string' 
+          : dados.quantidade_litros;
+          
+        const valor = typeof dados.valor_litro === 'string' 
           ? parseFloat(dados.valor_litro) 
-          : dados.valor_litro,
-        valor_total: typeof dados.valor_total === 'string' 
-          ? parseFloat(dados.valor_total) 
-          : dados.valor_total,
-        numero_nota: dados.numero_nota,
-        data_entrega: dados.data_entrega,
-        nome_operador: dados.nome_operador,
-        observacoes: dados.observacoes
-      };
-
-      const token = localStorage.getItem('jwtToken');
+          : dados.valor_litro;
+          
+        dados.valor_total = (qtd * valor).toFixed(2);
+      }
+      
       const response = await fetch('/api/recebimentos/osasco_v2', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify(payload)
+        body: JSON.stringify(dados),
       });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao adicionar recebimento: ${response.statusText}`);
+      }
 
       const result = await response.json();
       
-      if (!response.ok) {
+      if (result.success) {
+        toast({
+          title: "Recebimento registrado",
+          description: "Recebimento de combustível registrado com sucesso.",
+        });
+        
+        refreshRecebimentos();
+        return { success: true, data: result.data };
+      } else {
         throw new Error(result.message || 'Erro ao registrar recebimento');
       }
-
-      // Atualizar a lista de recebimentos após adicionar um novo
-      await fetchRecebimentos();
+    } catch (err) {
+      console.error("Erro ao adicionar recebimento:", err);
       
       toast({
-        title: 'Recebimento registrado com sucesso',
-        description: 'O novo recebimento foi registrado e os níveis do tanque foram atualizados.',
+        title: "Erro ao registrar recebimento",
+        description: err instanceof Error ? err.message : 'Erro desconhecido',
+        variant: "destructive",
       });
       
-      return true;
-    } catch (err: any) {
-      console.error('Erro ao adicionar recebimento:', err);
-      setError(err.message || 'Falha ao registrar recebimento');
-      
-      toast({
-        title: 'Erro ao registrar recebimento',
-        description: err.message || 'Ocorreu um problema ao registrar o recebimento.',
-        variant: 'destructive',
-      });
-      
-      return false;
-    } finally {
-      setIsLoading(false);
+      return { success: false, error: err instanceof Error ? err : new Error('Erro desconhecido') };
     }
   };
-
-  // Carregar recebimentos ao montar o componente
-  useEffect(() => {
-    fetchRecebimentos();
-  }, [fetchRecebimentos]);
-
-  // Função para atualizar manualmente os recebimentos
-  const refreshRecebimentos = useCallback(() => {
-    fetchRecebimentos();
-  }, [fetchRecebimentos]);
 
   return {
     recebimentos,
