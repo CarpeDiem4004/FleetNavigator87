@@ -69,7 +69,7 @@ const EntradaCombustivelPage: React.FC = () => {
   const [selectedPosto, setSelectedPosto] = useState<string>("todos");
   const [searchTerm, setSearchTerm] = useState("");
   
-  const { isAuthenticated } = useAuthManagerContext();
+  const { user } = useAuth();
 
   const fetchRecebimentosPosto = async (posto: string) => {
     try {
@@ -122,10 +122,10 @@ const EntradaCombustivelPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (user) {
       fetchAllRecebimentos();
     }
-  }, [isAuthenticated]);
+  }, [user]);
 
   useEffect(() => {
     filterRecebimentos();

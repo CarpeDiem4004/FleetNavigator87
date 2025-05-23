@@ -25,7 +25,8 @@ import {
   CreditCard,
   ChevronDown,
   ChevronRight,
-  Droplets
+  Droplets,
+  TruckIcon
 } from 'lucide-react';
 
 // Constantes para itens de menu
