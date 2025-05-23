@@ -20,6 +20,7 @@ import { useLocation } from 'wouter';
 import HistoricoAbastecimentosTabela from '@/components/posto-remedios/HistoricoAbastecimentosTabela';
 import FormularioAbastecimentoStandalone from '@/components/posto-remedios/FormularioAbastecimentoStandalone';
 import FormularioRecebimentoStandalone from '@/components/posto-remedios/FormularioRecebimentoStandalone';
+import HistoricoRecebimentos from '@/components/posto-remedios/HistoricoRecebimentos';
 
 export default function PostoRemediosStandalone() {
   const { toast } = useToast();
@@ -199,52 +200,75 @@ export default function PostoRemediosStandalone() {
         </TabsContent>
 
         <TabsContent value="historico" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Histórico de Abastecimentos</CardTitle>
-              <CardDescription>
-                Visualize os registros de abastecimento do Posto Remédios.
-              </CardDescription>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Data Início</label>
-                  <Input
-                    type="date"
-                    value={dataInicio}
-                    onChange={(e) => setDataInicio(e.target.value)}
+          <Tabs defaultValue="abastecimentos">
+            <TabsList className="mb-4">
+              <TabsTrigger value="abastecimentos">Abastecimentos</TabsTrigger>
+              <TabsTrigger value="recebimentos">Recebimentos</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="abastecimentos">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Histórico de Abastecimentos</CardTitle>
+                  <CardDescription>
+                    Visualize os registros de abastecimento do Posto Remédios.
+                  </CardDescription>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Data Início</label>
+                      <Input
+                        type="date"
+                        value={dataInicio}
+                        onChange={(e) => setDataInicio(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Data Fim</label>
+                      <Input
+                        type="date"
+                        value={dataFim}
+                        onChange={(e) => setDataFim(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Placa</label>
+                      <Input
+                        placeholder="Filtrar por placa"
+                        value={filtroPlaca}
+                        onChange={(e) => setFiltroPlaca(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <Button onClick={() => carregarRegistros()} className="w-full">
+                        Filtrar
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <HistoricoAbastecimentosTabela 
+                    registros={registros} 
+                    loading={loadingRegistros} 
+                    onRefresh={carregarRegistros}
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Data Fim</label>
-                  <Input
-                    type="date"
-                    value={dataFim}
-                    onChange={(e) => setDataFim(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Placa</label>
-                  <Input
-                    placeholder="Filtrar por placa"
-                    value={filtroPlaca}
-                    onChange={(e) => setFiltroPlaca(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button onClick={() => carregarRegistros()} className="w-full">
-                    Filtrar
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <HistoricoAbastecimentosTabela 
-                registros={registros} 
-                loading={loadingRegistros} 
-                onRefresh={carregarRegistros}
-              />
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="recebimentos">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Histórico de Entradas de Combustível</CardTitle>
+                  <CardDescription>
+                    Visualize os recebimentos de combustível registrados no posto.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <HistoricoRecebimentos postoId="posto_remedios" />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </TabsContent>
       </Tabs>
     </div>
