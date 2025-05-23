@@ -6,6 +6,20 @@ import { BsFillFuelPumpFill } from 'react-icons/bs';
 import { RiOilFill, RiGasStationFill } from 'react-icons/ri';
 import { GiGasPump, GiWaterTank } from 'react-icons/gi';
 
+// Interface para os dados de recebimentos (entradas) de combustível
+interface Recebimento {
+  id: number;
+  tipo_produto: string;
+  quantidade: number;
+  valor: number;
+  fornecedor: string;
+  posto: string;
+  data_recebimento?: string;
+  created_at: string;
+  updated_at?: string;
+  observacoes?: string;
+}
+
 interface Abastecimento {
   id: number;
   placa: string;
@@ -137,6 +151,65 @@ const HistoricoGeralPage: React.FC = () => {
     // Projetos ordenados por consumo
     projetosOrdenados: [] as [string, number][]
   });
+
+  // Estado para armazenar dados de recebimentos
+  const [recebimentos, setRecebimentos] = useState<Recebimento[]>([]);
+  
+  // Função para buscar recebimentos (entradas) de combustível de todos os postos
+  const fetchAllRecebimentos = async () => {
+    try {
+      console.log("[FETCH] Buscando recebimentos de combustível");
+      
+      // Array para armazenar todos os recebimentos
+      let todosRecebimentos: Recebimento[] = [];
+      
+      // Lista de postos para buscar recebimentos
+      const postos = [
+        "osasco_v2",
+        "alair_v2",
+        "campinas_v2", 
+        "abc_v2",
+        "socorro_v2",
+        "sorocaba_v2",
+        "guarulhos_v2"
+      ];
+      
+      // Buscar recebimentos de cada posto
+      for (const posto of postos) {
+        const { success, data, error } = await fetchRecords(`recebimentos_posto_${posto}`, {
+          order: { column: 'created_at', ascending: false }
+        });
+        
+        if (success && data) {
+          console.log(`[FETCH] Encontrados ${data.length} recebimentos em ${posto}`);
+          
+          // Adicionar nome do posto a cada registro e adicionar ao array
+          const recebimentosComPosto = data.map((item: any) => ({
+            ...item,
+            posto: posto
+          }));
+          
+          todosRecebimentos = [...todosRecebimentos, ...recebimentosComPosto];
+        } else if (error) {
+          console.error(`[FETCH] Erro ao buscar recebimentos de ${posto}:`, error);
+        }
+      }
+      
+      // Ordenar por data
+      todosRecebimentos.sort((a, b) => {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      
+      console.log(`[FETCH] Total de ${todosRecebimentos.length} recebimentos encontrados`);
+      setRecebimentos(todosRecebimentos);
+      
+      // Recalcular dados consolidados
+      return todosRecebimentos;
+    } catch (error) {
+      console.error("[FETCH] Erro ao buscar recebimentos:", error);
+      return [];
+    }
+  };
 
   const fetchAllAbastecimentos = async () => {
     try {
