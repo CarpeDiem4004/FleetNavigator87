@@ -1,9 +1,10 @@
 /**
  * Rotas de debug para recebimentos do posto Osasco
  */
-const express = require('express');
+import express from 'express';
+import { pool } from '../db.js';
+
 const router = express.Router();
-const { pool } = require('../db');
 
 // Endpoint para verificar se a tabela existe
 router.get('/check-table', async (req, res) => {
@@ -99,4 +100,4 @@ router.get('/recebimentos', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
