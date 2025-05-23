@@ -67,16 +67,16 @@ export default function RecebimentosOsascoV2() {
       const valorTotal = parseFloat(formData.valor_total);
       const valorLitro = valorTotal / litros;
       
-      // Montar os dados no formato esperado pela API (nomes dos campos devem corresponder ao backend)
+      // Usar os dados do formulário diretamente, pois o hook useOsascoV2Recebimentos já faz a conversão de nomes de campos
       const dados = {
-        fornecedor: formData.nome_fornecedor,
-        tipo_combustivel: formData.tipo_produto,
-        quantidade_litros: litros,
-        valor_litro: valorLitro.toFixed(2),
-        valor_total: valorTotal,
-        numero_nota: 'NF ' + new Date().toISOString().split('T')[0].replace(/-/g, ''), // Número automático baseado na data
+        nome_fornecedor: formData.nome_fornecedor,
+        tipo_produto: formData.tipo_produto,
+        litros_recebidos: litros,
+        valor_litro: valorLitro.toFixed(3), // Usar 3 decimais para valor_litro
+        valor_total: valorTotal.toFixed(2), // Certificar que valor_total está no formato correto
+        numero_nota: 'NF' + new Date().toISOString().split('T')[0].replace(/-/g, ''), // Número automático baseado na data
         data_entrega: new Date().toISOString().split('T')[0],  // Data atual
-        operador: formData.nome_operador,
+        nome_operador: formData.nome_operador,
         observacoes: formData.observacoes || ''
       };
       

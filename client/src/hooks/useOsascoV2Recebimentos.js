@@ -22,7 +22,7 @@ export default function useOsascoV2Recebimentos() {
         setLoading(true);
         setError(null);
 
-        const response = await fetch('/api/recebimentos-osasco-v2', {
+        const response = await fetch('/api/recebimentos/osasco_v2', {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
