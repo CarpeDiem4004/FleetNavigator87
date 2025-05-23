@@ -53,7 +53,19 @@ router.get('/api/recebimentos/osasco_v2', async (req, res) => {
     
     // Buscar recebimentos com mapeamento de colunas específico
     const query = `
-      SELECT *
+      SELECT 
+        id,
+        nome_fornecedor,
+        tipo_produto,
+        litros_recebidos,
+        COALESCE(valor_litro, 0) as valor_litro,
+        valor_total,
+        COALESCE(numero_nota, '-') as numero_nota,
+        data_entrega,
+        nome_operador,
+        observacoes,
+        created_at,
+        updated_at
       FROM recebimentos_posto_osasco_v2
       ORDER BY created_at DESC
     `;
@@ -62,6 +74,8 @@ router.get('/api/recebimentos/osasco_v2', async (req, res) => {
     
     // Mapear os resultados para o formato esperado pela interface
     const mappedData = result.rows.map(mapRecebimentoOsascoV2);
+    
+    console.log("Recebimentos mapeados:", mappedData);
     
     return res.json({
       success: true,

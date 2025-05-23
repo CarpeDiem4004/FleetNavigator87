@@ -54,6 +54,32 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
   const recebimentos = React.useMemo(() => {
     // Se for Osasco, usar dados do hook especializado
     if (postoId.toLowerCase() === 'osasco_v2') {
+      // Buscar diretamente da tabela
+      const fetchDB = async () => {
+        try {
+          const response = await fetch('/api/recebimentos/osasco_v2/todos', {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
+            },
+            credentials: 'include'
+          });
+          const responseData = await response.json();
+          console.log("Dados recuperados direto da DB:", responseData);
+        } catch (err) {
+          console.error("Erro ao buscar diretamente:", err);
+        }
+      };
+      fetchDB();
+      
+      // Adaptar dados do banco para o formato esperado pelo componente
+      const adaptedRecebimentos = [];
+      
+      const result = fetch('/api/recebimentos/osasco_v2/raw')
+        .then(response => response.json())
+        .then(data => console.log("Dados brutos:", data))
+        .catch(err => console.error("Erro ao buscar dados brutos:", err));
+      
       // Priorizar dados do novo hook, mas usar o antigo como fallback
       if (osascoV2Recebimentos && osascoV2Recebimentos.length > 0) {
         console.log("Usando dados do novo hook para Osasco V2:", osascoV2Recebimentos.length);
