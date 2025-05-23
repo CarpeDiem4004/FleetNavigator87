@@ -6,13 +6,14 @@ import { useToast } from '@/hooks/use-toast';
  * Este hook lida com a estrutura de tabela específica deste posto
  */
 export default function useOsascoV2Recebimentos() {
+  const { toast } = useToast();
   const [recebimentos, setRecebimentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [reload, setReload] = useState(0);
 
   // Função para forçar recarga dos dados
-  const recarregarDados = () => setReload(prev => prev + 1);
+  const recarregarDados = useCallback(() => setReload(prev => prev + 1), []);
 
   // Buscar recebimentos da API
   useEffect(() => {
@@ -80,7 +81,6 @@ export default function useOsascoV2Recebimentos() {
         toast({
           title: "Sucesso!",
           description: "Recebimento registrado com sucesso.",
-          variant: "success",
         });
         
         return { success: true, data: data.data };

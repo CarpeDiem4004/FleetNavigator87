@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import useOsascoV2Recebimentos from '@/hooks/useOsascoV2Recebimentos';
 
@@ -13,6 +13,7 @@ import useOsascoV2Recebimentos from '@/hooks/useOsascoV2Recebimentos';
  * Este componente lida com a estrutura da tabela específica deste posto
  */
 export default function RecebimentosOsascoV2() {
+  const { toast } = useToast();
   const { recebimentos, loading, adicionarRecebimento } = useOsascoV2Recebimentos();
   
   // Estado local para o formulário
@@ -69,8 +70,7 @@ export default function RecebimentosOsascoV2() {
     if (!isFormValid()) {
       toast({
         title: "Formulário incompleto",
-        description: "Todos os campos obrigatórios devem ser preenchidos.",
-        variant: "destructive",
+        description: "Todos os campos obrigatórios devem ser preenchidos."
       });
       return;
     }
@@ -107,8 +107,7 @@ export default function RecebimentosOsascoV2() {
       console.error("Erro ao enviar formulário:", error);
       toast({
         title: "Erro ao registrar recebimento",
-        description: error.message || "Ocorreu um erro ao tentar registrar o recebimento.",
-        variant: "destructive",
+        description: error.message || "Ocorreu um erro ao tentar registrar o recebimento."
       });
     } finally {
       setSubmitting(false);
