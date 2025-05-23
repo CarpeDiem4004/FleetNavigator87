@@ -35,6 +35,8 @@ import { debugAuthMiddleware, recoverSessionMiddleware } from './middleware/debu
 import frotaDiagnosticoRoute from "./routes/frotaDiagnosticoRoute";
 // Importar rotas de recebimentos e movimentações de pátio
 import recebimentosMovimentacoesRoutes from "./routes/recebimentosMovimentacoesRoutes";
+// Importar rotas de projetos padronizados
+import projetosRoutes from "./routes/projetosRoutes";
 // Importar rotas de preços de combustível
 import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoutes";
 
@@ -138,6 +140,9 @@ app.use((req, res, next) => {
   
   // Registrar rotas de recebimentos e movimentações de pátio
   app.use('/api', recebimentosMovimentacoesRoutes);
+  
+  // Registrar rotas de projetos padronizados
+  app.use('/api', projetosRoutes);
   
   // Registrar as rotas de API diretas para evitar interceptação do Vite
   // Estas rotas serão processadas antes do middleware do Vite e terão os headers adequados
