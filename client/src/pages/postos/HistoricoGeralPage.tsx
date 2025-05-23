@@ -647,6 +647,20 @@ const HistoricoGeralPage: React.FC = () => {
     const abastecimentosAlcool = filteredData.filter(item => ehTipoCombustivel(item, alcoolVariations));
     const abastecimentosArla = filteredData.filter(item => ehTipoCombustivel(item, arlaVariations));
     
+    // Cálculos para os dados de recebimentos (entradas)
+    // Total de litros recebidos
+    const litrosRecebidos = recebimentos.reduce((sum, item) => {
+      return sum + (item.quantidade || 0);
+    }, 0);
+    
+    // Total do valor dos recebimentos
+    const valorRecebimentos = recebimentos.reduce((sum, item) => {
+      return sum + (item.valor || 0);
+    }, 0);
+    
+    // Total de recebimentos (contagem)
+    const totalRecebimentos = recebimentos.length;
+    
     // Somas totais de litros (considerando quantidade_litros ou litros, conforme disponível)
     const litrosDiesel = abastecimentosDiesel.reduce((sum, item) => sum + (item.quantidade_litros || item.litros || 0), 0);
     const litrosGasolina = abastecimentosGasolina.reduce((sum, item) => sum + (item.quantidade_litros || item.litros || 0), 0);
@@ -802,6 +816,10 @@ const HistoricoGeralPage: React.FC = () => {
       valorArla,
       veiculosArla,
       abastecimentosArla: abastecimentosArla.length,
+      // Estatísticas de recebimentos (entradas)
+      litrosRecebidos,
+      valorRecebimentos,
+      totalRecebimentos,
       // Estatísticas por projeto
       consumoPorProjeto,
       projetosOrdenados
