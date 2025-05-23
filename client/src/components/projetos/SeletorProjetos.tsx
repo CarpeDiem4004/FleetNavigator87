@@ -13,7 +13,6 @@ type Projeto = {
 interface SeletorProjetosProps {
   value?: string | number;
   onChange: (value: string) => void;
-  label?: string;
   className?: string;
   required?: boolean;
 }
@@ -21,7 +20,6 @@ interface SeletorProjetosProps {
 const SeletorProjetos: React.FC<SeletorProjetosProps> = ({
   value,
   onChange,
-  label = "Projeto",
   className = "",
   required = false
 }) => {
@@ -68,7 +66,7 @@ const SeletorProjetos: React.FC<SeletorProjetosProps> = ({
   return (
     <div className={className}>
       <Label htmlFor="projeto" className={`text-muted-foreground ${required ? 'required' : ''}`}>
-        {label}
+        Projeto
       </Label>
       <Select
         value={value?.toString() || ''}

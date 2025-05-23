@@ -338,7 +338,6 @@ const FormularioForm = ({
                 name="projeto"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Projeto</FormLabel>
                     <FormControl>
                       <SeletorProjetos
                         value={field.value}
