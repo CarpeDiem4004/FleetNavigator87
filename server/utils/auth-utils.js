@@ -277,3 +277,46 @@ export function generateToken(user) {
     throw error;
   }
 }
+
+/**
+ * Verifica autenticação e permissões de usuário
+ * @param {Array<string>} allowedRoles - Lista de roles permitidas
+ */
+export function checkAuthAndRoles(allowedRoles = []) {
+  return async (req, res, next) => {
+    try {
+      // Primeiro verificar autenticação
+      await unifiedAuthMiddleware(req, res, (err) => {
+        if (err) return next(err);
+        
+        // Se chegou aqui, está autenticado. Verificar roles se necessário
+        if (allowedRoles.length > 0) {
+          // Admin sempre tem acesso a tudo
+          if (req.user.role === 'admin') {
+            return next();
+          }
+          
+          // Verificar se a role do usuário está na lista de permitidas
+          if (!allowedRoles.includes(req.user.role)) {
+            console.log(`[CheckAuthRoles] Acesso negado para usuário ${req.user.id} com role ${req.user.role}`);
+            return res.status(403).json({
+              success: false, 
+              message: 'Acesso negado',
+              error: 'Você não tem permissão para acessar este recurso'
+            });
+          }
+        }
+        
+        // Usuário autenticado e com permissão adequada
+        next();
+      });
+    } catch (error) {
+      console.error('[CheckAuthRoles] Erro:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erro ao verificar autenticação',
+        error: error.message
+      });
+    }
+  };
+}
