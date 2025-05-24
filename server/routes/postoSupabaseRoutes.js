@@ -93,7 +93,7 @@ router.get('/historico/:posto', unifiedAuthMiddleware, requireRoles(['admin', 'g
     }
     
     // Obter dados da view
-    const dataQuery = `SELECT * FROM "${viewName}" ORDER BY data_hora DESC LIMIT 50`;
+    const dataQuery = `SELECT * FROM "${viewName}" ORDER BY data_hora DESC`;
     const result = await pool.query(dataQuery);
     
     res.json({

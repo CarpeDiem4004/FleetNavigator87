@@ -83,7 +83,9 @@ async function atualizarNivelTanque(posto, recebimentoData) {
 router.get('/:posto', async (req, res) => {
   try {
     const { posto } = req.params;
-    const limit = parseInt(req.query.limit) || 50;
+    // Removendo limite para permitir recuperar todos os registros
+    // const limit = parseInt(req.query.limit) || 50;
+    const limit = 999999; // Valor alto para trazer praticamente todos os registros
     
     console.log(`[Recebimentos] Buscando recebimentos para posto: ${posto}`);
     

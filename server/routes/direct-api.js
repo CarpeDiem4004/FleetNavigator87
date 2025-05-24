@@ -39,7 +39,7 @@ router.get('/historico/:posto', async (req, res) => {
     }
     
     // Obter dados da view
-    const dataQuery = `SELECT * FROM "${viewName}" ORDER BY data_hora DESC LIMIT 50`;
+    const dataQuery = `SELECT * FROM "${viewName}" ORDER BY data_hora DESC`;
     const result = await pool.query(dataQuery);
     
     return res.json({

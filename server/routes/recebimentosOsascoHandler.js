@@ -162,7 +162,7 @@ router.post('/api/recebimentos/osasco_v2', async (req, res) => {
 });
 
 // Funções específicas para uso em outros módulos
-const getRecebimentosOsascoV2 = async (limit = 50) => {
+const getRecebimentosOsascoV2 = async (limit = 999999) => {
   try {
     // Verificar se a tabela existe
     const checkTableQuery = `
