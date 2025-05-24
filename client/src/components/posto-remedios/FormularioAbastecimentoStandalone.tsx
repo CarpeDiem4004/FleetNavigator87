@@ -728,12 +728,28 @@ export default function FormularioAbastecimentoStandalone() {
                     className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     value={field.value || ""}
                     onChange={(e) => {
-                      if (isMounted.current) {
-                        field.onChange(e.target.value);
+                      try {
+                        if (isMounted.current) {
+                          field.onChange(e.target.value);
+                        }
+                      } catch (error) {
+                        console.error("Erro ao selecionar projeto:", error);
+                        // Tentar recuperar de forma segura
+                        setTimeout(() => {
+                          if (isMounted.current) {
+                            field.onChange(e.target.value);
+                          }
+                        }, 0);
                       }
                     }}
+                    style={{
+                      minHeight: '44px',
+                      fontSize: '16px',
+                      WebkitAppearance: 'menulist',
+                      appearance: 'menulist'
+                    }}
                   >
-                    <option value="" disabled>Selecione o projeto</option>
+                    <option value="">Selecione o projeto</option>
                     {projetosOptions.map((projeto) => (
                       <option key={projeto} value={projeto}>
                         {projeto}
