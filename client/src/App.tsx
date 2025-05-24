@@ -48,6 +48,7 @@ import PostoGuarulhos from "@/pages/postos/Guarulhos";
 import PostoAlairV2 from "@/pages/postos/AlairV2";
 import PostoGuarulhosV2 from "@/pages/postos/GuarulhosV2";
 import PostoSaoPaulo from "@/pages/postos/SaoPaulo";
+import ConsumoDiarioPostos from "@/pages/postos/ConsumoDiarioPostos";
 import PostoCampinas from "@/pages/postos/Campinas";
 import PostoCampinasV2 from "@/pages/postos/CampinasV2";
 import PostoABC from "@/pages/postos/ABC";
