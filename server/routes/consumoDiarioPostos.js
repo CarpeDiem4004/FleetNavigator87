@@ -3,10 +3,11 @@
  * Permite visualizar o consumo agrupado por dia e por posto
  */
 
-const express = require('express');
+import express from 'express';
+import { pool } from '../database.js';
+import { unifiedAuthMiddleware, requireRoles } from '../utils/auth-utils.js';
+
 const router = express.Router();
-const { pool } = require('../database');
-const { unifiedAuthMiddleware, requireRoles } = require('../utils/auth-utils');
 
 /**
  * Obtém o consumo diário de todos os postos
@@ -216,4 +217,4 @@ router.get('/:posto', unifiedAuthMiddleware, requireRoles(['admin', 'gestor', 'o
   }
 });
 
-module.exports = router;
+export default router;

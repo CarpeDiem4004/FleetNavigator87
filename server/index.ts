@@ -145,8 +145,7 @@ app.use((req, res, next) => {
   app.use('/api', projetosRoutes);
   
   // Registrar rotas de consumo diário dos postos
-  const consumoDiarioPostosRoutes = require('./routes/consumoDiarioPostos');
-  app.use('/api/consumo-diario-postos', consumoDiarioPostosRoutes);
+  app.use('/api/consumo-diario-postos', (await import('./routes/consumoDiarioPostos.js')).default);
   
   // Registrar as rotas de API diretas para evitar interceptação do Vite
   // Estas rotas serão processadas antes do middleware do Vite e terão os headers adequados

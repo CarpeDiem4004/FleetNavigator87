@@ -245,6 +245,7 @@ function App() {
           <ProtectedRoute path="/postos/historico-geral" component={HistoricoGeralPage} />
           <ProtectedRoute path="/postos/historico-patio" component={HistoricoPatioPage} />
           <ProtectedRoute path="/postos/historico-consolidado" component={HistoricoConsolidado} />
+          <ProtectedRoute path="/postos/consumo-diario" component={ConsumoDiarioPostos} />
           <ProtectedRoute path="/postos/visao-geral" component={PostosVisaoGeralPage} />
           <ProtectedRoute path="/postos/entradas-combustivel" component={EntradaCombustivelPage} />
           <ProtectedRoute path="/postos/:id" component={PostoDetalhesPage} />

@@ -3,14 +3,14 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Droplet, Info, BarChart3, Calendar, BarChart, List } from 'lucide-react';
-import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line } from 'recharts';
+import { Loader2, Droplet, Info, BarChart3, Calendar, List } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line } from 'recharts';
 import { format, parseISO, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useProtectedRoute } from '@/hooks/useProtectedRoute';
+// Usando componente ProtectedRoute no App.tsx em vez de hook
 import { apiRequest } from '@/lib/queryClient';
 
 // Interfaces para tipagem de dados
@@ -381,7 +381,7 @@ const DetalhesPostoConsumo: React.FC<{ postoId: string }> = ({ postoId }) => {
 
 // Página Principal
 const ConsumoDiarioPostos: React.FC = () => {
-  useProtectedRoute(['admin', 'gestor']);
+  // A proteção da rota é feita pelo componente ProtectedRoute no App.tsx
   const { toast } = useToast();
   const [selectedPosto, setSelectedPosto] = useState<string | null>(null);
   const [periodo, setPeriodo] = useState<number>(30);
