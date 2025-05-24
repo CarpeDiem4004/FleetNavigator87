@@ -161,6 +161,7 @@ const ComparativoPostos: React.FC<{ dados: PostoConsumo[] }> = ({ dados }) => {
   return (
     <div className="w-full h-[400px] mt-4">
       <ResponsiveContainer width="100%" height="100%">
+        {/* Usando BarChart do recharts, não o ícone do lucide-react */}
         <BarChart
           data={dadosGrafico}
           margin={{

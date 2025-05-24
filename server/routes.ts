@@ -28,6 +28,7 @@ import {
 import { runSupabaseDiagnostic } from "./supabaseDiagnostic";
 import { registerPneusRoutes } from "./pneusApi";
 import { registerTireMoveRoutes } from "./tireMoveApi";
+import consumoDiarioPostosRoute from "./routes/consumoDiarioPostosRoute";
 import { compareSchemas } from "./compareSchemas";
 import diagnosticoRoutes from './routes/diagnosticoRoutes';
 import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
