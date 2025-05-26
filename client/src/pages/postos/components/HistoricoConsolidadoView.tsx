@@ -143,8 +143,7 @@ const HistoricoConsolidadoView: React.FC = () => {
         
         if (!response.ok) {
           console.error('[FETCH] Erro na resposta:', response.status);
-          // Usar dados de exemplo para desenvolvimento
-          return dadosExemplo;
+          throw new Error(`Erro ao buscar dados: ${response.status}`);
         }
         
         const jsonData = await response.json();
