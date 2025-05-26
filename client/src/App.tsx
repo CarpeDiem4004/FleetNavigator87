@@ -300,6 +300,11 @@ function App() {
             <LineHallDriverPage />
           </Route>
           
+          {/* Rota para gerenciamento de manutenções do Line Hall */}
+          <ProtectedRoute path="/line-hall-maintenance">
+            <LineHallMaintenanceManager />
+          </ProtectedRoute>
+          
           {/* Rota para redirecionamento rápido para postos - sem autenticação */}
           <Route path="/redirect-posto/:posto">
             <RedirectToPosto />

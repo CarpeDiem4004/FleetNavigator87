@@ -2265,6 +2265,271 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Listar todas as solicitações de manutenção do Line Hall
+  app.get('/api/line-hall/maintenance-requests', isAuthenticated, async (req, res) => {
+    try {
+      const query = `
+        SELECT 
+          id,
+          motorista_id,
+          motorista_nome,
+          vehicle_plate,
+          description,
+          urgency,
+          status,
+          created_at,
+          updated_at,
+          completed_at,
+          notes,
+          approved_by
+        FROM linehall_maintenance
+        ORDER BY created_at DESC
+      `;
+      
+      const result = await pool.query(query);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        total: result.rows.length
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar solicitações de manutenção:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar solicitações de manutenção',
+        error: error.message
+      });
+    }
+  });
+
+  // Atualizar status de solicitação de manutenção do Line Hall
+  app.put('/api/line-hall/maintenance-requests/:id/status', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, notes, approved_by } = req.body;
+      
+      if (!status) {
+        return res.status(400).json({
+          success: false,
+          message: 'Status é obrigatório'
+        });
+      }
+      
+      // Validar status permitidos
+      const validStatuses = ['pendente', 'em_andamento', 'concluida', 'cancelada'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Status inválido'
+        });
+      }
+      
+      // Buscar dados atuais da solicitação para histórico
+      const currentQuery = 'SELECT * FROM linehall_maintenance WHERE id = $1';
+      const currentResult = await pool.query(currentQuery, [id]);
+      
+      if (currentResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Solicitação de manutenção não encontrada'
+        });
+      }
+      
+      const currentData = currentResult.rows[0];
+      
+      // Atualizar status da solicitação
+      const updateQuery = `
+        UPDATE linehall_maintenance 
+        SET 
+          status = $1,
+          notes = COALESCE($2, notes),
+          approved_by = COALESCE($3, approved_by),
+          updated_at = NOW(),
+          completed_at = CASE WHEN $1 = 'concluida' THEN NOW() ELSE completed_at END
+        WHERE id = $4
+        RETURNING *
+      `;
+      
+      const updateResult = await pool.query(updateQuery, [status, notes, approved_by, id]);
+      const updatedData = updateResult.rows[0];
+      
+      // Criar registro no histórico da placa
+      await createPlateHistory(
+        currentData.vehicle_plate,
+        'maintenance_status_update',
+        `Status da manutenção alterado de "${currentData.status}" para "${status}"`,
+        {
+          maintenance_id: id,
+          old_status: currentData.status,
+          new_status: status,
+          notes: notes,
+          approved_by: approved_by,
+          description: currentData.description
+        }
+      );
+      
+      return res.status(200).json({
+        success: true,
+        data: updatedData,
+        message: 'Status atualizado com sucesso'
+      });
+    } catch (error: any) {
+      console.error('Erro ao atualizar status:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao atualizar status',
+        error: error.message
+      });
+    }
+  });
+
+  // Função helper para criar registros de histórico da placa
+  async function createPlateHistory(plate: string, eventType: string, description: string, metadata: any = {}) {
+    try {
+      // Primeiro, verificar se a tabela existe, se não, criar
+      const createTableQuery = `
+        CREATE TABLE IF NOT EXISTS vehicle_plate_history (
+          id SERIAL PRIMARY KEY,
+          vehicle_plate VARCHAR(10) NOT NULL,
+          event_type VARCHAR(50) NOT NULL,
+          description TEXT NOT NULL,
+          metadata JSONB DEFAULT '{}',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          created_by VARCHAR(255)
+        );
+        
+        CREATE INDEX IF NOT EXISTS idx_vehicle_plate_history_plate ON vehicle_plate_history(vehicle_plate);
+        CREATE INDEX IF NOT EXISTS idx_vehicle_plate_history_created_at ON vehicle_plate_history(created_at);
+      `;
+      
+      await pool.query(createTableQuery);
+      
+      // Inserir o registro de histórico
+      const insertQuery = `
+        INSERT INTO vehicle_plate_history (vehicle_plate, event_type, description, metadata)
+        VALUES ($1, $2, $3, $4)
+        RETURNING *
+      `;
+      
+      const result = await pool.query(insertQuery, [
+        plate.toUpperCase(),
+        eventType,
+        description,
+        JSON.stringify(metadata)
+      ]);
+      
+      console.log(`Histórico criado para placa ${plate}: ${eventType} - ${description}`);
+      return result.rows[0];
+    } catch (error) {
+      console.error('Erro ao criar histórico da placa:', error);
+      // Não falhar a operação principal se o histórico falhar
+      return null;
+    }
+  }
+
+  // Buscar histórico de uma placa específica
+  app.get('/api/vehicles/:plate/history', isAuthenticated, async (req, res) => {
+    try {
+      const { plate } = req.params;
+      
+      const query = `
+        SELECT 
+          id,
+          vehicle_plate,
+          event_type,
+          description,
+          metadata,
+          created_at,
+          created_by
+        FROM vehicle_plate_history
+        WHERE vehicle_plate = $1
+        ORDER BY created_at DESC
+        LIMIT 100
+      `;
+      
+      const result = await pool.query(query, [plate.toUpperCase()]);
+      
+      return res.status(200).json({
+        success: true,
+        plate: plate.toUpperCase(),
+        history: result.rows,
+        total: result.rows.length
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar histórico da placa:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar histórico da placa',
+        error: error.message
+      });
+    }
+  });
+
+  // Endpoint para criar solicitação de manutenção via Line Hall (corrigindo o 404)
+  app.post('/api/line-hall/maintenance-request', async (req, res) => {
+    try {
+      const { 
+        motorista_id, 
+        motorista_nome, 
+        vehicle_plate, 
+        description, 
+        urgency = 'normal' 
+      } = req.body;
+      
+      if (!motorista_id || !motorista_nome || !vehicle_plate || !description) {
+        return res.status(400).json({
+          success: false,
+          message: 'Dados incompletos. Informe ID do motorista, nome, placa e descrição.'
+        });
+      }
+      
+      const insertQuery = `
+        INSERT INTO linehall_maintenance 
+        (motorista_id, motorista_nome, vehicle_plate, description, urgency, status, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, 'pendente', NOW(), NOW())
+        RETURNING *
+      `;
+      
+      const result = await pool.query(insertQuery, [
+        motorista_id,
+        motorista_nome,
+        vehicle_plate.toUpperCase(),
+        description,
+        urgency
+      ]);
+      
+      const newRequest = result.rows[0];
+      
+      // Criar registro no histórico da placa
+      await createPlateHistory(
+        vehicle_plate,
+        'maintenance_request_created',
+        `Solicitação de manutenção criada por ${motorista_nome}`,
+        {
+          maintenance_id: newRequest.id,
+          motorista_id: motorista_id,
+          motorista_nome: motorista_nome,
+          urgency: urgency,
+          description: description
+        }
+      );
+      
+      return res.status(201).json({
+        success: true,
+        data: newRequest,
+        message: 'Solicitação de manutenção criada com sucesso'
+      });
+    } catch (error: any) {
+      console.error('Erro ao criar solicitação de manutenção:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao criar solicitação de manutenção',
+        error: error.message
+      });
+    }
+  });
+
   // API específica para buscar motoristas do Line Hall
   app.get('/api/line-hall/drivers', async (req, res) => {
     try {
