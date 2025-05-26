@@ -2694,7 +2694,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount, 
         reason, 
         requested_by, 
-        receipt_url,
         driver_id,
         source
       } = req.body;
@@ -2709,9 +2708,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const query = `
         INSERT INTO fuel_card_requests
-          (plate, card_number, amount, reason, requested_by, receipt_url, driver_id, source, status, requested_at, created_at, updated_at)
+          (plate, card_number, amount, reason, requested_by, driver_id, source, status, requested_at, created_at, updated_at)
         VALUES
-          ($1, $2, $3, $4, $5, $6, $7, $8, 'pendente', NOW(), NOW(), NOW())
+          ($1, $2, $3, $4, $5, $6, $7, 'pendente', NOW(), NOW(), NOW())
         RETURNING *
       `;
       
@@ -2721,7 +2720,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         parseFloat(amount),
         reason,
         requested_by || 'Motorista Line Hall',
-        receipt_url,
         driver_id,
         source || 'line_hall'
       ]);
