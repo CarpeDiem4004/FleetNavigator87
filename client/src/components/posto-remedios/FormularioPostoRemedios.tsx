@@ -254,8 +254,10 @@ export default function FormularioPostoRemedios() {
                 <option value="GRUPO PEREIRA">GRUPO PEREIRA</option>
                 <option value="MADEIRA MADEIRA">MADEIRA MADEIRA</option>
                 <option value="MAGALU">MAGALU</option>
+                <option value="MANUTENÇÃO">MANUTENÇÃO</option>
                 <option value="MERCADO LIVRE">MERCADO LIVRE</option>
                 <option value="NATURA">NATURA</option>
+                <option value="OPERACIONAL">OPERACIONAL</option>
                 <option value="OXXO">OXXO</option>
                 <option value="PETLOVE">PETLOVE</option>
                 <option value="SHOPEE">SHOPEE</option>
