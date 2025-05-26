@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Droplet, Info } from 'lucide-react';
+import { Loader2, Droplet, Info, Calendar, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { apiRequest } from '@/lib/queryClient';
 
 // Interfaces para tipagem de dados
