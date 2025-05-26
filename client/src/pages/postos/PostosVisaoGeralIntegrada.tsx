@@ -399,11 +399,11 @@ export default function PostosVisaoGeralIntegrada() {
               </div>
               <div className="flex gap-2">
                 <Button
-                  variant={periodoDias === 7 ? "default" : "outline"}
+                  variant={periodoDias === 15 ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setPeriodoDias(7)}
+                  onClick={() => setPeriodoDias(15)}
                 >
-                  7 dias
+                  15 dias
                 </Button>
                 <Button
                   variant={periodoDias === 30 ? "default" : "outline"}
