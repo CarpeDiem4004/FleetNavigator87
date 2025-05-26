@@ -231,6 +231,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Histórico Geral', href: '/refueling', icon: ClipboardList },
       { name: 'Histórico Pátio', href: '/abastecimentos', icon: Gauge },
       { name: 'Visão Geral dos Postos', href: '/postos/visao-geral', icon: BarChart4 },
+      { name: 'Consumo Diário', href: '/postos/consumo-diario', icon: BarChart4 },
       { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 }
     ]},
     // Alterado para usar o ícone de posto de gasolina (Droplets) em vez de Warehouse para Postos Externos
@@ -279,6 +280,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Histórico Geral', href: '/refueling', icon: ClipboardList },
       { name: 'Histórico Pátio', href: '/abastecimentos', icon: Gauge },
       { name: 'Visão Geral dos Postos', href: '/postos/visao-geral', icon: BarChart4 },
+      { name: 'Consumo Diário', href: '/postos/consumo-diario', icon: BarChart4 },
       { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 }
     ]},
     // Corrigido para usar o mesmo ícone e estrutura em ambas as listas de navegação
@@ -322,6 +324,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Histórico Geral', href: '/refueling', icon: ClipboardList },
       { name: 'Histórico Pátio', href: '/abastecimentos', icon: Gauge },
       { name: 'Visão Geral dos Postos', href: '/postos/visao-geral', icon: BarChart4 },
+      { name: 'Consumo Diário', href: '/postos/consumo-diario', icon: BarChart4 },
       { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 }
     ]},
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
