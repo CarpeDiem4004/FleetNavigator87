@@ -141,7 +141,7 @@ const LineHallDriverPage: React.FC = () => {
   const [, setLocation] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [step, setStep] = useState<'auth' | 'menu' | 'checklist' | 'maintenance' | 'fuelcard' | 'success'>('auth');
+  const [step, setStep] = useState<'auth' | 'menu' | 'checklist' | 'maintenance' | 'fuelcard' | 'fuel-request' | 'success'>('auth');
   const [progress, setProgress] = useState(0);
   const [cpf, setCpf] = useState<string>('');
   const [motorista, setMotorista] = useState<{id: number, nome: string, cpf: string} | null>(null);
@@ -167,6 +167,17 @@ const LineHallDriverPage: React.FC = () => {
     numeroCartao: '',
     valorSolicitado: 0,
     justificativa: ''
+  });
+
+  // Estado para solicitação de abastecimento
+  const [fuelRequest, setFuelRequest] = useState({
+    vehiclePlate: '',
+    kmAtual: 0,
+    litrosEstimados: 0,
+    localAbastecimento: '',
+    justificativa: '',
+    urgencia: 'normal' as 'baixa' | 'normal' | 'alta',
+    tipoCombustivel: 'diesel' as 'diesel' | 'gasolina' | 'etanol'
   });
   
   // Estado para upload de imagens
@@ -197,6 +208,9 @@ const LineHallDriverPage: React.FC = () => {
       case 'checklist':
       case 'maintenance':
       case 'fuelcard':
+        setProgress(75);
+        break;
+      case 'fuel-request':
         setProgress(75);
         break;
       case 'success':
@@ -824,12 +838,22 @@ const LineHallDriverPage: React.FC = () => {
             
             <Button
               className="flex items-center gap-2"
+              onClick={() => setStep('fuel-request')}
+              disabled={!selectedVehicle}
+              variant="outline"
+            >
+              <CreditCard className="h-5 w-5" />
+              Solicitar Abastecimento
+            </Button>
+            
+            <Button
+              className="flex items-center gap-2"
               onClick={() => setStep('fuelcard')}
               disabled={!selectedVehicle}
               variant="outline"
             >
               <CreditCard className="h-5 w-5" />
-              Solicitar Recarga de Cartão de Abastecimento
+              Solicitar Recarga de Cartão
             </Button>
           </div>
         </CardContent>
@@ -1284,6 +1308,7 @@ const LineHallDriverPage: React.FC = () => {
           {step === 'checklist' && renderChecklistScreen()}
           {step === 'maintenance' && renderMaintenanceScreen()}
           {step === 'fuelcard' && renderFuelCardScreen()}
+          {step === 'fuel-request' && renderFuelRequestScreen()}
         </div>
       </main>
       
