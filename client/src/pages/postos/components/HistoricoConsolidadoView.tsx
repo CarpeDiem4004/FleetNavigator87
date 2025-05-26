@@ -133,20 +133,7 @@ const HistoricoConsolidadoView: React.FC = () => {
       try {
         // Adicionar timestamp para evitar cache
         const timestamp = new Date().getTime();
-        const response = await fetch(`/api/historico/historico-consolidado?t=${timestamp}`, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`,
-          },
-          credentials: 'include',
-        });
-        
-        if (!response.ok) {
-          console.error('[FETCH] Erro na resposta:', response.status);
-          throw new Error(`Erro ao buscar dados: ${response.status}`);
-        }
-        
-        const jsonData = await response.json();
+        const jsonData = await apiRequest('GET', `/api/historico/historico-consolidado?t=${timestamp}`);
         console.log('[FETCH] Resposta do histórico consolidado:', jsonData);
         
         if (jsonData && jsonData.success === true) {
