@@ -2265,6 +2265,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Listar todos os checklists do Line Hall
+  app.get('/api/line-hall/checklists', isAuthenticated, async (req, res) => {
+    try {
+      // Simular dados de checklist para demonstração (já que não temos tabela real ainda)
+      const mockChecklists = [
+        {
+          id: 1,
+          driver_name: 'João Silva',
+          vehicle_plate: 'ABC1234',
+          checklist_type: 'diario',
+          status: 'concluido',
+          created_at: '2024-05-26T08:00:00Z',
+          completed_at: '2024-05-26T08:15:00Z',
+          items: [
+            { item: 'Verificar freios', status: 'ok', observations: '' },
+            { item: 'Verificar pneus', status: 'ok', observations: '' },
+            { item: 'Verificar óleo', status: 'problema', observations: 'Nível baixo' },
+            { item: 'Verificar combustível', status: 'ok', observations: '' },
+            { item: 'Verificar documentação', status: 'ok', observations: '' }
+          ]
+        },
+        {
+          id: 2,
+          driver_name: 'Carlos Santos',
+          vehicle_plate: 'DEF5678',
+          checklist_type: 'semanal',
+          status: 'pendente',
+          created_at: '2024-05-26T14:30:00Z',
+          items: [
+            { item: 'Verificar freios', status: 'nao_verificado', observations: '' },
+            { item: 'Verificar pneus', status: 'nao_verificado', observations: '' },
+            { item: 'Verificar óleo', status: 'nao_verificado', observations: '' },
+            { item: 'Verificar combustível', status: 'nao_verificado', observations: '' },
+            { item: 'Verificar documentação', status: 'nao_verificado', observations: '' }
+          ]
+        },
+        {
+          id: 3,
+          driver_name: 'Maria Oliveira',
+          vehicle_plate: 'GHI9012',
+          checklist_type: 'diario',
+          status: 'concluido',
+          created_at: '2024-05-26T09:15:00Z',
+          completed_at: '2024-05-26T09:30:00Z',
+          items: [
+            { item: 'Verificar freios', status: 'ok', observations: '' },
+            { item: 'Verificar pneus', status: 'problema', observations: 'Pneu dianteiro com baixa pressão' },
+            { item: 'Verificar óleo', status: 'ok', observations: '' },
+            { item: 'Verificar combustível', status: 'ok', observations: '' },
+            { item: 'Verificar documentação', status: 'ok', observations: '' }
+          ]
+        }
+      ];
+
+      return res.status(200).json({
+        success: true,
+        data: mockChecklists,
+        count: mockChecklists.length
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar checklists:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar checklists',
+        error: error.message
+      });
+    }
+  });
+
   // Listar todas as solicitações de manutenção do Line Hall
   app.get('/api/line-hall/maintenance-requests', isAuthenticated, async (req, res) => {
     try {
