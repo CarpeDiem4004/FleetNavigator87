@@ -28,6 +28,7 @@ import {
 import { runSupabaseDiagnostic } from "./supabaseDiagnostic";
 import { registerPneusRoutes } from "./pneusApi";
 import { registerTireMoveRoutes } from "./tireMoveApi";
+import { unifiedAuthMiddleware } from "./utils/auth-utils.js";
 import consumoDiarioPostosRoute from "./routes/consumoDiarioPostosRoute";
 import { compareSchemas } from "./compareSchemas";
 import diagnosticoRoutes from './routes/diagnosticoRoutes';
@@ -9775,6 +9776,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rota para listar motoristas
   app.get('/api/drivers', async (req, res) => {
     try {
+      // Verificar se a tabela motoristas existe
+      const tableCheck = await pool.query(`
+        SELECT EXISTS (
+          SELECT 1 FROM information_schema.tables 
+          WHERE table_name = 'motoristas'
+        ) as exists
+      `);
+
+      if (!tableCheck.rows[0].exists) {
+        // Criar tabela se não existir
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS motoristas (
+            id SERIAL PRIMARY KEY,
+            nome VARCHAR(255) NOT NULL,
+            cpf VARCHAR(14) UNIQUE NOT NULL,
+            telefone VARCHAR(20),
+            base_id INTEGER REFERENCES bases(id),
+            created_at TIMESTAMP DEFAULT NOW()
+          )
+        `);
+      }
+
       const query = `
         SELECT 
           m.id,
@@ -9791,12 +9814,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const result = await pool.query(query);
       
-      return res.status(200).json(result.rows);
+      res.json(result.rows);
     } catch (error) {
       console.error('Erro ao buscar motoristas:', error);
-      return res.status(500).json({
+      res.status(500).json({
         success: false,
-        message: 'Erro interno do servidor'
+        message: 'Erro interno do servidor',
+        error: error.message
       });
     }
   });
@@ -9817,7 +9841,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const checkCpfQuery = 'SELECT id FROM motoristas WHERE cpf = $1';
       const checkResult = await pool.query(checkCpfQuery, [cpf]);
       
-      if (checkResult.rowCount > 0) {
+      if (checkResult.rowCount && checkResult.rowCount > 0) {
         return res.status(400).json({
           success: false,
           message: 'CPF já cadastrado no sistema'
@@ -9836,13 +9860,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(201).json({
         success: true,
         message: 'Motorista cadastrado com sucesso',
-        ...result.rows[0]
+        data: result.rows[0]
       });
     } catch (error) {
       console.error('Erro ao cadastrar motorista:', error);
       return res.status(500).json({
         success: false,
-        message: 'Erro interno do servidor'
+        message: 'Erro interno do servidor',
+        error: error.message
       });
     }
   });
