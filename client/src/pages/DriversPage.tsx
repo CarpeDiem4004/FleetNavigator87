@@ -102,8 +102,11 @@ const DriversPage: React.FC = () => {
   useEffect(() => {
     const fetchBases = async () => {
       try {
-        const { data, error } = await supabase.from('bases').select('id, name');
-        if (error) throw error;
+        const response = await fetch('/api/bases');
+        if (!response.ok) {
+          throw new Error('Erro ao carregar bases');
+        }
+        const data = await response.json();
         setBases(data || []);
       } catch (error) {
         console.error('Erro ao buscar bases:', error);

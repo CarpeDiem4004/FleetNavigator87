@@ -9773,6 +9773,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rota para listar bases
+  app.get('/api/bases', async (req, res) => {
+    try {
+      const query = 'SELECT id, name FROM bases WHERE active = true ORDER BY name';
+      const result = await pool.query(query);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Erro ao buscar bases:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  });
+
   // Rota para listar motoristas
   app.get('/api/drivers', async (req, res) => {
     try {
@@ -9806,7 +9821,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           m.telefone,
           m.base_id,
           m.created_at,
-          b.nome as base_nome
+          b.name as base_nome
         FROM motoristas m
         LEFT JOIN bases b ON m.base_id = b.id
         ORDER BY m.created_at DESC
