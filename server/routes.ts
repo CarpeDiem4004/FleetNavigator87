@@ -9916,6 +9916,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rota para excluir abastecimento de qualquer posto
+  app.delete('/api/abastecimento/:posto/:id', async (req, res) => {
+    try {
+      const { posto, id } = req.params;
+      
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({
+          success: false,
+          message: 'Não autenticado'
+        });
+      }
+
+      // Normalizar nome do posto para determinar a tabela
+      let nomeTabela = '';
+      const postoLower = posto.toLowerCase().replace(/\s+/g, '_');
+      
+      if (postoLower.includes('alair')) {
+        nomeTabela = 'abastecimentos_posto_alair_v2';
+      } else if (postoLower.includes('osasco')) {
+        nomeTabela = 'abastecimentos_posto_osasco_v2';
+      } else if (postoLower.includes('campinas')) {
+        nomeTabela = 'abastecimentos_posto_campinas_v2';
+      } else if (postoLower.includes('abc')) {
+        nomeTabela = 'abastecimentos_posto_abc_v2';
+      } else if (postoLower.includes('socorro')) {
+        nomeTabela = 'abastecimentos_posto_socorro_v2';
+      } else if (postoLower.includes('sorocaba')) {
+        nomeTabela = 'abastecimentos_posto_sorocaba_v2';
+      } else if (postoLower.includes('guarulhos')) {
+        nomeTabela = 'abastecimentos_posto_guarulhos_v2';
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: 'Posto não reconhecido'
+        });
+      }
+
+      console.log(`Excluindo abastecimento ID ${id} da tabela ${nomeTabela}`);
+
+      // Verificar se o registro existe
+      const checkQuery = `SELECT id FROM ${nomeTabela} WHERE id = $1`;
+      const checkResult = await pool.query(checkQuery, [id]);
+      
+      if (checkResult.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Registro não encontrado'
+        });
+      }
+
+      // Excluir o registro
+      const deleteQuery = `DELETE FROM ${nomeTabela} WHERE id = $1 RETURNING id`;
+      const deleteResult = await pool.query(deleteQuery, [id]);
+      
+      if (deleteResult.rowCount === 0) {
+        return res.status(500).json({
+          success: false,
+          message: 'Erro ao excluir registro'
+        });
+      }
+
+      console.log(`Abastecimento ID ${id} excluído com sucesso da tabela ${nomeTabela}`);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Registro excluído com sucesso'
+      });
+      
+    } catch (error) {
+      console.error('Erro ao excluir abastecimento:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  });
+
   // Rota para editar motorista
   app.put('/api/drivers/:id', async (req, res) => {
     try {
