@@ -60,7 +60,7 @@ import PostoSorocabaV2 from "@/pages/postos/SorocabaV2";
 import HistoricoGeralPage from "@/pages/postos/HistoricoGeralPage";
 import HistoricoPatioPage from "@/pages/postos/HistoricoPatioPage";
 import HistoricoConsolidado from "@/pages/postos/HistoricoConsolidado";
-import PostosVisaoGeralPage from "@/pages/postos/PostosVisaoGeralPage";
+import PostosVisaoGeralIntegrada from "@/pages/postos/PostosVisaoGeralIntegrada";
 import PostoDetalhesPage from "@/pages/postos/PostoDetalhesPage";
 import EntradaCombustivelPage from "@/pages/postos/EntradaCombustivelPage";
 import SupabaseDiagnostico from "@/pages/diagnostico/SupabaseDiagnosticoSimples";
@@ -246,7 +246,7 @@ function App() {
           <ProtectedRoute path="/postos/historico-patio" component={HistoricoPatioPage} />
           <ProtectedRoute path="/postos/historico-consolidado" component={HistoricoConsolidado} />
           <ProtectedRoute path="/postos/consumo-diario" component={ConsumoDiarioPorDia} />
-          <ProtectedRoute path="/postos/visao-geral" component={PostosVisaoGeralPage} />
+          <ProtectedRoute path="/postos/visao-geral" component={PostosVisaoGeralIntegrada} />
           <ProtectedRoute path="/postos/entradas-combustivel" component={EntradaCombustivelPage} />
           <ProtectedRoute path="/postos/:id" component={PostoDetalhesPage} />
           <ProtectedRoute path="/diagnostico/supabase" component={SupabaseDiagnostico} />
