@@ -69,17 +69,7 @@ export default function PostoRemediosPage() {
           </TabsList>
 
           <TabsContent value="novo" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Registrar Abastecimento ou Lavagem</CardTitle>
-                <CardDescription>
-                  Preencha os dados para registrar um abastecimento ou lavagem no Posto Remédios.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <PostoRemediosForm />
-              </CardContent>
-            </Card>
+            <FormularioPostoRemedios />
           </TabsContent>
 
           <TabsContent value="historico" className="mt-4">
