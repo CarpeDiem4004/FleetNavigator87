@@ -76,8 +76,20 @@ const DriversPage: React.FC = () => {
     const fetchDrivers = async () => {
       setIsLoading(true);
       try {
-        const response = await apiRequest('GET', '/api/drivers');
+        const response = await fetch('/api/drivers', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
+        console.log('Dados dos motoristas recebidos:', data);
         setDrivers(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Erro ao buscar motoristas:', error);
