@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import clsx from 'clsx';
-import RemoverPostoSaoPaulo from '@/components/postos/RemoverPostoSaoPaulo';
+
 
 interface PostoResumo {
   id: number;
@@ -198,7 +198,6 @@ export default function PostosVisaoGeralIntegrada() {
             <RefreshCw className="mr-2 h-4 w-4" />
             Atualizar
           </Button>
-          <RemoverPostoSaoPaulo />
         </div>
       </div>
 
