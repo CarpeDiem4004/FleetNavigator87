@@ -485,10 +485,16 @@ export default function LineHallShopeePage() {
                   <span className="text-sm text-muted-foreground">Total de checklists</span>
                   <span className="font-medium">{checklistStats.total}</span>
                 </div>
-                <Button variant="outline" size="sm" className="w-full" onClick={fetchDriverStats}>
-                  <RefreshCcw className="mr-2 h-4 w-4" />
-                  Atualizar Dados
-                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" size="sm" onClick={fetchDriverStats}>
+                    <RefreshCcw className="mr-2 h-4 w-4" />
+                    Atualizar
+                  </Button>
+                  <Button variant="default" size="sm" onClick={() => setLocation('/line-hall-checklists')}>
+                    <CheckSquare className="mr-2 h-4 w-4" />
+                    Gerenciar
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

@@ -89,6 +89,7 @@ import TiresEntrada from "@/pages/TiresEntrada";
 import LineHallShopeePage from "@/pages/LineHallShopeePage";
 import LineHallDriverPage from "@/pages/LineHallDriverPage";
 import LineHallMaintenanceManager from "@/pages/LineHallMaintenanceManager";
+import LineHallChecklistManager from "@/pages/LineHallChecklistManager";
 import FuelCardPage from "@/pages/FuelCardPage";
 import FuelCard from "@/pages/FuelCard";
 import FuelCardRequestsPanel from "@/pages/FuelCardRequestsPanel";
@@ -303,6 +304,7 @@ function App() {
           
           {/* Rota para gerenciamento de manutenções do Line Hall */}
           <ProtectedRoute path="/line-hall-maintenance" component={LineHallMaintenanceManager} />
+          <ProtectedRoute path="/line-hall-checklists" component={LineHallChecklistManager} />
           
           {/* Rota para redirecionamento rápido para postos - sem autenticação */}
           <Route path="/redirect-posto/:posto">
