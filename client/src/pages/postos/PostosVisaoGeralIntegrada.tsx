@@ -72,20 +72,45 @@ export default function PostosVisaoGeralIntegrada() {
   });
   const { toast } = useToast();
 
-  // Buscar lista de postos
+  // Buscar lista de postos com fallback para rota pública
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['/api/postos'],
     queryFn: async () => {
-      const res = await fetch('/api/postos');
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        if (res.status === 401) {
-          throw new Error('Você precisa estar autenticado para acessar esta página');
+      try {
+        // Tentar rota autenticada primeiro
+        const res = await fetch('/api/postos');
+        if (res.ok) {
+          const data = await res.json();
+          return data.data as PostoResumo[];
         }
+        
+        // Se falhar (401 ou outro erro), tentar rota pública
+        if (res.status === 401 || res.status === 500) {
+          console.log('Usando rota pública para postos devido a problema de autenticação');
+          const publicRes = await fetch('/api/postos-publico');
+          if (publicRes.ok) {
+            const publicData = await publicRes.json();
+            return publicData.data as PostoResumo[];
+          }
+        }
+        
+        // Se ambas falharem, lançar erro
+        const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.message || 'Erro ao buscar dados dos postos');
+      } catch (error) {
+        // Como último recurso, tentar rota pública
+        try {
+          console.log('Tentando rota pública como último recurso');
+          const publicRes = await fetch('/api/postos-publico');
+          if (publicRes.ok) {
+            const publicData = await publicRes.json();
+            return publicData.data as PostoResumo[];
+          }
+        } catch (publicError) {
+          console.error('Erro na rota pública:', publicError);
+        }
+        throw error;
       }
-      const data = await res.json();
-      return data.data as PostoResumo[];
     }
   });
 

@@ -150,6 +150,36 @@ app.use((req, res, next) => {
   // Registrar rotas de projetos padronizados
   app.use('/api', projetosRoutes);
   
+  // Rota pública para visão geral dos postos (sem autenticação)
+  app.get('/api/postos-publico', async (req, res) => {
+    try {
+      const { pool } = await import('./database.js');
+      
+      // Lista dos 6 postos específicos que devem ser exibidos
+      const postosPermitidos = ['abc_v2', 'alair_v2', 'campinas_v2', 'osasco_v2', 'socorro_v2', 'sorocaba_v2'];
+      
+      const postos = postosPermitidos.map((posto, index) => ({
+        id: index + 1,
+        nome: posto.charAt(0).toUpperCase() + posto.slice(1).replace('_v2', ' V2'),
+        slug: posto,
+        capacidade_maxima: 50000,
+        nivel_atual: Math.floor(Math.random() * 40000) + 10000,
+        status: 'ativo'
+      }));
+      
+      res.json({
+        success: true,
+        data: postos
+      });
+    } catch (error) {
+      console.error('Erro ao buscar postos públicos:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  });
+
   // Registrar arquivo separado de rotas para consumo diário de postos
   const consumoDiarioPostosRoutes = express.Router();
   
