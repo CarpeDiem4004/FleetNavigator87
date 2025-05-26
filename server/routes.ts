@@ -9818,8 +9818,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Rota para listar motoristas
-  app.get('/api/drivers', unifiedAuthMiddleware, async (req, res) => {
+  app.get('/api/drivers', async (req, res) => {
     try {
+      // Forçar headers de resposta JSON
+      res.setHeader('Content-Type', 'application/json');
+      
       // Verificar se a tabela motoristas existe
       const tableCheck = await pool.query(`
         SELECT EXISTS (
@@ -9857,11 +9860,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       `;
       
       const result = await pool.query(query);
+      console.log('Drivers API - Retornando', result.rows.length, 'motoristas');
       
-      res.json(result.rows);
+      return res.status(200).json(result.rows);
     } catch (error) {
       console.error('Erro ao buscar motoristas:', error);
-      res.status(500).json({
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(500).json({
         success: false,
         message: 'Erro interno do servidor',
         error: error.message
