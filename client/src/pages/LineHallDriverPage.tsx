@@ -87,9 +87,9 @@ interface MaintenanceRequest {
 interface FuelCardRequest {
   numeroCartao: string;
   valorSolicitado: number;
-  justificativa: string;
-  plate?: string;
-  comprovante?: string;
+  kmAtual: string;
+  destino: string;
+  observacoes?: string;
 }
 
 // Componente para condição com ícones de cor
@@ -167,7 +167,9 @@ const LineHallDriverPage: React.FC = () => {
   const [fuelCardRequest, setFuelCardRequest] = useState<FuelCardRequest>({
     numeroCartao: '',
     valorSolicitado: 0,
-    justificativa: ''
+    kmAtual: '',
+    destino: '',
+    observacoes: ''
   });
 
   // Estado para solicitação de abastecimento
@@ -659,13 +661,11 @@ const LineHallDriverPage: React.FC = () => {
         },
         body: JSON.stringify({
           plate: selectedVehicle,
+          km_atual: fuelCardRequest.kmAtual,
           card_number: fuelCardRequest.numeroCartao,
           amount: fuelCardRequest.valorSolicitado,
-          reason: fuelCardRequest.justificativa,
-          requested_by: motorista?.nome,
-          receipt_url: fuelCardRequest.comprovante || null,
-          driver_id: motorista?.id,
-          source: 'line_hall',
+          destino: fuelCardRequest.destino,
+          observacoes: fuelCardRequest.observacoes || null,
         }),
       });
 
@@ -702,7 +702,9 @@ const LineHallDriverPage: React.FC = () => {
       setFuelCardRequest({
         numeroCartao: '',
         valorSolicitado: 0,
-        justificativa: ''
+        kmAtual: '',
+        destino: '',
+        observacoes: ''
       });
       
       // Voltar para o menu

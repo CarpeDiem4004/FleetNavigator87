@@ -2690,19 +2690,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { 
         plate, 
+        km_atual,
         card_number, 
         amount, 
-        reason, 
-        requested_by, 
-        driver_id,
-        source
+        destino,
+        observacoes
       } = req.body;
       
       // Validação básica
-      if (!plate || !card_number || !amount || !reason) {
+      if (!plate || !card_number || !amount || !destino) {
         return res.status(400).json({
           success: false,
-          message: 'Dados incompletos para solicitação. Informe placa, número do cartão, valor e motivo.'
+          message: 'Dados incompletos para solicitação. Informe placa, número do cartão, valor e destino.'
         });
       }
       
@@ -2714,12 +2713,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         RETURNING *
       `;
       
+      const motivo = `Destino: ${destino}${observacoes ? ` - Obs: ${observacoes}` : ''}${km_atual ? ` - KM: ${km_atual}` : ''}`;
+      
       const result = await pool.query(query, [
         plate.toUpperCase(),
         card_number,
         parseFloat(amount),
-        reason,
-        requested_by || 'Motorista Line Hall',
+        motivo,
+        'Motorista Line Hall',
         3 // Line Hall Shopee base_id
       ]);
       
