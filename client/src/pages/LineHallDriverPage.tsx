@@ -641,10 +641,19 @@ const LineHallDriverPage: React.FC = () => {
       return;
     }
 
-    if (!fuelCardRequest.justificativa) {
+    if (!fuelCardRequest.kmAtual) {
       toast({
-        title: 'Justificativa necessária',
-        description: 'Por favor, informe a justificativa para a recarga do cartão.',
+        title: 'Quilometragem necessária',
+        description: 'Por favor, informe a quilometragem atual do veículo.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!fuelCardRequest.destino) {
+      toast({
+        title: 'Destino necessário',
+        description: 'Por favor, informe o destino da viagem.',
         variant: 'destructive',
       });
       return;
