@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'wouter';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -39,6 +40,7 @@ const statusLabels: Record<string, string> = {
 
 export default function LineHallShopeePage() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [trips, setTrips] = useState<LineHallTrip[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
@@ -519,10 +521,16 @@ export default function LineHallShopeePage() {
                   <span className="text-sm text-muted-foreground">Total de solicitações</span>
                   <span className="font-medium">{maintenanceStats.total}</span>
                 </div>
-                <Button variant="outline" size="sm" className="w-full" onClick={fetchDriverStats}>
-                  <RefreshCcw className="mr-2 h-4 w-4" />
-                  Atualizar Dados
-                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" size="sm" onClick={fetchDriverStats}>
+                    <RefreshCcw className="mr-2 h-4 w-4" />
+                    Atualizar
+                  </Button>
+                  <Button variant="default" size="sm" onClick={() => setLocation('/line-hall-maintenance')}>
+                    <Wrench className="mr-2 h-4 w-4" />
+                    Gerenciar
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
