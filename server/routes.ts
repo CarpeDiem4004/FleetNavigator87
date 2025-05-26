@@ -9916,5 +9916,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rota para editar motorista
+  app.put('/api/drivers/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { nome, cpf, telefone, base_id } = req.body;
+      
+      if (!nome || !cpf || !base_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Nome, CPF e Base são obrigatórios'
+        });
+      }
+
+      // Verificar se o motorista existe
+      const checkDriverQuery = 'SELECT id FROM motoristas WHERE id = $1';
+      const checkDriverResult = await pool.query(checkDriverQuery, [id]);
+      
+      if (checkDriverResult.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Motorista não encontrado'
+        });
+      }
+
+      // Verificar se CPF já existe em outro motorista
+      const checkCpfQuery = 'SELECT id FROM motoristas WHERE cpf = $1 AND id != $2';
+      const checkResult = await pool.query(checkCpfQuery, [cpf, id]);
+      
+      if (checkResult.rowCount && checkResult.rowCount > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'CPF já cadastrado para outro motorista'
+        });
+      }
+
+      // Atualizar motorista
+      const updateQuery = `
+        UPDATE motoristas 
+        SET nome = $1, cpf = $2, telefone = $3, base_id = $4, updated_at = NOW()
+        WHERE id = $5
+        RETURNING *
+      `;
+      
+      const result = await pool.query(updateQuery, [nome, cpf, telefone, base_id, id]);
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Motorista atualizado com sucesso',
+        ...result.rows[0]
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar motorista:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error.message
+      });
+    }
+  });
+
   return httpServer;
 }
