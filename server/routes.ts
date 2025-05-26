@@ -2237,12 +2237,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Consultar estatísticas de manutenções
       const query = `
         SELECT 
-          COUNT(*) FILTER (WHERE status = 'pendente') as pendentes,
-          COUNT(*) FILTER (WHERE status = 'em_andamento') as "emAndamento",
-          COUNT(*) FILTER (WHERE status = 'concluida') as concluidas,
+          COUNT(CASE WHEN status = 'pendente' THEN 1 END) as pendentes,
+          COUNT(CASE WHEN status = 'em_andamento' THEN 1 END) as "emAndamento",
+          COUNT(CASE WHEN status = 'concluida' THEN 1 END) as concluidas,
           COUNT(*) as total
         FROM maintenance
-        WHERE maintenance_type = 'line_hall' OR notes LIKE '%line_hall%'
       `;
       
       const result = await pool.query(query);
