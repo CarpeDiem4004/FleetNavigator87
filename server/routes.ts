@@ -9772,5 +9772,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rota para cadastro de motoristas
+  app.post('/api/drivers', async (req, res) => {
+    try {
+      const { nome, cpf, telefone, base_id } = req.body;
+      
+      if (!nome || !cpf || !base_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Nome, CPF e Base são obrigatórios'
+        });
+      }
+
+      // Verificar se CPF já existe
+      const checkCpfQuery = 'SELECT id FROM motoristas WHERE cpf = $1';
+      const checkResult = await pool.query(checkCpfQuery, [cpf]);
+      
+      if (checkResult.rowCount > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'CPF já cadastrado no sistema'
+        });
+      }
+
+      // Inserir novo motorista
+      const insertQuery = `
+        INSERT INTO motoristas (nome, cpf, telefone, base_id, created_at)
+        VALUES ($1, $2, $3, $4, NOW())
+        RETURNING *
+      `;
+      
+      const result = await pool.query(insertQuery, [nome, cpf, telefone, base_id]);
+      
+      return res.status(201).json({
+        success: true,
+        message: 'Motorista cadastrado com sucesso',
+        ...result.rows[0]
+      });
+    } catch (error) {
+      console.error('Erro ao cadastrar motorista:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  });
+
   return httpServer;
 }

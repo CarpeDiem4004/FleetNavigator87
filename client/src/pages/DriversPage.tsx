@@ -174,12 +174,21 @@ const DriversPage: React.FC = () => {
         base_id: parseInt(form.base_id),
       };
 
-      const { data, error } = await supabase
-        .from('motoristas')
-        .insert(driverData)
-        .select();
+      // Usar a API backend direta ao invés do Supabase
+      const response = await fetch('/api/drivers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(driverData),
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao cadastrar motorista');
+      }
+
+      const newDriver = await response.json();
 
       toast({
         title: 'Motorista cadastrado',
@@ -198,17 +207,17 @@ const DriversPage: React.FC = () => {
       // Adicionar novo motorista à lista
       const baseSelecionada = bases.find(b => b.id === parseInt(form.base_id));
       
-      const newDriver: Driver = {
-        id: data[0].id,
-        nome: data[0].nome,
-        cpf: data[0].cpf,
-        telefone: data[0].telefone,
-        base_id: data[0].base_id,
+      const newDriverForList: Driver = {
+        id: newDriver.id,
+        nome: newDriver.nome,
+        cpf: newDriver.cpf,
+        telefone: newDriver.telefone,
+        base_id: newDriver.base_id,
         base_nome: baseSelecionada?.name,
-        created_at: data[0].created_at
+        created_at: newDriver.created_at
       };
       
-      setDrivers([newDriver, ...drivers]);
+      setDrivers([newDriverForList, ...drivers]);
       setActiveTab('list');
       
     } catch (error) {
