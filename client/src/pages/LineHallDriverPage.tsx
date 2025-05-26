@@ -227,7 +227,21 @@ const LineHallDriverPage: React.FC = () => {
         throw new Error('Erro ao buscar motoristas');
       }
       
-      const drivers = await response.json();
+      const text = await response.text();
+      let drivers;
+      
+      try {
+        drivers = JSON.parse(text);
+      } catch (jsonError) {
+        console.error('Erro ao fazer parse da resposta JSON:', text);
+        throw new Error('Resposta inválida do servidor');
+      }
+      
+      if (!Array.isArray(drivers)) {
+        console.error('Resposta não é um array:', drivers);
+        throw new Error('Formato de dados inválido');
+      }
+      
       const motoristaEncontrado = drivers.find((d: any) => d.cpf === cpfLimpo);
 
       if (!motoristaEncontrado) {
