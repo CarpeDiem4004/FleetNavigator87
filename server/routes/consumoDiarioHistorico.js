@@ -3,8 +3,8 @@
  * Permite visualizar dados coletados automaticamente à meia-noite
  */
 
-const express = require('express');
-const { Pool } = require('pg');
+import express from 'express';
+import { Pool } from 'pg';
 const router = express.Router();
 
 // Configuração do banco de dados
@@ -117,7 +117,7 @@ router.get('/consumo-diario-historico/resumo', async (req, res) => {
  */
 router.post('/consumo-diario-historico/coletar', async (req, res) => {
   try {
-    const { executarColetaManual } = require('../services/consumoDiarioScheduler');
+    const { executarColetaManual } = await import('../services/consumoDiarioScheduler.js');
     
     // Executar coleta manual
     await executarColetaManual();
@@ -202,4 +202,4 @@ router.get('/consumo-diario-historico/tendencia', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

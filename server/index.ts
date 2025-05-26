@@ -42,9 +42,9 @@ import projetosRoutes from "./routes/projetosRoutes";
 // Importar rotas de preços de combustível
 import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoutes";
 // Importar scheduler de consumo diário
-const { iniciarScheduler } = require('./services/consumoDiarioScheduler');
+import { iniciarScheduler } from './services/consumoDiarioScheduler.js';
 // Importar rotas de histórico de consumo diário
-const consumoDiarioHistorico = require('./routes/consumoDiarioHistorico');
+import consumoDiarioHistorico from './routes/consumoDiarioHistorico.js';
 
 // Configuração das variáveis de ambiente do Supabase
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)

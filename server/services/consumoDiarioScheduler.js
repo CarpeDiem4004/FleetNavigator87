@@ -3,8 +3,8 @@
  * Executa à meia-noite para registrar o consumo de cada posto
  */
 
-const cron = require('node-cron');
-const { Pool } = require('pg');
+import cron from 'node-cron';
+import { Pool } from 'pg';
 
 // Configuração do banco de dados
 const pool = new Pool({
@@ -186,7 +186,7 @@ function iniciarScheduler() {
   console.log('📅 Scheduler de coleta diária iniciado - Execução à meia-noite');
 }
 
-module.exports = {
+export {
   iniciarScheduler,
   executarColetaManual,
   executarColetaDiaria
