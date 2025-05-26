@@ -2686,7 +2686,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // API para solicitação de recarga de cartão de combustível por motorista do Line Hall
-  app.post('/api/fuel-card/request', async (req, res) => {
+  app.post('/api/line-hall/fuel-card-request', async (req, res) => {
     try {
       const { 
         plate, 

@@ -663,7 +663,7 @@ const LineHallDriverPage: React.FC = () => {
     
     try {
       // Enviar solicitação para API do sistema (conectando ao módulo Fuel Card)
-      const response = await fetch('/api/fuel-card/request', {
+      const response = await fetch('/api/line-hall/fuel-card-request', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
