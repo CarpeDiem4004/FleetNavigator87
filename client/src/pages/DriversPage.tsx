@@ -69,6 +69,7 @@ const DriversPage: React.FC = () => {
   });
   const [bases, setBases] = useState<Base[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
 
   // Carregamento de dados - Motoristas
   useEffect(() => {
@@ -140,7 +141,7 @@ const DriversPage: React.FC = () => {
     setForm({ ...form, [field]: value });
   };
 
-  // Função para cadastrar novo motorista
+  // Função para cadastrar ou editar motorista
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -163,25 +164,41 @@ const DriversPage: React.FC = () => {
         base_id: parseInt(form.base_id),
       };
 
-      // Usar a API backend direta ao invés do Supabase
-      const response = await fetch('/api/drivers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(driverData),
-      });
+      let response;
+      let successMessage;
+
+      if (editingDriver) {
+        // Editar motorista existente
+        response = await fetch(`/api/drivers/${editingDriver.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(driverData),
+        });
+        successMessage = 'Motorista atualizado com sucesso.';
+      } else {
+        // Criar novo motorista
+        response = await fetch('/api/drivers', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(driverData),
+        });
+        successMessage = 'Motorista cadastrado com sucesso.';
+      }
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao cadastrar motorista');
+        throw new Error(errorData.message || 'Erro ao processar solicitação');
       }
 
-      const newDriver = await response.json();
+      const driverResponse = await response.json();
 
       toast({
-        title: 'Motorista cadastrado',
-        description: 'O motorista foi cadastrado com sucesso.',
+        title: editingDriver ? 'Motorista atualizado' : 'Motorista cadastrado',
+        description: successMessage,
         variant: 'default',
       });
 
@@ -193,32 +210,65 @@ const DriversPage: React.FC = () => {
         base_id: '',
       });
       
-      // Adicionar novo motorista à lista
+      // Atualizar lista de motoristas
       const baseSelecionada = bases.find(b => b.id === parseInt(form.base_id));
       
-      const newDriverForList: Driver = {
-        id: newDriver.id,
-        nome: newDriver.nome,
-        cpf: newDriver.cpf,
-        telefone: newDriver.telefone,
-        base_id: newDriver.base_id,
+      const updatedDriver: Driver = {
+        id: driverResponse.id || editingDriver?.id,
+        nome: driverResponse.nome,
+        cpf: driverResponse.cpf,
+        telefone: driverResponse.telefone,
+        base_id: driverResponse.base_id,
         base_nome: baseSelecionada?.name,
-        created_at: newDriver.created_at
+        created_at: driverResponse.created_at || editingDriver?.created_at
       };
+
+      if (editingDriver) {
+        // Atualizar motorista na lista
+        setDrivers(drivers.map(driver => 
+          driver.id === editingDriver.id ? updatedDriver : driver
+        ));
+        setEditingDriver(null);
+      } else {
+        // Adicionar novo motorista à lista
+        setDrivers([updatedDriver, ...drivers]);
+      }
       
-      setDrivers([newDriverForList, ...drivers]);
       setActiveTab('list');
       
     } catch (error) {
-      console.error('Erro ao cadastrar motorista:', error);
+      console.error('Erro ao processar motorista:', error);
       toast({
-        title: 'Erro ao cadastrar motorista',
+        title: editingDriver ? 'Erro ao atualizar motorista' : 'Erro ao cadastrar motorista',
         description: error instanceof Error ? error.message : 'Erro desconhecido',
         variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Função para editar motorista
+  const handleEditDriver = (driver: Driver) => {
+    setEditingDriver(driver);
+    setForm({
+      nome: driver.nome,
+      cpf: driver.cpf,
+      telefone: driver.telefone || '',
+      base_id: driver.base_id?.toString() || '',
+    });
+    setActiveTab('add');
+  };
+
+  // Função para cancelar edição
+  const handleCancelEdit = () => {
+    setEditingDriver(null);
+    setForm({
+      nome: '',
+      cpf: '',
+      telefone: '',
+      base_id: '',
+    });
   };
 
   // Função para excluir motorista
@@ -325,6 +375,7 @@ const DriversPage: React.FC = () => {
                                   variant="outline" 
                                   size="icon"
                                   title="Editar Motorista"
+                                  onClick={() => handleEditDriver(driver)}
                                 >
                                   <FileEdit className="h-4 w-4" />
                                 </Button>
@@ -351,9 +402,14 @@ const DriversPage: React.FC = () => {
           <TabsContent value="add">
             <Card>
               <CardHeader>
-                <CardTitle>Novo Motorista</CardTitle>
+                <CardTitle>
+                  {editingDriver ? 'Editar Motorista' : 'Novo Motorista'}
+                </CardTitle>
                 <CardDescription>
-                  Cadastre um novo motorista para a frota
+                  {editingDriver 
+                    ? 'Atualize as informações do motorista' 
+                    : 'Cadastre um novo motorista para a frota'
+                  }
                 </CardDescription>
               </CardHeader>
               <form onSubmit={handleSubmit}>
@@ -418,23 +474,36 @@ const DriversPage: React.FC = () => {
                 </CardContent>
                 
                 <CardFooter className="flex justify-end space-x-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      // Limpar formulário
-                      setForm({
-                        nome: '',
-                        cpf: '',
-                        telefone: '',
-                        base_id: '',
-                      });
-                    }}
-                  >
-                    Limpar
-                  </Button>
+                  {editingDriver ? (
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={handleCancelEdit}
+                    >
+                      Cancelar Edição
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        // Limpar formulário
+                        setForm({
+                          nome: '',
+                          cpf: '',
+                          telefone: '',
+                          base_id: '',
+                        });
+                      }}
+                    >
+                      Limpar
+                    </Button>
+                  )}
                   <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? 'Cadastrando...' : 'Cadastrar Motorista'}
+                    {isSubmitting 
+                      ? (editingDriver ? 'Atualizando...' : 'Cadastrando...') 
+                      : (editingDriver ? 'Atualizar Motorista' : 'Cadastrar Motorista')
+                    }
                   </Button>
                 </CardFooter>
               </form>
