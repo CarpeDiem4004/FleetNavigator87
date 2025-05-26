@@ -221,8 +221,8 @@ const LineHallDriverPage: React.FC = () => {
       // Limpar formatação do CPF
       const cpfLimpo = cpf.replace(/\D/g, '');
       
-      // Buscar motorista via API
-      const response = await fetch('/api/drivers');
+      // Buscar motorista via API específica do Line Hall
+      const response = await fetch('/api/line-hall/drivers');
       if (!response.ok) {
         throw new Error('Erro ao buscar motoristas');
       }

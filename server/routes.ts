@@ -2271,6 +2271,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API específica para buscar motoristas do Line Hall
+  app.get('/api/line-hall/drivers', async (req, res) => {
+    try {
+      const { data, error } = await supabase
+        .from('linehall_shopee')
+        .select('motorista_nome, motorista_cpf')
+        .not('motorista_nome', 'is', null)
+        .not('motorista_cpf', 'is', null);
+
+      if (error) throw error;
+
+      // Criar lista única de motoristas
+      const motoristasUnicos = new Map();
+      
+      data?.forEach(item => {
+        if (item.motorista_nome && item.motorista_cpf) {
+          const cpfLimpo = item.motorista_cpf.replace(/\D/g, '');
+          if (!motoristasUnicos.has(cpfLimpo)) {
+            motoristasUnicos.set(cpfLimpo, {
+              id: cpfLimpo, // Usar CPF como ID único
+              nome: item.motorista_nome,
+              cpf: cpfLimpo
+            });
+          }
+        }
+      });
+
+      const motoristas = Array.from(motoristasUnicos.values());
+
+      return res.status(200).json(motoristas);
+    } catch (error: any) {
+      console.error('Erro ao buscar motoristas do Line Hall:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar motoristas',
+        error: error.message
+      });
+    }
+  });
+
   // API para solicitação de recarga de cartão de combustível por motorista do Line Hall
   app.post('/api/fuel-card/request', async (req, res) => {
     try {
