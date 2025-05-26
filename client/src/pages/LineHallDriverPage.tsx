@@ -139,7 +139,7 @@ const ConditionSelect: React.FC<{
 const LineHallDriverPage: React.FC = () => {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<'auth' | 'menu' | 'checklist' | 'maintenance' | 'fuelcard' | 'success'>('auth');
   const [progress, setProgress] = useState(0);
