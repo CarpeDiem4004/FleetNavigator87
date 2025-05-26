@@ -42,7 +42,11 @@ export async function getPostosResumo(req: Request, res: Response) {
   try {
     const { ordenarPor = 'nome', direcao = 'asc', somenteComAlerta = false } = req.query;
     
+    // Lista dos 6 postos específicos que devem ser exibidos
+    const postosPermitidos = ['abc_v2', 'alair_v2', 'campinas_v2', 'osasco_v2', 'socorro_v2', 'sorocaba_v2'];
+    
     // Consulta utilizando a tabela configuracao_tanques com dados reais dos abastecimentos
+    // Filtrando apenas os 6 postos específicos
     let query = `
       SELECT 
         id, 
@@ -56,11 +60,12 @@ export async function getPostosResumo(req: Request, res: Response) {
         CASE WHEN (diesel_nivel / diesel_capacidade * 100) < 15 THEN true ELSE false END as alerta_nivel_baixo,
         updated_at as ultima_atualizacao
       FROM configuracao_tanques
+      WHERE posto IN ('abc_v2', 'alair_v2', 'campinas_v2', 'osasco_v2', 'socorro_v2', 'sorocaba_v2')
     `;
     
     // Adicionar filtro de alerta se solicitado
     if (somenteComAlerta === 'true') {
-      query += ' WHERE (diesel_nivel / diesel_capacidade * 100) < 15';
+      query += ' AND (diesel_nivel / diesel_capacidade * 100) < 15';
     }
     
     // Validar ordenação para evitar injeção SQL
@@ -198,7 +203,11 @@ export async function getPostoDetalhes(req: Request, res: Response) {
       });
     }
     
+    // Lista dos 6 postos específicos que devem ser exibidos
+    const postosPermitidos = ['abc_v2', 'alair_v2', 'campinas_v2', 'osasco_v2', 'socorro_v2', 'sorocaba_v2'];
+    
     // Buscar detalhes do posto usando a tabela configuracao_tanques
+    // Filtrando apenas os 6 postos específicos
     const postoQuery = `
       SELECT 
         id, 
@@ -212,7 +221,7 @@ export async function getPostoDetalhes(req: Request, res: Response) {
         CASE WHEN (diesel_nivel / diesel_capacidade * 100) < 15 THEN true ELSE false END as alerta_nivel_baixo,
         updated_at as ultima_atualizacao
       FROM configuracao_tanques
-      WHERE id = $1
+      WHERE id = $1 AND posto IN ('abc_v2', 'alair_v2', 'campinas_v2', 'osasco_v2', 'socorro_v2', 'sorocaba_v2')
     `;
     const postoResult = await pool.query(postoQuery, [id]);
     
