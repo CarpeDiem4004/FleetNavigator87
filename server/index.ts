@@ -156,7 +156,7 @@ app.use((req, res, next) => {
   // Definir rota para obter consumo diário de todos os postos
   consumoDiarioPostosRoutes.get('/', async (req, res) => {
     try {
-      const { pool } = require('./database');
+      const { pool } = await import('./database.js');
       
       // Lista dos 6 postos específicos que devem ser exibidos
       const postosPermitidos = ['abc_v2', 'alair_v2', 'campinas_v2', 'osasco_v2', 'socorro_v2', 'sorocaba_v2'];
