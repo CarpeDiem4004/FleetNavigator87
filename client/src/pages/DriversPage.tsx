@@ -76,8 +76,9 @@ const DriversPage: React.FC = () => {
     const fetchDrivers = async () => {
       setIsLoading(true);
       try {
-        const data = await apiRequest('GET', '/api/drivers');
-        setDrivers(data || []);
+        const response = await apiRequest('GET', '/api/drivers');
+        const data = await response.json();
+        setDrivers(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Erro ao buscar motoristas:', error);
         toast({
@@ -97,8 +98,9 @@ const DriversPage: React.FC = () => {
   useEffect(() => {
     const fetchBases = async () => {
       try {
-        const data = await apiRequest('GET', '/api/bases');
-        setBases(data || []);
+        const response = await apiRequest('GET', '/api/bases');
+        const data = await response.json();
+        setBases(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Erro ao buscar bases:', error);
         toast({
@@ -113,13 +115,13 @@ const DriversPage: React.FC = () => {
   }, [toast]);
 
   // Filtrar motoristas
-  const filteredDrivers = drivers.filter(
+  const filteredDrivers = Array.isArray(drivers) ? drivers.filter(
     (driver) =>
       driver.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       driver.cpf.includes(searchTerm) ||
       (driver.telefone && driver.telefone.includes(searchTerm)) ||
       (driver.base_nome && driver.base_nome.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  ) : [];
 
   // Função para lidar com mudanças no formulário
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
