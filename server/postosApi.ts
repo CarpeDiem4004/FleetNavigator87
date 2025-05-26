@@ -42,11 +42,7 @@ export async function getPostosResumo(req: Request, res: Response) {
   try {
     const { ordenarPor = 'nome', direcao = 'asc', somenteComAlerta = false } = req.query;
     
-    // Lista dos 6 postos específicos que devem ser exibidos (APENAS com final _v2)
-    const postosPermitidos = ['Abc_v2', 'Alair_v2', 'Campinas_v2', 'Osasco_v2', 'Socorro_v2', 'Sorocaba_v2'];
-    
-    // Consulta utilizando a tabela configuracao_tanques com dados reais dos abastecimentos
-    // Filtrando APENAS os 6 postos específicos que terminam com _v2
+    // Consulta simples e direta usando apenas a tabela configuracao_tanques
     let query = `
       SELECT 
         id, 
@@ -54,14 +50,13 @@ export async function getPostosResumo(req: Request, res: Response) {
         posto as localizacao,
         diesel_capacidade as capacidade_total,
         diesel_nivel as volume_atual,
-        COALESCE((SELECT COUNT(*) FROM abastecimentos_postos WHERE posto = configuracao_tanques.posto), 0) as total_abastecimentos,
-        COALESCE((SELECT SUM(quantity_litros) FROM abastecimentos_postos WHERE posto = configuracao_tanques.posto), 0) as total_litros,
+        0 as total_abastecimentos,
+        0 as total_litros,
         (diesel_nivel / diesel_capacidade * 100) as percentual,
         CASE WHEN (diesel_nivel / diesel_capacidade * 100) < 15 THEN true ELSE false END as alerta_nivel_baixo,
         updated_at as ultima_atualizacao
       FROM configuracao_tanques
       WHERE posto IN ('Abc_v2', 'Alair_v2', 'Campinas_v2', 'Osasco_v2', 'Socorro_v2', 'Sorocaba_v2')
-        AND posto NOT IN ('Campinas', 'Contagem', 'Goiania', 'Osasco', 'Guarulhos_v2')
     `;
     
     // Adicionar filtro de alerta se solicitado
@@ -70,7 +65,7 @@ export async function getPostosResumo(req: Request, res: Response) {
     }
     
     // Validar ordenação para evitar injeção SQL
-    const colunas = ['nome', 'volume_atual', 'total_abastecimentos', 'total_litros', 'percentual'];
+    const colunas = ['nome', 'volume_atual', 'percentual'];
     const direcoes = ['asc', 'desc'];
     
     const coluna = colunas.includes(ordenarPor as string) ? ordenarPor : 'nome';
