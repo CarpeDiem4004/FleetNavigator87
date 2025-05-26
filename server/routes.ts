@@ -2275,30 +2275,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/line-hall/drivers', async (req, res) => {
     try {
       const { data, error } = await supabase
-        .from('linehall_shopee')
-        .select('motorista_nome, motorista_cpf')
-        .not('motorista_nome', 'is', null)
-        .not('motorista_cpf', 'is', null);
+        .from('motoristas')
+        .select('id, nome, cpf, telefone, base_id')
+        .eq('base_id', 3); // Line Hall base_id = 3
 
       if (error) throw error;
 
-      // Criar lista única de motoristas
-      const motoristasUnicos = new Map();
-      
-      data?.forEach(item => {
-        if (item.motorista_nome && item.motorista_cpf) {
-          const cpfLimpo = item.motorista_cpf.replace(/\D/g, '');
-          if (!motoristasUnicos.has(cpfLimpo)) {
-            motoristasUnicos.set(cpfLimpo, {
-              id: cpfLimpo, // Usar CPF como ID único
-              nome: item.motorista_nome,
-              cpf: cpfLimpo
-            });
-          }
-        }
-      });
-
-      const motoristas = Array.from(motoristasUnicos.values());
+      const motoristas = data?.map(motorista => ({
+        id: motorista.id,
+        nome: motorista.nome,
+        cpf: motorista.cpf.replace(/\D/g, ''), // Limpar formatação
+        telefone: motorista.telefone,
+        base_id: motorista.base_id
+      })) || [];
 
       return res.status(200).json(motoristas);
     } catch (error: any) {
