@@ -4,9 +4,9 @@
  * através de um link exclusivo, para posterior aprovação pelo gestor de frota.
  */
 
-const express = require('express');
-const crypto = require('crypto');
-const { createClient } = require('@supabase/supabase-js');
+import express from 'express';
+import crypto from 'crypto';
+import { createClient } from '@supabase/supabase-js';
 const router = express.Router();
 
 // Configurar cliente Supabase
@@ -352,4 +352,4 @@ router.post('/revoke/:id', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

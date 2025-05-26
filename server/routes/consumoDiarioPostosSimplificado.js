@@ -1,7 +1,7 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { pool } = require('../database.js');
-const { unifiedAuthMiddleware, requireRoles } = require('../utils/auth-utils.js');
+import { pool } from '../database.js';
+import { unifiedAuthMiddleware, requireRoles } from '../utils/auth-utils.js';
 
 /**
  * Obtém o consumo diário de todos os postos
@@ -128,4 +128,4 @@ router.get('/', unifiedAuthMiddleware, requireRoles(['admin', 'gestor']), async 
   }
 });
 
-module.exports = router;
+export default router;

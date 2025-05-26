@@ -4,9 +4,9 @@
  * e faz o mapeamento correto dos campos
  */
 
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { pool } = require('../db');
+import { pool } from '../db.js';
 
 // Função para mapear os nomes dos campos do banco para o formato esperado pelo frontend
 function mapearCamposRecebimento(item) {
@@ -73,4 +73,4 @@ router.get('/api/recebimentos-osasco-v2/todos', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
