@@ -3,7 +3,7 @@
  * Garante que todos os postos sejam incluídos no histórico geral
  */
 
-import { pool } from './server/db.js';
+import { pool } from './server/database.js';
 
 async function fixHistoricoConsolidado() {
   try {
@@ -19,7 +19,7 @@ async function fixHistoricoConsolidado() {
           id,
           placa,
           km_atual AS km,
-          hodometro_atual,
+          km_atual AS hodometro_atual,
           tipo_combustivel,
           litros AS quantidade_litros,
           motorista AS nome_motorista,
@@ -44,7 +44,7 @@ async function fixHistoricoConsolidado() {
           id,
           placa,
           km_atual AS km,
-          hodometro_atual,
+          km_atual AS hodometro_atual,
           tipo_combustivel,
           litros AS quantidade_litros,
           motorista AS nome_motorista,
@@ -69,7 +69,7 @@ async function fixHistoricoConsolidado() {
           id,
           placa,
           km_atual AS km,
-          hodometro_atual,
+          km_atual AS hodometro_atual,
           tipo_combustivel,
           litros AS quantidade_litros,
           motorista AS nome_motorista,
@@ -94,7 +94,7 @@ async function fixHistoricoConsolidado() {
           id,
           placa,
           km_atual AS km,
-          hodometro_atual,
+          km_atual AS hodometro_atual,
           tipo_combustivel,
           litros AS quantidade_litros,
           motorista AS nome_motorista,
@@ -119,7 +119,7 @@ async function fixHistoricoConsolidado() {
           id,
           placa,
           km_atual AS km,
-          hodometro_atual,
+          km_atual AS hodometro_atual,
           tipo_combustivel,
           litros AS quantidade_litros,
           motorista AS nome_motorista,
@@ -144,7 +144,7 @@ async function fixHistoricoConsolidado() {
           id,
           placa,
           km_atual AS km,
-          hodometro_atual,
+          km_atual AS hodometro_atual,
           tipo_combustivel,
           litros AS quantidade_litros,
           motorista AS nome_motorista,
