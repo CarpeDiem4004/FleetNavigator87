@@ -65,22 +65,33 @@ export default function FormularioPostoRemedios() {
       return;
     }
 
-    // Se não é lavagem, deve ter dados de combustível
-    if (!form.lavagem && (!form.quantidade_litros || !form.valor_litro)) {
-      setStatus("Para abastecimento, preencha quantidade de litros e valor por litro.");
+    // Verificar se é abastecimento ou lavagem
+    const isAbastecimento = form.quantidade_litros && parseFloat(form.quantidade_litros) > 0;
+    const isLavagem = form.lavagem;
+
+    // Deve ser pelo menos abastecimento ou lavagem
+    if (!isAbastecimento && !isLavagem) {
+      setStatus("Preencha os dados de abastecimento ou marque a opção de lavagem.");
+      setLoading(false);
+      return;
+    }
+
+    // Se é abastecimento, validar campos obrigatórios
+    if (isAbastecimento && (!form.valor_litro || parseFloat(form.valor_litro) <= 0)) {
+      setStatus("Para abastecimento, preencha o valor por litro.");
       setLoading(false);
       return;
     }
 
     // Se é lavagem, deve ter tipo de lavagem
-    if (form.lavagem && !form.tipo_lavagem) {
+    if (isLavagem && !form.tipo_lavagem) {
       setStatus("Para lavagem, selecione o tipo de lavagem.");
       setLoading(false);
       return;
     }
 
     try {
-      const response = await fetch("/api/posto-remedios/abastecimentos", {
+      const response = await fetch("/api/posto-remedios-standalone/abastecimentos", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
