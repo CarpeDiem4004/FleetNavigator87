@@ -42,7 +42,7 @@ export async function getPostosResumo(req: Request, res: Response) {
   try {
     const { ordenarPor = 'nome', direcao = 'asc', somenteComAlerta = false } = req.query;
     
-    // Consulta utilizando a tabela configuracao_tanques existente
+    // Consulta utilizando a tabela configuracao_tanques com dados reais dos abastecimentos
     let query = `
       SELECT 
         id, 
@@ -50,8 +50,8 @@ export async function getPostosResumo(req: Request, res: Response) {
         posto as localizacao,
         diesel_capacidade as capacidade_total,
         diesel_nivel as volume_atual,
-        0 as total_abastecimentos,
-        0 as total_litros,
+        COALESCE((SELECT COUNT(*) FROM abastecimentos_postos WHERE local_abastecimento = configuracao_tanques.posto), 0) as total_abastecimentos,
+        COALESCE((SELECT SUM(quantity_litros) FROM abastecimentos_postos WHERE local_abastecimento = configuracao_tanques.posto), 0) as total_litros,
         (diesel_nivel / diesel_capacidade * 100) as percentual,
         CASE WHEN (diesel_nivel / diesel_capacidade * 100) < 15 THEN true ELSE false END as alerta_nivel_baixo,
         updated_at as ultima_atualizacao
@@ -206,8 +206,8 @@ export async function getPostoDetalhes(req: Request, res: Response) {
         posto as localizacao,
         diesel_capacidade as capacidade_total,
         diesel_nivel as volume_atual,
-        0 as total_abastecimentos,
-        0 as total_litros,
+        COALESCE((SELECT COUNT(*) FROM abastecimentos_postos WHERE local_abastecimento = configuracao_tanques.posto), 0) as total_abastecimentos,
+        COALESCE((SELECT SUM(quantity_litros) FROM abastecimentos_postos WHERE local_abastecimento = configuracao_tanques.posto), 0) as total_litros,
         (diesel_nivel / diesel_capacidade * 100) as percentual,
         CASE WHEN (diesel_nivel / diesel_capacidade * 100) < 15 THEN true ELSE false END as alerta_nivel_baixo,
         updated_at as ultima_atualizacao
