@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { format } from 'date-fns';
-import { AlertTriangle, DropletIcon, Filter, Fuel, LogIn, RefreshCw, Search } from 'lucide-react';
+import { AlertTriangle, DropletIcon, Filter, Fuel, LogIn, RefreshCw, Search, BarChart4, Calendar } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -38,6 +38,18 @@ interface PostoResumo {
   ultima_atualizacao: string;
 }
 
+interface ConsumoDiario {
+  dia: number;
+  data: string;
+  osasco_v2: number;
+  alair_v2: number;
+  campinas_v2: number;
+  abc_v2: number;
+  socorro_v2: number;
+  sorocaba_v2: number;
+  total: number;
+}
+
 // Função para formatação de números
 const formatarNumero = (valor: number): string => {
   return new Intl.NumberFormat('pt-BR').format(Math.round(valor));
@@ -51,6 +63,8 @@ const formatarPercentual = (valor: number): string => {
 export default function PostosVisaoGeralPage() {
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('visao-geral');
+  const [periodoDias, setPeriodoDias] = useState(30);
   const [filtros, setFiltros] = useState({
     mostrarApenasAlertas: false,
     ordenarPor: 'nome', // 'nome', 'nivel' ou 'localizacao'
@@ -72,6 +86,20 @@ export default function PostosVisaoGeralPage() {
       const data = await res.json();
       return data.data as PostoResumo[];
     }
+  });
+
+  // Buscar dados de consumo diário
+  const { data: consumoDiarioData, isLoading: isLoadingConsumo } = useQuery({
+    queryKey: ['/api/consumo-diario-postos-simplificado', periodoDias],
+    queryFn: async () => {
+      const res = await fetch(`/api/consumo-diario-postos-simplificado?dias=${periodoDias}`);
+      if (!res.ok) {
+        throw new Error('Erro ao buscar dados de consumo diário');
+      }
+      const data = await res.json();
+      return data.dados as ConsumoDiario[];
+    },
+    enabled: activeTab === 'consumo-diario'
   });
 
   // Determinar a classe de cor para o indicador de nível
@@ -162,7 +190,7 @@ export default function PostosVisaoGeralPage() {
         <div>
           <h1 className="text-2xl font-bold">Visão Geral dos Postos de Abastecimento</h1>
           <p className="text-gray-500 mt-1">
-            Monitore o status de todos os postos de abastecimento da frota
+            Monitore o status e consumo de todos os postos de abastecimento da frota
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
@@ -174,8 +202,22 @@ export default function PostosVisaoGeralPage() {
         </div>
       </div>
 
-      {/* Filtros e pesquisa */}
-      <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+      {/* Abas */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="visao-geral" className="flex items-center gap-2">
+            <DropletIcon className="h-4 w-4" />
+            Status dos Postos
+          </TabsTrigger>
+          <TabsTrigger value="consumo-diario" className="flex items-center gap-2">
+            <BarChart4 className="h-4 w-4" />
+            Consumo Diário
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="visao-geral" className="mt-6">
+          {/* Filtros e pesquisa */}
+          <div className="bg-white rounded-lg shadow-md p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4 items-center">
           <div className="relative w-full md:w-96">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
@@ -338,6 +380,130 @@ export default function PostosVisaoGeralPage() {
           ))}
         </div>
       )}
+        </TabsContent>
+
+        <TabsContent value="consumo-diario" className="mt-6">
+          {/* Seção de Consumo Diário */}
+          <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Consumo Diário por Posto
+                </h3>
+                <p className="text-gray-500 text-sm">Visualize o consumo dia a dia de todos os postos</p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant={periodoDias === 7 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setPeriodoDias(7)}
+                >
+                  7 dias
+                </Button>
+                <Button
+                  variant={periodoDias === 30 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setPeriodoDias(30)}
+                >
+                  30 dias
+                </Button>
+                <Button
+                  variant={periodoDias === 90 ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setPeriodoDias(90)}
+                >
+                  90 dias
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {isLoadingConsumo ? (
+            <div className="bg-white rounded-lg shadow-md p-8 text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+              <p className="mt-2 text-gray-500">Carregando dados de consumo...</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-md overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Dia
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Data
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Osasco V2
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Alair V2
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Campinas V2
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        ABC V2
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Socorro V2
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Sorocaba V2
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Total
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {consumoDiarioData?.map((item, index) => (
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          Dia {item.dia}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {format(new Date(item.data), 'dd/MM/yyyy')}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                          {formatarNumero(item.osasco_v2)} L
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                          {formatarNumero(item.alair_v2)} L
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                          {formatarNumero(item.campinas_v2)} L
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                          {formatarNumero(item.abc_v2)} L
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                          {formatarNumero(item.socorro_v2)} L
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                          {formatarNumero(item.sorocaba_v2)} L
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right bg-blue-50">
+                          {formatarNumero(item.total)} L
+                        </td>
+                      </tr>
+                    )) || (
+                      <tr>
+                        <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
+                          Nenhum dado de consumo encontrado para o período selecionado
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
