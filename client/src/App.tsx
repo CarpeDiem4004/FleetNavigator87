@@ -48,7 +48,7 @@ import PostoGuarulhos from "@/pages/postos/Guarulhos";
 import PostoAlairV2 from "@/pages/postos/AlairV2";
 import PostoGuarulhosV2 from "@/pages/postos/GuarulhosV2";
 import PostoSaoPaulo from "@/pages/postos/SaoPaulo";
-import ConsumoDiarioPostos from "@/pages/postos/ConsumoDiarioPostos";
+import ConsumoDiarioPostosSimples from "@/pages/postos/ConsumoDiarioPostosSimples";
 import PostoCampinas from "@/pages/postos/Campinas";
 import PostoCampinasV2 from "@/pages/postos/CampinasV2";
 import PostoABC from "@/pages/postos/ABC";
@@ -245,7 +245,7 @@ function App() {
           <ProtectedRoute path="/postos/historico-geral" component={HistoricoGeralPage} />
           <ProtectedRoute path="/postos/historico-patio" component={HistoricoPatioPage} />
           <ProtectedRoute path="/postos/historico-consolidado" component={HistoricoConsolidado} />
-          <ProtectedRoute path="/postos/consumo-diario" component={ConsumoDiarioPostos} />
+          <ProtectedRoute path="/postos/consumo-diario" component={ConsumoDiarioPostosSimples} />
           <ProtectedRoute path="/postos/visao-geral" component={PostosVisaoGeralPage} />
           <ProtectedRoute path="/postos/entradas-combustivel" component={EntradaCombustivelPage} />
           <ProtectedRoute path="/postos/:id" component={PostoDetalhesPage} />
