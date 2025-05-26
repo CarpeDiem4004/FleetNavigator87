@@ -152,7 +152,7 @@ app.use((req, res, next) => {
   // Definir rota para obter consumo diário de todos os postos
   consumoDiarioPostosRoutes.get('/', async (req, res) => {
     try {
-      const { pool } = require('./database.js');
+      const { pool } = require('./database');
       
       // Consulta para obter as tabelas de abastecimento existentes
       const tabelasQuery = `

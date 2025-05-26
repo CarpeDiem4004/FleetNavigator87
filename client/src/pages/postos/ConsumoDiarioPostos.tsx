@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -396,6 +396,17 @@ const ConsumoDiarioPostos: React.FC = () => {
     }
   });
   
+  // Usar useEffect para mostrar toast de erro, evitando loop infinito
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Erro ao carregar dados",
+        description: (error as Error).message || "Não foi possível obter dados dos postos",
+        variant: "destructive"
+      });
+    }
+  }, [error, toast]);
+  
   if (isLoading) {
     return (
       <div className="container py-6">
@@ -414,12 +425,6 @@ const ConsumoDiarioPostos: React.FC = () => {
   }
   
   if (error || !data || !data.success) {
-    toast({
-      title: "Erro ao carregar dados",
-      description: error ? (error as Error).message : "Não foi possível obter dados dos postos",
-      variant: "destructive"
-    });
-    
     return (
       <div className="container py-6">
         <div className="p-6 bg-red-50 border border-red-200 rounded-md text-red-800">
