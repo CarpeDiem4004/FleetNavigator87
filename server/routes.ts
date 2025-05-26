@@ -9818,7 +9818,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Rota para listar motoristas
-  app.get('/api/drivers', async (req, res) => {
+  app.get('/api/drivers', unifiedAuthMiddleware, async (req, res) => {
     try {
       // Verificar se a tabela motoristas existe
       const tableCheck = await pool.query(`
@@ -9870,7 +9870,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Rota para cadastro de motoristas
-  app.post('/api/drivers', async (req, res) => {
+  app.post('/api/drivers', unifiedAuthMiddleware, async (req, res) => {
     try {
       const { nome, cpf, telefone, base_id } = req.body;
       
