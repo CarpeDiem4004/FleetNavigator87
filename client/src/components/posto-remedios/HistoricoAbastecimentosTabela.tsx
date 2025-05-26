@@ -431,6 +431,7 @@ export default function HistoricoAbastecimentosTabela({
                 <TableHead>Valor/L</TableHead>
                 <TableHead>Total</TableHead>
                 <TableHead>Lavagem</TableHead>
+                <TableHead>Observações</TableHead>
                 <TableHead>Data</TableHead>
                 {isAdmin && <TableHead className="text-right">Ações</TableHead>}
               </TableRow>
@@ -457,7 +458,25 @@ export default function HistoricoAbastecimentosTabela({
                         ? `R$ ${Number(registro.valor_total).toFixed(2)}`
                         : '-'}
                     </TableCell>
-                    <TableCell>{registro.lavagem ? 'Sim' : 'Não'}</TableCell>
+                    <TableCell>
+                      {registro.lavagem ? (
+                        <div className="space-y-1">
+                          <div className="text-green-600 font-medium">Sim</div>
+                          {registro.tipo_lavagem && (
+                            <div className="text-xs text-gray-500">
+                              {registro.tipo_lavagem}
+                            </div>
+                          )}
+                        </div>
+                      ) : 'Não'}
+                    </TableCell>
+                    <TableCell>
+                      {registro.observacoes ? (
+                        <div className="max-w-xs truncate" title={registro.observacoes}>
+                          {registro.observacoes}
+                        </div>
+                      ) : '-'}
+                    </TableCell>
                     <TableCell>{registro.created_at ? formatarData(registro.created_at) : '-'}</TableCell>
                     {isAdmin && (
                       <TableCell className="text-right">
