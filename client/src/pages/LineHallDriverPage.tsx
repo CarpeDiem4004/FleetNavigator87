@@ -850,16 +850,6 @@ const LineHallDriverPage: React.FC = () => {
             
             <Button
               className="flex items-center gap-2"
-              onClick={() => setStep('fuel-request')}
-              disabled={!selectedVehicle}
-              variant="outline"
-            >
-              <CreditCard className="h-5 w-5" />
-              Solicitar Abastecimento
-            </Button>
-            
-            <Button
-              className="flex items-center gap-2"
               onClick={() => setStep('fuelcard')}
               disabled={!selectedVehicle}
               variant="outline"
