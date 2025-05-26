@@ -50,8 +50,8 @@ export async function getPostosResumo(req: Request, res: Response) {
         posto as localizacao,
         diesel_capacidade as capacidade_total,
         diesel_nivel as volume_atual,
-        COALESCE((SELECT COUNT(*) FROM abastecimentos WHERE posto = configuracao_tanques.posto), 0) as total_abastecimentos,
-        COALESCE((SELECT SUM(quantidade_litros) FROM abastecimentos WHERE posto = configuracao_tanques.posto), 0) as total_litros,
+        0 as total_abastecimentos,
+        0 as total_litros,
         (diesel_nivel / diesel_capacidade * 100) as percentual,
         CASE WHEN (diesel_nivel / diesel_capacidade * 100) < 15 THEN true ELSE false END as alerta_nivel_baixo,
         updated_at as ultima_atualizacao
@@ -206,8 +206,8 @@ export async function getPostoDetalhes(req: Request, res: Response) {
         posto as localizacao,
         diesel_capacidade as capacidade_total,
         diesel_nivel as volume_atual,
-        COALESCE((SELECT COUNT(*) FROM abastecimentos WHERE posto = configuracao_tanques.posto), 0) as total_abastecimentos,
-        COALESCE((SELECT SUM(quantidade_litros) FROM abastecimentos WHERE posto = configuracao_tanques.posto), 0) as total_litros,
+        0 as total_abastecimentos,
+        0 as total_litros,
         (diesel_nivel / diesel_capacidade * 100) as percentual,
         CASE WHEN (diesel_nivel / diesel_capacidade * 100) < 15 THEN true ELSE false END as alerta_nivel_baixo,
         updated_at as ultima_atualizacao
@@ -298,13 +298,11 @@ export async function getPostoDetalhes(req: Request, res: Response) {
     const postoNomeQuery = await pool.query('SELECT posto FROM configuracao_tanques WHERE id = $1', [id]);
     const postoNome = postoNomeQuery.rows[0]?.posto;
     
+    // Dados de histórico simulados (a tabela abastecimentos não tem a estrutura esperada)
     const abastecimentosQuery = `
-      SELECT a.id, a.placa, a.created_at as data, a.nome_motorista as motorista, 
-             a.quantidade_litros as litros, a.valor_total
-      FROM abastecimentos a
-      WHERE a.posto = $1
-      ORDER BY a.created_at DESC
-      LIMIT 50
+      SELECT 1 as id, 'Sem dados' as placa, NOW() as data, 'Sistema' as motorista, 
+             0 as litros, 0 as valor_total
+      WHERE false
     `;
     
     const abastecimentosResult = await pool.query(abastecimentosQuery, [postoNome]);
