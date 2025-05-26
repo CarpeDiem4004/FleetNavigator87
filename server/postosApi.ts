@@ -51,7 +51,7 @@ export async function getPostosResumo(req: Request, res: Response) {
         diesel_capacidade as capacidade_total,
         diesel_nivel as volume_atual,
         COALESCE((SELECT COUNT(*) FROM abastecimentos WHERE posto = configuracao_tanques.posto), 0) as total_abastecimentos,
-        COALESCE((SELECT SUM(litros) FROM abastecimentos WHERE posto = configuracao_tanques.posto), 0) as total_litros,
+        COALESCE((SELECT SUM(quantidade_litros) FROM abastecimentos WHERE posto = configuracao_tanques.posto), 0) as total_litros,
         (diesel_nivel / diesel_capacidade * 100) as percentual,
         CASE WHEN (diesel_nivel / diesel_capacidade * 100) < 15 THEN true ELSE false END as alerta_nivel_baixo,
         updated_at as ultima_atualizacao
@@ -207,7 +207,7 @@ export async function getPostoDetalhes(req: Request, res: Response) {
         diesel_capacidade as capacidade_total,
         diesel_nivel as volume_atual,
         COALESCE((SELECT COUNT(*) FROM abastecimentos WHERE posto = configuracao_tanques.posto), 0) as total_abastecimentos,
-        COALESCE((SELECT SUM(litros) FROM abastecimentos WHERE posto = configuracao_tanques.posto), 0) as total_litros,
+        COALESCE((SELECT SUM(quantidade_litros) FROM abastecimentos WHERE posto = configuracao_tanques.posto), 0) as total_litros,
         (diesel_nivel / diesel_capacidade * 100) as percentual,
         CASE WHEN (diesel_nivel / diesel_capacidade * 100) < 15 THEN true ELSE false END as alerta_nivel_baixo,
         updated_at as ultima_atualizacao
