@@ -2244,6 +2244,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         FROM linehall_maintenance
       `;
       
+      console.log('Executando query para estatísticas de manutenção Line Hall:', query);
       const result = await pool.query(query);
       
       if (!result.rows || result.rows.length === 0) {
@@ -2256,9 +2257,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      const stats = result.rows[0];
       return res.status(200).json({
         success: true,
-        ...result.rows[0]
+        pendentes: parseInt(stats.pendentes) || 0,
+        emAndamento: parseInt(stats.emAndamento) || 0,
+        concluidas: parseInt(stats.concluidas) || 0,
+        total: parseInt(stats.total) || 0
       });
     } catch (error: any) {
       console.error('Erro ao buscar estatísticas de manutenções:', error);
