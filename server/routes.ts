@@ -2241,7 +2241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           COUNT(CASE WHEN status = 'em_andamento' THEN 1 END) as "emAndamento",
           COUNT(CASE WHEN status = 'concluida' THEN 1 END) as concluidas,
           COUNT(*) as total
-        FROM maintenance
+        FROM linehall_maintenance
       `;
       
       const result = await pool.query(query);
