@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase-compat';
+import { apiRequest } from '@/lib/queryClient';
 import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import {
   Tabs,
@@ -76,13 +76,7 @@ const DriversPage: React.FC = () => {
     const fetchDrivers = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch('/api/drivers');
-        
-        if (!response.ok) {
-          throw new Error('Erro ao carregar motoristas');
-        }
-
-        const data = await response.json();
+        const data = await apiRequest('GET', '/api/drivers');
         setDrivers(data || []);
       } catch (error) {
         console.error('Erro ao buscar motoristas:', error);
@@ -103,11 +97,7 @@ const DriversPage: React.FC = () => {
   useEffect(() => {
     const fetchBases = async () => {
       try {
-        const response = await fetch('/api/bases');
-        if (!response.ok) {
-          throw new Error('Erro ao carregar bases');
-        }
-        const data = await response.json();
+        const data = await apiRequest('GET', '/api/bases');
         setBases(data || []);
       } catch (error) {
         console.error('Erro ao buscar bases:', error);
