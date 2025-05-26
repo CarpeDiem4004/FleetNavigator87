@@ -147,10 +147,8 @@ export default function ConsumoDiarioHistorico() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="7">Últimos 7 dias</SelectItem>
                   <SelectItem value="15">Últimos 15 dias</SelectItem>
                   <SelectItem value="30">Últimos 30 dias</SelectItem>
-                  <SelectItem value="60">Últimos 60 dias</SelectItem>
                   <SelectItem value="90">Últimos 90 dias</SelectItem>
                 </SelectContent>
               </Select>
