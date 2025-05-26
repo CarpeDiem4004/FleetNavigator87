@@ -107,6 +107,40 @@ app.use((req, res, next) => {
     console.error("Erro ao executar migrações:", error);
   }
   
+  // Add simple drivers API before any middleware conflicts
+  app.get('/api/drivers', async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      const query = `
+        SELECT 
+          m.id,
+          m.nome,
+          m.cpf,
+          m.telefone,
+          m.base_id,
+          m.created_at,
+          b.name as base_nome
+        FROM motoristas m
+        LEFT JOIN bases b ON m.base_id = b.id
+        ORDER BY m.created_at DESC
+      `;
+      
+      const result = await pool.query(query);
+      console.log('Direct Drivers API - Found', result.rows.length, 'drivers');
+      
+      return res.status(200).json(result.rows);
+    } catch (error) {
+      console.error('Direct Drivers API - Error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error fetching drivers',
+        error: error.message
+      });
+    }
+  });
+  
   const server = await registerRoutes(app);
   
   // Agora podemos aplicar o middleware de diagnóstico 
