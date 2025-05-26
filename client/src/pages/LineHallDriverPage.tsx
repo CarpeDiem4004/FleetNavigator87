@@ -1207,63 +1207,39 @@ const LineHallDriverPage: React.FC = () => {
             />
           </div>
 
-          {/* Justificativa */}
+          {/* Quilometragem atual */}
           <div className="space-y-2">
-            <Label htmlFor="justificativa">Justificativa</Label>
-            <Textarea
-              id="justificativa"
-              placeholder="Informe o motivo para a recarga do cartão de abastecimento"
-              value={fuelCardRequest.justificativa}
-              onChange={(e) => setFuelCardRequest(prev => ({ ...prev, justificativa: e.target.value }))}
-              rows={3}
+            <Label htmlFor="kmAtual">Quilometragem atual</Label>
+            <Input
+              id="kmAtual"
+              type="number"
+              placeholder="Ex: 125000"
+              value={fuelCardRequest.kmAtual}
+              onChange={(e) => setFuelCardRequest(prev => ({ ...prev, kmAtual: e.target.value }))}
             />
           </div>
 
-          {/* Upload de comprovante */}
+          {/* Destino */}
           <div className="space-y-2">
-            <Label htmlFor="comprovante" className="flex items-center gap-2">
-              <Upload className="h-4 w-4" />
-              Anexar Comprovante (opcional)
-            </Label>
+            <Label htmlFor="destino">Destino</Label>
             <Input
-              id="comprovante"
-              type="file"
-              accept="image/*"
-              onChange={handleCardReceiptUpload}
-              disabled={uploading}
-              className="cursor-pointer"
+              id="destino"
+              placeholder="Ex: São Paulo - SP"
+              value={fuelCardRequest.destino}
+              onChange={(e) => setFuelCardRequest(prev => ({ ...prev, destino: e.target.value }))}
             />
-            {uploading && (
-              <div className="flex items-center space-x-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm">Enviando arquivo...</span>
-              </div>
-            )}
-            
-            {/* Preview do comprovante */}
-            {fuelCardRequest.comprovante && (
-              <div className="mt-2">
-                <div className="relative inline-block">
-                  <img
-                    src={fuelCardRequest.comprovante}
-                    alt="Comprovante"
-                    className="object-cover h-32 rounded-md"
-                  />
-                  <button
-                    type="button"
-                    className="absolute top-1 right-1 bg-red-500 rounded-full p-1"
-                    onClick={() => {
-                      setFuelCardRequest(prev => ({
-                        ...prev,
-                        comprovante: undefined
-                      }));
-                    }}
-                  >
-                    <XCircle className="h-3 w-3 text-white" />
-                  </button>
-                </div>
-              </div>
-            )}
+          </div>
+
+          {/* Observações */}
+          <div className="space-y-2">
+            <Label htmlFor="observacoes">Observações (opcional)</Label>
+            <Textarea
+              id="observacoes"
+              placeholder="Informações adicionais sobre a viagem..."
+              value={fuelCardRequest.observacoes || ''}
+              onChange={(e) => setFuelCardRequest(prev => ({ ...prev, observacoes: e.target.value }))}
+              rows={3}
+            />
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
