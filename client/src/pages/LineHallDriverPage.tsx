@@ -228,29 +228,28 @@ const LineHallDriverPage: React.FC = () => {
       }
       
       const drivers = await response.json();
-      const motorista = drivers.find((d: any) => d.cpf === cpfLimpo);
+      const motoristaEncontrado = drivers.find((d: any) => d.cpf === cpfLimpo);
 
-      if (!motorista) {
+      if (!motoristaEncontrado) {
         toast({
           title: 'Motorista não encontrado',
           description: 'CPF não encontrado no sistema. Por favor, verifique se o CPF está correto ou entre em contato com o suporte.',
           variant: 'destructive',
         });
-        setIsLoading(false);
         return;
       }
 
       setMotorista({
-        id: motorista.id,
-        nome: motorista.nome,
-        cpf: motorista.cpf
+        id: motoristaEncontrado.id,
+        nome: motoristaEncontrado.nome,
+        cpf: motoristaEncontrado.cpf
       });
 
       // Atualizar o checklist com informações do motorista
       setChecklist(prev => ({
         ...prev,
-        motoristaNome: motorista.nome,
-        motoristaId: motorista.id
+        motoristaNome: motoristaEncontrado.nome,
+        motoristaId: motoristaEncontrado.id
       }));
 
       // Buscar veículos associados ao Line Hall
@@ -258,7 +257,7 @@ const LineHallDriverPage: React.FC = () => {
 
       toast({
         title: 'Motorista identificado',
-        description: `Bem-vindo, ${motorista.nome}!`,
+        description: `Bem-vindo, ${motoristaEncontrado.nome}!`,
       });
 
       // Avançar para o menu principal
