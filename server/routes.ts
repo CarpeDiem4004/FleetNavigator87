@@ -2242,7 +2242,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           COUNT(*) FILTER (WHERE status = 'concluida') as concluidas,
           COUNT(*) as total
         FROM maintenance
-        WHERE source = 'line_hall' OR requested_by_driver = true
+        WHERE maintenance_type = 'line_hall' OR notes LIKE '%line_hall%'
       `;
       
       const result = await pool.query(query);
