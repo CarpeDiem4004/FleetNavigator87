@@ -300,7 +300,7 @@ export async function getPostoDetalhes(req: Request, res: Response) {
     
     const abastecimentosQuery = `
       SELECT a.id, a.placa, a.created_at as data, a.nome_motorista as motorista, 
-             a.litros, a.valor_total
+             a.quantidade_litros as litros, a.valor_total
       FROM abastecimentos a
       WHERE a.posto = $1
       ORDER BY a.created_at DESC
