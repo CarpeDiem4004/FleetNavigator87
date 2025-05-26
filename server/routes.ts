@@ -2697,8 +2697,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         observacoes
       } = req.body;
       
+      // Debug: Log dos dados recebidos
+      console.log('Dados recebidos na solicitação de recarga:', {
+        plate,
+        km_atual,
+        card_number,
+        amount,
+        destino,
+        observacoes,
+        bodyCompleto: req.body
+      });
+      
       // Validação básica
       if (!plate || !card_number || !amount || !destino) {
+        console.log('Validação falhou:', { plate: !!plate, card_number: !!card_number, amount: !!amount, destino: !!destino });
         return res.status(400).json({
           success: false,
           message: 'Dados incompletos para solicitação. Informe placa, número do cartão, valor e destino.'
