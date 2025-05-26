@@ -2268,16 +2268,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Listar todos os checklists do Line Hall
   app.get('/api/line-hall/checklists', isAuthenticated, async (req, res) => {
     try {
-      // Simular dados de checklist para demonstração (já que não temos tabela real ainda)
+      // Simular dados de checklist com informações de quilometragem
       const mockChecklists = [
         {
           id: 1,
           driver_name: 'João Silva',
           vehicle_plate: 'ABC1234',
-          checklist_type: 'diario',
+          checklist_type: 'saida_garagem',
           status: 'concluido',
           created_at: '2024-05-26T08:00:00Z',
           completed_at: '2024-05-26T08:15:00Z',
+          km_inicial: 125840,
+          km_final: null,
+          dias_na_garagem: 0,
           items: [
             { item: 'Verificar freios', status: 'ok', observations: '' },
             { item: 'Verificar pneus', status: 'ok', observations: '' },
@@ -2290,28 +2293,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: 2,
           driver_name: 'Carlos Santos',
           vehicle_plate: 'DEF5678',
-          checklist_type: 'semanal',
-          status: 'pendente',
-          created_at: '2024-05-26T14:30:00Z',
+          checklist_type: 'entrada_garagem',
+          status: 'concluido',
+          created_at: '2024-05-24T18:30:00Z',
+          completed_at: '2024-05-24T18:45:00Z',
+          km_inicial: 98750,
+          km_final: 99120,
+          dias_na_garagem: 2,
           items: [
-            { item: 'Verificar freios', status: 'nao_verificado', observations: '' },
-            { item: 'Verificar pneus', status: 'nao_verificado', observations: '' },
-            { item: 'Verificar óleo', status: 'nao_verificado', observations: '' },
-            { item: 'Verificar combustível', status: 'nao_verificado', observations: '' },
-            { item: 'Verificar documentação', status: 'nao_verificado', observations: '' }
+            { item: 'Verificar freios', status: 'ok', observations: '' },
+            { item: 'Verificar pneus', status: 'ok', observations: '' },
+            { item: 'Verificar óleo', status: 'ok', observations: '' },
+            { item: 'Verificar combustível', status: 'ok', observations: '' },
+            { item: 'Verificar documentação', status: 'ok', observations: '' }
           ]
         },
         {
           id: 3,
           driver_name: 'Maria Oliveira',
           vehicle_plate: 'GHI9012',
-          checklist_type: 'diario',
+          checklist_type: 'entrada_garagem',
           status: 'concluido',
-          created_at: '2024-05-26T09:15:00Z',
-          completed_at: '2024-05-26T09:30:00Z',
+          created_at: '2024-05-23T17:15:00Z',
+          completed_at: '2024-05-23T17:30:00Z',
+          km_inicial: 87200,
+          km_final: 87580,
+          dias_na_garagem: 3,
           items: [
             { item: 'Verificar freios', status: 'ok', observations: '' },
             { item: 'Verificar pneus', status: 'problema', observations: 'Pneu dianteiro com baixa pressão' },
+            { item: 'Verificar óleo', status: 'ok', observations: '' },
+            { item: 'Verificar combustível', status: 'ok', observations: '' },
+            { item: 'Verificar documentação', status: 'ok', observations: '' }
+          ]
+        },
+        {
+          id: 4,
+          driver_name: 'Pedro Lima',
+          vehicle_plate: 'JKL3456',
+          checklist_type: 'entrada_garagem',
+          status: 'concluido',
+          created_at: '2024-05-20T19:00:00Z',
+          completed_at: '2024-05-20T19:15:00Z',
+          km_inicial: 145600,
+          km_final: 146200,
+          dias_na_garagem: 6,
+          items: [
+            { item: 'Verificar freios', status: 'ok', observations: '' },
+            { item: 'Verificar pneus', status: 'ok', observations: '' },
             { item: 'Verificar óleo', status: 'ok', observations: '' },
             { item: 'Verificar combustível', status: 'ok', observations: '' },
             { item: 'Verificar documentação', status: 'ok', observations: '' }
@@ -2329,6 +2358,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({
         success: false,
         message: 'Erro ao buscar checklists',
+        error: error.message
+      });
+    }
+  });
+
+  // Estatísticas de veículos na garagem
+  app.get('/api/line-hall/garage-stats', isAuthenticated, async (req, res) => {
+    try {
+      // Simular dados de veículos na garagem baseado nos checklists de entrada
+      const vehiculosNaGaragem = [
+        { plate: 'DEF5678', driver_name: 'Carlos Santos', dias_na_garagem: 2, km_final: 99120 },
+        { plate: 'GHI9012', driver_name: 'Maria Oliveira', dias_na_garagem: 3, km_final: 87580 },
+        { plate: 'JKL3456', driver_name: 'Pedro Lima', dias_na_garagem: 6, km_final: 146200 }
+      ];
+
+      return res.status(200).json({
+        success: true,
+        data: vehiculosNaGaragem,
+        total_veiculos: vehiculosNaGaragem.length,
+        media_dias: Math.round(vehiculosNaGaragem.reduce((acc, v) => acc + v.dias_na_garagem, 0) / vehiculosNaGaragem.length)
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar estatísticas da garagem:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar estatísticas da garagem',
         error: error.message
       });
     }

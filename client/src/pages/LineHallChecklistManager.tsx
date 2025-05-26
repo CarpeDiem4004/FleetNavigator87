@@ -19,10 +19,13 @@ interface ChecklistItem {
   id: number;
   driver_name: string;
   vehicle_plate: string;
-  checklist_type: string;
+  checklist_type: 'saida_garagem' | 'entrada_garagem' | 'diario' | 'semanal';
   status: 'pendente' | 'concluido';
   created_at: string;
   completed_at?: string;
+  km_inicial: number | null;
+  km_final: number | null;
+  dias_na_garagem: number;
   items: ChecklistItemDetail[];
 }
 
@@ -35,6 +38,13 @@ interface ChecklistItemDetail {
 const statusLabels = {
   'pendente': { label: 'Pendente', className: 'bg-amber-100 text-amber-800' },
   'concluido': { label: 'Concluído', className: 'bg-green-100 text-green-800' }
+};
+
+const typeLabels = {
+  'saida_garagem': { label: 'Saída da Garagem', className: 'bg-blue-100 text-blue-800' },
+  'entrada_garagem': { label: 'Entrada na Garagem', className: 'bg-purple-100 text-purple-800' },
+  'diario': { label: 'Checklist Diário', className: 'bg-green-100 text-green-800' },
+  'semanal': { label: 'Checklist Semanal', className: 'bg-orange-100 text-orange-800' }
 };
 
 const itemStatusLabels = {
@@ -194,6 +204,9 @@ const LineHallChecklistManager: React.FC = () => {
                       <TableHead>Motorista</TableHead>
                       <TableHead>Veículo</TableHead>
                       <TableHead>Tipo</TableHead>
+                      <TableHead>KM Inicial</TableHead>
+                      <TableHead>KM Final</TableHead>
+                      <TableHead>Dias na Garagem</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Problemas</TableHead>
                       <TableHead>Data/Hora</TableHead>
@@ -212,9 +225,24 @@ const LineHallChecklistManager: React.FC = () => {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <span className="capitalize">
-                            {checklist.checklist_type.replace('_', ' ')}
-                          </span>
+                          <Badge className={typeLabels[checklist.checklist_type]?.className || 'bg-gray-100 text-gray-800'}>
+                            {typeLabels[checklist.checklist_type]?.label || checklist.checklist_type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {checklist.km_inicial ? checklist.km_inicial.toLocaleString() : '-'}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {checklist.km_final ? checklist.km_final.toLocaleString() : '-'}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {checklist.checklist_type === 'entrada_garagem' ? (
+                            <Badge className={checklist.dias_na_garagem > 5 ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}>
+                              {checklist.dias_na_garagem} dia{checklist.dias_na_garagem !== 1 ? 's' : ''}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Badge className={statusLabels[checklist.status].className}>

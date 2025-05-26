@@ -61,6 +61,12 @@ export default function LineHallShopeePage() {
     total: 0
   });
   
+  const [garageStats, setGarageStats] = useState({
+    total_veiculos: 0,
+    media_dias: 0,
+    veiculos: []
+  });
+  
   // Form states
   const [currentTrip, setCurrentTrip] = useState<Partial<LineHallTrip>>({
     placa_cavalo: '',
