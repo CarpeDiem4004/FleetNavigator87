@@ -507,6 +507,10 @@ export default function PostosVisaoGeralIntegrada() {
             </div>
           )}
         </TabsContent>
+
+        <TabsContent value="historico-automatico" className="mt-6">
+          <ConsumoDiarioHistorico />
+        </TabsContent>
       </Tabs>
     </div>
   );
