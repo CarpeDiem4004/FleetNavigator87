@@ -2708,9 +2708,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const query = `
         INSERT INTO fuel_card_requests
-          (plate, card_number, amount, reason, requested_by, driver_id, source, status, requested_at, created_at, updated_at)
+          (plate, card_number, amount, reason, requested_by, base_id, status, requested_at, created_at, updated_at)
         VALUES
-          ($1, $2, $3, $4, $5, $6, $7, 'pendente', NOW(), NOW(), NOW())
+          ($1, $2, $3, $4, $5, $6, 'pendente', NOW(), NOW(), NOW())
         RETURNING *
       `;
       
@@ -2720,8 +2720,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         parseFloat(amount),
         reason,
         requested_by || 'Motorista Line Hall',
-        driver_id,
-        source || 'line_hall'
+        3 // Line Hall Shopee base_id
       ]);
       
       return res.status(201).json({
@@ -10439,6 +10438,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({
         success: false,
         message: 'Erro interno do servidor',
+        error: error.message
+      });
+    }
+  });
+
+  // === SISTEMA DE NOTIFICAÇÕES PARA MOTORISTAS ===
+  
+  // API para obter notificações do motorista
+  app.get('/api/line-hall/notifications/:motorista_id', async (req, res) => {
+    try {
+      const { motorista_id } = req.params;
+      
+      const query = `
+        SELECT 
+          'fuel_card' as type,
+          'Solicitação de Recarga Aprovada' as title,
+          CONCAT('Sua solicitação de recarga de R$ ', amount, ' para o cartão ', card_number, ' foi aprovada!') as message,
+          updated_at as created_at,
+          id as related_id
+        FROM fuel_card_requests 
+        WHERE driver_id = $1 AND status = 'aprovada' AND updated_at > NOW() - INTERVAL '7 days'
+        UNION ALL
+        SELECT 
+          'fuel_request' as type,
+          'Solicitação de Abastecimento Aprovada' as title,
+          CONCAT('Sua solicitação de abastecimento de ', litros_estimados, ' litros para o veículo ', vehicle_plate, ' foi aprovada!') as message,
+          updated_at as created_at,
+          id as related_id
+        FROM fuel_requests 
+        WHERE motorista_id = $1 AND status = 'aprovada' AND updated_at > NOW() - INTERVAL '7 days'
+        ORDER BY created_at DESC
+        LIMIT 10
+      `;
+
+      const result = await pool.query(query, [motorista_id]);
+
+      res.status(200).json({
+        success: true,
+        data: result.rows
+      });
+
+    } catch (error) {
+      console.error('Erro ao buscar notificações do motorista:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar notificações',
         error: error.message
       });
     }
