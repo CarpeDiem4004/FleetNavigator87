@@ -5500,6 +5500,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Inicializar tabela de solicitações de cartão combustível
   setupFuelCardTable().catch(err => console.error("Erro ao configurar tabela de solicitações de cartão:", err));
   
+  // Configurar tabela de solicitações de abastecimento
+  setupFuelRequestsTable().catch(err => console.error("Erro ao configurar tabela de solicitações de abastecimento:", err));
+  
   // Solicitações de manutenção - API para página de solicitação de manutenção
   app.get("/api/solicitacoes-manutencao", hasMaintenanceAccess, async (req, res) => {
     try {
@@ -10443,5 +10446,205 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // === ROTAS PARA SOLICITAÇÕES DE ABASTECIMENTO ===
+  
+  // Criar solicitação de abastecimento (Line Hall)
+  app.post('/api/line-hall/fuel-requests', async (req, res) => {
+    try {
+      const {
+        motorista_id,
+        motorista_nome,
+        vehicle_plate,
+        km_atual,
+        litros_estimados,
+        local_abastecimento,
+        justificativa,
+        urgencia,
+        tipo_combustivel,
+        status = 'pendente'
+      } = req.body;
+
+      const insertQuery = `
+        INSERT INTO fuel_requests (
+          motorista_id, motorista_nome, vehicle_plate, km_atual, 
+          litros_estimados, local_abastecimento, justificativa, 
+          urgencia, tipo_combustivel, status, created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+        RETURNING *
+      `;
+
+      const result = await pool.query(insertQuery, [
+        motorista_id, motorista_nome, vehicle_plate, km_atual,
+        litros_estimados, local_abastecimento, justificativa,
+        urgencia, tipo_combustivel, status
+      ]);
+
+      res.status(201).json({
+        success: true,
+        message: 'Solicitação de abastecimento criada com sucesso',
+        data: result.rows[0]
+      });
+
+    } catch (error) {
+      console.error('Erro ao criar solicitação de abastecimento:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao criar solicitação de abastecimento',
+        error: error.message
+      });
+    }
+  });
+
+  // Listar solicitações de abastecimento
+  app.get('/api/line-hall/fuel-requests', isAuthenticated, async (req, res) => {
+    try {
+      const { status, motorista_id } = req.query;
+      let query = 'SELECT * FROM fuel_requests WHERE 1=1';
+      const params = [];
+      let paramCount = 0;
+
+      if (status) {
+        paramCount++;
+        query += ` AND status = $${paramCount}`;
+        params.push(status);
+      }
+
+      if (motorista_id) {
+        paramCount++;
+        query += ` AND motorista_id = $${paramCount}`;
+        params.push(motorista_id);
+      }
+
+      query += ' ORDER BY created_at DESC';
+
+      const result = await pool.query(query, params);
+
+      res.status(200).json({
+        success: true,
+        data: result.rows
+      });
+
+    } catch (error) {
+      console.error('Erro ao buscar solicitações de abastecimento:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar solicitações',
+        error: error.message
+      });
+    }
+  });
+
+  // Atualizar status de solicitação de abastecimento
+  app.put('/api/line-hall/fuel-requests/:id/status', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, observacoes_operador } = req.body;
+
+      const updateQuery = `
+        UPDATE fuel_requests 
+        SET status = $1, observacoes_operador = $2, updated_at = NOW()
+        WHERE id = $3
+        RETURNING *
+      `;
+
+      const result = await pool.query(updateQuery, [status, observacoes_operador, id]);
+
+      if (result.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Solicitação não encontrada'
+        });
+      }
+
+      // Se foi aprovada, gerar notificação para o motorista
+      if (status === 'aprovada') {
+        await createFuelRequestNotification(result.rows[0]);
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Status da solicitação atualizado com sucesso',
+        data: result.rows[0]
+      });
+
+    } catch (error) {
+      console.error('Erro ao atualizar status da solicitação:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao atualizar status',
+        error: error.message
+      });
+    }
+  });
+
   return httpServer;
+}
+
+// === FUNÇÕES AUXILIARES PARA SOLICITAÇÕES DE ABASTECIMENTO ===
+
+// Configurar tabela de solicitações de abastecimento
+async function setupFuelRequestsTable() {
+  try {
+    const createTableQuery = `
+      CREATE TABLE IF NOT EXISTS fuel_requests (
+        id SERIAL PRIMARY KEY,
+        motorista_id INTEGER NOT NULL,
+        motorista_nome VARCHAR(255) NOT NULL,
+        vehicle_plate VARCHAR(20) NOT NULL,
+        km_atual INTEGER NOT NULL,
+        litros_estimados INTEGER NOT NULL,
+        local_abastecimento TEXT NOT NULL,
+        justificativa TEXT NOT NULL,
+        urgencia VARCHAR(20) DEFAULT 'normal' CHECK (urgencia IN ('baixa', 'normal', 'alta')),
+        tipo_combustivel VARCHAR(20) DEFAULT 'diesel' CHECK (tipo_combustivel IN ('diesel', 'gasolina', 'etanol')),
+        status VARCHAR(20) DEFAULT 'pendente' CHECK (status IN ('pendente', 'aprovada', 'rejeitada', 'concluida')),
+        observacoes_operador TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_fuel_requests_status ON fuel_requests(status);
+      CREATE INDEX IF NOT EXISTS idx_fuel_requests_motorista ON fuel_requests(motorista_id);
+      CREATE INDEX IF NOT EXISTS idx_fuel_requests_vehicle ON fuel_requests(vehicle_plate);
+    `;
+
+    await pool.query(createTableQuery);
+    console.log('✅ Tabela fuel_requests configurada com sucesso');
+
+  } catch (error) {
+    console.error('❌ Erro ao configurar tabela fuel_requests:', error);
+    throw error;
+  }
+}
+
+// Criar notificação para motorista quando solicitação for aprovada
+async function createFuelRequestNotification(fuelRequest) {
+  try {
+    // Criar notificação na tabela de notificações (se existir)
+    const notificationQuery = `
+      INSERT INTO notifications (
+        user_id, user_type, title, message, 
+        type, related_id, created_at
+      ) VALUES ($1, 'motorista', $2, $3, 'fuel_request_approved', $4, NOW())
+    `;
+
+    const title = 'Solicitação de Abastecimento Aprovada';
+    const message = `Sua solicitação de abastecimento para o veículo ${fuelRequest.vehicle_plate} foi aprovada. Você pode prosseguir com o abastecimento de ${fuelRequest.litros_estimados} litros no local: ${fuelRequest.local_abastecimento}`;
+
+    // Tentar criar a notificação (pode falhar se a tabela não existir)
+    try {
+      await pool.query(notificationQuery, [
+        fuelRequest.motorista_id,
+        title,
+        message,
+        fuelRequest.id
+      ]);
+      console.log(`📱 Notificação criada para motorista ${fuelRequest.motorista_nome}`);
+    } catch (notifError) {
+      console.log('ℹ️ Tabela de notificações não encontrada, pulando criação de notificação');
+    }
+
+  } catch (error) {
+    console.error('Erro ao criar notificação:', error);
+  }
 }

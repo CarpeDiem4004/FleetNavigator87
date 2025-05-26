@@ -51,7 +51,8 @@ import {
   ShieldAlert,
   Loader2,
   Droplets,
-  Gauge
+  Gauge,
+  Fuel
 } from "lucide-react";
 
 // Tipos de condição para componentes do veículo
@@ -1274,6 +1275,195 @@ const LineHallDriverPage: React.FC = () => {
           <Button 
             onClick={submitFuelCardRequest}
             disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Enviando...
+              </>
+            ) : (
+              'Enviar Solicitação'
+            )}
+          </Button>
+        </CardFooter>
+      </Card>
+    );
+  };
+
+  // Função para enviar solicitação de abastecimento
+  const submitFuelRequest = async () => {
+    if (!motorista || !selectedVehicle) return;
+
+    setIsSubmitting(true);
+    try {
+      const requestData = {
+        motorista_id: motorista.id,
+        motorista_nome: motorista.nome,
+        vehicle_plate: selectedVehicle,
+        km_atual: fuelRequest.kmAtual,
+        litros_estimados: fuelRequest.litrosEstimados,
+        local_abastecimento: fuelRequest.localAbastecimento,
+        justificativa: fuelRequest.justificativa,
+        urgencia: fuelRequest.urgencia,
+        tipo_combustivel: fuelRequest.tipoCombustivel,
+        status: 'pendente'
+      };
+
+      const response = await fetch('/api/line-hall/fuel-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData)
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Solicitação enviada!",
+          description: "Sua solicitação de abastecimento foi enviada com sucesso. Você será notificado quando for aprovada.",
+        });
+        setStep('success');
+      } else {
+        throw new Error('Falha ao enviar solicitação');
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao enviar solicitação de abastecimento",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Tela de solicitação de abastecimento
+  const renderFuelRequestScreen = () => {
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Fuel className="h-5 w-5" />
+            Solicitar Abastecimento
+          </CardTitle>
+          <CardDescription>
+            Solicite autorização para abastecer o veículo {selectedVehicle}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Quilometragem Atual */}
+            <div className="space-y-2">
+              <Label htmlFor="km-atual">Quilometragem Atual *</Label>
+              <Input
+                id="km-atual"
+                type="number"
+                placeholder="Ex: 150000"
+                value={fuelRequest.kmAtual || ''}
+                onChange={(e) => setFuelRequest(prev => ({ 
+                  ...prev, 
+                  kmAtual: parseInt(e.target.value) || 0 
+                }))}
+              />
+            </div>
+
+            {/* Litros Estimados */}
+            <div className="space-y-2">
+              <Label htmlFor="litros">Litros Estimados *</Label>
+              <Input
+                id="litros"
+                type="number"
+                placeholder="Ex: 200"
+                value={fuelRequest.litrosEstimados || ''}
+                onChange={(e) => setFuelRequest(prev => ({ 
+                  ...prev, 
+                  litrosEstimados: parseInt(e.target.value) || 0 
+                }))}
+              />
+            </div>
+
+            {/* Tipo de Combustível */}
+            <div className="space-y-2">
+              <Label htmlFor="combustivel">Tipo de Combustível *</Label>
+              <Select 
+                value={fuelRequest.tipoCombustivel} 
+                onValueChange={(value) => setFuelRequest(prev => ({ 
+                  ...prev, 
+                  tipoCombustivel: value as 'diesel' | 'gasolina' | 'etanol' 
+                }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o combustível" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="diesel">Diesel</SelectItem>
+                  <SelectItem value="gasolina">Gasolina</SelectItem>
+                  <SelectItem value="etanol">Etanol</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Urgência */}
+            <div className="space-y-2">
+              <Label htmlFor="urgencia">Urgência *</Label>
+              <Select 
+                value={fuelRequest.urgencia} 
+                onValueChange={(value) => setFuelRequest(prev => ({ 
+                  ...prev, 
+                  urgencia: value as 'baixa' | 'normal' | 'alta' 
+                }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a urgência" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="baixa">Baixa</SelectItem>
+                  <SelectItem value="normal">Normal</SelectItem>
+                  <SelectItem value="alta">Alta</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Local de Abastecimento */}
+          <div className="space-y-2">
+            <Label htmlFor="local">Local de Abastecimento *</Label>
+            <Input
+              id="local"
+              placeholder="Ex: Posto Shell - Rod. Dutra km 225"
+              value={fuelRequest.localAbastecimento}
+              onChange={(e) => setFuelRequest(prev => ({ 
+                ...prev, 
+                localAbastecimento: e.target.value 
+              }))}
+            />
+          </div>
+
+          {/* Justificativa */}
+          <div className="space-y-2">
+            <Label htmlFor="justificativa">Justificativa *</Label>
+            <Textarea
+              id="justificativa"
+              placeholder="Descreva o motivo da solicitação de abastecimento..."
+              value={fuelRequest.justificativa}
+              onChange={(e) => setFuelRequest(prev => ({ 
+                ...prev, 
+                justificativa: e.target.value 
+              }))}
+              rows={3}
+            />
+          </div>
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <Button 
+            variant="outline"
+            onClick={() => setStep('menu')}
+            disabled={isSubmitting}
+          >
+            Voltar
+          </Button>
+          <Button 
+            onClick={submitFuelRequest}
+            disabled={isSubmitting || !fuelRequest.kmAtual || !fuelRequest.litrosEstimados || 
+                     !fuelRequest.localAbastecimento || !fuelRequest.justificativa}
           >
             {isSubmitting ? (
               <>
