@@ -18,9 +18,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useLocation } from 'wouter';
 import HistoricoAbastecimentosTabela from '@/components/posto-remedios/HistoricoAbastecimentosTabela';
-import FormularioAbastecimentoStandalone from '@/components/posto-remedios/FormularioAbastecimentoStandalone';
-import FormularioRecebimentoStandalone from '@/components/posto-remedios/FormularioRecebimentoStandalone';
-import HistoricoRecebimentos from '@/components/posto-remedios/HistoricoRecebimentos';
+import FormularioPostoRemedios from '@/components/posto-remedios/FormularioPostoRemedios';
 
 export default function PostoRemediosStandalone() {
   const { toast } = useToast();
@@ -165,110 +163,62 @@ export default function PostoRemediosStandalone() {
       </div>
 
       <Tabs defaultValue="novo" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="novo">Abastecimento</TabsTrigger>
-          <TabsTrigger value="recebimento">Recebimento</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="novo">Novo Registro</TabsTrigger>
           <TabsTrigger value="historico">Histórico</TabsTrigger>
         </TabsList>
 
         <TabsContent value="novo" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Registrar Abastecimento ou Lavagem</CardTitle>
-              <CardDescription>
-                Preencha os dados para registrar um abastecimento ou lavagem no Posto Remédios.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FormularioAbastecimentoStandalone />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="recebimento" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Registrar Recebimento de Combustível</CardTitle>
-              <CardDescription>
-                Registre a entrega de combustível no tanque do posto. Esta função é para operadores registrarem quando combustível é recebido dos fornecedores.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FormularioRecebimentoStandalone />
-            </CardContent>
-          </Card>
+          <FormularioPostoRemedios />
         </TabsContent>
 
         <TabsContent value="historico" className="mt-4">
-          <Tabs defaultValue="abastecimentos">
-            <TabsList className="mb-4">
-              <TabsTrigger value="abastecimentos">Abastecimentos</TabsTrigger>
-              <TabsTrigger value="recebimentos">Recebimentos</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="abastecimentos">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Histórico de Abastecimentos</CardTitle>
-                  <CardDescription>
-                    Visualize os registros de abastecimento do Posto Remédios.
-                  </CardDescription>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Data Início</label>
-                      <Input
-                        type="date"
-                        value={dataInicio}
-                        onChange={(e) => setDataInicio(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Data Fim</label>
-                      <Input
-                        type="date"
-                        value={dataFim}
-                        onChange={(e) => setDataFim(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Placa</label>
-                      <Input
-                        placeholder="Filtrar por placa"
-                        value={filtroPlaca}
-                        onChange={(e) => setFiltroPlaca(e.target.value)}
-                      />
-                    </div>
-                    <div className="flex items-end">
-                      <Button onClick={() => carregarRegistros()} className="w-full">
-                        Filtrar
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <HistoricoAbastecimentosTabela 
-                    registros={registros} 
-                    loading={loadingRegistros} 
-                    onRefresh={carregarRegistros}
+          <Card>
+            <CardHeader>
+              <CardTitle>Histórico de Abastecimentos</CardTitle>
+              <CardDescription>
+                Visualize os registros de abastecimento e lavagem do Posto Remédios.
+              </CardDescription>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Data Início</label>
+                  <Input
+                    type="date"
+                    value={dataInicio}
+                    onChange={(e) => setDataInicio(e.target.value)}
                   />
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="recebimentos">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Histórico de Entradas de Combustível</CardTitle>
-                  <CardDescription>
-                    Visualize os recebimentos de combustível registrados no posto.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <HistoricoRecebimentos postoId="posto_remedios" />
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Data Fim</label>
+                  <Input
+                    type="date"
+                    value={dataFim}
+                    onChange={(e) => setDataFim(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Placa</label>
+                  <Input
+                    placeholder="Filtrar por placa"
+                    value={filtroPlaca}
+                    onChange={(e) => setFiltroPlaca(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button onClick={() => carregarRegistros()} className="w-full">
+                    Filtrar
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <HistoricoAbastecimentosTabela 
+                registros={registros} 
+                loading={loadingRegistros} 
+                onRefresh={carregarRegistros}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
