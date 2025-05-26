@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
-// Interface para o formulário
+// Interface para o formulário (abastecimento e lavagem)
 interface FormValues {
   placa: string;
   km: string;
@@ -39,11 +39,7 @@ export default function PostoRemediosForm() {
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Calcular valor total automaticamente
-  const valorTotal = 
-    form.valor_litro && form.quantidade_litros
-      ? (parseFloat(form.valor_litro) * parseFloat(form.quantidade_litros)).toFixed(2)
-      : "0.00";
+  // Não há mais cálculo de valor total (removido recebimento de combustível)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;

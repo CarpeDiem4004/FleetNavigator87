@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/components/layout/AppLayout';
 import HistoricoAbastecimentosTabela from '@/components/posto-remedios/HistoricoAbastecimentosTabela';
-import PostoRemediosForm from '@/components/posto-remedios/PostoRemediosForm';
+import FormularioPostoRemedios from '@/components/posto-remedios/FormularioPostoRemedios';
 
 export default function PostoRemediosPage() {
   const { toast } = useToast();
