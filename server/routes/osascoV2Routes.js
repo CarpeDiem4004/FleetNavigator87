@@ -36,7 +36,6 @@ router.get('/historico', async (req, res) => {
         created_at
       FROM abastecimentos_posto_osasco_v2
       ORDER BY created_at DESC
-      LIMIT ${req.query.limit || 50}
     `;
     
     console.log("[OsascoV2] Executando consulta especializada de histórico");
