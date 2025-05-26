@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, RefreshCcw, Search, Edit, Trash2, Truck, FileText, CheckSquare, Wrench, AlertCircle } from 'lucide-react';
+import { Loader2, Plus, RefreshCcw, Search, Edit, Trash2, Truck, FileText, CheckSquare, Wrench, AlertCircle, Car } from 'lucide-react';
 import { api } from '@/services/api';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -265,6 +266,16 @@ export default function LineHallShopeePage() {
           total: maintenanceResponse.data.total || 0
         });
       }
+      
+      // Buscar estatísticas de veículos na garagem
+      const garageResponse = await api.get('/line-hall/garage-stats');
+      if (garageResponse.data.success) {
+        setGarageStats({
+          total_veiculos: garageResponse.data.total_veiculos || 0,
+          media_dias: garageResponse.data.media_dias || 0,
+          veiculos: garageResponse.data.data || []
+        });
+      }
     } catch (error: any) {
       console.error("Erro ao buscar estatísticas:", error);
       // Usar valores padrão para casos de falha
@@ -279,6 +290,12 @@ export default function LineHallShopeePage() {
         emAndamento: 0,
         concluidas: 0,
         total: 0
+      });
+      
+      setGarageStats({
+        total_veiculos: 0,
+        media_dias: 0,
+        veiculos: []
       });
     }
   };
@@ -543,6 +560,53 @@ export default function LineHallShopeePage() {
                     Gerenciar
                   </Button>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Card de Veículos na Garagem */}
+          <Card className="overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-green-100 to-green-50 dark:from-green-950 dark:to-green-900">
+              <CardTitle className="flex items-center text-lg">
+                <Car className="mr-2 h-5 w-5 text-green-600 dark:text-green-400" />
+                Veículos na Garagem
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="flex flex-col space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col items-center justify-center p-4 bg-green-50 dark:bg-green-900/20 rounded-md">
+                    <span className="text-3xl font-bold text-green-600 dark:text-green-400">{garageStats.total_veiculos}</span>
+                    <span className="text-sm text-muted-foreground">Total de Veículos</span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+                    <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                      {garageStats.media_dias ? garageStats.media_dias.toFixed(1) : '0.0'}
+                    </span>
+                    <span className="text-sm text-muted-foreground">Média de Dias</span>
+                  </div>
+                </div>
+                
+                {garageStats.veiculos.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-muted-foreground">Veículos Atualmente na Garagem:</h4>
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {garageStats.veiculos.map((veiculo: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-md text-sm">
+                          <span className="font-medium">{veiculo.vehicle_plate}</span>
+                          <Badge className={veiculo.dias_na_garagem > 5 ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}>
+                            {veiculo.dias_na_garagem} dia{veiculo.dias_na_garagem !== 1 ? 's' : ''}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <Button variant="outline" size="sm" onClick={fetchDriverStats}>
+                  <RefreshCcw className="mr-2 h-4 w-4" />
+                  Atualizar
+                </Button>
               </div>
             </CardContent>
           </Card>
