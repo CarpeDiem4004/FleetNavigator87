@@ -2234,21 +2234,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Estatísticas de manutenções solicitadas por motoristas do Line Hall
   app.get('/api/line-hall/maintenance-stats', isAuthenticated, async (req, res) => {
     try {
-      // Usar Supabase diretamente para evitar problemas de colunas
-      const { data, error } = await supabase
-        .from('linehall_maintenance')
-        .select('status');
-
-      if (error) {
-        console.error('Erro Supabase ao buscar manutenções:', error);
-        throw error;
-      }
+      // Usar PostgreSQL diretamente para evitar problemas de colunas
+      const query = 'SELECT status FROM linehall_maintenance';
+      const result = await pool.query(query);
 
       // Contar estatísticas manualmente
-      const pendentes = data?.filter(item => item.status === 'pendente').length || 0;
-      const emAndamento = data?.filter(item => item.status === 'em_andamento').length || 0;
-      const concluidas = data?.filter(item => item.status === 'concluida').length || 0;
-      const total = data?.length || 0;
+      const pendentes = result.rows?.filter(item => item.status === 'pendente').length || 0;
+      const emAndamento = result.rows?.filter(item => item.status === 'em_andamento').length || 0;
+      const concluidas = result.rows?.filter(item => item.status === 'concluida').length || 0;
+      const total = result.rows?.length || 0;
       
       return res.status(200).json({
         success: true,
@@ -2274,14 +2268,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API específica para buscar motoristas do Line Hall
   app.get('/api/line-hall/drivers', async (req, res) => {
     try {
-      const { data, error } = await supabase
-        .from('motoristas')
-        .select('id, nome, cpf, telefone, base_id')
-        .eq('base_id', 3); // Line Hall base_id = 3
-
-      if (error) throw error;
-
-      const motoristas = data?.map(motorista => ({
+      const query = `
+        SELECT id, nome, cpf, telefone, base_id
+        FROM motoristas 
+        WHERE base_id = 3
+        ORDER BY created_at DESC
+      `;
+      
+      const result = await pool.query(query);
+      
+      const motoristas = result.rows.map(motorista => ({
         id: motorista.id,
         nome: motorista.nome,
         cpf: motorista.cpf.replace(/\D/g, ''), // Limpar formatação

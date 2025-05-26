@@ -140,6 +140,32 @@ app.use((req, res, next) => {
       });
     }
   });
+
+  // Add DELETE endpoint for drivers
+  app.delete('/api/drivers/:id', async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      const { id } = req.params;
+      const query = 'DELETE FROM motoristas WHERE id = $1';
+      
+      const result = await pool.query(query, [id]);
+      console.log('Driver deleted:', id);
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Driver deleted successfully'
+      });
+    } catch (error) {
+      console.error('Delete Driver API - Error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error deleting driver',
+        error: error.message
+      });
+    }
+  });
   
   const server = await registerRoutes(app);
   

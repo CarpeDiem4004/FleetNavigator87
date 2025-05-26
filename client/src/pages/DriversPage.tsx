@@ -282,12 +282,14 @@ const DriversPage: React.FC = () => {
     }
 
     try {
-      const { error } = await supabase
-        .from('motoristas')
-        .delete()
-        .eq('id', id);
+      const response = await fetch(`/api/drivers/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
       
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Erro ao excluir motorista');
+      }
       
       setDrivers(drivers.filter(driver => driver.id !== id));
       
