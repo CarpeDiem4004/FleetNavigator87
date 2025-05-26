@@ -741,6 +741,13 @@ app.use((req, res, next) => {
       });
     }
   });
+  
+  // Registrar rotas de histórico de consumo diário
+  app.use('/api', consumoDiarioHistorico);
+  
+  // Inicializar scheduler de coleta automática de dados (meia-noite)
+  iniciarScheduler();
+  console.log('🕛 Sistema de coleta automática de consumo diário iniciado');
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

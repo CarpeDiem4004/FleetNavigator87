@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { format } from 'date-fns';
-import { AlertTriangle, DropletIcon, Filter, Fuel, LogIn, RefreshCw, Search, BarChart4, Calendar } from 'lucide-react';
+import { AlertTriangle, DropletIcon, Filter, Fuel, LogIn, RefreshCw, Search, BarChart4, Calendar, Clock } from 'lucide-react';
+import ConsumoDiarioHistorico from './ConsumoDiarioHistorico';
 import {
   Card,
   CardContent,
@@ -203,7 +204,7 @@ export default function PostosVisaoGeralIntegrada() {
 
       {/* Abas */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="visao-geral" className="flex items-center gap-2">
             <DropletIcon className="h-4 w-4" />
             Status dos Postos
@@ -211,6 +212,10 @@ export default function PostosVisaoGeralIntegrada() {
           <TabsTrigger value="consumo-diario" className="flex items-center gap-2">
             <BarChart4 className="h-4 w-4" />
             Consumo Diário
+          </TabsTrigger>
+          <TabsTrigger value="historico-automatico" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Histórico Automático
           </TabsTrigger>
         </TabsList>
 
