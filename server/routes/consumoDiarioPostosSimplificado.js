@@ -9,7 +9,10 @@ const { unifiedAuthMiddleware, requireRoles } = require('../utils/auth-utils.js'
  */
 router.get('/', unifiedAuthMiddleware, requireRoles(['admin', 'gestor']), async (req, res) => {
   try {
-    // Consulta para obter as tabelas de abastecimento existentes
+    // Lista dos 6 postos específicos que devem ser exibidos (APENAS com final _v2)
+    const postosPermitidos = ['abc_v2', 'alair_v2', 'campinas_v2', 'osasco_v2', 'socorro_v2', 'sorocaba_v2'];
+    
+    // Consulta para obter APENAS as tabelas dos 6 postos específicos
     const tabelasQuery = `
       SELECT table_name 
       FROM information_schema.tables 
@@ -20,6 +23,14 @@ router.get('/', unifiedAuthMiddleware, requireRoles(['admin', 'gestor']), async 
       AND table_name NOT LIKE '%_ultimos%'
       AND table_name NOT LIKE '%_consolidado%'
       AND table_schema = 'public'
+      AND (
+        table_name = 'abastecimentos_posto_abc_v2' OR
+        table_name = 'abastecimentos_posto_alair_v2' OR
+        table_name = 'abastecimentos_posto_campinas_v2' OR
+        table_name = 'abastecimentos_posto_osasco_v2' OR
+        table_name = 'abastecimentos_posto_socorro_v2' OR
+        table_name = 'abastecimentos_posto_sorocaba_v2'
+      )
       ORDER BY table_name
     `;
     
