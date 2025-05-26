@@ -75,28 +75,14 @@ const DriversPage: React.FC = () => {
     const fetchDrivers = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('motoristas')
-          .select(`
-            *,
-            bases:base_id(id, name)
-          `)
-          .order('created_at', { ascending: false });
+        const response = await fetch('/api/drivers');
+        
+        if (!response.ok) {
+          throw new Error('Erro ao carregar motoristas');
+        }
 
-        if (error) throw error;
-
-        // Formatar os dados para incluir os nomes das bases
-        const formattedData = data.map((item: any) => ({
-          id: item.id,
-          nome: item.nome,
-          cpf: item.cpf,
-          telefone: item.telefone,
-          base_id: item.base_id,
-          base_nome: item.bases?.name,
-          created_at: item.created_at
-        }));
-
-        setDrivers(formattedData);
+        const data = await response.json();
+        setDrivers(data || []);
       } catch (error) {
         console.error('Erro ao buscar motoristas:', error);
         toast({
