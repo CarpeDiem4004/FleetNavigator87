@@ -305,10 +305,10 @@ emergencyRouter.get('/history/:token', async (req, res) => {
     if (token) {
       const lowerToken = token.toLowerCase();
       
-      if (lowerToken.includes('allan_de_souza_vieira')) {
+      if (lowerToken.includes('allan_de_souza_vieira') || lowerToken.includes('teste_allan')) {
         partnerId = 15; // ID fixo do Allan de Souza Vieira para teste
         console.log('[EmergencyRouter] Token de teste identificado para Allan de Souza Vieira (ID: 15)');
-      } else if (lowerToken === 'teste_caio_ramos_de_souza_token' || (lowerToken.includes('caio_ramos') && lowerToken.includes('_de_souza') && !lowerToken.includes('allan'))) {
+      } else if (lowerToken === 'teste_caio_ramos_de_souza_token' || (lowerToken.includes('caio_ramos') && !lowerToken.includes('allan'))) {
         partnerId = 8; // ID fixo do Caio Ramos para teste
         console.log('[EmergencyRouter] Token de teste identificado para Caio Ramos (ID: 8)');
       } else if (lowerToken.includes('claudio_de_oliveira')) {
@@ -336,7 +336,7 @@ emergencyRouter.get('/history/:token', async (req, res) => {
     
     // Se ainda não encontrou um parceiro, usar default (Caio Ramos)
     if (!partnerId) {
-      partnerId = 8;
+      return res.status(404).json({ success: false, message: "Token não reconhecido" });
       console.log('[EmergencyRouter] Usando parceiro padrão Caio Ramos (ID: 8)');
     }
     
