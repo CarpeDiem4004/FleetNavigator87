@@ -82,6 +82,12 @@ export default function ExternalAccessPage() {
             company_name: 'Allan de Souza Vieira',
             token_expires_at: null
           },
+          'TESTE_ALLAN_DE_SOUZA_VIEIRA_TOKEN': {
+            id: 15,
+            name: 'Allan de Souza Vieira',
+            company_name: 'Allan de Souza Vieira (Teste)',
+            token_expires_at: null
+          },
           'FORD_PERMANENTE_2025_TOKEN': {
             id: 1,
             name: 'Guincho Rápido Ltda',
