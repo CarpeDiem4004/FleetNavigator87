@@ -1141,8 +1141,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rotas de diagnóstico
   app.use('/api/diagnostico', diagnosticoRoutes);
   
-  // DELETE endpoint para excluir registros de recebimentos (deve vir ANTES da rota geral)
-  app.delete('/api/recebimentos/:posto/:id', unifiedAuthMiddleware, async (req, res) => {
+  // DELETE endpoint para excluir registros de recebimentos (rota específica para evitar conflito com Vite)
+  app.delete('/api/delete-recebimento/:posto/:id', unifiedAuthMiddleware, async (req, res) => {
     try {
       const { posto, id } = req.params;
       
@@ -1193,11 +1193,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (result.rowCount > 0) {
         console.log(`[DELETE RECEBIMENTO] Registro ${id} excluído com sucesso da tabela ${tableName}`);
         
-        return res.status(200).json({
+        // Force response termination to prevent Vite middleware interference
+        res.status(200);
+        res.json({
           success: true,
           message: 'Registro de recebimento excluído com sucesso',
           deletedId: id
         });
+        return res.end();
       } else {
         return res.status(500).json({
           success: false,
