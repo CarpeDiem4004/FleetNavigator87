@@ -171,85 +171,82 @@ app.use((req, res, next) => {
   app.get('/api/consumo-diario-postos-simplificado', async (req, res) => {
     try {
       // Período da consulta - últimos 30 dias por padrão
-      const dias = parseInt(req.query.dias) || 30;
+      const dias = parseInt(req.query.dias as string) || 30;
       const dataLimite = new Date();
       dataLimite.setDate(dataLimite.getDate() - dias);
       const dataLimiteStr = dataLimite.toISOString().split('T')[0];
       
-      // Lista das 6 tabelas específicas dos postos
-      const tabelas = [
-        'abastecimentos_posto_abc_v2',
-        'abastecimentos_posto_alair_v2', 
-        'abastecimentos_posto_campinas_v2',
-        'abastecimentos_posto_osasco_v2',
-        'abastecimentos_posto_socorro_v2',
-        'abastecimentos_posto_sorocaba_v2'
-      ];
+      // Mapa das tabelas para normalizar nomes
+      const tabelasMap = {
+        'abastecimentos_posto_abc_v2': 'abc_v2',
+        'abastecimentos_posto_alair_v2': 'alair_v2', 
+        'abastecimentos_posto_campinas_v2': 'campinas_v2',
+        'abastecimentos_posto_osasco_v2': 'osasco_v2',
+        'abastecimentos_posto_socorro_v2': 'socorro_v2',
+        'abastecimentos_posto_sorocaba_v2': 'sorocaba_v2'
+      };
       
+      // Obter todas as datas únicas do período
+      const queryDatas = `
+        SELECT DISTINCT DATE(created_at) as data
+        FROM (
+          SELECT created_at FROM abastecimentos_posto_abc_v2 WHERE created_at >= $1
+          UNION SELECT created_at FROM abastecimentos_posto_alair_v2 WHERE created_at >= $1
+          UNION SELECT created_at FROM abastecimentos_posto_campinas_v2 WHERE created_at >= $1
+          UNION SELECT created_at FROM abastecimentos_posto_osasco_v2 WHERE created_at >= $1
+          UNION SELECT created_at FROM abastecimentos_posto_socorro_v2 WHERE created_at >= $1
+          UNION SELECT created_at FROM abastecimentos_posto_sorocaba_v2 WHERE created_at >= $1
+        ) todas_datas
+        ORDER BY data DESC
+      `;
+      
+      const datasResult = await pool.query(queryDatas, [dataLimiteStr]);
       const resultado = [];
       
-      // Para cada tabela, consultar o consumo diário
-      for (const tabela of tabelas) {
-        const nomePosto = tabela.replace('abastecimentos_posto_', '').toUpperCase().replace(/_/g, ' ');
+      // Para cada data, buscar consumo de todos os postos
+      for (let i = 0; i < datasResult.rows.length; i++) {
+        const dataAtual = datasResult.rows[i].data;
+        const item = {
+          dia: i + 1,
+          data: dataAtual,
+          osasco_v2: 0,
+          alair_v2: 0,
+          campinas_v2: 0,
+          abc_v2: 0,
+          socorro_v2: 0,
+          sorocaba_v2: 0,
+          total: 0
+        };
         
-        try {
-          // Consulta para obter o consumo diário
-          const query = `
-            SELECT 
-              DATE(created_at) as data,
-              COALESCE(SUM(litros), 0) as litros,
-              COUNT(*) as abastecimentos,
-              COALESCE(SUM(valor_total), 0) as valor_total
-            FROM ${tabela}
-            WHERE created_at >= $1
-            GROUP BY DATE(created_at)
-            ORDER BY data DESC
-          `;
-          
-          const consumoResult = await pool.query(query, [dataLimiteStr]);
-          
-          // Cálculo do total e média
-          let totalLitros = 0;
-          let totalAbastecimentos = 0;
-          let totalValor = 0;
-          const diasComRegistro = consumoResult.rows.length;
-          
-          consumoResult.rows.forEach(row => {
-            totalLitros += parseFloat(row.litros || 0);
-            totalAbastecimentos += parseInt(row.abastecimentos || 0);
-            totalValor += parseFloat(row.valor_total || 0);
-          });
-          
-          // Média diária considerando apenas dias com registro
-          const mediaDiaria = diasComRegistro > 0 ? (totalLitros / diasComRegistro) : 0;
-          
-          resultado.push({
-            posto: nomePosto,
-            tabelaOrigem: tabela,
-            consumoDiario: consumoResult.rows,
-            resumo: {
-              totalLitros,
-              totalAbastecimentos,
-              totalValor,
-              mediaDiaria,
-              diasComRegistro
-            }
-          });
-        } catch (tableError) {
-          console.error(`Erro ao consultar tabela ${tabela}:`, tableError);
-          continue;
+        // Para cada tabela, buscar o consumo da data
+        for (const [tabela, nomePosto] of Object.entries(tabelasMap)) {
+          try {
+            const query = `
+              SELECT COALESCE(SUM(litros), 0) as litros
+              FROM ${tabela}
+              WHERE DATE(created_at) = $1
+            `;
+            
+            const consumoResult = await pool.query(query, [dataAtual]);
+            const litros = parseFloat(consumoResult.rows[0]?.litros || 0);
+            
+            item[nomePosto] = litros;
+            item.total += litros;
+          } catch (tableError) {
+            console.error(`Erro ao consultar tabela ${tabela} para data ${dataAtual}:`, tableError);
+            continue;
+          }
         }
+        
+        resultado.push(item);
       }
-      
-      // Ordenar por consumo total (decrescente)
-      resultado.sort((a, b) => b.resumo.totalLitros - a.resumo.totalLitros);
       
       res.status(200).json({
         success: true,
         data: resultado,
         params: { dias }
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao obter consumo diário de postos:', error);
       res.status(500).json({
         success: false,

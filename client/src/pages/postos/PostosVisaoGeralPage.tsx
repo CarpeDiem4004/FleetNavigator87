@@ -97,7 +97,7 @@ export default function PostosVisaoGeralPage() {
         throw new Error('Erro ao buscar dados de consumo diário');
       }
       const data = await res.json();
-      return data.dados as ConsumoDiario[];
+      return data.data as ConsumoDiario[];
     },
     enabled: activeTab === 'consumo-diario'
   });
