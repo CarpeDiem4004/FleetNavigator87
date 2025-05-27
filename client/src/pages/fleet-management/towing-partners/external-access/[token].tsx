@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, History, Clock, MapPin, Truck, DollarSign, FileClock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { formatDateShortBrasilia } from '@/lib/date-utils';
 import {
   Dialog,
   DialogContent,
@@ -848,9 +849,8 @@ export default function TowingPartnerExternalAccess() {
                         </TableHeader>
                         <TableBody>
                           {serviceHistory.map((service) => {
-                            // Formatar a data do serviço
-                            const serviceDate = new Date(service.service_date);
-                            const formattedDate = serviceDate.toLocaleDateString('pt-BR');
+                            // Formatar a data do serviço com fuso horário de Brasília
+                            const formattedDate = formatDateShortBrasilia(service.service_date);
                             
                             // Determinar o status
                             let statusBadge;

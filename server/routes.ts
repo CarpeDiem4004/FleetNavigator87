@@ -10228,6 +10228,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Rota para limpar serviços excluídos do histórico
+  app.post('/api/towing/limpar-servicos-excluidos', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Usuário não autenticado" });
+      }
+      
+      // Limpar serviços que foram rejeitados ou excluídos
+      const deleteQuery = `
+        DELETE FROM towing_service_notes 
+        WHERE status IN ('rejected', 'deleted', 'cancelled')
+        AND created_at < NOW() - INTERVAL '30 days'
+      `;
+      
+      const result = await pool.query(deleteQuery);
+      
+      // Também limpar da tabela servicos_guincho se existir
+      try {
+        const deleteGuinchoQuery = `
+          DELETE FROM servicos_guincho 
+          WHERE status IN ('rejeitado', 'excluido', 'cancelado')
+          AND data_lancamento < NOW() - INTERVAL '30 days'
+        `;
+        
+        await pool.query(deleteGuinchoQuery);
+      } catch (guinchoError) {
+        console.warn('Tabela servicos_guincho não existe ou erro ao limpar:', guinchoError);
+      }
+      
+      const deletedCount = result.rowCount || 0;
+      
+      console.log(`Limpeza concluída. ${deletedCount} serviços excluídos removidos do histórico.`);
+      
+      res.json({ 
+        success: true, 
+        message: 'Serviços excluídos removidos do histórico com sucesso',
+        count: deletedCount 
+      });
+    } catch (error) {
+      console.error('Erro ao limpar serviços excluídos:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao limpar histórico de serviços excluídos',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+  });
+  
   // Rota para obter serviços de guincho para aprovação
   app.get('/api/towing/servicos', async (req, res) => {
     try {
