@@ -675,7 +675,8 @@ app.use((req, res, next) => {
         new Date(b.data).getTime() - new Date(a.data).getTime()
       );
       
-      console.log(`[CONSUMO-DIRETO] Dados finais:`, JSON.stringify(dadosFinais[0], null, 2));
+      // Verificar se os dados de carros estão sendo incluídos
+      console.log(`[CONSUMO-DIRETO] Dados finais com carros:`, JSON.stringify(dadosFinais[0], null, 2));
       
       res.json({
         success: true,
