@@ -755,18 +755,7 @@ export default function TowingPartnerExternalAccess() {
                       value={formData.service_description}
                       onChange={handleInputChange}
                       placeholder="Descreva os detalhes do serviço realizado"
-                      rows={3}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="observation">Observações</Label>
-                    <Textarea
-                      id="observation"
-                      name="observation"
-                      value={formData.observation}
-                      onChange={handleInputChange}
-                      placeholder="Observações adicionais sobre o serviço"
-                      rows={3}
+                      rows={4}
                     />
                   </div>
                 </CardContent>
