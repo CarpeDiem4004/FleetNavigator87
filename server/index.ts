@@ -644,16 +644,28 @@ app.use((req, res, next) => {
             abc_v2: 0,
             socorro_v2: 0,
             sorocaba_v2: 0,
-            total: 0
+            total: 0,
+            // Adicionar contadores de carros
+            osasco_v2_carros: 0,
+            alair_v2_carros: 0,
+            campinas_v2_carros: 0,
+            abc_v2_carros: 0,
+            socorro_v2_carros: 0,
+            sorocaba_v2_carros: 0,
+            total_carros: 0
           };
         }
         
         const posto = row.posto.toLowerCase();
         const litros = parseFloat(row.litros) || 0;
+        const carros = parseInt(row.carros) || 0;
         
         if (dadosAgrupados[data][posto] !== undefined) {
+          // Adicionar litros e carros para cada posto
           dadosAgrupados[data][posto] = litros;
+          dadosAgrupados[data][posto + '_carros'] = carros;
           dadosAgrupados[data].total += litros;
+          dadosAgrupados[data].total_carros += carros;
         }
       });
       

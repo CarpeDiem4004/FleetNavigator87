@@ -554,25 +554,25 @@ export default function PostosVisaoGeralPage() {
                           {format(new Date(item.data), 'dd/MM/yyyy')}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                          {formatarNumero(item.osasco_v2)} L
+                          {formatarNumero(item.osasco_v2)} L {item.osasco_v2_carros ? `(${item.osasco_v2_carros} carros)` : ''}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                          {formatarNumero(item.alair_v2)} L
+                          {formatarNumero(item.alair_v2)} L {item.alair_v2_carros ? `(${item.alair_v2_carros} carros)` : ''}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                          {formatarNumero(item.campinas_v2)} L
+                          {formatarNumero(item.campinas_v2)} L {item.campinas_v2_carros ? `(${item.campinas_v2_carros} carros)` : ''}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                          {formatarNumero(item.abc_v2)} L
+                          {formatarNumero(item.abc_v2)} L {item.abc_v2_carros ? `(${item.abc_v2_carros} carros)` : ''}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                          {formatarNumero(item.socorro_v2)} L
+                          {formatarNumero(item.socorro_v2)} L {item.socorro_v2_carros ? `(${item.socorro_v2_carros} carros)` : ''}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                          {formatarNumero(item.sorocaba_v2)} L
+                          {formatarNumero(item.sorocaba_v2)} L {item.sorocaba_v2_carros ? `(${item.sorocaba_v2_carros} carros)` : ''}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right bg-blue-50">
-                          {formatarNumero(item.total)} L
+                          {formatarNumero(item.total)} L {item.total_carros ? `(${item.total_carros} carros)` : ''}
                         </td>
                       </tr>
                     )) || (
