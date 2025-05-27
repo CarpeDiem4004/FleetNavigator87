@@ -11161,8 +11161,7 @@ async function createFuelRequestNotification(fuelRequest) {
   } catch (error) {
     console.error('Erro ao criar notificação:', error);
   }
-}
-
+  
   // ===== ROTAS PARA MÓDULO FINANCEIRO DE SERVIÇOS DE GUINCHO =====
   // (Movidas para towingPaymentsRoutes.ts)
 
