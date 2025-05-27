@@ -65,9 +65,14 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
       // Fazer a chamada para excluir o registro usando apiRequest com autenticação
       const response = await apiRequest('DELETE', `/api/recebimentos/${postId.toLowerCase()}/${deleteItemId}`);
       
-      console.log('[DELETE] Resposta recebida:', response);
+      console.log('[DELETE] Response object received:', response);
       
-      if (response && response.success) {
+      // Parse the JSON response
+      const responseData = await response.json();
+      
+      console.log('[DELETE] Dados da resposta parseados:', responseData);
+      
+      if (responseData && responseData.success) {
         // Invalidar a query para recarregar os dados
         queryClient.invalidateQueries({ queryKey: [`/api/recebimentos/${postId.toLowerCase()}`] });
         setIsDeleteDialogOpen(false);
@@ -77,7 +82,7 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
         console.log(`✅ Registro de recebimento #${deleteItemId} excluído com sucesso`);
         alert('Registro excluído com sucesso!');
       } else {
-        const errorMsg = response?.message || response?.error || 'Erro desconhecido';
+        const errorMsg = responseData?.message || responseData?.error || 'Erro desconhecido';
         console.error('❌ Erro ao excluir o registro:', errorMsg);
         alert(`Erro ao excluir o registro: ${errorMsg}`);
       }
