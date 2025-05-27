@@ -176,7 +176,7 @@ export default function FinanceiroGuincho() {
   // Mutation para excluir serviço de guincho
   const deleteServiceMutation = useMutation({
     mutationFn: async (serviceId: number) => {
-      const response = await fetch(`/api/towing/services/${serviceId}`, {
+      const response = await fetch(`/api/towing/payments/services/${serviceId}`, {
         method: 'DELETE',
       });
       if (!response.ok) throw new Error('Erro ao excluir serviço');
