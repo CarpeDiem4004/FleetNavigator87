@@ -10179,18 +10179,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const query = `
         WITH inseridos AS (
           INSERT INTO servicos_guincho (
-            parceiro_id, ${plateColumn}, ${vehicleColumn}, ${serviceTypeColumn}, ${valueColumn}, ${dateColumn}, 
-            status, ${notesColumn}, ${locationColumn}, ${kmColumn}, ${photosColumn}, towing_note_id
+            parceiro_id, placa_veiculo, modelo_veiculo, valor, data_servico, 
+            status, observacoes, endereco_origem, quilometragem
           )
           SELECT 
-            t.partner_id, t.plate, t.vehicle_model, t.service_type, t.value, t.service_date,
-            'pendente', t.notes, t.service_location, t.towing_km, t.service_photos, t.id
+            t.partner_id, t.plate, COALESCE(t.vehicle_model, 'Não informado'), t.cost, t.service_date,
+            'pendente', COALESCE(t.notes, ''), COALESCE(t.pickup_location, ''), COALESCE(t.mileage, 0)
           FROM 
             towing_service_notes t
           LEFT JOIN 
-            servicos_guincho s ON t.id = s.towing_note_id
+            servicos_guincho s ON t.partner_id = s.parceiro_id AND t.plate = s.placa_veiculo AND t.service_date::date = s.data_servico::date
           WHERE 
-            s.id IS NULL
+            s.id IS NULL AND t.status = 'pending'
           RETURNING id
         )
         SELECT COUNT(*) as count FROM inseridos
