@@ -166,11 +166,11 @@ export default function PostosVisaoGeralPage() {
     }
   });
 
-  // Buscar dados de consumo diário usando o novo endpoint
+  // Buscar dados de consumo diário usando o endpoint direto
   const { data: consumoDiarioResponse, isLoading: isLoadingConsumo } = useQuery({
-    queryKey: ['/api/consumo-diario-tabela', periodoDias],
+    queryKey: ['/api/consumo-diario-tabela-direto', periodoDias],
     queryFn: async () => {
-      const res = await fetch(`/api/consumo-diario-tabela?dias=${periodoDias}`);
+      const res = await fetch(`/api/consumo-diario-tabela-direto?dias=${periodoDias}`);
       if (!res.ok) {
         throw new Error('Erro ao buscar dados de consumo diário');
       }

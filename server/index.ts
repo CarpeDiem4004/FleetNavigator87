@@ -599,10 +599,80 @@ app.use((req, res, next) => {
     });
   });
   
+  // Rota direta para consumo diário (DEVE estar ANTES das outras rotas para evitar interceptação do Vite)
+  app.get('/api/consumo-diario-tabela-direto', async (req, res) => {
+    try {
+      const dias = parseInt(req.query.dias as string) || 30;
+      
+      // Consulta na tabela de histórico consolidado
+      const query = `
+        SELECT 
+          data_coleta as data,
+          posto,
+          litros_consumidos as litros,
+          numero_abastecimentos as carros,
+          valor_total
+        FROM consumo_diario_historico
+        WHERE data_coleta >= CURRENT_DATE - INTERVAL '${dias} days'
+        ORDER BY data_coleta DESC, posto
+      `;
+      
+      const result = await pool.query(query);
+      
+      // Agrupar dados por data
+      const dadosAgrupados: any = {};
+      
+      result.rows.forEach((row: any) => {
+        const data = row.data.toISOString().split('T')[0];
+        
+        if (!dadosAgrupados[data]) {
+          dadosAgrupados[data] = {
+            data: data,
+            dia: new Date(data).getDate(),
+            osasco_v2: 0,
+            alair_v2: 0,
+            campinas_v2: 0,
+            abc_v2: 0,
+            socorro_v2: 0,
+            sorocaba_v2: 0,
+            total: 0
+          };
+        }
+        
+        const posto = row.posto.toLowerCase();
+        const litros = parseFloat(row.litros) || 0;
+        
+        if (dadosAgrupados[data][posto] !== undefined) {
+          dadosAgrupados[data][posto] = litros;
+          dadosAgrupados[data].total += litros;
+        }
+      });
+      
+      // Converter para array e ordenar
+      const dadosFinais = Object.values(dadosAgrupados).sort((a: any, b: any) => 
+        new Date(b.data).getTime() - new Date(a.data).getTime()
+      );
+      
+      res.json({
+        success: true,
+        data: dadosFinais,
+        totalRegistros: dadosFinais.length
+      });
+      
+    } catch (error) {
+      console.error('Erro ao buscar dados de consumo diário:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: (error as Error).message
+      });
+    }
+  });
+
   // Registrar as rotas no aplicativo principal
   app.use('/api/consumo-diario-postos', consumoDiarioPostosRoutes);
   app.use('/api/consumo-diario-tabela', consumoDiarioTabela);
-  
+
   // Registrar as rotas de API diretas para evitar interceptação do Vite
   // Estas rotas serão processadas antes do middleware do Vite e terão os headers adequados
   app.get('/api/historico-direto/:posto', getHistoricoPosto);
