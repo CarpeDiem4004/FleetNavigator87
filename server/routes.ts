@@ -10317,15 +10317,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           nome: row.parceiro_nome || row.parceiro_empresa,
           cidade: row.parceiro_cidade || 'N/A',
           estado: row.parceiro_estado || 'N/A',
-          avaliacao: 4.0 // Valor padrão, implementar avaliação real no futuro
+          avaliacao: 4.0
         },
         placa: row.placa,
-        veiculo: 'Não especificado', // Campo a ser adicionado no futuro
+        veiculo: 'Não especificado',
         tipo_servico: row.tipo_servico || 'Reboque',
         valor: parseFloat(row.valor) || 0,
         data_servico: row.data_servico,
         status: row.status === 'pending' ? 'pendente' : (row.status === 'approved' ? 'aprovado' : 'rejeitado'),
-        observacoes: row.observacoes,
+        observacoes: row.observacoes || '',
         local_atendimento: row.pickup_location || 'Não informado',
         local_retirada: row.pickup_location || 'Não informado',
         local_entrega: row.delivery_location || 'Não informado',
