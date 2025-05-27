@@ -949,4 +949,114 @@ router.post('/ratings', authenticateJWT, async (req, res) => {
   }
 });
 
+/**
+ * @route PUT /api/towing/services/:id/approve
+ * @desc Aprovar serviço de guincho e enviar para módulo financeiro
+ * @access Privado (apenas administradores e gestores de frota)
+ */
+router.put('/services/:id/approve', authenticateJWT, verifyFleetManager, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { notes, actual_cost } = req.body;
+    const user = req.user as any;
+
+    console.log(`[Aprovação] Aprovando serviço ${id} pelo usuário ${user.name} (ID: ${user.id})`);
+
+    // Primeiro, atualizar o status na tabela principal
+    const updateQuery = `
+      UPDATE towing_services 
+      SET 
+        status = 'aprovado',
+        approved_by = $1,
+        approved_at = NOW(),
+        actual_cost = COALESCE($2, estimated_cost),
+        notes = COALESCE($3, notes),
+        updated_at = NOW()
+      WHERE id = $4
+      RETURNING *
+    `;
+
+    const result = await pool.query(updateQuery, [
+      user.id,
+      actual_cost,
+      notes,
+      id
+    ]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Serviço não encontrado' });
+    }
+
+    const approvedService = result.rows[0];
+    
+    console.log(`[Aprovação] Serviço ${id} aprovado com sucesso - direcionado para módulo financeiro`);
+    console.log(`[Aprovação] Valor final: R$ ${approvedService.actual_cost}`);
+
+    // Resposta incluindo informação sobre redirecionamento para financeiro
+    res.json({
+      ...approvedService,
+      message: 'Serviço aprovado com sucesso e direcionado para o Módulo Financeiro',
+      financial_module_ready: true
+    });
+
+  } catch (error: any) {
+    console.error('[Aprovação] Erro ao aprovar serviço:', error);
+    res.status(500).json({ 
+      error: 'Erro ao aprovar serviço', 
+      details: error.message 
+    });
+  }
+});
+
+/**
+ * @route PUT /api/towing/services/:id/reject
+ * @desc Rejeitar serviço de guincho
+ * @access Privado (apenas administradores e gestores de frota)
+ */
+router.put('/services/:id/reject', authenticateJWT, verifyFleetManager, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { notes } = req.body;
+    const user = req.user as any;
+
+    console.log(`[Rejeição] Rejeitando serviço ${id} pelo usuário ${user.name} (ID: ${user.id})`);
+
+    const updateQuery = `
+      UPDATE towing_services 
+      SET 
+        status = 'rejeitado',
+        rejected_by = $1,
+        rejected_at = NOW(),
+        notes = COALESCE($2, notes),
+        updated_at = NOW()
+      WHERE id = $3
+      RETURNING *
+    `;
+
+    const result = await pool.query(updateQuery, [
+      user.id,
+      notes,
+      id
+    ]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Serviço não encontrado' });
+    }
+
+    console.log(`[Rejeição] Serviço ${id} rejeitado com sucesso`);
+
+    res.json({
+      ...result.rows[0],
+      message: 'Serviço rejeitado com sucesso'
+    });
+
+  } catch (error: any) {
+    console.error('[Rejeição] Erro ao rejeitar serviço:', error);
+    res.status(500).json({ 
+      error: 'Erro ao rejeitar serviço', 
+      details: error.message 
+    });
+  }
+});
+
 export default router;
