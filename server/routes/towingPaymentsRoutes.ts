@@ -385,6 +385,7 @@ router.get('/detailed-report', async (req, res) => {
 
 // Rota para excluir serviço de guincho (apenas administradores)
 router.delete('/services/:id', unifiedAuthMiddleware, requireRoles(['admin']), async (req, res) => {
+  const client = await pool.connect();
   try {
     // Verificar se o usuário é administrador
     if (req.user?.role !== 'admin') {
@@ -394,31 +395,49 @@ router.delete('/services/:id', unifiedAuthMiddleware, requireRoles(['admin']), a
     const { id } = req.params;
     const serviceId = parseInt(id);
 
+    console.log(`[DELETE SERVICE] Tentando excluir serviço ID: ${serviceId}`);
+
     if (isNaN(serviceId)) {
       return res.status(400).json({ error: 'ID do serviço inválido' });
     }
 
+    await client.query('BEGIN');
+
     // Verificar se o serviço existe
-    const checkQuery = 'SELECT id FROM towing_services WHERE id = $1';
-    const checkResult = await pool.query(checkQuery, [serviceId]);
+    const checkQuery = 'SELECT id, vehicle_plate FROM towing_services WHERE id = $1';
+    const checkResult = await client.query(checkQuery, [serviceId]);
+
+    console.log(`[DELETE SERVICE] Resultado da verificação:`, checkResult.rows);
 
     if (checkResult.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Serviço não encontrado' });
     }
 
-    // Excluir o serviço
+    // Excluir registros relacionados primeiro (se existirem)
+    await client.query('DELETE FROM towing_service_notes WHERE service_id = $1', [serviceId]);
+    
+    // Excluir o serviço principal
     const deleteQuery = 'DELETE FROM towing_services WHERE id = $1';
-    await pool.query(deleteQuery, [serviceId]);
+    const deleteResult = await client.query(deleteQuery, [serviceId]);
+
+    console.log(`[DELETE SERVICE] Resultado da exclusão:`, deleteResult.rowCount);
+
+    await client.query('COMMIT');
 
     res.json({ 
       success: true, 
       message: 'Serviço excluído com sucesso',
-      deletedServiceId: serviceId 
+      deletedServiceId: serviceId,
+      affectedRows: deleteResult.rowCount 
     });
 
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Erro ao excluir serviço:', error);
     res.status(500).json({ error: 'Erro ao excluir serviço' });
+  } finally {
+    client.release();
   }
 });
 
