@@ -176,20 +176,9 @@ export default function FinanceiroGuincho() {
   // Mutation para excluir serviço de guincho
   const deleteServiceMutation = useMutation({
     mutationFn: async (serviceId: number) => {
-      const response = await fetch(`/api/towing/payments/services/${serviceId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
-        throw new Error(errorData.error || 'Erro ao excluir serviço');
-      }
-      
-      return response.json();
+      // Usar apiRequest para garantir autenticação adequada
+      const response = await apiRequest('DELETE', `/api/towing/payments/services/${serviceId}`);
+      return response;
     },
     onSuccess: (data) => {
       // Invalidar todas as queries relacionadas
