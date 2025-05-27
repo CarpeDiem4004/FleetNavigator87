@@ -166,19 +166,22 @@ export default function PostosVisaoGeralPage() {
     }
   });
 
-  // Buscar dados de consumo diário
-  const { data: consumoDiarioData, isLoading: isLoadingConsumo } = useQuery({
-    queryKey: ['/consumo-data/postos', periodoDias],
+  // Buscar dados de consumo diário usando o novo endpoint
+  const { data: consumoDiarioResponse, isLoading: isLoadingConsumo } = useQuery({
+    queryKey: ['/api/consumo-diario-tabela', periodoDias],
     queryFn: async () => {
-      const res = await fetch(`/api/consumo-diario-postos-simplificado?dias=${periodoDias}`);
+      const res = await fetch(`/api/consumo-diario-tabela?dias=${periodoDias}`);
       if (!res.ok) {
         throw new Error('Erro ao buscar dados de consumo diário');
       }
       const data = await res.json();
-      return data.data as ConsumoDiario[];
+      return data;
     },
     enabled: activeTab === 'consumo-diario'
   });
+
+  // Extrair os dados da resposta
+  const consumoDiarioData = consumoDiarioResponse?.data || [];
 
   // Determinar a classe de cor para o indicador de nível
   const getAlertColorClass = (posto: PostoResumo): string => {
