@@ -10326,9 +10326,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data_servico: row.data_servico,
         status: row.status === 'pending' ? 'pendente' : (row.status === 'approved' ? 'aprovado' : 'rejeitado'),
         observacoes: row.observacoes,
-        local_atendimento: row.pickup_location,
-        local_retirada: row.pickup_location,
-        local_entrega: row.delivery_location,
+        local_atendimento: row.pickup_location || 'Não informado',
+        local_retirada: row.pickup_location || 'Não informado',
+        local_entrega: row.delivery_location || 'Não informado',
         km_reboque: row.km_reboque || 0
       }));
       
