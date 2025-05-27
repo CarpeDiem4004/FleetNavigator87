@@ -1218,6 +1218,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Endpoint DELETE específico para recebimentos de combustível
+  app.delete('/api/recebimentos/:posto/:id', unifiedAuthMiddleware, async (req, res) => {
+    try {
+      const { posto, id } = req.params;
+      
+      // Ensure JSON response headers to prevent Vite middleware interference
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      console.log(`[DELETE RECEBIMENTO] Excluindo registro ${id} do posto ${posto}`);
+      
+      // Normalizar o nome do posto
+      const formattedPosto = posto.toLowerCase();
+      
+      // Mapear postos para nomes de tabelas de RECEBIMENTOS
+      const tableMap: { [key: string]: string } = {
+        'osasco_v2': 'recebimentos_posto_osasco_v2',
+        'abc_v2': 'recebimentos_posto_abc_v2',
+        'alair_v2': 'recebimentos_posto_alair_v2',
+        'campinas_v2': 'recebimentos_posto_campinas_v2',
+        'socorro_v2': 'recebimentos_posto_socorro_v2',
+        'sorocaba_v2': 'recebimentos_posto_sorocaba_v2',
+        'guarulhos_v2': 'recebimentos_posto_guarulhos_v2'
+      };
+      
+      const tableName = tableMap[formattedPosto];
+      
+      if (!tableName) {
+        return res.status(400).json({
+          success: false,
+          message: `Posto "${posto}" não encontrado`
+        });
+      }
+      
+      // Verificar se o registro existe antes de excluir
+      const checkQuery = `SELECT id FROM ${tableName} WHERE id = $1`;
+      const checkResult = await pool.query(checkQuery, [id]);
+      
+      if (checkResult.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Registro de recebimento não encontrado'
+        });
+      }
+      
+      // Executar a exclusão
+      const deleteQuery = `DELETE FROM ${tableName} WHERE id = $1 RETURNING id`;
+      const result = await pool.query(deleteQuery, [id]);
+      
+      if (result.rowCount > 0) {
+        console.log(`[DELETE RECEBIMENTO] Registro ${id} excluído com sucesso da tabela ${tableName}`);
+        
+        // Force response termination to prevent Vite middleware interference
+        res.status(200);
+        res.json({
+          success: true,
+          message: 'Registro de recebimento excluído com sucesso',
+          deletedId: id
+        });
+        return res.end();
+      } else {
+        return res.status(500).json({
+          success: false,
+          message: 'Erro ao excluir registro de recebimento'
+        });
+      }
+      
+    } catch (error: any) {
+      console.error('[DELETE RECEBIMENTO] Erro:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor ao excluir registro',
+        error: error.message
+      });
+    }
+  });
+
   // Registrar rotas de recebimentos (DEPOIS do DELETE endpoint específico)
   app.use('/api/recebimentos', recebimentosRoutes);
   
