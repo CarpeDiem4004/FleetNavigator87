@@ -215,14 +215,14 @@ export default function ConsumoDiarioHistorico() {
                           <div className="flex items-center justify-between mb-3">
                             <h4 className="font-semibold">{registro.posto}</h4>
                             <Badge variant="outline">
-                              {registro.percentual_disponivel.toFixed(1)}%
+                              {Number(registro.percentual_disponivel || 0).toFixed(1)}%
                             </Badge>
                           </div>
                           
                           <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                               <span className="text-gray-600">Litros consumidos:</span>
-                              <span className="font-medium">{registro.litros_consumidos.toFixed(2)}L</span>
+                              <span className="font-medium">{Number(registro.litros_consumidos || 0).toFixed(2)}L</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-gray-600">Abastecimentos:</span>
@@ -230,11 +230,11 @@ export default function ConsumoDiarioHistorico() {
                             </div>
                             <div className="flex justify-between">
                               <span className="text-gray-600">Valor total:</span>
-                              <span className="font-medium">R$ {registro.valor_total.toFixed(2)}</span>
+                              <span className="font-medium">R$ {Number(registro.valor_total || 0).toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-gray-600">Nível tanque:</span>
-                              <span className="font-medium">{registro.nivel_tanque_atual.toFixed(0)}L</span>
+                              <span className="font-medium">{Number(registro.nivel_tanque_atual || 0).toFixed(0)}L</span>
                             </div>
                           </div>
                         </div>
