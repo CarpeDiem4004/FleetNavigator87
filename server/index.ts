@@ -166,6 +166,98 @@ app.use((req, res, next) => {
       });
     }
   });
+
+  // Adicionar rota para consumo diário simplificado dos postos
+  app.get('/api/consumo-diario-postos-simplificado', async (req, res) => {
+    try {
+      // Período da consulta - últimos 30 dias por padrão
+      const dias = parseInt(req.query.dias) || 30;
+      const dataLimite = new Date();
+      dataLimite.setDate(dataLimite.getDate() - dias);
+      const dataLimiteStr = dataLimite.toISOString().split('T')[0];
+      
+      // Lista das 6 tabelas específicas dos postos
+      const tabelas = [
+        'abastecimentos_posto_abc_v2',
+        'abastecimentos_posto_alair_v2', 
+        'abastecimentos_posto_campinas_v2',
+        'abastecimentos_posto_osasco_v2',
+        'abastecimentos_posto_socorro_v2',
+        'abastecimentos_posto_sorocaba_v2'
+      ];
+      
+      const resultado = [];
+      
+      // Para cada tabela, consultar o consumo diário
+      for (const tabela of tabelas) {
+        const nomePosto = tabela.replace('abastecimentos_posto_', '').toUpperCase().replace(/_/g, ' ');
+        
+        try {
+          // Consulta para obter o consumo diário
+          const query = `
+            SELECT 
+              DATE(created_at) as data,
+              COALESCE(SUM(litros), 0) as litros,
+              COUNT(*) as abastecimentos,
+              COALESCE(SUM(valor_total), 0) as valor_total
+            FROM ${tabela}
+            WHERE created_at >= $1
+            GROUP BY DATE(created_at)
+            ORDER BY data DESC
+          `;
+          
+          const consumoResult = await pool.query(query, [dataLimiteStr]);
+          
+          // Cálculo do total e média
+          let totalLitros = 0;
+          let totalAbastecimentos = 0;
+          let totalValor = 0;
+          const diasComRegistro = consumoResult.rows.length;
+          
+          consumoResult.rows.forEach(row => {
+            totalLitros += parseFloat(row.litros || 0);
+            totalAbastecimentos += parseInt(row.abastecimentos || 0);
+            totalValor += parseFloat(row.valor_total || 0);
+          });
+          
+          // Média diária considerando apenas dias com registro
+          const mediaDiaria = diasComRegistro > 0 ? (totalLitros / diasComRegistro) : 0;
+          
+          resultado.push({
+            posto: nomePosto,
+            tabelaOrigem: tabela,
+            consumoDiario: consumoResult.rows,
+            resumo: {
+              totalLitros,
+              totalAbastecimentos,
+              totalValor,
+              mediaDiaria,
+              diasComRegistro
+            }
+          });
+        } catch (tableError) {
+          console.error(`Erro ao consultar tabela ${tabela}:`, tableError);
+          continue;
+        }
+      }
+      
+      // Ordenar por consumo total (decrescente)
+      resultado.sort((a, b) => b.resumo.totalLitros - a.resumo.totalLitros);
+      
+      res.status(200).json({
+        success: true,
+        data: resultado,
+        params: { dias }
+      });
+    } catch (error) {
+      console.error('Erro ao obter consumo diário de postos:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao obter dados de consumo diário',
+        error: error.message
+      });
+    }
+  });
   
   const server = await registerRoutes(app);
   
