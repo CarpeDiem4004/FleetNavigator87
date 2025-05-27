@@ -152,10 +152,12 @@ export default function ExternalAccessPage() {
 
         console.log('[ExternalAccess] Validando token:', token);
 
-        if (validTokens[token]) {
-          setPartner(validTokens[token]);
-          console.log(`[ExternalAccess] Token válido para parceiro: ${validTokens[token].name}`);
+        if (validTokens[token as keyof typeof validTokens]) {
+          const partnerData = validTokens[token as keyof typeof validTokens];
+          setPartner(partnerData);
+          console.log(`[ExternalAccess] Token válido para parceiro: ${partnerData.name}`);
         } else {
+          console.log(`[ExternalAccess] Token "${token}" não encontrado na lista de válidos`);
           toast({
             title: "Acesso Negado",
             description: "Token inválido ou expirado. Entre em contato com o administrador.",
