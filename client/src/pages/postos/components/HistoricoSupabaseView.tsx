@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { apiRequest } from '@/lib/queryClient';
 import { 
   Card, 
   CardContent, 
@@ -219,15 +220,10 @@ const HistoricoSupabaseView: React.FC<HistoricoSupabaseViewProps> = ({
     setIsDeleting(true);
     
     try {
-      // Fazer a chamada para excluir o registro
-      const response = await axios.delete(`/api/abastecimento/${posto.toLowerCase()}/${deleteItemId}`, {
-        headers: {
-          'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
-        }
-      });
+      // Fazer a chamada para excluir o registro usando apiRequest com autenticação
+      const response = await apiRequest('DELETE', `/api/abastecimento/${posto.toLowerCase()}/${deleteItemId}`);
       
-      if (response.data && response.data.success) {
+      if (response && response.success) {
         // Atualizar a lista após exclusão bem-sucedida
         setHistorico(prev => prev.filter(item => item.id !== deleteItemId));
         setIsDeleteDialogOpen(false);
