@@ -20,7 +20,10 @@ import {
   Trash2,
   Calculator,
   TrendingUp,
-  Users
+  Users,
+  Truck,
+  Eye,
+  FileText
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -246,7 +249,217 @@ export default function FinanceiroGuincho() {
         </Dialog>
       </div>
 
-      {/* Cards de Resumo */}
+      {/* Filtros para Relatório Detalhado */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            Relatório Detalhado de Serviços por Parceiro
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4 flex-wrap">
+            <div>
+              <Label className="text-sm font-medium">Período</Label>
+              <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="week">Última semana</SelectItem>
+                  <SelectItem value="month">Último mês</SelectItem>
+                  <SelectItem value="year">Último ano</SelectItem>
+                  <SelectItem value="">Todos os períodos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label className="text-sm font-medium">Parceiro</Label>
+              <Select value={selectedPartner} onValueChange={setSelectedPartner}>
+                <SelectTrigger className="w-64">
+                  <SelectValue placeholder="Todos os parceiros" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos os parceiros</SelectItem>
+                  {detailedReport?.services_by_partner?.map((partner: any) => (
+                    <SelectItem key={partner.partner_info.id} value={partner.partner_info.id.toString()}>
+                      {partner.partner_info.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Resumo Geral do Relatório */}
+      {detailedReport?.summary && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total de Serviços</p>
+                  <p className="text-2xl font-bold">{detailedReport.summary.total_services}</p>
+                </div>
+                <Truck className="w-8 h-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Parceiros Ativos</p>
+                  <p className="text-2xl font-bold">{detailedReport.summary.total_partners}</p>
+                </div>
+                <Users className="w-8 h-8 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Valor Total</p>
+                  <p className="text-2xl font-bold">R$ {detailedReport.summary.total_value?.toFixed(2)}</p>
+                </div>
+                <DollarSign className="w-8 h-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Valor Pago</p>
+                  <p className="text-2xl font-bold text-green-600">R$ {detailedReport.summary.paid_value?.toFixed(2)}</p>
+                </div>
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Valor Pendente</p>
+                  <p className="text-2xl font-bold text-yellow-600">R$ {detailedReport.summary.pending_value?.toFixed(2)}</p>
+                </div>
+                <Clock className="w-8 h-8 text-yellow-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Serviços Detalhados por Parceiro */}
+      {detailedReport?.services_by_partner && detailedReport.services_by_partner.length > 0 && (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold">Serviços por Parceiro</h2>
+          {detailedReport.services_by_partner.map((partnerData: any) => (
+            <Card key={partnerData.partner_info.id} className="overflow-hidden">
+              <CardHeader className="bg-gray-50">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-xl">{partnerData.partner_info.name}</CardTitle>
+                    {partnerData.partner_info.company_name && (
+                      <p className="text-sm text-gray-600">{partnerData.partner_info.company_name}</p>
+                    )}
+                    <div className="flex gap-4 mt-2 text-sm text-gray-600">
+                      {partnerData.partner_info.phone && (
+                        <span>📞 {partnerData.partner_info.phone}</span>
+                      )}
+                      {partnerData.partner_info.email && (
+                        <span>📧 {partnerData.partner_info.email}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-blue-600">
+                      R$ {partnerData.totals.total_value.toFixed(2)}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {partnerData.totals.count} serviços
+                    </div>
+                    <div className="flex gap-2 mt-1">
+                      <Badge variant="outline" className="text-green-600 border-green-600">
+                        {partnerData.totals.paid_count} pagos
+                      </Badge>
+                      <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+                        {partnerData.totals.pending_count} pendentes
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Data</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Placa</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Serviço</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Origem → Destino</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Motorista</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Valor</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {partnerData.services.map((service: any) => (
+                        <tr key={service.id} className="border-b hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm">
+                            {service.service_date ? format(new Date(service.service_date), 'dd/MM/yyyy', { locale: ptBR }) : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-sm font-medium">{service.vehicle_plate}</td>
+                          <td className="px-4 py-3 text-sm">{service.service_type}</td>
+                          <td className="px-4 py-3 text-sm">
+                            <div className="text-xs">
+                              <div>📍 {service.pickup_location}</div>
+                              <div>🎯 {service.destination}</div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm">{service.driver_name || '-'}</td>
+                          <td className="px-4 py-3 text-sm font-bold text-blue-600">
+                            R$ {parseFloat(service.actual_cost || 0).toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <Badge 
+                              variant={service.status === 'aprovado' ? 'default' : 'secondary'}
+                              className={service.status === 'aprovado' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}
+                            >
+                              {service.payment_status_display}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {reportLoading && (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+            <p className="mt-4 text-gray-600">Carregando relatório detalhado...</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Cards de Resumo Antigo */}
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
