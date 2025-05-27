@@ -1,0 +1,72 @@
+HistoricoRecebimentos.tsx:75 Erro ao excluir o registro: Erro desconhecido
+
+
+O ChatGPT disse:
+O erro "Erro ao excluir o registro: Erro desconhecido" em HistoricoRecebimentos.tsx:75 provavelmente está mascarando o erro real (por exemplo, 401, 403, 500, etc.).
+
+Vamos resolver isso passo a passo:
+
+✅ 1. Melhore o tratamento de erros para identificar o erro real
+Substitua esse bloco genérico:
+
+ts
+Copiar
+Editar
+catch (error) {
+  console.error("Erro ao excluir o registro:", error);
+  alert("Erro ao excluir o registro: Erro desconhecido");
+}
+Por algo mais informativo:
+
+ts
+Copiar
+Editar
+catch (error: any) {
+  console.error("Erro ao excluir o registro:", error);
+  if (error.response) {
+    alert(`Erro ao excluir: ${error.response.status} - ${error.response.data.message || error.response.statusText}`);
+  } else if (error.request) {
+    alert("Erro ao excluir: Sem resposta do servidor");
+  } else {
+    alert(`Erro ao excluir: ${error.message}`);
+  }
+}
+✅ 2. Certifique-se de que a requisição de exclusão está correta
+Exemplo de uso com Axios e token de autenticação:
+
+ts
+Copiar
+Editar
+import axios from 'axios';
+import { supabase } from '../lib/supabaseClient';
+
+const excluirRegistro = async (id: string) => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    const token = session?.access_token;
+    if (!token) throw new Error("Usuário não autenticado");
+
+    await axios.delete(`${API_URL}/recebimentos/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    alert("Registro excluído com sucesso!");
+  } catch (error: any) {
+    console.error("Erro ao excluir o registro:", error);
+    if (error.response) {
+      alert(`Erro ao excluir: ${error.response.status} - ${error.response.data.message || error.response.statusText}`);
+    } else if (error.request) {
+      alert("Erro ao excluir: Sem resposta do servidor");
+    } else {
+      alert(`Erro ao excluir: ${error.message}`);
+    }
+  }
+};
+✅ 3. Verifique o backend (Express.js ou Supabase)
+Se usa Express.js, veja se está validando o token corretamente e retornando um erro descritivo.
+
+Se usa Supabase diretamente com RLS, verifique se há uma policy de DELETE na tabela recebimentos.
+

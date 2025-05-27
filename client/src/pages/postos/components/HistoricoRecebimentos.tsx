@@ -60,8 +60,12 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
     setIsDeleting(true);
     
     try {
+      console.log(`[DELETE] Tentando excluir registro ${deleteItemId} do posto ${postId}`);
+      
       // Fazer a chamada para excluir o registro usando apiRequest com autenticação
       const response = await apiRequest('DELETE', `/api/recebimentos/${postId.toLowerCase()}/${deleteItemId}`);
+      
+      console.log('[DELETE] Resposta recebida:', response);
       
       if (response && response.success) {
         // Invalidar a query para recarregar os dados
@@ -70,12 +74,28 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
         setDeleteItemId(null);
         
         // Exibir mensagem de sucesso
-        console.log(`Registro de recebimento #${deleteItemId} excluído com sucesso`);
+        console.log(`✅ Registro de recebimento #${deleteItemId} excluído com sucesso`);
+        alert('Registro excluído com sucesso!');
       } else {
-        console.error('Erro ao excluir o registro:', response?.error || 'Erro desconhecido');
+        const errorMsg = response?.message || response?.error || 'Erro desconhecido';
+        console.error('❌ Erro ao excluir o registro:', errorMsg);
+        alert(`Erro ao excluir o registro: ${errorMsg}`);
       }
     } catch (err: any) {
-      console.error('Erro ao excluir recebimento:', err);
+      console.error('❌ Erro ao excluir recebimento:', err);
+      
+      // Melhor tratamento de erro para mostrar detalhes
+      let errorMessage = 'Erro desconhecido';
+      
+      if (err.response) {
+        errorMessage = `${err.response.status} - ${err.response.data?.message || err.response.statusText}`;
+      } else if (err.request) {
+        errorMessage = 'Sem resposta do servidor';
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      alert(`Erro ao excluir o registro: ${errorMessage}`);
     } finally {
       setIsDeleting(false);
     }
