@@ -10119,14 +10119,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Colunas disponíveis:', columns);
       
       // Adaptamos os nomes das colunas conforme existem na tabela
-      const plateColumn = columns.includes('placa') ? 'placa' : 'vehicle_plate';
-      const vehicleColumn = columns.includes('veiculo') ? 'veiculo' : 'vehicle_model';
+      const plateColumn = columns.includes('placa_veiculo') ? 'placa_veiculo' : 'placa';
+      const vehicleColumn = columns.includes('modelo_veiculo') ? 'modelo_veiculo' : 'veiculo';
       const serviceTypeColumn = columns.includes('tipo_servico') ? 'tipo_servico' : 'service_type';
       const valueColumn = columns.includes('valor') ? 'valor' : 'value';
       const dateColumn = columns.includes('data_servico') ? 'data_servico' : 'service_date';
       const notesColumn = columns.includes('observacoes') ? 'observacoes' : 'notes';
-      const locationColumn = columns.includes('local_atendimento') ? 'local_atendimento' : 'service_location';
-      const kmColumn = columns.includes('km_reboque') ? 'km_reboque' : 'towing_km';
+      const locationColumn = columns.includes('endereco_origem') ? 'endereco_origem' : 'local_atendimento';
+      const kmColumn = columns.includes('quilometragem') ? 'quilometragem' : 'km_reboque';
       const photosColumn = columns.includes('fotos_servico') ? 'fotos_servico' : 'service_photos';
       
       // 1. Buscar todos os registros na tabela towing_service_notes que não estão em servicos_guincho
