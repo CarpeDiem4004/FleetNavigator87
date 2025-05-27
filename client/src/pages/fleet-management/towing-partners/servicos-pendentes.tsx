@@ -66,14 +66,18 @@ export default function ServicosPendentesPage() {
   const [selectedServico, setSelectedServico] = useState<ServicoPrestado | null>(null);
 
   // Consulta para obter serviços prestados
-  const { data: servicos, isLoading, error } = useQuery<ServicoPrestado[]>({
-    queryKey: ['/api/towing/servicos'],
+  const { data: servicos, isLoading, error, refetch } = useQuery<ServicoPrestado[]>({
+    queryKey: ['/api/towing/servicos', Date.now()], // Forçar cache refresh
     queryFn: async () => {
       try {
-        const response = await fetch('/api/towing/servicos', {
+        const response = await fetch('/api/towing/servicos?' + new URLSearchParams({
+          _cache: Date.now().toString()
+        }), {
           method: 'GET',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
           },
           credentials: 'include'
         });
@@ -83,7 +87,9 @@ export default function ServicosPendentesPage() {
           throw new Error(errorData.message || 'Erro ao buscar serviços');
         }
         
-        return await response.json();
+        const data = await response.json();
+        console.log('Dados recebidos da API:', data[0]);
+        return data;
       } catch (error: any) {
         toast({
           title: "Erro ao carregar serviços",
@@ -92,7 +98,9 @@ export default function ServicosPendentesPage() {
         });
         return [];
       }
-    }
+    },
+    staleTime: 0, // Não usar cache
+    cacheTime: 0  // Não manter em cache
   });
 
   // Aprovar serviço
