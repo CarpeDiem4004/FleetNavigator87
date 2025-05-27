@@ -49,6 +49,8 @@ interface ServicoPrestado {
   status: "pendente" | "aprovado" | "rejeitado";
   observacoes?: string;
   local_atendimento?: string;
+  local_retirada?: string;
+  local_entrega?: string;
   km_reboque?: number;
   fotos_servico?: string[];
 }
@@ -507,11 +509,30 @@ export default function ServicosPendentesPage() {
                 </div>
               </div>
 
-              {/* Local de Atendimento */}
-              {selectedServico.local_atendimento && (
+              {/* Locais de Serviço */}
+              {(selectedServico.local_atendimento || selectedServico.local_retirada || selectedServico.local_entrega) && (
                 <div className="bg-muted/30 p-4 rounded-lg">
-                  <h3 className="font-semibold text-lg mb-3">Local de Atendimento</h3>
-                  <p>{selectedServico.local_atendimento}</p>
+                  <h3 className="font-semibold text-lg mb-3">Informações de Localização</h3>
+                  <div className="space-y-4">
+                    {selectedServico.local_atendimento && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Local de Atendimento</label>
+                        <p className="mt-1">{selectedServico.local_atendimento}</p>
+                      </div>
+                    )}
+                    {selectedServico.local_retirada && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Local de Retirada</label>
+                        <p className="mt-1">{selectedServico.local_retirada}</p>
+                      </div>
+                    )}
+                    {selectedServico.local_entrega && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Local de Entrega</label>
+                        <p className="mt-1">{selectedServico.local_entrega}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
