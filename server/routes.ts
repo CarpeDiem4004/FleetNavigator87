@@ -1141,10 +1141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rotas de diagnóstico
   app.use('/api/diagnostico', diagnosticoRoutes);
   
-  // Registrar rotas de recebimentos
-  app.use('/api/recebimentos', recebimentosRoutes);
-
-  // DELETE endpoint para excluir registros de recebimentos
+  // DELETE endpoint para excluir registros de recebimentos (deve vir ANTES da rota geral)
   app.delete('/api/recebimentos/:posto/:id', unifiedAuthMiddleware, async (req, res) => {
     try {
       const { posto, id } = req.params;
@@ -1217,6 +1214,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Registrar rotas de recebimentos (DEPOIS do DELETE endpoint específico)
+  app.use('/api/recebimentos', recebimentosRoutes);
   
   // Registrar rotas de autenticação JWT
   app.use('/api', jwtAuthRoutes);
