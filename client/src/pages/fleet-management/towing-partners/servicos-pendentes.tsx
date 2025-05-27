@@ -322,6 +322,7 @@ export default function ServicosPendentesPage() {
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="bg-muted/50">
+                      <th className="py-3 px-4 text-left font-medium">Nº Serviço</th>
                       <th className="py-3 px-4 text-left font-medium">Parceiro</th>
                       <th className="py-3 px-4 text-left font-medium">Veículo</th>
                       <th className="py-3 px-4 text-left font-medium">Tipo</th>
@@ -340,6 +341,9 @@ export default function ServicosPendentesPage() {
                           index % 2 === 0 ? 'bg-background' : 'bg-muted/10'
                         }`}
                       >
+                        <td className="py-3 px-4">
+                          <div className="font-bold text-blue-600">#{servico.id}</div>
+                        </td>
                         <td className="py-3 px-4">
                           <div className="font-medium">{servico.parceiro.nome}</div>
                           <div className="text-xs text-muted-foreground">{servico.parceiro.cidade}</div>
