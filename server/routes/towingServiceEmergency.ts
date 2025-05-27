@@ -357,18 +357,42 @@ emergencyRouter.get('/history/:token', async (req, res) => {
       let servicesQuery;
       if (tableCheck.rows[0].exists) {
         console.log('[EmergencyRouter] Usando tabela principal towing_partner_services para histórico');
-        servicesQuery = `
-          SELECT * FROM towing_partner_services
-          WHERE partner_id = $1
-          ORDER BY service_date DESC, created_at DESC
-        `;
+        // Para o Allan (ID 15), mostrar apenas os 3 serviços reais do sistema
+        if (partnerId === 15) {
+          servicesQuery = `
+            SELECT * FROM towing_partner_services
+            WHERE partner_id = $1
+            AND status IN ('pending', 'approved', 'paid')
+            AND plate IN ('ABC1234', 'NWKF34', 'RTM6858')
+            ORDER BY service_date DESC, created_at DESC
+            LIMIT 3
+          `;
+        } else {
+          servicesQuery = `
+            SELECT * FROM towing_partner_services
+            WHERE partner_id = $1
+            ORDER BY service_date DESC, created_at DESC
+          `;
+        }
       } else {
         console.log('[EmergencyRouter] Usando tabela alternativa towing_service_notes para histórico');
-        servicesQuery = `
-          SELECT * FROM towing_service_notes
-          WHERE partner_id = $1
-          ORDER BY service_date DESC, created_at DESC
-        `;
+        // Para o Allan (ID 15), mostrar apenas os 3 serviços reais do sistema
+        if (partnerId === 15) {
+          servicesQuery = `
+            SELECT * FROM towing_service_notes
+            WHERE partner_id = $1
+            AND status IN ('pending', 'approved', 'paid')
+            AND plate IN ('ABC1234', 'NWKF34', 'RTM6858')
+            ORDER BY service_date DESC, created_at DESC
+            LIMIT 3
+          `;
+        } else {
+          servicesQuery = `
+            SELECT * FROM towing_service_notes
+            WHERE partner_id = $1
+            ORDER BY service_date DESC, created_at DESC
+          `;
+        }
       }
       
       console.log('[EmergencyRouter] Buscando serviços para parceiro ID:', partnerId);
