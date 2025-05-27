@@ -384,7 +384,7 @@ router.get('/detailed-report', async (req, res) => {
 });
 
 // Rota para excluir serviço de guincho (apenas administradores)
-router.delete('/services/:id', authMiddleware, async (req, res) => {
+router.delete('/services/:id', unifiedAuthMiddleware, requireRoles(['admin']), async (req, res) => {
   try {
     // Verificar se o usuário é administrador
     if (req.user?.role !== 'admin') {

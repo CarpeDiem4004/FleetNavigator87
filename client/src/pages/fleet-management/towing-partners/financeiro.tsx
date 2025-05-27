@@ -178,19 +178,41 @@ export default function FinanceiroGuincho() {
     mutationFn: async (serviceId: number) => {
       const response = await fetch(`/api/towing/payments/services/${serviceId}`, {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
       });
-      if (!response.ok) throw new Error('Erro ao excluir serviço');
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
+        throw new Error(errorData.error || 'Erro ao excluir serviço');
+      }
+      
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Invalidar todas as queries relacionadas
       queryClient.invalidateQueries({ queryKey: ['/api/towing/payments'] });
       queryClient.invalidateQueries({ queryKey: ['/api/towing/payments/summary'] });
       queryClient.invalidateQueries({ queryKey: ['/api/towing/payments/by-partner'] });
       queryClient.invalidateQueries({ queryKey: ['/api/towing/payments/detailed-report'] });
-      toast({ title: 'Sucesso', description: 'Serviço excluído com sucesso!' });
+      
+      // Forçar um refetch imediato
+      queryClient.refetchQueries({ queryKey: ['/api/towing/payments'] });
+      
+      toast({ 
+        title: 'Sucesso', 
+        description: `Serviço #${data.deletedServiceId} excluído com sucesso!`
+      });
     },
-    onError: () => {
-      toast({ title: 'Erro', description: 'Erro ao excluir serviço', variant: 'destructive' });
+    onError: (error: Error) => {
+      console.error('Erro ao excluir serviço:', error);
+      toast({ 
+        title: 'Erro', 
+        description: error.message || 'Erro ao excluir serviço', 
+        variant: 'destructive' 
+      });
     },
   });
 
