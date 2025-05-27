@@ -47,25 +47,46 @@ emergencyRouter.post('/submit', async (req, res) => {
       });
     }
     
-    // Para token de teste do Caio Ramos
-    let partnerId = 8; // Default para Caio Ramos (teste)
+    // Identificar parceiro pelo token
+    let partnerId = null;
     
-    if (token && token.toLowerCase() !== 'teste_caio_ramos_de_souza_token') {
-      // Verificar token no banco de dados
-      try {
-        const tokenQuery = `
-          SELECT partner_id FROM towing_access_tokens 
-          WHERE token = $1 AND active = true
-        `;
-        
-        const tokenResult = await pool.query(tokenQuery, [token]);
-        
-        if (tokenResult.rowCount && tokenResult.rowCount > 0) {
-          partnerId = tokenResult.rows[0].partner_id;
+    // Verificar tokens de teste primeiro
+    if (token) {
+      const lowerToken = token.toLowerCase();
+      
+      if (lowerToken === 'teste_caio_ramos_de_souza_token' || (lowerToken.includes('caio_ramos') && lowerToken.includes('_de_souza') && !lowerToken.includes('allan'))) {
+        partnerId = 8; // ID fixo do Caio Ramos para teste
+        console.log('[EmergencyRouter] Serviço sendo criado para Caio Ramos (ID: 8)');
+      } else if (lowerToken.includes('allan_de_souza_vieira')) {
+        partnerId = 15; // ID fixo do Allan de Souza Vieira para teste
+        console.log('[EmergencyRouter] Serviço sendo criado para Allan de Souza Vieira (ID: 15)');
+      } else if (lowerToken.includes('claudio_de_oliveira')) {
+        partnerId = 9; // ID fixo do Claudio de Oliveira para teste
+        console.log('[EmergencyRouter] Serviço sendo criado para Claudio de Oliveira (ID: 9)');
+      } else {
+        // Verificar token no banco de dados
+        try {
+          const tokenQuery = `
+            SELECT partner_id FROM towing_access_tokens 
+            WHERE token = $1 AND active = true
+          `;
+          
+          const tokenResult = await pool.query(tokenQuery, [token]);
+          
+          if (tokenResult.rowCount && tokenResult.rowCount > 0) {
+            partnerId = tokenResult.rows[0].partner_id;
+            console.log('[EmergencyRouter] Token encontrado no banco, parceiro ID:', partnerId);
+          }
+        } catch (tokenError) {
+          console.error('[EmergencyRouter] Erro ao verificar token no banco:', tokenError);
         }
-      } catch (tokenError) {
-        console.error('[EmergencyRouter] Erro ao verificar token, usando ID padrão:', tokenError);
       }
+    }
+    
+    // Se ainda não encontrou um parceiro, usar default (Caio Ramos)
+    if (!partnerId) {
+      partnerId = 8;
+      console.log('[EmergencyRouter] Usando parceiro padrão Caio Ramos (ID: 8)');
     }
     
     // Inserir serviço no banco
@@ -284,9 +305,12 @@ emergencyRouter.get('/history/:token', async (req, res) => {
     if (token) {
       const lowerToken = token.toLowerCase();
       
-      if (lowerToken.includes('caio_ramos') || lowerToken.includes('_de_souza')) {
+      if (lowerToken.includes('caio_ramos') && lowerToken.includes('_de_souza') && !lowerToken.includes('allan')) {
         partnerId = 8; // ID fixo do Caio Ramos para teste
         console.log('[EmergencyRouter] Token de teste identificado para Caio Ramos (ID: 8)');
+      } else if (lowerToken.includes('allan_de_souza_vieira')) {
+        partnerId = 15; // ID fixo do Allan de Souza Vieira para teste
+        console.log('[EmergencyRouter] Token de teste identificado para Allan de Souza Vieira (ID: 15)');
       } else if (lowerToken.includes('claudio_de_oliveira')) {
         partnerId = 9; // ID fixo do Claudio de Oliveira para teste
         console.log('[EmergencyRouter] Token de teste identificado para Claudio de Oliveira (ID: 9)');
