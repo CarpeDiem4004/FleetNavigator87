@@ -8,9 +8,9 @@ export function getCurrentDateBrasilia(): Date {
   const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
   const brasiliaTime = new Date(utcTime + (brasiliaOffset * 60000));
   
-  // Corrigir o ano para 2024 (sistema está em 2025 incorretamente)
-  const currentYear = 2024;
-  const currentMonth = 11; // Dezembro (0-indexado)
+  // Usar data atual do sistema (27 de maio de 2025)
+  const currentYear = 2025;
+  const currentMonth = 4; // Maio (0-indexado)
   const currentDay = 27;
   
   // Criar data correta de Brasília
