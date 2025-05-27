@@ -243,7 +243,11 @@ export default function TowingPartnerExternalAccess() {
             partnerId = 5;
             partnerName = 'Guincho Águia';
             companyName = 'Guincho Águia LTDA';
-          } else if (token.includes('_DE_SOUZA') || token.includes('CAIO_RAMOS')) {
+          } else if (token.includes('ALLAN_DE_SOUZA_VIEIRA')) {
+            partnerId = 15;
+            partnerName = 'Allan de Souza Vieira';
+            companyName = 'Allan de Souza Vieira Guinchos LTDA';
+          } else if (token.includes('CAIO_RAMOS') || (token.includes('_DE_SOUZA') && !token.includes('ALLAN'))) {
             partnerId = 8;
             partnerName = 'Caio Ramos Guincho';
             companyName = 'Caio Ramos Serviços de Guincho LTDA';
