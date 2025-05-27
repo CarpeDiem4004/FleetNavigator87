@@ -602,7 +602,15 @@ app.use((req, res, next) => {
   // Rota direta para consumo diário (DEVE estar ANTES das outras rotas para evitar interceptação do Vite)
   app.get('/api/consumo-diario-tabela-direto', async (req, res) => {
     try {
+      // Configurar headers para evitar interceptação do Vite
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Cache-Control', 'no-cache');
+      
       const dias = parseInt(req.query.dias as string) || 30;
+      console.log(`[CONSUMO-DIRETO] Buscando dados para ${dias} dias`);
+      
+      // Usar a conexão do database.js que já está funcionando
+      const { pool: dbPool } = require('./database.js');
       
       // Consulta na tabela de histórico consolidado
       const query = `
@@ -617,7 +625,8 @@ app.use((req, res, next) => {
         ORDER BY data_coleta DESC, posto
       `;
       
-      const result = await pool.query(query);
+      const result = await dbPool.query(query);
+      console.log(`[CONSUMO-DIRETO] Encontrados ${result.rows.length} registros`);
       
       // Agrupar dados por data
       const dadosAgrupados: any = {};
