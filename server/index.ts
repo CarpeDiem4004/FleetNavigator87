@@ -710,6 +710,7 @@ app.use((req, res, next) => {
   app.get('/api/comparativo-combustiveis-direto/:posto', getComparativoCombustiveisPosto);
   app.get('/api/check-tabela-direto/:posto', checkTabelaPosto);
   app.post('/api/abastecimento-direto/:posto', registrarAbastecimentoPosto);
+  app.delete('/api/historico-direto/:posto/:id', deleteAbastecimentoPosto);
   
   // Rotas especiais para Campinas V2, para resolver o problema de nomenclatura (formato antigo)
   // Rota de abastecimento
