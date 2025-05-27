@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { format } from 'date-fns';
 import { AlertTriangle, DropletIcon, Filter, Fuel, LogIn, RefreshCw, Search, BarChart4, Calendar } from 'lucide-react';
@@ -70,6 +70,27 @@ export default function PostosVisaoGeralPage() {
     ordenarPor: 'nome', // 'nome', 'nivel' ou 'localizacao'
   });
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Função para atualizar todos os dados
+  const atualizarTodosDados = async () => {
+    try {
+      // Invalidar todas as consultas relacionadas
+      await queryClient.invalidateQueries({ queryKey: ['/api/postos'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/consumo-diario-postos-simplificado'] });
+      
+      toast({
+        title: "Dados atualizados",
+        description: "Todos os dados foram atualizados com sucesso!",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao atualizar",
+        description: "Não foi possível atualizar os dados. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Buscar lista de postos
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -194,7 +215,7 @@ export default function PostosVisaoGeralPage() {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
+          <Button variant="outline" size="sm" onClick={atualizarTodosDados}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Atualizar
           </Button>
