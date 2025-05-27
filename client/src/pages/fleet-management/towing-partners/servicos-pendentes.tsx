@@ -12,6 +12,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import PageHeader from '@/components/layout/PageHeader';
 import ServicoPrestadoCard from '@/components/ServicoPrestadoCard';
 import AppLayout from '@/components/AppLayout';
@@ -53,6 +60,8 @@ export default function ServicosPendentesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'todos' | 'pendente' | 'aprovado' | 'rejeitado'>('todos');
   const [loadingServico, setLoadingServico] = useState<number | null>(null);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [selectedServico, setSelectedServico] = useState<ServicoPrestado | null>(null);
 
   // Consulta para obter serviços prestados
   const { data: servicos, isLoading, error } = useQuery<ServicoPrestado[]>({
@@ -373,10 +382,8 @@ export default function ServicosPendentesPage() {
                               variant="outline"
                               className="h-8 px-2"
                               onClick={() => {
-                                toast({
-                                  title: "Visualizando detalhes",
-                                  description: `Detalhes do serviço #${servico.id}`,
-                                });
+                                setSelectedServico(servico);
+                                setDetailsModalOpen(true);
                               }}
                             >
                               <Eye className="h-4 w-4 mr-1" />
@@ -416,6 +423,132 @@ export default function ServicosPendentesPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Modal de Detalhes do Serviço */}
+      <Dialog open={detailsModalOpen} onOpenChange={setDetailsModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Serviço #{selectedServico?.id}</DialogTitle>
+            <DialogDescription>
+              Informações completas do serviço prestado
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedServico && (
+            <div className="space-y-6">
+              {/* Informações do Parceiro */}
+              <div className="bg-muted/30 p-4 rounded-lg">
+                <h3 className="font-semibold text-lg mb-3">Informações do Parceiro</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Nome</label>
+                    <p className="font-medium">{selectedServico.parceiro.nome}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Cidade/Estado</label>
+                    <p>{selectedServico.parceiro.cidade}, {selectedServico.parceiro.estado}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Avaliação</label>
+                    <p>⭐ {selectedServico.parceiro.avaliacao}/5</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Informações do Veículo */}
+              <div className="bg-muted/30 p-4 rounded-lg">
+                <h3 className="font-semibold text-lg mb-3">Informações do Veículo</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Placa</label>
+                    <p className="font-medium">{selectedServico.placa}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Veículo</label>
+                    <p>{selectedServico.veiculo || 'Não especificado'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Informações do Serviço */}
+              <div className="bg-muted/30 p-4 rounded-lg">
+                <h3 className="font-semibold text-lg mb-3">Informações do Serviço</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Tipo de Serviço</label>
+                    <p className="font-medium">{selectedServico.tipo_servico}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Data do Serviço</label>
+                    <p>{formatDateShortBrasilia(selectedServico.data_servico)}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Valor</label>
+                    <p className="font-medium text-green-600">R$ {parseFloat(selectedServico.valor).toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Status</label>
+                    <p className={`font-medium ${
+                      selectedServico.status === 'pendente' ? 'text-yellow-600' :
+                      selectedServico.status === 'aprovado' ? 'text-green-600' :
+                      'text-red-600'
+                    }`}>
+                      {selectedServico.status === 'pendente' ? 'Pendente' :
+                       selectedServico.status === 'aprovado' ? 'Aprovado' :
+                       'Rejeitado'}
+                    </p>
+                  </div>
+                  {selectedServico.km_reboque && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">KM Reboque</label>
+                      <p>{selectedServico.km_reboque} km</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Local de Atendimento */}
+              {selectedServico.local_atendimento && (
+                <div className="bg-muted/30 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-3">Local de Atendimento</h3>
+                  <p>{selectedServico.local_atendimento}</p>
+                </div>
+              )}
+
+              {/* Observações */}
+              {selectedServico.observacoes && (
+                <div className="bg-muted/30 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-3">Observações</h3>
+                  <p className="whitespace-pre-wrap">{selectedServico.observacoes}</p>
+                </div>
+              )}
+
+              {/* Fotos do Serviço */}
+              {selectedServico.fotos_servico && selectedServico.fotos_servico.length > 0 && (
+                <div className="bg-muted/30 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg mb-3">Fotos do Serviço</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {selectedServico.fotos_servico.map((foto, index) => (
+                      <div key={index} className="relative group">
+                        <img 
+                          src={foto} 
+                          alt={`Foto do serviço ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => window.open(foto, '_blank')}
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded-lg flex items-center justify-center">
+                          <Eye className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
     </AppLayout>
   );
 }
