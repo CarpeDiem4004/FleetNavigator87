@@ -17,7 +17,7 @@ import AppLayout from '@/components/AppLayout';
 import { SincronizarServicosButton } from '@/components/SincronizarServicosButton';
 
 // Ícones
-import { Search, AlertCircle, FileText, CheckCircle, XCircle, RefreshCw, Check, X, Eye } from 'lucide-react';
+import { Search, AlertCircle, FileText, CheckCircle, XCircle, RefreshCw, Check, X, Eye, Trash2 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
 // Tipos
@@ -160,6 +160,35 @@ export default function ServicosPendentesPage() {
       toast({
         title: "Erro ao rejeitar serviço",
         description: error.message || "Ocorreu um erro ao rejeitar o serviço. Tente novamente.",
+        variant: "destructive"
+      });
+      setLoadingServico(null);
+    }
+  });
+
+  // Mutation para excluir serviço
+  const deleteServicoMutation = useMutation({
+    mutationFn: async (id: number) => {
+      setLoadingServico(id);
+      const response = await apiRequest('DELETE', `/api/towing/servicos/${id}`);
+      return response;
+    },
+    onSuccess: (_, id) => {
+      toast({
+        title: "Serviço excluído",
+        description: `O serviço #${id} foi excluído com sucesso.`,
+        variant: "default"
+      });
+      
+      // Invalidar cache para recarregar os dados
+      queryClient.invalidateQueries({ queryKey: ['/api/towing/servicos'] });
+      
+      setLoadingServico(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao excluir serviço",
+        description: error.message || "Ocorreu um erro ao excluir o serviço. Tente novamente.",
         variant: "destructive"
       });
       setLoadingServico(null);
@@ -350,6 +379,21 @@ export default function ServicosPendentesPage() {
                             >
                               <Eye className="h-4 w-4 mr-1" />
                               Detalhes
+                            </Button>
+                            {/* Botão de exclusão apenas para administradores */}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => {
+                                if (window.confirm(`Tem certeza que deseja excluir o serviço #${servico.id}?`)) {
+                                  deleteServicoMutation.mutate(servico.id);
+                                }
+                              }}
+                              disabled={loadingServico === servico.id}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Excluir
                             </Button>
                           </div>
                         </td>

@@ -10330,6 +10330,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Rota para excluir um serviço (apenas para administradores)
+  app.delete('/api/towing/servicos/:id', async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Usuário não autenticado" });
+      }
+      
+      // Verificar se é administrador
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Acesso negado. Apenas administradores podem excluir serviços" });
+      }
+      
+      const servicoId = parseInt(req.params.id);
+      if (isNaN(servicoId)) {
+        return res.status(400).json({ message: "ID do serviço inválido" });
+      }
+      
+      // Primeiro verificar se o serviço existe
+      const checkQuery = `SELECT id FROM towing_service_notes WHERE id = $1`;
+      const checkResult = await pool.query(checkQuery, [servicoId]);
+      
+      if (checkResult.rowCount === 0) {
+        return res.status(404).json({ message: "Serviço não encontrado" });
+      }
+      
+      // Excluir o serviço
+      const deleteQuery = `DELETE FROM towing_service_notes WHERE id = $1`;
+      const result = await pool.query(deleteQuery, [servicoId]);
+      
+      // Também excluir da tabela servicos_guincho se existir
+      try {
+        const deleteFromServicosGuincho = `DELETE FROM servicos_guincho WHERE towing_note_id = $1`;
+        await pool.query(deleteFromServicosGuincho, [servicoId]);
+      } catch (error) {
+        // Não é crítico se essa tabela não existir ou falhar
+        console.log('Aviso: Não foi possível excluir da tabela servicos_guincho:', error);
+      }
+      
+      return res.status(200).json({
+        message: "Serviço excluído com sucesso",
+        deletedId: servicoId
+      });
+    } catch (error: any) {
+      console.error('Erro ao excluir serviço:', error);
+      return res.status(500).json({ 
+        message: 'Erro ao excluir serviço', 
+        error: error.message 
+      });
+    }
+  });
+  
   // Registrar rotas para o novo módulo de parceiros de guincho
   app.use('/api/towing', towingPartnersRoutes);
   
