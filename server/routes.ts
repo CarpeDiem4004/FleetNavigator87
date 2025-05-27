@@ -10289,7 +10289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         RETURNING *
       `;
       
-      const result = await pool.query(updateQuery, [req.user.id, servicoId]);
+      const result = await pool.query(updateQuery, [req.user.id, servicoId, formatDateForDB()]);
       
       if (result.rowCount === 0) {
         return res.status(404).json({ message: "Serviço não encontrado" });
@@ -10324,14 +10324,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         UPDATE towing_service_notes
         SET 
           status = 'rejected',
-          updated_at = NOW(),
+          updated_at = $3,
           rejected_by = $1,
-          rejected_at = NOW()
+          rejected_at = $3
         WHERE id = $2
         RETURNING *
       `;
       
-      const result = await pool.query(updateQuery, [req.user.id, servicoId]);
+      const result = await pool.query(updateQuery, [req.user.id, servicoId, formatDateForDB()]);
       
       if (result.rowCount === 0) {
         return res.status(404).json({ message: "Serviço não encontrado" });
