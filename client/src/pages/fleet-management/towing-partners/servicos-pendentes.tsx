@@ -335,7 +335,7 @@ export default function ServicosPendentesPage() {
                           <div className="text-xs text-muted-foreground">{servico.placa}</div>
                         </td>
                         <td className="py-3 px-4">{servico.tipo_servico}</td>
-                        <td className="py-3 px-4">{new Date(servico.data_servico).toLocaleDateString()}</td>
+                        <td className="py-3 px-4">{formatDateShortBrasilia(new Date(servico.data_servico))}</td>
                         <td className="py-3 px-4 font-medium">R$ {parseFloat(servico.valor).toFixed(2)}</td>
                         <td className="py-3 px-4">{servico.km_reboque ? `${servico.km_reboque} km` : '-'}</td>
                         <td className="py-3 px-4">
