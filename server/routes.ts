@@ -10183,7 +10183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             status, observacoes, endereco_origem, quilometragem
           )
           SELECT 
-            t.partner_id, t.plate, COALESCE(t.vehicle_model, 'Não informado'), t.cost, t.service_date,
+            t.partner_id, t.plate, 'Não informado', t.cost, t.service_date,
             'pendente', COALESCE(t.notes, ''), COALESCE(t.pickup_location, ''), COALESCE(t.mileage, 0)
           FROM 
             towing_service_notes t
