@@ -43,7 +43,7 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
   const queryClient = useQueryClient();
   
   const { data, isLoading, error } = useQuery({
-    queryKey: [`/api/historico-direto/posto ${postId.toLowerCase()}`],
+    queryKey: [`/api/recebimentos/${postId.toLowerCase()}`],
     staleTime: 1000 * 60 * 5 // 5 minutos
   });
 
@@ -62,8 +62,8 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
     try {
       console.log(`[DELETE] Tentando excluir registro ${deleteItemId} do posto ${postId}`);
       
-      // Fazer a chamada para excluir o registro de abastecimento usando apiRequest com autenticação
-      const response = await apiRequest('DELETE', `/api/historico-direto/posto ${postId.toLowerCase()}/${deleteItemId}`);
+      // Fazer a chamada para excluir o registro de recebimento usando apiRequest com autenticação
+      const response = await apiRequest('DELETE', `/api/recebimentos/${postId.toLowerCase()}/${deleteItemId}`);
       
       console.log('[DELETE] Response object received:', response);
       
@@ -74,7 +74,7 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
       
       if (responseData && responseData.success) {
         // Invalidar a query para recarregar os dados
-        queryClient.invalidateQueries({ queryKey: [`/api/historico-direto/posto ${postId.toLowerCase()}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/recebimentos/${postId.toLowerCase()}`] });
         setIsDeleteDialogOpen(false);
         setDeleteItemId(null);
         
