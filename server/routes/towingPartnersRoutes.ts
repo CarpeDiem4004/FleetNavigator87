@@ -6,11 +6,7 @@ import { createClient } from '@supabase/supabase-js';
 import { unifiedAuthMiddleware as authenticateJWT } from '../utils/auth-utils';
 import { verifyAdmin, verifyFleetManager } from '../middleware/roleMiddleware';
 import { pool } from '../db';
-// Implementação temporária para substituir o módulo com problemas
-const testServices = new Map<number, any[]>();
-function getTestServices(partnerId: number) {
-  return testServices.get(partnerId) || [];
-}
+// Dados de teste removidos - sistema usa apenas dados reais
 
 // Configuração do Supabase
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';

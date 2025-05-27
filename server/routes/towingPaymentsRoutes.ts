@@ -5,10 +5,7 @@
 import express, { Request, Response } from 'express';
 import { pool } from '../db';
 import { unifiedAuthMiddleware, requireRoles } from '../utils/auth-utils';
-// Implementação temporária para substituir o módulo com problemas
-const getTestServices = (partnerId: number) => {
-  return []; // Retorna lista vazia temporariamente
-};
+// Dados de teste removidos - sistema usa apenas dados reais do banco
 
 const router = express.Router();
 
