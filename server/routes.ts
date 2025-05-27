@@ -11169,27 +11169,6 @@ async function createFuelRequestNotification(fuelRequest) {
   const httpServer = createServer(app);
   return httpServer;
 }
-      serviceId,
-      partnerId,
-      vehiclePlate,
-      serviceValue,
-      paymentStatus,
-      paymentMethod,
-      paymentReference,
-      notes
-    ]);
-
-    res.json(result.rows[0]);
-  } catch (error) {
-    console.error('Erro ao criar pagamento:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
-  }
-});
-
-// Atualizar status de pagamento
-app.put('/api/towing/payments/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
     const {
       paymentStatus,
       paymentDate,
