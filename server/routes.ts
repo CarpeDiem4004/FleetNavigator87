@@ -11164,54 +11164,11 @@ async function createFuelRequestNotification(fuelRequest) {
 }
 
 // ===== ROTAS PARA MÓDULO FINANCEIRO DE SERVIÇOS DE GUINCHO =====
+// (Movidas para towingPaymentsRoutes.ts)
 
-  // Listar todos os pagamentos dos serviços de guincho
-  app.get('/api/towing/payments', async (req, res) => {
-  try {
-    const query = `
-      SELECT 
-        p.*,
-        tp.name as partner_name,
-        CASE 
-          WHEN p.service_id IN (SELECT id FROM towing_partner_services) THEN 'towing_partner_services'
-          WHEN p.service_id IN (SELECT id FROM towing_service_history) THEN 'towing_service_history'
-          ELSE 'unknown'
-        END as service_table
-      FROM towing_service_payments p
-      LEFT JOIN towing_partners tp ON p.partner_id = tp.id
-      ORDER BY p.created_at DESC
-    `;
-
-    const result = await pool.query(query);
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Erro ao buscar pagamentos:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
-  }
-});
-
-// Criar um novo registro de pagamento
-app.post('/api/towing/payments', async (req, res) => {
-  try {
-    const {
-      serviceId,
-      partnerId,
-      vehiclePlate,
-      serviceValue,
-      paymentStatus = 'pendente',
-      paymentMethod,
-      paymentReference,
-      notes
-    } = req.body;
-
-    const query = `
-      INSERT INTO towing_service_payments 
-      (service_id, partner_id, vehicle_plate, service_value, payment_status, payment_method, payment_reference, notes)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING *
-    `;
-
-    const result = await pool.query(query, [
+  const httpServer = createServer(app);
+  return httpServer;
+}
       serviceId,
       partnerId,
       vehiclePlate,
