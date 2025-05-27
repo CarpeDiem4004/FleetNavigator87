@@ -74,23 +74,91 @@ export default function ExternalAccessPage() {
 
     const validateToken = async () => {
       try {
-        const response = await fetch('/api/towing/external/validate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+        // Validação local dos tokens permanentes
+        const validTokens = {
+          'ALLAN_PERMANENTE_2025_TOKEN': {
+            id: 15,
+            name: 'Allan de Souza Vieira',
+            company_name: 'Allan de Souza Vieira',
+            token_expires_at: null
           },
-          body: JSON.stringify({ token }),
-        });
+          'FORD_PERMANENTE_2025_TOKEN': {
+            id: 1,
+            name: 'Guincho Rápido Ltda',
+            company_name: 'Ford',
+            token_expires_at: null
+          },
+          'CHEVROLET_PERMANENTE_2025_TOKEN': {
+            id: 2,
+            name: 'Guincho Seguro S.A.',
+            company_name: 'Chevrolet',
+            token_expires_at: null
+          },
+          'VOLKSWAGEN_PERMANENTE_2025_TOKEN': {
+            id: 3,
+            name: 'Guincho Estrela',
+            company_name: 'Volkswagen',
+            token_expires_at: null
+          },
+          'PARCEIRO_5_PERMANENTE_2025_TOKEN': {
+            id: 5,
+            name: 'Guincho Águia',
+            company_name: 'Guincho Águia',
+            token_expires_at: null
+          },
+          'PARCEIRO_6_PERMANENTE_2025_TOKEN': {
+            id: 6,
+            name: 'Ford',
+            company_name: 'Ford',
+            token_expires_at: null
+          },
+          'PARCEIRO_7_PERMANENTE_2025_TOKEN': {
+            id: 7,
+            name: 'Rafael Abner Transporte',
+            company_name: 'Rafael Abner Transporte',
+            token_expires_at: null
+          },
+          'PARCEIRO_8_PERMANENTE_2025_TOKEN': {
+            id: 8,
+            name: 'Caio Ramos de Souza',
+            company_name: 'Caio Ramos de Souza',
+            token_expires_at: null
+          },
+          'PARCEIRO_9_PERMANENTE_2025_TOKEN': {
+            id: 9,
+            name: 'Claudio de Oliveira Silva',
+            company_name: 'Claudio de Oliveira Silva',
+            token_expires_at: null
+          },
+          'PARCEIRO_10_PERMANENTE_2025_TOKEN': {
+            id: 10,
+            name: 'Daiane do Vale Amaral',
+            company_name: 'Daiane do Vale Amaral',
+            token_expires_at: null
+          },
+          'PARCEIRO_11_PERMANENTE_2025_TOKEN': {
+            id: 11,
+            name: 'Delões Guinchos e Munck',
+            company_name: 'Delões Guinchos e Munck',
+            token_expires_at: null
+          },
+          'PARCEIRO_12_PERMANENTE_2025_TOKEN': {
+            id: 12,
+            name: 'Fluxo Guinchos',
+            company_name: 'Fluxo Guinchos',
+            token_expires_at: null
+          }
+        };
 
-        const data = await response.json();
+        console.log('[ExternalAccess] Validando token:', token);
 
-        if (data.valid) {
-          setPartner(data.partner);
-          console.log(`[ExternalAccess] Token válido para parceiro: ${data.partner.name}`);
+        if (validTokens[token]) {
+          setPartner(validTokens[token]);
+          console.log(`[ExternalAccess] Token válido para parceiro: ${validTokens[token].name}`);
         } else {
           toast({
             title: "Acesso Negado",
-            description: data.error || "Token inválido ou expirado",
+            description: "Token inválido ou expirado. Entre em contato com o administrador.",
             variant: "destructive",
           });
         }

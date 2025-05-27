@@ -305,7 +305,6 @@ app.use((req, res, next) => {
       const result = await pool.query(query, [token]);
       
       console.log(`[ExternalAccess] Resultado da busca: ${result.rows.length} parceiro(s) encontrado(s)`);
-      console.log(`[ExternalAccess] Token buscado: ${token}`);
       
       if (result.rows.length > 0) {
         console.log(`[ExternalAccess] Parceiro encontrado:`, result.rows[0]);
@@ -321,7 +320,7 @@ app.use((req, res, next) => {
           }
         });
       } else {
-        console.log(`[ExternalAccess] Nenhum parceiro encontrado para o token: ${token}`);
+        console.log(`[ExternalAccess] Token não encontrado: ${token}`);
         return res.status(404).json({
           valid: false,
           error: 'Token inválido ou expirado'
@@ -332,6 +331,59 @@ app.use((req, res, next) => {
       console.error('[ExternalAccess] Erro ao validar token:', error);
       return res.status(500).json({
         valid: false,
+        error: 'Erro interno do servidor'
+      });
+    }
+  });
+
+  // Rota alternativa para buscar parceiro por token
+  app.get('/api/towing/partners/by-token/:token', async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      const { token } = req.params;
+
+      if (!token) {
+        return res.status(400).json({
+          error: 'Token não fornecido'
+        });
+      }
+
+      console.log(`[ExternalAccess-Alternative] Buscando parceiro por token: ${token}`);
+
+      const query = `
+        SELECT id, name, company_name, external_access_token, token_expires_at, status
+        FROM towing_partners 
+        WHERE external_access_token = $1 
+        AND status = 'ativo'
+      `;
+
+      const result = await pool.query(query, [token]);
+      
+      console.log(`[ExternalAccess-Alternative] Resultado: ${result.rows.length} parceiro(s) encontrado(s)`);
+      
+      if (result.rows.length > 0) {
+        const partner = result.rows[0];
+        console.log(`[ExternalAccess-Alternative] Parceiro encontrado: ${partner.name}`);
+        
+        return res.status(200).json({
+          id: partner.id,
+          name: partner.name,
+          company_name: partner.company_name,
+          token_expires_at: partner.token_expires_at,
+          status: partner.status
+        });
+      } else {
+        console.log(`[ExternalAccess-Alternative] Nenhum parceiro encontrado para token: ${token}`);
+        return res.status(404).json({
+          error: 'Parceiro não encontrado para este token'
+        });
+      }
+
+    } catch (error) {
+      console.error('[ExternalAccess-Alternative] Erro:', error);
+      return res.status(500).json({
         error: 'Erro interno do servidor'
       });
     }
