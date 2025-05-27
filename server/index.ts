@@ -45,6 +45,7 @@ import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoute
 import { iniciarScheduler } from './services/consumoDiarioScheduler.js';
 // Importar rotas de histórico de consumo diário
 import consumoDiarioHistorico from './routes/consumoDiarioHistorico.js';
+import consumoDiarioTabela from './routes/consumoDiarioTabela.js';
 
 // Configuração das variáveis de ambiente do Supabase
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
@@ -600,6 +601,7 @@ app.use((req, res, next) => {
   
   // Registrar as rotas no aplicativo principal
   app.use('/api/consumo-diario-postos', consumoDiarioPostosRoutes);
+  app.use('/api/consumo-diario-tabela', consumoDiarioTabela);
   
   // Registrar as rotas de API diretas para evitar interceptação do Vite
   // Estas rotas serão processadas antes do middleware do Vite e terão os headers adequados
