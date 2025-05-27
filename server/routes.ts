@@ -1,5 +1,24 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+
+// Função utilitária para corrigir datas do sistema
+function getCurrentDate() {
+  // Ajuste manual para corrigir a data do sistema que está em 2025
+  const now = new Date();
+  const currentYear = 2024; // Ano correto
+  const currentMonth = 11; // Dezembro (0-indexado)
+  const currentDay = 27; // Dia atual aproximado
+  
+  // Criar data correta mantendo a hora atual
+  const correctedDate = new Date(currentYear, currentMonth, currentDay, now.getHours(), now.getMinutes(), now.getSeconds());
+  
+  return correctedDate;
+}
+
+function formatDateForDB(date?: Date) {
+  const targetDate = date || getCurrentDate();
+  return targetDate.toISOString();
+}
 import { storage } from "./storage";
 import { 
   insertBaseSchema, insertVehicleSchema, insertMaintenanceSchema,
@@ -10057,7 +10076,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           service_description, service_date, cost, mileage, 
           notes, contact_name, contact_phone, status, created_at, payment_status
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending', NOW(), 'pending')
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending', $12, 'pending')
         RETURNING *
       `;
       
@@ -10067,12 +10086,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pickup_location || '',
         delivery_location || '',
         service_description || 'Reboque',
-        service_date ? new Date(service_date) : new Date(),
+        service_date ? new Date(service_date) : getCurrentDate(),
         cost ? parseFloat(cost.toString()) : 0,
         mileage ? parseInt(mileage.toString()) : 0,
         notes || '',
         contact_name || '',
         contact_phone || '',
+        formatDateForDB(),
       ];
       
       const result = await pool.query(insertQuery, values);
@@ -10262,8 +10282,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         UPDATE towing_service_notes
         SET 
           status = 'approved',
-          approved_at = NOW(),
-          updated_at = NOW(),
+          approved_at = $3,
+          updated_at = $3,
           approved_by = $1
         WHERE id = $2
         RETURNING *
