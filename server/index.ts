@@ -389,6 +389,194 @@ app.use((req, res, next) => {
     }
   });
 
+  // Rota para registrar serviços através de acesso externo
+  app.post('/api/towing/external/submit-service', async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      const { 
+        token, 
+        vehicle_plate, 
+        pickup_location, 
+        destination, 
+        service_description, 
+        service_type, 
+        driver_name, 
+        service_date, 
+        actual_cost, 
+        km_traveled, 
+        observation 
+      } = req.body;
+
+      if (!token) {
+        return res.status(400).json({
+          success: false,
+          error: 'Token não fornecido'
+        });
+      }
+
+      console.log(`[ExternalSubmit] Registrando serviço via token: ${token}`);
+
+      // Buscar parceiro pelo token
+      const partnerQuery = `
+        SELECT id, name, company_name
+        FROM towing_partners 
+        WHERE external_access_token = $1 
+        AND status = 'ativo'
+      `;
+
+      const partnerResult = await pool.query(partnerQuery, [token]);
+      
+      if (partnerResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Token inválido ou expirado'
+        });
+      }
+
+      const partner = partnerResult.rows[0];
+      console.log(`[ExternalSubmit] Parceiro encontrado: ${partner.name} (ID: ${partner.id})`);
+
+      // Inserir novo serviço
+      const insertQuery = `
+        INSERT INTO towing_services (
+          partner_id,
+          vehicle_plate,
+          pickup_location,
+          destination,
+          service_description,
+          service_type,
+          driver_name,
+          service_date,
+          actual_cost,
+          km_traveled,
+          observation,
+          status,
+          created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pendente', NOW())
+        RETURNING id
+      `;
+
+      const insertResult = await pool.query(insertQuery, [
+        partner.id,
+        vehicle_plate,
+        pickup_location,
+        destination,
+        service_description,
+        service_type,
+        driver_name,
+        service_date,
+        actual_cost,
+        km_traveled,
+        observation
+      ]);
+
+      const serviceId = insertResult.rows[0].id;
+      
+      console.log(`[ExternalSubmit] Serviço registrado com ID: ${serviceId}`);
+
+      return res.status(201).json({
+        success: true,
+        service_id: serviceId,
+        message: 'Serviço registrado com sucesso'
+      });
+
+    } catch (error) {
+      console.error('[ExternalSubmit] Erro ao registrar serviço:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Erro interno do servidor'
+      });
+    }
+  });
+
+  // Rota para carregar histórico de serviços de um parceiro
+  app.post('/api/towing/external/history', async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      const { token } = req.body;
+
+      if (!token) {
+        return res.status(400).json({
+          success: false,
+          error: 'Token não fornecido'
+        });
+      }
+
+      console.log(`[ExternalHistory] Carregando histórico para token: ${token}`);
+
+      // Buscar parceiro pelo token
+      const partnerQuery = `
+        SELECT id, name, company_name
+        FROM towing_partners 
+        WHERE external_access_token = $1 
+        AND status = 'ativo'
+      `;
+
+      const partnerResult = await pool.query(partnerQuery, [token]);
+      
+      if (partnerResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Token inválido ou expirado'
+        });
+      }
+
+      const partner = partnerResult.rows[0];
+
+      // Buscar serviços do parceiro
+      const servicesQuery = `
+        SELECT 
+          id,
+          vehicle_plate,
+          pickup_location,
+          destination,
+          service_description,
+          service_type,
+          driver_name,
+          service_date,
+          actual_cost,
+          km_traveled,
+          observation,
+          status,
+          created_at,
+          approved_at,
+          rejected_at,
+          rejection_reason
+        FROM towing_services 
+        WHERE partner_id = $1 
+        ORDER BY created_at DESC
+        LIMIT 50
+      `;
+
+      const servicesResult = await pool.query(servicesQuery, [partner.id]);
+      
+      console.log(`[ExternalHistory] Encontrados ${servicesResult.rows.length} serviços para parceiro ${partner.name}`);
+
+      return res.status(200).json({
+        success: true,
+        partner: {
+          id: partner.id,
+          name: partner.name,
+          company_name: partner.company_name
+        },
+        services: servicesResult.rows,
+        total: servicesResult.rows.length,
+        has_more: servicesResult.rows.length === 50
+      });
+
+    } catch (error) {
+      console.error('[ExternalHistory] Erro ao carregar histórico:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Erro interno do servidor'
+      });
+    }
+  });
+
   // Adicionar rota para consumo diário simplificado dos postos
   app.get('/api/consumo-diario-postos-simplificado', async (req, res) => {
     try {

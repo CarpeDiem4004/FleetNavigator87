@@ -193,12 +193,20 @@ export default function ExternalAccessPage() {
     if (!token) return;
 
     try {
-      const response = await fetch(`/api/towing/external/history/${token}`);
+      const response = await fetch('/api/towing/external/history', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token }),
+      });
+
       const data = await response.json();
 
       if (data.success) {
         setServices(data.services);
         setShowHistory(true);
+        console.log(`[ExternalAccess] Histórico carregado: ${data.services.length} serviços encontrados`);
       } else {
         toast({
           title: "Erro",
