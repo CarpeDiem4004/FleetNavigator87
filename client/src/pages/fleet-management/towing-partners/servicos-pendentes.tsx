@@ -384,6 +384,9 @@ export default function ServicosPendentesPage() {
                               variant="outline"
                               className="h-8 px-2"
                               onClick={() => {
+                                console.log('Dados do serviço selecionado:', servico);
+                                console.log('Local de retirada:', servico.local_retirada);
+                                console.log('Local de entrega:', servico.local_entrega);
                                 setSelectedServico(servico);
                                 setDetailsModalOpen(true);
                               }}
