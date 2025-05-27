@@ -170,7 +170,7 @@ export default function PostosVisaoGeralPage() {
   const { data: consumoDiarioData, isLoading: isLoadingConsumo } = useQuery({
     queryKey: ['/consumo-data/postos', periodoDias],
     queryFn: async () => {
-      const res = await fetch(`/consumo-data/postos?dias=${periodoDias}`);
+      const res = await fetch(`/api/consumo-diario-postos-simplificado?dias=${periodoDias}`);
       if (!res.ok) {
         throw new Error('Erro ao buscar dados de consumo diário');
       }
