@@ -669,12 +669,9 @@ export const towingServicePayments = pgTable("towing_service_payments", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-// Relações para pagamentos
+// Relações para pagamentos (será definida após criar towingPartners)
 export const towingServicePaymentsRelations = relations(towingServicePayments, ({ one }) => ({
-  partner: one(towingPartners, {
-    fields: [towingServicePayments.partnerId],
-    references: [towingPartners.id]
-  })
+  // Relação será adicionada quando towingPartners estiver definido
 }));
 
 // Schemas de inserção para pagamentos
