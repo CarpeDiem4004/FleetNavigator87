@@ -11163,9 +11163,9 @@ async function createFuelRequestNotification(fuelRequest) {
   }
 }
 
-// ===== ROTAS PARA MÓDULO FINANCEIRO DE SERVIÇOS DE GUINCHO =====
-// (Movidas para towingPaymentsRoutes.ts)
+  // ===== ROTAS PARA MÓDULO FINANCEIRO DE SERVIÇOS DE GUINCHO =====
+  // (Movidas para towingPaymentsRoutes.ts)
 
-const httpServer = createServer(app);
-return httpServer;
+  const httpServer = createServer(app);
+  return httpServer;
 }
