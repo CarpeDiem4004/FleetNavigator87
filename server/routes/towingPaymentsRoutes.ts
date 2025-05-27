@@ -74,38 +74,8 @@ router.get('/services', unifiedAuthMiddleware, async (req: Request, res: Respons
     const result = await pool.query(query, queryParams);
     let services = result.rows;
     
-    // Incluir serviços de teste armazenados em memória, se solicitado
-    // ou se não houver nenhum filtro especificado (para garantir retrocompatibilidade)
-    const shouldIncludeTestServices = include_test === 'true' || (!include_test && !status && !payment_status);
-    
-    if (shouldIncludeTestServices && partner_id) {
-      // Buscar serviços de teste para o parceiro específico
-      const partnerIdNum = parseInt(partner_id as string);
-      if (!isNaN(partnerIdNum)) {
-        console.log(`[TowingPaymentsRoutes] Buscando serviços de teste para parceiro ID: ${partnerIdNum}`);
-        const testServicesList = getTestServices(partnerIdNum);
-        
-        if (testServicesList && testServicesList.length > 0) {
-          console.log(`[TowingPaymentsRoutes] Encontrados ${testServicesList.length} serviços de teste para o parceiro ID: ${partnerIdNum}`);
-          
-          // Formatar os serviços de teste para corresponder ao formato esperado pela UI
-          const formattedTestServices = testServicesList.map(service => {
-            return {
-              ...service,
-              partner_name: service.partner_name || "Parceiro Teste",
-              company_name: service.company_name || "Empresa Teste",
-              is_paid: service.payment_status === "paid",
-              is_test_service: true  // Marca para identificar serviços de teste
-            };
-          });
-          
-          // Combinar os resultados
-          services = [...formattedTestServices, ...services];
-        } else {
-          console.log(`[TowingPaymentsRoutes] Nenhum serviço de teste encontrado para o parceiro ID: ${partnerIdNum}`);
-        }
-      }
-    }
+    // Dados de teste desabilitados - usando apenas dados reais do banco
+    console.log(`[TowingPaymentsRoutes] Retornando ${services.length} serviços reais do banco de dados`);
     
     res.status(200).json(services);
   } catch (error) {
