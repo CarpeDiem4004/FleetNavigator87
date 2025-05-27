@@ -3,6 +3,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Truck, MapPin, Calendar, DollarSign, FileText, CheckCircle, XCircle, ExternalLink } from "lucide-react";
+import { formatDateShortBrasilia } from "@/lib/date-utils";
 
 interface ServicoPrestado {
   id: number;
@@ -38,7 +39,7 @@ const ServicoPrestadoCard: React.FC<ServicoPrestadoCardProps> = ({
   onRejeitar, 
   onDetalhar 
 }) => {
-  const formattedDate = new Date(servico.data_servico).toLocaleDateString('pt-BR');
+  const formattedDate = formatDateShortBrasilia(new Date(servico.data_servico));
   const formattedValue = servico.valor.toLocaleString('pt-BR', { 
     style: 'currency', 
     currency: 'BRL' 

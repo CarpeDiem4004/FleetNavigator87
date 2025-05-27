@@ -19,6 +19,7 @@ import { SincronizarServicosButton } from '@/components/SincronizarServicosButto
 // Ícones
 import { Search, AlertCircle, FileText, CheckCircle, XCircle, RefreshCw, Check, X, Eye, Trash2 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
+import { formatDateTimeBrasilia, formatDateBrasilia } from '@/lib/date-utils';
 
 // Tipos
 interface Parceiro {

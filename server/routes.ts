@@ -1,23 +1,49 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 
-// Função utilitária para corrigir datas do sistema
-function getCurrentDate() {
-  // Ajuste manual para corrigir a data do sistema que está em 2025
+// Função utilitária para obter data/hora no fuso horário de Brasília (UTC-3)
+function getCurrentDateBrasilia() {
   const now = new Date();
-  const currentYear = 2024; // Ano correto
+  
+  // Ajustar para o fuso horário de Brasília (UTC-3)
+  const brasiliaOffset = -3 * 60; // -3 horas em minutos
+  const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const brasiliaTime = new Date(utcTime + (brasiliaOffset * 60000));
+  
+  // Corrigir o ano para 2024 (sistema está em 2025 incorretamente)
+  const currentYear = 2024;
   const currentMonth = 11; // Dezembro (0-indexado)
-  const currentDay = 27; // Dia atual aproximado
+  const currentDay = 27;
   
-  // Criar data correta mantendo a hora atual
-  const correctedDate = new Date(currentYear, currentMonth, currentDay, now.getHours(), now.getMinutes(), now.getSeconds());
+  // Criar data correta de Brasília
+  const correctedBrasiliaDate = new Date(
+    currentYear, 
+    currentMonth, 
+    currentDay, 
+    brasiliaTime.getHours(), 
+    brasiliaTime.getMinutes(), 
+    brasiliaTime.getSeconds()
+  );
   
-  return correctedDate;
+  return correctedBrasiliaDate;
 }
 
 function formatDateForDB(date?: Date) {
-  const targetDate = date || getCurrentDate();
+  const targetDate = date || getCurrentDateBrasilia();
   return targetDate.toISOString();
+}
+
+function formatDateBrasilia(date?: Date) {
+  const targetDate = date || getCurrentDateBrasilia();
+  return targetDate.toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
 }
 import { storage } from "./storage";
 import { 
@@ -10086,7 +10112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pickup_location || '',
         delivery_location || '',
         service_description || 'Reboque',
-        service_date ? new Date(service_date) : getCurrentDate(),
+        service_date ? new Date(service_date) : getCurrentDateBrasilia(),
         cost ? parseFloat(cost.toString()) : 0,
         mileage ? parseInt(mileage.toString()) : 0,
         notes || '',
