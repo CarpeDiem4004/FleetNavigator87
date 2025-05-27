@@ -31,14 +31,20 @@ async function coletarDadosPosto(posto) {
     
     // Buscar dados do tanque
     const tanqueQuery = `
-      SELECT capacidade_maxima, nivel_atual 
+      SELECT diesel_capacidade, diesel_nivel, arla_capacidade, arla_nivel
       FROM configuracao_tanques 
       WHERE posto = $1
     `;
     const tanqueResult = await client.query(tanqueQuery, [posto]);
     
-    const capacidadeMaxima = tanqueResult.rows[0]?.capacidade_maxima || 0;
-    const nivelAtual = tanqueResult.rows[0]?.nivel_atual || 0;
+    const dieselCapacidade = tanqueResult.rows[0]?.diesel_capacidade || 0;
+    const dieselNivel = tanqueResult.rows[0]?.diesel_nivel || 0;
+    const arlaCapacidade = tanqueResult.rows[0]?.arla_capacidade || 0;
+    const arlaNivel = tanqueResult.rows[0]?.arla_nivel || 0;
+    
+    // Calcular totais (usando diesel como principal)
+    const capacidadeMaxima = dieselCapacidade;
+    const nivelAtual = dieselNivel;
     const percentualDisponivel = capacidadeMaxima > 0 ? (nivelAtual / capacidadeMaxima * 100) : 0;
 
     // Buscar dados de abastecimentos do dia anterior
