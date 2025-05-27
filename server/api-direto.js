@@ -992,7 +992,7 @@ export async function registrarAbastecimentoPosto(req, res) {
       const valuesV2 = insertValues;
       
       console.log('Query SQL V2 a ser executada:', insertQueryV2);
-      console.log('Valores V2:', valuesV2);
+      console.log('Valores V2:', insertValues);
       
       const result = await pool.query(insertQueryV2, valuesV2);
       
