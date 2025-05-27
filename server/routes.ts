@@ -3045,6 +3045,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Endpoint para consumo diário simplificado dos postos
+  app.get('/api/consumo-diario-postos-simplificado', isAuthenticated, async (req, res) => {
+    try {
+      // Período da consulta - últimos 30 dias por padrão
+      const dias = parseInt(req.query.dias as string) || 30;
+      const dataLimite = new Date();
+      dataLimite.setDate(dataLimite.getDate() - dias);
+      const dataLimiteStr = dataLimite.toISOString().split('T')[0];
+      
+      // Mapa das tabelas para normalizar nomes
+      const tabelasMap = {
+        'abastecimentos_posto_abc_v2': 'abc_v2',
+        'abastecimentos_posto_alair_v2': 'alair_v2', 
+        'abastecimentos_posto_campinas_v2': 'campinas_v2',
+        'abastecimentos_posto_osasco_v2': 'osasco_v2',
+        'abastecimentos_posto_socorro_v2': 'socorro_v2',
+        'abastecimentos_posto_sorocaba_v2': 'sorocaba_v2'
+      };
+      
+      // Obter todas as datas únicas do período
+      const queryDatas = `
+        SELECT DISTINCT DATE(created_at) as data
+        FROM (
+          SELECT created_at FROM abastecimentos_posto_abc_v2 WHERE created_at >= $1
+          UNION SELECT created_at FROM abastecimentos_posto_alair_v2 WHERE created_at >= $1
+          UNION SELECT created_at FROM abastecimentos_posto_campinas_v2 WHERE created_at >= $1
+          UNION SELECT created_at FROM abastecimentos_posto_osasco_v2 WHERE created_at >= $1
+          UNION SELECT created_at FROM abastecimentos_posto_socorro_v2 WHERE created_at >= $1
+          UNION SELECT created_at FROM abastecimentos_posto_sorocaba_v2 WHERE created_at >= $1
+        ) todas_datas
+        ORDER BY data DESC
+      `;
+      
+      const datasResult = await pool.query(queryDatas, [dataLimiteStr]);
+      const resultado = [];
+      
+      // Para cada data, buscar consumo de todos os postos
+      for (let i = 0; i < datasResult.rows.length; i++) {
+        const dataAtual = datasResult.rows[i].data;
+        const item: any = {
+          dia: i + 1,
+          data: dataAtual,
+          osasco_v2: 0,
+          alair_v2: 0,
+          campinas_v2: 0,
+          abc_v2: 0,
+          socorro_v2: 0,
+          sorocaba_v2: 0,
+          total: 0
+        };
+        
+        // Para cada tabela, buscar o consumo da data
+        for (const [tabela, nomePosto] of Object.entries(tabelasMap)) {
+          try {
+            const query = `
+              SELECT COALESCE(SUM(litros), 0) as litros
+              FROM ${tabela}
+              WHERE DATE(created_at) = $1
+            `;
+            
+            const consumoResult = await pool.query(query, [dataAtual]);
+            const litros = parseFloat(consumoResult.rows[0]?.litros || 0);
+            
+            item[nomePosto] = litros;
+            item.total += litros;
+          } catch (tableError) {
+            console.error(`Erro ao consultar tabela ${tabela} para data ${dataAtual}:`, tableError);
+            continue;
+          }
+        }
+        
+        resultado.push(item);
+      }
+      
+      res.status(200).json({
+        success: true,
+        data: resultado,
+        params: { dias }
+      });
+    } catch (error: any) {
+      console.error('Erro ao obter consumo diário de postos:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao obter dados de consumo diário',
+        error: error.message
+      });
+    }
+  });
+
   // Endpoint para sincronizar tabelas entre Replit e Supabase
   app.post("/api/diagnostico/sync-schema", isAdmin, async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
