@@ -18,7 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import PageHeader from '@/components/layout/PageHeader';
 
 // Ícones
-import { Truck, Phone, MapPin, Star, AlertCircle, ChevronRight, Search, Plus, Filter, FileText } from 'lucide-react';
+import { Truck, Phone, MapPin, Star, AlertCircle, ChevronRight, Search, Plus, Filter, FileText, DollarSign } from 'lucide-react';
 
 // Tipos
 interface TowingPartner {
@@ -320,6 +320,13 @@ const TowingPartnersPage: React.FC = () => {
             <Button variant="secondary" size="sm" className="gap-2">
               <FileText size={16} />
               Serviços Pendentes
+            </Button>
+          </SafeLink>
+          
+          <SafeLink to="/fleet-management/towing-partners/financeiro">
+            <Button variant="outline" size="sm" className="gap-2">
+              <DollarSign size={16} />
+              Financeiro
             </Button>
           </SafeLink>
         </div>
