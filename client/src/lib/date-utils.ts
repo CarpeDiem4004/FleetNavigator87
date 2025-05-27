@@ -39,14 +39,26 @@ export function formatDateBrasilia(date?: Date): string {
   });
 }
 
-export function formatDateShortBrasilia(date?: Date): string {
-  const targetDate = date || getCurrentDateBrasilia();
-  return targetDate.toLocaleDateString('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  });
+export function formatDateShortBrasilia(date?: Date | string): string {
+  let targetDate: Date;
+  
+  if (!date) {
+    targetDate = getCurrentDateBrasilia();
+  } else if (typeof date === 'string') {
+    // Para strings de data vindas do banco, criar uma nova data e ajustar para Brasília
+    targetDate = new Date(date);
+    // Adicionar 3 horas para compensar UTC para Brasília
+    targetDate.setHours(targetDate.getHours() + 3);
+  } else {
+    targetDate = date;
+  }
+  
+  // Formatação manual para garantir resultado correto
+  const day = String(targetDate.getDate()).padStart(2, '0');
+  const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+  const year = targetDate.getFullYear();
+  
+  return `${day}/${month}/${year}`;
 }
 
 export function formatTimeBrasilia(date?: Date): string {
