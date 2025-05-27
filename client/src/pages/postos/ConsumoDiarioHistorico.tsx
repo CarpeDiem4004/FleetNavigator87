@@ -274,7 +274,7 @@ export default function ConsumoDiarioHistorico() {
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="text-gray-600">Total de litros</p>
-                        <p className="text-lg font-semibold">{posto.total_litros.toFixed(2)}L</p>
+                        <p className="text-lg font-semibold">{Number(posto.total_litros || 0).toFixed(2)}L</p>
                       </div>
                       <div>
                         <p className="text-gray-600">Total abastecimentos</p>
@@ -282,19 +282,19 @@ export default function ConsumoDiarioHistorico() {
                       </div>
                       <div>
                         <p className="text-gray-600">Valor total</p>
-                        <p className="text-lg font-semibold">R$ {posto.total_valor.toFixed(2)}</p>
+                        <p className="text-lg font-semibold">R$ {Number(posto.total_valor || 0).toFixed(2)}</p>
                       </div>
                       <div>
                         <p className="text-gray-600">Média disponível</p>
-                        <p className="text-lg font-semibold">{posto.media_percentual_disponivel.toFixed(1)}%</p>
+                        <p className="text-lg font-semibold">{Number(posto.media_percentual_disponivel || 0).toFixed(1)}%</p>
                       </div>
                       <div>
                         <p className="text-gray-600">Média litros/dia</p>
-                        <p className="text-lg font-semibold">{posto.media_litros_dia.toFixed(2)}L</p>
+                        <p className="text-lg font-semibold">{Number(posto.media_litros_dia || 0).toFixed(2)}L</p>
                       </div>
                       <div>
                         <p className="text-gray-600">Média abast./dia</p>
-                        <p className="text-lg font-semibold">{posto.media_abastecimentos_dia.toFixed(1)}</p>
+                        <p className="text-lg font-semibold">{Number(posto.media_abastecimentos_dia || 0).toFixed(1)}</p>
                       </div>
                     </div>
                   </CardContent>
