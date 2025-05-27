@@ -60,25 +60,14 @@ async function coletarDadosPosto(posto) {
     let abastecimentosParams;
     
     // Adaptar query baseada na estrutura de cada posto
-    if (posto === 'Osasco_v2') {
-      abastecimentosQuery = `
-        SELECT 
-          COUNT(*) as numero_abastecimentos,
-          COALESCE(SUM(litros), 0) as litros_consumidos,
-          COALESCE(SUM(valor_total), 0) as valor_total
-        FROM ${tabelaAbastecimento}
-        WHERE DATE(data_abastecimento) = $1
-      `;
-    } else {
-      abastecimentosQuery = `
-        SELECT 
-          COUNT(*) as numero_abastecimentos,
-          COALESCE(SUM(COALESCE(litros, quantidade_litros, quantity_litros)), 0) as litros_consumidos,
-          COALESCE(SUM(valor_total), 0) as valor_total
-        FROM ${tabelaAbastecimento}
-        WHERE DATE(data_abastecimento) = $1
-      `;
-    }
+    abastecimentosQuery = `
+      SELECT 
+        COUNT(*) as numero_abastecimentos,
+        COALESCE(SUM(litros), 0) as litros_consumidos,
+        COALESCE(SUM(valor_total), 0) as valor_total
+      FROM ${tabelaAbastecimento}
+      WHERE DATE(created_at) = $1
+    `;
     
     abastecimentosParams = [dataOntemStr];
     
