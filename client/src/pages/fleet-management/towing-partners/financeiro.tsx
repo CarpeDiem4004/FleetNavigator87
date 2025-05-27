@@ -463,74 +463,7 @@ export default function FinanceiroGuincho() {
         </Card>
       )}
 
-      {/* Cards de Resumo Antigo */}
-      {summary && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Serviços</CardTitle>
-              <Calculator className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{summary.total_services}</div>
-              <p className="text-xs text-muted-foreground">
-                {summary.paid_services} pagos • {summary.pending_services} pendentes
-              </p>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(summary.total_value)}</div>
-              <p className="text-xs text-muted-foreground">Valor total dos serviços</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Valores Pagos</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{formatCurrency(summary.paid_value)}</div>
-              <p className="text-xs text-muted-foreground">
-                {(() => {
-                  const paidValue = parseFloat(summary.paid_value || '0');
-                  const totalValue = parseFloat(summary.total_value || '0');
-                  if (totalValue === 0 || isNaN(paidValue) || isNaN(totalValue)) {
-                    return '0% do total';
-                  }
-                  return `${Math.round((paidValue / totalValue) * 100)}% do total`;
-                })()}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Valores Pendentes</CardTitle>
-              <Clock className="h-4 w-4 text-yellow-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">{formatCurrency(summary.pending_value)}</div>
-              <p className="text-xs text-muted-foreground">
-                {(() => {
-                  const pendingValue = parseFloat(summary.pending_value || '0');
-                  const totalValue = parseFloat(summary.total_value || '0');
-                  if (totalValue === 0 || isNaN(pendingValue) || isNaN(totalValue)) {
-                    return '0% do total';
-                  }
-                  return `${Math.round((pendingValue / totalValue) * 100)}% do total`;
-                })()}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
       {/* Resumo por Parceiro */}
       {partnerSummary.length > 0 && (
