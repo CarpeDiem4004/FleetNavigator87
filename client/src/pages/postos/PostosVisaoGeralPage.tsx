@@ -77,12 +77,12 @@ export default function PostosVisaoGeralPage() {
     try {
       // Invalidar e refazer todas as consultas relacionadas
       await queryClient.invalidateQueries({ queryKey: ['/api/postos'] });
-      await queryClient.invalidateQueries({ queryKey: ['/data-api/consumo-diario-postos'] });
+      await queryClient.invalidateQueries({ queryKey: ['/consumo-data/postos'] });
       
       // Forçar refetch das queries ativas
       await queryClient.refetchQueries({ queryKey: ['/api/postos'] });
       if (activeTab === 'consumo-diario') {
-        await queryClient.refetchQueries({ queryKey: ['/data-api/consumo-diario-postos', periodoDias] });
+        await queryClient.refetchQueries({ queryKey: ['/consumo-data/postos', periodoDias] });
       }
       
       toast({
@@ -118,9 +118,9 @@ export default function PostosVisaoGeralPage() {
 
   // Buscar dados de consumo diário
   const { data: consumoDiarioData, isLoading: isLoadingConsumo } = useQuery({
-    queryKey: ['/data-api/consumo-diario-postos', periodoDias],
+    queryKey: ['/consumo-data/postos', periodoDias],
     queryFn: async () => {
-      const res = await fetch(`/data-api/consumo-diario-postos?dias=${periodoDias}`);
+      const res = await fetch(`/consumo-data/postos?dias=${periodoDias}`);
       if (!res.ok) {
         throw new Error('Erro ao buscar dados de consumo diário');
       }

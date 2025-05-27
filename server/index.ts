@@ -57,6 +57,7 @@ const app = express();
 // ENDPOINT CRÍTICO - Registrar ANTES de todos os middlewares do Vite
 // Usando um prefixo que não será interceptado pelo Vite
 app.get('/consumo-data/postos', async (req, res) => {
+  console.log('🔥 ENDPOINT /consumo-data/postos foi chamado!', req.query);
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
