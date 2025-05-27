@@ -383,4 +383,43 @@ router.get('/detailed-report', async (req, res) => {
   }
 });
 
+// Rota para excluir serviço de guincho (apenas administradores)
+router.delete('/services/:id', authMiddleware, async (req, res) => {
+  try {
+    // Verificar se o usuário é administrador
+    if (req.user?.role !== 'admin') {
+      return res.status(403).json({ error: 'Acesso negado. Apenas administradores podem excluir serviços.' });
+    }
+
+    const { id } = req.params;
+    const serviceId = parseInt(id);
+
+    if (isNaN(serviceId)) {
+      return res.status(400).json({ error: 'ID do serviço inválido' });
+    }
+
+    // Verificar se o serviço existe
+    const checkQuery = 'SELECT id FROM towing_services WHERE id = $1';
+    const checkResult = await pool.query(checkQuery, [serviceId]);
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Serviço não encontrado' });
+    }
+
+    // Excluir o serviço
+    const deleteQuery = 'DELETE FROM towing_services WHERE id = $1';
+    await pool.query(deleteQuery, [serviceId]);
+
+    res.json({ 
+      success: true, 
+      message: 'Serviço excluído com sucesso',
+      deletedServiceId: serviceId 
+    });
+
+  } catch (error) {
+    console.error('Erro ao excluir serviço:', error);
+    res.status(500).json({ error: 'Erro ao excluir serviço' });
+  }
+});
+
 export default router;

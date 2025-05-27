@@ -173,6 +173,27 @@ export default function FinanceiroGuincho() {
     },
   });
 
+  // Mutation para excluir serviço de guincho
+  const deleteServiceMutation = useMutation({
+    mutationFn: async (serviceId: number) => {
+      const response = await fetch(`/api/towing/services/${serviceId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Erro ao excluir serviço');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/towing/payments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/towing/payments/summary'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/towing/payments/by-partner'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/towing/payments/detailed-report'] });
+      toast({ title: 'Sucesso', description: 'Serviço excluído com sucesso!' });
+    },
+    onError: () => {
+      toast({ title: 'Erro', description: 'Erro ao excluir serviço', variant: 'destructive' });
+    },
+  });
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pago':
@@ -415,6 +436,7 @@ export default function FinanceiroGuincho() {
                   <table className="w-full">
                     <thead className="bg-gray-100">
                       <tr>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Nº Serviço</th>
                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Data</th>
                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Placa</th>
                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Serviço</th>
@@ -422,11 +444,17 @@ export default function FinanceiroGuincho() {
                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Motorista</th>
                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Valor</th>
                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Status</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Ações</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {partnerData.services.map((service: any) => (
+                      {partnerData.services.map((service: any, index: number) => (
                         <tr key={service.id} className="border-b hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              #{index + 1}
+                            </span>
+                          </td>
                           <td className="px-4 py-3 text-sm">
                             {service.service_date ? format(new Date(service.service_date), 'dd/MM/yyyy', { locale: ptBR }) : '-'}
                           </td>
@@ -449,6 +477,21 @@ export default function FinanceiroGuincho() {
                             >
                               {service.payment_status_display}
                             </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => {
+                                if (window.confirm(`Tem certeza que deseja excluir o serviço #${index + 1}? Esta ação não pode ser desfeita.`)) {
+                                  deleteServiceMutation.mutate(service.id);
+                                }
+                              }}
+                              disabled={deleteServiceMutation.isPending}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </td>
                         </tr>
                       ))}
