@@ -12,7 +12,8 @@ import {
   getConsumoPorVeiculoPosto,
   getComparativoCombustiveisPosto,
   checkTabelaPosto,
-  registrarAbastecimentoPosto
+  registrarAbastecimentoPosto,
+  deleteAbastecimentoPosto
 } from "./api-direto.js";
 // Importar API para usuários via Supabase
 import userApi from "./api/userApi";

@@ -224,6 +224,118 @@ export async function getHistoricoPosto(req, res) {
   }
 }
 
+// Função para excluir um abastecimento específico
+export async function deleteAbastecimentoPosto(req, res) {
+  try {
+    // Forçar o Content-Type como application/json para evitar interceptação do Vite
+    res.setHeader('Content-Type', 'application/json');
+    
+    const { posto, id } = req.params;
+    let postoName = posto;
+    
+    console.log(`deleteAbastecimentoPosto - Posto solicitado: ${posto}, ID: ${id}`);
+    
+    // Identificar o posto correto (mesmo lógica do getHistoricoPosto)
+    if (postoName.toLowerCase() === 'campinas_v2' || 
+        postoName.toLowerCase().includes('campinas_v2') || 
+        postoName.toLowerCase().includes('campinas v2')) {
+      postoName = 'campinas_v2';
+    }
+    else if (postoName.toLowerCase() === 'osasco_v2' || 
+        postoName.toLowerCase().includes('osasco_v2') || 
+        postoName.toLowerCase().includes('osasco v2')) {
+      postoName = 'osasco_v2';
+    }
+    else if (postoName.toLowerCase() === 'abc_v2' || 
+        postoName.toLowerCase().includes('abc_v2') || 
+        postoName.toLowerCase().includes('abc v2')) {
+      postoName = 'abc_v2';
+    }
+    else if (postoName.toLowerCase() === 'alair_v2' || 
+        postoName.toLowerCase().includes('alair_v2') || 
+        postoName.toLowerCase().includes('alair v2')) {
+      postoName = 'alair_v2';
+    }
+    else if (postoName.toLowerCase() === 'guarulhos_v2' || 
+        postoName.toLowerCase().includes('guarulhos_v2') || 
+        postoName.toLowerCase().includes('guarulhos v2')) {
+      postoName = 'guarulhos_v2';
+    }
+    else if (postoName.toLowerCase() === 'socorro_v2' || 
+        postoName.toLowerCase().includes('socorro_v2') || 
+        postoName.toLowerCase().includes('socorro v2')) {
+      postoName = 'socorro_v2';
+    }
+    else if (postoName.toLowerCase() === 'sorocaba_v2' || 
+        postoName.toLowerCase().includes('sorocaba_v2') || 
+        postoName.toLowerCase().includes('sorocaba v2')) {
+      postoName = 'sorocaba_v2';
+    }
+    else if (postoName.toLowerCase() === 'osasco' || 
+        postoName.toLowerCase().includes('osasco')) {
+      postoName = 'osasco';
+    } 
+    else {
+      postoName = formatPostoName(postoName);
+    }
+    
+    console.log(`deleteAbastecimentoPosto - Posto identificado como: ${postoName}`);
+    
+    // Definir o nome da tabela
+    const tableName = `abastecimentos_posto_${postoName.toLowerCase()}`;
+    
+    // Verificar se a tabela existe
+    const tableCheckQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = $1
+      ) as "exists";
+    `;
+    
+    const tableCheckResult = await pool.query(tableCheckQuery, [tableName]);
+    
+    if (!tableCheckResult.rows[0].exists) {
+      return res.status(404).json({ 
+        success: false, 
+        error: `Tabela para posto ${postoName} não encontrada.` 
+      });
+    }
+    
+    // Executar a exclusão
+    const deleteQuery = `
+      DELETE FROM ${tableName} 
+      WHERE id = $1 
+      RETURNING id
+    `;
+    
+    console.log(`Executando exclusão: DELETE FROM ${tableName} WHERE id = ${id}`);
+    const result = await pool.query(deleteQuery, [parseInt(id)]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: `Abastecimento com ID ${id} não encontrado na tabela ${tableName}`
+      });
+    }
+    
+    console.log(`✅ Abastecimento ${id} excluído com sucesso da tabela ${tableName}`);
+    
+    return res.json({
+      success: true,
+      message: `Abastecimento ${id} do posto ${postoName} excluído com sucesso`,
+      deletedId: result.rows[0].id
+    });
+    
+  } catch (error) {
+    console.error(`❌ Erro ao excluir abastecimento do posto ${req.params.posto}:`, error);
+    res.status(500).json({ 
+      success: false, 
+      error: `Erro ao excluir abastecimento: ${error.message}` 
+    });
+  }
+}
+
 // Função para obter estatísticas mensais
 export async function getEstatisticasMensaisPosto(req, res) {
   try {
