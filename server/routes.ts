@@ -11165,8 +11165,8 @@ async function createFuelRequestNotification(fuelRequest) {
 
 // ===== ROTAS PARA MÓDULO FINANCEIRO DE SERVIÇOS DE GUINCHO =====
 
-// Listar todos os pagamentos dos serviços de guincho
-app.get('/api/towing/payments', async (req, res) => {
+  // Listar todos os pagamentos dos serviços de guincho
+  app.get('/api/towing/payments', async (req, res) => {
   try {
     const query = `
       SELECT 
