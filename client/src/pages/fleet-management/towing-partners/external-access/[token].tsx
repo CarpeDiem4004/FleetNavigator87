@@ -52,6 +52,7 @@ export default function ExternalAccessPage() {
   const [submitting, setSubmitting] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
   // Form state
   const [formData, setFormData] = useState({
@@ -107,6 +108,17 @@ export default function ExternalAccessPage() {
 
     validateToken();
   }, [token, toast]);
+
+  // Atualização automática do histórico a cada 30 segundos
+  useEffect(() => {
+    if (!showHistory || !token) return;
+
+    const interval = setInterval(() => {
+      loadHistory();
+    }, 30000); // 30 segundos
+
+    return () => clearInterval(interval);
+  }, [showHistory, token]);
 
   // Carregar histórico de serviços
   const loadHistory = async () => {

@@ -192,35 +192,66 @@ router.get('/history/:token', async (req: Request, res: Response) => {
 
     const partner = partnerResult.rows[0];
 
-    // Buscar serviços do parceiro
+    // Buscar serviços do parceiro (incluindo serviços das tabelas principais)
     const servicesQuery = `
-      SELECT 
-        id,
-        vehicle_plate,
-        pickup_location,
-        destination,
-        service_description,
-        service_type,
-        driver_name,
-        service_date,
-        actual_cost,
-        km_traveled,
-        observation,
-        status,
-        created_at,
-        approved_at,
-        rejected_at,
-        rejection_reason
-      FROM towing_services 
-      WHERE partner_id = $1 
+      SELECT DISTINCT
+        COALESCE(ts.id, tps.id) as id,
+        COALESCE(ts.vehicle_plate, tps.vehicle_plate) as vehicle_plate,
+        COALESCE(ts.pickup_location, tps.pickup_location) as pickup_location,
+        COALESCE(ts.destination, tps.destination) as destination,
+        COALESCE(ts.service_description, tps.service_description) as service_description,
+        COALESCE(ts.service_type, tps.service_type) as service_type,
+        COALESCE(ts.driver_name, tps.driver_name) as driver_name,
+        COALESCE(ts.service_date, tps.service_date) as service_date,
+        COALESCE(ts.actual_cost, tps.actual_cost) as actual_cost,
+        COALESCE(ts.km_traveled, tps.km_traveled) as km_traveled,
+        COALESCE(ts.observation, tps.observation) as observation,
+        COALESCE(ts.status, tps.status) as status,
+        COALESCE(ts.created_at, tps.created_at) as created_at,
+        COALESCE(ts.approved_at, tps.approved_at) as approved_at,
+        COALESCE(ts.rejected_at, tps.rejected_at) as rejected_at,
+        COALESCE(ts.rejection_reason, tps.rejection_reason) as rejection_reason,
+        'external' as source_table
+      FROM towing_services ts
+      WHERE ts.partner_id = $1 AND ts.created_via_token IS NOT NULL
+      
+      UNION ALL
+      
+      SELECT DISTINCT
+        tps.id,
+        tps.vehicle_plate,
+        tps.pickup_location,
+        tps.destination,
+        tps.service_description,
+        tps.service_type,
+        tps.driver_name,
+        tps.service_date,
+        tps.actual_cost,
+        tps.km_traveled,
+        tps.observation,
+        tps.status,
+        tps.created_at,
+        tps.approved_at,
+        tps.rejected_at,
+        tps.rejection_reason,
+        'main' as source_table
+      FROM towing_partner_services tps
+      WHERE tps.partner_id = $1
+      
       ORDER BY created_at DESC 
       LIMIT $2 OFFSET $3
     `;
 
     const servicesResult = await pool.query(servicesQuery, [partner.id, limit, offset]);
 
-    // Contar total de serviços
-    const countQuery = 'SELECT COUNT(*) as total FROM towing_services WHERE partner_id = $1';
+    // Contar total de serviços (incluindo ambas as tabelas)
+    const countQuery = `
+      SELECT COUNT(*) as total FROM (
+        SELECT id FROM towing_services WHERE partner_id = $1 AND created_via_token IS NOT NULL
+        UNION ALL
+        SELECT id FROM towing_partner_services WHERE partner_id = $1
+      ) as combined_services
+    `;
     const countResult = await pool.query(countQuery, [partner.id]);
 
     res.status(200).json({
