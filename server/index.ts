@@ -627,6 +627,7 @@ app.use((req, res, next) => {
       
       const result = await dbPool.query(query);
       console.log(`[CONSUMO-DIRETO] Encontrados ${result.rows.length} registros`);
+      console.log(`[CONSUMO-DIRETO] Primeira linha:`, result.rows[0]);
       
       // Agrupar dados por data
       const dadosAgrupados: any = {};
@@ -673,6 +674,8 @@ app.use((req, res, next) => {
       const dadosFinais = Object.values(dadosAgrupados).sort((a: any, b: any) => 
         new Date(b.data).getTime() - new Date(a.data).getTime()
       );
+      
+      console.log(`[CONSUMO-DIRETO] Dados finais:`, JSON.stringify(dadosFinais[0], null, 2));
       
       res.json({
         success: true,
