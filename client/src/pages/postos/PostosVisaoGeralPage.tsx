@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { format } from 'date-fns';
-import { AlertTriangle, DropletIcon, Filter, Fuel, LogIn, RefreshCw, Search, BarChart4, Calendar } from 'lucide-react';
+import { AlertTriangle, DropletIcon, Filter, Fuel, LogIn, RefreshCw, Search, BarChart4, Calendar, Database } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -94,6 +94,56 @@ export default function PostosVisaoGeralPage() {
       toast({
         title: "Erro ao atualizar",
         description: "Não foi possível atualizar os dados. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Função para verificar dados de consumo específicos
+  const verificarDadosConsumo = async () => {
+    try {
+      toast({
+        title: "Verificando dados",
+        description: "Carregando dados de consumo de todos os postos...",
+      });
+
+      const response = await fetch('/api/consumo-diario-postos-simplificado?dias=30');
+      const data = await response.json();
+      
+      if (data.success) {
+        const resumo = data.data.map((item: any) => ({
+          dia: item.dia,
+          data: item.data,
+          total: item.total,
+          postos: {
+            osasco_v2: item.osasco_v2 || 0,
+            alair_v2: item.alair_v2 || 0,
+            campinas_v2: item.campinas_v2 || 0,
+            abc_v2: item.abc_v2 || 0,
+            socorro_v2: item.socorro_v2 || 0,
+            sorocaba_v2: item.sorocaba_v2 || 0
+          }
+        }));
+
+        console.log('Dados de consumo carregados:', resumo);
+        
+        // Verificar quantos postos têm dados
+        const postosComDados = Object.keys(resumo[0]?.postos || {}).filter(posto => 
+          resumo.some((dia: any) => dia.postos[posto] > 0)
+        );
+        
+        toast({
+          title: "Dados carregados com sucesso!",
+          description: `Encontrados ${resumo.length} registros de consumo diário. ${postosComDados.length} postos com dados.`,
+        });
+      } else {
+        throw new Error('Falha ao carregar dados');
+      }
+    } catch (error) {
+      console.error('Erro ao verificar dados de consumo:', error);
+      toast({
+        title: "Erro ao verificar dados",
+        description: "Não foi possível carregar os dados de consumo. Verifique se todas as tabelas estão configuradas.",
         variant: "destructive",
       });
     }
@@ -225,6 +275,10 @@ export default function PostosVisaoGeralPage() {
           <Button variant="outline" size="sm" onClick={atualizarTodosDados}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Atualizar
+          </Button>
+          <Button variant="outline" size="sm" onClick={verificarDadosConsumo}>
+            <Database className="mr-2 h-4 w-4" />
+            Verificar Dados de Consumo
           </Button>
           <RemoverPostoSaoPaulo />
         </div>
