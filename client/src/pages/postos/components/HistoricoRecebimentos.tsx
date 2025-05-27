@@ -62,8 +62,8 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
     try {
       console.log(`[DELETE] Tentando excluir registro ${deleteItemId} do posto ${postId}`);
       
-      // Fazer a chamada para excluir o registro de recebimento usando apiRequest com autenticação
-      const response = await apiRequest('DELETE', `/api/recebimentos/${postId.toLowerCase()}/${deleteItemId}`);
+      // Fazer a chamada para excluir o registro de recebimento usando o novo endpoint
+      const response = await apiRequest('DELETE', `/api/delete-fuel-receipt/${postId.toLowerCase()}/${deleteItemId}`);
       
       console.log('[DELETE] Response object received:', response);
       

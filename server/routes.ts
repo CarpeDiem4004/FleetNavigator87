@@ -903,6 +903,66 @@ async function criarTabelaDemoForms() {
 import sqlSeguroRouter from './routes/sql-seguro';
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // ENDPOINT CRÍTICO: DELETE para recebimentos (deve ser registrado PRIMEIRO)
+  app.delete('/api/delete-fuel-receipt/:posto/:id', unifiedAuthMiddleware, async (req, res) => {
+    const { posto, id } = req.params;
+    
+    // Force JSON response
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-cache');
+    
+    try {
+      console.log(`[DELETE FUEL RECEIPT] Excluindo recebimento ${id} do posto ${posto}`);
+      
+      // Map stations to receipt table names
+      const tableMap: { [key: string]: string } = {
+        'osasco_v2': 'recebimentos_posto_osasco_v2',
+        'abc_v2': 'recebimentos_posto_abc_v2',
+        'alair_v2': 'recebimentos_posto_alair_v2',
+        'campinas_v2': 'recebimentos_posto_campinas_v2',
+        'socorro_v2': 'recebimentos_posto_socorro_v2',
+        'sorocaba_v2': 'recebimentos_posto_sorocaba_v2',
+        'guarulhos_v2': 'recebimentos_posto_guarulhos_v2'
+      };
+      
+      const tableName = tableMap[posto.toLowerCase()];
+      
+      if (!tableName) {
+        return res.status(400).json({
+          success: false,
+          message: `Posto "${posto}" não encontrado`
+        });
+      }
+      
+      // Execute deletion
+      const deleteQuery = `DELETE FROM ${tableName} WHERE id = $1 RETURNING id`;
+      const result = await pool.query(deleteQuery, [id]);
+      
+      if (result.rowCount && result.rowCount > 0) {
+        console.log(`[DELETE FUEL RECEIPT] Registro ${id} excluído com sucesso`);
+        
+        return res.status(200).json({
+          success: true,
+          message: 'Registro excluído com sucesso',
+          deletedId: parseInt(id)
+        });
+      } else {
+        return res.status(404).json({
+          success: false,
+          message: 'Registro não encontrado'
+        });
+      }
+      
+    } catch (error: any) {
+      console.error('[DELETE FUEL RECEIPT] Erro:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao excluir registro',
+        error: error.message
+      });
+    }
+  });
+
   // ENDPOINTS CRÍTICOS - Registrar primeiro para evitar interceptação pelos middlewares
   
   // Endpoint para consumo diário simplificado dos postos
