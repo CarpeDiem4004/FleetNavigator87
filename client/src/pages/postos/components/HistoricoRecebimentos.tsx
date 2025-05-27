@@ -43,7 +43,7 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
   const queryClient = useQueryClient();
   
   const { data, isLoading, error } = useQuery({
-    queryKey: [`/api/recebimentos/${postId.toLowerCase()}`],
+    queryKey: [`/api/historico-direto/posto ${postId.toLowerCase()}`],
     staleTime: 1000 * 60 * 5 // 5 minutos
   });
 
@@ -74,7 +74,7 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
       
       if (responseData && responseData.success) {
         // Invalidar a query para recarregar os dados
-        queryClient.invalidateQueries({ queryKey: [`/api/recebimentos/${postId.toLowerCase()}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/historico-direto/posto ${postId.toLowerCase()}`] });
         setIsDeleteDialogOpen(false);
         setDeleteItemId(null);
         
