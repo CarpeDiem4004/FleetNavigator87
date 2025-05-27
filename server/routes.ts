@@ -10426,13 +10426,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/abastecimento/:posto/:id', isAuthenticated, async (req, res) => {
     try {
       const { posto, id } = req.params;
-      
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({
-          success: false,
-          message: 'Não autenticado'
-        });
-      }
+      console.log(`[DELETE] Tentativa de exclusão - Posto: ${posto}, ID: ${id}, User: ${req.user?.email}`);
 
       // Normalizar nome do posto para determinar a tabela
       let nomeTabela = '';
