@@ -26,6 +26,8 @@ import towingPartnerExternalRoutes from "./routes/towingPartnerExternalRoutes";
 import towingServiceEmergency from "./routes/towingServiceEmergency";
 // Importar rotas para gerenciamento financeiro de serviços de guincho
 import towingPaymentsRoutes from "./routes/towingPaymentsRoutes";
+// Importar nova rota de acesso externo melhorada
+import towingExternalAccessRoutes from "./routes/towingExternalAccessRoutes";
 // Importar middleware de CORS personalizado
 import { corsMiddleware } from "./middleware/cors";
 // Importar middleware para corrigir cookies de sessão
@@ -397,6 +399,9 @@ app.use((req, res, next) => {
   
   // Registrar as rotas de gestão financeira para serviços de guincho
   app.use('/api/towing/payments', towingPaymentsRoutes);
+  
+  // Registrar nova rota de acesso externo melhorada
+  app.use('/api/towing/external', towingExternalAccessRoutes);
   
   // Registrar rota de diagnóstico para verificar autenticação no módulo de frota
   app.use('/api/frota', frotaDiagnosticoRoute);
