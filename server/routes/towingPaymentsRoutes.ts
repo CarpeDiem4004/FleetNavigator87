@@ -228,11 +228,11 @@ router.get('/summary', unifiedAuthMiddleware, async (req: Request, res: Response
     const query = `
       SELECT 
         COUNT(*) as total_services,
-        COUNT(CASE WHEN payment_date IS NOT NULL THEN 1 END) as paid_services,
-        COUNT(CASE WHEN payment_date IS NULL THEN 1 END) as pending_services,
+        COUNT(CASE WHEN status = 'aprovado' THEN 1 END) as paid_services,
+        COUNT(CASE WHEN status = 'pendente' THEN 1 END) as pending_services,
         SUM(actual_cost) as total_cost,
-        SUM(CASE WHEN payment_date IS NOT NULL THEN actual_cost ELSE 0 END) as paid_amount,
-        SUM(CASE WHEN payment_date IS NULL THEN actual_cost ELSE 0 END) as pending_amount
+        SUM(CASE WHEN status = 'aprovado' THEN actual_cost ELSE 0 END) as paid_amount,
+        SUM(CASE WHEN status = 'pendente' THEN actual_cost ELSE 0 END) as pending_amount
       FROM towing_services
       WHERE 1=1 ${dateFilter}
     `;
@@ -244,8 +244,8 @@ router.get('/summary', unifiedAuthMiddleware, async (req: Request, res: Response
         tp.company_name,
         COUNT(ts.id) as service_count,
         SUM(ts.actual_cost) as total_amount,
-        COUNT(CASE WHEN ts.payment_date IS NOT NULL THEN 1 END) as paid_services,
-        SUM(CASE WHEN ts.payment_date IS NOT NULL THEN ts.actual_cost ELSE 0 END) as paid_amount
+        COUNT(CASE WHEN ts.status = 'aprovado' THEN 1 END) as paid_services,
+        SUM(CASE WHEN ts.status = 'aprovado' THEN ts.actual_cost ELSE 0 END) as paid_amount
       FROM towing_partners tp
       LEFT JOIN towing_services ts ON tp.id = ts.partner_id
       WHERE 1=1 ${dateFilter}
@@ -264,6 +264,112 @@ router.get('/summary', unifiedAuthMiddleware, async (req: Request, res: Response
   } catch (error) {
     console.error('Erro ao obter resumo financeiro:', error);
     res.status(500).json({ error: 'Erro ao obter resumo financeiro' });
+  }
+});
+
+// Rota para obter relatório detalhado de todos os serviços por parceiro
+router.get('/detailed-report', async (req, res) => {
+  try {
+    const { period, partner_id } = req.query;
+    
+    let dateFilter = '';
+    if (period === 'week') {
+      dateFilter = `AND ts.service_date >= CURRENT_DATE - INTERVAL '7 days'`;
+    } else if (period === 'month') {
+      dateFilter = `AND ts.service_date >= CURRENT_DATE - INTERVAL '30 days'`;
+    } else if (period === 'year') {
+      dateFilter = `AND ts.service_date >= CURRENT_DATE - INTERVAL '365 days'`;
+    }
+    
+    let partnerFilter = '';
+    if (partner_id) {
+      partnerFilter = `AND tp.id = ${parseInt(partner_id as string)}`;
+    }
+    
+    const query = `
+      SELECT 
+        ts.*,
+        tp.name as partner_name,
+        tp.company_name,
+        tp.phone as partner_phone,
+        tp.email as partner_email,
+        CASE 
+          WHEN ts.status = 'aprovado' THEN 'Pago'
+          WHEN ts.status = 'pendente' THEN 'Pendente'
+          WHEN ts.status = 'rejeitado' THEN 'Rejeitado'
+          ELSE 'Aguardando'
+        END as payment_status_display
+      FROM towing_services ts
+      INNER JOIN towing_partners tp ON ts.partner_id = tp.id
+      WHERE 1=1 ${dateFilter} ${partnerFilter}
+      ORDER BY ts.service_date DESC, tp.name ASC
+    `;
+    
+    const result = await pool.query(query);
+    
+    // Agrupar por parceiro para facilitar a visualização
+    const servicesByPartner = {};
+    let totalServices = 0;
+    let totalValue = 0;
+    let paidValue = 0;
+    let pendingValue = 0;
+    
+    result.rows.forEach(service => {
+      const partnerId = service.partner_id;
+      
+      if (!servicesByPartner[partnerId]) {
+        servicesByPartner[partnerId] = {
+          partner_info: {
+            id: partnerId,
+            name: service.partner_name,
+            company_name: service.company_name,
+            phone: service.partner_phone,
+            email: service.partner_email
+          },
+          services: [],
+          totals: {
+            count: 0,
+            total_value: 0,
+            paid_value: 0,
+            pending_value: 0,
+            paid_count: 0,
+            pending_count: 0
+          }
+        };
+      }
+      
+      servicesByPartner[partnerId].services.push(service);
+      servicesByPartner[partnerId].totals.count++;
+      servicesByPartner[partnerId].totals.total_value += parseFloat(service.actual_cost || 0);
+      
+      if (service.status === 'aprovado') {
+        servicesByPartner[partnerId].totals.paid_value += parseFloat(service.actual_cost || 0);
+        servicesByPartner[partnerId].totals.paid_count++;
+        paidValue += parseFloat(service.actual_cost || 0);
+      } else {
+        servicesByPartner[partnerId].totals.pending_value += parseFloat(service.actual_cost || 0);
+        servicesByPartner[partnerId].totals.pending_count++;
+        pendingValue += parseFloat(service.actual_cost || 0);
+      }
+      
+      totalServices++;
+      totalValue += parseFloat(service.actual_cost || 0);
+    });
+    
+    res.status(200).json({
+      summary: {
+        total_services: totalServices,
+        total_value: totalValue,
+        paid_value: paidValue,
+        pending_value: pendingValue,
+        total_partners: Object.keys(servicesByPartner).length
+      },
+      services_by_partner: Object.values(servicesByPartner),
+      all_services: result.rows
+    });
+  } catch (error) {
+    console.error('Erro ao obter relatório detalhado:', error);
+    res.status(500).json({ error: 'Erro ao obter relatório detalhado' });
   }
 });
 

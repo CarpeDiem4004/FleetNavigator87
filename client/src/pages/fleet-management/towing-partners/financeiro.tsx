@@ -66,8 +66,25 @@ export default function FinanceiroGuincho() {
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState('month');
+  const [selectedPartner, setSelectedPartner] = useState('');
+  const [activeTab, setActiveTab] = useState('report');
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Buscar relatório detalhado
+  const { data: detailedReport, isLoading: reportLoading } = useQuery({
+    queryKey: ['/api/towing/payments/detailed-report', selectedPeriod, selectedPartner || undefined],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedPeriod) params.append('period', selectedPeriod);
+      if (selectedPartner) params.append('partner_id', selectedPartner);
+      
+      const response = await fetch(`/api/towing/payments/detailed-report?${params}`);
+      if (!response.ok) throw new Error('Erro ao buscar relatório');
+      return response.json();
+    },
+  });
 
   // Buscar pagamentos
   const { data: payments = [], isLoading: paymentsLoading } = useQuery<Payment[]>({
