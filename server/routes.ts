@@ -1155,15 +1155,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Normalizar o nome do posto
       const formattedPosto = posto.toLowerCase();
       
-      // Mapear postos para nomes de tabelas
+      // Mapear postos para nomes de tabelas de ABASTECIMENTOS (não recebimentos)
       const tableMap: { [key: string]: string } = {
-        'osasco_v2': 'recebimentos_posto_osasco_v2',
-        'abc_v2': 'recebimentos_posto_abc_v2',
-        'alair_v2': 'recebimentos_posto_alair_v2',
-        'campinas_v2': 'recebimentos_posto_campinas_v2',
-        'socorro_v2': 'recebimentos_posto_socorro_v2',
-        'sorocaba_v2': 'recebimentos_posto_sorocaba_v2',
-        'guarulhos_v2': 'recebimentos_posto_guarulhos_v2'
+        'osasco_v2': 'abastecimentos_posto_osasco_v2',
+        'abc_v2': 'abastecimentos_posto_abc_v2',
+        'alair_v2': 'abastecimentos_posto_alair_v2',
+        'campinas_v2': 'abastecimentos_posto_campinas_v2',
+        'socorro_v2': 'abastecimentos_posto_socorro_v2',
+        'sorocaba_v2': 'abastecimentos_posto_sorocaba_v2',
+        'guarulhos_v2': 'abastecimentos_posto_guarulhos_v2'
       };
       
       const tableName = tableMap[formattedPosto];
