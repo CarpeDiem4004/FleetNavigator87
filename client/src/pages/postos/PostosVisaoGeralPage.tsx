@@ -77,7 +77,7 @@ export default function PostosVisaoGeralPage() {
     try {
       // Invalidar todas as consultas relacionadas
       await queryClient.invalidateQueries({ queryKey: ['/api/postos'] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/consumo-diario-postos-simplificado'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/data/consumo-diario-postos'] });
       
       toast({
         title: "Dados atualizados",
