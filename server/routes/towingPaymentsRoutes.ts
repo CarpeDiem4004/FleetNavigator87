@@ -28,7 +28,7 @@ router.get('/services', unifiedAuthMiddleware, async (req: Request, res: Respons
         END) as is_paid
       FROM towing_services ts
       JOIN towing_partners tp ON ts.partner_id = tp.id
-      WHERE 1=1
+      WHERE ts.status = 'aprovado'
     `;
     
     const queryParams: any[] = [];
@@ -228,26 +228,27 @@ router.get('/summary', unifiedAuthMiddleware, async (req: Request, res: Response
     const query = `
       SELECT 
         COUNT(*) as total_services,
-        COUNT(CASE WHEN status = 'aprovado' THEN 1 END) as paid_services,
-        COUNT(CASE WHEN status = 'pendente' THEN 1 END) as pending_services,
-        SUM(actual_cost) as total_cost,
-        SUM(CASE WHEN status = 'aprovado' THEN actual_cost ELSE 0 END) as paid_amount,
-        SUM(CASE WHEN status = 'pendente' THEN actual_cost ELSE 0 END) as pending_amount
+        COUNT(CASE WHEN status = 'aprovado' AND payment_date IS NOT NULL THEN 1 END) as paid_services,
+        COUNT(CASE WHEN status = 'aprovado' AND payment_date IS NULL THEN 1 END) as pending_services,
+        COALESCE(SUM(CASE WHEN status = 'aprovado' THEN actual_cost ELSE 0 END), 0) as total_value,
+        COALESCE(SUM(CASE WHEN status = 'aprovado' AND payment_date IS NOT NULL THEN actual_cost ELSE 0 END), 0) as paid_value,
+        COALESCE(SUM(CASE WHEN status = 'aprovado' AND payment_date IS NULL THEN actual_cost ELSE 0 END), 0) as pending_value
       FROM towing_services
-      WHERE 1=1 ${dateFilter}
+      WHERE status = 'aprovado' ${dateFilter}
     `;
     
     const partnerQuery = `
       SELECT 
         tp.id,
-        tp.name,
+        tp.name as partner_name,
         tp.company_name,
-        COUNT(ts.id) as service_count,
-        SUM(ts.actual_cost) as total_amount,
-        COUNT(CASE WHEN ts.status = 'aprovado' THEN 1 END) as paid_services,
-        SUM(CASE WHEN ts.status = 'aprovado' THEN ts.actual_cost ELSE 0 END) as paid_amount
+        COUNT(CASE WHEN ts.status = 'aprovado' THEN 1 END) as total_services,
+        COUNT(CASE WHEN ts.status = 'aprovado' AND ts.payment_date IS NOT NULL THEN 1 END) as paid_services,
+        COALESCE(SUM(CASE WHEN ts.status = 'aprovado' THEN ts.actual_cost ELSE 0 END), 0) as total_value,
+        COALESCE(SUM(CASE WHEN ts.status = 'aprovado' AND ts.payment_date IS NOT NULL THEN ts.actual_cost ELSE 0 END), 0) as paid_value,
+        COALESCE(SUM(CASE WHEN ts.status = 'aprovado' AND ts.payment_date IS NULL THEN ts.actual_cost ELSE 0 END), 0) as pending_value
       FROM towing_partners tp
-      LEFT JOIN towing_services ts ON tp.id = ts.partner_id
+      LEFT JOIN towing_services ts ON tp.id = ts.partner_id AND ts.status = 'aprovado'
       WHERE 1=1 ${dateFilter}
       GROUP BY tp.id, tp.name, tp.company_name
       ORDER BY total_amount DESC
