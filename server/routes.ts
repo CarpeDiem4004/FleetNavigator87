@@ -10423,7 +10423,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Rota para excluir abastecimento de qualquer posto
-  app.delete('/api/abastecimento/:posto/:id', async (req, res) => {
+  app.delete('/api/abastecimento/:posto/:id', isAuthenticated, async (req, res) => {
     try {
       const { posto, id } = req.params;
       
