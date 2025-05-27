@@ -1,10 +1,13 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DropletIcon, TruckIcon, AlertCircleIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { DropletIcon, TruckIcon, AlertCircleIcon, Trash2, Loader2, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/utils';
+import { apiRequest } from '@/lib/queryClient';
 
 interface RecebimentoItem {
   id: number;
@@ -32,10 +35,57 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
   postId,
   className = ''
 }) => {
+  const [deleteItemId, setDeleteItemId] = useState<number | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [recebimentosList, setRecebimentosList] = useState<RecebimentoItem[]>([]);
+  
+  const queryClient = useQueryClient();
+  
   const { data, isLoading, error } = useQuery({
     queryKey: [`/api/recebimentos/${postId.toLowerCase()}`],
     staleTime: 1000 * 60 * 5 // 5 minutos
   });
+
+  // Função para iniciar o processo de exclusão
+  const handleDeleteRecebimento = (id: number) => {
+    setDeleteItemId(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  // Função para confirmar e executar a exclusão de registro
+  const handleConfirmDelete = async () => {
+    if (!deleteItemId) return;
+    
+    setIsDeleting(true);
+    
+    try {
+      // Fazer a chamada para excluir o registro usando apiRequest com autenticação
+      const response = await apiRequest('DELETE', `/api/recebimentos/${postId.toLowerCase()}/${deleteItemId}`);
+      
+      if (response && response.success) {
+        // Invalidar a query para recarregar os dados
+        queryClient.invalidateQueries({ queryKey: [`/api/recebimentos/${postId.toLowerCase()}`] });
+        setIsDeleteDialogOpen(false);
+        setDeleteItemId(null);
+        
+        // Exibir mensagem de sucesso
+        console.log(`Registro de recebimento #${deleteItemId} excluído com sucesso`);
+      } else {
+        console.error('Erro ao excluir o registro:', response?.error || 'Erro desconhecido');
+      }
+    } catch (err: any) {
+      console.error('Erro ao excluir recebimento:', err);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Função para cancelar a exclusão
+  const handleCancelDelete = () => {
+    setIsDeleteDialogOpen(false);
+    setDeleteItemId(null);
+  };
 
   // Processar os dados da resposta da API
   const recebimentos = React.useMemo(() => {
@@ -140,6 +190,7 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
               <TableHead>Valor Total</TableHead>
               <TableHead>Fornecedor</TableHead>
               <TableHead>Operador</TableHead>
+              <TableHead className="text-center">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -188,11 +239,57 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
                   title={recebimento.nome_operador || recebimento.operador || recebimento.usuario_operador || ''}>
                   {recebimento.nome_operador || recebimento.operador || recebimento.usuario_operador || 'N/D'}
                 </TableCell>
+                <TableCell className="text-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteRecebimento(recebimento.id)}
+                    className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                    title="Excluir registro"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </CardContent>
+      
+      {/* Dialog de confirmação para exclusão */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Confirmar Exclusão
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este registro de recebimento? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelDelete}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                'Excluir'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };
