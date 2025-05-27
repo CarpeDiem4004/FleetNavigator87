@@ -20,6 +20,7 @@ export const maintenanceRequestStatusEnum = pgEnum('maintenance_request_status',
 export const refuelingCardStatusEnum = pgEnum('refueling_card_status', ['pendente', 'aprovada', 'rejeitada']);
 export const messageAuthorEnum = pgEnum('message_author', ['oficina', 'frota']);
 export const vehicleOwnershipEnum = pgEnum('vehicle_ownership', ['murici', 'locado']);
+export const paymentStatusEnum = pgEnum('payment_status', ['pendente', 'pago', 'em_processamento', 'cancelado']);
 
 // Enums para sistema de estoque
 export const inventoryMovementTypeEnum = pgEnum('inventory_movement_type', [
@@ -652,9 +653,38 @@ export type InventoryMovement = typeof inventoryMovements.$inferSelect;
 export type BaseRequest = typeof baseRequests.$inferSelect;
 export type BaseRequestUpdate = typeof baseRequestUpdates.$inferSelect;
 
+// Tabela para controle financeiro dos serviços de guincho
+export const towingServicePayments = pgTable("towing_service_payments", {
+  id: serial("id").primaryKey(),
+  serviceId: integer("service_id").notNull(),
+  partnerId: integer("partner_id").notNull(),
+  vehiclePlate: text("vehicle_plate").notNull(),
+  serviceValue: decimal("service_value", { precision: 10, scale: 2 }).notNull(),
+  paymentStatus: paymentStatusEnum("payment_status").notNull().default('pendente'),
+  paymentDate: timestamp("payment_date"),
+  paymentMethod: text("payment_method"), // PIX, transferência, etc.
+  paymentReference: text("payment_reference"), // referência do pagamento
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Relações para pagamentos
+export const towingServicePaymentsRelations = relations(towingServicePayments, ({ one }) => ({
+  partner: one(towingPartners, {
+    fields: [towingServicePayments.partnerId],
+    references: [towingPartners.id]
+  })
+}));
+
+// Schemas de inserção para pagamentos
+export const insertTowingServicePaymentSchema = createInsertSchema(towingServicePayments);
+
 // Tipos para inserção
 export type InsertInventoryItem = z.infer<typeof insertInventoryItemSchema>;
 export type InsertInventoryStock = z.infer<typeof insertInventoryStockSchema>;
 export type InsertInventoryMovement = z.infer<typeof insertInventoryMovementSchema>;
 export type InsertBaseRequest = z.infer<typeof insertBaseRequestSchema>;
 export type InsertBaseRequestUpdate = z.infer<typeof insertBaseRequestUpdateSchema>;
+export type TowingServicePayment = typeof towingServicePayments.$inferSelect;
+export type InsertTowingServicePayment = z.infer<typeof insertTowingServicePaymentSchema>;

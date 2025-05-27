@@ -11162,3 +11162,183 @@ async function createFuelRequestNotification(fuelRequest) {
     console.error('Erro ao criar notificação:', error);
   }
 }
+
+// ===== ROTAS PARA MÓDULO FINANCEIRO DE SERVIÇOS DE GUINCHO =====
+
+// Listar todos os pagamentos dos serviços de guincho
+app.get('/api/towing/payments', async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        p.*,
+        tp.name as partner_name,
+        CASE 
+          WHEN p.service_id IN (SELECT id FROM towing_partner_services) THEN 'towing_partner_services'
+          WHEN p.service_id IN (SELECT id FROM towing_service_history) THEN 'towing_service_history'
+          ELSE 'unknown'
+        END as service_table
+      FROM towing_service_payments p
+      LEFT JOIN towing_partners tp ON p.partner_id = tp.id
+      ORDER BY p.created_at DESC
+    `;
+
+    const result = await pool.query(query);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Erro ao buscar pagamentos:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// Criar um novo registro de pagamento
+app.post('/api/towing/payments', async (req, res) => {
+  try {
+    const {
+      serviceId,
+      partnerId,
+      vehiclePlate,
+      serviceValue,
+      paymentStatus = 'pendente',
+      paymentMethod,
+      paymentReference,
+      notes
+    } = req.body;
+
+    const query = `
+      INSERT INTO towing_service_payments 
+      (service_id, partner_id, vehicle_plate, service_value, payment_status, payment_method, payment_reference, notes)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING *
+    `;
+
+    const result = await pool.query(query, [
+      serviceId,
+      partnerId,
+      vehiclePlate,
+      serviceValue,
+      paymentStatus,
+      paymentMethod,
+      paymentReference,
+      notes
+    ]);
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Erro ao criar pagamento:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// Atualizar status de pagamento
+app.put('/api/towing/payments/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      paymentStatus,
+      paymentDate,
+      paymentMethod,
+      paymentReference,
+      notes
+    } = req.body;
+
+    const query = `
+      UPDATE towing_service_payments 
+      SET 
+        payment_status = $1,
+        payment_date = $2,
+        payment_method = $3,
+        payment_reference = $4,
+        notes = $5,
+        updated_at = NOW()
+      WHERE id = $6
+      RETURNING *
+    `;
+
+    const result = await pool.query(query, [
+      paymentStatus,
+      paymentDate,
+      paymentMethod,
+      paymentReference,
+      notes,
+      id
+    ]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Pagamento não encontrado' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Erro ao atualizar pagamento:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// Obter resumo financeiro
+app.get('/api/towing/payments/summary', async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        COUNT(*) as total_services,
+        COUNT(CASE WHEN payment_status = 'pago' THEN 1 END) as paid_services,
+        COUNT(CASE WHEN payment_status = 'pendente' THEN 1 END) as pending_services,
+        COUNT(CASE WHEN payment_status = 'em_processamento' THEN 1 END) as processing_services,
+        COALESCE(SUM(service_value), 0) as total_value,
+        COALESCE(SUM(CASE WHEN payment_status = 'pago' THEN service_value ELSE 0 END), 0) as paid_value,
+        COALESCE(SUM(CASE WHEN payment_status = 'pendente' THEN service_value ELSE 0 END), 0) as pending_value
+      FROM towing_service_payments
+    `;
+
+    const result = await pool.query(query);
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Erro ao buscar resumo financeiro:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// Obter resumo por parceiro
+app.get('/api/towing/payments/by-partner', async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        tp.id,
+        tp.name as partner_name,
+        COUNT(p.id) as total_services,
+        COUNT(CASE WHEN p.payment_status = 'pago' THEN 1 END) as paid_services,
+        COUNT(CASE WHEN p.payment_status = 'pendente' THEN 1 END) as pending_services,
+        COALESCE(SUM(p.service_value), 0) as total_value,
+        COALESCE(SUM(CASE WHEN p.payment_status = 'pago' THEN p.service_value ELSE 0 END), 0) as paid_value,
+        COALESCE(SUM(CASE WHEN p.payment_status = 'pendente' THEN p.service_value ELSE 0 END), 0) as pending_value
+      FROM towing_partners tp
+      LEFT JOIN towing_service_payments p ON tp.id = p.partner_id
+      GROUP BY tp.id, tp.name
+      ORDER BY total_value DESC
+    `;
+
+    const result = await pool.query(query);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Erro ao buscar resumo por parceiro:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// Excluir um pagamento
+app.delete('/api/towing/payments/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const query = 'DELETE FROM towing_service_payments WHERE id = $1 RETURNING *';
+    const result = await pool.query(query, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Pagamento não encontrado' });
+    }
+
+    res.json({ message: 'Pagamento excluído com sucesso' });
+  } catch (error) {
+    console.error('Erro ao excluir pagamento:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
