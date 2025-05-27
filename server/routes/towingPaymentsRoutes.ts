@@ -271,20 +271,29 @@ router.get('/summary', unifiedAuthMiddleware, async (req: Request, res: Response
 // Rota para obter relatório detalhado de todos os serviços por parceiro
 router.get('/detailed-report', async (req, res) => {
   try {
-    const { period, partner_id } = req.query;
+    const { start_date, end_date, partner_id } = req.query;
     
     let dateFilter = '';
-    if (period === 'week') {
-      dateFilter = `AND ts.service_date >= CURRENT_DATE - INTERVAL '7 days'`;
-    } else if (period === 'month') {
-      dateFilter = `AND ts.service_date >= CURRENT_DATE - INTERVAL '30 days'`;
-    } else if (period === 'year') {
-      dateFilter = `AND ts.service_date >= CURRENT_DATE - INTERVAL '365 days'`;
+    const queryParams: any[] = [];
+    let paramCount = 1;
+    
+    if (start_date) {
+      dateFilter += ` AND ts.service_date >= $${paramCount}`;
+      queryParams.push(start_date);
+      paramCount++;
+    }
+    
+    if (end_date) {
+      dateFilter += ` AND ts.service_date <= $${paramCount}`;
+      queryParams.push(end_date);
+      paramCount++;
     }
     
     let partnerFilter = '';
     if (partner_id) {
-      partnerFilter = `AND tp.id = ${parseInt(partner_id as string)}`;
+      partnerFilter = ` AND tp.id = $${paramCount}`;
+      queryParams.push(parseInt(partner_id as string));
+      paramCount++;
     }
     
     const query = `
@@ -306,7 +315,7 @@ router.get('/detailed-report', async (req, res) => {
       ORDER BY ts.service_date DESC, tp.name ASC
     `;
     
-    const result = await pool.query(query);
+    const result = await pool.query(query, queryParams);
     
     // Agrupar por parceiro para facilitar a visualização
     const servicesByPartner = {};

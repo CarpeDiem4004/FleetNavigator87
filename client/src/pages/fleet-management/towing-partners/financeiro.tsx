@@ -69,7 +69,8 @@ export default function FinanceiroGuincho() {
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState('month');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [selectedPartner, setSelectedPartner] = useState('');
   const [activeTab, setActiveTab] = useState('report');
   const { toast } = useToast();
@@ -77,10 +78,11 @@ export default function FinanceiroGuincho() {
 
   // Buscar relatório detalhado
   const { data: detailedReport, isLoading: reportLoading } = useQuery({
-    queryKey: ['/api/towing/payments/detailed-report', selectedPeriod, selectedPartner || undefined],
+    queryKey: ['/api/towing/payments/detailed-report', startDate, endDate, selectedPartner || undefined],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (selectedPeriod) params.append('period', selectedPeriod);
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
       if (selectedPartner) params.append('partner_id', selectedPartner);
       
       const response = await fetch(`/api/towing/payments/detailed-report?${params}`);
@@ -264,18 +266,23 @@ export default function FinanceiroGuincho() {
         <CardContent>
           <div className="flex gap-4 flex-wrap">
             <div>
-              <Label className="text-sm font-medium">Período</Label>
-              <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                <SelectTrigger className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="week">Última semana</SelectItem>
-                  <SelectItem value="month">Último mês</SelectItem>
-                  <SelectItem value="year">Último ano</SelectItem>
-                  <SelectItem value="">Todos os períodos</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label className="text-sm font-medium">Data Inicial</Label>
+              <Input 
+                type="date" 
+                value={startDate} 
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-48"
+              />
+            </div>
+            
+            <div>
+              <Label className="text-sm font-medium">Data Final</Label>
+              <Input 
+                type="date" 
+                value={endDate} 
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-48"
+              />
             </div>
             
             <div>
