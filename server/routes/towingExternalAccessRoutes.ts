@@ -22,16 +22,17 @@ router.post('/validate', async (req: Request, res: Response) => {
 
     console.log(`[ExternalAccess] Validando token: ${token}`);
 
-    // Buscar parceiro pelo token
+    // Buscar parceiro pelo token (tokens permanentes não expiram)
     const query = `
       SELECT id, name, company_name, external_access_token, token_expires_at
       FROM towing_partners 
       WHERE external_access_token = $1 
       AND status = 'ativo'
-      AND (token_expires_at IS NULL OR token_expires_at > NOW())
     `;
 
     const result = await pool.query(query, [token]);
+    
+    console.log(`[ExternalAccess] Resultado da busca: ${result.rows.length} parceiro(s) encontrado(s)`);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
