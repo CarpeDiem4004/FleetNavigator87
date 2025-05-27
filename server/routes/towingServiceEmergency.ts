@@ -374,6 +374,33 @@ emergencyRouter.get('/history/:token', async (req, res) => {
       console.log('[EmergencyRouter] Buscando serviços para parceiro ID:', partnerId);
       const servicesResult = await pool.query(servicesQuery, [partnerId]);
       console.log('[EmergencyRouter] Serviços encontrados:', servicesResult.rowCount || 0);
+      
+      // Retornar resultados diretamente
+      const services = servicesResult.rows || [];
+      
+      res.status(200).json({
+        success: true,
+        message: services.length > 0 ? `${services.length} serviços encontrados` : 'Nenhum serviço encontrado',
+        data: {
+          serviceCount: services.length,
+          services: services.map(service => ({
+            id: service.id,
+            plate: service.plate,
+            service_date: service.service_date,
+            service_type: service.service_type || service.service_description,
+            origin: service.origin || service.pickup_location,
+            destination: service.destination || service.delivery_location,
+            cost: service.cost,
+            km_traveled: service.km_traveled || service.mileage,
+            status: service.status,
+            notes: service.notes,
+            driver_name: service.driver_name || service.contact_name,
+            contact_phone: service.contact_phone,
+            created_at: service.created_at
+          }))
+        }
+      });
+      
     } catch (queryError) {
       console.error('[EmergencyRouter] Erro ao buscar serviços:', queryError);
       return res.status(200).json({
@@ -382,82 +409,6 @@ emergencyRouter.get('/history/:token', async (req, res) => {
         data: { serviceCount: 0, services: [] }
       });
     }
-    
-    // Verificar também na tabela de histórico
-    try {
-      const historyCheckQuery = `
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables 
-          WHERE table_schema = 'public' 
-          AND table_name = 'towing_service_history'
-        )
-      `;
-      
-      const historyCheck = await pool.query(historyCheckQuery);
-      console.log('[EmergencyRouter] Verificação de tabela de histórico disponível:', historyCheck.rows[0]);
-      
-      if (historyCheck.rows[0].exists) {
-        console.log('[EmergencyRouter] Tabela de histórico encontrada, verificando serviços');
-        
-        const historyQuery = `
-          SELECT * FROM towing_service_history
-          WHERE partner_id = $1
-          ORDER BY service_date DESC, created_at DESC
-        `;
-        
-        const historyResult = await pool.query(historyQuery, [partnerId]);
-        console.log('[EmergencyRouter] Serviços no histórico:', historyResult.rowCount || 0);
-        
-        // Se houver registros no histórico, combinar com os resultados principais
-        if (historyResult.rowCount && historyResult.rowCount > 0) {
-          console.log('[EmergencyRouter] Combinando resultados de histórico');
-          // Adicionar cada serviço do histórico aos resultados principais
-          for (const historyRow of historyResult.rows) {
-            const existsInResults = servicesResult.rows.some(r => 
-              r.id === historyRow.service_id || r.id === historyRow.id);
-            
-            if (!existsInResults) {
-              servicesResult.rows.push({
-                id: historyRow.service_id || historyRow.id,
-                plate: historyRow.vehicle_plate,
-                pickup_location: historyRow.pickup_location,
-                delivery_location: historyRow.delivery_location,
-                service_date: historyRow.service_date,
-                status: historyRow.status,
-                created_at: historyRow.created_at
-              });
-            }
-          }
-          
-          console.log('[EmergencyRouter] Total após combinar histórico:', servicesResult.rows.length);
-        }
-      }
-    } catch (historyError) {
-      console.error('[EmergencyRouter] Erro ao verificar tabela de histórico:', historyError);
-    }
-    
-    const services = servicesResult.rows.map(row => ({
-      id: row.id,
-      plate: row.vehicle_plate || row.plate,
-      pickup_location: row.pickup_location,
-      delivery_location: row.delivery_location,
-      service_description: row.service_description,
-      service_date: row.service_date,
-      cost: row.cost ? row.cost.toString() : '0',
-      mileage: row.mileage || 0,
-      status: row.status || 'pending',
-      payment_status: row.payment_status || 'pending',
-      created_at: row.created_at
-    }));
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Histórico de serviços recuperado com sucesso',
-      data: {
-        serviceCount: services.length,
-        services
-      }
-    });
   } catch (error) {
     console.error('[EmergencyRouter] Erro ao buscar histórico de serviços:', error);
     // Para evitar erro na tela, sempre retornar 200 com lista vazia
