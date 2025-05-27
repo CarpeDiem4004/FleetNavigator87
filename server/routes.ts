@@ -1149,6 +1149,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { posto, id } = req.params;
       
+      // Ensure JSON response headers to prevent Vite middleware interference
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
       console.log(`[DELETE RECEBIMENTO] Excluindo registro ${id} do posto ${posto}`);
       
       // Normalizar o nome do posto
