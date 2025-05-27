@@ -277,6 +277,66 @@ app.use((req, res, next) => {
     }
   });
 
+  // Rota de validação de token para acesso externo de parceiros
+  app.post('/api/towing/external/validate', async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      const { token } = req.body;
+
+      if (!token) {
+        return res.status(400).json({
+          valid: false,
+          error: 'Token não fornecido'
+        });
+      }
+
+      console.log(`[ExternalAccess] Validando token: ${token}`);
+
+      // Buscar parceiro pelo token (tokens permanentes não expiram)
+      const query = `
+        SELECT id, name, company_name, external_access_token, token_expires_at
+        FROM towing_partners 
+        WHERE external_access_token = $1 
+        AND status = 'ativo'
+      `;
+
+      const result = await pool.query(query, [token]);
+      
+      console.log(`[ExternalAccess] Resultado da busca: ${result.rows.length} parceiro(s) encontrado(s)`);
+      console.log(`[ExternalAccess] Token buscado: ${token}`);
+      
+      if (result.rows.length > 0) {
+        console.log(`[ExternalAccess] Parceiro encontrado:`, result.rows[0]);
+        
+        const partner = result.rows[0];
+        return res.status(200).json({
+          valid: true,
+          partner: {
+            id: partner.id,
+            name: partner.name,
+            company_name: partner.company_name,
+            token_expires_at: partner.token_expires_at
+          }
+        });
+      } else {
+        console.log(`[ExternalAccess] Nenhum parceiro encontrado para o token: ${token}`);
+        return res.status(404).json({
+          valid: false,
+          error: 'Token inválido ou expirado'
+        });
+      }
+
+    } catch (error) {
+      console.error('[ExternalAccess] Erro ao validar token:', error);
+      return res.status(500).json({
+        valid: false,
+        error: 'Erro interno do servidor'
+      });
+    }
+  });
+
   // Adicionar rota para consumo diário simplificado dos postos
   app.get('/api/consumo-diario-postos-simplificado', async (req, res) => {
     try {
