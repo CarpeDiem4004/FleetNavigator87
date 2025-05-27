@@ -627,7 +627,10 @@ app.use((req, res, next) => {
       
       const result = await dbPool.query(query);
       console.log(`[CONSUMO-DIRETO] Encontrados ${result.rows.length} registros`);
-      console.log(`[CONSUMO-DIRETO] Primeira linha:`, result.rows[0]);
+      if (result.rows.length > 0) {
+        console.log(`[CONSUMO-DIRETO] Primeira linha completa:`, result.rows[0]);
+        console.log(`[CONSUMO-DIRETO] Verificando campos: posto=${result.rows[0]?.posto}, litros=${result.rows[0]?.litros}, carros=${result.rows[0]?.carros}`);
+      }
       
       // Agrupar dados por data
       const dadosAgrupados: any = {};
