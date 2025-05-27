@@ -201,11 +201,15 @@ export default function FinanceiroGuincho() {
     }
   };
 
-  const formatCurrency = (value: string) => {
+  const formatCurrency = (value: string | number | null | undefined) => {
+    const numericValue = parseFloat(String(value || 0));
+    if (isNaN(numericValue)) {
+      return 'R$ 0,00';
+    }
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
-    }).format(parseFloat(value));
+    }).format(numericValue);
   };
 
   const handleQuickStatusUpdate = (payment: Payment, newStatus: string) => {
@@ -494,7 +498,14 @@ export default function FinanceiroGuincho() {
             <CardContent>
               <div className="text-2xl font-bold text-green-600">{formatCurrency(summary.paid_value)}</div>
               <p className="text-xs text-muted-foreground">
-                {Math.round((parseFloat(summary.paid_value) / parseFloat(summary.total_value)) * 100)}% do total
+                {(() => {
+                  const paidValue = parseFloat(summary.paid_value || '0');
+                  const totalValue = parseFloat(summary.total_value || '0');
+                  if (totalValue === 0 || isNaN(paidValue) || isNaN(totalValue)) {
+                    return '0% do total';
+                  }
+                  return `${Math.round((paidValue / totalValue) * 100)}% do total`;
+                })()}
               </p>
             </CardContent>
           </Card>
@@ -507,7 +518,14 @@ export default function FinanceiroGuincho() {
             <CardContent>
               <div className="text-2xl font-bold text-yellow-600">{formatCurrency(summary.pending_value)}</div>
               <p className="text-xs text-muted-foreground">
-                {Math.round((parseFloat(summary.pending_value) / parseFloat(summary.total_value)) * 100)}% do total
+                {(() => {
+                  const pendingValue = parseFloat(summary.pending_value || '0');
+                  const totalValue = parseFloat(summary.total_value || '0');
+                  if (totalValue === 0 || isNaN(pendingValue) || isNaN(totalValue)) {
+                    return '0% do total';
+                  }
+                  return `${Math.round((pendingValue / totalValue) * 100)}% do total`;
+                })()}
               </p>
             </CardContent>
           </Card>
