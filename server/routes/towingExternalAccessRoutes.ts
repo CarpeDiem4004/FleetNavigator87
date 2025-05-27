@@ -33,6 +33,17 @@ router.post('/validate', async (req: Request, res: Response) => {
     const result = await pool.query(query, [token]);
     
     console.log(`[ExternalAccess] Resultado da busca: ${result.rows.length} parceiro(s) encontrado(s)`);
+    console.log(`[ExternalAccess] Token buscado: ${token}`);
+    
+    if (result.rows.length > 0) {
+      console.log(`[ExternalAccess] Parceiro encontrado:`, result.rows[0]);
+    } else {
+      console.log(`[ExternalAccess] Nenhum parceiro encontrado para o token: ${token}`);
+      // Vamos verificar se existe algum parceiro com token similar
+      const debugQuery = `SELECT id, name, external_access_token FROM towing_partners WHERE external_access_token LIKE '%ALLAN%' OR id = 15`;
+      const debugResult = await pool.query(debugQuery);
+      console.log(`[ExternalAccess] Debug - Parceiros Allan encontrados:`, debugResult.rows);
+    }
 
     if (result.rows.length === 0) {
       return res.status(404).json({
