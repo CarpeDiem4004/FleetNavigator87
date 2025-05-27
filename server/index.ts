@@ -54,15 +54,15 @@ process.env.SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.e
 
 const app = express();
 
-// ENDPOINT CRÍTICO - Registrar ANTES de todos os middlewares
-// Usando uma rota alternativa para evitar conflitos com o middleware do Vite
-app.get('/api/data/consumo-diario-postos', async (req, res) => {
+// ENDPOINT CRÍTICO - Registrar ANTES de todos os middlewares do Vite
+// Usando um prefixo que não será interceptado pelo Vite
+app.get('/consumo-data/postos', async (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   try {
-    console.log('Endpoint de consumo diário (rota alternativa) chamado com parâmetros:', req.query);
+    console.log('Endpoint de consumo diário (data-api) chamado com parâmetros:', req.query);
     
     // Período da consulta - últimos 30 dias por padrão
     const dias = parseInt(req.query.dias as string) || 30;
