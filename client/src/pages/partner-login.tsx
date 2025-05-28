@@ -32,16 +32,26 @@ export default function PartnerLogin() {
         credentials: 'include'
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        console.error('Erro ao processar resposta JSON:', parseError);
+        setError('Erro na resposta do servidor. Tente novamente.');
+        return;
+      }
 
-      if (response.ok && data.success) {
+      console.log('Resposta do servidor:', { status: response.status, data });
+
+      if (response.ok && data && data.success) {
         // Salvar dados do parceiro no localStorage
         localStorage.setItem('partner_data', JSON.stringify(data.partner));
         
         // Redirecionar para painel do parceiro com ID
         setLocation(`/partner/dashboard?id=${data.partner.id}`);
       } else {
-        setError(data.message || 'Credenciais inválidas. Verifique o nome do parceiro e CPF/CNPJ.');
+        const errorMessage = data?.message || 'Credenciais inválidas. Verifique o nome do parceiro e CPF/CNPJ.';
+        setError(errorMessage);
       }
     } catch (err) {
       console.error('Erro no login:', err);
