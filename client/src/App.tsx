@@ -148,7 +148,7 @@ import PostoAcessoDireto from "@/pages/PostoAcessoDireto";
 import LinksExternosPostos from "@/pages/postos/LinksExternosPostos";
 
 // Importação das páginas de acesso dos parceiros de guincho
-import PartnerLogin from "@/pages/partner-login";
+import PartnerAccess from "@/pages/partner-access";
 import PartnerDashboard from "@/pages/partner-dashboard";
 
 function App() {
@@ -431,7 +431,11 @@ function App() {
           
           {/* Rotas do Sistema de Login dos Parceiros de Guincho */}
           <Route path="/partner/login">
-            <PartnerLogin />
+            <PartnerAccess />
+          </Route>
+          
+          <Route path="/partner/access">
+            <PartnerAccess />
           </Route>
           
           <Route path="/partner/dashboard">

@@ -3,78 +3,146 @@ import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Truck, User, Phone, Mail, MapPin, LogOut, FileText, Clock } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  Truck, 
+  MapPin, 
+  Clock, 
+  DollarSign, 
+  CheckCircle, 
+  AlertCircle,
+  User,
+  Phone,
+  Building,
+  LogOut
+} from 'lucide-react';
 
 interface Partner {
   id: number;
   name: string;
-  company_name: string;
-  email: string;
   phone: string;
-  city: string;
-  type: string;
+  address: string;
+  active: boolean;
+}
+
+interface Service {
+  id: number;
+  vehicle_plate: string;
+  origin_address: string;
+  destination_address: string;
+  service_type: string;
+  status: string;
+  created_at: string;
+  estimated_cost: number;
+  actual_cost: number;
+  notes: string;
 }
 
 export default function PartnerDashboard() {
   const [, setLocation] = useLocation();
   const [partner, setPartner] = useState<Partner | null>(null);
-  const [services, setServices] = useState([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    // Verificar se há token e dados do parceiro
-    const token = localStorage.getItem('partner_token');
-    const partnerData = localStorage.getItem('partner_data');
-
-    if (!token || !partnerData) {
-      setLocation('/partner/login');
+    // Verificar se o parceiro está logado
+    const sessionData = localStorage.getItem('partner_session');
+    if (!sessionData) {
+      setLocation('/partner/access');
       return;
     }
 
     try {
-      const parsedPartner = JSON.parse(partnerData);
-      setPartner(parsedPartner);
-      
-      // Buscar serviços do parceiro
-      fetchPartnerServices(token, parsedPartner.id);
+      const data = JSON.parse(sessionData);
+      if (data.success && data.partner) {
+        setPartner(data.partner);
+        setServices(data.services || []);
+        setLoading(false);
+      } else {
+        throw new Error('Dados de sessão inválidos');
+      }
     } catch (error) {
-      console.error('Erro ao carregar dados do parceiro:', error);
-      setLocation('/partner/login');
+      console.error('Erro ao carregar sessão:', error);
+      localStorage.removeItem('partner_session');
+      setLocation('/partner/access');
     }
   }, [setLocation]);
 
-  const fetchPartnerServices = async (token: string, partnerId: number) => {
+  const handleLogout = () => {
+    localStorage.removeItem('partner_session');
+    setLocation('/partner/access');
+  };
+
+  const updateServiceStatus = async (serviceId: number, newStatus: string, actualCost?: number) => {
     try {
-      const response = await fetch(`/api/towing/partners/${partnerId}/services`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/partner-service-update', true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      
+      const response = await new Promise((resolve, reject) => {
+        xhr.onload = function() {
+          if (xhr.status === 200) {
+            try {
+              const data = JSON.parse(xhr.responseText);
+              resolve(data);
+            } catch (parseError) {
+              reject(new Error('Erro na resposta do servidor'));
+            }
+          } else {
+            reject(new Error(`Erro HTTP ${xhr.status}`));
+          }
+        };
+        
+        xhr.onerror = () => reject(new Error('Erro de conexão'));
+        xhr.send(JSON.stringify({
+          serviceId,
+          partnerId: partner?.id,
+          status: newStatus,
+          actualCost,
+          notes: `Status atualizado para ${newStatus} em ${new Date().toLocaleString('pt-BR')}`
+        }));
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setServices(data.services || []);
-      }
-    } catch (error) {
-      console.error('Erro ao buscar serviços:', error);
-    } finally {
-      setLoading(false);
+      // Atualizar a lista local
+      setServices(prev => prev.map(service => 
+        service.id === serviceId 
+          ? { ...service, status: newStatus, actual_cost: actualCost || service.actual_cost }
+          : service
+      ));
+
+    } catch (error: any) {
+      setError(error.message || 'Erro ao atualizar serviço');
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('partner_token');
-    localStorage.removeItem('partner_data');
-    setLocation('/partner/login');
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'pendente': return 'bg-yellow-100 text-yellow-800';
+      case 'em_andamento': return 'bg-blue-100 text-blue-800';
+      case 'concluido': return 'bg-green-100 text-green-800';
+      case 'cancelado': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
-  if (!partner) {
+  const getStatusIcon = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'pendente': return <Clock className="h-4 w-4" />;
+      case 'em_andamento': return <Truck className="h-4 w-4" />;
+      case 'concluido': return <CheckCircle className="h-4 w-4" />;
+      case 'cancelado': return <AlertCircle className="h-4 w-4" />;
+      default: return <Clock className="h-4 w-4" />;
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Carregando...</p>
+          <Truck className="h-12 w-12 animate-pulse text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Carregando...</p>
         </div>
       </div>
     );
@@ -83,182 +151,214 @@ export default function PartnerDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Truck className="w-6 h-6 text-white" />
+            <div className="flex items-center space-x-4">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <Truck className="h-5 w-5 text-white" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Portal do Parceiro</h1>
-                <p className="text-sm text-gray-500">Bem-vindo, {partner.name}</p>
-              </div>
+              <h1 className="text-xl font-bold text-gray-900">Portal do Parceiro</h1>
             </div>
-            <Button onClick={handleLogout} variant="outline" size="sm">
-              <LogOut className="w-4 h-4 mr-2" />
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-2" />
               Sair
             </Button>
           </div>
         </div>
-      </header>
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Informações do Parceiro */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <User className="w-5 h-5" />
-                  <span>Informações do Parceiro</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Nome</p>
-                  <p className="text-sm text-gray-900">{partner.name}</p>
-                </div>
-                
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Empresa</p>
-                  <p className="text-sm text-gray-900">{partner.company_name}</p>
-                </div>
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-                <div className="flex items-center space-x-2">
-                  <Phone className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-900">{partner.phone}</span>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Mail className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-900">{partner.email}</span>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <MapPin className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-900">{partner.city}</span>
-                </div>
-
-                <div className="pt-2">
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    Parceiro Ativo
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Serviços Realizados */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <FileText className="w-5 h-5" />
-                  <span>Serviços Realizados</span>
-                </CardTitle>
-                <CardDescription>
-                  Histórico dos seus serviços de guincho
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-2 text-gray-600">Carregando serviços...</p>
-                  </div>
-                ) : services.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Truck className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-600">Nenhum serviço registrado ainda</p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Os serviços realizados aparecerão aqui após aprovação
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {services.map((service: any, index) => (
-                      <div key={index} className="border rounded-lg p-4 hover:bg-gray-50">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <Badge 
-                                variant={service.status === 'aprovado' ? 'default' : 'secondary'}
-                              >
-                                {service.status}
-                              </Badge>
-                              <span className="text-sm text-gray-500">
-                                Serviço #{service.id}
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-900 mb-1">
-                              <strong>Veículo:</strong> {service.vehicle_plate}
-                            </p>
-                            <p className="text-sm text-gray-600 mb-1">
-                              <strong>De:</strong> {service.pickup_location}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              <strong>Para:</strong> {service.destination}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <div className="flex items-center space-x-1 text-sm text-gray-500">
-                              <Clock className="w-4 h-4" />
-                              <span>{new Date(service.service_date).toLocaleDateString('pt-BR')}</span>
-                            </div>
-                            {service.cost && (
-                              <p className="text-sm font-medium text-green-600 mt-1">
-                                R$ {parseFloat(service.cost).toFixed(2)}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Instruções */}
-        <Card className="mt-8">
+        {/* Informações do Parceiro */}
+        <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Como Funciona</CardTitle>
+            <CardTitle className="flex items-center space-x-2">
+              <User className="h-5 w-5" />
+              <span>Informações do Parceiro</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                  <span className="text-blue-600 font-bold">1</span>
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="flex items-center space-x-3">
+                <User className="h-5 w-5 text-gray-400" />
+                <div>
+                  <p className="font-medium">{partner?.name}</p>
+                  <p className="text-sm text-gray-500">Nome do Parceiro</p>
                 </div>
-                <h3 className="font-medium text-gray-900 mb-2">Receba Solicitações</h3>
-                <p className="text-sm text-gray-600">
-                  A equipe da Murici Logística entrará em contato quando precisar dos seus serviços
-                </p>
               </div>
-              
-              <div className="text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                  <span className="text-blue-600 font-bold">2</span>
+              <div className="flex items-center space-x-3">
+                <Phone className="h-5 w-5 text-gray-400" />
+                <div>
+                  <p className="font-medium">{partner?.phone || 'Não informado'}</p>
+                  <p className="text-sm text-gray-500">Telefone</p>
                 </div>
-                <h3 className="font-medium text-gray-900 mb-2">Realize o Serviço</h3>
-                <p className="text-sm text-gray-600">
-                  Execute o serviço de guincho conforme solicitado e registre os detalhes
-                </p>
               </div>
-              
-              <div className="text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                  <span className="text-blue-600 font-bold">3</span>
+              <div className="flex items-center space-x-3">
+                <Building className="h-5 w-5 text-gray-400" />
+                <div>
+                  <p className="font-medium">{partner?.address || 'Não informado'}</p>
+                  <p className="text-sm text-gray-500">Endereço</p>
                 </div>
-                <h3 className="font-medium text-gray-900 mb-2">Receba o Pagamento</h3>
-                <p className="text-sm text-gray-600">
-                  Após aprovação, o pagamento será processado conforme acordado
-                </p>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Estatísticas */}
+        <div className="grid md:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total de Serviços</p>
+                  <p className="text-2xl font-bold">{services.length}</p>
+                </div>
+                <Truck className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Pendentes</p>
+                  <p className="text-2xl font-bold">
+                    {services.filter(s => s.status === 'pendente').length}
+                  </p>
+                </div>
+                <Clock className="h-8 w-8 text-yellow-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Em Andamento</p>
+                  <p className="text-2xl font-bold">
+                    {services.filter(s => s.status === 'em_andamento').length}
+                  </p>
+                </div>
+                <AlertCircle className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Concluídos</p>
+                  <p className="text-2xl font-bold">
+                    {services.filter(s => s.status === 'concluido').length}
+                  </p>
+                </div>
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Lista de Serviços */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Serviços Ativos</CardTitle>
+            <CardDescription>
+              Gerencie seus serviços de guincho e atualize o status conforme necessário
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {services.length === 0 ? (
+              <div className="text-center py-8">
+                <Truck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">Nenhum serviço encontrado</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {services.map((service) => (
+                  <div key={service.id} className="border rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Badge className={getStatusColor(service.status)}>
+                            {getStatusIcon(service.status)}
+                            <span className="ml-1">{service.status.replace('_', ' ').toUpperCase()}</span>
+                          </Badge>
+                          <span className="text-sm text-gray-500">#{service.id}</span>
+                        </div>
+                        <p className="font-medium mb-1">
+                          Veículo: <span className="text-blue-600">{service.vehicle_plate}</span>
+                        </p>
+                        <p className="text-sm text-gray-600 mb-1">
+                          Tipo: {service.service_type}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {new Date(service.created_at).toLocaleString('pt-BR')}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium text-lg">
+                          R$ {(service.actual_cost || service.estimated_cost || 0).toFixed(2)}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {service.actual_cost ? 'Valor Final' : 'Estimativa'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <Separator className="my-3" />
+
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600 mb-1">Origem</p>
+                        <p className="text-sm flex items-center">
+                          <MapPin className="h-4 w-4 mr-1 text-gray-400" />
+                          {service.origin_address}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600 mb-1">Destino</p>
+                        <p className="text-sm flex items-center">
+                          <MapPin className="h-4 w-4 mr-1 text-gray-400" />
+                          {service.destination_address}
+                        </p>
+                      </div>
+                    </div>
+
+                    {service.status === 'pendente' && (
+                      <div className="flex space-x-2">
+                        <Button 
+                          size="sm" 
+                          onClick={() => updateServiceStatus(service.id, 'em_andamento')}
+                        >
+                          Iniciar Serviço
+                        </Button>
+                      </div>
+                    )}
+
+                    {service.status === 'em_andamento' && (
+                      <div className="flex space-x-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => updateServiceStatus(service.id, 'concluido', service.estimated_cost)}
+                        >
+                          Concluir Serviço
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
