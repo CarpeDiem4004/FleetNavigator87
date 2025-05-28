@@ -16,52 +16,27 @@ router.get('/services', unifiedAuthMiddleware, async (req: Request, res: Respons
     
     let query = `
       SELECT 
-        tr.id,
-        tr.partner_id,
-        'N/A' as vehicle_plate,
-        'N/A' as vehicle_model,
-        tr.pickup_location,
-        tr.destination as delivery_location,
-        0 as total_km,
-        tr.actual_cost,
-        tr.request_date as service_date,
-        tr.created_at,
-        tr.status,
-        tr.reason as observations,
-        tr.approval_user_id as approved_by,
-        tr.approval_date as approved_at,
+        tsa.id,
+        tsa.partner_id,
+        tsa.vehicle_plate,
+        tsa.vehicle_model,
+        tsa.pickup_location,
+        tsa.delivery_location,
+        tsa.total_km,
+        tsa.service_value as actual_cost,
+        tsa.service_date,
+        tsa.created_at,
+        tsa.status,
+        tsa.observations,
+        tsa.approved_by,
+        tsa.approved_at,
         tp.name as partner_name, 
         tp.company_name,
-        NULL as payment_date,
-        false as is_paid
-      FROM towing_requests tr
-      JOIN towing_partners tp ON tr.partner_id = tp.id
-      WHERE tr.status = 'approved' AND tp.status = 'ativo'
-      
-      UNION ALL
-      
-      SELECT 
-        sg.id + 10000 as id,
-        sg.parceiro_id as partner_id,
-        sg.placa_veiculo as vehicle_plate,
-        sg.modelo_veiculo as vehicle_model,
-        sg.endereco_origem as pickup_location,
-        sg.endereco_destino as delivery_location,
-        sg.quilometragem as total_km,
-        sg.valor as actual_cost,
-        sg.data_servico as service_date,
-        sg.data_lancamento as created_at,
-        sg.status,
-        sg.observacoes as observations,
-        sg.usuario_aprovacao as approved_by,
-        sg.data_aprovacao as approved_at,
-        tp.name as partner_name, 
-        tp.company_name,
-        NULL as payment_date,
-        false as is_paid
-      FROM servicos_guincho sg
-      JOIN towing_partners tp ON sg.parceiro_id = tp.id
-      WHERE sg.status = 'aprovado' AND tp.status = 'ativo'
+        tsa.payment_date,
+        tsa.is_paid
+      FROM towing_services_approved tsa
+      JOIN towing_partners tp ON tsa.partner_id = tp.id
+      WHERE tsa.status = 'aprovado' AND tp.status = 'ativo'
     `;
     
     const queryParams: any[] = [];
@@ -245,14 +220,14 @@ router.get('/summary', unifiedAuthMiddleware, async (req: Request, res: Response
         tp.id,
         tp.name as partner_name,
         tp.company_name,
-        COUNT(CASE WHEN sg.status = 'aprovado' THEN 1 END) as total_services,
-        0 as paid_services,
-        COALESCE(SUM(CASE WHEN sg.status = 'aprovado' THEN sg.valor ELSE 0 END), 0) as total_value,
-        0 as paid_value,
-        COALESCE(SUM(CASE WHEN sg.status = 'aprovado' THEN sg.valor ELSE 0 END), 0) as pending_value
+        COUNT(CASE WHEN tsa.status = 'aprovado' THEN 1 END) as total_services,
+        COUNT(CASE WHEN tsa.is_paid = true THEN 1 END) as paid_services,
+        COALESCE(SUM(CASE WHEN tsa.status = 'aprovado' THEN tsa.service_value ELSE 0 END), 0) as total_value,
+        COALESCE(SUM(CASE WHEN tsa.is_paid = true THEN tsa.service_value ELSE 0 END), 0) as paid_value,
+        COALESCE(SUM(CASE WHEN tsa.status = 'aprovado' AND tsa.is_paid = false THEN tsa.service_value ELSE 0 END), 0) as pending_value
       FROM towing_partners tp
-      LEFT JOIN servicos_guincho sg ON tp.id = sg.parceiro_id 
-      WHERE tp.status = 'ativo' AND (sg.status = 'aprovado' OR sg.status IS NULL)
+      LEFT JOIN towing_services_approved tsa ON tp.id = tsa.partner_id 
+      WHERE tp.status = 'ativo'
       GROUP BY tp.id, tp.name, tp.company_name
       ORDER BY total_value DESC
       LIMIT 10
