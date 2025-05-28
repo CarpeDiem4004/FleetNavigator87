@@ -276,21 +276,32 @@ router.get('/detailed-report', async (req, res) => {
     
     const query = `
       SELECT 
-        ts.*,
+        sg.id,
+        sg.parceiro_id as partner_id,
+        sg.placa_veiculo as vehicle_plate,
+        sg.modelo_veiculo as vehicle_model,
+        sg.endereco_origem as pickup_location,
+        sg.endereco_destino as delivery_location,
+        sg.quilometragem as distance_km,
+        sg.valor as cost,
+        sg.data_servico as service_date,
+        sg.data_lancamento as created_at,
+        sg.observacoes as notes,
+        sg.status,
         tp.name as partner_name,
         tp.company_name,
-        tp.phone as partner_phone,
-        tp.email as partner_email,
+        tp.contact_phone as partner_phone,
+        tp.contact_email as partner_email,
         CASE 
-          WHEN ts.status = 'aprovado' THEN 'Pago'
-          WHEN ts.status = 'pendente' THEN 'Pendente'
-          WHEN ts.status = 'rejeitado' THEN 'Rejeitado'
+          WHEN sg.status = 'aprovado' THEN 'Pago'
+          WHEN sg.status = 'pendente' THEN 'Pendente'
+          WHEN sg.status = 'negado' THEN 'Rejeitado'
           ELSE 'Aguardando'
         END as payment_status_display
-      FROM towing_services ts
-      INNER JOIN towing_partners tp ON ts.partner_id = tp.id
-      WHERE 1=1 ${dateFilter} ${partnerFilter}
-      ORDER BY ts.service_date DESC, tp.name ASC
+      FROM servicos_guincho sg
+      INNER JOIN towing_partners tp ON sg.parceiro_id = tp.id
+      WHERE 1=1 ${dateFilter.replace(/ts\./g, 'sg.')} ${partnerFilter}
+      ORDER BY sg.data_servico DESC, tp.name ASC
     `;
     
     const result = await pool.query(query, queryParams);
