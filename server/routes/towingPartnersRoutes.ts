@@ -488,6 +488,82 @@ router.put('/partners/:id/status', authenticateJWT, verifyFleetManager, async (r
 });
 
 /**
+ * @route POST /api/towing/partners/:id/services
+ * @desc Registrar um novo serviço realizado pelo parceiro
+ * @access Privado (parceiros autenticados)
+ */
+router.post('/partners/:id/services', async (req, res) => {
+  try {
+    const partnerId = parseInt(req.params.id);
+    const {
+      vehicle_plate,
+      vehicle_model,
+      vehicle_type,
+      pickup_location,
+      delivery_location,
+      total_km,
+      service_value,
+      observations,
+      status = 'pendente'
+    } = req.body;
+
+    // Validação básica
+    if (!vehicle_plate || !vehicle_model || !vehicle_type || !pickup_location || !delivery_location || !total_km || !service_value) {
+      return res.status(400).json({
+        success: false,
+        message: 'Dados obrigatórios faltando'
+      });
+    }
+
+    console.log(`[TowingPartners] Registrando serviço para parceiro ID: ${partnerId}`);
+    console.log(`[TowingPartners] Dados do serviço:`, req.body);
+
+    // Inserir o serviço na tabela towing_requests
+    const { data, error } = await supabase
+      .from('towing_requests')
+      .insert([{
+        partner_id: partnerId,
+        vehicle_plate,
+        vehicle_model,
+        vehicle_type,
+        pickup_location,
+        delivery_location,
+        total_km: parseFloat(total_km),
+        service_value: parseFloat(service_value),
+        observations,
+        status,
+        request_date: new Date().toISOString(),
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[TowingPartners] Erro ao inserir serviço:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao registrar serviço'
+      });
+    }
+
+    console.log(`[TowingPartners] Serviço registrado com sucesso:`, data);
+
+    res.status(201).json({
+      success: true,
+      message: 'Serviço registrado com sucesso',
+      service: data
+    });
+
+  } catch (error) {
+    console.error('[TowingPartners] Erro ao registrar serviço:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
+/**
  * @route GET /api/towing/partners/:id/requests
  * @desc Listar todas as solicitações de serviço de um parceiro, incluindo serviços de teste
  * @access Privado (usuários autenticados)
