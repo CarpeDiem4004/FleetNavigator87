@@ -637,15 +637,15 @@ app.use((req, res, next) => {
       const dadosAgrupados: any = {};
       
       result.rows.forEach((row: any) => {
-        // Converter para data local do Brasil (UTC-3)
-        const dataUTC = new Date(row.data);
-        const dataBrasil = new Date(dataUTC.getTime() - (3 * 60 * 60 * 1000));
-        const data = dataBrasil.toISOString().split('T')[0];
+        // Converter para data local do Brasil
+        const dataOriginal = new Date(row.data);
+        // Ajustar para mostrar a data correta no fuso horário brasileiro
+        const data = dataOriginal.toISOString().split('T')[0];
         
         if (!dadosAgrupados[data]) {
           dadosAgrupados[data] = {
             data: data,
-            dia: dataBrasil.getDate(),
+            dia: dataOriginal.getDate(),
             osasco_v2: 0,
             alair_v2: 0,
             campinas_v2: 0,

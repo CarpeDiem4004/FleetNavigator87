@@ -202,7 +202,7 @@ export default function ConsumoDiarioHistorico() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Calendar className="h-5 w-5" />
-                      {format(new Date(data), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                      {format(new Date(data + 'T12:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                     </CardTitle>
                     <CardDescription>
                       {historicoAgrupado[data].length} posto(s) registrados
