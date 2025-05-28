@@ -16,16 +16,27 @@ router.get('/services', unifiedAuthMiddleware, async (req: Request, res: Respons
     
     let query = `
       SELECT 
-        ts.*, 
+        sg.id,
+        sg.parceiro_id as partner_id,
+        sg.placa_veiculo as vehicle_plate,
+        sg.modelo_veiculo as vehicle_model,
+        sg.endereco_origem as pickup_location,
+        sg.endereco_destino as delivery_location,
+        sg.quilometragem as total_km,
+        sg.valor as actual_cost,
+        sg.data_servico as service_date,
+        sg.data_lancamento as created_at,
+        sg.status,
+        sg.observacoes as observations,
+        sg.usuario_aprovacao as approved_by,
+        sg.data_aprovacao as approved_at,
         tp.name as partner_name, 
         tp.company_name,
-        (CASE 
-          WHEN ts.payment_date IS NOT NULL THEN true 
-          ELSE false 
-        END) as is_paid
-      FROM towing_services ts
-      JOIN towing_partners tp ON ts.partner_id = tp.id
-      WHERE ts.status = 'aprovado'
+        NULL as payment_date,
+        false as is_paid
+      FROM servicos_guincho sg
+      JOIN towing_partners tp ON sg.parceiro_id = tp.id
+      WHERE sg.status = 'aprovado'
     `;
     
     const queryParams: any[] = [];
@@ -33,40 +44,40 @@ router.get('/services', unifiedAuthMiddleware, async (req: Request, res: Respons
     
     // Filtrar por status
     if (status) {
-      query += ` AND ts.status = $${paramCount}`;
+      query += ` AND sg.status = $${paramCount}`;
       queryParams.push(status);
       paramCount++;
     }
     
     // Filtrar por parceiro
     if (partner_id) {
-      query += ` AND ts.partner_id = $${paramCount}`;
+      query += ` AND sg.parceiro_id = $${paramCount}`;
       queryParams.push(partner_id);
       paramCount++;
     }
     
-    // Filtrar por status de pagamento
+    // Filtrar por status de pagamento (sempre false pois não há campo payment_date na tabela servicos_guincho)
     if (payment_status === 'paid') {
-      query += ` AND ts.payment_date IS NOT NULL`;
+      query += ` AND 1 = 0`; // Nunca retorna resultados pois não há serviços pagos ainda
     } else if (payment_status === 'pending') {
-      query += ` AND ts.payment_date IS NULL`;
+      // Todos os serviços aprovados estão pendentes de pagamento
     }
     
     // Filtrar por período
     if (date_from) {
-      query += ` AND ts.service_date >= $${paramCount}`;
+      query += ` AND sg.data_servico >= $${paramCount}`;
       queryParams.push(date_from);
       paramCount++;
     }
     
     if (date_to) {
-      query += ` AND ts.service_date <= $${paramCount}`;
+      query += ` AND sg.data_servico <= $${paramCount}`;
       queryParams.push(date_to);
       paramCount++;
     }
     
     // Ordenação
-    query += ` ORDER BY ts.service_date DESC, ts.id DESC`;
+    query += ` ORDER BY sg.data_servico DESC, sg.id DESC`;
     
     const result = await pool.query(query, queryParams);
     let services = result.rows;
@@ -185,22 +196,22 @@ router.get('/summary', unifiedAuthMiddleware, async (req: Request, res: Response
     let dateFilter = '';
     
     if (period === 'week') {
-      dateFilter = `AND service_date >= CURRENT_DATE - INTERVAL '7 days'`;
+      dateFilter = `AND data_servico >= CURRENT_DATE - INTERVAL '7 days'`;
     } else if (period === 'month') {
-      dateFilter = `AND service_date >= CURRENT_DATE - INTERVAL '30 days'`;
+      dateFilter = `AND data_servico >= CURRENT_DATE - INTERVAL '30 days'`;
     } else if (period === 'year') {
-      dateFilter = `AND service_date >= CURRENT_DATE - INTERVAL '365 days'`;
+      dateFilter = `AND data_servico >= CURRENT_DATE - INTERVAL '365 days'`;
     }
     
     const query = `
       SELECT 
         COUNT(*) as total_services,
-        COUNT(CASE WHEN status = 'aprovado' AND payment_date IS NOT NULL THEN 1 END) as paid_services,
-        COUNT(CASE WHEN status = 'aprovado' AND payment_date IS NULL THEN 1 END) as pending_services,
-        COALESCE(SUM(CASE WHEN status = 'aprovado' THEN actual_cost ELSE 0 END), 0) as total_value,
-        COALESCE(SUM(CASE WHEN status = 'aprovado' AND payment_date IS NOT NULL THEN actual_cost ELSE 0 END), 0) as paid_value,
-        COALESCE(SUM(CASE WHEN status = 'aprovado' AND payment_date IS NULL THEN actual_cost ELSE 0 END), 0) as pending_value
-      FROM towing_services
+        0 as paid_services,
+        COUNT(*) as pending_services,
+        COALESCE(SUM(CASE WHEN status = 'aprovado' THEN valor ELSE 0 END), 0) as total_value,
+        0 as paid_value,
+        COALESCE(SUM(CASE WHEN status = 'aprovado' THEN valor ELSE 0 END), 0) as pending_value
+      FROM servicos_guincho
       WHERE status = 'aprovado' ${dateFilter}
     `;
     
@@ -209,13 +220,13 @@ router.get('/summary', unifiedAuthMiddleware, async (req: Request, res: Response
         tp.id,
         tp.name as partner_name,
         tp.company_name,
-        COUNT(CASE WHEN ts.status = 'aprovado' THEN 1 END) as total_services,
-        COUNT(CASE WHEN ts.status = 'aprovado' AND ts.payment_date IS NOT NULL THEN 1 END) as paid_services,
-        COALESCE(SUM(CASE WHEN ts.status = 'aprovado' THEN ts.actual_cost ELSE 0 END), 0) as total_value,
-        COALESCE(SUM(CASE WHEN ts.status = 'aprovado' AND ts.payment_date IS NOT NULL THEN ts.actual_cost ELSE 0 END), 0) as paid_value,
-        COALESCE(SUM(CASE WHEN ts.status = 'aprovado' AND ts.payment_date IS NULL THEN ts.actual_cost ELSE 0 END), 0) as pending_value
+        COUNT(CASE WHEN sg.status = 'aprovado' THEN 1 END) as total_services,
+        0 as paid_services,
+        COALESCE(SUM(CASE WHEN sg.status = 'aprovado' THEN sg.valor ELSE 0 END), 0) as total_value,
+        0 as paid_value,
+        COALESCE(SUM(CASE WHEN sg.status = 'aprovado' THEN sg.valor ELSE 0 END), 0) as pending_value
       FROM towing_partners tp
-      LEFT JOIN towing_services ts ON tp.id = ts.partner_id AND ts.status = 'aprovado'
+      LEFT JOIN servicos_guincho sg ON tp.id = sg.parceiro_id AND sg.status = 'aprovado'
       WHERE tp.status = 'ativo'
       GROUP BY tp.id, tp.name, tp.company_name
       ORDER BY total_value DESC
