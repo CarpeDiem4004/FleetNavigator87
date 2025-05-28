@@ -22,7 +22,8 @@ export default function PartnerLogin() {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/partner-login', {
+      // Fazer requisição direta sem autenticação JWT
+      const response = await window.fetch('/api/auth/partner-login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
