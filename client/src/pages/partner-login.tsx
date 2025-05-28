@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Truck, Lock, User } from 'lucide-react';
 
 export default function PartnerLogin() {
-  const [, navigate] = useNavigate();
+  const [, navigate] = useLocation();
   const [formData, setFormData] = useState({
     name: '',
     password: ''

@@ -146,6 +146,8 @@ import RegisterPostoUser from "@/pages/postos/RegisterPostoUser";
 import RedirectToPosto from "@/pages/RedirectToPosto";
 import PostoAcessoDireto from "@/pages/PostoAcessoDireto";
 import LinksExternosPostos from "@/pages/postos/LinksExternosPostos";
+import PartnerLogin from "@/pages/partner-login";
+import PartnerDashboard from "@/pages/partner-dashboard";
 
 function App() {
   // Ativar o hook de injeção automática de token JWT em todas as requisições fetch
@@ -316,6 +318,14 @@ function App() {
           {/* Rota de acesso direto a todos os postos */}
           <Route path="/acesso-posto">
             <PostoAcessoDireto />
+          </Route>
+          
+          {/* Rotas para parceiros de guincho */}
+          <Route path="/partner/login">
+            <PartnerLogin />
+          </Route>
+          <Route path="/partner/dashboard">
+            <PartnerDashboard />
           </Route>
           
           {/* Rota pública para cadastro de oficinas */}

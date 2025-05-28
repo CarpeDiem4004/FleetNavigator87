@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Truck, User, Phone, Mail, MapPin, LogOut, FileText, Clock } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Truck, User, Phone, Mail, MapPin, LogOut, FileText, Clock, Plus, Route, Calculator } from 'lucide-react';
 
 interface Partner {
   id: number;
@@ -16,10 +19,19 @@ interface Partner {
 }
 
 export default function PartnerDashboard() {
-  const [, navigate] = useNavigate();
+  const [, navigate] = useLocation();
   const [partner, setPartner] = useState<Partner | null>(null);
   const [services, setServices] = useState([]);
+  const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showRouteDialog, setShowRouteDialog] = useState(false);
+  const [routeForm, setRouteForm] = useState({
+    origin: '',
+    destination: '',
+    totalKm: '',
+    description: '',
+    vehiclePlate: ''
+  });
 
   useEffect(() => {
     // Verificar se há token e dados do parceiro
@@ -35,8 +47,9 @@ export default function PartnerDashboard() {
       const parsedPartner = JSON.parse(partnerData);
       setPartner(parsedPartner);
       
-      // Buscar serviços do parceiro
+      // Buscar serviços e rotas do parceiro
       fetchPartnerServices(token, parsedPartner.id);
+      fetchPartnerRoutes(token, parsedPartner.id);
     } catch (error) {
       console.error('Erro ao carregar dados do parceiro:', error);
       navigate('/partner/login');
@@ -60,6 +73,57 @@ export default function PartnerDashboard() {
       console.error('Erro ao buscar serviços:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPartnerRoutes = async (token: string, partnerId: number) => {
+    try {
+      const response = await fetch(`/api/towing/partners/${partnerId}/routes`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setRoutes(data.routes || []);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar rotas:', error);
+    }
+  };
+
+  const handleRouteSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = localStorage.getItem('partner_token');
+    
+    if (!token || !partner) return;
+
+    try {
+      const response = await fetch(`/api/towing/partners/${partner.id}/routes`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(routeForm)
+      });
+
+      if (response.ok) {
+        // Resetar formulário e recarregar rotas
+        setRouteForm({
+          origin: '',
+          destination: '',
+          totalKm: '',
+          description: '',
+          vehiclePlate: ''
+        });
+        setShowRouteDialog(false);
+        fetchPartnerRoutes(token, partner.id);
+      }
+    } catch (error) {
+      console.error('Erro ao cadastrar rota:', error);
     }
   };
 
