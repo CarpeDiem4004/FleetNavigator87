@@ -3532,6 +3532,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/estoque/pecas", isAuthenticated, async (req, res) => {
     try {
       const { search, categoria } = req.query;
+      console.log("[API Peças] Parâmetros recebidos:", { search, categoria });
       
       // Usar tabela existente do sistema
       let query = 'SELECT id, codigo, nome, descricao, categoria, fornecedor, preco_unitario, quantidade_estoque, quantidade_minima, unidade_medida FROM estoque_pecas WHERE quantidade_estoque > 0';
@@ -3542,14 +3543,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         params.push(`%${search}%`);
       }
       
-      if (categoria) {
+      if (categoria && categoria !== '') {
         query += ` AND categoria = $${params.length + 1}`;
         params.push(categoria as string);
       }
       
       query += ' ORDER BY nome ASC';
+      console.log("[API Peças] Query:", query);
+      console.log("[API Peças] Params:", params);
       
       const result = await pool.query(query, params);
+      console.log("[API Peças] Resultado:", result.rows.length, "peças encontradas");
       return res.status(200).json(result.rows);
     } catch (error) {
       console.error("Erro ao buscar peças do estoque:", error);
