@@ -196,7 +196,7 @@ export default function MaintenanceDetailDialog({
     mutationFn: async (data: any) => {
       if (!maintenance) return null;
       try {
-        const response = await apiRequest('PUT', `/api/maintenance/${maintenance.id}`, data);
+        const response = await apiRequest('PUT', `/api/oficina-murici/maintenance/${maintenance.id}`, data);
         return await response.json();
       } catch (error) {
         console.error('Erro ao atualizar manutenção:', error);
@@ -227,7 +227,7 @@ export default function MaintenanceDetailDialog({
     
     if (!maintenance) return;
 
-    const updatedData = {
+    const updatedData: any = {
       status: formData.status,
       workshopId: formData.workshopId,
       servicePerformed: formData.servicePerformed,
@@ -236,6 +236,15 @@ export default function MaintenanceDetailDialog({
       cost: formData.cost ? parseFloat(formData.cost) : null,
       replacedParts: formData.replacedParts
     };
+
+    // Adicionar campos específicos para aguardando_peca
+    if (formData.status === 'aguardando_peca') {
+      updatedData.pendingPartDescription = formData.pendingPartDescription;
+      updatedData.pendingPartValue = formData.pendingPartValue ? parseFloat(formData.pendingPartValue) : null;
+      updatedData.pendingPartSupplier = formData.pendingPartSupplier;
+      updatedData.pendingPartPhone = formData.pendingPartPhone;
+      updatedData.pendingPartDeadline = formData.pendingPartDeadline ? format(formData.pendingPartDeadline, 'yyyy-MM-dd') : null;
+    }
 
     updateMutation.mutate(updatedData);
   };

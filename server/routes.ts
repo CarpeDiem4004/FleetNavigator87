@@ -4510,7 +4510,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         estimatedCompletion, 
         completionDate, 
         cost, 
-        replacedParts 
+        replacedParts,
+        // Campos específicos para aguardando_peca
+        pendingPartDescription,
+        pendingPartValue,
+        pendingPartSupplier,
+        pendingPartPhone,
+        pendingPartDeadline
       } = req.body;
 
       // Validar status
@@ -4666,6 +4672,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Erro ao atualizar manutenção",
         error: error instanceof Error ? error.message : "Erro desconhecido" 
       });
+    }
+  });
+
+  // Endpoint específico para atualizar manutenções da Oficina Murici
+  app.put("/api/oficina-murici/maintenance/:id", async (req, res) => {
+    try {
+      const maintenanceId = parseInt(req.params.id);
+      if (isNaN(maintenanceId)) {
+        return res.status(400).json({ message: "ID de manutenção inválido" });
+      }
+
+      const { 
+        status, 
+        pendingPartDescription,
+        pendingPartValue,
+        pendingPartSupplier,
+        pendingPartPhone,
+        pendingPartDeadline
+      } = req.body;
+
+      // Verificar se a manutenção existe na tabela oficina_murici_manutencoes
+      const checkQuery = `SELECT * FROM oficina_murici_manutencoes WHERE id = $1`;
+      const checkResult = await pool.query(checkQuery, [maintenanceId]);
+      
+      if (!checkResult.rows.length) {
+        return res.status(404).json({ message: "Manutenção não encontrada" });
+      }
+
+      // Construir query dinâmica baseada nos campos fornecidos
+      let setClause = [];
+      let params = [];
+      let paramIndex = 1;
+
+      if (status) {
+        setClause.push(`status = $${paramIndex}`);
+        params.push(status);
+        paramIndex++;
+      }
+
+      // Campos específicos para aguardando_peca
+      if (status === 'aguardando_peca') {
+        if (pendingPartDescription) {
+          setClause.push(`peca_descricao = $${paramIndex}`);
+          params.push(pendingPartDescription);
+          paramIndex++;
+        }
+
+        if (pendingPartValue !== undefined) {
+          setClause.push(`peca_valor = $${paramIndex}`);
+          params.push(pendingPartValue);
+          paramIndex++;
+        }
+
+        if (pendingPartSupplier) {
+          setClause.push(`fornecedor_nome = $${paramIndex}`);
+          params.push(pendingPartSupplier);
+          paramIndex++;
+        }
+
+        if (pendingPartPhone) {
+          setClause.push(`fornecedor_telefone = $${paramIndex}`);
+          params.push(pendingPartPhone);
+          paramIndex++;
+        }
+
+        if (pendingPartDeadline) {
+          setClause.push(`prazo_entrega = $${paramIndex}`);
+          params.push(pendingPartDeadline);
+          paramIndex++;
+        }
+      }
+
+      // Adicionar updated_at
+      setClause.push(`updated_at = CURRENT_TIMESTAMP`);
+      
+      // Adicionar id no final dos parâmetros
+      params.push(maintenanceId);
+
+      if (setClause.length === 1) { // Apenas updated_at
+        return res.status(400).json({ message: "Nenhum campo para atualizar" });
+      }
+
+      const updateQuery = `
+        UPDATE oficina_murici_manutencoes 
+        SET ${setClause.join(', ')} 
+        WHERE id = $${paramIndex}
+        RETURNING *
+      `;
+
+      const result = await pool.query(updateQuery, params);
+      
+      if (!result.rows.length) {
+        return res.status(500).json({ message: "Falha ao atualizar a manutenção" });
+      }
+
+      return res.status(200).json({
+        message: "Manutenção atualizada com sucesso",
+        maintenance: result.rows[0]
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar manutenção da Oficina Murici:", error);
+      return res.status(500).json({ message: "Erro ao atualizar manutenção" });
     }
   });
 
