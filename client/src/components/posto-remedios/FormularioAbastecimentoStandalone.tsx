@@ -650,7 +650,8 @@ export default function FormularioAbastecimentoStandalone() {
     'NATURA',
     'OXXO',
     'PETLOVE',
-    'REMÉDIOS'
+    'MANUTENÇÃO',
+    'USO OPERACIONAL'
   ];
 
   // Função segura para submissão do formulário

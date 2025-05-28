@@ -110,8 +110,7 @@ export default function FormularioAbastecimentoSimples() {
     'OXXO',
     'PETLOVE',
     'MANUTENÇÃO',
-    'OPERACIONAL',
-    'Outro'
+    'USO OPERACIONAL'
   ];
 
   return (
