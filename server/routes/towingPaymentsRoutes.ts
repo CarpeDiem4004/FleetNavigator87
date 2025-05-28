@@ -18,25 +18,25 @@ router.get('/services', unifiedAuthMiddleware, async (req: Request, res: Respons
       SELECT 
         tr.id,
         tr.partner_id,
-        tr.vehicle_plate,
-        tr.vehicle_model,
+        'N/A' as vehicle_plate,
+        'N/A' as vehicle_model,
         tr.pickup_location,
-        tr.delivery_location,
-        tr.total_km,
-        tr.service_value as actual_cost,
+        tr.destination as delivery_location,
+        0 as total_km,
+        tr.actual_cost,
         tr.request_date as service_date,
         tr.created_at,
         tr.status,
-        tr.observations,
-        NULL as approved_by,
-        NULL as approved_at,
+        tr.reason as observations,
+        tr.approval_user_id as approved_by,
+        tr.approval_date as approved_at,
         tp.name as partner_name, 
         tp.company_name,
         NULL as payment_date,
         false as is_paid
       FROM towing_requests tr
       JOIN towing_partners tp ON tr.partner_id = tp.id
-      WHERE tr.status = 'aprovado' AND tp.status = 'ativo'
+      WHERE tr.status = 'approved' AND tp.status = 'ativo'
       
       UNION ALL
       
