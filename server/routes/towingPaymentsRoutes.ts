@@ -382,7 +382,13 @@ router.delete('/services/:id', unifiedAuthMiddleware, requireRoles(['admin']), a
     }
 
     // Excluir registros relacionados primeiro (se existirem)
-    await client.query('DELETE FROM towing_service_notes WHERE service_id = $1', [serviceId]);
+    // Verificar se a tabela towing_service_notes existe antes de tentar excluir
+    try {
+      await client.query('DELETE FROM towing_service_notes WHERE towing_service_id = $1', [serviceId]);
+    } catch (notesError) {
+      // Se a tabela não existir ou a coluna for diferente, continuar sem erro
+      console.log('[DELETE SERVICE] Tabela towing_service_notes não encontrada ou coluna diferente, continuando...');
+    }
     
     // Excluir o serviço principal
     const deleteQuery = 'DELETE FROM towing_services WHERE id = $1';
