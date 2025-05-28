@@ -553,7 +553,7 @@ export default function PostosVisaoGeralPage() {
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                           {(() => {
                             const date = new Date(item.data + 'T00:00:00Z');
-                            date.setDate(date.getDate() + 1);
+                            date.setDate(date.getDate() - 1);
                             return format(date, 'dd/MM/yyyy');
                           })()}
                         </td>

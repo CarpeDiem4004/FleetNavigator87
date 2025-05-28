@@ -205,7 +205,7 @@ export default function ConsumoDiarioHistorico() {
                       {(() => {
                         try {
                           const [year, month, day] = data.split('-');
-                          const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day) + 1);
+                          const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day) - 1);
                           return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
                         } catch (error) {
                           return data;
