@@ -3528,16 +3528,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Estoque de Peças routes
+  // Estoque de Peças routes - Integrado com sistema existente
   app.get("/api/estoque/pecas", isAuthenticated, async (req, res) => {
     try {
       const { search, categoria } = req.query;
       
-      let query = 'SELECT * FROM estoque_pecas WHERE status = $1';
-      let params = ['ativo'];
+      // Usar tabela existente do sistema
+      let query = 'SELECT id, codigo, nome, descricao, categoria, fabricante as fornecedor, valor_unitario as preco_unitario, quantidade as quantidade_estoque, estoque_minimo as quantidade_minima, unidade_medida FROM pecas_estoque WHERE quantidade > 0';
+      let params: any[] = [];
       
       if (search) {
-        query += ' AND (nome ILIKE $2 OR codigo ILIKE $2 OR descricao ILIKE $2)';
+        query += ' AND (nome ILIKE $1 OR codigo ILIKE $1 OR descricao ILIKE $1)';
         params.push(`%${search}%`);
       }
       
@@ -3559,7 +3560,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/estoque/categorias", isAuthenticated, async (req, res) => {
     try {
       const result = await pool.query(
-        'SELECT DISTINCT categoria FROM estoque_pecas WHERE categoria IS NOT NULL ORDER BY categoria'
+        'SELECT DISTINCT categoria FROM pecas_estoque WHERE categoria IS NOT NULL ORDER BY categoria'
       );
       const categorias = result.rows.map(row => row.categoria);
       return res.status(200).json(categorias);
@@ -3577,11 +3578,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Lista de peças inválida" });
       }
       
-      // Atualizar estoque para cada peça
+      // Atualizar estoque e registrar movimentação
       for (const peca of pecas) {
+        // Buscar dados atuais da peça
+        const pecaAtual = await pool.query(
+          'SELECT * FROM pecas_estoque WHERE id = $1',
+          [peca.id]
+        );
+        
+        if (pecaAtual.rows.length === 0) {
+          continue;
+        }
+        
+        const dadosPeca = pecaAtual.rows[0];
+        const quantidadeAnterior = dadosPeca.quantidade;
+        const quantidadeAtual = quantidadeAnterior - peca.quantidade;
+        
+        // Atualizar quantidade no estoque
         await pool.query(
-          'UPDATE estoque_pecas SET quantidade_estoque = quantidade_estoque - $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND quantidade_estoque >= $1',
-          [peca.quantidade, peca.id]
+          'UPDATE pecas_estoque SET quantidade = $1, ultima_atualizacao = CURRENT_TIMESTAMP WHERE id = $2 AND quantidade >= $3',
+          [quantidadeAtual, peca.id, peca.quantidade]
+        );
+        
+        // Registrar movimentação
+        await pool.query(
+          'INSERT INTO movimentacoes_estoque (peca_id, tipo_movimento, quantidade, quantidade_anterior, quantidade_atual, valor_unitario, valor_total, motivo, responsavel, data_movimento) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP)',
+          [
+            peca.id,
+            'saida',
+            peca.quantidade,
+            quantidadeAnterior,
+            quantidadeAtual,
+            dadosPeca.valor_unitario,
+            dadosPeca.valor_unitario * peca.quantidade,
+            'Utilização em manutenção - Oficina Murici',
+            'Sistema Oficina Murici'
+          ]
         );
       }
       
