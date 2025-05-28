@@ -234,7 +234,9 @@ export default function TowingPartnerExternalAccess() {
             token === 'TESTE_GUINCHO_ÁGUIA_TOKEN' ||
             token.includes('_DE_SOUZA') ||
             token.includes('CAIO_RAMOS') ||
-            token.includes('CLAUDIO_DE_OLIVEIRA')) {
+            token.includes('CLAUDIO_DE_OLIVEIRA') ||
+            token.includes('GILSON_FERNANDES') ||
+            token.includes('FERNANDES_GONCALVES')) {
           // Determinar qual parceiro mostrar com base no token
           let partnerId = 6;
           let partnerName = 'Ford Service';
@@ -248,6 +250,10 @@ export default function TowingPartnerExternalAccess() {
             partnerId = 15;
             partnerName = 'Allan de Souza Vieira';
             companyName = 'Allan de Souza Vieira Guinchos LTDA';
+          } else if (token.includes('GILSON_FERNANDES') || token.includes('FERNANDES_GONCALVES')) {
+            partnerId = 3;
+            partnerName = 'Gilson Fernandes Gonçalves';
+            companyName = 'Gilson Fernandes Gonçalves Guincho LTDA';
           } else if (token.includes('CAIO_RAMOS') || (token.includes('_DE_SOUZA') && !token.includes('ALLAN'))) {
             partnerId = 8;
             partnerName = 'Caio Ramos Guincho';
