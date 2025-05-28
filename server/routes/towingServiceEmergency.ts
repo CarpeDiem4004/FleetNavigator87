@@ -53,6 +53,8 @@ emergencyRouter.post('/submit', async (req, res) => {
     // Verificar tokens de teste primeiro
     if (token) {
       const lowerToken = token.toLowerCase();
+      console.log('[EmergencyRouter] Token recebido para registro:', token);
+      console.log('[EmergencyRouter] Token em lowercase:', lowerToken);
       
       if (lowerToken.includes('allan_de_souza_vieira')) {
         partnerId = 15; // ID fixo do Allan de Souza Vieira para teste
