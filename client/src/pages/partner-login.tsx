@@ -33,15 +33,14 @@ export default function PartnerLogin() {
 
       const data = await response.json();
 
-      if (data.success) {
-        // Salvar token no localStorage
-        localStorage.setItem('partner_token', data.token);
+      if (response.ok && data.success) {
+        // Salvar dados do parceiro no localStorage
         localStorage.setItem('partner_data', JSON.stringify(data.partner));
         
-        // Redirecionar para painel do parceiro
-        setLocation('/partner/dashboard');
+        // Redirecionar para painel do parceiro com ID
+        setLocation(`/partner/dashboard?id=${data.partner.id}`);
       } else {
-        setError(data.message || 'Erro ao fazer login');
+        setError(data.message || 'Credenciais inválidas. Verifique o nome do parceiro e CPF/CNPJ.');
       }
     } catch (err) {
       console.error('Erro no login:', err);

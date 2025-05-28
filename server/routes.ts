@@ -10480,8 +10480,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rotas para o novo módulo de parceiros de guincho
   app.use('/api/towing', towingPartnersRoutes);
   
-  // Registrar rotas de autenticação de parceiros de guincho
-  // app.use('/api/partner', partnerAuthRoutes);
+  // Rota de autenticação específica para parceiros de guincho
+  app.post('/api/auth/partner-login', async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      console.log('[PartnerAuth] Tentativa de login:', { username, passwordLength: password?.length });
+      
+      // Buscar parceiro pelo nome
+      const partnerQuery = `
+        SELECT id, name, cpf_cnpj 
+        FROM towing_partners 
+        WHERE LOWER(name) = LOWER($1) AND is_active = true
+      `;
+      
+      const partnerResult = await pool.query(partnerQuery, [username]);
+      
+      if (partnerResult.rows.length === 0) {
+        console.log('[PartnerAuth] Parceiro não encontrado:', username);
+        return res.status(401).json({ 
+          success: false, 
+          message: 'Credenciais inválidas' 
+        });
+      }
+      
+      const partner = partnerResult.rows[0];
+      console.log('[PartnerAuth] Parceiro encontrado:', { id: partner.id, name: partner.name });
+      
+      // Verificar se a senha (CPF/CNPJ) confere
+      const cleanPassword = password.replace(/[^\d]/g, ''); // Remove caracteres não numéricos
+      const cleanCpfCnpj = partner.cpf_cnpj.replace(/[^\d]/g, '');
+      
+      if (cleanPassword !== cleanCpfCnpj) {
+        console.log('[PartnerAuth] Senha incorreta para parceiro:', partner.name);
+        return res.status(401).json({ 
+          success: false, 
+          message: 'Credenciais inválidas' 
+        });
+      }
+      
+      console.log('[PartnerAuth] Login bem-sucedido para parceiro:', partner.name);
+      
+      // Retornar dados do parceiro para redirecionamento
+      return res.json({
+        success: true,
+        message: 'Login realizado com sucesso',
+        partner: {
+          id: partner.id,
+          name: partner.name
+        },
+        redirectTo: `/partner/dashboard?id=${partner.id}`
+      });
+      
+    } catch (error) {
+      console.error('[PartnerAuth] Erro no login:', error);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Erro interno do servidor' 
+      });
+    }
+  });
   
   // Registrar rotas para gestão de pneus
   app.use('/api/pneus', pneusRoutes);
