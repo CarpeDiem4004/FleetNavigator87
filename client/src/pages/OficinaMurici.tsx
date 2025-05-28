@@ -40,6 +40,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileSpreadsheet, Plus, Search, FileEdit, Trash2, Download as FileDownload, Upload as FileUp, Calendar, Truck, Wrench as Tool, Clock, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import { createSupabaseClient } from '@/lib/supabase-compat';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Textarea } from '@/components/ui/textarea';
@@ -169,58 +170,42 @@ const OficinaMurici: React.FC = () => {
       const supabase = createSupabaseClient();
       
       // Calcular custo total das peças automaticamente
-      const valorTotalPecas = pecasSelecionadas.reduce((total, peca) => total + peca.valor_total, 0);
+      const valorTotalPecas = pecasSelecionadas.reduce((total, peca) => total + Number(peca.valor_total || 0), 0);
       
       // Formatear lista de peças para salvar no banco
       const pecasUtilizadasTexto = pecasSelecionadas.map(peca => 
         `${peca.nome} (${peca.codigo}) - Qtd: ${peca.quantidade} ${peca.unidade_medida} - R$ ${Number(peca.valor_total || 0).toFixed(2)}`
       ).join('\n');
       
-      // Dar baixa no estoque das peças utilizadas
-      if (pecasSelecionadas.length > 0) {
-        try {
-          const response = await fetch('/api/estoque/baixa', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              pecas: pecasSelecionadas.map(peca => ({
-                id: peca.id,
-                quantidade: peca.quantidade
-              }))
-            }),
-          });
-          
-          if (!response.ok) {
-            throw new Error('Erro ao dar baixa no estoque');
-          }
-        } catch (estoqueError) {
-          console.warn('Aviso: Não foi possível dar baixa no estoque:', estoqueError);
-        }
-      }
-      
+      // Preparar dados básicos da manutenção
+      const dadosBasicos = {
+        placa: currentManutencao.placa,
+        km: Number(currentManutencao.km) || 0,
+        prazo: currentManutencao.prazo,
+        descricao_manutencao: currentManutencao.descricao_manutencao,
+        status: currentManutencao.status,
+        mecanico: currentManutencao.mecanico,
+        custo_total: valorTotalPecas || Number(currentManutencao.custo_total) || 0,
+        observacoes: currentManutencao.observacoes || '',
+        peças_utilizadas: pecasUtilizadasTexto || currentManutencao.peças_utilizadas || ''
+      };
+
       if (isEditMode && currentManutencao.id) {
         // Atualizar manutenção existente
         const { error: updateError } = await supabase
           .from('oficina_murici_manutencoes')
           .update({
-            placa: currentManutencao.placa,
-            km: currentManutencao.km,
-            prazo: currentManutencao.prazo,
-            descricao_manutencao: currentManutencao.descricao_manutencao,
-            status: currentManutencao.status,
-            mecanico: currentManutencao.mecanico,
-            custo_total: valorTotalPecas || currentManutencao.custo_total,
-            observacoes: currentManutencao.observacoes,
-            peças_utilizadas: pecasUtilizadasTexto || currentManutencao.peças_utilizadas,
+            ...dadosBasicos,
             ...(currentManutencao.status === 'finalizado' && {
               data_hora_fim: new Date().toISOString()
             })
           })
           .eq('id', currentManutencao.id);
         
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Erro Supabase:', updateError);
+          throw new Error(`Erro ao atualizar: ${updateError.message}`);
+        }
         
         toast({
           title: 'Manutenção atualizada',
@@ -231,18 +216,14 @@ const OficinaMurici: React.FC = () => {
         const { error: insertError } = await supabase
           .from('oficina_murici_manutencoes')
           .insert({
-            placa: currentManutencao.placa,
-            km: currentManutencao.km,
-            prazo: currentManutencao.prazo,
-            descricao_manutencao: currentManutencao.descricao_manutencao,
-            status: currentManutencao.status,
-            mecanico: currentManutencao.mecanico,
-            custo_total: currentManutencao.custo_total,
-            observacoes: currentManutencao.observacoes,
-            peças_utilizadas: currentManutencao.peças_utilizadas
+            ...dadosBasicos,
+            data_hora_inicio: new Date().toISOString()
           });
         
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error('Erro Supabase:', insertError);
+          throw new Error(`Erro ao criar: ${insertError.message}`);
+        }
         
         toast({
           title: 'Manutenção cadastrada',
