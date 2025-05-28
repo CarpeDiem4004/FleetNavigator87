@@ -10478,8 +10478,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ===== SISTEMA DE PARCEIROS - PRIMEIRA PRIORIDADE =====
-  setupPartnerSystem(app);
+  // ===== SISTEMA DE PARCEIROS - IMPLEMENTAÇÃO DIRETA =====
+  app.post('/partner-login', async (req, res) => {
+    console.log('🎯 [PARTNER-LOGIN-DIRETO] Rota executada');
+    
+    try {
+      const { name, cnpj } = req.body;
+      console.log('🎯 [PARTNER-LOGIN-DIRETO] Dados recebidos:', { name, cnpj: cnpj ? '***' : 'vazio' });
+
+      if (!name || !cnpj) {
+        return res.status(400).json({
+          success: false,
+          message: 'Nome e CNPJ são obrigatórios'
+        });
+      }
+
+      // Import pool directly
+      const { pool } = require('./database.js');
+
+      // Buscar parceiro no banco
+      const query = `
+        SELECT id, name, cnpj, phone, address, ativo as active
+        FROM towing_partners 
+        WHERE LOWER(TRIM(name)) = LOWER(TRIM($1))
+        AND cnpj = $2
+        AND ativo = true
+      `;
+      
+      const result = await pool.query(query, [name.trim(), cnpj.replace(/\D/g, '')]);
+      
+      if (result.rows.length === 0) {
+        console.log('🎯 [PARTNER-LOGIN-DIRETO] Parceiro não encontrado');
+        return res.status(401).json({
+          success: false,
+          message: 'Credenciais inválidas'
+        });
+      }
+
+      const partner = result.rows[0];
+      console.log('🎯 [PARTNER-LOGIN-DIRETO] Parceiro encontrado:', partner.name);
+      
+      // Buscar serviços do parceiro
+      const servicesQuery = `
+        SELECT s.id, s.vehicle_plate, s.origin_address, s.destination_address, 
+               s.service_type, s.status, s.created_at, s.estimated_cost, s.actual_cost
+        FROM towing_services s
+        WHERE s.partner_id = $1
+        AND s.status IN ('pendente', 'em_andamento', 'aguardando_aprovacao')
+        ORDER BY s.created_at DESC
+        LIMIT 10
+      `;
+      
+      const servicesResult = await pool.query(servicesQuery, [partner.id]);
+      
+      const response = {
+        success: true,
+        message: 'Login realizado com sucesso',
+        partner: {
+          id: partner.id,
+          name: partner.name,
+          phone: partner.phone,
+          address: partner.address,
+          active: partner.active
+        },
+        services: servicesResult.rows
+      };
+
+      console.log('🎯 [PARTNER-LOGIN-DIRETO] Resposta enviada:', response);
+      return res.json(response);
+
+    } catch (error) {
+      console.error('🎯 [PARTNER-LOGIN-DIRETO] Erro:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  });
 
   // ===== ROTA DE BYPASS PARA PARCEIROS - SOLUÇÃO DEFINITIVA =====
   app.post('/api/partner-simple-auth', (req, res) => {
