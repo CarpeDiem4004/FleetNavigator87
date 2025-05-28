@@ -57,7 +57,7 @@ emergencyRouter.post('/submit', async (req, res) => {
       if (lowerToken.includes('allan_de_souza_vieira')) {
         partnerId = 15; // ID fixo do Allan de Souza Vieira para teste
         console.log('[EmergencyRouter] Serviço sendo criado para Allan de Souza Vieira (ID: 15)');
-      } else if (lowerToken.includes('gilson_fernandes_gonçalves') || lowerToken.includes('gilson_fernandes_goncalves')) {
+      } else if (lowerToken.includes('gilson_fernandes') || lowerToken.includes('teste_gilson')) {
         partnerId = 16; // ID fixo do Gilson Fernandes Gonçalves
         console.log('[EmergencyRouter] Serviço sendo criado para Gilson Fernandes Gonçalves (ID: 16)');
       } else if (lowerToken === 'teste_caio_ramos_de_souza_token' || (lowerToken.includes('caio_ramos') && lowerToken.includes('_de_souza'))) {
@@ -311,7 +311,7 @@ emergencyRouter.get('/history/:token', async (req, res) => {
       if (lowerToken.includes('allan_de_souza_vieira') || lowerToken.includes('teste_allan')) {
         partnerId = 15; // ID fixo do Allan de Souza Vieira para teste
         console.log('[EmergencyRouter] Token de teste identificado para Allan de Souza Vieira (ID: 15)');
-      } else if (lowerToken.includes('gilson_fernandes_gonçalves') || lowerToken.includes('gilson_fernandes_goncalves')) {
+      } else if (lowerToken.includes('gilson_fernandes') || lowerToken.includes('teste_gilson')) {
         partnerId = 16; // ID fixo do Gilson Fernandes Gonçalves
         console.log('[EmergencyRouter] Token de teste identificado para Gilson Fernandes Gonçalves (ID: 16)');
       } else if (lowerToken === 'teste_caio_ramos_de_souza_token' || (lowerToken.includes('caio_ramos') && !lowerToken.includes('allan'))) {
