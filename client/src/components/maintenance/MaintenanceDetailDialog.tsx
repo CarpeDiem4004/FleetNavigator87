@@ -307,7 +307,10 @@ export default function MaintenanceDetailDialog({
           </div>
 
           {/* Campos específicos para aguardando_peca */}
-          {(formData.status === 'aguardando_peca' || formData.status === 'Aguardando Peça') && (
+          {(formData.status === 'aguardando_peca' || 
+            formData.status === 'Aguardando Peça' || 
+            formData.status === 'Aguardando Peças' ||
+            formData.status?.toLowerCase().includes('aguardando')) && (
             <div className="space-y-4 p-4 border rounded-lg bg-orange-50">
               <h3 className="font-semibold text-orange-800">Informações da Peça Aguardada</h3>
               
