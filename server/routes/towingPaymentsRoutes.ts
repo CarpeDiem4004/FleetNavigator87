@@ -276,32 +276,31 @@ router.get('/detailed-report', async (req, res) => {
     
     const query = `
       SELECT 
-        sg.id,
-        sg.parceiro_id as partner_id,
-        sg.placa_veiculo as vehicle_plate,
-        sg.modelo_veiculo as vehicle_model,
-        sg.endereco_origem as pickup_location,
-        sg.endereco_destino as delivery_location,
-        sg.quilometragem as distance_km,
-        sg.valor as cost,
-        sg.data_servico as service_date,
-        sg.data_lancamento as created_at,
-        sg.observacoes as notes,
-        sg.status,
+        tsa.id,
+        tsa.partner_id,
+        tsa.vehicle_plate,
+        tsa.vehicle_model,
+        tsa.pickup_location,
+        tsa.delivery_location,
+        tsa.total_km as distance_km,
+        tsa.service_value as cost,
+        tsa.service_date,
+        tsa.created_at,
+        tsa.observations as notes,
+        tsa.status,
         tp.name as partner_name,
         tp.company_name,
-        tp.contact_phone as partner_phone,
-        tp.contact_email as partner_email,
+        tp.phone as partner_phone,
+        tp.email as partner_email,
         CASE 
-          WHEN sg.status = 'aprovado' THEN 'Pago'
-          WHEN sg.status = 'pendente' THEN 'Pendente'
-          WHEN sg.status = 'negado' THEN 'Rejeitado'
+          WHEN tsa.is_paid = true THEN 'Pago'
+          WHEN tsa.status = 'aprovado' AND tsa.is_paid = false THEN 'Pendente'
           ELSE 'Aguardando'
         END as payment_status_display
-      FROM servicos_guincho sg
-      INNER JOIN towing_partners tp ON sg.parceiro_id = tp.id
-      WHERE 1=1 ${dateFilter.replace(/ts\./g, 'sg.')} ${partnerFilter}
-      ORDER BY sg.data_servico DESC, tp.name ASC
+      FROM towing_services_approved tsa
+      INNER JOIN towing_partners tp ON tsa.partner_id = tp.id
+      WHERE 1=1 ${dateFilter.replace(/ts\./g, 'tsa.')} ${partnerFilter.replace(/tp\./g, 'tp.')}
+      ORDER BY tsa.service_date DESC, tp.name ASC
     `;
     
     const result = await pool.query(query, queryParams);
