@@ -226,8 +226,8 @@ router.get('/summary', unifiedAuthMiddleware, async (req: Request, res: Response
         0 as paid_value,
         COALESCE(SUM(CASE WHEN sg.status = 'aprovado' THEN sg.valor ELSE 0 END), 0) as pending_value
       FROM towing_partners tp
-      LEFT JOIN servicos_guincho sg ON tp.id = sg.parceiro_id AND sg.status = 'aprovado'
-      WHERE tp.status = 'ativo'
+      LEFT JOIN servicos_guincho sg ON tp.id = sg.parceiro_id 
+      WHERE tp.status = 'ativo' AND (sg.status = 'aprovado' OR sg.status IS NULL)
       GROUP BY tp.id, tp.name, tp.company_name
       ORDER BY total_value DESC
       LIMIT 10
