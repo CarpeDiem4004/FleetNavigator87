@@ -30,9 +30,10 @@ router.get('/', unifiedAuthMiddleware, requireRoles(['admin', 'gestor']), async 
     const dadosAgrupados = {};
     
     result.rows.forEach(row => {
-      // Ajustar para fuso horário do Brasil (UTC-3)
-      const dataAjustada = new Date(row.data.getTime() - (3 * 60 * 60 * 1000));
-      const data = dataAjustada.toISOString().split('T')[0];
+      // Converter para data local do Brasil (UTC-3)
+      const dataUTC = new Date(row.data);
+      const dataBrasil = new Date(dataUTC.getTime() - (3 * 60 * 60 * 1000));
+      const data = dataBrasil.toISOString().split('T')[0];
       
       if (!dadosAgrupados[data]) {
         dadosAgrupados[data] = {
