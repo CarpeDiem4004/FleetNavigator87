@@ -62,15 +62,15 @@ export default function PartnerDashboard() {
   const fetchPartnerServices = async (token: string, partnerId: number) => {
     try {
       console.log('🔍 Buscando serviços para parceiro ID:', partnerId);
-      // Fazer requisição direta para o backend na porta 5000
-      const backendUrl = window.location.hostname === 'localhost' 
-        ? 'http://localhost:5000' 
-        : window.location.origin;
-        
-      const response = await fetch(`${backendUrl}/api/towing/partners/${partnerId}/services`, {
+      
+      // Obter token atualizado do localStorage se existir
+      const latestToken = localStorage.getItem('TESTE_GILSON_FERNANDES_GONCALVES__TOKEN') || token;
+      console.log('🔑 Usando token:', latestToken.substring(0, 20) + '...');
+      
+      const response = await fetch(`/api/towing/partners/${partnerId}/services`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${latestToken}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
