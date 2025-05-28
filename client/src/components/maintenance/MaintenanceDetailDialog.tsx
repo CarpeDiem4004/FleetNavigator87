@@ -269,6 +269,8 @@ export default function MaintenanceDetailDialog({
                 value={formData.status} 
                 onValueChange={(value) => {
                   console.log('Status selecionado:', value);
+                  console.log('Comparação aguardando_peca:', value === 'aguardando_peca');
+                  console.log('Tipo do valor:', typeof value);
                   setFormData({...formData, status: value as Maintenance['status']});
                 }}
               >
@@ -307,6 +309,7 @@ export default function MaintenanceDetailDialog({
           </div>
 
           {/* Campos específicos para aguardando_peca */}
+          {console.log('Verificando se deve mostrar campos:', { status: formData.status, shouldShow: formData.status === 'aguardando_peca' })}
           {formData.status === 'aguardando_peca' && (
             <div className="space-y-4 p-4 border rounded-lg bg-orange-50">
               <h3 className="font-semibold text-orange-800">Informações da Peça Aguardada</h3>
