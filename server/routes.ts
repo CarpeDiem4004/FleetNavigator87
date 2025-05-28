@@ -10478,8 +10478,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // ROTA DE AUTENTICAÇÃO DOS PARCEIROS - DEVE VIR PRIMEIRO!
-  registerPartnerAuthRoute(app);
+  // ===== ROTA DE AUTENTICAÇÃO DOS PARCEIROS - PRIORITÁRIA =====
+  app.post('/api/auth/partner-login', async (req, res) => {
+    console.log('🔐 [PartnerAuth] Rota /api/auth/partner-login EXECUTADA');
+    console.log('🔐 [PartnerAuth] Method:', req.method);
+    console.log('🔐 [PartnerAuth] Content-Type:', req.headers['content-type']);
+    console.log('🔐 [PartnerAuth] Body recebido:', JSON.stringify(req.body));
+    
+    // FORÇAR resposta como JSON
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-cache');
+    
+    try {
+      const { name, password } = req.body;
+      
+      console.log('🔐 [PartnerAuth] Dados extraídos - Nome:', name, 'Password:', password ? '***' : 'undefined');
+      
+      if (!name || !password) {
+        console.log('🔐 [PartnerAuth] ERRO: Dados faltando');
+        return res.status(400).json({
+          success: false,
+          message: 'Nome e senha (CPF/CNPJ) são obrigatórios'
+        });
+      }
+      
+      // Buscar parceiro pelo nome
+      const partnerQuery = `
+        SELECT id, name, company_name, cnpj, phone, email, city, status
+        FROM towing_partners 
+        WHERE LOWER(name) = LOWER($1) AND status = 'ativo'
+      `;
+      
+      console.log('🔐 [PartnerAuth] Executando query para:', name);
+      const partnerResult = await pool.query(partnerQuery, [name]);
+      console.log('🔐 [PartnerAuth] Parceiros encontrados:', partnerResult.rows.length);
+      
+      if (partnerResult.rows.length === 0) {
+        console.log('🔐 [PartnerAuth] ERRO: Parceiro não encontrado');
+        return res.status(401).json({
+          success: false,
+          message: 'Parceiro não encontrado ou inativo'
+        });
+      }
+      
+      const partner = partnerResult.rows[0];
+      console.log('🔐 [PartnerAuth] Parceiro encontrado:', partner.name, 'CNPJ:', partner.cnpj);
+      
+      // Verificar senha (CPF/CNPJ)
+      const cleanPassword = password.replace(/[^\d]/g, '');
+      const cleanCnpj = partner.cnpj ? partner.cnpj.replace(/[^\d]/g, '') : '';
+      
+      console.log('🔐 [PartnerAuth] Comparando senhas:', cleanPassword, 'vs', cleanCnpj);
+      
+      if (cleanPassword !== cleanCnpj) {
+        console.log('🔐 [PartnerAuth] ERRO: Senha incorreta');
+        return res.status(401).json({
+          success: false,
+          message: 'CPF/CNPJ incorreto'
+        });
+      }
+      
+      console.log('🔐 [PartnerAuth] LOGIN SUCESSO!');
+      
+      const response = {
+        success: true,
+        message: 'Login realizado com sucesso',
+        partner: {
+          id: partner.id,
+          name: partner.name,
+          company_name: partner.company_name,
+          email: partner.email,
+          phone: partner.phone,
+          city: partner.city,
+          type: 'partner'
+        }
+      };
+      
+      console.log('🔐 [PartnerAuth] Enviando resposta JSON:', JSON.stringify(response));
+      return res.json(response);
+      
+    } catch (error) {
+      console.error('🔐 [PartnerAuth] ERRO CRÍTICO:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error.message
+      });
+    }
+  });
   
   // Registrar rotas para o novo módulo de parceiros de guincho
   app.use('/api/towing', towingPartnersRoutes);
