@@ -173,7 +173,7 @@ const OficinaMurici: React.FC = () => {
       
       // Formatear lista de peças para salvar no banco
       const pecasUtilizadasTexto = pecasSelecionadas.map(peca => 
-        `${peca.nome} (${peca.codigo}) - Qtd: ${peca.quantidade} ${peca.unidade_medida} - R$ ${peca.valor_total.toFixed(2)}`
+        `${peca.nome} (${peca.codigo}) - Qtd: ${peca.quantidade} ${peca.unidade_medida} - R$ ${Number(peca.valor_total || 0).toFixed(2)}`
       ).join('\n');
       
       // Dar baixa no estoque das peças utilizadas
