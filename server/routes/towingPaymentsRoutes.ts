@@ -216,7 +216,7 @@ router.get('/summary', unifiedAuthMiddleware, async (req: Request, res: Response
         COALESCE(SUM(CASE WHEN ts.status = 'aprovado' AND ts.payment_date IS NULL THEN ts.actual_cost ELSE 0 END), 0) as pending_value
       FROM towing_partners tp
       LEFT JOIN towing_services ts ON tp.id = ts.partner_id AND ts.status = 'aprovado'
-      WHERE tp.isActive = true
+      WHERE tp.status = 'ativo'
       GROUP BY tp.id, tp.name, tp.company_name
       ORDER BY total_value DESC
       LIMIT 10
