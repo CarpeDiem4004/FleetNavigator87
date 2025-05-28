@@ -314,10 +314,14 @@ app.use((req, res, next) => {
       const hoje = new Date('2025-05-28');
       const resultado = [];
       
+      console.log('[CONSUMO-SIMPLIFICADO] Gerando sequência de datas começando em:', hoje.toISOString().split('T')[0]);
+      
       for (let dia = 1; dia <= dias && dia <= 30; dia++) {
         const dataAtual = new Date(hoje);
         dataAtual.setDate(hoje.getDate() - (dia - 1));
         const dataStr = dataAtual.toISOString().split('T')[0];
+        
+        console.log(`[CONSUMO-SIMPLIFICADO] Dia ${dia} = ${dataStr}`);
         
         const item = {
           dia: dia,
