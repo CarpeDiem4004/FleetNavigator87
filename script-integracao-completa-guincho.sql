@@ -10,7 +10,7 @@ ADD COLUMN IF NOT EXISTS email VARCHAR(100);
 -- 2. Atualizar campos vazios na tabela towing_partners
 UPDATE towing_partners 
 SET 
-  phone = COALESCE(phone, contact_phone, ''),
+  phone = COALESCE(phone, ''),
   email = COALESCE(email, contact_email, '')
 WHERE phone IS NULL OR email IS NULL OR phone = '' OR email = '';
 
