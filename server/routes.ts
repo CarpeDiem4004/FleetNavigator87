@@ -3528,6 +3528,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Estoque de Peças routes
+  app.get("/api/estoque/pecas", isAuthenticated, async (req, res) => {
+    try {
+      const { search, categoria } = req.query;
+      
+      let query = 'SELECT * FROM estoque_pecas WHERE status = $1';
+      let params = ['ativo'];
+      
+      if (search) {
+        query += ' AND (nome ILIKE $2 OR codigo ILIKE $2 OR descricao ILIKE $2)';
+        params.push(`%${search}%`);
+      }
+      
+      if (categoria) {
+        query += ` AND categoria = $${params.length + 1}`;
+        params.push(categoria as string);
+      }
+      
+      query += ' ORDER BY nome ASC';
+      
+      const result = await pool.query(query, params);
+      return res.status(200).json(result.rows);
+    } catch (error) {
+      console.error("Erro ao buscar peças do estoque:", error);
+      return res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.get("/api/estoque/categorias", isAuthenticated, async (req, res) => {
+    try {
+      const result = await pool.query(
+        'SELECT DISTINCT categoria FROM estoque_pecas WHERE categoria IS NOT NULL ORDER BY categoria'
+      );
+      const categorias = result.rows.map(row => row.categoria);
+      return res.status(200).json(categorias);
+    } catch (error) {
+      console.error("Erro ao buscar categorias:", error);
+      return res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.post("/api/estoque/baixa", isAuthenticated, async (req, res) => {
+    try {
+      const { pecas } = req.body; // Array de { id, quantidade }
+      
+      if (!Array.isArray(pecas) || pecas.length === 0) {
+        return res.status(400).json({ message: "Lista de peças inválida" });
+      }
+      
+      // Atualizar estoque para cada peça
+      for (const peca of pecas) {
+        await pool.query(
+          'UPDATE estoque_pecas SET quantidade_estoque = quantidade_estoque - $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND quantidade_estoque >= $1',
+          [peca.quantidade, peca.id]
+        );
+      }
+      
+      return res.status(200).json({ message: "Baixa no estoque realizada com sucesso" });
+    } catch (error) {
+      console.error("Erro ao dar baixa no estoque:", error);
+      return res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   // Vehicle routes
   // Temporariamente sem autenticação para testes
   app.get("/api/vehicles", async (req, res) => {
