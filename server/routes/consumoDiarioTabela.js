@@ -30,10 +30,9 @@ router.get('/', unifiedAuthMiddleware, requireRoles(['admin', 'gestor']), async 
     const dadosAgrupados = {};
     
     result.rows.forEach(row => {
-      // Ajustar data para fuso horário brasileiro (+1 dia para corrigir exibição)
+      // Usar a data diretamente do banco sem ajuste de fuso horário
       const dataOriginal = new Date(row.data);
-      const dataCorrigida = new Date(dataOriginal.getTime() + (24 * 60 * 60 * 1000));
-      const data = dataCorrigida.toISOString().split('T')[0];
+      const data = dataOriginal.toISOString().split('T')[0];
       
       if (!dadosAgrupados[data]) {
         dadosAgrupados[data] = {
