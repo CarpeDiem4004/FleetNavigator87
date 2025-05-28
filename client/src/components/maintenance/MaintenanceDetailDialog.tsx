@@ -39,7 +39,7 @@ interface Maintenance {
   entryDate: string;
   estimatedCompletion?: string;
   completionDate?: string;
-  status: 'pendente' | 'aguardando_orcamento' | 'em_andamento' | 'concluida' | 'cancelada';
+  status: 'pendente' | 'aguardando_orcamento' | 'aguardando_peca' | 'em_andamento' | 'concluida' | 'cancelada';
   cost?: number;
   initialBudget?: number;
   requestBaseId: number;
@@ -77,6 +77,12 @@ export default function MaintenanceDetailDialog({
     completionDate: Date | null;
     cost: string;
     replacedParts: ReplacedPart[];
+    // Campos específicos para aguardando_peca
+    pendingPartDescription: string;
+    pendingPartValue: string;
+    pendingPartSupplier: string;
+    pendingPartPhone: string;
+    pendingPartDeadline: Date | null;
   }>({
     status: 'pendente',
     workshopId: 0,
@@ -84,13 +90,20 @@ export default function MaintenanceDetailDialog({
     estimatedCompletion: null,
     completionDate: null,
     cost: '',
-    replacedParts: []
+    replacedParts: [],
+    // Campos específicos para aguardando_peca
+    pendingPartDescription: '',
+    pendingPartValue: '',
+    pendingPartSupplier: '',
+    pendingPartPhone: '',
+    pendingPartDeadline: null
   });
 
   // Tipo para tradução dos status
   const statusLabels: Record<Maintenance['status'], string> = {
     pendente: 'Pendente',
     aguardando_orcamento: 'Aguardando Orçamento',
+    aguardando_peca: 'Aguardando Peça',
     em_andamento: 'Em Andamento',
     concluida: 'Concluída',
     cancelada: 'Cancelada'
@@ -100,11 +113,13 @@ export default function MaintenanceDetailDialog({
   const getNextAvailableStatuses = (currentStatus: Maintenance['status']): Maintenance['status'][] => {
     switch(currentStatus) {
       case 'pendente':
-        return ['pendente', 'aguardando_orcamento', 'cancelada'];
+        return ['pendente', 'aguardando_orcamento', 'aguardando_peca', 'cancelada'];
       case 'aguardando_orcamento':
-        return ['aguardando_orcamento', 'em_andamento', 'cancelada'];
+        return ['aguardando_orcamento', 'aguardando_peca', 'em_andamento', 'cancelada'];
+      case 'aguardando_peca':
+        return ['aguardando_peca', 'em_andamento', 'cancelada'];
       case 'em_andamento':
-        return ['em_andamento', 'concluida', 'cancelada'];
+        return ['em_andamento', 'aguardando_peca', 'concluida', 'cancelada'];
       case 'concluida':
         return ['concluida'];
       case 'cancelada':
@@ -124,7 +139,13 @@ export default function MaintenanceDetailDialog({
         estimatedCompletion: maintenance.estimatedCompletion ? new Date(maintenance.estimatedCompletion) : null,
         completionDate: maintenance.completionDate ? new Date(maintenance.completionDate) : null,
         cost: maintenance.cost?.toString() || '',
-        replacedParts: maintenance.replacedParts || []
+        replacedParts: maintenance.replacedParts || [],
+        // Campos específicos para aguardando_peca
+        pendingPartDescription: '',
+        pendingPartValue: '',
+        pendingPartSupplier: '',
+        pendingPartPhone: '',
+        pendingPartDeadline: null
       });
     }
   }, [maintenance]);
@@ -272,6 +293,78 @@ export default function MaintenanceDetailDialog({
               </Select>
             </div>
           </div>
+
+          {/* Campos específicos para aguardando_peca */}
+          {formData.status === 'aguardando_peca' && (
+            <div className="space-y-4 p-4 border rounded-lg bg-orange-50">
+              <h3 className="font-semibold text-orange-800">Informações da Peça Aguardada</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Descrição da Peça */}
+                <div className="space-y-2">
+                  <Label htmlFor="pendingPartDescription">Descrição da Peça *</Label>
+                  <Input
+                    id="pendingPartDescription"
+                    value={formData.pendingPartDescription}
+                    onChange={(e) => setFormData({...formData, pendingPartDescription: e.target.value})}
+                    placeholder="Ex: Filtro de óleo, pastilha de freio..."
+                    required
+                  />
+                </div>
+
+                {/* Valor */}
+                <div className="space-y-2">
+                  <Label htmlFor="pendingPartValue">Valor (R$) *</Label>
+                  <Input
+                    id="pendingPartValue"
+                    type="number"
+                    value={formData.pendingPartValue}
+                    onChange={(e) => setFormData({...formData, pendingPartValue: e.target.value})}
+                    placeholder="0,00"
+                    step="0.01"
+                    min="0"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Fornecedor */}
+                <div className="space-y-2">
+                  <Label htmlFor="pendingPartSupplier">Fornecedor *</Label>
+                  <Input
+                    id="pendingPartSupplier"
+                    value={formData.pendingPartSupplier}
+                    onChange={(e) => setFormData({...formData, pendingPartSupplier: e.target.value})}
+                    placeholder="Nome do fornecedor"
+                    required
+                  />
+                </div>
+
+                {/* Telefone */}
+                <div className="space-y-2">
+                  <Label htmlFor="pendingPartPhone">Telefone *</Label>
+                  <Input
+                    id="pendingPartPhone"
+                    value={formData.pendingPartPhone}
+                    onChange={(e) => setFormData({...formData, pendingPartPhone: e.target.value})}
+                    placeholder="(11) 99999-9999"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Prazo */}
+              <div className="space-y-2">
+                <Label>Prazo de Entrega *</Label>
+                <DatePicker
+                  date={formData.pendingPartDeadline}
+                  setDate={(date) => setFormData({...formData, pendingPartDeadline: date})}
+                  locale={ptBR}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Datas */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
