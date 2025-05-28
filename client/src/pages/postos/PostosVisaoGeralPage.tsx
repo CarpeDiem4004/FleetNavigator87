@@ -167,18 +167,24 @@ export default function PostosVisaoGeralPage() {
   });
 
   // Buscar dados de consumo diário usando o endpoint direto
-  const { data: consumoDiarioResponse, isLoading: isLoadingConsumo } = useQuery({
-    queryKey: ['/api/consumo-diario-postos-simplificado', periodoDias, Date.now()],
+  const { data: consumoDiarioResponse, isLoading: isLoadingConsumo, refetch: refetchConsumo } = useQuery({
+    queryKey: ['/api/consumo-diario-postos-simplificado', periodoDias, Math.random()],
     queryFn: async () => {
       const timestamp = Date.now();
-      const res = await fetch(`/api/consumo-diario-postos-simplificado?dias=${periodoDias}&_t=${timestamp}`);
+      console.log('[Frontend] Fazendo requisição para consumo diário com timestamp:', timestamp);
+      const res = await fetch(`/api/consumo-diario-postos-simplificado?dias=${periodoDias}&_t=${timestamp}&cache=false`);
       if (!res.ok) {
         throw new Error('Erro ao buscar dados de consumo diário');
       }
       const data = await res.json();
+      console.log('[Frontend] Dados recebidos:', data.data?.slice(0, 3));
       return data;
     },
-    enabled: activeTab === 'consumo-diario'
+    enabled: activeTab === 'consumo-diario',
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    staleTime: 0,
+    cacheTime: 0
   });
 
   // Extrair os dados da resposta
