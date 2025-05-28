@@ -294,6 +294,11 @@ export default function MaintenanceDetailDialog({
             </div>
           </div>
 
+          {/* Debug - mostrar status atual */}
+          <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded">
+            Status atual: {formData.status}
+          </div>
+
           {/* Campos específicos para aguardando_peca */}
           {formData.status === 'aguardando_peca' && (
             <div className="space-y-4 p-4 border rounded-lg bg-orange-50">
