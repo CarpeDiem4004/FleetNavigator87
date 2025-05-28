@@ -11169,6 +11169,88 @@ async function createFuelRequestNotification(fuelRequest) {
   // ===== ROTAS PARA MÓDULO FINANCEIRO DE SERVIÇOS DE GUINCHO =====
   // (Movidas para towingPaymentsRoutes.ts)
 
+  // ===== ROTAS PARA CADASTRO DE ROTAS DOS PARCEIROS =====
+  // API para buscar rotas de um parceiro
+  app.get('/api/towing/partners/:id/routes', async (req, res) => {
+    try {
+      const partnerId = parseInt(req.params.id);
+      const authHeader = req.headers.authorization;
+      
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Token não fornecido' });
+      }
+
+      const token = authHeader.substring(7);
+      
+      // Verificar token JWT
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(token, 'partner_secret_key');
+      
+      if (decoded.partnerId !== partnerId) {
+        return res.status(403).json({ error: 'Acesso negado' });
+      }
+
+      const result = await pool.query(`
+        SELECT * FROM partner_routes 
+        WHERE partner_id = $1 
+        ORDER BY created_at DESC
+      `, [partnerId]);
+
+      res.json({ routes: result.rows });
+    } catch (error) {
+      console.error('Erro ao buscar rotas:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  });
+
+  // API para cadastrar nova rota
+  app.post('/api/towing/partners/:id/routes', async (req, res) => {
+    try {
+      const partnerId = parseInt(req.params.id);
+      const { origin, destination, totalKm, description, vehiclePlate } = req.body;
+      const authHeader = req.headers.authorization;
+      
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Token não fornecido' });
+      }
+
+      const token = authHeader.substring(7);
+      
+      // Verificar token JWT
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(token, 'partner_secret_key');
+      
+      if (decoded.partnerId !== partnerId) {
+        return res.status(403).json({ error: 'Acesso negado' });
+      }
+
+      // Criar tabela se não existir
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS partner_routes (
+          id SERIAL PRIMARY KEY,
+          partner_id INTEGER REFERENCES towing_partners(id),
+          origin VARCHAR(255) NOT NULL,
+          destination VARCHAR(255) NOT NULL,
+          total_km DECIMAL(10,2) NOT NULL,
+          description TEXT,
+          vehicle_plate VARCHAR(50),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      const result = await pool.query(`
+        INSERT INTO partner_routes (partner_id, origin, destination, total_km, description, vehicle_plate)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *
+      `, [partnerId, origin, destination, parseFloat(totalKm), description, vehiclePlate]);
+
+      res.json({ route: result.rows[0] });
+    } catch (error) {
+      console.error('Erro ao cadastrar rota:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
