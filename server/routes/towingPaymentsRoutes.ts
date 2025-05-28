@@ -44,40 +44,40 @@ router.get('/services', unifiedAuthMiddleware, async (req: Request, res: Respons
     
     // Filtrar por status
     if (status) {
-      query += ` AND sg.status = $${paramCount}`;
+      query += ` AND tsa.status = $${paramCount}`;
       queryParams.push(status);
       paramCount++;
     }
     
     // Filtrar por parceiro
     if (partner_id) {
-      query += ` AND sg.parceiro_id = $${paramCount}`;
+      query += ` AND tsa.partner_id = $${paramCount}`;
       queryParams.push(partner_id);
       paramCount++;
     }
     
-    // Filtrar por status de pagamento (sempre false pois não há campo payment_date na tabela servicos_guincho)
+    // Filtrar por status de pagamento
     if (payment_status === 'paid') {
-      query += ` AND 1 = 0`; // Nunca retorna resultados pois não há serviços pagos ainda
+      query += ` AND tsa.is_paid = true`;
     } else if (payment_status === 'pending') {
-      // Todos os serviços aprovados estão pendentes de pagamento
+      query += ` AND tsa.is_paid = false`;
     }
     
     // Filtrar por período
     if (date_from) {
-      query += ` AND sg.data_servico >= $${paramCount}`;
+      query += ` AND tsa.service_date >= $${paramCount}`;
       queryParams.push(date_from);
       paramCount++;
     }
     
     if (date_to) {
-      query += ` AND sg.data_servico <= $${paramCount}`;
+      query += ` AND tsa.service_date <= $${paramCount}`;
       queryParams.push(date_to);
       paramCount++;
     }
     
     // Ordenação
-    query += ` ORDER BY sg.data_servico DESC, sg.id DESC`;
+    query += ` ORDER BY tsa.service_date DESC, tsa.id DESC`;
     
     const result = await pool.query(query, queryParams);
     let services = result.rows;
