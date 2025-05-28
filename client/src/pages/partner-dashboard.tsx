@@ -62,9 +62,12 @@ export default function PartnerDashboard() {
   const fetchPartnerServices = async (token: string, partnerId: number) => {
     try {
       console.log('🔍 Buscando serviços para parceiro ID:', partnerId);
-      // Fazer requisição direta para a API, ignorando o fetch interceptado
-      const originalFetch = window.fetch;
-      const response = await originalFetch(`/api/towing/partners/${partnerId}/services`, {
+      // Fazer requisição direta para o backend na porta 5000
+      const backendUrl = window.location.hostname === 'localhost' 
+        ? 'http://localhost:5000' 
+        : window.location.origin;
+        
+      const response = await fetch(`${backendUrl}/api/towing/partners/${partnerId}/services`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
