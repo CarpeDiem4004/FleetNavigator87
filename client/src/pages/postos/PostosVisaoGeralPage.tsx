@@ -552,9 +552,8 @@ export default function PostosVisaoGeralPage() {
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                           {(() => {
-                            // Padrão: Dia 1 = 28/05 (hoje), Dia 2 = 27/05, Dia 3 = 26/05, etc.
-                            const hoje = new Date();
-                            hoje.setHours(0, 0, 0, 0);
+                            // Padrão correto: Dia 1 = 28/05 (hoje), Dia 2 = 27/05 (ontem), etc.
+                            const hoje = new Date('2025-05-28T00:00:00');
                             const dataItem = new Date(hoje);
                             dataItem.setDate(hoje.getDate() - (item.dia - 1));
                             return format(dataItem, 'dd/MM/yyyy');
