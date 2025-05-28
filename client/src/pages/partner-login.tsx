@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Truck, Lock, User } from 'lucide-react';
 
 export default function PartnerLogin() {
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
   const [formData, setFormData] = useState({
     name: '',
     password: ''
@@ -39,7 +39,7 @@ export default function PartnerLogin() {
         localStorage.setItem('partner_data', JSON.stringify(data.partner));
         
         // Redirecionar para painel do parceiro
-        navigate('/partner/dashboard');
+        setLocation('/partner/dashboard');
       } else {
         setError(data.message || 'Erro ao fazer login');
       }

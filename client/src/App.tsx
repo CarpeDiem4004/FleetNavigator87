@@ -147,6 +147,10 @@ import RedirectToPosto from "@/pages/RedirectToPosto";
 import PostoAcessoDireto from "@/pages/PostoAcessoDireto";
 import LinksExternosPostos from "@/pages/postos/LinksExternosPostos";
 
+// Importação das páginas de acesso dos parceiros de guincho
+import PartnerLogin from "@/pages/partner-login";
+import PartnerDashboard from "@/pages/partner-dashboard";
+
 function App() {
   // Ativar o hook de injeção automática de token JWT em todas as requisições fetch
   useFetchWithAuth();
