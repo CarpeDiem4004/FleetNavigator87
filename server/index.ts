@@ -309,14 +309,19 @@ app.use((req, res, next) => {
       `;
       
       const datasResult = await pool.query(queryDatas, [dataLimiteStr]);
+      
+      // Gerar sequência de dias começando de hoje (Dia 1 = hoje, Dia 2 = ontem, etc.)
+      const hoje = new Date('2025-05-28');
       const resultado = [];
       
-      // Para cada data, buscar consumo de todos os postos
-      for (let i = 0; i < datasResult.rows.length; i++) {
-        const dataAtual = datasResult.rows[i].data;
+      for (let dia = 1; dia <= dias && dia <= 30; dia++) {
+        const dataAtual = new Date(hoje);
+        dataAtual.setDate(hoje.getDate() - (dia - 1));
+        const dataStr = dataAtual.toISOString().split('T')[0];
+        
         const item = {
-          dia: i + 1,
-          data: dataAtual,
+          dia: dia,
+          data: dataStr,
           osasco_v2: 0,
           alair_v2: 0,
           campinas_v2: 0,
@@ -335,13 +340,13 @@ app.use((req, res, next) => {
               WHERE DATE(created_at) = $1
             `;
             
-            const consumoResult = await pool.query(query, [dataAtual]);
+            const consumoResult = await pool.query(query, [dataStr]);
             const litros = parseFloat(consumoResult.rows[0]?.litros || 0);
             
-            item[nomePosto] = litros;
+            (item as any)[nomePosto] = litros;
             item.total += litros;
           } catch (tableError) {
-            console.error(`Erro ao consultar tabela ${tabela} para data ${dataAtual}:`, tableError);
+            console.error(`Erro ao consultar tabela ${tabela} para data ${dataStr}:`, tableError);
             continue;
           }
         }
