@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Truck, Lock, User } from 'lucide-react';
 
 export default function PartnerLogin() {
-  const [, setLocation] = useLocation();
+  const [, navigate] = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     password: ''
@@ -22,44 +22,26 @@ export default function PartnerLogin() {
     setError('');
 
     try {
-      // Usar XMLHttpRequest para evitar interferência do FetchWithAuth
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', '/api/partner-simple-auth', true);
-      xhr.setRequestHeader('Content-Type', 'application/json');
-      
-      const data = await new Promise((resolve, reject) => {
-        xhr.onload = function() {
-          console.log('🎯 Status:', xhr.status);
-          console.log('🎯 Response:', xhr.responseText);
-          
-          if (xhr.status === 200) {
-            try {
-              const parsed = JSON.parse(xhr.responseText);
-              resolve(parsed);
-            } catch (parseError) {
-              console.error('🎯 Parse Error:', parseError);
-              reject(new Error('Erro ao processar resposta'));
-            }
-          } else {
-            reject(new Error(`HTTP ${xhr.status}`));
-          }
-        };
-        
-        xhr.onerror = () => reject(new Error('Erro de rede'));
-        xhr.send(JSON.stringify(formData));
+      const response = await fetch('/api/auth/partner-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+        credentials: 'include'
       });
 
-      console.log('🎯 Dados recebidos:', data);
+      const data = await response.json();
 
-      if (data && data.success) {
-        // Salvar dados do parceiro no localStorage
+      if (data.success) {
+        // Salvar token no localStorage
+        localStorage.setItem('partner_token', data.token);
         localStorage.setItem('partner_data', JSON.stringify(data.partner));
         
-        // Redirecionar para painel do parceiro com ID
-        setLocation(`/partner/dashboard?id=${data.partner.id}`);
+        // Redirecionar para painel do parceiro
+        navigate('/partner/dashboard');
       } else {
-        const errorMessage = data?.message || 'Credenciais inválidas. Verifique o nome do parceiro e CPF/CNPJ.';
-        setError(errorMessage);
+        setError(data.message || 'Erro ao fazer login');
       }
     } catch (err) {
       console.error('Erro no login:', err);

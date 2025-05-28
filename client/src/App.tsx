@@ -147,10 +147,6 @@ import RedirectToPosto from "@/pages/RedirectToPosto";
 import PostoAcessoDireto from "@/pages/PostoAcessoDireto";
 import LinksExternosPostos from "@/pages/postos/LinksExternosPostos";
 
-// Importação das páginas de acesso dos parceiros de guincho
-import PartnerAccess from "@/pages/partner-access";
-import PartnerDashboard from "@/pages/partner-dashboard";
-
 function App() {
   // Ativar o hook de injeção automática de token JWT em todas as requisições fetch
   useFetchWithAuth();
@@ -428,19 +424,6 @@ function App() {
               <StationProfile />
             </div>
           )} />
-          
-          {/* Rotas do Sistema de Login dos Parceiros de Guincho */}
-          <Route path="/partner/login">
-            <PartnerAccess />
-          </Route>
-          
-          <Route path="/partner/access">
-            <PartnerAccess />
-          </Route>
-          
-          <Route path="/partner/dashboard">
-            <PartnerDashboard />
-          </Route>
           
           <Route>
             <NotFound />

@@ -277,14 +277,8 @@ export function useFetchWithAuth() {
           url.startsWith(window.location.origin);
       }
 
-      // Verificar se é uma rota de login de parceiro (NÃO deve ter token)
-      const requestUrl = typeof input === 'string' ? input : input.url;
-      const isPartnerRoute = requestUrl.includes('/partner-login') || 
-                            requestUrl.includes('/partner/') ||
-                            requestUrl.includes('/auth/partner');
-
-      // Se ainda não tiver um header de autorização em uma requisição interna E não for rota de parceiro, adicione-o
-      if (!hasAuthHeader && isInternalRequest && !isPartnerRoute) {
+      // Se ainda não tiver um header de autorização em uma requisição interna, adicione-o
+      if (!hasAuthHeader && isInternalRequest) {
         const token = await getAuthToken();
         if (token) {
           (init.headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
