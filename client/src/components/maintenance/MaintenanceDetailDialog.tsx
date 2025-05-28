@@ -303,6 +303,9 @@ export default function MaintenanceDetailDialog({
             </div>
           </div>
 
+          {/* Debug: Status atual */}
+          {console.log('Status atual:', formData.status)}
+          
           {/* Campos específicos para aguardando_peca */}
           {formData.status === 'aguardando_peca' && (
             <div className="space-y-4 p-4 border rounded-lg bg-orange-50">
