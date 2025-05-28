@@ -10478,6 +10478,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // ===== ROTA DIRETA PARA PARCEIROS - SEM MIDDLEWARES =====
+  app.post('/api/partner-direct-auth', async (req, res) => {
+    console.log('🚀 [DIRECT-AUTH] Nova rota executada!');
+    
+    // Configurar headers antes de qualquer resposta
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'no-cache');
+    
+    try {
+      const { name, password } = req.body;
+      console.log('🚀 [DIRECT-AUTH] Dados recebidos:', { name, password: password ? '***' : null });
+      
+      if (!name || !password) {
+        console.log('🚀 [DIRECT-AUTH] Dados faltando');
+        return res.status(400).json({
+          success: false,
+          message: 'Nome e senha são obrigatórios'
+        });
+      }
+      
+      // Buscar parceiro
+      const partnerQuery = `
+        SELECT id, name, company_name, cnpj, phone, email, city, status
+        FROM towing_partners 
+        WHERE LOWER(name) = LOWER($1) AND status = 'ativo'
+      `;
+      
+      console.log('🚀 [DIRECT-AUTH] Buscando parceiro:', name);
+      const partnerResult = await pool.query(partnerQuery, [name]);
+      console.log('🚀 [DIRECT-AUTH] Parceiros encontrados:', partnerResult.rows.length);
+      
+      if (partnerResult.rows.length === 0) {
+        console.log('🚀 [DIRECT-AUTH] Parceiro não encontrado');
+        return res.status(401).json({
+          success: false,
+          message: 'Parceiro não encontrado ou inativo'
+        });
+      }
+      
+      const partner = partnerResult.rows[0];
+      const cleanPassword = password.replace(/[^\d]/g, '');
+      const cleanCnpj = partner.cnpj ? partner.cnpj.replace(/[^\d]/g, '') : '';
+      
+      console.log('🚀 [DIRECT-AUTH] Verificando senha:', { cleanPassword, cleanCnpj });
+      
+      if (cleanPassword !== cleanCnpj) {
+        console.log('🚀 [DIRECT-AUTH] Senha incorreta');
+        return res.status(401).json({
+          success: false,
+          message: 'CPF/CNPJ incorreto'
+        });
+      }
+      
+      console.log('🚀 [DIRECT-AUTH] LOGIN SUCESSO!');
+      
+      const response = {
+        success: true,
+        message: 'Login realizado com sucesso',
+        partner: {
+          id: partner.id,
+          name: partner.name,
+          company_name: partner.company_name,
+          email: partner.email,
+          phone: partner.phone,
+          city: partner.city,
+          type: 'partner'
+        }
+      };
+      
+      console.log('🚀 [DIRECT-AUTH] Enviando resposta:', response);
+      return res.json(response);
+      
+    } catch (error) {
+      console.error('🚀 [DIRECT-AUTH] ERRO CRÍTICO:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  });
+
   // ===== ROTA DE AUTENTICAÇÃO DOS PARCEIROS - PRIORITÁRIA =====
   app.post('/api/auth/partner-login', async (req, res) => {
     console.log('🔐 [PartnerAuth] Rota /api/auth/partner-login EXECUTADA');

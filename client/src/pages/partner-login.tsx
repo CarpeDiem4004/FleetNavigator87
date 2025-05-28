@@ -22,8 +22,8 @@ export default function PartnerLogin() {
     setError('');
 
     try {
-      // Fazer requisição direta sem autenticação JWT
-      const response = await window.fetch('/api/auth/partner-login', {
+      // Usar nova rota direta para parceiros
+      const response = await window.fetch('/api/partner-direct-auth', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
