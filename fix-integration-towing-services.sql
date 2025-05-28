@@ -10,9 +10,9 @@ ADD COLUMN IF NOT EXISTS email VARCHAR(100);
 -- 2. Atualizar campos da tabela towing_partners se estiverem vazios
 UPDATE towing_partners 
 SET 
-  phone = COALESCE(phone, contact_phone),
-  email = COALESCE(email, contact_email)
-WHERE phone IS NULL OR email IS NULL;
+  phone = COALESCE(phone, contact_phone, ''),
+  email = COALESCE(email, contact_email, '')
+WHERE phone IS NULL OR email IS NULL OR phone = '' OR email = '';
 
 -- 3. Limpar tabela unificada para recriar com dados corretos
 TRUNCATE TABLE towing_services_approved;
