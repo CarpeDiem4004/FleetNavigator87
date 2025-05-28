@@ -70,7 +70,8 @@ export default function PartnerDashboard() {
 
       if (response.ok) {
         const data = await response.json();
-        setServices(data.services || []);
+        console.log('Serviços recebidos:', data);
+        setServices(Array.isArray(data) ? data : data.services || []);
       }
     } catch (error) {
       console.error('Erro ao buscar serviços:', error);
@@ -278,23 +279,23 @@ export default function PartnerDashboard() {
                               </span>
                             </div>
                             <p className="text-sm text-gray-900 mb-1">
-                              <strong>Veículo:</strong> {service.vehicle_plate}
+                              <strong>Veículo:</strong> {service.vehicle_plate} - {service.vehicle_model}
                             </p>
                             <p className="text-sm text-gray-600 mb-1">
                               <strong>De:</strong> {service.pickup_location}
                             </p>
                             <p className="text-sm text-gray-600">
-                              <strong>Para:</strong> {service.destination}
+                              <strong>Para:</strong> {service.delivery_location}
                             </p>
                           </div>
                           <div className="text-right">
                             <div className="flex items-center space-x-1 text-sm text-gray-500">
                               <Clock className="w-4 h-4" />
-                              <span>{new Date(service.service_date).toLocaleDateString('pt-BR')}</span>
+                              <span>{new Date(service.created_at || service.request_date).toLocaleDateString('pt-BR')}</span>
                             </div>
-                            {service.cost && (
+                            {service.service_value && (
                               <p className="text-sm font-medium text-green-600 mt-1">
-                                R$ {parseFloat(service.cost).toFixed(2)}
+                                R$ {parseFloat(service.service_value).toFixed(2)}
                               </p>
                             )}
                           </div>
