@@ -16,7 +16,32 @@ router.get('/services', unifiedAuthMiddleware, async (req: Request, res: Respons
     
     let query = `
       SELECT 
-        sg.id,
+        tr.id,
+        tr.partner_id,
+        tr.vehicle_plate,
+        tr.vehicle_model,
+        tr.pickup_location,
+        tr.delivery_location,
+        tr.total_km,
+        tr.service_value as actual_cost,
+        tr.request_date as service_date,
+        tr.created_at,
+        tr.status,
+        tr.observations,
+        NULL as approved_by,
+        NULL as approved_at,
+        tp.name as partner_name, 
+        tp.company_name,
+        NULL as payment_date,
+        false as is_paid
+      FROM towing_requests tr
+      JOIN towing_partners tp ON tr.partner_id = tp.id
+      WHERE tr.status = 'aprovado' AND tp.status = 'ativo'
+      
+      UNION ALL
+      
+      SELECT 
+        sg.id + 10000 as id,
         sg.parceiro_id as partner_id,
         sg.placa_veiculo as vehicle_plate,
         sg.modelo_veiculo as vehicle_model,
