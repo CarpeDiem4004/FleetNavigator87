@@ -10481,8 +10481,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/towing', towingPartnersRoutes);
   
   // Registrar rotas de autenticação de parceiros de guincho
-  const partnerAuthRoutes = require('./routes/partnerAuth');
-  app.use('/api/auth', partnerAuthRoutes);
+  // app.use('/api/partner', partnerAuthRoutes);
   
   // Registrar rotas para gestão de pneus
   app.use('/api/pneus', pneusRoutes);
