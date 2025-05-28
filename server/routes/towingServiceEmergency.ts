@@ -86,10 +86,10 @@ emergencyRouter.post('/submit', async (req, res) => {
       }
     }
     
-    // Se ainda não encontrou um parceiro, usar default (Caio Ramos)
+    // Se ainda não encontrou um parceiro, retornar erro
     if (!partnerId) {
-      partnerId = 8;
-      console.log('[EmergencyRouter] Usando parceiro padrão Caio Ramos (ID: 8)');
+      console.log('[EmergencyRouter] Token não reconhecido no registro:', token);
+      return res.status(404).json({ success: false, message: "Token não reconhecido" });
     }
     
     // Inserir serviço no banco
@@ -340,10 +340,10 @@ emergencyRouter.get('/history/:token', async (req, res) => {
       }
     }
     
-    // Se ainda não encontrou um parceiro, usar default (Caio Ramos)
+    // Se ainda não encontrou um parceiro, retornar erro
     if (!partnerId) {
+      console.log('[EmergencyRouter] Token não reconhecido:', token);
       return res.status(404).json({ success: false, message: "Token não reconhecido" });
-      console.log('[EmergencyRouter] Usando parceiro padrão Caio Ramos (ID: 8)');
     }
     
     // Verificar qual tabela usar para o histórico
