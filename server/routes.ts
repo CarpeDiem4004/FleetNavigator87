@@ -10489,9 +10489,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Buscar parceiro pelo nome
       const partnerQuery = `
-        SELECT id, name, cpf_cnpj 
+        SELECT id, name, cnpj 
         FROM towing_partners 
-        WHERE LOWER(name) = LOWER($1) AND is_active = true
+        WHERE LOWER(name) = LOWER($1) AND status = 'ativo'
       `;
       
       const partnerResult = await pool.query(partnerQuery, [username]);
@@ -10509,9 +10509,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Verificar se a senha (CPF/CNPJ) confere
       const cleanPassword = password.replace(/[^\d]/g, ''); // Remove caracteres não numéricos
-      const cleanCpfCnpj = partner.cpf_cnpj.replace(/[^\d]/g, '');
+      const cleanCnpj = partner.cnpj ? partner.cnpj.replace(/[^\d]/g, '') : '';
       
-      if (cleanPassword !== cleanCpfCnpj) {
+      if (cleanPassword !== cleanCnpj) {
         console.log('[PartnerAuth] Senha incorreta para parceiro:', partner.name);
         return res.status(401).json({ 
           success: false, 
