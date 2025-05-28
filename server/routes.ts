@@ -1,6 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import { registerPartnerAuthRoute } from './partnerAuthRoute';
+import { setupPartnerAuth } from './partnerAuth';
 
 // Função utilitária para obter data/hora no fuso horário de Brasília (UTC-3)
 function getCurrentDateBrasilia() {
@@ -10477,6 +10477,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // ===== SISTEMA DE AUTENTICAÇÃO DE PARCEIROS - PRIMEIRA PRIORIDADE =====
+  setupPartnerAuth(app);
   
   // ===== ROTA DIRETA PARA PARCEIROS - SEM MIDDLEWARES =====
   app.post('/api/partner-direct-auth', async (req, res) => {

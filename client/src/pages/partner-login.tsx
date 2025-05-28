@@ -22,8 +22,8 @@ export default function PartnerLogin() {
     setError('');
 
     try {
-      // Usar nova rota direta para parceiros
-      const response = await window.fetch('/api/partner-direct-auth', {
+      // Usar sistema de autenticação independente para parceiros
+      const response = await window.fetch('/api/partner/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
