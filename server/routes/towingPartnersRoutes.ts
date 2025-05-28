@@ -507,15 +507,16 @@ router.get('/partners/:id/services', async (req, res) => {
       SELECT 
         id,
         vehicle_plate,
-        vehicle_model,
-        vehicle_type,
         pickup_location,
-        delivery_location,
-        total_km,
-        service_value,
-        observations,
+        destination as delivery_location,
+        service_description,
+        service_type,
+        driver_name,
+        service_date,
+        actual_cost as service_value,
+        km_traveled as total_km,
+        observation as observations,
         status,
-        request_date,
         created_at
       FROM towing_services
       WHERE partner_id = $1
