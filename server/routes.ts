@@ -10480,63 +10480,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rotas para o novo módulo de parceiros de guincho
   app.use('/api/towing', towingPartnersRoutes);
   
-  // Rota de autenticação específica para parceiros de guincho
+  // Rota de autenticação específica para parceiros de guincho (implementação direta)
   app.post('/api/auth/partner-login', async (req, res) => {
     try {
-      const { username, password } = req.body;
+      const { name, password } = req.body;
       
-      console.log('[PartnerAuth] Tentativa de login:', { username, passwordLength: password?.length });
+      console.log('[PartnerAuth] Tentativa de login para parceiro:', name);
+      
+      if (!name || !password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Nome e senha (CPF/CNPJ) são obrigatórios'
+        });
+      }
       
       // Buscar parceiro pelo nome
       const partnerQuery = `
-        SELECT id, name, cnpj 
+        SELECT id, name, company_name, cnpj, phone, email, city, status
         FROM towing_partners 
         WHERE LOWER(name) = LOWER($1) AND status = 'ativo'
       `;
       
-      const partnerResult = await pool.query(partnerQuery, [username]);
+      const partnerResult = await pool.query(partnerQuery, [name]);
       
       if (partnerResult.rows.length === 0) {
-        console.log('[PartnerAuth] Parceiro não encontrado:', username);
-        return res.status(401).json({ 
-          success: false, 
-          message: 'Credenciais inválidas' 
+        console.log('[PartnerAuth] Parceiro não encontrado ou inativo:', name);
+        return res.status(401).json({
+          success: false,
+          message: 'Parceiro não encontrado ou inativo'
         });
       }
       
       const partner = partnerResult.rows[0];
-      console.log('[PartnerAuth] Parceiro encontrado:', { id: partner.id, name: partner.name });
       
-      // Verificar se a senha (CPF/CNPJ) confere
-      const cleanPassword = password.replace(/[^\d]/g, ''); // Remove caracteres não numéricos
+      // Verificar se a senha (CPF/CNPJ) está correta
+      const cleanPassword = password.replace(/[^\d]/g, '');
       const cleanCnpj = partner.cnpj ? partner.cnpj.replace(/[^\d]/g, '') : '';
       
       if (cleanPassword !== cleanCnpj) {
-        console.log('[PartnerAuth] Senha incorreta para parceiro:', partner.name);
-        return res.status(401).json({ 
-          success: false, 
-          message: 'Credenciais inválidas' 
+        console.log('[PartnerAuth] Senha incorreta para parceiro:', name);
+        return res.status(401).json({
+          success: false,
+          message: 'CPF/CNPJ incorreto'
         });
       }
       
       console.log('[PartnerAuth] Login bem-sucedido para parceiro:', partner.name);
       
-      // Retornar dados do parceiro para redirecionamento
-      return res.json({
+      res.json({
         success: true,
         message: 'Login realizado com sucesso',
         partner: {
           id: partner.id,
-          name: partner.name
-        },
-        redirectTo: `/partner/dashboard?id=${partner.id}`
+          name: partner.name,
+          company_name: partner.company_name,
+          email: partner.email,
+          phone: partner.phone,
+          city: partner.city,
+          type: 'partner'
+        }
       });
       
     } catch (error) {
-      console.error('[PartnerAuth] Erro no login:', error);
-      return res.status(500).json({ 
-        success: false, 
-        message: 'Erro interno do servidor' 
+      console.error('[PartnerAuth] Erro no login do parceiro:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
       });
     }
   });
