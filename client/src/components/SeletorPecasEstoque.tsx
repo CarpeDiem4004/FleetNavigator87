@@ -258,7 +258,7 @@ export default function SeletorPecasEstoque({ pecasSelecionadas, onPecasChange }
                   
                   <div className="flex items-center gap-3">
                     <div className="text-sm">
-                      R$ {peca.preco_unitario.toFixed(2)} / {peca.unidade_medida}
+                      R$ {peca.valor_unitario.toFixed(2)} / {peca.unidade_medida}
                     </div>
                     
                     <Input
