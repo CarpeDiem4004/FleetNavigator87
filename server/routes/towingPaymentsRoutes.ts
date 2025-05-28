@@ -206,13 +206,13 @@ router.get('/summary', unifiedAuthMiddleware, async (req: Request, res: Response
     const query = `
       SELECT 
         COUNT(*) as total_services,
-        0 as paid_services,
-        COUNT(*) as pending_services,
-        COALESCE(SUM(CASE WHEN status = 'aprovado' THEN valor ELSE 0 END), 0) as total_value,
-        0 as paid_value,
-        COALESCE(SUM(CASE WHEN status = 'aprovado' THEN valor ELSE 0 END), 0) as pending_value
-      FROM servicos_guincho
-      WHERE status = 'aprovado' ${dateFilter}
+        COUNT(CASE WHEN is_paid = true THEN 1 END) as paid_services,
+        COUNT(CASE WHEN is_paid = false THEN 1 END) as pending_services,
+        COALESCE(SUM(service_value), 0) as total_value,
+        COALESCE(SUM(CASE WHEN is_paid = true THEN service_value ELSE 0 END), 0) as paid_value,
+        COALESCE(SUM(CASE WHEN is_paid = false THEN service_value ELSE 0 END), 0) as pending_value
+      FROM towing_services_approved
+      WHERE status = 'aprovado' ${dateFilter.replace(/ts\./g, '')}
     `;
     
     const partnerQuery = `
