@@ -488,6 +488,54 @@ router.put('/partners/:id/status', authenticateJWT, verifyFleetManager, async (r
 });
 
 /**
+ * @route GET /api/towing/partners/:id/services
+ * @desc Buscar todos os serviços registrados por um parceiro
+ * @access Privado (parceiros autenticados)
+ */
+router.get('/partners/:id/services', async (req, res) => {
+  try {
+    const partnerId = parseInt(req.params.id);
+    
+    if (isNaN(partnerId)) {
+      return res.status(400).json({ error: 'ID inválido', details: 'O ID do parceiro deve ser um número' });
+    }
+    
+    console.log(`[TowingPartnersRoutes] Buscando serviços para parceiro ID: ${partnerId}`);
+    
+    // Buscar serviços registrados pelo parceiro
+    const query = `
+      SELECT 
+        id,
+        vehicle_plate,
+        vehicle_model,
+        vehicle_type,
+        pickup_location,
+        delivery_location,
+        total_km,
+        service_value,
+        observations,
+        status,
+        request_date,
+        created_at
+      FROM towing_services
+      WHERE partner_id = $1
+      ORDER BY created_at DESC, id DESC
+    `;
+    
+    const result = await pool.query(query, [partnerId]);
+    const services = result.rows;
+    
+    console.log(`[TowingPartnersRoutes] Encontrados ${services.length} serviços para parceiro ID: ${partnerId}`);
+    console.log('Serviços encontrados:', services);
+    
+    res.json(services);
+  } catch (error: any) {
+    console.error('Erro ao buscar serviços do parceiro:', error);
+    res.status(500).json({ error: 'Erro ao buscar serviços do parceiro', details: error.message });
+  }
+});
+
+/**
  * @route POST /api/towing/partners/:id/services
  * @desc Registrar um novo serviço realizado pelo parceiro
  * @access Privado (parceiros autenticados)
