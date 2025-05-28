@@ -552,8 +552,9 @@ export default function PostosVisaoGeralPage() {
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                           {(() => {
+                            // Para manter o padrão: Dia 1 = data mais recente, Dia 2 = dia anterior, etc.
                             const date = new Date(item.data + 'T00:00:00Z');
-                            date.setDate(date.getDate() - 1);
+                            // Como os dados estão em ordem decrescente no banco, usamos a data diretamente
                             return format(date, 'dd/MM/yyyy');
                           })()}
                         </td>
