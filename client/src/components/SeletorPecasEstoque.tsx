@@ -17,10 +17,10 @@ interface PecaEstoque {
   nome: string;
   descricao: string;
   categoria: string;
-  fornecedor: string;
-  preco_unitario: number;
-  quantidade_estoque: number;
-  quantidade_minima: number;
+  fabricante: string; // Campo correto da API existente
+  valor_unitario: number; // Campo correto da API existente
+  quantidade: number; // Campo correto da API existente
+  estoque_minimo: number; // Campo correto da API existente
   unidade_medida: string;
   localizacao: string;
 }
@@ -29,7 +29,7 @@ interface PecaSelecionada {
   id: number;
   codigo: string;
   nome: string;
-  preco_unitario: number;
+  valor_unitario: number; // Campo correto da API existente
   quantidade: number;
   unidade_medida: string;
   valor_total: number;
@@ -46,15 +46,26 @@ export default function SeletorPecasEstoque({ pecasSelecionadas, onPecasChange }
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const { toast } = useToast();
 
-  // Buscar peças do estoque
-  const { data: pecasEstoque = [], isLoading: loadingPecas } = useQuery({
-    queryKey: ['/api/estoque/pecas', searchTerm, selectedCategory],
+  // Buscar peças do estoque usando a API do sistema de inventário
+  const { data: allParts = [], isLoading: loadingPecas } = useQuery({
+    queryKey: ['/api/frota/estoque-pecas'],
   });
 
-  // Buscar categorias
-  const { data: categorias = [] } = useQuery({
-    queryKey: ['/api/estoque/categorias'],
+  // Filtrar peças com base na busca e categoria
+  const pecasEstoque = allParts.filter((peca: any) => {
+    const matchesSearch = !searchTerm || 
+      peca.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      peca.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      peca.descricao?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesCategory = !selectedCategory || 
+      peca.categoria === selectedCategory;
+    
+    return matchesSearch && matchesCategory && peca.quantidade > 0;
   });
+
+  // Extrair categorias únicas das peças
+  const categorias = [...new Set(allParts.map((peca: any) => peca.categoria).filter(Boolean))];
 
   const adicionarPeca = (peca: PecaEstoque) => {
     const pecaExistente = pecasSelecionadas.find(p => p.id === peca.id);
@@ -72,10 +83,10 @@ export default function SeletorPecasEstoque({ pecasSelecionadas, onPecasChange }
       id: peca.id,
       codigo: peca.codigo,
       nome: peca.nome,
-      preco_unitario: peca.preco_unitario,
+      valor_unitario: peca.valor_unitario,
       quantidade: 1,
       unidade_medida: peca.unidade_medida,
-      valor_total: peca.preco_unitario,
+      valor_total: peca.valor_unitario,
     };
 
     onPecasChange([...pecasSelecionadas, novaPeca]);
@@ -101,7 +112,7 @@ export default function SeletorPecasEstoque({ pecasSelecionadas, onPecasChange }
         return {
           ...peca,
           quantidade,
-          valor_total: peca.preco_unitario * quantidade,
+          valor_total: peca.valor_unitario * quantidade,
         };
       }
       return peca;
@@ -203,18 +214,18 @@ export default function SeletorPecasEstoque({ pecasSelecionadas, onPecasChange }
                             <Badge variant="outline">{peca.categoria}</Badge>
                           </TableCell>
                           <TableCell>
-                            <div className={`${peca.quantidade_estoque <= peca.quantidade_minima ? 'text-red-600' : 'text-green-600'}`}>
-                              {peca.quantidade_estoque} {peca.unidade_medida}
+                            <div className={`${peca.quantidade <= peca.estoque_minimo ? 'text-red-600' : 'text-green-600'}`}>
+                              {peca.quantidade} {peca.unidade_medida}
                             </div>
                           </TableCell>
                           <TableCell>
-                            R$ {peca.preco_unitario.toFixed(2)}
+                            R$ {peca.valor_unitario.toFixed(2)}
                           </TableCell>
                           <TableCell>
                             <Button
                               size="sm"
                               onClick={() => adicionarPeca(peca)}
-                              disabled={peca.quantidade_estoque === 0}
+                              disabled={peca.quantidade === 0}
                             >
                               <Plus className="h-4 w-4" />
                             </Button>
