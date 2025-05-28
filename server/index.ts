@@ -637,7 +637,11 @@ app.use((req, res, next) => {
       const dadosAgrupados: any = {};
       
       result.rows.forEach((row: any) => {
-        const data = row.data.toISOString().split('T')[0];
+        // Converter para data local do Brasil
+        const dataOriginal = new Date(row.data);
+        const data = dataOriginal.toLocaleDateString('pt-BR', { 
+          timeZone: 'America/Sao_Paulo'
+        }).split('/').reverse().join('-'); // Formato YYYY-MM-DD
         
         if (!dadosAgrupados[data]) {
           dadosAgrupados[data] = {
