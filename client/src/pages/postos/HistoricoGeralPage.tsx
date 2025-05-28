@@ -750,7 +750,7 @@ const HistoricoGeralPage: React.FC = () => {
         'OXXO',
         'PETLOVE',
         'MANUTENÇÃO',
-        'OPERACIONAL'
+        'USO OPERACIONAL'
       ];
       
       // Log para diagnóstico
@@ -1236,7 +1236,7 @@ const HistoricoGeralPage: React.FC = () => {
                       'OXXO',
                       'PETLOVE',
                       'MANUTENÇÃO',
-                      'OPERACIONAL'
+                      'USO OPERACIONAL'
                     ];
                     
                     // Projetos que já estão sendo exibidos nos dados
