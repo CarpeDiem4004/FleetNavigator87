@@ -16,7 +16,7 @@ interface Partner {
 }
 
 export default function PartnerDashboard() {
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
   const [partner, setPartner] = useState<Partner | null>(null);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +27,7 @@ export default function PartnerDashboard() {
     const partnerData = localStorage.getItem('partner_data');
 
     if (!token || !partnerData) {
-      navigate('/partner/login');
+      setLocation('/partner/login');
       return;
     }
 
@@ -39,9 +39,9 @@ export default function PartnerDashboard() {
       fetchPartnerServices(token, parsedPartner.id);
     } catch (error) {
       console.error('Erro ao carregar dados do parceiro:', error);
-      navigate('/partner/login');
+      setLocation('/partner/login');
     }
-  }, [navigate]);
+  }, [setLocation]);
 
   const fetchPartnerServices = async (token: string, partnerId: number) => {
     try {
@@ -66,7 +66,7 @@ export default function PartnerDashboard() {
   const handleLogout = () => {
     localStorage.removeItem('partner_token');
     localStorage.removeItem('partner_data');
-    navigate('/partner/login');
+    setLocation('/partner/login');
   };
 
   if (!partner) {

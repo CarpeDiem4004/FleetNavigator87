@@ -429,6 +429,15 @@ function App() {
             </div>
           )} />
           
+          {/* Rotas do Sistema de Login dos Parceiros de Guincho */}
+          <Route path="/partner/login">
+            <PartnerLogin />
+          </Route>
+          
+          <Route path="/partner/dashboard">
+            <PartnerDashboard />
+          </Route>
+          
           <Route>
             <NotFound />
           </Route>
