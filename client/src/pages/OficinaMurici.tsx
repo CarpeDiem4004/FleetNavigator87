@@ -62,11 +62,11 @@ interface Manutencao {
   observacoes?: string;
   peças_utilizadas?: string;
   // Campos específicos para "Aguardando Peça"
-  peca_descricao?: string;
-  peca_valor?: number;
-  fornecedor_nome?: string;
-  fornecedor_telefone?: string;
-  prazo_entrega?: string;
+  pendingPartDescription?: string;
+  pendingPartValue?: string;
+  pendingPartSupplier?: string;
+  pendingPartPhone?: string;
+  pendingPartDeadline?: string;
 }
 
 const statusOptions = [
@@ -196,11 +196,11 @@ const OficinaMurici: React.FC = () => {
         peças_utilizadas: pecasUtilizadasTexto || currentManutencao.peças_utilizadas || '',
         // Campos específicos para "Aguardando Peça"
         ...(currentManutencao.status === 'aguardando_peca' && {
-          peca_descricao: currentManutencao.peca_descricao || '',
-          peca_valor: Number(currentManutencao.peca_valor) || 0,
-          fornecedor_nome: currentManutencao.fornecedor_nome || '',
-          fornecedor_telefone: currentManutencao.fornecedor_telefone || '',
-          prazo_entrega: currentManutencao.prazo_entrega || ''
+          peca_descricao: currentManutencao.pendingPartDescription || '',
+          peca_valor: Number(currentManutencao.pendingPartValue) || 0,
+          fornecedor_nome: currentManutencao.pendingPartSupplier || '',
+          fornecedor_telefone: currentManutencao.pendingPartPhone || '',
+          prazo_entrega: currentManutencao.pendingPartDeadline || ''
         })
       };
 
