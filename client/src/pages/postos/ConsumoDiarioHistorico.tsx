@@ -203,9 +203,13 @@ export default function ConsumoDiarioHistorico() {
                     <CardTitle className="flex items-center gap-2">
                       <Calendar className="h-5 w-5" />
                       {(() => {
-                        const date = new Date(data + 'T00:00:00Z');
-                        date.setDate(date.getDate() + 1);
-                        return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+                        try {
+                          const [year, month, day] = data.split('-');
+                          const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day) + 1);
+                          return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+                        } catch (error) {
+                          return data;
+                        }
                       })()}
                     </CardTitle>
                     <CardDescription>
