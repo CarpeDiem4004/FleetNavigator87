@@ -52,7 +52,7 @@ export default function SeletorPecasEstoque({ pecasSelecionadas, onPecasChange }
   });
 
   // Filtrar peças com base na busca e categoria
-  const pecasEstoque = allParts.filter((peca: any) => {
+  const pecasEstoque = (allParts as PecaEstoque[]).filter((peca) => {
     const matchesSearch = !searchTerm || 
       peca.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       peca.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -65,7 +65,7 @@ export default function SeletorPecasEstoque({ pecasSelecionadas, onPecasChange }
   });
 
   // Extrair categorias únicas das peças
-  const categorias = [...new Set(allParts.map((peca: any) => peca.categoria).filter(Boolean))];
+  const categorias = [...new Set((allParts as PecaEstoque[]).map((peca) => peca.categoria).filter(Boolean))];
 
   const adicionarPeca = (peca: PecaEstoque) => {
     const pecaExistente = pecasSelecionadas.find(p => p.id === peca.id);
