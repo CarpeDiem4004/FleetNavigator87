@@ -267,7 +267,10 @@ export default function MaintenanceDetailDialog({
               <Label htmlFor="status">Status da Manutenção</Label>
               <Select 
                 value={formData.status} 
-                onValueChange={(value) => setFormData({...formData, status: value as Maintenance['status']})}
+                onValueChange={(value) => {
+                  console.log('Status selecionado:', value);
+                  setFormData({...formData, status: value as Maintenance['status']});
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o status" />
