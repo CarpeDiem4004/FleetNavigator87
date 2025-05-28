@@ -300,6 +300,83 @@ router.post('/estoque-pecas', verifyAuth, sessionAuth, async (req, res) => {
   }
 });
 
+// PUT - Atualizar quantidade de uma peça específica (para uso interno do sistema)
+router.put('/estoque-pecas/:id', verifyAuth, sessionAuth, async (req, res) => {
+  const { id } = req.params;
+  const { quantidade } = req.body;
+
+  try {
+    // Validar campos obrigatórios
+    if (quantidade === undefined || quantidade < 0) {
+      return res.status(400).json({ message: 'Quantidade deve ser um número válido maior ou igual a zero' });
+    }
+
+    // Verificar se a peça existe
+    const pecaResult = await pool.query(
+      'SELECT id, codigo, nome, quantidade FROM frota_estoque_pecas WHERE id = $1', 
+      [id]
+    );
+
+    if (pecaResult.rowCount === 0) {
+      return res.status(404).json({ message: 'Peça não encontrada' });
+    }
+
+    const peca = pecaResult.rows[0];
+    const quantidadeAnterior = peca.quantidade;
+
+    // Atualizar a quantidade da peça
+    const updateResult = await pool.query(
+      `UPDATE frota_estoque_pecas 
+       SET quantidade = $1, ultima_atualizacao = NOW() 
+       WHERE id = $2 
+       RETURNING id, codigo, nome, quantidade`,
+      [quantidade, id]
+    );
+
+    // Registrar movimentação de saída (automática pelo sistema)
+    if (quantidadeAnterior !== quantidade) {
+      const tipoMovimento = quantidade < quantidadeAnterior ? 'saida' : 'entrada';
+      const quantidadeMovimento = Math.abs(quantidade - quantidadeAnterior);
+      
+      await pool.query(`
+        INSERT INTO frota_movimentacao_estoque (
+          peca_id,
+          tipo_movimento,
+          quantidade,
+          quantidade_anterior,
+          quantidade_atual,
+          valor_unitario,
+          motivo,
+          responsavel,
+          responsavel_id,
+          observacoes
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `, [
+        id,
+        tipoMovimento,
+        quantidadeMovimento,
+        quantidadeAnterior,
+        quantidade,
+        0, // valor_unitario zerado para movimentações automáticas
+        'Atualização automática do sistema',
+        req.user?.name || req.supabaseUser?.email || 'Sistema',
+        req.user?.id || req.supabaseUser?.id || null,
+        'Peça selecionada para manutenção'
+      ]);
+    }
+
+    res.json({
+      success: true,
+      peca: updateResult.rows[0],
+      quantidadeAnterior,
+      quantidadeAtual: quantidade
+    });
+  } catch (error: any) {
+    console.error('Erro ao atualizar quantidade da peça:', error);
+    res.status(500).json({ message: `Erro ao atualizar quantidade da peça: ${error.message}` });
+  }
+});
+
 // POST - Registrar movimentação de estoque
 router.post('/movimentacao-estoque', verifyAuth, sessionAuth, async (req, res) => {
   const {

@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Search, Plus, Trash2, Package } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 
 interface PecaEstoque {
   id: number;
@@ -67,7 +68,7 @@ export default function SeletorPecasEstoque({ pecasSelecionadas, onPecasChange }
   // Extrair categorias únicas das peças
   const categorias = [...new Set((allParts as PecaEstoque[]).map((peca) => peca.categoria).filter(Boolean))];
 
-  const adicionarPeca = (peca: PecaEstoque) => {
+  const adicionarPeca = async (peca: PecaEstoque) => {
     const pecaExistente = pecasSelecionadas.find(p => p.id === peca.id);
     
     if (pecaExistente) {
@@ -79,22 +80,52 @@ export default function SeletorPecasEstoque({ pecasSelecionadas, onPecasChange }
       return;
     }
 
-    const novaPeca: PecaSelecionada = {
-      id: peca.id,
-      codigo: peca.codigo,
-      nome: peca.nome,
-      valor_unitario: peca.valor_unitario,
-      quantidade: 1,
-      unidade_medida: peca.unidade_medida,
-      valor_total: peca.valor_unitario,
-    };
+    // Verificar se há estoque suficiente
+    if (peca.quantidade < 1) {
+      toast({
+        title: 'Estoque insuficiente',
+        description: 'Não há estoque disponível para esta peça.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
-    onPecasChange([...pecasSelecionadas, novaPeca]);
-    
-    toast({
-      title: 'Peça adicionada',
-      description: `${peca.nome} foi adicionada à lista.`,
-    });
+    try {
+      // Atualizar o estoque (reduzir 1 unidade)
+      const response = await apiRequest('PUT', `/api/frota/estoque-pecas/${peca.id}`, {
+        quantidade: peca.quantidade - 1
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar estoque');
+      }
+
+      const novaPeca: PecaSelecionada = {
+        id: peca.id,
+        codigo: peca.codigo,
+        nome: peca.nome,
+        valor_unitario: peca.valor_unitario,
+        quantidade: 1,
+        unidade_medida: peca.unidade_medida,
+        valor_total: peca.valor_unitario,
+      };
+
+      onPecasChange([...pecasSelecionadas, novaPeca]);
+      
+      // Recarregar a lista de peças para refletir o novo estoque
+      queryClient.invalidateQueries({ queryKey: ['/api/frota/estoque-pecas'] });
+      
+      toast({
+        title: 'Peça adicionada',
+        description: `${peca.nome} foi adicionada à lista. Estoque atualizado.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Erro ao adicionar peça',
+        description: 'Não foi possível atualizar o estoque. Tente novamente.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const removerPeca = (id: number) => {
