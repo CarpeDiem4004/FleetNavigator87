@@ -551,7 +551,7 @@ export default function PostosVisaoGeralPage() {
                           Dia {item.dia}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {format(new Date(item.data), 'dd/MM/yyyy')}
+                          {format(new Date(item.data + 'T12:00:00'), 'dd/MM/yyyy')}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
                           {formatarNumero(item.osasco_v2)} L {item.osasco_v2_carros ? `(${item.osasco_v2_carros} carros)` : ''}
