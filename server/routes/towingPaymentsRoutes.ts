@@ -393,7 +393,7 @@ router.delete('/services/:id', unifiedAuthMiddleware, requireRoles(['admin']), a
     await client.query('BEGIN');
 
     // Verificar se o serviço existe
-    const checkQuery = 'SELECT id, vehicle_plate FROM towing_services WHERE id = $1';
+    const checkQuery = 'SELECT id, placa_veiculo FROM servicos_guincho WHERE id = $1';
     const checkResult = await client.query(checkQuery, [serviceId]);
 
     console.log(`[DELETE SERVICE] Resultado da verificação:`, checkResult.rows);
@@ -413,7 +413,7 @@ router.delete('/services/:id', unifiedAuthMiddleware, requireRoles(['admin']), a
     }
     
     // Excluir o serviço principal
-    const deleteQuery = 'DELETE FROM towing_services WHERE id = $1';
+    const deleteQuery = 'DELETE FROM servicos_guincho WHERE id = $1';
     const deleteResult = await client.query(deleteQuery, [serviceId]);
 
     console.log(`[DELETE SERVICE] Resultado da exclusão:`, deleteResult.rowCount);
