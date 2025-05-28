@@ -61,6 +61,7 @@ export default function PartnerDashboard() {
 
   const fetchPartnerServices = async (token: string, partnerId: number) => {
     try {
+      console.log('🔍 Buscando serviços para parceiro ID:', partnerId);
       const response = await fetch(`/api/towing/partners/${partnerId}/services`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -68,13 +69,32 @@ export default function PartnerDashboard() {
         }
       });
 
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response headers:', response.headers);
+
       if (response.ok) {
-        const data = await response.json();
-        console.log('Serviços recebidos:', data);
-        setServices(Array.isArray(data) ? data : data.services || []);
+        const responseText = await response.text();
+        console.log('📄 Resposta bruta do servidor:', responseText.substring(0, 200));
+        
+        try {
+          const data = JSON.parse(responseText);
+          console.log('✅ Serviços recebidos do servidor:', data);
+          console.log('📊 Quantidade de serviços:', Array.isArray(data) ? data.length : 'não é array');
+          
+          const servicesList = Array.isArray(data) ? data : data.services || [];
+          setServices(servicesList);
+          console.log('💾 Serviços salvos no estado:', servicesList);
+        } catch (parseError) {
+          console.error('❌ Erro ao fazer parse do JSON:', parseError);
+          console.error('📄 Resposta que causou erro:', responseText.substring(0, 500));
+        }
+      } else {
+        console.error('❌ Erro na resposta:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('📄 Conteúdo da resposta de erro:', errorText);
       }
     } catch (error) {
-      console.error('Erro ao buscar serviços:', error);
+      console.error('🚨 Erro ao buscar serviços:', error);
     } finally {
       setLoading(false);
     }
