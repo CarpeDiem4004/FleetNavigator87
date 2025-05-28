@@ -10478,6 +10478,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // ROTA DE AUTENTICAÇÃO DOS PARCEIROS - DEVE VIR PRIMEIRO!
+  registerPartnerAuthRoute(app);
+  
   // Registrar rotas para o novo módulo de parceiros de guincho
   app.use('/api/towing', towingPartnersRoutes);
   
