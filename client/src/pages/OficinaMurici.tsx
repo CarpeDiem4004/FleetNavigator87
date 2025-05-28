@@ -44,6 +44,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Textarea } from '@/components/ui/textarea';
 import * as XLSX from 'xlsx';
+import SeletorPecasEstoque from '@/components/SeletorPecasEstoque';
 
 // Interface para a manutenção
 interface Manutencao {
@@ -83,6 +84,9 @@ const OficinaMurici: React.FC = () => {
     mecanico: '',
     custo_total: 0
   });
+
+  // Estado para controlar as peças selecionadas do estoque
+  const [pecasSelecionadas, setPecasSelecionadas] = useState<any[]>([]);
   
   const { toast } = useToast();
   
@@ -806,18 +810,11 @@ const OficinaMurici: React.FC = () => {
               </div>
             </div>
             
-            <div className="space-y-1">
-              <Label htmlFor="pecas_utilizadas" className="text-sm">Peças Utilizadas</Label>
-              <Textarea
-                id="pecas_utilizadas"
-                name="peças_utilizadas"
-                value={currentManutencao.peças_utilizadas || ''}
-                onChange={handleInputChange}
-                placeholder="Liste as peças utilizadas na manutenção"
-                rows={2}
-                className="min-h-[60px] resize-none"
-              />
-            </div>
+            {/* Componente de seleção de peças do estoque */}
+            <SeletorPecasEstoque 
+              pecasSelecionadas={pecasSelecionadas}
+              onPecasChange={setPecasSelecionadas}
+            />
             
             <div className="space-y-1">
               <Label htmlFor="observacoes" className="text-sm">Observações</Label>
