@@ -10482,12 +10482,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rota de autenticação específica para parceiros de guincho (implementação direta)
   app.post('/api/auth/partner-login', async (req, res) => {
+    console.log('[PartnerAuth] Rota /api/auth/partner-login chamada');
+    console.log('[PartnerAuth] Dados recebidos:', req.body);
+    
+    // Definir o tipo de resposta como JSON
+    res.setHeader('Content-Type', 'application/json');
+    
     try {
       const { name, password } = req.body;
       
       console.log('[PartnerAuth] Tentativa de login para parceiro:', name);
       
       if (!name || !password) {
+        console.log('[PartnerAuth] Dados faltando - nome:', !!name, 'password:', !!password);
         return res.status(400).json({
           success: false,
           message: 'Nome e senha (CPF/CNPJ) são obrigatórios'
@@ -10501,7 +10508,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         WHERE LOWER(name) = LOWER($1) AND status = 'ativo'
       `;
       
+      console.log('[PartnerAuth] Executando query para buscar parceiro:', name);
       const partnerResult = await pool.query(partnerQuery, [name]);
+      console.log('[PartnerAuth] Resultado da busca:', partnerResult.rows.length, 'parceiros encontrados');
       
       if (partnerResult.rows.length === 0) {
         console.log('[PartnerAuth] Parceiro não encontrado ou inativo:', name);
@@ -10512,10 +10521,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const partner = partnerResult.rows[0];
+      console.log('[PartnerAuth] Parceiro encontrado:', partner.name, 'CNPJ:', partner.cnpj);
       
       // Verificar se a senha (CPF/CNPJ) está correta
       const cleanPassword = password.replace(/[^\d]/g, '');
       const cleanCnpj = partner.cnpj ? partner.cnpj.replace(/[^\d]/g, '') : '';
+      
+      console.log('[PartnerAuth] Comparando senhas - Fornecida:', cleanPassword, 'Banco:', cleanCnpj);
       
       if (cleanPassword !== cleanCnpj) {
         console.log('[PartnerAuth] Senha incorreta para parceiro:', name);
@@ -10527,7 +10539,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('[PartnerAuth] Login bem-sucedido para parceiro:', partner.name);
       
-      res.json({
+      const response = {
         success: true,
         message: 'Login realizado com sucesso',
         partner: {
@@ -10539,11 +10551,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           city: partner.city,
           type: 'partner'
         }
-      });
+      };
+      
+      console.log('[PartnerAuth] Enviando resposta:', response);
+      return res.json(response);
       
     } catch (error) {
       console.error('[PartnerAuth] Erro no login do parceiro:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Erro interno do servidor'
       });
