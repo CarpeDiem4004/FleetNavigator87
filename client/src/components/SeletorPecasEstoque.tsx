@@ -49,25 +49,11 @@ export default function SeletorPecasEstoque({ pecasSelecionadas, onPecasChange }
   // Buscar peças do estoque
   const { data: pecasEstoque = [], isLoading: loadingPecas } = useQuery({
     queryKey: ['/api/estoque/pecas', searchTerm, selectedCategory],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (searchTerm) params.append('search', searchTerm);
-      if (selectedCategory) params.append('categoria', selectedCategory);
-      
-      const response = await fetch(`/api/estoque/pecas?${params}`);
-      if (!response.ok) throw new Error('Erro ao buscar peças');
-      return response.json();
-    },
   });
 
   // Buscar categorias
   const { data: categorias = [] } = useQuery({
     queryKey: ['/api/estoque/categorias'],
-    queryFn: async () => {
-      const response = await fetch('/api/estoque/categorias');
-      if (!response.ok) throw new Error('Erro ao buscar categorias');
-      return response.json();
-    },
   });
 
   const adicionarPeca = (peca: PecaEstoque) => {
