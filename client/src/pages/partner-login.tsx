@@ -22,28 +22,36 @@ export default function PartnerLogin() {
     setError('');
 
     try {
-      // Usar rota de bypass simplificada para parceiros
-      const response = await window.fetch('/api/partner-simple-auth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-        credentials: 'include'
+      // Usar XMLHttpRequest para evitar interferência do FetchWithAuth
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/partner-simple-auth', true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      
+      const data = await new Promise((resolve, reject) => {
+        xhr.onload = function() {
+          console.log('🎯 Status:', xhr.status);
+          console.log('🎯 Response:', xhr.responseText);
+          
+          if (xhr.status === 200) {
+            try {
+              const parsed = JSON.parse(xhr.responseText);
+              resolve(parsed);
+            } catch (parseError) {
+              console.error('🎯 Parse Error:', parseError);
+              reject(new Error('Erro ao processar resposta'));
+            }
+          } else {
+            reject(new Error(`HTTP ${xhr.status}`));
+          }
+        };
+        
+        xhr.onerror = () => reject(new Error('Erro de rede'));
+        xhr.send(JSON.stringify(formData));
       });
 
-      let data;
-      try {
-        data = await response.json();
-      } catch (parseError) {
-        console.error('Erro ao processar resposta JSON:', parseError);
-        setError('Erro na resposta do servidor. Tente novamente.');
-        return;
-      }
+      console.log('🎯 Dados recebidos:', data);
 
-      console.log('Resposta do servidor:', { status: response.status, data });
-
-      if (response.ok && data && data.success) {
+      if (data && data.success) {
         // Salvar dados do parceiro no localStorage
         localStorage.setItem('partner_data', JSON.stringify(data.partner));
         
