@@ -62,7 +62,7 @@ export default function PartnerDashboard() {
   const fetchPartnerServices = async (token: string, partnerId: number) => {
     try {
       console.log('🔍 Buscando serviços para parceiro ID:', partnerId);
-      const response = await fetch(`/api/towing/partners/${partnerId}/services`, {
+      const response = await fetch(`${window.location.origin}/api/towing/partners/${partnerId}/services`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
