@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { Truck, User, Phone, Mail, MapPin, LogOut, FileText, Clock, Plus, Route, Calculator } from 'lucide-react';
 
 interface Partner {
@@ -23,6 +25,17 @@ export default function PartnerDashboard() {
   const [partner, setPartner] = useState<Partner | null>(null);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showServiceDialog, setShowServiceDialog] = useState(false);
+  const [serviceForm, setServiceForm] = useState({
+    vehiclePlate: '',
+    vehicleModel: '',
+    vehicleType: '',
+    pickupLocation: '',
+    deliveryLocation: '',
+    totalKm: '',
+    serviceValue: '',
+    observations: ''
+  });
 
   useEffect(() => {
     // Verificar se há token e dados do parceiro
@@ -72,6 +85,56 @@ export default function PartnerDashboard() {
     localStorage.removeItem('partner_token');
     localStorage.removeItem('partner_data');
     navigate('/partner/login');
+  };
+
+  const handleServiceSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = localStorage.getItem('partner_token');
+    
+    if (!token || !partner) return;
+
+    try {
+      const response = await fetch(`/api/towing/partners/${partner.id}/services`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          vehicle_plate: serviceForm.vehiclePlate,
+          vehicle_model: serviceForm.vehicleModel,
+          vehicle_type: serviceForm.vehicleType,
+          pickup_location: serviceForm.pickupLocation,
+          delivery_location: serviceForm.deliveryLocation,
+          total_km: parseFloat(serviceForm.totalKm),
+          service_value: parseFloat(serviceForm.serviceValue),
+          observations: serviceForm.observations,
+          status: 'pendente'
+        })
+      });
+
+      if (response.ok) {
+        // Resetar formulário e recarregar serviços
+        setServiceForm({
+          vehiclePlate: '',
+          vehicleModel: '',
+          vehicleType: '',
+          pickupLocation: '',
+          deliveryLocation: '',
+          totalKm: '',
+          serviceValue: '',
+          observations: ''
+        });
+        setShowServiceDialog(false);
+        fetchPartnerServices(token, partner.id);
+        alert('Serviço registrado com sucesso! Aguarde a aprovação da equipe.');
+      } else {
+        alert('Erro ao registrar serviço. Tente novamente.');
+      }
+    } catch (error) {
+      console.error('Erro ao registrar serviço:', error);
+      alert('Erro ao registrar serviço. Tente novamente.');
+    }
   };
 
   if (!partner) {
@@ -158,13 +221,25 @@ export default function PartnerDashboard() {
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <FileText className="w-5 h-5" />
-                  <span>Serviços Realizados</span>
-                </CardTitle>
-                <CardDescription>
-                  Histórico dos seus serviços de guincho
-                </CardDescription>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle className="flex items-center space-x-2">
+                      <FileText className="w-5 h-5" />
+                      <span>Serviços Realizados</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Histórico dos seus serviços de guincho
+                    </CardDescription>
+                  </div>
+                  <Button 
+                    onClick={() => setShowServiceDialog(true)}
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Registrar Serviço
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {loading ? (
@@ -270,6 +345,146 @@ export default function PartnerDashboard() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Modal de Registro de Serviço */}
+        <Dialog open={showServiceDialog} onOpenChange={setShowServiceDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Registrar Novo Serviço</DialogTitle>
+              <DialogDescription>
+                Preencha as informações do serviço de guincho realizado
+              </DialogDescription>
+            </DialogHeader>
+            
+            <form onSubmit={handleServiceSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Placa do Veículo */}
+                <div>
+                  <Label htmlFor="vehiclePlate">Placa do Veículo</Label>
+                  <Input
+                    id="vehiclePlate"
+                    value={serviceForm.vehiclePlate}
+                    onChange={(e) => setServiceForm({...serviceForm, vehiclePlate: e.target.value})}
+                    placeholder="ABC-1234"
+                    required
+                  />
+                </div>
+
+                {/* Modelo do Veículo */}
+                <div>
+                  <Label htmlFor="vehicleModel">Modelo do Veículo</Label>
+                  <Input
+                    id="vehicleModel"
+                    value={serviceForm.vehicleModel}
+                    onChange={(e) => setServiceForm({...serviceForm, vehicleModel: e.target.value})}
+                    placeholder="Ex: Ford Transit, Mercedes Sprinter"
+                    required
+                  />
+                </div>
+
+                {/* Tipo de Veículo */}
+                <div>
+                  <Label htmlFor="vehicleType">Tipo de Veículo</Label>
+                  <Select 
+                    value={serviceForm.vehicleType} 
+                    onValueChange={(value) => setServiceForm({...serviceForm, vehicleType: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="fiorino">Fiorino</SelectItem>
+                      <SelectItem value="van">Van</SelectItem>
+                      <SelectItem value="3/4">3/4</SelectItem>
+                      <SelectItem value="vuc">VUC</SelectItem>
+                      <SelectItem value="toco">Toco</SelectItem>
+                      <SelectItem value="truck">Truck</SelectItem>
+                      <SelectItem value="cavalo">Cavalo</SelectItem>
+                      <SelectItem value="carreta">Carreta</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Valor do Serviço */}
+                <div>
+                  <Label htmlFor="serviceValue">Valor do Serviço (R$)</Label>
+                  <Input
+                    id="serviceValue"
+                    type="number"
+                    step="0.01"
+                    value={serviceForm.serviceValue}
+                    onChange={(e) => setServiceForm({...serviceForm, serviceValue: e.target.value})}
+                    placeholder="150.00"
+                    required
+                  />
+                </div>
+
+                {/* Local de Retirada */}
+                <div>
+                  <Label htmlFor="pickupLocation">Local de Retirada</Label>
+                  <Input
+                    id="pickupLocation"
+                    value={serviceForm.pickupLocation}
+                    onChange={(e) => setServiceForm({...serviceForm, pickupLocation: e.target.value})}
+                    placeholder="Endereço ou referência"
+                    required
+                  />
+                </div>
+
+                {/* Local de Entrega */}
+                <div>
+                  <Label htmlFor="deliveryLocation">Local de Entrega</Label>
+                  <Input
+                    id="deliveryLocation"
+                    value={serviceForm.deliveryLocation}
+                    onChange={(e) => setServiceForm({...serviceForm, deliveryLocation: e.target.value})}
+                    placeholder="Endereço ou referência"
+                    required
+                  />
+                </div>
+
+                {/* KM Total */}
+                <div className="md:col-span-2">
+                  <Label htmlFor="totalKm">Quilometragem Total</Label>
+                  <Input
+                    id="totalKm"
+                    type="number"
+                    step="0.1"
+                    value={serviceForm.totalKm}
+                    onChange={(e) => setServiceForm({...serviceForm, totalKm: e.target.value})}
+                    placeholder="25.5"
+                    required
+                  />
+                </div>
+
+                {/* Observações */}
+                <div className="md:col-span-2">
+                  <Label htmlFor="observations">Observações</Label>
+                  <Textarea
+                    id="observations"
+                    value={serviceForm.observations}
+                    onChange={(e) => setServiceForm({...serviceForm, observations: e.target.value})}
+                    placeholder="Informações adicionais sobre o serviço..."
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowServiceDialog(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                  Registrar Serviço
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
