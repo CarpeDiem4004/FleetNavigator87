@@ -120,6 +120,8 @@ import { consultarUsuarios, consultarUsuarioPorId } from "./handlers/userHandler
 import authTestRoutes from './routes/authTest.js';
 // Importação da rota de ressincronização de sessão
 import { resyncSession } from './routes/sessionResyncRoute.js';
+// Importação das rotas de autenticação dos parceiros
+import partnerAuthRouter from './routes/partnerAuth';
 // Importação das novas rotas de JWT
 import jwtAuthRoutes from './jwtAuthRoutes.js';
 // Importação do cliente Supabase para armazenamento de arquivos
@@ -1132,6 +1134,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Registrar rota SQL segura (novo)
   app.use('/api/sql-seguro', sqlSeguroRouter);
+  
+  // Registrar rotas de autenticação dos parceiros
+  app.use('/api/auth', partnerAuthRouter);
   
   // Rota de debug para Osasco
   app.use('/api/debug-osasco', debugOsascoRoutes);
