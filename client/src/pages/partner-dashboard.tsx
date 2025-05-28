@@ -22,16 +22,7 @@ export default function PartnerDashboard() {
   const [, navigate] = useLocation();
   const [partner, setPartner] = useState<Partner | null>(null);
   const [services, setServices] = useState([]);
-  const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showRouteDialog, setShowRouteDialog] = useState(false);
-  const [routeForm, setRouteForm] = useState({
-    origin: '',
-    destination: '',
-    totalKm: '',
-    description: '',
-    vehiclePlate: ''
-  });
 
   useEffect(() => {
     // Verificar se há token e dados do parceiro
@@ -47,9 +38,8 @@ export default function PartnerDashboard() {
       const parsedPartner = JSON.parse(partnerData);
       setPartner(parsedPartner);
       
-      // Buscar serviços e rotas do parceiro
+      // Buscar serviços do parceiro
       fetchPartnerServices(token, parsedPartner.id);
-      fetchPartnerRoutes(token, parsedPartner.id);
     } catch (error) {
       console.error('Erro ao carregar dados do parceiro:', error);
       navigate('/partner/login');
@@ -76,56 +66,7 @@ export default function PartnerDashboard() {
     }
   };
 
-  const fetchPartnerRoutes = async (token: string, partnerId: number) => {
-    try {
-      const response = await fetch(`/api/towing/partners/${partnerId}/routes`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
 
-      if (response.ok) {
-        const data = await response.json();
-        setRoutes(data.routes || []);
-      }
-    } catch (error) {
-      console.error('Erro ao buscar rotas:', error);
-    }
-  };
-
-  const handleRouteSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const token = localStorage.getItem('partner_token');
-    
-    if (!token || !partner) return;
-
-    try {
-      const response = await fetch(`/api/towing/partners/${partner.id}/routes`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(routeForm)
-      });
-
-      if (response.ok) {
-        // Resetar formulário e recarregar rotas
-        setRouteForm({
-          origin: '',
-          destination: '',
-          totalKm: '',
-          description: '',
-          vehiclePlate: ''
-        });
-        setShowRouteDialog(false);
-        fetchPartnerRoutes(token, partner.id);
-      }
-    } catch (error) {
-      console.error('Erro ao cadastrar rota:', error);
-    }
-  };
 
   const handleLogout = () => {
     localStorage.removeItem('partner_token');
@@ -284,165 +225,11 @@ export default function PartnerDashboard() {
               </CardContent>
             </Card>
 
-            {/* Card de Cadastro de Rotas */}
-            <Card className="mt-6">
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle className="flex items-center space-x-2">
-                    <Route className="w-5 h-5" />
-                    <span>Cadastro de Rotas</span>
-                  </CardTitle>
-                  <Button 
-                    onClick={() => setShowRouteDialog(true)}
-                    size="sm"
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Nova Rota
-                  </Button>
-                </div>
-                <CardDescription>
-                  Registre rotas com origem, destino e quilometragem total
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {routes.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Route className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-600">Nenhuma rota cadastrada</p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Registre suas rotas para melhor controle
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {routes.map((route: any, index) => (
-                      <div key={index} className="border rounded-lg p-3 hover:bg-gray-50">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-900 text-sm">
-                              {route.origin} → {route.destination}
-                            </h4>
-                            <p className="text-xs text-gray-600 mt-1">
-                              <strong>Distância:</strong> {route.total_km} km
-                            </p>
-                            {route.vehicle_plate && (
-                              <p className="text-xs text-blue-600">
-                                Veículo: {route.vehicle_plate}
-                              </p>
-                            )}
-                            {route.description && (
-                              <p className="text-xs text-gray-500 mt-1">
-                                {route.description}
-                              </p>
-                            )}
-                          </div>
-                          <span className="text-xs text-gray-500">
-                            {new Date(route.created_at).toLocaleDateString('pt-BR')}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+
           </div>
         </div>
 
-        {/* Modal para Cadastro de Rota */}
-        {showRouteDialog && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <Card className="w-full max-w-md mx-4">
-              <CardHeader>
-                <CardTitle>Cadastrar Nova Rota</CardTitle>
-                <CardDescription>
-                  Registre uma rota com origem, destino e quilometragem
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleRouteSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Origem</label>
-                    <input
-                      type="text"
-                      value={routeForm.origin}
-                      onChange={(e) => setRouteForm({...routeForm, origin: e.target.value})}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Local de origem"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Destino</label>
-                    <input
-                      type="text"
-                      value={routeForm.destination}
-                      onChange={(e) => setRouteForm({...routeForm, destination: e.target.value})}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Local de destino"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Quilometragem Total (km)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      value={routeForm.totalKm}
-                      onChange={(e) => setRouteForm({...routeForm, totalKm: e.target.value})}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="0.0"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Placa do Veículo (opcional)</label>
-                    <input
-                      type="text"
-                      value={routeForm.vehiclePlate}
-                      onChange={(e) => setRouteForm({...routeForm, vehiclePlate: e.target.value})}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Ex: ABC-1234"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Observações (opcional)</label>
-                    <textarea
-                      value={routeForm.description}
-                      onChange={(e) => setRouteForm({...routeForm, description: e.target.value})}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Observações sobre a rota"
-                      rows={3}
-                    />
-                  </div>
-                  
-                  <div className="flex gap-3 pt-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setShowRouteDialog(false)}
-                      className="flex-1"
-                    >
-                      Cancelar
-                    </Button>
-                    <Button
-                      type="submit"
-                      className="flex-1 bg-blue-600 hover:bg-blue-700"
-                    >
-                      Cadastrar
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+
 
         {/* Instruções */}
         <Card className="mt-8">
