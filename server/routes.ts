@@ -10478,13 +10478,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ===== SISTEMA DE PARCEIROS - IMPLEMENTAÇÃO DIRETA =====
-  app.post('/partner-login', async (req, res) => {
-    console.log('🎯 [PARTNER-LOGIN-DIRETO] Rota executada');
+  // ===== SISTEMA DE PARCEIROS - IMPLEMENTAÇÃO DEFINITIVA =====
+  // Rota totalmente isolada para evitar qualquer conflito
+  app.post('/api/partner-auth-direct', async (req, res) => {
+    console.log('🚀 [PARTNER-AUTH-DIRECT] Rota de autenticação direta executada');
+    
+    // Definir headers de resposta como JSON imediatamente
+    res.setHeader('Content-Type', 'application/json');
     
     try {
       const { name, cnpj } = req.body;
-      console.log('🎯 [PARTNER-LOGIN-DIRETO] Dados recebidos:', { name, cnpj: cnpj ? '***' : 'vazio' });
+      console.log('🚀 [PARTNER-AUTH-DIRECT] Dados recebidos:', { name, cnpj: cnpj ? '***' : 'vazio' });
 
       if (!name || !cnpj) {
         return res.status(400).json({
@@ -10508,7 +10512,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await pool.query(query, [name.trim(), cnpj.replace(/\D/g, '')]);
       
       if (result.rows.length === 0) {
-        console.log('🎯 [PARTNER-LOGIN-DIRETO] Parceiro não encontrado');
+        console.log('🚀 [PARTNER-AUTH-DIRECT] Parceiro não encontrado');
         return res.status(401).json({
           success: false,
           message: 'Credenciais inválidas'
@@ -10516,7 +10520,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const partner = result.rows[0];
-      console.log('🎯 [PARTNER-LOGIN-DIRETO] Parceiro encontrado:', partner.name);
+      console.log('🚀 [PARTNER-AUTH-DIRECT] Parceiro encontrado:', partner.name);
       
       // Buscar serviços do parceiro
       const servicesQuery = `
@@ -10544,11 +10548,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         services: servicesResult.rows
       };
 
-      console.log('🎯 [PARTNER-LOGIN-DIRETO] Resposta enviada:', response);
+      console.log('🚀 [PARTNER-AUTH-DIRECT] Resposta enviada:', response);
       return res.json(response);
 
     } catch (error) {
-      console.error('🎯 [PARTNER-LOGIN-DIRETO] Erro:', error);
+      console.error('🚀 [PARTNER-AUTH-DIRECT] Erro:', error);
       return res.status(500).json({
         success: false,
         message: 'Erro interno do servidor'

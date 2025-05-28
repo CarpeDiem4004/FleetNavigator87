@@ -22,11 +22,11 @@ export default function PartnerAccess() {
     setError('');
 
     try {
-      console.log('🎯 Enviando dados para /partner-login:', formData);
+      console.log('🚀 Enviando dados para /api/partner-auth-direct:', formData);
 
       // Usar XMLHttpRequest direto para evitar middleware
       const xhr = new XMLHttpRequest();
-      xhr.open('POST', '/partner-login', true);
+      xhr.open('POST', '/api/partner-auth-direct', true);
       xhr.setRequestHeader('Content-Type', 'application/json');
       
       const response = await new Promise((resolve, reject) => {
