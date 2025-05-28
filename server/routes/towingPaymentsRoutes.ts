@@ -36,7 +36,7 @@ router.get('/services', unifiedAuthMiddleware, async (req: Request, res: Respons
         false as is_paid
       FROM servicos_guincho sg
       JOIN towing_partners tp ON sg.parceiro_id = tp.id
-      WHERE sg.status = 'aprovado'
+      WHERE sg.status = 'aprovado' AND tp.status = 'ativo'
     `;
     
     const queryParams: any[] = [];
