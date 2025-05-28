@@ -115,8 +115,6 @@ export default function PartnerDashboard() {
       });
 
       if (response.ok) {
-        const result = await response.json();
-        
         // Resetar formulário e recarregar serviços
         setServiceForm({
           vehiclePlate: '',
@@ -135,8 +133,12 @@ export default function PartnerDashboard() {
         
         alert('✅ Serviço registrado com sucesso!\n\nO serviço foi adicionado ao seu histórico e está aguardando aprovação da equipe Murici Logística.');
       } else {
-        const errorData = await response.json();
-        alert(`❌ Erro ao registrar serviço: ${errorData.message || 'Tente novamente.'}`);
+        try {
+          const errorData = await response.json();
+          alert(`❌ Erro ao registrar serviço: ${errorData.message || 'Tente novamente.'}`);
+        } catch (e) {
+          alert(`❌ Erro ao registrar serviço. Status: ${response.status}`);
+        }
       }
     } catch (error) {
       console.error('Erro ao registrar serviço:', error);
