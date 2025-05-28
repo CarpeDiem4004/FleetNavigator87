@@ -837,6 +837,88 @@ const OficinaMurici: React.FC = () => {
               </div>
             </div>
             
+            {/* Campos específicos para aguardando_peca */}
+            {currentManutencao.status === 'aguardando_peca' && (
+              <div className="space-y-4 p-4 border rounded-lg bg-orange-50">
+                <h3 className="font-semibold text-orange-800">Informações da Peça Aguardada</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Nome da peça */}
+                  <div className="space-y-1">
+                    <Label htmlFor="peca_descricao" className="text-sm">Nome da Peça*</Label>
+                    <Input
+                      id="peca_descricao"
+                      name="peca_descricao"
+                      value={currentManutencao.peca_descricao || ''}
+                      onChange={handleInputChange}
+                      placeholder="Ex: Filtro de óleo"
+                      className="h-9"
+                      required
+                    />
+                  </div>
+                  
+                  {/* Valor estimado */}
+                  <div className="space-y-1">
+                    <Label htmlFor="peca_valor" className="text-sm">Valor Estimado (R$)*</Label>
+                    <Input
+                      id="peca_valor"
+                      name="peca_valor"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={currentManutencao.peca_valor || ''}
+                      onChange={handleInputChange}
+                      placeholder="0,00"
+                      className="h-9"
+                      required
+                    />
+                  </div>
+                  
+                  {/* Nome do fornecedor */}
+                  <div className="space-y-1">
+                    <Label htmlFor="fornecedor_nome" className="text-sm">Nome do Fornecedor*</Label>
+                    <Input
+                      id="fornecedor_nome"
+                      name="fornecedor_nome"
+                      value={currentManutencao.fornecedor_nome || ''}
+                      onChange={handleInputChange}
+                      placeholder="Ex: Auto Peças XYZ"
+                      className="h-9"
+                      required
+                    />
+                  </div>
+                  
+                  {/* Telefone do fornecedor */}
+                  <div className="space-y-1">
+                    <Label htmlFor="fornecedor_telefone" className="text-sm">Telefone do Fornecedor*</Label>
+                    <Input
+                      id="fornecedor_telefone"
+                      name="fornecedor_telefone"
+                      value={currentManutencao.fornecedor_telefone || ''}
+                      onChange={handleInputChange}
+                      placeholder="(11) 99999-9999"
+                      className="h-9"
+                      required
+                    />
+                  </div>
+                  
+                  {/* Prazo de entrega */}
+                  <div className="space-y-1 md:col-span-2">
+                    <Label htmlFor="prazo_entrega" className="text-sm">Prazo de Entrega Estimado*</Label>
+                    <Input
+                      id="prazo_entrega"
+                      name="prazo_entrega"
+                      type="date"
+                      value={currentManutencao.prazo_entrega || ''}
+                      onChange={handleInputChange}
+                      className="h-9"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* Componente de seleção de peças do estoque */}
             <SeletorPecasEstoque 
               pecasSelecionadas={pecasSelecionadas}
