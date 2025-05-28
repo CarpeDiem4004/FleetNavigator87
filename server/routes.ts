@@ -1,77 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { setupPartnerSystem } from './partnerSystem';
-
-// ===== ROTA DE PARCEIROS - PRIMEIRA PRIORIDADE =====
-function setupPartnerAuthRoute(app: Express) {
-  app.post('/api/partner-auth-direct', async (req: Request, res: Response) => {
-    console.log('🚀 [PARTNER-AUTH-DIRECT] Rota executada - PRIMEIRA PRIORIDADE');
-    
-    // Headers explícitos para garantir JSON
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Cache-Control', 'no-cache');
-    
-    try {
-      const { name, cnpj } = req.body;
-      console.log('🚀 [PARTNER-AUTH-DIRECT] Dados recebidos:', { name, cnpj: cnpj ? '***' : 'vazio' });
-
-      if (!name || !cnpj) {
-        return res.status(400).json({
-          success: false,
-          message: 'Nome e CNPJ são obrigatórios'
-        });
-      }
-
-      // Import pool directly
-      const { pool } = require('./database.js');
-
-      // Buscar parceiro no banco
-      const query = `
-        SELECT id, name, cnpj, phone, address, status
-        FROM towing_partners 
-        WHERE LOWER(TRIM(name)) = LOWER(TRIM($1))
-        AND cnpj = $2
-        AND status = 'ativo'
-      `;
-      
-      const result = await pool.query(query, [name.trim(), cnpj.replace(/\D/g, '')]);
-      
-      if (result.rows.length === 0) {
-        console.log('🚀 [PARTNER-AUTH-DIRECT] Parceiro não encontrado');
-        return res.status(401).json({
-          success: false,
-          message: 'Credenciais inválidas'
-        });
-      }
-
-      const partner = result.rows[0];
-      console.log('🚀 [PARTNER-AUTH-DIRECT] Parceiro encontrado:', partner.name);
-      
-      const response = {
-        success: true,
-        message: 'Login realizado com sucesso',
-        partner: {
-          id: partner.id,
-          name: partner.name,
-          phone: partner.phone,
-          address: partner.address,
-          status: partner.status
-        },
-        services: []
-      };
-
-      console.log('🚀 [PARTNER-AUTH-DIRECT] Resposta enviada:', response);
-      return res.status(200).json(response);
-
-    } catch (error) {
-      console.error('🚀 [PARTNER-AUTH-DIRECT] Erro:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor'
-      });
-    }
-  });
-}
+import { setupDirectPartnerAuth } from './partnerAuthDirect';
 
 // Função utilitária para obter data/hora no fuso horário de Brasília (UTC-3)
 function getCurrentDateBrasilia() {
@@ -1021,8 +951,8 @@ import sqlSeguroRouter from './routes/sql-seguro';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // ===== REGISTRAR SISTEMA DE PARCEIROS PRIMEIRO =====
-  setupPartnerAuthRoute(app);
-  console.log('🚀 Sistema de autenticação de parceiros registrado com prioridade máxima');
+  setupDirectPartnerAuth(app);
+  console.log('🚀 Sistema de autenticação de parceiros DIRETO registrado com prioridade máxima');
   
   // ENDPOINT CRÍTICO: DELETE para recebimentos (deve ser registrado PRIMEIRO)
   app.delete('/api/delete-fuel-receipt/:posto/:id', unifiedAuthMiddleware, async (req, res) => {
