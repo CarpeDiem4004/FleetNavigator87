@@ -168,6 +168,38 @@ const OficinaMurici: React.FC = () => {
     try {
       const supabase = createSupabaseClient();
       
+      // Calcular custo total das peças automaticamente
+      const valorTotalPecas = pecasSelecionadas.reduce((total, peca) => total + peca.valor_total, 0);
+      
+      // Formatear lista de peças para salvar no banco
+      const pecasUtilizadasTexto = pecasSelecionadas.map(peca => 
+        `${peca.nome} (${peca.codigo}) - Qtd: ${peca.quantidade} ${peca.unidade_medida} - R$ ${peca.valor_total.toFixed(2)}`
+      ).join('\n');
+      
+      // Dar baixa no estoque das peças utilizadas
+      if (pecasSelecionadas.length > 0) {
+        try {
+          const response = await fetch('/api/estoque/baixa', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              pecas: pecasSelecionadas.map(peca => ({
+                id: peca.id,
+                quantidade: peca.quantidade
+              }))
+            }),
+          });
+          
+          if (!response.ok) {
+            throw new Error('Erro ao dar baixa no estoque');
+          }
+        } catch (estoqueError) {
+          console.warn('Aviso: Não foi possível dar baixa no estoque:', estoqueError);
+        }
+      }
+      
       if (isEditMode && currentManutencao.id) {
         // Atualizar manutenção existente
         const { error: updateError } = await supabase
@@ -179,9 +211,9 @@ const OficinaMurici: React.FC = () => {
             descricao_manutencao: currentManutencao.descricao_manutencao,
             status: currentManutencao.status,
             mecanico: currentManutencao.mecanico,
-            custo_total: currentManutencao.custo_total,
+            custo_total: valorTotalPecas || currentManutencao.custo_total,
             observacoes: currentManutencao.observacoes,
-            peças_utilizadas: currentManutencao.peças_utilizadas,
+            peças_utilizadas: pecasUtilizadasTexto || currentManutencao.peças_utilizadas,
             ...(currentManutencao.status === 'finalizado' && {
               data_hora_fim: new Date().toISOString()
             })
