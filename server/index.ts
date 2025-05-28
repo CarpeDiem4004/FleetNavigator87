@@ -276,6 +276,88 @@ app.use((req, res, next) => {
   });
 
   // Adicionar rota para consumo diário simplificado dos postos
+  app.get('/api/consumo-diario-postos-simplificado-v2', async (req, res) => {
+    // Nova versão para corrigir sequência de datas
+    try {
+      console.log('[CONSUMO-V2] Nova rota ativada para corrigir datas');
+      const dias = parseInt(req.query.dias as string) || 30;
+      
+      // Gerar sequência de dias começando de hoje (Dia 1 = 28/05, Dia 2 = 27/05)
+      const hoje = new Date('2025-05-28');
+      const resultado = [];
+      
+      const tabelasMap = {
+        'abastecimentos_posto_abc_v2': 'abc_v2',
+        'abastecimentos_posto_alair_v2': 'alair_v2', 
+        'abastecimentos_posto_campinas_v2': 'campinas_v2',
+        'abastecimentos_posto_osasco_v2': 'osasco_v2',
+        'abastecimentos_posto_socorro_v2': 'socorro_v2',
+        'abastecimentos_posto_sorocaba_v2': 'sorocaba_v2'
+      };
+      
+      console.log('[CONSUMO-V2] Gerando sequência começando em 28/05/2025');
+      
+      for (let dia = 1; dia <= dias && dia <= 30; dia++) {
+        const dataAtual = new Date(hoje);
+        dataAtual.setDate(hoje.getDate() - (dia - 1));
+        const dataStr = dataAtual.toISOString().split('T')[0];
+        
+        console.log(`[CONSUMO-V2] Dia ${dia} = ${dataStr}`);
+        
+        const item = {
+          dia: dia,
+          data: dataStr,
+          osasco_v2: 0,
+          alair_v2: 0,
+          campinas_v2: 0,
+          abc_v2: 0,
+          socorro_v2: 0,
+          sorocaba_v2: 0,
+          total: 0
+        };
+        
+        // Para cada tabela, buscar o consumo da data
+        for (const [tabela, nomePosto] of Object.entries(tabelasMap)) {
+          try {
+            const query = `
+              SELECT COALESCE(SUM(litros), 0) as litros
+              FROM ${tabela}
+              WHERE DATE(created_at) = $1
+            `;
+            
+            const consumoResult = await pool.query(query, [dataStr]);
+            const litros = parseFloat(consumoResult.rows[0]?.litros || 0);
+            
+            (item as any)[nomePosto] = litros;
+            item.total += litros;
+          } catch (tableError) {
+            console.error(`[CONSUMO-V2] Erro ao consultar tabela ${tabela} para data ${dataStr}:`, tableError);
+            continue;
+          }
+        }
+        
+        resultado.push(item);
+      }
+      
+      console.log(`[CONSUMO-V2] Retornando ${resultado.length} registros`);
+      console.log('[CONSUMO-V2] Primeiros 3 registros:', resultado.slice(0, 3));
+      
+      res.status(200).json({
+        success: true,
+        data: resultado,
+        params: { dias },
+        version: 'v2-fixed-dates'
+      });
+    } catch (error: any) {
+      console.error('[CONSUMO-V2] Erro:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao obter dados de consumo diário',
+        error: error.message
+      });
+    }
+  });
+
   app.get('/api/consumo-diario-postos-simplificado', async (req, res) => {
     try {
       // Período da consulta - últimos 30 dias por padrão
