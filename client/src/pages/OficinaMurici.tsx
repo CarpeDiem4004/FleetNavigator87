@@ -61,6 +61,12 @@ interface Manutencao {
   custo_total?: number;
   observacoes?: string;
   peças_utilizadas?: string;
+  // Campos específicos para "Aguardando Peça"
+  peca_descricao?: string;
+  peca_valor?: number;
+  fornecedor_nome?: string;
+  fornecedor_telefone?: string;
+  prazo_entrega?: string;
 }
 
 const statusOptions = [
@@ -187,7 +193,15 @@ const OficinaMurici: React.FC = () => {
         mecanico: currentManutencao.mecanico,
         custo_total: valorTotalPecas || Number(currentManutencao.custo_total) || 0,
         observacoes: currentManutencao.observacoes || '',
-        peças_utilizadas: pecasUtilizadasTexto || currentManutencao.peças_utilizadas || ''
+        peças_utilizadas: pecasUtilizadasTexto || currentManutencao.peças_utilizadas || '',
+        // Campos específicos para "Aguardando Peça"
+        ...(currentManutencao.status === 'aguardando_peca' && {
+          peca_descricao: currentManutencao.peca_descricao || '',
+          peca_valor: Number(currentManutencao.peca_valor) || 0,
+          fornecedor_nome: currentManutencao.fornecedor_nome || '',
+          fornecedor_telefone: currentManutencao.fornecedor_telefone || '',
+          prazo_entrega: currentManutencao.prazo_entrega || ''
+        })
       };
 
       if (isEditMode && currentManutencao.id) {
