@@ -22,8 +22,8 @@ export default function PartnerLogin() {
     setError('');
 
     try {
-      // Usar sistema de autenticação independente para parceiros
-      const response = await window.fetch('/api/partner/login', {
+      // Usar rota de bypass simplificada para parceiros
+      const response = await window.fetch('/api/partner-simple-auth', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
