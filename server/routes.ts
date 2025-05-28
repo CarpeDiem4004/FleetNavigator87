@@ -10502,11 +10502,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Buscar parceiro no banco
       const query = `
-        SELECT id, name, cnpj, phone, address, ativo as active
+        SELECT id, name, cnpj, phone, address, status
         FROM towing_partners 
         WHERE LOWER(TRIM(name)) = LOWER(TRIM($1))
         AND cnpj = $2
-        AND ativo = true
+        AND status = 'ativo'
       `;
       
       const result = await pool.query(query, [name.trim(), cnpj.replace(/\D/g, '')]);
@@ -10543,7 +10543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: partner.name,
           phone: partner.phone,
           address: partner.address,
-          active: partner.active
+          status: partner.status
         },
         services: servicesResult.rows
       };
