@@ -270,7 +270,7 @@ export default function SeletorPecasEstoque({ pecasSelecionadas, onPecasChange }
                     />
                     
                     <div className="text-sm font-medium min-w-[80px] text-right">
-                      R$ {peca.valor_total.toFixed(2)}
+                      R$ {Number(peca.valor_total || 0).toFixed(2)}
                     </div>
                     
                     <Button
@@ -286,7 +286,7 @@ export default function SeletorPecasEstoque({ pecasSelecionadas, onPecasChange }
               
               <div className="flex justify-between items-center pt-3 border-t">
                 <span className="font-medium">Total das Peças:</span>
-                <span className="text-lg font-bold">R$ {valorTotalGeral.toFixed(2)}</span>
+                <span className="text-lg font-bold">R$ {Number(valorTotalGeral || 0).toFixed(2)}</span>
               </div>
             </div>
           </CardContent>
