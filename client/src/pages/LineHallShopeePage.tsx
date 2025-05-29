@@ -466,8 +466,22 @@ export default function LineHallShopeePage() {
                     💡 Preencha origem e destino, depois clique no ícone ao lado do campo distância para consultar no Google Maps
                   </div>
                 </div>
-                <DialogFooter>
+                <DialogFooter className="flex gap-2">
                   <Button type="button" variant="outline" onClick={() => setIsCreatingRoute(false)}>Cancelar</Button>
+                  {currentRoute.nome_ponto_a && currentRoute.nome_ponto_b && (
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      onClick={() => {
+                        const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(currentRoute.nome_ponto_a)}/${encodeURIComponent(currentRoute.nome_ponto_b)}`;
+                        window.open(mapsUrl, '_blank');
+                      }}
+                      className="text-blue-600 hover:text-blue-800"
+                    >
+                      <MapPin className="mr-2 h-4 w-4" />
+                      Ver no Maps
+                    </Button>
+                  )}
                   <Button type="button" onClick={handleCreateRoute}>Cadastrar Rota</Button>
                 </DialogFooter>
               </DialogContent>
