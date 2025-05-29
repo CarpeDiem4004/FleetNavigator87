@@ -273,6 +273,44 @@ const OficinaMurici: React.FC = () => {
         });
       }
       
+      // Atualizar estoque das peças apenas após salvar com sucesso
+      if (pecasSelecionadas.length > 0) {
+        try {
+          // Buscar o estoque atual antes de atualizar
+          for (const peca of pecasSelecionadas) {
+            // Primeiro, buscar a peça atual para obter a quantidade em estoque
+            const stockResponse = await apiRequest('GET', `/api/frota/estoque-pecas`);
+            const estoquePecas = await stockResponse.json();
+            const pecaAtual = estoquePecas.find((p: any) => p.id === peca.id);
+            
+            if (pecaAtual) {
+              // Calcular nova quantidade: estoque atual - quantidade utilizada
+              const novaQuantidade = Math.max(0, pecaAtual.quantidade - peca.quantidade);
+              
+              const response = await apiRequest('PUT', `/api/frota/estoque-pecas/${peca.id}`, {
+                quantidade: novaQuantidade
+              });
+              
+              if (!response.ok) {
+                console.warn(`Erro ao atualizar estoque da peça ${peca.nome}`);
+              }
+            }
+          }
+          
+          toast({
+            title: 'Estoque atualizado',
+            description: `Estoque das peças utilizadas foi atualizado automaticamente.`
+          });
+        } catch (stockError) {
+          console.error('Erro ao atualizar estoque:', stockError);
+          toast({
+            title: 'Aviso',
+            description: 'Manutenção salva, mas houve erro ao atualizar o estoque das peças.',
+            variant: 'destructive'
+          });
+        }
+      }
+      
       // Recarregar dados e fechar diálogo
       fetchManutencoes();
       setIsDialogOpen(false);
