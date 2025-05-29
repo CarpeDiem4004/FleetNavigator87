@@ -3,6 +3,8 @@ import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import {
   Dialog,
   DialogContent,
@@ -37,7 +39,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileSpreadsheet, Plus, Search, FileEdit, Trash2, Download as FileDownload, Upload as FileUp, Calendar, Truck, Wrench as Tool, Clock, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import { FileSpreadsheet, Plus, Search, FileEdit, Trash2, Download as FileDownload, Upload as FileUp, Calendar, Truck, Wrench as Tool, Clock, CheckCircle, AlertCircle, XCircle, Printer } from 'lucide-react';
 import { createSupabaseClient } from '@/lib/supabase-compat';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -365,6 +367,144 @@ const OficinaMurici: React.FC = () => {
     setIsDialogOpen(true);
   };
   
+  // Função para gerar relatório PDF da manutenção
+  const generateMaintenanceReport = async (manutencao: Manutencao) => {
+    try {
+      const pdf = new jsPDF();
+      
+      // Configurar fonte
+      pdf.setFont('helvetica');
+      
+      // Cabeçalho
+      pdf.setFontSize(20);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text('RELATÓRIO DE MANUTENÇÃO', 105, 30, { align: 'center' });
+      
+      pdf.setFontSize(14);
+      pdf.text('Murici Logística - Oficina', 105, 45, { align: 'center' });
+      
+      // Linha divisória
+      pdf.setLineWidth(0.5);
+      pdf.line(20, 55, 190, 55);
+      
+      // Informações do veículo
+      pdf.setFontSize(16);
+      pdf.setTextColor(51, 51, 51);
+      pdf.text('DADOS DO VEÍCULO', 20, 70);
+      
+      pdf.setFontSize(12);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(`Placa: ${manutencao.placa}`, 20, 85);
+      pdf.text(`Quilometragem: ${Number(manutencao.km || 0).toLocaleString('pt-BR')} km`, 20, 95);
+      
+      // Data da manutenção
+      const dataInicio = manutencao.data_hora_inicio ? 
+        format(new Date(manutencao.data_hora_inicio), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : 
+        'Não informado';
+      const dataFim = manutencao.data_hora_fim ? 
+        format(new Date(manutencao.data_hora_fim), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : 
+        'Em andamento';
+      
+      pdf.text(`Data de Início: ${dataInicio}`, 20, 105);
+      pdf.text(`Data de Conclusão: ${dataFim}`, 20, 115);
+      
+      // Status
+      const statusMap: Record<string, string> = {
+        'em_andamento': 'Em Andamento',
+        'aguardando_peca': 'Aguardando Peça',
+        'finalizado': 'Finalizado'
+      };
+      pdf.text(`Status: ${statusMap[manutencao.status] || manutencao.status}`, 20, 125);
+      
+      // Informações da manutenção
+      pdf.setFontSize(16);
+      pdf.setTextColor(51, 51, 51);
+      pdf.text('DETALHES DA MANUTENÇÃO', 20, 145);
+      
+      pdf.setFontSize(12);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(`Mecânico Responsável: ${manutencao.mecanico || 'Não informado'}`, 20, 160);
+      
+      // Descrição da manutenção com quebra de linha
+      const descricaoLinhas = pdf.splitTextToSize(`Descrição: ${manutencao.descricao_manutencao}`, 170);
+      pdf.text(descricaoLinhas, 20, 170);
+      
+      let yPosition = 170 + (descricaoLinhas.length * 10);
+      
+      // Peças utilizadas se houver
+      if (manutencao.peças_utilizadas) {
+        pdf.setFontSize(16);
+        pdf.setTextColor(51, 51, 51);
+        pdf.text('PEÇAS UTILIZADAS', 20, yPosition + 20);
+        
+        pdf.setFontSize(10);
+        pdf.setTextColor(0, 0, 0);
+        const pecasLinhas = pdf.splitTextToSize(manutencao.peças_utilizadas, 170);
+        pdf.text(pecasLinhas, 20, yPosition + 35);
+        
+        yPosition += 35 + (pecasLinhas.length * 5);
+      }
+      
+      // Informações de oficina parceira se houver
+      if (manutencao.used_partner_workshop && manutencao.partner_workshop_name) {
+        pdf.setFontSize(16);
+        pdf.setTextColor(51, 51, 51);
+        pdf.text('OFICINA PARCEIRA', 20, yPosition + 20);
+        
+        pdf.setFontSize(12);
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(`Oficina: ${manutencao.partner_workshop_name}`, 20, yPosition + 35);
+        pdf.text(`Valor da Mão de Obra: R$ ${Number(manutencao.labor_cost || 0).toFixed(2)}`, 20, yPosition + 45);
+        
+        yPosition += 55;
+      }
+      
+      // Custos
+      pdf.setFontSize(16);
+      pdf.setTextColor(51, 51, 51);
+      pdf.text('CUSTOS', 20, yPosition + 20);
+      
+      pdf.setFontSize(12);
+      pdf.setTextColor(0, 0, 0);
+      const custoTotal = Number(manutencao.custo_total || 0);
+      pdf.text(`Custo Total da Manutenção: R$ ${custoTotal.toFixed(2)}`, 20, yPosition + 35);
+      
+      // Observações se houver
+      if (manutencao.observacoes) {
+        pdf.setFontSize(16);
+        pdf.setTextColor(51, 51, 51);
+        pdf.text('OBSERVAÇÕES', 20, yPosition + 55);
+        
+        pdf.setFontSize(12);
+        pdf.setTextColor(0, 0, 0);
+        const observacoesLinhas = pdf.splitTextToSize(manutencao.observacoes, 170);
+        pdf.text(observacoesLinhas, 20, yPosition + 70);
+      }
+      
+      // Rodapé
+      pdf.setFontSize(10);
+      pdf.setTextColor(128, 128, 128);
+      pdf.text(`Relatório gerado em ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, 105, 280, { align: 'center' });
+      
+      // Salvar o PDF
+      const fileName = `relatorio_manutencao_${manutencao.placa}_${format(new Date(), 'ddMMyyyy_HHmm')}.pdf`;
+      pdf.save(fileName);
+      
+      toast({
+        title: 'Relatório gerado',
+        description: `Relatório de manutenção do veículo ${manutencao.placa} foi gerado com sucesso.`
+      });
+      
+    } catch (error) {
+      console.error('Erro ao gerar relatório:', error);
+      toast({
+        title: 'Erro ao gerar relatório',
+        description: 'Não foi possível gerar o relatório PDF. Tente novamente.',
+        variant: 'destructive'
+      });
+    }
+  };
+
   // Resetar formulário
   const resetForm = () => {
     setCurrentManutencao({
