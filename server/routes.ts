@@ -10698,6 +10698,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // Buscar solicitações de manutenção do motorista
+  app.get('/api/line-hall/motorista/:motoristaId/maintenance-requests', async (req, res) => {
+    try {
+      const { motoristaId } = req.params;
+
+      if (!motoristaId) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID do motorista é obrigatório'
+        });
+      }
+
+      // Buscar solicitações de manutenção do motorista específico
+      const query = `
+        SELECT 
+          id,
+          motorista_id,
+          vehicle_plate,
+          description,
+          urgency,
+          status,
+          protocolo,
+          created_at,
+          updated_at,
+          completed_at,
+          notes,
+          approved_by
+        FROM linehall_maintenance 
+        WHERE motorista_id = $1 
+        ORDER BY created_at DESC
+      `;
+
+      const result = await pool.query(query, [motoristaId]);
+
+      console.log(`Solicitações de manutenção encontradas para motorista ${motoristaId}:`, result.rows.length);
+
+      res.json({
+        success: true,
+        requests: result.rows
+      });
+
+    } catch (error) {
+      console.error('Erro ao buscar solicitações de manutenção do motorista:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  });
   app.use('/api/posto-special', postoRoutes); // Adicionando novas rotas especiais para atualização de histórico
 
   // Para debugging, adicionar rota para listar todas as tabelas relacionadas a postos

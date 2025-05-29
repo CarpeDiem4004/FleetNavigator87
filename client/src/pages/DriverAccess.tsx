@@ -32,7 +32,22 @@ const DriverAccess: React.FC = () => {
   const [driver, setDriver] = useState<DriverData | null>(null);
   const [tripStatus, setTripStatus] = useState<'programada' | 'em_andamento' | 'concluida'>('programada');
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [maintenanceRequests, setMaintenanceRequests] = useState<any[]>([]);
   const { toast } = useToast();
+
+  // Função para buscar solicitações de manutenção do motorista
+  const fetchMaintenanceRequests = async (motoristaId: number) => {
+    try {
+      const response = await apiRequest('GET', `/api/line-hall/motorista/${motoristaId}/maintenance-requests`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setMaintenanceRequests(data.requests || []);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar solicitações de manutenção:', error);
+    }
+  };
 
   const formatCPF = (value: string) => {
     // Remove tudo que não é dígito
@@ -76,6 +91,8 @@ const DriverAccess: React.FC = () => {
       
       if (data.success) {
         setDriver(data.motorista);
+        // Buscar solicitações de manutenção do motorista
+        await fetchMaintenanceRequests(data.motorista.id);
         toast({
           title: "Login realizado com sucesso",
           description: `Bem-vindo, ${data.motorista.nome}!`
@@ -399,6 +416,73 @@ const DriverAccess: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Seção de Solicitações de Manutenção */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center">
+              <Wrench className="h-5 w-5 mr-2 text-blue-600" />
+              Minhas Solicitações de Manutenção
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {maintenanceRequests.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Nenhuma solicitação de manutenção encontrada</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {maintenanceRequests.map((request: any) => (
+                  <div key={request.id} className="border rounded-lg p-4 bg-gray-50">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="font-semibold text-gray-800">Protocolo: {request.protocolo}</p>
+                        <p className="text-sm text-gray-600">Veículo: {request.vehicle_plate}</p>
+                      </div>
+                      <Badge 
+                        variant={
+                          request.status === 'concluida' ? 'default' :
+                          request.status === 'em_andamento' ? 'secondary' :
+                          request.status === 'pendente' ? 'destructive' :
+                          'outline'
+                        }
+                        className={
+                          request.status === 'concluida' ? 'bg-green-100 text-green-800' :
+                          request.status === 'em_andamento' ? 'bg-blue-100 text-blue-800' :
+                          request.status === 'pendente' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                        }
+                      >
+                        {request.status === 'concluida' ? 'Concluída' :
+                         request.status === 'em_andamento' ? 'Em Andamento' :
+                         request.status === 'pendente' ? 'Pendente' :
+                         request.status}
+                      </Badge>
+                    </div>
+                    
+                    <p className="text-gray-700 mb-2">{request.description}</p>
+                    
+                    <div className="flex justify-between items-center text-sm text-gray-500">
+                      <span>Urgência: {request.urgency}</span>
+                      <span>Criado em: {new Date(request.created_at).toLocaleDateString('pt-BR')}</span>
+                    </div>
+                    
+                    {request.status === 'concluida' && request.completed_at && (
+                      <div className="mt-2 p-2 bg-green-50 rounded border-l-4 border-green-400">
+                        <p className="text-sm text-green-700">
+                          ✅ Concluída em: {new Date(request.completed_at).toLocaleDateString('pt-BR')}
+                        </p>
+                        {request.notes && (
+                          <p className="text-sm text-green-600 mt-1">Observações: {request.notes}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Informações adicionais */}
         <Card>
