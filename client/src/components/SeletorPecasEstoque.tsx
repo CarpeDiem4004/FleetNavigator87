@@ -137,7 +137,10 @@ export default function SeletorPecasEstoque({ pecasSelecionadas, onPecasChange }
     onPecasChange(pecasAtualizadas);
   };
 
-  const valorTotalGeral = pecasSelecionadas.reduce((total, peca) => total + (peca.valor_total || 0), 0);
+  const valorTotalGeral = pecasSelecionadas.reduce((total, peca) => {
+    const valorPeca = Number(peca.valor_total) || 0;
+    return total + valorPeca;
+  }, 0);
 
   return (
     <div className="space-y-4">
