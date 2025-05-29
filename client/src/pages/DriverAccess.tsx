@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, User, Truck, FileText, Wrench } from 'lucide-react';
+import { Loader2, User, Truck, FileText, Wrench, MapPin, Clock, Calendar, LogOut } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
 interface DriverData {
@@ -14,6 +14,15 @@ interface DriverData {
   cpf: string;
   telefone?: string;
   placa_veiculo?: string;
+  tipo_veiculo?: string;
+  placa_carreta?: string;
+  viagem?: {
+    local_carregamento: string;
+    local_descarregamento: string;
+    data_viagem: string;
+    horario_carregamento: string;
+    status: string;
+  };
 }
 
 const DriverAccess: React.FC = () => {
@@ -105,6 +114,19 @@ const DriverAccess: React.FC = () => {
     setCpf('');
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'aguardando':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'em andamento':
+        return 'bg-blue-100 text-blue-800';
+      case 'programado':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   if (!driver) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -166,19 +188,86 @@ const DriverAccess: React.FC = () => {
                   <User className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <CardTitle>Olá, {driver.nome}!</CardTitle>
-                  <CardDescription>
-                    CPF: {formatCPF(driver.cpf)} 
-                    {driver.placa_veiculo && ` • Veículo: ${driver.placa_veiculo}`}
-                  </CardDescription>
+                  <CardTitle className="text-xl">{driver.nome}</CardTitle>
+                  <div className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(driver.viagem?.status || 'Aguardando')}`}>
+                    {driver.viagem?.status || 'Aguardando'}
+                  </div>
                 </div>
               </div>
               <Button variant="outline" onClick={handleLogout}>
+                <LogOut className="w-4 h-4 mr-2" />
                 Sair
               </Button>
             </div>
           </CardHeader>
         </Card>
+
+        {/* Informações dos Veículos */}
+        <div className="grid md:grid-cols-2 gap-4">
+          <Card className="bg-blue-50">
+            <CardContent className="p-4">
+              <div className="text-sm text-gray-600 mb-1">{driver.tipo_veiculo}</div>
+              <div className="text-lg font-bold text-blue-800">{driver.placa_veiculo}</div>
+            </CardContent>
+          </Card>
+          
+          {driver.placa_carreta && (
+            <Card className="bg-blue-50">
+              <CardContent className="p-4">
+                <div className="text-sm text-gray-600 mb-1">Carreta 1</div>
+                <div className="text-lg font-bold text-blue-800">{driver.placa_carreta}</div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Informações da Viagem */}
+        {driver.viagem && (
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              {/* Local de Carregamento */}
+              <div className="flex items-start space-x-3">
+                <div className="w-4 h-4 bg-green-500 rounded-full mt-1"></div>
+                <div>
+                  <div className="text-sm text-gray-600">Local de Carregamento</div>
+                  <div className="font-semibold">{driver.viagem.local_carregamento}</div>
+                </div>
+              </div>
+
+              {/* Local de Descarregamento */}
+              <div className="flex items-start space-x-3">
+                <div className="w-4 h-4 bg-red-500 rounded-full mt-1"></div>
+                <div>
+                  <div className="text-sm text-gray-600">Local de Descarregamento</div>
+                  <div className="font-semibold">{driver.viagem.local_descarregamento}</div>
+                </div>
+              </div>
+
+              {/* Data e Horário */}
+              <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
+                <div className="flex items-center space-x-3">
+                  <Calendar className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <div className="text-sm text-gray-600">Data da Viagem</div>
+                    <div className="font-semibold">
+                      {driver.viagem.data_viagem === 'Invalid Date' 
+                        ? 'Invalid Date' 
+                        : driver.viagem.data_viagem}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3">
+                  <Clock className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <div className="text-sm text-gray-600">Horário de Carregamento</div>
+                    <div className="font-semibold">{driver.viagem.horario_carregamento}</div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Menu de opções */}
         <div className="grid md:grid-cols-2 gap-6">

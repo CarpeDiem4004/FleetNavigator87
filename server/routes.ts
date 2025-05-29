@@ -10313,14 +10313,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Buscar motorista na base de dados (usando uma tabela temporária)
+      // Buscar motorista na base de dados com informações da viagem
       const result = await pool.query(`
         SELECT 
           1 as id,
           'João Silva' as nome,
           '12345678901' as cpf,
           '11999998888' as telefone,
-          'ABC-1234' as placa_veiculo
+          'ABC-1234' as placa_veiculo,
+          'Cavalo Mecânico' as tipo_veiculo,
+          'DEF-5678' as placa_carreta,
+          'Centro de Distribuição Shopee - São Paulo' as local_carregamento,
+          'Loja Magazine Luiza - Campinas' as local_descarregamento,
+          'Invalid Date' as data_viagem,
+          '08:00:00' as horario_carregamento,
+          'Aguardando' as status_viagem
         WHERE $1 = '12345678901'
         UNION ALL
         SELECT 
@@ -10328,7 +10335,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'Maria Santos' as nome,
           '23456789012' as cpf,
           '11888887777' as telefone,
-          'DEF-5678' as placa_veiculo
+          'DEF-5678' as placa_veiculo,
+          'Carreta' as tipo_veiculo,
+          'GHI-9012' as placa_carreta,
+          'Armazém Central Shopee - Guarulhos' as local_carregamento,
+          'Centro de Distribuição - Santos' as local_descarregamento,
+          '2025-05-30' as data_viagem,
+          '06:30:00' as horario_carregamento,
+          'Em Andamento' as status_viagem
         WHERE $1 = '23456789012'
         UNION ALL
         SELECT 
@@ -10336,7 +10350,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'Pedro Oliveira' as nome,
           '34567890123' as cpf,
           '11777776666' as telefone,
-          'GHI-9012' as placa_veiculo
+          'GHI-9012' as placa_veiculo,
+          'Van' as tipo_veiculo,
+          null as placa_carreta,
+          'Hub Logístico Shopee - Osasco' as local_carregamento,
+          'Loja Americanas - Sorocaba' as local_descarregamento,
+          '2025-05-30' as data_viagem,
+          '14:00:00' as horario_carregamento,
+          'Programado' as status_viagem
         WHERE $1 = '34567890123'
       `, [cpf]);
 
@@ -10357,7 +10378,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           nome: motorista.nome,
           cpf: motorista.cpf,
           telefone: motorista.telefone,
-          placa_veiculo: motorista.placa_veiculo
+          placa_veiculo: motorista.placa_veiculo,
+          tipo_veiculo: motorista.tipo_veiculo,
+          placa_carreta: motorista.placa_carreta,
+          viagem: {
+            local_carregamento: motorista.local_carregamento,
+            local_descarregamento: motorista.local_descarregamento,
+            data_viagem: motorista.data_viagem,
+            horario_carregamento: motorista.horario_carregamento,
+            status: motorista.status_viagem
+          }
         }
       });
 
