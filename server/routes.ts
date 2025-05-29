@@ -11705,6 +11705,177 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
+  // APIs para sistema de checklist dos motoristas Line Hall
+  app.post('/api/line-hall-checklist', async (req, res) => {
+    try {
+      const {
+        trip_id,
+        motorista_nome,
+        placa_cavalo,
+        km_inicial,
+        items
+      } = req.body;
+
+      if (!trip_id || !motorista_nome || !placa_cavalo || !km_inicial) {
+        return res.status(400).json({
+          success: false,
+          message: 'Todos os campos obrigatórios devem ser preenchidos'
+        });
+      }
+
+      const query = `
+        INSERT INTO line_hall_checklists
+        (trip_id, motorista_nome, placa_cavalo, km_inicial, items, created_at)
+        VALUES ($1, $2, $3, $4, $5, NOW())
+        RETURNING *
+      `;
+
+      const values = [
+        trip_id,
+        motorista_nome,
+        placa_cavalo,
+        km_inicial,
+        JSON.stringify(items || [])
+      ];
+
+      const result = await pool.query(query, values);
+      
+      return res.status(201).json({
+        success: true,
+        message: 'Checklist iniciado com sucesso',
+        checklist: result.rows[0]
+      });
+    } catch (error: any) {
+      console.error('Erro ao criar checklist:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao criar checklist',
+        error: error.message
+      });
+    }
+  });
+
+  app.patch('/api/line-hall-checklist/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const {
+        km_final,
+        status,
+        items
+      } = req.body;
+
+      if (!id) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID do checklist é obrigatório'
+        });
+      }
+
+      // Verificar se o checklist existe
+      const checkQuery = `
+        SELECT id FROM line_hall_checklists
+        WHERE id = $1
+      `;
+      
+      const checkResult = await pool.query(checkQuery, [id]);
+      
+      if (checkResult.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Checklist não encontrado'
+        });
+      }
+
+      const updateFields = [];
+      const updateValues = [];
+      let valueIndex = 1;
+
+      if (km_final !== undefined) {
+        updateFields.push(`km_final = $${valueIndex++}`);
+        updateValues.push(km_final);
+      }
+
+      if (status !== undefined) {
+        updateFields.push(`status = $${valueIndex++}`);
+        updateValues.push(status);
+        
+        if (status === 'concluido') {
+          updateFields.push(`completed_at = NOW()`);
+        }
+      }
+
+      if (items !== undefined) {
+        updateFields.push(`items = $${valueIndex++}`);
+        updateValues.push(JSON.stringify(items));
+      }
+
+      if (updateFields.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Nenhum campo para atualizar foi fornecido'
+        });
+      }
+
+      updateValues.push(id);
+
+      const updateQuery = `
+        UPDATE line_hall_checklists
+        SET ${updateFields.join(', ')}
+        WHERE id = $${valueIndex}
+        RETURNING *
+      `;
+
+      const result = await pool.query(updateQuery, updateValues);
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Checklist atualizado com sucesso',
+        checklist: result.rows[0]
+      });
+    } catch (error: any) {
+      console.error('Erro ao atualizar checklist:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao atualizar checklist',
+        error: error.message
+      });
+    }
+  });
+
+  app.get('/api/line-hall-checklist/trip/:tripId', async (req, res) => {
+    try {
+      const { tripId } = req.params;
+
+      const query = `
+        SELECT * FROM line_hall_checklists
+        WHERE trip_id = $1
+        ORDER BY created_at DESC
+        LIMIT 1
+      `;
+
+      const result = await pool.query(query, [tripId]);
+      
+      if (result.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Nenhum checklist encontrado para esta viagem'
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        checklist: result.rows[0]
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar checklist:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar checklist',
+        error: error.message
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

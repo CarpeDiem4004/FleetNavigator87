@@ -304,7 +304,7 @@ export default function MotoristaLineHall() {
         throw new Error('Erro ao finalizar checklist')
       }
 
-      setChecklist(updatedChecklist)
+      setChecklist(updatedChecklist as Checklist)
       
       toast({
         title: "Checklist finalizado",
@@ -555,7 +555,7 @@ export default function MotoristaLineHall() {
                       className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3"
                       size="lg"
                     >
-                      <ClipboardCheck className="mr-2 h-5 w-5" />
+                      <CheckCircle className="mr-2 h-5 w-5" />
                       {updating ? 'Iniciando...' : 'Iniciar Checklist'}
                     </Button>
                   </div>
@@ -579,6 +579,98 @@ export default function MotoristaLineHall() {
                 </Button>
               </CardContent>
             </Card>
+
+            {/* Checklist Card */}
+            {showChecklist && checklist && (
+              <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Checklist do Veículo</span>
+                    <Badge variant="outline" className="text-sm">
+                      KM Inicial: {checklist.km_inicial}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Itens do Checklist */}
+                  <div className="space-y-3">
+                    {checklistItems.map((item) => (
+                      <div key={item.id} className="border rounded-lg p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{item.description}</span>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant={item.status === 'ok' ? 'default' : 'outline'}
+                              onClick={() => updateChecklistItem(item.id, 'ok')}
+                              className={item.status === 'ok' ? 'bg-green-600 hover:bg-green-700' : ''}
+                            >
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                              OK
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={item.status === 'problema' ? 'destructive' : 'outline'}
+                              onClick={() => updateChecklistItem(item.id, 'problema')}
+                            >
+                              <AlertCircle className="w-4 h-4 mr-1" />
+                              Problema
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {item.status === 'problema' && (
+                          <div>
+                            <Input
+                              placeholder="Descreva o problema encontrado..."
+                              value={item.observations || ''}
+                              onChange={(e) => updateChecklistItem(item.id, 'problema', e.target.value)}
+                              className="mt-2"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Finalização do Checklist */}
+                  <Separator />
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        KM Final (ao retornar para garagem)
+                      </label>
+                      <Input
+                        type="number"
+                        placeholder="Ex: 150250"
+                        value={kmFinal}
+                        onChange={(e) => setKmFinal(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                    
+                    <div className="flex items-center justify-between text-sm text-gray-600">
+                      <span>
+                        {checklistItems.filter(item => item.status === 'ok').length} de {checklistItems.length} itens verificados
+                      </span>
+                      <span>
+                        {checklistItems.filter(item => item.status === 'pending').length} pendente(s)
+                      </span>
+                    </div>
+
+                    <Button 
+                      onClick={finishChecklist}
+                      disabled={updating || !kmFinal || checklistItems.some(item => item.status === 'pending')}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white py-3"
+                      size="lg"
+                    >
+                      <CheckCircle className="mr-2 h-5 w-5" />
+                      {updating ? 'Finalizando...' : 'Finalizar Checklist e Viagem'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
       </div>
