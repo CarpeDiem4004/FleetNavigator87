@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import { Plus, Search, Edit, Eye, Trash2, Loader2 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { 
@@ -67,6 +68,7 @@ const getStatusBadge = (status: VehicleStatusType) => {
 const Vehicles: React.FC = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [location] = useLocation();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [filters, setFilters] = useState({
     status: '',
@@ -74,6 +76,21 @@ const Vehicles: React.FC = () => {
     base: '',
     plate: '',
   });
+
+  // Handle URL parameters to set initial filters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const statusParam = urlParams.get('status');
+    const baseParam = urlParams.get('base');
+    
+    if (statusParam || baseParam) {
+      setFilters(prev => ({
+        ...prev,
+        status: statusParam || '',
+        base: baseParam || ''
+      }));
+    }
+  }, [location]);
   
   // Vamos garantir que a baseId seja inicializada com um valor válido
   const [newVehicle, setNewVehicle] = useState<NewVehicleData>({
