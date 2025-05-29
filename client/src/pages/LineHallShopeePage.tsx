@@ -44,6 +44,9 @@ interface RouteData {
 }
 
 const statusLabels: Record<string, string> = {
+  'Programada': 'bg-blue-100 text-blue-800',
+  'Em Andamento': 'bg-yellow-100 text-yellow-800',
+  'Aguardando': 'bg-gray-100 text-gray-800',
   'Concluída': 'bg-green-100 text-green-800',
   'No Show': 'bg-red-100 text-red-800',
   'Cancelada pelo Cliente': 'bg-orange-100 text-orange-800'
@@ -109,6 +112,13 @@ export default function LineHallShopeePage() {
     fetchTrips();
     fetchDriverStats();
     fetchRoutesData();
+    
+    // Configurar polling para atualizações automáticas do status das viagens
+    const interval = setInterval(() => {
+      fetchTrips();
+    }, 30000); // Atualiza a cada 30 segundos
+    
+    return () => clearInterval(interval);
   }, []);
 
   // Função para buscar rotas cadastradas
@@ -652,6 +662,9 @@ export default function LineHallShopeePage() {
                           <SelectValue placeholder="Selecione o status" />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="Programada">Programada</SelectItem>
+                          <SelectItem value="Em Andamento">Em Andamento</SelectItem>
+                          <SelectItem value="Aguardando">Aguardando</SelectItem>
                           <SelectItem value="Concluída">Concluída</SelectItem>
                           <SelectItem value="No Show">No Show</SelectItem>
                           <SelectItem value="Cancelada pelo Cliente">Cancelada pelo Cliente</SelectItem>
