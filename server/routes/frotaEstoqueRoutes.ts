@@ -467,43 +467,57 @@ router.delete('/estoque-pecas/:id', verifyAuth, sessionAuth, async (req, res) =>
       return res.status(400).json({ message: 'ID da peça é obrigatório e deve ser um número válido' });
     }
 
-    // Verificar se a peça existe
-    const pecaResult = await pool.query(
-      'SELECT id, codigo, nome, quantidade FROM frota_estoque_pecas WHERE id = $1',
-      [id]
-    );
+    // Usar transação para garantir consistência
+    const client = await pool.connect();
+    
+    try {
+      await client.query('BEGIN');
 
-    if (pecaResult.rowCount === 0) {
-      return res.status(404).json({ message: 'Peça não encontrada' });
-    }
+      // Verificar se a peça existe
+      const pecaResult = await client.query(
+        'SELECT id, codigo, nome, quantidade FROM frota_estoque_pecas WHERE id = $1',
+        [id]
+      );
 
-    const peca = pecaResult.rows[0];
+      if (pecaResult.rowCount === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ message: 'Peça não encontrada' });
+      }
 
-    // Primeiro, excluir os registros de movimentação relacionados
-    await pool.query(
-      'DELETE FROM frota_movimentacao_estoque WHERE peca_id = $1',
-      [id]
-    );
+      const peca = pecaResult.rows[0];
 
-    // Registrar movimentação de exclusão para histórico (em uma tabela de log separada se necessário)
-    // Por ora, vamos apenas excluir a peça após remover as movimentações
+      // Primeiro, excluir TODOS os registros de movimentação relacionados
+      const deleteMovementResult = await client.query(
+        'DELETE FROM frota_movimentacao_estoque WHERE peca_id = $1',
+        [id]
+      );
 
-    // Excluir a peça
-    const deleteResult = await pool.query(
-      'DELETE FROM frota_estoque_pecas WHERE id = $1 RETURNING id, codigo, nome',
-      [id]
-    );
+      console.log(`Excluídos ${deleteMovementResult.rowCount} registros de movimentação para a peça ${peca.codigo}`);
 
-    if (deleteResult.rowCount > 0) {
-      const pecaExcluida = deleteResult.rows[0];
-      console.log(`Peça excluída: ID ${pecaExcluida.id} - ${pecaExcluida.codigo} - ${pecaExcluida.nome}`);
+      // Agora excluir a peça
+      const deleteResult = await client.query(
+        'DELETE FROM frota_estoque_pecas WHERE id = $1 RETURNING id, codigo, nome',
+        [id]
+      );
 
-      res.json({
-        message: 'Peça excluída com sucesso',
-        peca: pecaExcluida
-      });
-    } else {
-      res.status(500).json({ message: 'Erro ao excluir a peça' });
+      if (deleteResult.rowCount > 0) {
+        await client.query('COMMIT');
+        const pecaExcluida = deleteResult.rows[0];
+        console.log(`Peça excluída: ID ${pecaExcluida.id} - ${pecaExcluida.codigo} - ${pecaExcluida.nome}`);
+
+        res.json({
+          message: 'Peça excluída com sucesso',
+          peca: pecaExcluida
+        });
+      } else {
+        await client.query('ROLLBACK');
+        res.status(500).json({ message: 'Erro ao excluir a peça' });
+      }
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
     }
 
   } catch (error: any) {
