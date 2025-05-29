@@ -43,6 +43,24 @@ interface RouteData {
   km_total: number;
 }
 
+interface FuelCardRequest {
+  id: number;
+  motorista_id: number;
+  motorista_nome: string;
+  motorista_telefone: string;
+  veiculo_placa: string;
+  rota_origem: string;
+  rota_destino: string;
+  data_viagem: string;
+  horario_carregamento: string;
+  km_total: number;
+  horario_abastecimento: string;
+  status: 'pendente' | 'aprovada' | 'rejeitada';
+  observacoes_operador?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 const statusLabels: Record<string, string> = {
   'Programada': 'bg-blue-100 text-blue-800',
   'Em Andamento': 'bg-yellow-100 text-yellow-800',
@@ -90,6 +108,10 @@ export default function LineHallShopeePage() {
     media_dias: 0,
     veiculos: []
   });
+
+  // Estado para solicitações de cartão combustível
+  const [fuelCardRequests, setFuelCardRequests] = useState<FuelCardRequest[]>([]);
+  const [showFuelRequests, setShowFuelRequests] = useState(false);
   
   // Form states
   const [currentTrip, setCurrentTrip] = useState<Partial<LineHallTrip>>({
@@ -325,6 +347,43 @@ export default function LineHallShopeePage() {
         title: "Erro ao cadastrar rota",
         description: error.response?.data?.message || "Ocorreu um erro ao cadastrar a rota",
         variant: "destructive"
+      });
+    }
+  };
+
+  // Função para buscar solicitações de cartão combustível
+  const fetchFuelCardRequests = async () => {
+    try {
+      const response = await api.get('/line-hall/fuel-requests');
+      if (response.data.success) {
+        setFuelCardRequests(response.data.data || []);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar solicitações de cartão:', error);
+    }
+  };
+
+  // Função para aprovar/rejeitar solicitação de cartão
+  const handleFuelRequestAction = async (requestId: number, action: 'aprovar' | 'rejeitar', observacoes?: string) => {
+    try {
+      const response = await api.put(`/line-hall/fuel-requests/${requestId}`, {
+        status: action === 'aprovar' ? 'aprovada' : 'rejeitada',
+        observacoes_operador: observacoes
+      });
+
+      if (response.data.success) {
+        toast({
+          title: action === 'aprovar' ? "Solicitação Aprovada" : "Solicitação Rejeitada",
+          description: `Solicitação ${action === 'aprovar' ? 'aprovada' : 'rejeitada'} com sucesso!`,
+        });
+        fetchFuelCardRequests(); // Atualizar lista
+      }
+    } catch (error) {
+      console.error('Erro ao processar solicitação:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao processar solicitação",
+        variant: "destructive",
       });
     }
   };

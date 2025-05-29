@@ -51,6 +51,41 @@ const DriverAccess: React.FC = () => {
     }
   };
 
+  // Função para buscar notificações de solicitações de recarga
+  const fetchFuelRequestNotifications = async (motoristaId: number) => {
+    try {
+      const response = await apiRequest('GET', `/api/line-hall/fuel-requests?motorista_id=${motoristaId}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        const recentRequests = data.data.filter((request: any) => 
+          request.status !== 'pendente' && 
+          new Date(request.updated_at) > new Date(Date.now() - 24 * 60 * 60 * 1000) // últimas 24 horas
+        );
+        
+        // Mostrar notificações para solicitações aprovadas ou rejeitadas
+        recentRequests.forEach((request: any) => {
+          if (request.status === 'aprovada') {
+            toast({
+              title: "Solicitação Aprovada",
+              description: `Sua solicitação de recarga de cartão foi aprovada! Placa: ${request.veiculo_placa}`,
+              duration: 8000,
+            });
+          } else if (request.status === 'rejeitada') {
+            toast({
+              title: "Solicitação Rejeitada",
+              description: `Sua solicitação de recarga foi rejeitada. ${request.observacoes_operador ? 'Motivo: ' + request.observacoes_operador : ''}`,
+              variant: "destructive",
+              duration: 8000,
+            });
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao buscar notificações de recarga:', error);
+    }
+  };
+
   const formatCPF = (value: string) => {
     // Remove tudo que não é dígito
     const numbers = value.replace(/\D/g, '');
@@ -95,6 +130,8 @@ const DriverAccess: React.FC = () => {
         setDriver(data.motorista);
         // Buscar solicitações de manutenção do motorista
         await fetchMaintenanceRequests(data.motorista.id);
+        // Buscar notificações de solicitações de recarga
+        await fetchFuelRequestNotifications(data.motorista.id);
         toast({
           title: "Login realizado com sucesso",
           description: `Bem-vindo, ${data.motorista.nome}!`
