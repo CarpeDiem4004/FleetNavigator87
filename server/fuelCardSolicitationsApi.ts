@@ -7,53 +7,54 @@ import { pool } from './db';
 export async function getFuelCardSolicitations(req: Request, res: Response) {
   try {
     const query = `
-      SELECT 
-        id,
-        placa,
-        km,
-        tipo_cartao,
-        provedor_cartao,
-        numero_cartao,
-        motorista,
-        observacoes,
-        status,
-        data_solicitacao,
-        atendido_por,
-        data_atendimento,
-        created_at,
-        updated_at,
-        valor_solicitado,
-        base,
-        id_rota,
-        'tradicional' as origem_tipo
-      FROM solicitacoes_fuel_card
+      SELECT * FROM (
+        SELECT 
+          id,
+          placa,
+          km,
+          tipo_cartao,
+          provedor_cartao,
+          numero_cartao,
+          motorista,
+          observacoes,
+          status,
+          data_solicitacao,
+          atendido_por,
+          data_atendimento,
+          created_at,
+          updated_at,
+          valor_solicitado,
+          base,
+          id_rota,
+          'tradicional' as origem_tipo
+        FROM solicitacoes_fuel_card
 
-      UNION ALL
+        UNION ALL
 
-      SELECT 
-        id,
-        veiculo_placa as placa,
-        km_total as km,
-        'Line Hall' as tipo_cartao,
-        'Line Hall Shopee' as provedor_cartao,
-        '' as numero_cartao,
-        motorista_nome as motorista,
-        CONCAT('Rota: ', COALESCE(rota_origem, 'N/I'), ' → ', COALESCE(rota_destino, 'N/I'), 
-               ' | Tel: ', telefone_motorista, ' | Horário: ', 
-               CASE WHEN horario_abastecimento = 'antes_17h' THEN 'Antes das 17h' 
-                    ELSE 'Após 18h' END) as observacoes,
-        status,
-        (data_solicitacao::date + horario_solicitacao::time)::timestamp as data_solicitacao,
-        observacoes_operador as atendido_por,
-        updated_at as data_atendimento,
-        created_at,
-        updated_at,
-        0 as valor_solicitado,
-        'Line Hall Shopee' as base,
-        NULL as id_rota,
-        'line_hall' as origem_tipo
-      FROM linehall_fuel_card_requests
-
+        SELECT 
+          id,
+          veiculo_placa as placa,
+          km_total as km,
+          'Line Hall' as tipo_cartao,
+          'Line Hall Shopee' as provedor_cartao,
+          '' as numero_cartao,
+          motorista_nome as motorista,
+          CONCAT('Rota: ', COALESCE(rota_origem, 'N/I'), ' → ', COALESCE(rota_destino, 'N/I'), 
+                 ' | Tel: ', telefone_motorista, ' | Horário: ', 
+                 CASE WHEN horario_abastecimento = 'antes_17h' THEN 'Antes das 17h' 
+                      ELSE 'Após 18h' END) as observacoes,
+          status,
+          (data_solicitacao::date + horario_solicitacao::time)::timestamp as data_solicitacao,
+          operador_aprovacao as atendido_por,
+          updated_at as data_atendimento,
+          created_at,
+          updated_at,
+          0 as valor_solicitado,
+          'Line Hall Shopee' as base,
+          NULL as id_rota,
+          'line_hall' as origem_tipo
+        FROM linehall_fuel_card_requests
+      ) unified_requests
       ORDER BY 
         CASE 
           WHEN status IN ('pendente', 'pending') THEN 1
