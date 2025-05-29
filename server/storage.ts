@@ -579,17 +579,18 @@ export class DatabaseStorage implements IStorage {
         throw duplicateError;
       }
       
-      // Usar SQL bruto para evitar problemas com mapeamento de campos
-      // Transformar os nomes de campo do modelo para os nomes usados no banco de dados
+      // Usar SQL bruto com os nomes corretos das colunas
       const result = await db.execute(sql`
         INSERT INTO veiculos 
-        (plate, model, vehicletype, status, baseid, fueltype, year, mileage, color)
+        (placa, model, make, tipo, status, base_id, fuel_type, year, media_consumo_combustivel)
         VALUES 
-        (${vehicle.plate}, ${vehicle.model}, ${vehicle.vehicleType}, ${vehicle.status}, 
-         ${vehicle.baseId}, ${vehicle.fuelType || 'diesel'}, 
-         ${vehicle.year || new Date().getFullYear()}, ${vehicle.mileage || 0}, ${vehicle.color || 'branco'})
-        RETURNING id, plate, model, vehicletype as "vehicleType", 
-                 status, baseid as "baseId", fueltype, year, mileage, color
+        (${vehicle.plate}, ${vehicle.model || ''}, ${vehicle.make || 'N/A'}, 
+         ${vehicle.vehicleType}, ${vehicle.status}, ${vehicle.baseId}, 
+         ${vehicle.fuelType || 'Diesel'}, ${vehicle.year || null}, 
+         ${vehicle.mediaConsumoCombutivel || null})
+        RETURNING id, placa as plate, model, make, tipo as "vehicleType", 
+                 status, base_id as "baseId", fuel_type as "fuelType", 
+                 year, media_consumo_combustivel as "mediaConsumoCombutivel"
       `);
       
       console.log("Veículo inserido com sucesso:", JSON.stringify(result.rows[0], null, 2));
