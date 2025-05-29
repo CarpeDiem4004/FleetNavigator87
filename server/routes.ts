@@ -5283,6 +5283,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Rota para buscar veículos parados com detalhes
+  app.get("/api/vehicles/stopped", async (req, res) => {
+    try {
+      // Buscar veículos com status "parado" e informações detalhadas
+      const stoppedVehiclesQuery = `
+        SELECT 
+          v.plate,
+          v.model,
+          v.vehicle_type,
+          v.status,
+          b.name as base_name,
+          CASE 
+            WHEN v.updated_at IS NOT NULL THEN 
+              EXTRACT(DAY FROM (NOW() - v.updated_at))::INTEGER
+            ELSE 0
+          END as dias_parado,
+          'Última rota registrada' as ultima_viagem,
+          v.updated_at::date as data_ultima_viagem
+        FROM vehicles v
+        LEFT JOIN bases b ON v.base_id = b.id
+        WHERE v.status = 'parado'
+        ORDER BY v.updated_at DESC
+      `;
+
+      const result = await pool.query(stoppedVehiclesQuery);
+      
+      const vehicles = result.rows;
+      const totalVehicles = vehicles.length;
+      const mediaDias = totalVehicles > 0 
+        ? vehicles.reduce((sum, v) => sum + v.dias_parado, 0) / totalVehicles 
+        : 0;
+
+      res.json({
+        success: true,
+        data: vehicles,
+        total: totalVehicles,
+        media_dias: mediaDias
+      });
+    } catch (error) {
+      console.error("Erro ao buscar veículos parados:", error);
+      res.status(500).json({ 
+        message: "Erro ao buscar veículos parados",
+        error: error instanceof Error ? error.message : "Erro desconhecido"
+      });
+    }
+  });
+
   // Rota para oficinas atualizarem o status de manutenções
   app.patch("/api/workshop/maintenance/:id/status", isWorkshop, async (req, res) => {
     try {

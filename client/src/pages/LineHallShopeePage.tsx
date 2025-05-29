@@ -821,7 +821,7 @@ export default function LineHallShopeePage() {
                     <RefreshCcw className="mr-2 h-4 w-4" />
                     Atualizar
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => setLocation('/vehicles?status=parado')}>
+                  <Button variant="outline" size="sm" onClick={() => setLocation('/stopped-vehicles')}>
                     <Car className="mr-2 h-4 w-4" />
                     Ver Veículos Parados
                   </Button>

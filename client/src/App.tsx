@@ -114,6 +114,7 @@ import BaseRequests from "@/pages/BaseRequests";
 import CartaoAbastecimentoPage from "@/pages/CartaoAbastecimentoPage";
 import PainelPostosPage from "@/pages/PainelPostosPage";
 import AbastecimentosPage from "@/pages/AbastecimentosPage";
+import StoppedVehicles from "@/pages/StoppedVehicles";
 
 // Importação das páginas da Base Campinas
 import BaseCampinas from "@/pages/bases/BaseCampinas";
@@ -191,6 +192,7 @@ function App() {
           
           {/* Rotas protegidas com verificação de permissão de base */}
           <ProtectedRoute path="/vehicles" component={VehiclesNew} />
+          <ProtectedRoute path="/stopped-vehicles" component={StoppedVehicles} />
           {/* <ProtectedRoute path="/maintenance" component={MaintenanceNew} /> */}
           <ProtectedRoute path="/tires" component={TiresPage} />
           <ProtectedRoute path="/tires/entrada" component={TiresEntrada} />
