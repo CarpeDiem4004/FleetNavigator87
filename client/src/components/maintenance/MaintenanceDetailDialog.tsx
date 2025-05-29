@@ -83,6 +83,11 @@ export default function MaintenanceDetailDialog({
     pendingPartSupplier: string;
     pendingPartPhone: string;
     pendingPartDeadline: Date | null;
+    // Campos para oficina parceira
+    usedPartnerWorkshop: boolean;
+    partnerWorkshopName: string;
+    laborCost: string;
+    mechanicName: string;
   }>({
     status: 'pendente',
     workshopId: 0,
@@ -96,7 +101,12 @@ export default function MaintenanceDetailDialog({
     pendingPartValue: '',
     pendingPartSupplier: '',
     pendingPartPhone: '',
-    pendingPartDeadline: null
+    pendingPartDeadline: null,
+    // Campos para oficina parceira
+    usedPartnerWorkshop: false,
+    partnerWorkshopName: '',
+    laborCost: '',
+    mechanicName: ''
   });
 
   // Tipo para tradução dos status
@@ -145,7 +155,12 @@ export default function MaintenanceDetailDialog({
         pendingPartValue: '',
         pendingPartSupplier: '',
         pendingPartPhone: '',
-        pendingPartDeadline: null
+        pendingPartDeadline: null,
+        // Campos para oficina parceira
+        usedPartnerWorkshop: false,
+        partnerWorkshopName: '',
+        laborCost: '',
+        mechanicName: ''
       });
     }
   }, [maintenance]);
@@ -189,6 +204,13 @@ export default function MaintenanceDetailDialog({
     return formData.replacedParts.reduce((total, part) => {
       return total + (part.quantity * part.unitPrice);
     }, 0).toFixed(2);
+  };
+
+  // Calcular custo total (peças + mão de obra)
+  const getTotalCost = () => {
+    const partsTotal = parseFloat(getTotalPartsValue());
+    const laborCost = parseFloat(formData.laborCost) || 0;
+    return (partsTotal + laborCost).toFixed(2);
   };
 
   // Mutação para atualizar manutenção
@@ -306,6 +328,62 @@ export default function MaintenanceDetailDialog({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* Mecânico Responsável */}
+          <div className="space-y-2">
+            <Label htmlFor="mechanicName">Mecânico Responsável</Label>
+            <Input
+              id="mechanicName"
+              value={formData.mechanicName}
+              onChange={(e) => setFormData({...formData, mechanicName: e.target.value})}
+              placeholder="Nome do mecânico responsável"
+            />
+          </div>
+
+          {/* Oficina Parceira */}
+          <div className="space-y-4 p-4 border rounded-lg bg-blue-50">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="usedPartnerWorkshop"
+                checked={formData.usedPartnerWorkshop}
+                onChange={(e) => setFormData({...formData, usedPartnerWorkshop: e.target.checked})}
+                className="rounded border-gray-300"
+              />
+              <Label htmlFor="usedPartnerWorkshop" className="font-medium">
+                Utilizou Oficina Parceira?
+              </Label>
+            </div>
+
+            {formData.usedPartnerWorkshop && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Nome da Oficina */}
+                <div className="space-y-2">
+                  <Label htmlFor="partnerWorkshopName">Nome da Oficina Parceira</Label>
+                  <Input
+                    id="partnerWorkshopName"
+                    value={formData.partnerWorkshopName}
+                    onChange={(e) => setFormData({...formData, partnerWorkshopName: e.target.value})}
+                    placeholder="Nome da oficina terceirizada"
+                  />
+                </div>
+
+                {/* Valor da Mão de Obra */}
+                <div className="space-y-2">
+                  <Label htmlFor="laborCost">Valor da Mão de Obra (R$)</Label>
+                  <Input
+                    id="laborCost"
+                    type="number"
+                    value={formData.laborCost}
+                    onChange={(e) => setFormData({...formData, laborCost: e.target.value})}
+                    placeholder="0,00"
+                    step="0.01"
+                    min="0"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Campos específicos para aguardando_peca */}
