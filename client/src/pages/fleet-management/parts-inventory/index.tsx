@@ -373,6 +373,62 @@ export default function PartsInventory() {
     setIsDeletePartDialogOpen(true);
   };
 
+  // Função para submeter edição de peça
+  const onSubmitEditPart = async (data: any) => {
+    if (!selectedPart) return;
+    
+    try {
+      const response = await apiRequest('PUT', `/api/frota/estoque-pecas/${selectedPart.id}`, data);
+      const result = await response.json();
+      
+      if (response.ok) {
+        toast({
+          title: 'Peça atualizada',
+          description: `Peça "${data.nome}" foi atualizada com sucesso`,
+        });
+        setIsEditPartDialogOpen(false);
+        editPartForm.reset();
+        refetchParts();
+      } else {
+        throw new Error(result.message || 'Erro ao atualizar peça');
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Erro',
+        description: error.message || 'Ocorreu um erro ao atualizar a peça',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Função para confirmar exclusão de peça
+  const handleDeletePart = async () => {
+    if (!selectedPart) return;
+    
+    try {
+      const response = await apiRequest('DELETE', `/api/frota/estoque-pecas/${selectedPart.id}`);
+      const result = await response.json();
+      
+      if (response.ok) {
+        toast({
+          title: 'Peça excluída',
+          description: `Peça "${selectedPart.nome}" foi removida do estoque`,
+        });
+        setIsDeletePartDialogOpen(false);
+        setSelectedPart(null);
+        refetchParts();
+      } else {
+        throw new Error(result.message || 'Erro ao excluir peça');
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Erro',
+        description: error.message || 'Ocorreu um erro ao excluir a peça',
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Funções para exportar e importar Excel
   const handleExportExcel = async () => {
     try {
@@ -1179,6 +1235,152 @@ export default function PartsInventory() {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para editar peça */}
+      <Dialog open={isEditPartDialogOpen} onOpenChange={setIsEditPartDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Editar Peça</DialogTitle>
+            <DialogDescription>
+              Atualize as informações da peça "{selectedPart?.nome}".
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...editPartForm}>
+            <form onSubmit={editPartForm.handleSubmit(onSubmitEditPart)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editPartForm.control}
+                  name="nome"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome da Peça*</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editPartForm.control}
+                  name="categoria"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Categoria</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editPartForm.control}
+                  name="fabricante"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Fabricante</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editPartForm.control}
+                  name="valor_unitario"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor Unitário (R$)*</FormLabel>
+                      <FormControl>
+                        <Input type="number" min="0" step="0.01" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editPartForm.control}
+                  name="estoque_minimo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Estoque Mínimo</FormLabel>
+                      <FormControl>
+                        <Input type="number" min="0" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editPartForm.control}
+                  name="unidade_medida"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Unidade de Medida</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={editPartForm.control}
+                name="descricao"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descrição</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsEditPartDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={editPartForm.formState.isSubmitting}>
+                  {editPartForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Atualizar Peça
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para confirmar exclusão */}
+      <Dialog open={isDeletePartDialogOpen} onOpenChange={setIsDeletePartDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Exclusão</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir a peça "{selectedPart?.nome}" (código: {selectedPart?.codigo})?
+              Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsDeletePartDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="button" variant="destructive" onClick={handleDeletePart}>
+              Excluir Peça
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </AppLayout>

@@ -300,8 +300,88 @@ router.post('/estoque-pecas', verifyAuth, sessionAuth, async (req, res) => {
   }
 });
 
-// PUT - Atualizar quantidade de uma peça específica (para uso interno do sistema)
+// PUT - Atualizar dados completos de uma peça
 router.put('/estoque-pecas/:id', verifyAuth, sessionAuth, async (req, res) => {
+  const { id } = req.params;
+  const {
+    nome,
+    descricao,
+    categoria,
+    fabricante,
+    aplicacao,
+    valor_unitario,
+    estoque_minimo,
+    estoque_maximo,
+    localizacao,
+    unidade_medida
+  } = req.body;
+
+  try {
+    // Validar ID
+    if (!id || isNaN(parseInt(id))) {
+      return res.status(400).json({ message: 'ID da peça é obrigatório e deve ser um número válido' });
+    }
+
+    // Validar campos obrigatórios
+    if (!nome || valor_unitario === undefined) {
+      return res.status(400).json({ message: 'Nome e valor unitário são obrigatórios' });
+    }
+
+    // Verificar se a peça existe
+    const pecaResult = await pool.query(
+      'SELECT id, codigo, nome, quantidade FROM frota_estoque_pecas WHERE id = $1',
+      [id]
+    );
+
+    if (pecaResult.rowCount === 0) {
+      return res.status(404).json({ message: 'Peça não encontrada' });
+    }
+
+    // Atualizar os dados da peça (exceto quantidade que tem rota específica)
+    const updateResult = await pool.query(
+      `UPDATE frota_estoque_pecas 
+       SET nome = $1, 
+           descricao = $2, 
+           categoria = $3, 
+           fabricante = $4, 
+           aplicacao = $5, 
+           valor_unitario = $6, 
+           estoque_minimo = $7, 
+           estoque_maximo = $8, 
+           localizacao = $9, 
+           unidade_medida = $10,
+           valor_total = quantidade * $6,
+           ultima_atualizacao = NOW()
+       WHERE id = $11 
+       RETURNING id, codigo, nome, valor_unitario, estoque_minimo`,
+      [
+        nome,
+        descricao || null,
+        categoria || null,
+        fabricante || null,
+        aplicacao || null,
+        valor_unitario,
+        estoque_minimo || 5,
+        estoque_maximo || null,
+        localizacao || null,
+        unidade_medida || 'unidade',
+        id
+      ]
+    );
+
+    res.json({
+      success: true,
+      message: 'Peça atualizada com sucesso',
+      peca: updateResult.rows[0]
+    });
+  } catch (error: any) {
+    console.error('Erro ao atualizar peça:', error);
+    res.status(500).json({ message: `Erro ao atualizar peça: ${error.message}` });
+  }
+});
+
+// PUT - Atualizar apenas quantidade de uma peça específica (para uso interno do sistema)
+router.put('/estoque-pecas/:id/quantidade', verifyAuth, sessionAuth, async (req, res) => {
   const { id } = req.params;
   const { quantidade } = req.body;
 
