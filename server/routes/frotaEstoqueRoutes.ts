@@ -377,6 +377,82 @@ router.put('/estoque-pecas/:id', verifyAuth, sessionAuth, async (req, res) => {
   }
 });
 
+// DELETE - Excluir peça do estoque
+router.delete('/estoque-pecas/:id', verifyAuth, sessionAuth, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Validar ID
+    if (!id || isNaN(parseInt(id))) {
+      return res.status(400).json({ message: 'ID da peça é obrigatório e deve ser um número válido' });
+    }
+
+    // Verificar se a peça existe
+    const pecaResult = await pool.query(
+      'SELECT id, codigo, nome, quantidade FROM frota_estoque_pecas WHERE id = $1',
+      [id]
+    );
+
+    if (pecaResult.rowCount === 0) {
+      return res.status(404).json({ message: 'Peça não encontrada' });
+    }
+
+    const peca = pecaResult.rows[0];
+
+    // Registrar movimentação de exclusão para histórico
+    await pool.query(`
+      INSERT INTO frota_movimentacao_estoque (
+        peca_id,
+        tipo_movimento,
+        quantidade,
+        quantidade_anterior,
+        quantidade_atual,
+        valor_unitario,
+        motivo,
+        responsavel,
+        responsavel_id,
+        observacoes
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    `, [
+      id,
+      'saida',
+      peca.quantidade,
+      peca.quantidade,
+      0,
+      0,
+      'Exclusão da peça do sistema',
+      req.user?.name || req.supabaseUser?.email || 'Sistema',
+      req.user?.id || req.supabaseUser?.id || null,
+      `Peça ${peca.codigo} - ${peca.nome} removida do estoque`
+    ]);
+
+    // Excluir a peça
+    const deleteResult = await pool.query(
+      'DELETE FROM frota_estoque_pecas WHERE id = $1 RETURNING id, codigo, nome',
+      [id]
+    );
+
+    if (deleteResult.rowCount > 0) {
+      const pecaExcluida = deleteResult.rows[0];
+      console.log(`Peça excluída: ID ${pecaExcluida.id} - ${pecaExcluida.codigo} - ${pecaExcluida.nome}`);
+
+      res.json({
+        message: 'Peça excluída com sucesso',
+        peca: pecaExcluida
+      });
+    } else {
+      res.status(500).json({ message: 'Erro ao excluir a peça' });
+    }
+
+  } catch (error: any) {
+    console.error('Erro ao excluir peça:', error);
+    res.status(500).json({
+      message: 'Erro interno do servidor ao excluir peça',
+      error: error.message
+    });
+  }
+});
+
 // POST - Registrar movimentação de estoque
 router.post('/movimentacao-estoque', verifyAuth, sessionAuth, async (req, res) => {
   const {
