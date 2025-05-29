@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, RefreshCcw, Search, Edit, Trash2, Truck, FileText, CheckSquare, Wrench, AlertCircle, Car } from 'lucide-react';
+import { Loader2, Plus, RefreshCcw, Search, Edit, Trash2, Truck, FileText, CheckSquare, Wrench, AlertCircle, Car, UserPlus } from 'lucide-react';
 import { api } from '@/services/api';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -325,6 +325,14 @@ export default function LineHallShopeePage() {
             </p>
           </div>
           <div className="flex space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setLocation('/vehicles')} 
+              className="flex items-center"
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              Cadastrar Veículo
+            </Button>
             <Button variant="outline" onClick={fetchTrips} className="flex items-center">
               <RefreshCcw className="mr-2 h-4 w-4" />
               Atualizar
