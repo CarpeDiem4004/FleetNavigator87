@@ -134,10 +134,12 @@ export default function LineHallShopeePage() {
     fetchTrips();
     fetchDriverStats();
     fetchRoutesData();
+    fetchFuelCardRequests();
     
     // Configurar polling para atualizações automáticas do status das viagens
     const interval = setInterval(() => {
       fetchTrips();
+      fetchFuelCardRequests();
     }, 30000); // Atualiza a cada 30 segundos
     
     return () => clearInterval(interval);
