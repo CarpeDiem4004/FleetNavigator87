@@ -23,6 +23,7 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
   const { toast } = useToast()
   const [placa, setPlaca] = useState('')
   const [marca, setMarca] = useState('')
+  const [marcaCustomizada, setMarcaCustomizada] = useState('')
   const [modeloVeiculo, setModeloVeiculo] = useState('')
   const [ano, setAno] = useState<number | undefined>(undefined)
   const [tipoCombustivel, setTipoCombustivel] = useState('Diesel')
@@ -65,6 +66,37 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
     { id: 'GNV', nome: 'GNV' },
     { id: 'Flex', nome: 'Flex' }
   ]
+
+  // Mapeamento de marcas com rendimento médio (km/l)
+  const rendimentoPorMarca: { [key: string]: number } = {
+    'Iveco': 2.5,
+    'Volvo': 2.7,
+    'Volkswagen Constellation': 2.5,
+    'Volkswagen Meteor': 2.7,
+    'Mercedes': 2.5,
+    'Man': 2.6,
+    'Scania': 2.7,
+    'Daf': 2.7
+  }
+
+  // Função para atualizar consumo quando marca for selecionada
+  const handleMarcaChange = (novaMarca: string) => {
+    setMarca(novaMarca)
+    
+    // Limpar marca customizada se não for "Outros"
+    if (novaMarca !== "Outros") {
+      setMarcaCustomizada('')
+    }
+    
+    // Se existe um rendimento padrão para esta marca, atualizar automaticamente
+    if (rendimentoPorMarca[novaMarca]) {
+      setMediaConsumo(rendimentoPorMarca[novaMarca])
+      toast({
+        title: "Consumo atualizado automaticamente",
+        description: `Rendimento médio de ${rendimentoPorMarca[novaMarca]} km/l aplicado para ${novaMarca}`,
+      })
+    }
+  }
 
   // Função para fazer upload de arquivos para o Supabase
   const uploadFileToSupabase = async (file: File, folder: string, vehiclePlate: string): Promise<string | null> => {
@@ -243,7 +275,7 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
         body: JSON.stringify({
           plate: placa,
           model: modeloVeiculo, // Modelo do veículo (ex: Cargo 2422)
-          make: marca, // Marca do veículo (ex: Ford)
+          make: marca === "Outros" ? marcaCustomizada : marca, // Marca do veículo (ex: Ford)
           vehicleType: tipoVeiculo, // Tipo de veículo (carreta, cavalo_mecanico, etc)
           year: ano,
           fuelType: tipoCombustivel,
@@ -329,14 +361,29 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
 
           <div className="space-y-2">
             <Label htmlFor="marca">Marca *</Label>
-            <Input
-              id="marca"
-              type="text"
-              placeholder="Ex: Ford"
-              value={marca}
-              onChange={(e) => setMarca(e.target.value)}
-              required
-            />
+            <Select value={marca} onValueChange={handleMarcaChange}>
+              <SelectTrigger id="marca">
+                <SelectValue placeholder="Selecione a marca do veículo" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.keys(rendimentoPorMarca).map((marcaOption) => (
+                  <SelectItem key={marcaOption} value={marcaOption}>
+                    {marcaOption} ({rendimentoPorMarca[marcaOption]} km/l)
+                  </SelectItem>
+                ))}
+                <SelectItem value="Outros">Outros</SelectItem>
+              </SelectContent>
+            </Select>
+            {marca === "Outros" && (
+              <Input
+                type="text"
+                placeholder="Digite a marca"
+                value={marcaCustomizada}
+                onChange={(e) => setMarcaCustomizada(e.target.value)}
+                className="mt-2"
+                required
+              />
+            )}
           </div>
           
           <div className="space-y-2">
