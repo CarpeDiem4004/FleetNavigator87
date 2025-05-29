@@ -169,6 +169,13 @@ const OficinaMurici: React.FC = () => {
       [name]: value
     }));
   };
+
+  // Função para calcular o custo total automaticamente
+  const calculateTotalCost = () => {
+    const valorTotalPecas = pecasSelecionadas.reduce((total, peca) => total + Number(peca.valor_total || 0), 0);
+    const valorMaoDeObra = Number(currentManutencao.labor_cost) || 0;
+    return valorTotalPecas + valorMaoDeObra;
+  };
   
   // Salvar manutenção
   const handleSaveManutencao = async () => {
@@ -188,6 +195,12 @@ const OficinaMurici: React.FC = () => {
       // Calcular custo total das peças automaticamente
       const valorTotalPecas = pecasSelecionadas.reduce((total, peca) => total + Number(peca.valor_total || 0), 0);
       
+      // Calcular valor da mão de obra
+      const valorMaoDeObra = Number(currentManutencao.labor_cost) || 0;
+      
+      // Calcular custo total (peças + mão de obra)
+      const custoTotalCalculado = valorTotalPecas + valorMaoDeObra;
+      
       // Formatear lista de peças para salvar no banco
       const pecasUtilizadasTexto = pecasSelecionadas.map(peca => 
         `${peca.nome} (${peca.codigo}) - Qtd: ${peca.quantidade} ${peca.unidade_medida} - R$ ${Number(peca.valor_total || 0).toFixed(2)}`
@@ -201,7 +214,7 @@ const OficinaMurici: React.FC = () => {
         descricao_manutencao: currentManutencao.descricao_manutencao,
         status: currentManutencao.status,
         mecanico: currentManutencao.mecanico,
-        custo_total: valorTotalPecas || Number(currentManutencao.custo_total) || 0,
+        custo_total: custoTotalCalculado,
         observacoes: currentManutencao.observacoes || '',
         peças_utilizadas: pecasUtilizadasTexto || currentManutencao.peças_utilizadas || '',
         // Campos de oficina parceira
@@ -885,17 +898,12 @@ const OficinaMurici: React.FC = () => {
               
               <div className="space-y-1">
                 <Label htmlFor="custo_total" className="text-sm">Custo Total (R$)</Label>
-                <Input
-                  id="custo_total"
-                  name="custo_total"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={currentManutencao.custo_total || ''}
-                  onChange={handleInputChange}
-                  placeholder="0,00"
-                  className="h-9"
-                />
+                <div className="h-9 px-3 py-2 border border-gray-200 rounded-md bg-gray-50 flex items-center text-sm font-medium text-gray-900">
+                  R$ {calculateTotalCost().toFixed(2)}
+                </div>
+                <p className="text-xs text-gray-500">
+                  Calculado automaticamente: Peças + Mão de Obra
+                </p>
               </div>
             </div>
 
