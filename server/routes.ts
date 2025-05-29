@@ -2273,6 +2273,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // API para buscar viagem por nome do motorista (acesso externo)
+  app.get('/api/line-hall-shopee/motorista/buscar', async (req, res) => {
+    try {
+      const { nome } = req.query;
+      
+      if (!nome) {
+        return res.status(400).json({
+          success: false,
+          message: 'Nome do motorista é obrigatório'
+        });
+      }
+      
+      // Buscar viagem ativa do motorista por nome (sem autenticação para acesso externo)
+      const query = `
+        SELECT * FROM line_hall_shopee
+        WHERE LOWER(motorista_nome) LIKE LOWER($1)
+        AND status_viagem IN ('Aguardando', 'Em Andamento')
+        ORDER BY created_at DESC
+        LIMIT 1
+      `;
+      
+      const result = await pool.query(query, [`%${nome}%`]);
+      
+      if (result.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Nenhuma viagem ativa encontrada para este motorista'
+        });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        trip: result.rows[0]
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar viagem do motorista:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar viagem do motorista',
+        error: error.message
+      });
+    }
+  });
+
+  // API para atualizar status da viagem (acesso externo)
+  app.patch('/api/line-hall-shopee/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status_viagem, data_inicio, data_fim } = req.body;
+      
+      if (!status_viagem) {
+        return res.status(400).json({
+          success: false,
+          message: 'Status da viagem é obrigatório'
+        });
+      }
+      
+      // Verificar se a viagem existe
+      const checkQuery = `
+        SELECT * FROM line_hall_shopee
+        WHERE id = $1
+      `;
+      
+      const checkResult = await pool.query(checkQuery, [id]);
+      
+      if (checkResult.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Viagem não encontrada'
+        });
+      }
+      
+      // Preparar dados para atualização
+      let updateFields = ['status_viagem = $2', 'updated_at = NOW()'];
+      let updateValues = [id, status_viagem];
+      let paramCount = 2;
+      
+      // Adicionar data de início se fornecida
+      if (data_inicio) {
+        paramCount++;
+        updateFields.push(`data_inicio = $${paramCount}`);
+        updateValues.push(data_inicio);
+      }
+      
+      // Adicionar data de fim se fornecida
+      if (data_fim) {
+        paramCount++;
+        updateFields.push(`data_fim = $${paramCount}`);
+        updateValues.push(data_fim);
+      }
+      
+      // Atualizar viagem
+      const updateQuery = `
+        UPDATE line_hall_shopee
+        SET ${updateFields.join(', ')}
+        WHERE id = $1
+        RETURNING *
+      `;
+      
+      const updateResult = await pool.query(updateQuery, updateValues);
+      
+      return res.status(200).json({
+        success: true,
+        data: updateResult.rows[0],
+        message: 'Status da viagem atualizado com sucesso'
+      });
+    } catch (error: any) {
+      console.error('Erro ao atualizar status da viagem:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao atualizar status da viagem',
+        error: error.message
+      });
+    }
+  });
   
   // Rotas para Fuel Card (Cartão de Combustível)
   // GET - Obter todas as solicitações de cartão de combustível (com filtragem opcional por status/base)
