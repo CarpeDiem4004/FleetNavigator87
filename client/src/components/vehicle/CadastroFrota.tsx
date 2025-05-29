@@ -98,6 +98,18 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
     }
   }
 
+  // Função para limpar campos relacionados quando tipo de veículo mudar
+  const handleTipoVeiculoChange = (novoTipo: string) => {
+    setTipoVeiculo(novoTipo)
+    
+    // Se não for cavalo mecânico, limpar marca e consumo médio
+    if (novoTipo !== 'cavalo_mecanico') {
+      setMarca('')
+      setMarcaCustomizada('')
+      setMediaConsumo(undefined)
+    }
+  }
+
   // Função para fazer upload de arquivos para o Supabase
   const uploadFileToSupabase = async (file: File, folder: string, vehiclePlate: string): Promise<string | null> => {
     if (!file) return null;
@@ -361,26 +373,39 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
 
           <div className="space-y-2">
             <Label htmlFor="marca">Marca *</Label>
-            <Select value={marca} onValueChange={handleMarcaChange}>
-              <SelectTrigger id="marca">
-                <SelectValue placeholder="Selecione a marca do veículo" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.keys(rendimentoPorMarca).map((marcaOption) => (
-                  <SelectItem key={marcaOption} value={marcaOption}>
-                    {marcaOption} ({rendimentoPorMarca[marcaOption]} km/l)
-                  </SelectItem>
-                ))}
-                <SelectItem value="Outros">Outros</SelectItem>
-              </SelectContent>
-            </Select>
-            {marca === "Outros" && (
+            {tipoVeiculo === 'cavalo_mecanico' ? (
+              <>
+                <Select value={marca} onValueChange={handleMarcaChange}>
+                  <SelectTrigger id="marca">
+                    <SelectValue placeholder="Selecione a marca do cavalo mecânico" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(rendimentoPorMarca).map((marcaOption) => (
+                      <SelectItem key={marcaOption} value={marcaOption}>
+                        {marcaOption} ({rendimentoPorMarca[marcaOption]} km/l)
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="Outros">Outros</SelectItem>
+                  </SelectContent>
+                </Select>
+                {marca === "Outros" && (
+                  <Input
+                    type="text"
+                    placeholder="Digite a marca"
+                    value={marcaCustomizada}
+                    onChange={(e) => setMarcaCustomizada(e.target.value)}
+                    className="mt-2"
+                    required
+                  />
+                )}
+              </>
+            ) : (
               <Input
+                id="marca"
                 type="text"
-                placeholder="Digite a marca"
-                value={marcaCustomizada}
-                onChange={(e) => setMarcaCustomizada(e.target.value)}
-                className="mt-2"
+                placeholder="Ex: Ford"
+                value={marca}
+                onChange={(e) => setMarca(e.target.value)}
                 required
               />
             )}
@@ -437,7 +462,7 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="tipoVeiculo">Tipo de Veículo *</Label>
-              <Select value={tipoVeiculo} onValueChange={setTipoVeiculo}>
+              <Select value={tipoVeiculo} onValueChange={handleTipoVeiculoChange}>
                 <SelectTrigger id="tipoVeiculo">
                   <SelectValue placeholder="Selecione o tipo de veículo" />
                 </SelectTrigger>
