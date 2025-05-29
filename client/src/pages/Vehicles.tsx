@@ -45,6 +45,10 @@ interface NewVehicleData {
   vehicleType: VehicleTypeType; // mapeado para vehicle_type na coluna
   status: VehicleStatusType;
   baseId: number; // mapeado para base_id na coluna
+  make: string; // marca do veículo
+  year?: number; // ano do veículo
+  fuelType?: string; // tipo de combustível
+  mediaConsumoCombutivel?: number; // média de consumo em km/l
 }
 
 const getStatusBadge = (status: VehicleStatusType) => {
@@ -78,6 +82,10 @@ const Vehicles: React.FC = () => {
     vehicleType: 'cavalo_mecanico',
     status: 'em_operacao',
     baseId: 12, // Base "Gestão de Frotas" como padrão
+    make: '',
+    year: undefined,
+    fuelType: 'Diesel',
+    mediaConsumoCombutivel: undefined,
   });
   
   // Obter veículos da API real
@@ -121,7 +129,11 @@ const Vehicles: React.FC = () => {
         model: '',
         vehicleType: 'cavalo_mecanico',
         status: 'em_operacao',
-        baseId: 12
+        baseId: 12,
+        make: '',
+        year: undefined,
+        fuelType: 'Diesel',
+        mediaConsumoCombutivel: undefined,
       });
       
       toast({
@@ -435,28 +447,50 @@ const Vehicles: React.FC = () => {
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col space-y-1.5">
-                <label htmlFor="plate" className="text-sm font-medium">Placa</label>
+                <label htmlFor="plate" className="text-sm font-medium">Placa *</label>
                 <Input 
                   id="plate" 
-                  placeholder="ABC1234" 
+                  placeholder="Ex: ABC1234" 
                   value={newVehicle.plate}
                   onChange={(e) => setNewVehicle({...newVehicle, plate: e.target.value})}
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
-                <label htmlFor="model" className="text-sm font-medium">Modelo</label>
+                <label htmlFor="make" className="text-sm font-medium">Marca *</label>
                 <Input 
-                  id="model" 
-                  placeholder="Volvo FH 540"
-                  value={newVehicle.model}
-                  onChange={(e) => setNewVehicle({...newVehicle, model: e.target.value})}
+                  id="make" 
+                  placeholder="Ex: Ford"
+                  value={newVehicle.make}
+                  onChange={(e) => setNewVehicle({...newVehicle, make: e.target.value})}
                 />
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col space-y-1.5">
-                <label htmlFor="type" className="text-sm font-medium">Tipo</label>
+                <label htmlFor="model" className="text-sm font-medium">Modelo</label>
+                <Input 
+                  id="model" 
+                  placeholder="Ex: Cargo"
+                  value={newVehicle.model}
+                  onChange={(e) => setNewVehicle({...newVehicle, model: e.target.value})}
+                />
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <label htmlFor="year" className="text-sm font-medium">Ano</label>
+                <Input 
+                  id="year" 
+                  type="number"
+                  placeholder="Ex: 2023"
+                  value={newVehicle.year || ''}
+                  onChange={(e) => setNewVehicle({...newVehicle, year: e.target.value ? parseInt(e.target.value) : undefined})}
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col space-y-1.5">
+                <label htmlFor="type" className="text-sm font-medium">Tipo de Veículo *</label>
                 <Select
                   value={newVehicle.vehicleType || "cavalo_mecanico"}
                   onValueChange={(value: VehicleTypeType) => setNewVehicle({...newVehicle, vehicleType: value})}
@@ -473,6 +507,40 @@ const Vehicles: React.FC = () => {
                     </SelectGroup>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <label htmlFor="fuelType" className="text-sm font-medium">Tipo de Combustível</label>
+                <Select
+                  value={newVehicle.fuelType || "Diesel"}
+                  onValueChange={(value) => setNewVehicle({...newVehicle, fuelType: value})}
+                >
+                  <SelectTrigger id="fuelType" className="w-full">
+                    <SelectValue placeholder="Selecione o combustível" />
+                  </SelectTrigger>
+                  <SelectContent position="popper">
+                    <SelectGroup>
+                      <SelectItem value="Diesel">Diesel</SelectItem>
+                      <SelectItem value="Gasolina">Gasolina</SelectItem>
+                      <SelectItem value="Etanol">Etanol</SelectItem>
+                      <SelectItem value="GNV">GNV</SelectItem>
+                      <SelectItem value="Flex">Flex</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col space-y-1.5">
+                <label htmlFor="mediaConsumo" className="text-sm font-medium">Média de Consumo (km/l)</label>
+                <Input 
+                  id="mediaConsumo" 
+                  type="number"
+                  step="0.1"
+                  placeholder="Ex: 2.5"
+                  value={newVehicle.mediaConsumoCombutivel || ''}
+                  onChange={(e) => setNewVehicle({...newVehicle, mediaConsumoCombutivel: e.target.value ? parseFloat(e.target.value) : undefined})}
+                />
               </div>
               <div className="flex flex-col space-y-1.5">
                 <label htmlFor="status" className="text-sm font-medium">Status</label>
