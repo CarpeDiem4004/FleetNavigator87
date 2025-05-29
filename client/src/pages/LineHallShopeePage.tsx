@@ -731,6 +731,50 @@ export default function LineHallShopeePage() {
             </CardContent>
           </Card>
           
+          {/* Card de Rotas */}
+          <Card className="overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-green-100 to-green-50 dark:from-green-950 dark:to-green-900">
+              <CardTitle className="flex items-center text-lg">
+                <MapPin className="mr-2 h-5 w-5 text-green-600 dark:text-green-400" />
+                Rotas Cadastradas
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="flex flex-col space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Total de rotas</span>
+                  <span className="font-bold text-2xl text-green-600 dark:text-green-400">{routes.length}</span>
+                </div>
+                {routes.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Menor distância</span>
+                      <span className="text-sm font-medium">
+                        {Math.min(...routes.map((r: any) => Number(r.km_total))).toLocaleString('pt-BR')} km
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Maior distância</span>
+                      <span className="text-sm font-medium">
+                        {Math.max(...routes.map((r: any) => Number(r.km_total))).toLocaleString('pt-BR')} km
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Distância média</span>
+                      <span className="text-sm font-medium">
+                        {Math.round(routes.reduce((acc: number, r: any) => acc + Number(r.km_total), 0) / routes.length).toLocaleString('pt-BR')} km
+                      </span>
+                    </div>
+                  </div>
+                )}
+                <Button variant="outline" size="sm" className="w-full" onClick={() => setIsCreatingRoute(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Cadastrar Nova Rota
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Card de Acesso */}
           <Card className="overflow-hidden">
             <CardHeader className="bg-gradient-to-r from-purple-100 to-purple-50 dark:from-purple-950 dark:to-purple-900">
