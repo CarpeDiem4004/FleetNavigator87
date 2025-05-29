@@ -906,6 +906,14 @@ const OficinaMurici: React.FC = () => {
                             <Button 
                               variant="ghost" 
                               size="icon" 
+                              onClick={() => generateMaintenanceReport(manutencao)}
+                              title="Imprimir Relatório"
+                            >
+                              <Printer className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
                               onClick={() => manutencao.id && handleDeleteManutencao(manutencao.id)}
                               title="Excluir"
                             >
