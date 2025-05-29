@@ -50,6 +50,7 @@ export default function LineHallShopeePage() {
   
   // Estados para gerenciar rotas
   const [isCreatingRoute, setIsCreatingRoute] = useState(false);
+  const [showRoutes, setShowRoutes] = useState(false);
   const [routes, setRoutes] = useState([]);
   const [currentRoute, setCurrentRoute] = useState({
     nome_ponto_a: '',
@@ -767,10 +768,16 @@ export default function LineHallShopeePage() {
                     </div>
                   </div>
                 )}
-                <Button variant="outline" size="sm" className="w-full" onClick={() => setIsCreatingRoute(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Cadastrar Nova Rota
-                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setShowRoutes(!showRoutes)}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    {showRoutes ? 'Ocultar' : 'Ver Rotas'}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setIsCreatingRoute(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Nova Rota
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -803,56 +810,58 @@ export default function LineHallShopeePage() {
           </Card>
         </div>
 
-        {/* Tabela de rotas cadastradas */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center text-lg">
-              <MapPin className="mr-2 h-5 w-5 text-blue-600 dark:text-blue-400" />
-              Rotas Cadastradas
-            </CardTitle>
-            <CardDescription>
-              Rotas disponíveis para as viagens do Line Hall Shopee
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {routes.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Ponto A (Origem)</TableHead>
-                      <TableHead>Ponto B (Destino)</TableHead>
-                      <TableHead>Distância (KM)</TableHead>
-                      <TableHead>Data de Cadastro</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {routes.map((route: any) => (
-                      <TableRow key={route.id}>
-                        <TableCell className="font-medium">{route.nome_ponto_a}</TableCell>
-                        <TableCell>{route.nome_ponto_b}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                            {Number(route.km_total).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {new Date(route.created_at).toLocaleDateString('pt-BR')}
-                        </TableCell>
+        {/* Tabela de rotas cadastradas - só exibe quando showRoutes for true */}
+        {showRoutes && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center text-lg">
+                <MapPin className="mr-2 h-5 w-5 text-blue-600 dark:text-blue-400" />
+                Rotas Cadastradas
+              </CardTitle>
+              <CardDescription>
+                Rotas disponíveis para as viagens do Line Hall Shopee
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {routes.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Ponto A (Origem)</TableHead>
+                        <TableHead>Ponto B (Destino)</TableHead>
+                        <TableHead>Distância (KM)</TableHead>
+                        <TableHead>Data de Cadastro</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <MapPin className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                <p>Nenhuma rota cadastrada ainda</p>
-                <p className="text-sm">Clique em "Cadastrar Rota" para adicionar a primeira rota</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {routes.map((route: any) => (
+                        <TableRow key={route.id}>
+                          <TableCell className="font-medium">{route.nome_ponto_a}</TableCell>
+                          <TableCell>{route.nome_ponto_b}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                              {Number(route.km_total).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {new Date(route.created_at).toLocaleDateString('pt-BR')}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <MapPin className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                  <p>Nenhuma rota cadastrada ainda</p>
+                  <p className="text-sm">Clique em "Nova Rota" para adicionar a primeira rota</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
