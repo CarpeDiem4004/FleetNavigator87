@@ -637,20 +637,20 @@ export default function FormularioAbastecimentoStandalone() {
     });
   };
 
-  // Opções de projetos
+  // Opções de projetos - conforme definição atualizada
   const projetosOptions = [
-    'GRUPO PEREIRA',
-    'COCA COLA',
     'SHOPEE',
     'MERCADO LIVRE',
-    'LINE HALL SHOPEE',
-    'FULL MELI',
+    'COCA COLA',
+    'GRUPO PEREIRA',
     'MADEIRA MADEIRA',
+    'OXXO',
+    'MANUTENÇÃO',
     'MAGALU',
     'NATURA',
-    'OXXO',
+    'LINE HALL SHOPEE',
+    'FULL MELI',
     'PETLOVE',
-    'MANUTENÇÃO',
     'USO OPERACIONAL'
   ];
 
