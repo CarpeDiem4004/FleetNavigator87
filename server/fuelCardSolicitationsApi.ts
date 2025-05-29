@@ -2,16 +2,61 @@ import { Request, Response } from 'express';
 import { pool } from './db';
 
 /**
- * Obtém todas as solicitações de cartão de combustível
+ * Obtém todas as solicitações de cartão de combustível (incluindo Line Hall Shopee)
  */
 export async function getFuelCardSolicitations(req: Request, res: Response) {
   try {
     const query = `
-      SELECT * FROM solicitacoes_fuel_card
+      SELECT 
+        id,
+        placa,
+        km,
+        tipo_cartao,
+        provedor_cartao,
+        numero_cartao,
+        motorista,
+        observacoes,
+        status,
+        data_solicitacao,
+        atendido_por,
+        data_atendimento,
+        created_at,
+        updated_at,
+        valor_solicitado,
+        base,
+        id_rota,
+        'tradicional' as origem_tipo
+      FROM solicitacoes_fuel_card
+
+      UNION ALL
+
+      SELECT 
+        id,
+        veiculo_placa as placa,
+        km_total as km,
+        'Line Hall' as tipo_cartao,
+        'Line Hall Shopee' as provedor_cartao,
+        '' as numero_cartao,
+        motorista_nome as motorista,
+        CONCAT('Rota: ', origem, ' → ', destino, ' | Tel: ', telefone_motorista, ' | Horário: ', 
+               CASE WHEN horario_abastecimento = 'antes_17h' THEN 'Antes das 17h' 
+                    ELSE 'Após 18h' END) as observacoes,
+        status,
+        data_hora as data_solicitacao,
+        operador_aprovacao as atendido_por,
+        updated_at as data_atendimento,
+        created_at,
+        updated_at,
+        0 as valor_solicitado,
+        'Line Hall Shopee' as base,
+        NULL as id_rota,
+        'line_hall' as origem_tipo
+      FROM linehall_fuel_card_requests
+
       ORDER BY 
         CASE 
-          WHEN status = 'pendente' THEN 1
-          WHEN status = 'em_analise' THEN 2
+          WHEN status IN ('pendente', 'pending') THEN 1
+          WHEN status IN ('em_analise', 'aprovada', 'approved') THEN 2
           ELSE 3
         END,
         data_solicitacao DESC
@@ -19,10 +64,16 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
     
     const result = await pool.query(query);
     
+    // Normalizar os status para consistência
+    const normalizedData = result.rows.map(row => ({
+      ...row,
+      status: normalizeStatus(row.status, row.origem_tipo)
+    }));
+    
     return res.status(200).json({
       success: true,
-      data: result.rows,
-      count: result.rowCount || 0
+      data: normalizedData,
+      count: normalizedData.length
     });
   } catch (error: any) {
     console.error('Erro ao buscar solicitações de cartão:', error);
@@ -31,6 +82,41 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
       message: 'Erro ao buscar solicitações',
       error: error.message
     });
+  }
+}
+
+/**
+ * Normaliza o status das solicitações para exibição consistente
+ */
+function normalizeStatus(status: string, origem: string): string {
+  if (origem === 'line_hall') {
+    switch (status) {
+      case 'pendente':
+      case 'pending':
+        return 'Pendente';
+      case 'aprovada':
+      case 'approved':
+        return 'Recarga Efetuada';
+      case 'rejeitada':
+      case 'rejected':
+        return 'Negado';
+      default:
+        return status;
+    }
+  } else {
+    // Status tradicionais
+    switch (status) {
+      case 'pendente':
+        return 'Pendente';
+      case 'em_analise':
+        return 'Em Análise';
+      case 'atendido':
+        return 'Recarga Efetuada';
+      case 'rejeitado':
+        return 'Negado';
+      default:
+        return status;
+    }
   }
 }
 
@@ -171,7 +257,7 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
 export async function updateFuelCardSolicitationStatus(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, origem_tipo } = req.body;
     const user = req.user as any;
     
     if (!id || !status) {
@@ -181,50 +267,100 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
       });
     }
     
-    if (!['atendido', 'rejeitado', 'em_analise', 'pendente'].includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Status inválido. Use: pendente, em_analise, atendido ou rejeitado'
-      });
+    // Primeiro, determinar se é solicitação tradicional ou Line Hall
+    let isLineHall = origem_tipo === 'line_hall';
+    
+    if (!isLineHall) {
+      // Tentar determinar pela existência na tabela tradicional
+      const checkTradicionalQuery = `SELECT * FROM solicitacoes_fuel_card WHERE id = $1`;
+      const checkTradicionalResult = await pool.query(checkTradicionalQuery, [id]);
+      
+      if (checkTradicionalResult.rowCount === 0) {
+        // Verificar se existe na tabela Line Hall
+        const checkLineHallQuery = `SELECT * FROM linehall_fuel_card_requests WHERE id = $1`;
+        const checkLineHallResult = await pool.query(checkLineHallQuery, [id]);
+        
+        if (checkLineHallResult.rowCount === 0) {
+          return res.status(404).json({
+            success: false,
+            message: 'Solicitação não encontrada'
+          });
+        }
+        
+        isLineHall = true;
+      }
     }
     
-    // Verifica se a solicitação existe
-    const checkQuery = `SELECT * FROM solicitacoes_fuel_card WHERE id = $1`;
-    const checkResult = await pool.query(checkQuery, [id]);
-    
-    if (checkResult.rowCount === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Solicitação não encontrada'
-      });
-    }
-    
-    // Se o status for 'atendido', atualiza os campos de atendimento
     let query;
     let values;
+    let tableName;
+    let statusField;
     
-    if (status === 'atendido') {
-      query = `
-        UPDATE solicitacoes_fuel_card 
-        SET 
-          status = $1, 
-          atendido_por = $2, 
-          data_atendimento = NOW(),
-          updated_at = NOW()
-        WHERE id = $3
-        RETURNING *
-      `;
-      values = [status, user?.name || 'Sistema', id];
+    if (isLineHall) {
+      // Lógica para solicitações Line Hall
+      tableName = 'linehall_fuel_card_requests';
+      
+      // Mapear status para Line Hall
+      const lineHallStatus = mapStatusToLineHall(status);
+      
+      if (lineHallStatus === 'aprovada') {
+        query = `
+          UPDATE ${tableName} 
+          SET 
+            status = $1, 
+            operador_aprovacao = $2, 
+            updated_at = NOW()
+          WHERE id = $3
+          RETURNING *
+        `;
+        values = [lineHallStatus, user?.name || 'Sistema', id];
+      } else {
+        query = `
+          UPDATE ${tableName} 
+          SET 
+            status = $1,
+            operador_aprovacao = $2,
+            observacoes_operador = $3,
+            updated_at = NOW()
+          WHERE id = $4
+          RETURNING *
+        `;
+        values = [lineHallStatus, user?.name || 'Sistema', req.body.observacoes || '', id];
+      }
     } else {
-      query = `
-        UPDATE solicitacoes_fuel_card 
-        SET 
-          status = $1,
-          updated_at = NOW()
-        WHERE id = $2
-        RETURNING *
-      `;
-      values = [status, id];
+      // Lógica para solicitações tradicionais
+      tableName = 'solicitacoes_fuel_card';
+      
+      if (!['atendido', 'rejeitado', 'em_analise', 'pendente'].includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Status inválido. Use: pendente, em_analise, atendido ou rejeitado'
+        });
+      }
+      
+      if (status === 'atendido') {
+        query = `
+          UPDATE ${tableName} 
+          SET 
+            status = $1, 
+            atendido_por = $2, 
+            data_atendimento = NOW(),
+            updated_at = NOW()
+          WHERE id = $3
+          RETURNING *
+        `;
+        values = [status, user?.name || 'Sistema', id];
+      } else {
+        query = `
+          UPDATE ${tableName} 
+          SET 
+            status = $1,
+            updated_at = NOW()
+          WHERE id = $2
+          RETURNING *
+        `;
+        values = [status, id];
+      }
     }
     
     const result = await pool.query(query, values);
@@ -232,7 +368,8 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
     return res.status(200).json({
       success: true,
       message: `Status atualizado para ${status}`,
-      data: result.rows[0]
+      data: result.rows[0],
+      isLineHall
     });
   } catch (error: any) {
     console.error('Erro ao atualizar status da solicitação:', error);
@@ -241,6 +378,28 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
       message: 'Erro ao atualizar status',
       error: error.message
     });
+  }
+}
+
+/**
+ * Mapeia status da interface principal para Line Hall
+ */
+function mapStatusToLineHall(status: string): string {
+  switch (status) {
+    case 'atendido':
+    case 'Recarga Efetuada':
+      return 'aprovada';
+    case 'rejeitado':
+    case 'Negado':
+      return 'rejeitada';
+    case 'em_analise':
+    case 'Em Análise':
+      return 'pendente';
+    case 'pendente':
+    case 'Pendente':
+      return 'pendente';
+    default:
+      return 'pendente';
   }
 }
 
