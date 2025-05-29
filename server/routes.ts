@@ -910,6 +910,77 @@ async function criarTabelaSolicitacoesFuelCard() {
 }
 
 /**
+ * Cria a tabela linehall_maintenance se não existir
+ */
+async function criarTabelaLineHallMaintenance() {
+  const checkTableQuery = "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'linehall_maintenance')";
+  const tableExistsResult = await pool.query(checkTableQuery);
+  
+  if (tableExistsResult.rows[0].exists) {
+    console.log("Tabela linehall_maintenance já existe, verificando colunas...");
+    
+    // Verificar se as colunas necessárias existem
+    const columnsToAdd = [
+      { name: 'tipo_problema', type: 'VARCHAR(100)' },
+      { name: 'local_ocorrencia', type: 'VARCHAR(255)' },
+      { name: 'pode_continuar_viagem', type: 'BOOLEAN' },
+      { name: 'observacoes', type: 'TEXT' },
+      { name: 'protocolo', type: 'VARCHAR(50)' }
+    ];
+    
+    for (const column of columnsToAdd) {
+      try {
+        const checkColumnQuery = `
+          SELECT EXISTS (
+            SELECT FROM information_schema.columns 
+            WHERE table_name = 'linehall_maintenance' AND column_name = $1
+          )
+        `;
+        const columnExists = await pool.query(checkColumnQuery, [column.name]);
+        
+        if (!columnExists.rows[0].exists) {
+          const addColumnQuery = `ALTER TABLE linehall_maintenance ADD COLUMN ${column.name} ${column.type}`;
+          await pool.query(addColumnQuery);
+          console.log(`Coluna ${column.name} adicionada à tabela linehall_maintenance`);
+        }
+      } catch (error) {
+        console.error(`Erro ao adicionar coluna ${column.name}:`, error);
+      }
+    }
+    return;
+  }
+
+  console.log("Criando tabela linehall_maintenance...");
+  
+  try {
+    const createTableQuery = `
+      CREATE TABLE linehall_maintenance (
+        id SERIAL PRIMARY KEY,
+        motorista_id INTEGER,
+        motorista_nome VARCHAR(255) NOT NULL,
+        vehicle_plate VARCHAR(20) NOT NULL,
+        description TEXT NOT NULL,
+        urgency VARCHAR(20) DEFAULT 'normal',
+        status VARCHAR(20) DEFAULT 'pendente',
+        tipo_problema VARCHAR(100),
+        local_ocorrencia VARCHAR(255),
+        pode_continuar_viagem BOOLEAN,
+        observacoes TEXT,
+        protocolo VARCHAR(50),
+        approved_by VARCHAR(255),
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+    
+    await pool.query(createTableQuery);
+    console.log("Tabela linehall_maintenance criada com sucesso!");
+  } catch (error) {
+    console.error("Erro ao criar tabela linehall_maintenance:", error);
+  }
+}
+
+/**
  * Cria a tabela demo_forms para testes e exemplos se não existir
  */
 async function criarTabelaDemoForms() {
@@ -1130,6 +1201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await criarTabelaMovimentacaoPneu();
   await atualizarTabelaPneus();
   await setupTireActivityTable();
+  await criarTabelaLineHallMaintenance();
   await criarTabelaDemoForms();
   
   // Registrar rota SQL segura (novo)
@@ -10470,26 +10542,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Gerar protocolo único
       const protocolo = `LH${Date.now()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
 
-      // Simular inserção de solicitação de manutenção
-      const solicitacaoId = Math.floor(Math.random() * 1000) + 1;
+      // Buscar dados do motorista
+      const motoristaQuery = `
+        SELECT nome FROM (
+          SELECT 'João Silva' as nome, '12345678901' as cpf
+          UNION ALL
+          SELECT 'Maria Santos' as nome, '23456789012' as cpf
+          UNION ALL
+          SELECT 'Pedro Oliveira' as nome, '34567890123' as cpf
+        ) motoristas WHERE cpf = (
+          SELECT cpf FROM (
+            SELECT '12345678901' as cpf WHERE $1 = 1
+            UNION ALL
+            SELECT '23456789012' as cpf WHERE $1 = 2
+            UNION ALL
+            SELECT '34567890123' as cpf WHERE $1 = 3
+          ) ids
+        )
+      `;
+      
+      const motoristaResult = await pool.query(motoristaQuery, [motorista_id]);
+      const motoristaNome = motoristaResult.rows[0]?.nome || 'Motorista Não Identificado';
 
-      console.log(`Solicitação de manutenção criada:`, {
-        protocolo,
+      // Inserir na tabela linehall_maintenance
+      const insertQuery = `
+        INSERT INTO linehall_maintenance (
+          motorista_id, 
+          motorista_nome, 
+          vehicle_plate, 
+          description, 
+          urgency, 
+          status, 
+          tipo_problema,
+          local_ocorrencia,
+          pode_continuar_viagem,
+          observacoes,
+          protocolo,
+          created_at, 
+          updated_at
+        ) VALUES ($1, $2, $3, $4, $5, 'pendente', $6, $7, $8, $9, $10, NOW(), NOW())
+        RETURNING id, protocolo
+      `;
+
+      // Mapear prioridade para urgência
+      const urgencyMap = {
+        'baixa': 'baixa',
+        'media': 'normal', 
+        'alta': 'alta',
+        'emergencial': 'emergencial'
+      };
+
+      const result = await pool.query(insertQuery, [
         motorista_id,
+        motoristaNome,
+        placa_veiculo.toUpperCase(),
+        descricao,
+        urgencyMap[prioridade] || 'normal',
+        tipo_problema,
+        local_ocorrencia || 'Não informado',
+        pode_continuar_viagem,
+        observacoes_adicionais || '',
+        protocolo
+      ]);
+
+      console.log(`Solicitação de manutenção salva no banco:`, {
+        id: result.rows[0].id,
+        protocolo: result.rows[0].protocolo,
+        motorista_nome: motoristaNome,
         placa_veiculo: placa_veiculo.toUpperCase(),
         tipo_problema,
         prioridade,
-        descricao,
-        local_ocorrencia,
-        pode_continuar_viagem,
-        observacoes_adicionais
+        descricao
       });
 
       res.json({
         success: true,
         message: 'Solicitação enviada com sucesso',
-        protocolo: protocolo,
-        solicitacaoId: solicitacaoId
+        protocolo: result.rows[0].protocolo,
+        solicitacaoId: result.rows[0].id
       });
 
     } catch (error) {
