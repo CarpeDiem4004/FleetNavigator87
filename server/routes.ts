@@ -2754,6 +2754,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rotas do Line Hall Shopee - Gerenciar rotas cadastradas
+  app.get('/api/line-hall/routes', isAuthenticated, async (req, res) => {
+    try {
+      const query = `
+        SELECT 
+          id,
+          nome_ponto_a,
+          nome_ponto_b,
+          km_total,
+          created_at,
+          updated_at
+        FROM line_hall_routes
+        ORDER BY nome_ponto_a, nome_ponto_b
+      `;
+      
+      const result = await pool.query(query);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        total: result.rows.length
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar rotas do Line Hall:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar rotas do Line Hall',
+        error: error.message
+      });
+    }
+  });
+
+  // Criar nova rota do Line Hall Shopee
+  app.post('/api/line-hall/routes', isAuthenticated, async (req, res) => {
+    try {
+      const { nome_ponto_a, nome_ponto_b, km_total } = req.body;
+      
+      if (!nome_ponto_a || !nome_ponto_b || !km_total) {
+        return res.status(400).json({
+          success: false,
+          message: 'Todos os campos são obrigatórios'
+        });
+      }
+      
+      // Verificar se a rota já existe
+      const checkQuery = `
+        SELECT id FROM line_hall_routes 
+        WHERE nome_ponto_a = $1 AND nome_ponto_b = $2
+      `;
+      const checkResult = await pool.query(checkQuery, [nome_ponto_a, nome_ponto_b]);
+      
+      if (checkResult.rows.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Esta rota já está cadastrada'
+        });
+      }
+      
+      const query = `
+        INSERT INTO line_hall_routes
+          (nome_ponto_a, nome_ponto_b, km_total, created_at, updated_at)
+        VALUES
+          ($1, $2, $3, NOW(), NOW())
+        RETURNING *
+      `;
+      
+      const result = await pool.query(query, [nome_ponto_a, nome_ponto_b, km_total]);
+      
+      return res.status(201).json({
+        success: true,
+        data: result.rows[0],
+        message: 'Rota cadastrada com sucesso'
+      });
+    } catch (error: any) {
+      console.error('Erro ao cadastrar rota:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao cadastrar rota',
+        error: error.message
+      });
+    }
+  });
+
   // Listar todas as solicitações de manutenção do Line Hall
   app.get('/api/line-hall/maintenance-requests', isAuthenticated, async (req, res) => {
     try {
