@@ -43,7 +43,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
                CASE WHEN horario_abastecimento = 'antes_17h' THEN 'Antes das 17h' 
                     ELSE 'Após 18h' END) as observacoes,
         status,
-        TIMESTAMP(data_solicitacao, horario_solicitacao) as data_solicitacao,
+        (data_solicitacao::date + horario_solicitacao::time)::timestamp as data_solicitacao,
         observacoes_operador as atendido_por,
         updated_at as data_atendimento,
         created_at,
