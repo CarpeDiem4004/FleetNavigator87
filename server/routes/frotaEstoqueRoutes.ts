@@ -479,32 +479,14 @@ router.delete('/estoque-pecas/:id', verifyAuth, sessionAuth, async (req, res) =>
 
     const peca = pecaResult.rows[0];
 
-    // Registrar movimentação de exclusão para histórico
-    await pool.query(`
-      INSERT INTO frota_movimentacao_estoque (
-        peca_id,
-        tipo_movimento,
-        quantidade,
-        quantidade_anterior,
-        quantidade_atual,
-        valor_unitario,
-        motivo,
-        responsavel,
-        responsavel_id,
-        observacoes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-    `, [
-      id,
-      'saida',
-      peca.quantidade,
-      peca.quantidade,
-      0,
-      0,
-      'Exclusão da peça do sistema',
-      req.user?.name || req.supabaseUser?.email || 'Sistema',
-      req.user?.id || req.supabaseUser?.id || null,
-      `Peça ${peca.codigo} - ${peca.nome} removida do estoque`
-    ]);
+    // Primeiro, excluir os registros de movimentação relacionados
+    await pool.query(
+      'DELETE FROM frota_movimentacao_estoque WHERE peca_id = $1',
+      [id]
+    );
+
+    // Registrar movimentação de exclusão para histórico (em uma tabela de log separada se necessário)
+    // Por ora, vamos apenas excluir a peça após remover as movimentações
 
     // Excluir a peça
     const deleteResult = await pool.query(
