@@ -27,10 +27,20 @@ interface LineHallTrip {
   horario_carregamento?: string | null;
   status_viagem: string;
   data_inicio: string;
+  data_viagem?: string;
   data_fim?: string | null;
   observacoes?: string | null;
+  rota_selecionada?: string;
+  km_total?: number;
   created_at: string;
   updated_at: string;
+}
+
+interface RouteData {
+  id: number;
+  nome_ponto_a: string;
+  nome_ponto_b: string;
+  km_total: number;
 }
 
 const statusLabels: Record<string, string> = {
@@ -51,7 +61,7 @@ export default function LineHallShopeePage() {
   // Estados para gerenciar rotas
   const [isCreatingRoute, setIsCreatingRoute] = useState(false);
   const [showRoutes, setShowRoutes] = useState(false);
-  const [routes, setRoutes] = useState([]);
+  const [routes, setRoutes] = useState<RouteData[]>([]);
   const [currentRoute, setCurrentRoute] = useState({
     nome_ponto_a: '',
     nome_ponto_b: '',
@@ -89,7 +99,10 @@ export default function LineHallShopeePage() {
     local_descarregamento: '',
     horario_carregamento: '',
     status_viagem: 'Concluída',
-    observacoes: ''
+    observacoes: '',
+    rota_selecionada: '',
+    data_viagem: new Date().toISOString().split('T')[0],
+    km_total: 0
   });
 
   useEffect(() => {
@@ -612,7 +625,17 @@ export default function LineHallShopeePage() {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="data_viagem">Data da Viagem *</Label>
+                      <Input
+                        id="data_viagem"
+                        name="data_viagem"
+                        type="date"
+                        value={currentTrip.data_viagem || new Date().toISOString().split('T')[0]}
+                        onChange={handleInputChange}
+                      />
+                    </div>
                     <div className="space-y-2">
                       <Label htmlFor="horario_carregamento">Horário de Carregamento</Label>
                       <Input
