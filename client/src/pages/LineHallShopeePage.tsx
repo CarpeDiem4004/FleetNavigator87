@@ -573,6 +573,45 @@ export default function LineHallShopeePage() {
                       />
                     </div>
                   </div>
+                  
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="rota_selecionada">Rota Cadastrada</Label>
+                      <Select 
+                        name="rota_selecionada"
+                        value={currentTrip.rota_selecionada || ''} 
+                        onValueChange={(value) => {
+                          handleSelectChange('rota_selecionada', value);
+                          if (value) {
+                            const selectedRoute = routes.find(route => route.id === parseInt(value));
+                            if (selectedRoute) {
+                              setCurrentTrip(prev => ({
+                                ...prev,
+                                local_carregamento: selectedRoute.nome_ponto_a,
+                                local_descarregamento: selectedRoute.nome_ponto_b,
+                                km_total: selectedRoute.km_total
+                              }));
+                            }
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione uma rota cadastrada (opcional)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {routes.map((route) => (
+                            <SelectItem key={route.id} value={route.id.toString()}>
+                              {route.nome_ponto_a} → {route.nome_ponto_b} ({route.km_total} km)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <div className="text-xs text-muted-foreground">
+                        Ao selecionar uma rota, os campos de origem, destino e quilometragem serão preenchidos automaticamente
+                      </div>
+                    </div>
+                  </div>
+                  
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="horario_carregamento">Horário de Carregamento</Label>
