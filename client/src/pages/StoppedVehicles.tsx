@@ -28,7 +28,7 @@ const StoppedVehicles: React.FC = () => {
 
   // Query para buscar veículos parados
   const { data: stoppedVehicles, isLoading, refetch } = useQuery({
-    queryKey: ['/api/vehicles/stopped'],
+    queryKey: ['/api/stopped-vehicles'],
     refetchInterval: 30000 // Atualizar a cada 30 segundos
   });
 

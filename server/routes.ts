@@ -3828,8 +3828,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Rota para buscar veículos parados com detalhes - DEVE vir ANTES da rota /:id
-  app.get("/api/vehicles/stopped", async (req, res) => {
+  // Rota para buscar veículos parados com detalhes
+  app.get("/api/stopped-vehicles", async (req, res) => {
     try {
       console.log("API /vehicles/stopped chamada diretamente");
       
