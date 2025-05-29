@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, RefreshCcw, Search, Edit, Trash2, Truck, FileText, CheckSquare, Wrench, AlertCircle, Car, UserPlus } from 'lucide-react';
+import { Loader2, Plus, RefreshCcw, Search, Edit, Trash2, Truck, FileText, CheckSquare, Wrench, AlertCircle, Car, UserPlus, MapPin } from 'lucide-react';
 import { api } from '@/services/api';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
