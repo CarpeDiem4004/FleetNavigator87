@@ -23,7 +23,11 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
   const { toast } = useToast()
   const [placa, setPlaca] = useState('')
   const [marca, setMarca] = useState('')
-  const [modelo, setModelo] = useState('carreta')
+  const [modeloVeiculo, setModeloVeiculo] = useState('')
+  const [ano, setAno] = useState<number | undefined>(undefined)
+  const [tipoCombustivel, setTipoCombustivel] = useState('Diesel')
+  const [mediaConsumo, setMediaConsumo] = useState<number | undefined>(undefined)
+  const [tipoVeiculo, setTipoVeiculo] = useState('carreta')
   const [baseId, setBaseId] = useState<string | undefined>(undefined)
   const [ownership, setOwnership] = useState('murici') // Alterado de 'proprio' para 'murici'
   const [leasingCompany, setLeasingCompany] = useState('')
@@ -42,8 +46,8 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
   const [isUploadingCrlv, setIsUploadingCrlv] = useState(false)
   const [isUploadingAntt, setIsUploadingAntt] = useState(false)
 
-  // Opções de modelo seguindo os valores válidos do enum vehicleType
-  const modelos = [
+  // Opções de tipo de veículo seguindo os valores válidos do enum vehicleType
+  const tiposVeiculo = [
     { id: 'fiorino', nome: 'Fiorino' },
     { id: 'van', nome: 'Van' },
     { id: 'vuc', nome: 'VUC' },
@@ -51,6 +55,15 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
     { id: 'truck', nome: 'Truck' },
     { id: 'cavalo_mecanico', nome: 'Cavalo Mecânico' },
     { id: 'carreta', nome: 'Carreta' }
+  ]
+
+  // Opções de tipo de combustível
+  const tiposCombustivel = [
+    { id: 'Diesel', nome: 'Diesel' },
+    { id: 'Gasolina', nome: 'Gasolina' },
+    { id: 'Etanol', nome: 'Etanol' },
+    { id: 'GNV', nome: 'GNV' },
+    { id: 'Flex', nome: 'Flex' }
   ]
 
   // Função para fazer upload de arquivos para o Supabase
@@ -229,8 +242,12 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
         },
         body: JSON.stringify({
           plate: placa,
-          model: marca, // Agora usamos marca como modelo (Ford, FACCHINI, etc)
-          vehicleType: modelo, // E modelo como vehicleType (carreta, cavalo_mecanico, etc)
+          model: modeloVeiculo, // Modelo do veículo (ex: Cargo 2422)
+          make: marca, // Marca do veículo (ex: Ford)
+          vehicleType: tipoVeiculo, // Tipo de veículo (carreta, cavalo_mecanico, etc)
+          year: ano,
+          fuelType: tipoCombustivel,
+          mediaConsumoCombutivel: mediaConsumo,
           status: 'em_operacao',
           baseId: parseInt(baseId),
           ownership: ownership,
@@ -262,7 +279,11 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
       // Limpar formulário após sucesso
       setPlaca('')
       setMarca('')
-      setModelo('carreta')
+      setModeloVeiculo('')
+      setAno(undefined)
+      setTipoCombustivel('Diesel')
+      setMediaConsumo(undefined)
+      setTipoVeiculo('carreta')
       setBaseId(undefined)
       setOwnership('murici')
       setLeasingCompany('')
@@ -319,17 +340,67 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="modelo">Tipo de Veículo *</Label>
-            <Select value={modelo} onValueChange={setModelo}>
-              <SelectTrigger id="modelo">
-                <SelectValue placeholder="Selecione o tipo de veículo" />
-              </SelectTrigger>
-              <SelectContent>
-                {modelos.map((m) => (
-                  <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="modeloVeiculo">Modelo</Label>
+            <Input
+              id="modeloVeiculo"
+              type="text"
+              placeholder="Ex: Cargo 2422"
+              value={modeloVeiculo}
+              onChange={(e) => setModeloVeiculo(e.target.value)}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="ano">Ano</Label>
+              <Input
+                id="ano"
+                type="number"
+                placeholder="Ex: 2023"
+                value={ano || ''}
+                onChange={(e) => setAno(e.target.value ? parseInt(e.target.value) : undefined)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tipoCombustivel">Tipo de Combustível</Label>
+              <Select value={tipoCombustivel} onValueChange={setTipoCombustivel}>
+                <SelectTrigger id="tipoCombustivel">
+                  <SelectValue placeholder="Selecione o combustível" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tiposCombustivel.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="mediaConsumo">Média de Consumo (km/l)</Label>
+              <Input
+                id="mediaConsumo"
+                type="number"
+                step="0.1"
+                placeholder="Ex: 2.5"
+                value={mediaConsumo || ''}
+                onChange={(e) => setMediaConsumo(e.target.value ? parseFloat(e.target.value) : undefined)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tipoVeiculo">Tipo de Veículo *</Label>
+              <Select value={tipoVeiculo} onValueChange={setTipoVeiculo}>
+                <SelectTrigger id="tipoVeiculo">
+                  <SelectValue placeholder="Selecione o tipo de veículo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tiposVeiculo.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">
