@@ -458,10 +458,14 @@ export default function LineHallShopeePage() {
                         className="text-blue-600 hover:text-blue-800"
                       >
                         <MapPin className="mr-2 h-4 w-4" />
-                        Consultar Distância no Google Maps
+                        Ver Rota no Google Maps
                       </Button>
                     </div>
                   )}
+                  
+                  <div className="text-sm text-muted-foreground text-center">
+                    💡 Preencha origem e destino, depois use o botão acima para consultar a distância no Google Maps e insira o valor no campo "Distância Total"
+                  </div>
                 </div>
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setIsCreatingRoute(false)}>Cancelar</Button>
