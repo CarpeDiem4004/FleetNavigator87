@@ -48,6 +48,15 @@ export default function LineHallShopeePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
+  // Estados para gerenciar rotas
+  const [isCreatingRoute, setIsCreatingRoute] = useState(false);
+  const [routes, setRoutes] = useState([]);
+  const [currentRoute, setCurrentRoute] = useState({
+    nome_ponto_a: '',
+    nome_ponto_b: '',
+    km_total: 0
+  });
+  
   // Estados para acompanhamento de checklists e manutenção
   const [checklistStats, setChecklistStats] = useState({
     pendentes: 0,
@@ -85,7 +94,20 @@ export default function LineHallShopeePage() {
   useEffect(() => {
     fetchTrips();
     fetchDriverStats();
+    fetchRoutesData();
   }, []);
+
+  // Função para buscar rotas cadastradas
+  const fetchRoutesData = async () => {
+    try {
+      const response = await api.get('/line-hall/routes');
+      if (response.data.success) {
+        setRoutes(response.data.data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar rotas:', error);
+    }
+  };
 
   const fetchTrips = async () => {
     setIsLoading(true);
@@ -243,6 +265,46 @@ export default function LineHallShopeePage() {
     setCurrentTrip(prev => ({ ...prev, [name]: value }));
   };
   
+
+
+  // Função para criar nova rota
+  const handleCreateRoute = async () => {
+    if (!currentRoute.nome_ponto_a.trim() || !currentRoute.nome_ponto_b.trim() || !currentRoute.km_total) {
+      toast({
+        title: "Erro de validação",
+        description: "Todos os campos são obrigatórios",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const response = await api.post('/line-hall/routes', currentRoute);
+      
+      if (response.data.success) {
+        toast({
+          title: "Rota cadastrada",
+          description: "Rota cadastrada com sucesso!",
+          variant: "default"
+        });
+        setIsCreatingRoute(false);
+        setCurrentRoute({
+          nome_ponto_a: '',
+          nome_ponto_b: '',
+          km_total: 0
+        });
+        fetchRoutesData();
+      }
+    } catch (error: any) {
+      console.error("Erro ao cadastrar rota:", error);
+      toast({
+        title: "Erro ao cadastrar rota",
+        description: error.response?.data?.message || "Ocorreu um erro ao cadastrar a rota",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Função para buscar estatísticas de checklist e manutenção
   const fetchDriverStats = async () => {
     try {
@@ -337,6 +399,56 @@ export default function LineHallShopeePage() {
               <RefreshCcw className="mr-2 h-4 w-4" />
               Atualizar
             </Button>
+            <Dialog open={isCreatingRoute} onOpenChange={setIsCreatingRoute}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="flex items-center">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Cadastrar Rota
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>Cadastrar Nova Rota</DialogTitle>
+                  <DialogDescription>
+                    Cadastre uma nova rota do Line Hall Shopee
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="nome_ponto_a">Ponto A (Origem) *</Label>
+                    <Input
+                      id="nome_ponto_a"
+                      placeholder="Ex: São Paulo - SP"
+                      value={currentRoute.nome_ponto_a}
+                      onChange={(e) => setCurrentRoute(prev => ({ ...prev, nome_ponto_a: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="nome_ponto_b">Ponto B (Destino) *</Label>
+                    <Input
+                      id="nome_ponto_b"
+                      placeholder="Ex: Rio de Janeiro - RJ"
+                      value={currentRoute.nome_ponto_b}
+                      onChange={(e) => setCurrentRoute(prev => ({ ...prev, nome_ponto_b: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="km_total">Distância Total (KM) *</Label>
+                    <Input
+                      id="km_total"
+                      type="number"
+                      placeholder="Ex: 450"
+                      value={currentRoute.km_total || ''}
+                      onChange={(e) => setCurrentRoute(prev => ({ ...prev, km_total: parseFloat(e.target.value) || 0 }))}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setIsCreatingRoute(false)}>Cancelar</Button>
+                  <Button type="button" onClick={handleCreateRoute}>Cadastrar Rota</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
             <Dialog open={isCreating} onOpenChange={setIsCreating}>
               <DialogTrigger asChild>
                 <Button className="flex items-center">
