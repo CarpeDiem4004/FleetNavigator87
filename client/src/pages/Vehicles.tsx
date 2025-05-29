@@ -601,7 +601,7 @@ const Vehicles: React.FC = () => {
                 console.log("Enviando veículo para a API:", vehicleData);
                 addVehicleMutation.mutate(vehicleData);
               }}
-              disabled={!newVehicle.plate || !newVehicle.model}
+              disabled={!newVehicle.plate || !newVehicle.make}
             >
               {addVehicleMutation.isPending ? 'Salvando...' : 'Salvar'}
             </Button>
