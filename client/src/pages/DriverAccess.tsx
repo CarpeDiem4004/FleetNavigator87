@@ -30,6 +30,8 @@ const DriverAccess: React.FC = () => {
   const [cpf, setCpf] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [driver, setDriver] = useState<DriverData | null>(null);
+  const [tripStatus, setTripStatus] = useState<'programada' | 'em_andamento' | 'concluida'>('programada');
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   const { toast } = useToast();
 
   const formatCPF = (value: string) => {
@@ -112,6 +114,42 @@ const DriverAccess: React.FC = () => {
   const handleLogout = () => {
     setDriver(null);
     setCpf('');
+  };
+
+  const handleTripStatusUpdate = async (newStatus: 'em_andamento' | 'concluida') => {
+    if (!driver) return;
+
+    setUpdatingStatus(true);
+    try {
+      const response = await apiRequest('POST', '/api/line-hall/trip/update-status', {
+        motorista_id: driver.id,
+        status: newStatus,
+        timestamp: new Date().toISOString()
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setTripStatus(newStatus);
+        toast({
+          title: "Status atualizado",
+          description: newStatus === 'em_andamento' 
+            ? "Viagem iniciada com sucesso!" 
+            : "Viagem concluída com sucesso!"
+        });
+      } else {
+        throw new Error(data.message || 'Erro ao atualizar status');
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar status da viagem:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o status da viagem",
+        variant: "destructive"
+      });
+    } finally {
+      setUpdatingStatus(false);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -263,6 +301,60 @@ const DriverAccess: React.FC = () => {
                     <div className="text-sm text-gray-600">Horário de Carregamento</div>
                     <div className="font-semibold">{driver.viagem.horario_carregamento}</div>
                   </div>
+                </div>
+              </div>
+
+              {/* Controles de Status da Viagem */}
+              <div className="pt-4 border-t">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-sm font-medium text-gray-700">Status da Viagem:</div>
+                  <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    tripStatus === 'programada' ? 'bg-yellow-100 text-yellow-800' :
+                    tripStatus === 'em_andamento' ? 'bg-blue-100 text-blue-800' :
+                    'bg-green-100 text-green-800'
+                  }`}>
+                    {tripStatus === 'programada' ? 'Programada' :
+                     tripStatus === 'em_andamento' ? 'Em Andamento' :
+                     'Concluída'}
+                  </div>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-3">
+                  {tripStatus === 'programada' && (
+                    <Button 
+                      onClick={() => handleTripStatusUpdate('em_andamento')}
+                      disabled={updatingStatus}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      {updatingStatus ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Clock className="w-4 h-4 mr-2" />
+                      )}
+                      Iniciar Viagem
+                    </Button>
+                  )}
+                  
+                  {tripStatus === 'em_andamento' && (
+                    <Button 
+                      onClick={() => handleTripStatusUpdate('concluida')}
+                      disabled={updatingStatus}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      {updatingStatus ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Calendar className="w-4 h-4 mr-2" />
+                      )}
+                      Viagem Concluída
+                    </Button>
+                  )}
+                  
+                  {tripStatus === 'concluida' && (
+                    <div className="col-span-2 text-center py-2 text-green-600 font-medium">
+                      ✓ Viagem concluída com sucesso!
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>

@@ -10630,6 +10630,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // Atualizar status da viagem
+  app.post('/api/line-hall/trip/update-status', async (req, res) => {
+    try {
+      const { motorista_id, status, timestamp } = req.body;
+
+      if (!motorista_id || !status) {
+        return res.status(400).json({
+          success: false,
+          message: 'Dados obrigatórios não fornecidos'
+        });
+      }
+
+      // Validar status
+      const validStatuses = ['em_andamento', 'concluida'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Status inválido'
+        });
+      }
+
+      // Verificar se existe uma tabela para armazenar o status das viagens
+      const createTableQuery = `
+        CREATE TABLE IF NOT EXISTS linehall_trip_status (
+          id SERIAL PRIMARY KEY,
+          motorista_id INTEGER NOT NULL,
+          status VARCHAR(20) NOT NULL,
+          timestamp TIMESTAMP DEFAULT NOW(),
+          created_at TIMESTAMP DEFAULT NOW()
+        )
+      `;
+      await pool.query(createTableQuery);
+
+      // Inserir novo status
+      const insertQuery = `
+        INSERT INTO linehall_trip_status (motorista_id, status, timestamp)
+        VALUES ($1, $2, $3)
+        RETURNING id
+      `;
+
+      const result = await pool.query(insertQuery, [
+        motorista_id,
+        status,
+        timestamp || new Date().toISOString()
+      ]);
+
+      console.log(`Status da viagem atualizado:`, {
+        id: result.rows[0].id,
+        motorista_id,
+        status,
+        timestamp: timestamp || new Date().toISOString()
+      });
+
+      res.json({
+        success: true,
+        message: 'Status da viagem atualizado com sucesso',
+        statusId: result.rows[0].id
+      });
+
+    } catch (error) {
+      console.error('Erro ao atualizar status da viagem:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  });
   app.use('/api/posto-special', postoRoutes); // Adicionando novas rotas especiais para atualização de histórico
 
   // Para debugging, adicionar rota para listar todas as tabelas relacionadas a postos
