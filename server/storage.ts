@@ -533,11 +533,16 @@ export class DatabaseStorage implements IStorage {
 
   async getAllVehicles(): Promise<Vehicle[]> {
     try {
-      // Usar SQL bruto para evitar problemas com mapeamento de campos
+      // Usar SQL bruto com os nomes corretos das colunas
       const result = await db.execute(sql`
-        SELECT id, plate, model, vehicletype as "vehicleType", 
-               status, baseid as "baseId", fueltype,
-               year, mileage, color
+        SELECT id, placa as plate, 
+               COALESCE(model, modelo, '') as model,
+               COALESCE(make, '') as make,
+               tipo as "vehicleType", 
+               status, base_id as "baseId",
+               COALESCE(fuel_type, 'Diesel') as "fuelType",
+               year, 
+               COALESCE(media_consumo_combustivel, 0) as "mediaConsumoCombutivel"
         FROM veiculos
       `);
       
@@ -546,16 +551,13 @@ export class DatabaseStorage implements IStorage {
         id: row.id,
         plate: row.plate,
         model: row.model,
+        make: row.make,
         vehicleType: row.vehicleType,
         status: row.status,
         baseId: row.baseId,
-        fuelType: row.fueltype,
+        fuelType: row.fuelType,
         year: row.year,
-        mileage: row.mileage,
-        color: row.color,
-        // Add default/null values for any fields expected by Vehicle interface but not in DB
-        ownership: 'murici',
-        rentalCompany: null
+        mediaConsumoCombutivel: row.mediaConsumoCombutivel
       }));
     } catch (error) {
       console.error("Erro ao buscar veículos:", error);
