@@ -255,8 +255,13 @@ export default function MaintenanceDetailDialog({
       servicePerformed: formData.servicePerformed,
       estimatedCompletion: formData.estimatedCompletion ? format(formData.estimatedCompletion, 'yyyy-MM-dd') : null,
       completionDate: formData.completionDate ? format(formData.completionDate, 'yyyy-MM-dd') : null,
-      cost: formData.cost ? parseFloat(formData.cost) : null,
-      replacedParts: formData.replacedParts
+      cost: parseFloat(getTotalCost()), // Custo calculado automaticamente
+      replacedParts: formData.replacedParts,
+      // Novos campos de oficina parceira
+      mechanicName: formData.mechanicName,
+      usedPartnerWorkshop: formData.usedPartnerWorkshop,
+      partnerWorkshopName: formData.usedPartnerWorkshop ? formData.partnerWorkshopName : null,
+      laborCost: formData.usedPartnerWorkshop ? parseFloat(formData.laborCost || '0') : 0
     };
 
     // Adicionar campos específicos para aguardando_peca
@@ -494,18 +499,29 @@ export default function MaintenanceDetailDialog({
             />
           </div>
 
-          {/* Custo Total */}
-          <div className="space-y-2">
-            <Label htmlFor="cost">Valor Total (R$)</Label>
-            <Input
-              id="cost"
-              type="number"
-              value={formData.cost}
-              onChange={(e) => setFormData({...formData, cost: e.target.value})}
-              placeholder="0,00"
-              step="0.01"
-              min="0"
-            />
+          {/* Custo Total Calculado */}
+          <div className="space-y-4 p-4 border rounded-lg bg-green-50">
+            <h3 className="font-semibold text-green-800">Resumo de Custos</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">Total das Peças:</Label>
+                <div className="text-lg font-bold text-green-700">
+                  R$ {getTotalPartsValue()}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">Mão de Obra:</Label>
+                <div className="text-lg font-bold text-blue-700">
+                  R$ {parseFloat(formData.laborCost || '0').toFixed(2)}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">Custo Total:</Label>
+                <div className="text-xl font-bold text-gray-900">
+                  R$ {getTotalCost()}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Peças Trocadas */}

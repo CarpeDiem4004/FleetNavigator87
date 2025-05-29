@@ -4689,7 +4689,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pendingPartValue,
         pendingPartSupplier,
         pendingPartPhone,
-        pendingPartDeadline
+        pendingPartDeadline,
+        mechanicName,
+        usedPartnerWorkshop,
+        partnerWorkshopName,
+        laborCost,
+        cost,
+        servicePerformed,
+        estimatedCompletion,
+        completionDate,
+        replacedParts
       } = req.body;
 
       // Verificar se a manutenção existe na tabela oficina_murici_manutencoes
@@ -4742,6 +4751,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
           params.push(pendingPartDeadline);
           paramIndex++;
         }
+      }
+
+      // Campos gerais da manutenção
+      if (mechanicName !== undefined) {
+        setClause.push(`mechanic_name = $${paramIndex}`);
+        params.push(mechanicName);
+        paramIndex++;
+      }
+
+      if (usedPartnerWorkshop !== undefined) {
+        setClause.push(`used_partner_workshop = $${paramIndex}`);
+        params.push(usedPartnerWorkshop);
+        paramIndex++;
+      }
+
+      if (partnerWorkshopName !== undefined) {
+        setClause.push(`partner_workshop_name = $${paramIndex}`);
+        params.push(partnerWorkshopName);
+        paramIndex++;
+      }
+
+      if (laborCost !== undefined) {
+        setClause.push(`labor_cost = $${paramIndex}`);
+        params.push(laborCost);
+        paramIndex++;
+      }
+
+      if (cost !== undefined) {
+        setClause.push(`custo_total = $${paramIndex}`);
+        params.push(cost);
+        paramIndex++;
+      }
+
+      if (servicePerformed !== undefined) {
+        setClause.push(`servico_realizado = $${paramIndex}`);
+        params.push(servicePerformed);
+        paramIndex++;
+      }
+
+      if (estimatedCompletion !== undefined) {
+        setClause.push(`previsao_conclusao = $${paramIndex}`);
+        params.push(estimatedCompletion);
+        paramIndex++;
+      }
+
+      if (completionDate !== undefined) {
+        setClause.push(`data_conclusao = $${paramIndex}`);
+        params.push(completionDate);
+        paramIndex++;
       }
 
       // Adicionar updated_at
