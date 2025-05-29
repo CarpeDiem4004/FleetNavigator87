@@ -18,10 +18,10 @@ interface PecaEstoque {
   nome: string;
   descricao: string;
   categoria: string;
-  fabricante: string; // Campo correto da API existente
-  valor_unitario: number; // Campo correto da API existente
-  quantidade: number; // Campo correto da API existente
-  estoque_minimo: number; // Campo correto da API existente
+  fabricante: string;
+  valor_unitario: number;
+  quantidade: number;
+  estoque_minimo: number;
   unidade_medida: string;
   localizacao: string;
 }
@@ -30,7 +30,7 @@ interface PecaSelecionada {
   id: number;
   codigo: string;
   nome: string;
-  valor_unitario: number; // Campo correto da API existente
+  valor_unitario: number;
   quantidade: number;
   unidade_medida: string;
   valor_total: number;
@@ -66,9 +66,12 @@ export default function SeletorPecasEstoque({ pecasSelecionadas, onPecasChange }
   });
 
   // Extrair categorias únicas das peças
-  const categorias = [...new Set((allParts as PecaEstoque[]).map((peca) => peca.categoria).filter(Boolean))];
+  const categorias = (allParts as PecaEstoque[])
+    .map((peca) => peca.categoria)
+    .filter(Boolean)
+    .filter((categoria, index, arr) => arr.indexOf(categoria) === index);
 
-  const adicionarPeca = async (peca: PecaEstoque) => {
+  const adicionarPeca = (peca: PecaEstoque) => {
     const pecaExistente = pecasSelecionadas.find(p => p.id === peca.id);
     
     if (pecaExistente) {
@@ -90,42 +93,24 @@ export default function SeletorPecasEstoque({ pecasSelecionadas, onPecasChange }
       return;
     }
 
-    try {
-      // Atualizar o estoque (reduzir 1 unidade)
-      const response = await apiRequest('PUT', `/api/frota/estoque-pecas/${peca.id}`, {
-        quantidade: peca.quantidade - 1
-      });
+    // Não atualizar o estoque aqui - apenas adicionar à lista
+    // O estoque será atualizado quando a manutenção for registrada
+    const novaPeca: PecaSelecionada = {
+      id: peca.id,
+      codigo: peca.codigo,
+      nome: peca.nome,
+      valor_unitario: peca.valor_unitario,
+      quantidade: 1,
+      unidade_medida: peca.unidade_medida,
+      valor_total: peca.valor_unitario,
+    };
 
-      if (!response.ok) {
-        throw new Error('Erro ao atualizar estoque');
-      }
-
-      const novaPeca: PecaSelecionada = {
-        id: peca.id,
-        codigo: peca.codigo,
-        nome: peca.nome,
-        valor_unitario: peca.valor_unitario,
-        quantidade: 1,
-        unidade_medida: peca.unidade_medida,
-        valor_total: peca.valor_unitario,
-      };
-
-      onPecasChange([...pecasSelecionadas, novaPeca]);
-      
-      // Recarregar a lista de peças para refletir o novo estoque
-      queryClient.invalidateQueries({ queryKey: ['/api/frota/estoque-pecas'] });
-      
-      toast({
-        title: 'Peça adicionada',
-        description: `${peca.nome} foi adicionada à lista. Estoque atualizado.`,
-      });
-    } catch (error) {
-      toast({
-        title: 'Erro ao adicionar peça',
-        description: 'Não foi possível atualizar o estoque. Tente novamente.',
-        variant: 'destructive',
-      });
-    }
+    onPecasChange([...pecasSelecionadas, novaPeca]);
+    
+    toast({
+      title: 'Peça adicionada',
+      description: `${peca.nome} foi adicionada à lista.`,
+    });
   };
 
   const removerPeca = (id: number) => {
@@ -152,7 +137,7 @@ export default function SeletorPecasEstoque({ pecasSelecionadas, onPecasChange }
     onPecasChange(pecasAtualizadas);
   };
 
-  const valorTotalGeral = pecasSelecionadas.reduce((total, peca) => total + peca.valor_total, 0);
+  const valorTotalGeral = pecasSelecionadas.reduce((total, peca) => total + (peca.valor_total || 0), 0);
 
   return (
     <div className="space-y-4">
