@@ -414,12 +414,6 @@ export default function LineHallShopeePage() {
               Atualizar
             </Button>
             <Dialog open={isCreatingRoute} onOpenChange={setIsCreatingRoute}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="flex items-center">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Cadastrar Rota
-                </Button>
-              </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                   <DialogTitle>Cadastrar Nova Rota</DialogTitle>
