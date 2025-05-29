@@ -90,6 +90,7 @@ import TiresEntrada from "@/pages/TiresEntrada";
 import LineHallShopeePage from "@/pages/LineHallShopeePage";
 import LineHallDriverPage from "@/pages/LineHallDriverPage";
 import LineHallMaintenanceManager from "@/pages/LineHallMaintenanceManager";
+import MotoristaLineHall from "@/pages/MotoristaLineHall";
 import LineHallChecklistManager from "@/pages/LineHallChecklistManager";
 import FuelCardPage from "@/pages/FuelCardPage";
 import FuelCard from "@/pages/FuelCard";
@@ -289,6 +290,11 @@ function App() {
           {/* Rota para verificação de motorista por CPF */}
           <Route path="/driver-checklist">
             <DriverChecklist />
+          </Route>
+          
+          {/* Rota pública para acesso do motorista Line Hall */}
+          <Route path="/line-hall-driver">
+            <MotoristaLineHall />
           </Route>
           
           {/* Rota para o perfil do usuário Supabase */}
