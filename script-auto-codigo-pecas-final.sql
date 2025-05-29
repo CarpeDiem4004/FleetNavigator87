@@ -1,26 +1,21 @@
 -- =====================================================
--- SCRIPT COMPLETO: AUTO-GERAÇÃO DE CÓDIGOS PARA PEÇAS
+-- SCRIPT FINAL: AUTO-GERAÇÃO DE CÓDIGOS PARA PEÇAS
 -- =====================================================
 
--- 1. CRIAR TABELA ESTOQUE_PECAS (se não existir)
-CREATE TABLE IF NOT EXISTS estoque_pecas (
-    id SERIAL PRIMARY KEY,
-    codigo VARCHAR(50) NOT NULL UNIQUE,
-    nome VARCHAR(255) NOT NULL,
-    descricao TEXT,
-    categoria VARCHAR(100),
-    fornecedor VARCHAR(255),
-    preco_unitario DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    quantidade_estoque INTEGER DEFAULT 0,
-    quantidade_minima INTEGER DEFAULT 1,
-    unidade_medida VARCHAR(20) DEFAULT 'UN',
-    localizacao VARCHAR(100),
-    data_entrada DATE DEFAULT CURRENT_DATE,
-    data_validade DATE,
-    status VARCHAR(20) DEFAULT 'ativo',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- 1. ADICIONAR CONSTRAINT UNIQUE SE NÃO EXISTIR
+DO $$
+BEGIN
+    -- Verificar se a constraint já existe
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE table_name = 'estoque_pecas' 
+        AND constraint_type = 'UNIQUE' 
+        AND constraint_name = 'estoque_pecas_codigo_unique'
+    ) THEN
+        -- Adicionar constraint unique no código
+        ALTER TABLE estoque_pecas ADD CONSTRAINT estoque_pecas_codigo_unique UNIQUE (codigo);
+    END IF;
+END $$;
 
 -- 2. FUNÇÃO PARA GERAR CÓDIGO AUTOMÁTICO
 CREATE OR REPLACE FUNCTION generate_part_code(categoria_input VARCHAR DEFAULT NULL)
@@ -87,17 +82,22 @@ CREATE TRIGGER trigger_update_part_timestamp
     FOR EACH ROW
     EXECUTE FUNCTION auto_generate_part_code();
 
--- 6. INSERIR DADOS DE EXEMPLO (opcional)
-INSERT INTO estoque_pecas (nome, categoria, descricao, preco_unitario, quantidade_estoque, fornecedor) VALUES
-('Óleo Motor 5W30', 'Lubrificantes', 'Óleo sintético para motor', 45.90, 50, 'Petrobras'),
-('Filtro de Óleo', 'Filtros', 'Filtro de óleo para motor', 28.50, 30, 'Mann Filter'),
-('Pastilha de Freio Dianteira', 'Freios', 'Pastilha de freio cerâmica', 89.90, 25, 'Bosch'),
-('Amortecedor Dianteiro', 'Suspensão', 'Amortecedor hidráulico', 245.00, 10, 'Monroe'),
-('Pneu 215/75R17.5', 'Pneus', 'Pneu para caminhão', 890.00, 8, 'Bridgestone'),
-('Bateria 12V 100Ah', 'Elétrica', 'Bateria para caminhão', 320.00, 15, 'Moura'),
-('Correia Dentada', 'Motor', 'Correia de distribuição', 125.00, 20, 'Gates'),
-('Lâmpada H7 12V', 'Elétrica', 'Lâmpada para farol', 35.00, 40, 'Osram')
-ON CONFLICT (codigo) DO NOTHING;
+-- 6. INSERIR DADOS DE EXEMPLO (apenas se não existirem)
+DO $$
+BEGIN
+    -- Verificar se já existem dados na tabela
+    IF (SELECT COUNT(*) FROM estoque_pecas) = 0 THEN
+        INSERT INTO estoque_pecas (nome, categoria, descricao, preco_unitario, quantidade_estoque, fornecedor) VALUES
+        ('Óleo Motor 5W30', 'Lubrificantes', 'Óleo sintético para motor', 45.90, 50, 'Petrobras'),
+        ('Filtro de Óleo', 'Filtros', 'Filtro de óleo para motor', 28.50, 30, 'Mann Filter'),
+        ('Pastilha de Freio Dianteira', 'Freios', 'Pastilha de freio cerâmica', 89.90, 25, 'Bosch'),
+        ('Amortecedor Dianteiro', 'Suspensão', 'Amortecedor hidráulico', 245.00, 10, 'Monroe'),
+        ('Pneu 215/75R17.5', 'Pneus', 'Pneu para caminhão', 890.00, 8, 'Bridgestone'),
+        ('Bateria 12V 100Ah', 'Elétrica', 'Bateria para caminhão', 320.00, 15, 'Moura'),
+        ('Correia Dentada', 'Motor', 'Correia de distribuição', 125.00, 20, 'Gates'),
+        ('Lâmpada H7 12V', 'Elétrica', 'Lâmpada para farol', 35.00, 40, 'Osram');
+    END IF;
+END $$;
 
 -- 7. FUNÇÕES AUXILIARES
 
@@ -147,6 +147,18 @@ BEGIN
     END LOOP;
 END;
 $$ LANGUAGE plpgsql;
+
+-- 8. TESTE DO SISTEMA
+DO $$
+DECLARE
+    teste_codigo VARCHAR;
+BEGIN
+    -- Testar a função de geração
+    SELECT generate_part_code('Teste') INTO teste_codigo;
+    RAISE NOTICE 'Código gerado para categoria Teste: %', teste_codigo;
+    
+    RAISE NOTICE 'Sistema de auto-geração de códigos instalado com sucesso!';
+END $$;
 
 -- =====================================================
 -- EXEMPLOS DE USO:
