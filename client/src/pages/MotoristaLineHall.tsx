@@ -15,7 +15,8 @@ import {
   CheckCircle,
   AlertCircle,
   Navigation,
-  Search
+  Search,
+  ClipboardCheck
 } from 'lucide-react'
 
 interface Trip {
@@ -34,6 +35,26 @@ interface Trip {
   observacoes?: string
 }
 
+interface ChecklistItem {
+  id: string
+  description: string
+  status: 'pending' | 'ok' | 'problema'
+  observations?: string
+}
+
+interface Checklist {
+  id?: number
+  trip_id: number
+  motorista_nome: string
+  placa_cavalo: string
+  km_inicial?: number
+  km_final?: number
+  status: 'em_andamento' | 'concluido'
+  items: ChecklistItem[]
+  created_at?: string
+  completed_at?: string
+}
+
 export default function MotoristaLineHall() {
   const [trip, setTrip] = useState<Trip | null>(null)
   const [loading, setLoading] = useState(false)
@@ -41,6 +62,23 @@ export default function MotoristaLineHall() {
   const [searchLoading, setSearchLoading] = useState(false)
   const [motoristaName, setMotoristaName] = useState('')
   const [cpf, setCpf] = useState('')
+  
+  // Estados para checklist
+  const [checklist, setChecklist] = useState<Checklist | null>(null)
+  const [showChecklist, setShowChecklist] = useState(false)
+  const [kmInicial, setKmInicial] = useState('')
+  const [kmFinal, setKmFinal] = useState('')
+  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([
+    { id: '1', description: 'Verificar freios', status: 'pending' },
+    { id: '2', description: 'Verificar pneus', status: 'pending' },
+    { id: '3', description: 'Verificar óleo do motor', status: 'pending' },
+    { id: '4', description: 'Verificar combustível', status: 'pending' },
+    { id: '5', description: 'Verificar documentação', status: 'pending' },
+    { id: '6', description: 'Verificar luzes e sinalização', status: 'pending' },
+    { id: '7', description: 'Verificar espelhos', status: 'pending' },
+    { id: '8', description: 'Verificar limpeza do veículo', status: 'pending' }
+  ])
+  
   const { toast } = useToast()
 
   const searchTrip = async () => {
@@ -151,6 +189,136 @@ export default function MotoristaLineHall() {
       toast({
         title: "Erro",
         description: "Não foi possível atualizar o status da viagem",
+        variant: "destructive"
+      })
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const startChecklist = async () => {
+    if (!trip || !kmInicial) {
+      toast({
+        title: "KM inicial obrigatório",
+        description: "Por favor, informe a quilometragem inicial",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      setUpdating(true)
+      
+      const newChecklist: Checklist = {
+        trip_id: trip.id,
+        motorista_nome: trip.motorista_nome,
+        placa_cavalo: trip.placa_cavalo,
+        km_inicial: parseInt(kmInicial),
+        status: 'em_andamento',
+        items: [...checklistItems]
+      }
+
+      const response = await fetch('/api/line-hall-checklist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newChecklist)
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao iniciar checklist')
+      }
+
+      const result = await response.json()
+      setChecklist(result.checklist)
+      setShowChecklist(true)
+      
+      toast({
+        title: "Checklist iniciado",
+        description: "Preencha todos os itens do checklist",
+      })
+
+    } catch (error) {
+      console.error('Erro ao iniciar checklist:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível iniciar o checklist",
+        variant: "destructive"
+      })
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const updateChecklistItem = (itemId: string, status: 'ok' | 'problema', observations?: string) => {
+    setChecklistItems(prev => 
+      prev.map(item => 
+        item.id === itemId 
+          ? { ...item, status, observations } 
+          : item
+      )
+    )
+  }
+
+  const finishChecklist = async () => {
+    if (!checklist || !kmFinal) {
+      toast({
+        title: "KM final obrigatório",
+        description: "Por favor, informe a quilometragem final",
+        variant: "destructive"
+      })
+      return
+    }
+
+    // Verificar se todos os itens foram preenchidos
+    const pendingItems = checklistItems.filter(item => item.status === 'pending')
+    if (pendingItems.length > 0) {
+      toast({
+        title: "Checklist incompleto",
+        description: `${pendingItems.length} item(s) ainda pendente(s)`,
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      setUpdating(true)
+      
+      const updatedChecklist: Checklist = {
+        ...checklist,
+        km_final: parseInt(kmFinal),
+        status: 'concluido',
+        items: checklistItems
+      }
+
+      const response = await fetch(`/api/line-hall-checklist/${checklist.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updatedChecklist)
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao finalizar checklist')
+      }
+
+      setChecklist(updatedChecklist)
+      
+      toast({
+        title: "Checklist finalizado",
+        description: "Checklist concluído com sucesso!",
+      })
+
+      // Finalizar a viagem automaticamente
+      await updateTripStatus('Concluída')
+
+    } catch (error) {
+      console.error('Erro ao finalizar checklist:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível finalizar o checklist",
         variant: "destructive"
       })
     } finally {
@@ -367,16 +535,30 @@ export default function MotoristaLineHall() {
                   </Button>
                 )}
 
-                {trip.status_viagem === 'Em Andamento' && (
-                  <Button 
-                    onClick={() => updateTripStatus('Concluída')}
-                    disabled={updating}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white py-3"
-                    size="lg"
-                  >
-                    <CheckCircle className="mr-2 h-5 w-5" />
-                    {updating ? 'Finalizando...' : 'Finalizar Viagem'}
-                  </Button>
+                {trip.status_viagem === 'Em Andamento' && !showChecklist && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        KM Inicial do Veículo
+                      </label>
+                      <Input
+                        type="number"
+                        placeholder="Ex: 150000"
+                        value={kmInicial}
+                        onChange={(e) => setKmInicial(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                    <Button 
+                      onClick={startChecklist}
+                      disabled={updating || !kmInicial}
+                      className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3"
+                      size="lg"
+                    >
+                      <ClipboardCheck className="mr-2 h-5 w-5" />
+                      {updating ? 'Iniciando...' : 'Iniciar Checklist'}
+                    </Button>
+                  </div>
                 )}
 
                 {trip.status_viagem === 'Concluída' && (
