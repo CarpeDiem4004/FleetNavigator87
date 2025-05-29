@@ -1,1563 +1,273 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useLocation, useParams } from 'wouter';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase-compat';
-import { useLocation } from 'wouter';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
-import { Progress } from "@/components/ui/progress";
-import { 
-  CircleCheck, 
-  AlertCircle, 
-  Info, 
-  Truck, 
-  CheckSquare, 
-  XCircle, 
-  Wrench as Tool, 
-  CreditCard, 
-  Camera, 
-  Upload, 
-  FileWarning,
-  ShieldAlert,
-  Loader2
-} from "lucide-react";
+import { ArrowLeft, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import { apiRequest } from '@/lib/queryClient';
 
-// Tipos de condição para componentes do veículo
-type Condition = 'bom' | 'regular' | 'ruim' | undefined;
-
-// Interface para o objeto do checklist
-interface Checklist {
-  tripId: number;
-  motoristaNome: string;
-  kmInicial?: number;
-  kmFinal?: number;
-  condicaoPneus?: Condition;
-  condicaoLuzes?: Condition;
-  condicaoFreios?: Condition;
-  condicaoParabrisa?: Condition;
-  nivelOleo?: Condition;
-  nivelAgua?: Condition;
-  condicaoCavalo?: Condition;
-  condicaoCarreta?: Condition;
-  avarias: string[];
-  fotos: string[];
-  observacoes?: string;
-  isChecklistInicial: boolean;
+interface ChecklistItem {
+  id: string;
+  category: string;
+  item: string;
+  checked: boolean;
+  observation?: string;
 }
-
-// Interface para dados da viagem
-interface TripInfo {
-  id: number;
-  data_viagem: string;
-  cavalo_placa: string;
-  carreta1_placa: string;
-  carreta2_placa?: string;
-  motorista_nome?: string;
-  motorista_id: number;
-  base_origem_nome?: string;
-  base_destino_nome?: string;
-  horario_carregamento: string;
-  status: string;
-}
-
-// Interface para as solicitações
-interface MaintenanceRequest {
-  descricao: string;
-  urgencia: 'baixa' | 'normal' | 'alta' | 'emergencial';
-}
-
-interface RefuelingCardRequest {
-  numeroCartao?: string;
-  valorSolicitado: number;
-  justificativa: string;
-  comprovante?: string;
-}
-
-// Componente para condição com ícones de cor
-const ConditionSelect: React.FC<{
-  label: string;
-  value: Condition;
-  onChange: (value: Condition) => void;
-}> = ({ label, value, onChange }) => {
-  return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      <Select 
-        value={value || ''} 
-        onValueChange={(val) => onChange(val as Condition)}
-      >
-        <SelectTrigger>
-          <SelectValue placeholder="Selecione a condição" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="bom" className="flex items-center">
-            <div className="flex items-center">
-              <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-              Bom
-            </div>
-          </SelectItem>
-          <SelectItem value="regular" className="flex items-center">
-            <div className="flex items-center">
-              <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
-              Regular
-            </div>
-          </SelectItem>
-          <SelectItem value="ruim" className="flex items-center">
-            <div className="flex items-center">
-              <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-              Ruim
-            </div>
-          </SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
-  );
-};
 
 const DriverChecklist: React.FC = () => {
-  const { toast } = useToast();
+  const params = useParams();
   const [, setLocation] = useLocation();
-  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [tripId, setTripId] = useState<number | null>(null);
-  const [tripInfo, setTripInfo] = useState<TripInfo | null>(null);
-  const [step, setStep] = useState<'auth' | 'info' | 'checklist' | 'requests' | 'success'>('auth');
-  const [progress, setProgress] = useState(0);
-  const [cpf, setCpf] = useState<string>('');
-  const [motorista, setMotorista] = useState<{id: number, nome: string, cpf: string} | null>(null);
-  
-  // Checklist state
-  const [checklist, setChecklist] = useState<Checklist>({
-    tripId: 0,
-    motoristaNome: '',
-    avarias: [],
-    fotos: [],
-    isChecklistInicial: true
-  });
-  
-  // Solicitações
-  const [showMaintenanceRequest, setShowMaintenanceRequest] = useState(false);
-  const [showRefuelingRequest, setShowRefuelingRequest] = useState(false);
-  const [maintenanceRequest, setMaintenanceRequest] = useState<MaintenanceRequest>({
-    descricao: '',
-    urgencia: 'normal'
-  });
-  const [refuelingRequest, setRefuelingRequest] = useState<RefuelingCardRequest>({
-    valorSolicitado: 0,
-    justificativa: ''
-  });
-  
-  // Estado para upload de imagens
-  const [uploading, setUploading] = useState(false);
-  const [avisoAvaria, setAvisoAvaria] = useState<string>('');
-  const [avariasOptions] = useState([
-    { id: 'amassado_frontal', label: 'Amassado na parte frontal' },
-    { id: 'amassado_lateral', label: 'Amassado na lateral' },
-    { id: 'amassado_traseiro', label: 'Amassado na parte traseira' },
-    { id: 'arranhao', label: 'Arranhão na pintura' },
-    { id: 'farol_quebrado', label: 'Farol/lanterna quebrado' },
-    { id: 'retrovisor_quebrado', label: 'Retrovisor quebrado/danificado' },
-    { id: 'para_choque_danificado', label: 'Para-choque danificado' },
-    { id: 'pneu_danificado', label: 'Pneu danificado' },
-    { id: 'vidro_trincado', label: 'Vidro trincado/quebrado' },
-    { id: 'outro', label: 'Outro (descrever nas observações)' }
+  const [observacoes, setObservacoes] = useState('');
+  const { toast } = useToast();
+
+  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([
+    // Itens de segurança
+    { id: 'seg_1', category: 'Segurança', item: 'Cinto de segurança em bom estado', checked: false },
+    { id: 'seg_2', category: 'Segurança', item: 'Triângulo de sinalização', checked: false },
+    { id: 'seg_3', category: 'Segurança', item: 'Extintor de incêndio', checked: false },
+    { id: 'seg_4', category: 'Segurança', item: 'Kit de primeiros socorros', checked: false },
+    
+    // Motor e fluidos
+    { id: 'mot_1', category: 'Motor', item: 'Nível do óleo do motor', checked: false },
+    { id: 'mot_2', category: 'Motor', item: 'Nível da água do radiador', checked: false },
+    { id: 'mot_3', category: 'Motor', item: 'Nível do fluido de freio', checked: false },
+    { id: 'mot_4', category: 'Motor', item: 'Combustível suficiente', checked: false },
+    
+    // Pneus e rodas
+    { id: 'pneu_1', category: 'Pneus', item: 'Calibragem dos pneus dianteiros', checked: false },
+    { id: 'pneu_2', category: 'Pneus', item: 'Calibragem dos pneus traseiros', checked: false },
+    { id: 'pneu_3', category: 'Pneus', item: 'Estado do pneu estepe', checked: false },
+    { id: 'pneu_4', category: 'Pneus', item: 'Porcas das rodas apertadas', checked: false },
+    
+    // Iluminação
+    { id: 'luz_1', category: 'Iluminação', item: 'Faróis dianteiros funcionando', checked: false },
+    { id: 'luz_2', category: 'Iluminação', item: 'Lanternas traseiras funcionando', checked: false },
+    { id: 'luz_3', category: 'Iluminação', item: 'Pisca-alerta funcionando', checked: false },
+    { id: 'luz_4', category: 'Iluminação', item: 'Setas funcionando', checked: false },
+    
+    // Freios
+    { id: 'freio_1', category: 'Freios', item: 'Freio de serviço funcionando', checked: false },
+    { id: 'freio_2', category: 'Freios', item: 'Freio de estacionamento funcionando', checked: false },
+    
+    // Carroceria
+    { id: 'carr_1', category: 'Carroceria', item: 'Portas e fechaduras em bom estado', checked: false },
+    { id: 'carr_2', category: 'Carroceria', item: 'Espelhos retrovisores limpos e ajustados', checked: false },
+    { id: 'carr_3', category: 'Carroceria', item: 'Limpador de para-brisa funcionando', checked: false },
+    { id: 'carr_4', category: 'Carroceria', item: 'Buzina funcionando', checked: false }
   ]);
 
-  useEffect(() => {
-    // Extrair o ID da viagem da URL
-    const path = window.location.pathname;
-    const match = path.match(/\/checklist\/(\d+)/);
-    
-    if (match && match[1]) {
-      // Caso 1: URL tem ID da viagem - acessar direto informações da viagem
-      const id = parseInt(match[1]);
-      setTripId(id);
-      loadTripInfo(id);
-    } else if (path === '/driver-checklist') {
-      // Caso 2: URL é /driver-checklist - iniciar com autenticação por CPF
-      setIsLoading(false);
-      // Estamos iniciando no passo 'auth', então não precisamos fazer nada aqui
-    } else {
-      // Caso 3: URL inválida
-      toast({
-        title: 'Link inválido',
-        description: 'O link do checklist é inválido. Por favor, verifique o endereço ou use a página principal de checklist.',
-        variant: 'destructive',
-      });
-      setIsLoading(false);
-    }
-  }, [toast]);
-
-  // Carregar informações da viagem
-  const loadTripInfo = async (id: number) => {
-    try {
-      const { data, error } = await supabase
-        .from('linehall_shopee')
-        .select(`
-          *,
-          bases_origem:base_origem_id(name),
-          bases_destino:base_destino_id(name),
-          motoristas:motorista_id(nome)
-        `)
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-
-      if (!data) {
-        toast({
-          title: 'Viagem não encontrada',
-          description: 'Não foi possível encontrar a viagem solicitada.',
-          variant: 'destructive',
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      setTripInfo({
-        id: data.id,
-        data_viagem: data.data_viagem,
-        cavalo_placa: data.cavalo_placa,
-        carreta1_placa: data.carreta1_placa,
-        carreta2_placa: data.carreta2_placa,
-        motorista_nome: data.motorista_nome || data.motoristas?.nome,
-        motorista_id: data.motorista_id,
-        base_origem_nome: data.bases_origem?.name,
-        base_destino_nome: data.bases_destino?.name,
-        horario_carregamento: data.horario_carregamento,
-        status: data.status
-      });
-
-      // Preencher informações iniciais do checklist
-      setChecklist(prev => ({
-        ...prev,
-        tripId: data.id,
-        motoristaNome: data.motorista_nome || data.motoristas?.nome || '',
-      }));
-
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Erro ao carregar informações da viagem:', error);
-      toast({
-        title: 'Erro ao carregar dados',
-        description: error instanceof Error ? error.message : 'Erro desconhecido',
-        variant: 'destructive',
-      });
-      setIsLoading(false);
-    }
+  const handleItemCheck = (itemId: string, checked: boolean) => {
+    setChecklistItems(items =>
+      items.map(item =>
+        item.id === itemId ? { ...item, checked } : item
+      )
+    );
   };
 
-  // Verificar o motorista por CPF
-  const verificarMotorista = async () => {
-    if (!cpf || cpf.length < 11) {
-      toast({
-        title: 'CPF inválido',
-        description: 'Por favor, informe um CPF válido.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // Limpar formatação do CPF
-      const cpfLimpo = cpf.replace(/\D/g, '');
-      
-      const { data, error } = await supabase
-        .from('motoristas')
-        .select('*')
-        .eq('cpf', cpfLimpo)
-        .single();
-
-      if (error) {
-        throw error;
-      }
-
-      if (!data) {
-        toast({
-          title: 'Motorista não encontrado',
-          description: 'CPF não encontrado no sistema. Por favor, verifique se o CPF está correto ou entre em contato com o suporte.',
-          variant: 'destructive',
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      setMotorista({
-        id: data.id,
-        nome: data.nome,
-        cpf: data.cpf
-      });
-
-      toast({
-        title: 'Motorista identificado',
-        description: `Bem-vindo, ${data.nome}!`,
-      });
-
-      // Buscar a viagem ativa mais recente para este motorista
-      try {
-        const { data: viagem, error: viagemError } = await supabase
-          .from('linehall_shopee')
-          .select('*')
-          .eq('motorista_id', data.id)
-          .order('data_viagem', { ascending: false })
-          .limit(1)
-          .single();
-        
-        if (viagemError) {
-          console.error('Erro ao buscar viagem do motorista:', viagemError);
-          toast({
-            title: 'Atenção',
-            description: 'Não foi possível encontrar uma viagem associada ao seu CPF.',
-          });
-          // Mesmo sem viagem, seguimos para a tela de informações
-          setStep('info');
-          return;
-        }
-        
-        if (viagem) {
-          // Encontrou uma viagem, definir como tripId atual
-          setTripId(viagem.id);
-          // Carregar dados da viagem
-          await loadTripInfo(viagem.id);
-          // Avançar para o passo de informações
-          setStep('info');
-        } else {
-          // Nenhuma viagem encontrada
-          toast({
-            title: 'Nenhuma viagem encontrada',
-            description: 'Não há viagens registradas para este motorista.',
-          });
-          setStep('info');
-        }
-      } catch (error) {
-        console.error('Erro ao buscar viagens:', error);
-        // Mesmo com erro, continuamos para a tela de info
-        setStep('info');
-      }
-      
-    } catch (error) {
-      console.error('Erro ao verificar motorista:', error);
-      toast({
-        title: 'Erro ao verificar motorista',
-        description: error instanceof Error ? error.message : 'Erro desconhecido',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const handleItemObservation = (itemId: string, observation: string) => {
+    setChecklistItems(items =>
+      items.map(item =>
+        item.id === itemId ? { ...item, observation } : item
+      )
+    );
   };
 
-  // Atualizar progresso com base no passo atual
-  useEffect(() => {
-    switch (step) {
-      case 'auth':
-        setProgress(10);
-        break;
-      case 'info':
-        setProgress(30);
-        break;
-      case 'checklist':
-        setProgress(60);
-        break;
-      case 'requests':
-        setProgress(85);
-        break;
-      case 'success':
-        setProgress(100);
-        break;
-    }
-  }, [step]);
+  const handleSubmit = async () => {
+    const checkedItems = checklistItems.filter(item => item.checked);
+    const uncheckedItems = checklistItems.filter(item => !item.checked);
 
-  // Função para avançar para o próximo passo
-  const nextStep = () => {
-    if (step === 'info') {
-      setStep('checklist');
-    } else if (step === 'checklist') {
-      setStep('requests');
-    } else if (step === 'requests') {
-      submitChecklist();
-    }
-  };
-
-  // Função para voltar ao passo anterior
-  const prevStep = () => {
-    if (step === 'checklist') {
-      setStep('info');
-    } else if (step === 'requests') {
-      setStep('checklist');
-    }
-  };
-
-  // Verificar se todos os campos necessários estão preenchidos
-  const validateChecklist = (): boolean => {
-    if (!checklist.motoristaNome) {
+    if (uncheckedItems.length > 0) {
       toast({
-        title: 'Campo obrigatório',
-        description: 'Por favor, informe o nome do motorista.',
-        variant: 'destructive',
+        title: "Checklist incompleto",
+        description: `${uncheckedItems.length} item(ns) não verificado(s). Deseja continuar mesmo assim?`,
+        variant: "destructive"
       });
-      return false;
     }
 
-    if (checklist.isChecklistInicial && !checklist.kmInicial) {
-      toast({
-        title: 'Campo obrigatório',
-        description: 'Por favor, informe o KM inicial do veículo.',
-        variant: 'destructive',
-      });
-      return false;
-    }
-
-    if (!checklist.isChecklistInicial && !checklist.kmFinal) {
-      toast({
-        title: 'Campo obrigatório',
-        description: 'Por favor, informe o KM final do veículo.',
-        variant: 'destructive',
-      });
-      return false;
-    }
-
-    return true;
-  };
-
-  // Função para fazer upload de uma imagem
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) {
-      return;
-    }
-    
-    const file = e.target.files[0];
-    setUploading(true);
-    
-    try {
-      // Criar um nome único para o arquivo usando o ID da viagem e timestamp
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${tripId}_${Date.now()}.${fileExt}`;
-      const filePath = `checklist-fotos/${fileName}`;
-      
-      // Upload do arquivo para o Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('uploads')
-        .upload(filePath, file);
-        
-      if (uploadError) throw uploadError;
-      
-      // Obter URL pública do arquivo
-      const { data } = supabase.storage
-        .from('uploads')
-        .getPublicUrl(filePath);
-        
-      if (data) {
-        // Adicionar URL à lista de fotos do checklist
-        setChecklist(prev => ({
-          ...prev,
-          fotos: [...prev.fotos, data.publicUrl]
-        }));
-        
-        toast({
-          title: 'Imagem enviada',
-          description: 'A foto foi adicionada ao checklist',
-        });
-      }
-    } catch (error) {
-      console.error('Erro ao fazer upload da imagem:', error);
-      toast({
-        title: 'Erro no upload',
-        description: error instanceof Error ? error.message : 'Erro desconhecido',
-        variant: 'destructive',
-      });
-    } finally {
-      setUploading(false);
-      // Limpar o input de arquivo
-      if (e.target) {
-        e.target.value = '';
-      }
-    }
-  };
-  
-  // Função para adicionar ou remover uma avaria da lista
-  const toggleAvaria = (avariaId: string) => {
-    setChecklist(prev => {
-      const avarias = [...prev.avarias];
-      
-      if (avarias.includes(avariaId)) {
-        // Remover avaria se já estiver na lista
-        return { ...prev, avarias: avarias.filter(id => id !== avariaId) };
-      } else {
-        // Adicionar avaria se não estiver na lista
-        return { ...prev, avarias: [...avarias, avariaId] };
-      }
-    });
-  };
-  
-  // Função para anexar uma imagem para solicitação de recarga de cartão
-  const handleCardReceiptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) {
-      return;
-    }
-    
-    const file = e.target.files[0];
-    setUploading(true);
-    
-    try {
-      // Criar um nome único para o arquivo usando o ID da viagem e timestamp
-      const fileExt = file.name.split('.').pop();
-      const fileName = `cartao_${tripId}_${Date.now()}.${fileExt}`;
-      const filePath = `recarga-comprovantes/${fileName}`;
-      
-      // Upload do arquivo para o Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('uploads')
-        .upload(filePath, file);
-        
-      if (uploadError) throw uploadError;
-      
-      // Obter URL pública do arquivo
-      const { data } = supabase.storage
-        .from('uploads')
-        .getPublicUrl(filePath);
-        
-      if (data) {
-        // Atualizar o request com o URL do comprovante
-        setRefuelingRequest(prev => ({
-          ...prev,
-          comprovante: data.publicUrl
-        }));
-        
-        toast({
-          title: 'Comprovante enviado',
-          description: 'O comprovante foi anexado à solicitação',
-        });
-      }
-    } catch (error) {
-      console.error('Erro ao fazer upload do comprovante:', error);
-      toast({
-        title: 'Erro no upload',
-        description: error instanceof Error ? error.message : 'Erro desconhecido',
-        variant: 'destructive',
-      });
-    } finally {
-      setUploading(false);
-      // Limpar o input de arquivo
-      if (e.target) {
-        e.target.value = '';
-      }
-    }
-  };
-
-  // Função para enviar o checklist e as solicitações
-  const submitChecklist = async () => {
-    if (!validateChecklist()) return;
-    
     setIsSubmitting(true);
-    
     try {
-      // 1. Salvar o checklist
-      const { data: checklistData, error: checklistError } = await supabase
-        .from('vehicle_checklist')
-        .insert({
-          viagem_id: checklist.tripId,
-          motorista_nome: checklist.motoristaNome,
-          km_inicial: checklist.isChecklistInicial ? checklist.kmInicial : null,
-          km_final: !checklist.isChecklistInicial ? checklist.kmFinal : null,
-          condicao_pneus: checklist.condicaoPneus,
-          condicao_luzes: checklist.condicaoLuzes,
-          condicao_freios: checklist.condicaoFreios,
-          condicao_parabrisa: checklist.condicaoParabrisa,
-          nivel_oleo: checklist.nivelOleo,
-          nivel_agua: checklist.nivelAgua,
-          condicao_cavalo: checklist.condicaoCavalo,
-          condicao_carreta: checklist.condicaoCarreta,
-          avarias: checklist.avarias,
-          fotos: checklist.fotos,
-          observacoes: checklist.observacoes,
-          status: 'concluido',
-          checklist_inicial: checklist.isChecklistInicial,
-        })
-        .select();
-
-      if (checklistError) throw checklistError;
-      
-      // 2. Atualizar a viagem com o KM inicial/final e status de checklist
-      const updateData: any = {
-        checklist_status: 'concluido'
+      const checklistData = {
+        motorista_id: parseInt(params.id as string),
+        itens_verificados: checkedItems.length,
+        total_itens: checklistItems.length,
+        itens_detalhes: checklistItems,
+        observacoes_gerais: observacoes,
+        status: uncheckedItems.length === 0 ? 'aprovado' : 'pendente'
       };
-      
-      if (checklist.isChecklistInicial && checklist.kmInicial) {
-        updateData.km_inicial = checklist.kmInicial;
+
+      const response = await apiRequest('POST', '/api/line-hall/checklist', checklistData);
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: "Checklist enviado com sucesso",
+          description: uncheckedItems.length === 0 
+            ? "Veículo aprovado para viagem" 
+            : "Veículo com pendências registradas"
+        });
+        setLocation('/driver-access');
+      } else {
+        throw new Error(data.message || 'Erro ao salvar checklist');
       }
-      
-      if (!checklist.isChecklistInicial && checklist.kmFinal) {
-        updateData.km_final = checklist.kmFinal;
-      }
-      
-      const { error: updateError } = await supabase
-        .from('linehall_shopee')
-        .update(updateData)
-        .eq('id', tripId);
-        
-      if (updateError) throw updateError;
-      
-      // 3. Salvar solicitação de manutenção (se aplicável)
-      if (showMaintenanceRequest && maintenanceRequest.descricao) {
-        const { error: maintenanceError } = await supabase
-          .from('solicitacao_manutencao')
-          .insert({
-            viagem_id: tripId,
-            placa_veiculo: tripInfo?.cavalo_placa,
-            motorista_nome: checklist.motoristaNome,
-            descricao: maintenanceRequest.descricao,
-            urgencia: maintenanceRequest.urgencia,
-            status: 'pendente'
-          });
-          
-        if (maintenanceError) throw maintenanceError;
-      }
-      
-      // 4. Salvar solicitação de recarga de cartão (se aplicável)
-      if (showRefuelingRequest && refuelingRequest.valorSolicitado > 0 && refuelingRequest.justificativa) {
-        const { error: refuelingError } = await supabase
-          .from('solicitacao_recarga_cartao')
-          .insert({
-            viagem_id: tripId,
-            placa_veiculo: tripInfo?.cavalo_placa,
-            motorista_nome: checklist.motoristaNome,
-            numero_cartao: refuelingRequest.numeroCartao,
-            valor_solicitado: refuelingRequest.valorSolicitado,
-            justificativa: refuelingRequest.justificativa,
-            comprovante: refuelingRequest.comprovante,
-            status: 'pendente'
-          });
-          
-        if (refuelingError) throw refuelingError;
-      }
-      
-      // 5. Mostrar mensagem de sucesso
-      setStep('success');
-      
     } catch (error) {
-      console.error('Erro ao enviar dados do checklist:', error);
+      console.error('Erro ao enviar checklist:', error);
       toast({
-        title: 'Erro ao salvar checklist',
-        description: error instanceof Error ? error.message : 'Erro desconhecido',
-        variant: 'destructive',
+        title: "Erro ao enviar checklist",
+        description: "Tente novamente ou procure ajuda",
+        variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Componente para autenticação do motorista
-  const DriverAuthForm: React.FC<{
-    cpf: string;
-    setCpf: (value: string) => void;
-    onSubmit: () => void;
-    isLoading: boolean;
-  }> = ({ cpf, setCpf, onSubmit, isLoading }) => {
-    // Função para formatar CPF enquanto o usuário digita
-    const formatCPF = (value: string) => {
-      // Remove tudo que não é número
-      const numbersOnly = value.replace(/\D/g, '');
-      
-      // Aplica a formatação de CPF (000.000.000-00)
-      let formattedCPF = numbersOnly;
-      if (numbersOnly.length > 3) {
-        formattedCPF = `${numbersOnly.slice(0, 3)}.${numbersOnly.slice(3)}`;
-      }
-      if (numbersOnly.length > 6) {
-        formattedCPF = `${formattedCPF.slice(0, 7)}.${formattedCPF.slice(7)}`;
-      }
-      if (numbersOnly.length > 9) {
-        formattedCPF = `${formattedCPF.slice(0, 11)}-${formattedCPF.slice(11, 13)}`;
-      }
-      
-      return formattedCPF;
-    };
+  const groupedItems = checklistItems.reduce((groups, item) => {
+    if (!groups[item.category]) {
+      groups[item.category] = [];
+    }
+    groups[item.category].push(item);
+    return groups;
+  }, {} as Record<string, ChecklistItem[]>);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      setCpf(formatCPF(value));
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-      e.preventDefault();
-      onSubmit();
-    };
-
-    return (
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle>Acesso ao Checklist</CardTitle>
-          <CardDescription>
-            Por favor, digite seu CPF para acessar o sistema de checklist do veículo
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="cpf">CPF do Motorista</Label>
-              <Input
-                id="cpf"
-                type="text"
-                value={cpf}
-                onChange={handleChange}
-                placeholder="000.000.000-00"
-                maxLength={14}
-                required
-                disabled={isLoading}
-                className="text-center text-lg"
-              />
-            </div>
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isLoading || cpf.length < 14}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Verificando...
-                </>
-              ) : (
-                'Acessar Checklist'
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    );
-  };
-  
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle>Carregando Checklist</CardTitle>
-            <CardDescription>Aguarde enquanto carregamos os dados da viagem...</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Exibir formulário de autenticação por CPF
-  if (step === 'auth') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold mb-2">Checklist de Veículo</h1>
-          <p className="text-gray-500">Acesso restrito a motoristas cadastrados</p>
-        </div>
-        
-        <DriverAuthForm 
-          cpf={cpf} 
-          setCpf={setCpf} 
-          onSubmit={verificarMotorista} 
-          isLoading={isLoading} 
-        />
-        
-        <div className="mt-8 text-center text-sm text-gray-500">
-          <p>Em caso de dúvidas, entre em contato com o suporte</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Tela quando o motorista está autenticado, mas não tem viagem (modo seleção manual)
-  if (step === 'info' && !tripInfo && motorista) {
-    // Estado local para armazenar os dados do formulário
-    const [placaCavalo, setPlacaCavalo] = useState<string>('');
-    const [placaCarreta, setPlacaCarreta] = useState<string>('');
-    
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-2xl">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-center mb-1">Checklist do Veículo</h1>
-            <p className="text-center text-gray-500">Informações do Veículo e Motorista</p>
-            <div className="mt-4">
-              <Progress value={progress} className="h-2" />
-            </div>
-          </div>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Informações Básicas</CardTitle>
-              <CardDescription>Motorista: {motorista.nome}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="placa_cavalo">Placa do Cavalo Mecânico</Label>
-                <Input
-                  id="placa_cavalo"
-                  placeholder="Informe a placa do veículo (Ex: ABC1234)"
-                  value={placaCavalo}
-                  onChange={(e) => setPlacaCavalo(e.target.value.toUpperCase())}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="placa_carreta">Placa da Carreta</Label>
-                <Input
-                  id="placa_carreta"
-                  placeholder="Informe a placa da carreta (Ex: XYZ9876)"
-                  value={placaCarreta}
-                  onChange={(e) => setPlacaCarreta(e.target.value.toUpperCase())}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="driver_name">Nome do Motorista</Label>
-                <Input
-                  id="driver_name"
-                  placeholder="Informe o nome do motorista"
-                  value={motorista.nome}
-                  disabled
-                />
-              </div>
-              
-              <div className="space-y-4">
-                <div className="flex items-center mb-1">
-                  <Label className="font-medium">Tipo de Checklist</Label>
-                </div>
-                <div className="flex space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      id="initial"
-                      checked={checklist.isChecklistInicial}
-                      onChange={() => setChecklist(prev => ({ ...prev, isChecklistInicial: true }))}
-                      className="h-4 w-4 text-blue-600"
-                    />
-                    <Label htmlFor="initial">Checklist Inicial (Saída)</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      id="final"
-                      checked={!checklist.isChecklistInicial}
-                      onChange={() => setChecklist(prev => ({ ...prev, isChecklistInicial: false }))}
-                      className="h-4 w-4 text-blue-600"
-                    />
-                    <Label htmlFor="final">Checklist Final (Retorno)</Label>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="km">
-                  {checklist.isChecklistInicial ? 'Quilometragem Inicial (KM)' : 'Quilometragem Final (KM)'}
-                </Label>
-                <Input
-                  id="km"
-                  type="number"
-                  placeholder="Informe a quilometragem atual"
-                  value={checklist.isChecklistInicial 
-                    ? checklist.kmInicial?.toString() || '' 
-                    : checklist.kmFinal?.toString() || ''}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value);
-                    if (checklist.isChecklistInicial) {
-                      setChecklist(prev => ({ ...prev, kmInicial: isNaN(value) ? undefined : value }));
-                    } else {
-                      setChecklist(prev => ({ ...prev, kmFinal: isNaN(value) ? undefined : value }));
-                    }
-                  }}
-                />
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={() => setStep('auth')}>Voltar</Button>
-              <Button 
-                onClick={() => {
-                  if (placaCavalo) {
-                    // Criar uma viagem temporária para armazenar os dados do checklist
-                    const viagemTemp: TripInfo = {
-                      id: 0,
-                      data_viagem: new Date().toISOString(),
-                      cavalo_placa: placaCavalo,
-                      carreta1_placa: placaCarreta,
-                      motorista_id: motorista.id,
-                      motorista_nome: motorista.nome,
-                      horario_carregamento: '',
-                      status: 'em_andamento',
-                      base_origem_nome: '',
-                      base_destino_nome: ''
-                    };
-                    
-                    setTripInfo(viagemTemp);
-                    
-                    // Atualizar o checklist com os dados da "viagem" temporária
-                    setChecklist(prev => ({
-                      ...prev,
-                      tripId: 0,
-                      motoristaNome: motorista.nome
-                    }));
-                    
-                    setStep('checklist');
-                  } else {
-                    toast({
-                      title: 'Informação necessária',
-                      description: 'Por favor, informe a placa do cavalo mecânico.',
-                      variant: 'destructive',
-                    });
-                  }
-                }}
-              >
-                Próximo
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  // Tela para informar que nenhuma viagem foi encontrada (caso antigo)
-  if ((step === 'info' || step === 'checklist' || step === 'requests' || step === 'success') && !tripInfo && !motorista) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle>Viagem Não Encontrada</CardTitle>
-            <CardDescription>O link do checklist é inválido ou a viagem não existe.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-center">
-              <XCircle className="h-12 w-12 text-red-500" />
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-center">
-            <Button onClick={() => window.close()}>Fechar</Button>
-          </CardFooter>
-        </Card>
-      </div>
-    );
-  }
-
-  // Garantir que tripInfo não é nulo aqui
-  if (!tripInfo) {
-    // Se tripInfo for nulo neste ponto, algo deu errado
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle>Erro ao Carregar Dados</CardTitle>
-            <CardDescription>Não foi possível carregar os dados do veículo para o checklist.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-center">
-              <AlertCircle className="h-12 w-12 text-red-500" />
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-center">
-            <Button onClick={() => setStep('auth')}>Voltar</Button>
-          </CardFooter>
-        </Card>
-      </div>
-    );
-  }
+  const checkedCount = checklistItems.filter(item => item.checked).length;
+  const totalCount = checklistItems.length;
+  const completionPercentage = Math.round((checkedCount / totalCount) * 100);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-center mb-1">Checklist do Veículo</h1>
-          <p className="text-center text-gray-500">
-            {checklist.isChecklistInicial ? 'Checklist Inicial da Viagem' : 'Checklist Final da Viagem'}
-          </p>
-          <div className="mt-4">
-            <Progress value={progress} className="h-2" />
-            <div className="flex justify-between mt-1 text-xs text-gray-500">
-              <span>Informações</span>
-              <span>Checklist</span>
-              <span>Solicitações</span>
-              <span>Conclusão</span>
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <Button variant="ghost" onClick={() => setLocation('/driver-access')}>
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <div>
+                  <CardTitle>Checklist do Veículo</CardTitle>
+                  <CardDescription>
+                    Verificação obrigatória antes da viagem
+                  </CardDescription>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold">{completionPercentage}%</div>
+                <div className="text-sm text-gray-500">{checkedCount}/{totalCount} itens</div>
+              </div>
             </div>
-          </div>
-        </div>
+          </CardHeader>
+        </Card>
 
-        {step === 'info' && (
-          <Card>
+        {/* Progress bar */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${completionPercentage}%` }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Checklist items by category */}
+        {Object.entries(groupedItems).map(([category, items]) => (
+          <Card key={category}>
             <CardHeader>
-              <CardTitle>Informações da Viagem</CardTitle>
-              <CardDescription>Verifique os dados da viagem e do veículo</CardDescription>
+              <CardTitle className="text-lg">{category}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                <div className="flex items-center mb-3">
-                  <Truck className="h-5 w-5 mr-2 text-blue-600" />
-                  <h3 className="font-medium">Dados da Viagem</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <p className="text-gray-500">Data da Viagem</p>
-                    <p className="font-medium">{new Date(tripInfo.data_viagem).toLocaleDateString('pt-BR')}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Status</p>
-                    <p className="font-medium capitalize">{tripInfo.status.replace('_', ' ')}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">CD de Origem</p>
-                    <p className="font-medium">{tripInfo.base_origem_nome}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">CD de Destino</p>
-                    <p className="font-medium">{tripInfo.base_destino_nome}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Horário de Carregamento</p>
-                    <p className="font-medium">{tripInfo.horario_carregamento}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                <div className="flex items-center mb-3">
-                  <Truck className="h-5 w-5 mr-2 text-blue-600" />
-                  <h3 className="font-medium">Veículos</h3>
-                </div>
-                <div className="space-y-3 text-sm">
-                  <div>
-                    <p className="text-gray-500">Cavalo Mecânico</p>
-                    <p className="font-medium">{tripInfo.cavalo_placa}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Carreta 1</p>
-                    <p className="font-medium">{tripInfo.carreta1_placa}</p>
-                  </div>
-                  {tripInfo.carreta2_placa && (
-                    <div>
-                      <p className="text-gray-500">Carreta 2</p>
-                      <p className="font-medium">{tripInfo.carreta2_placa}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="flex items-center mb-1">
-                  <Label className="font-medium">Tipo de Checklist</Label>
-                </div>
-                <div className="flex space-x-4">
+              {items.map((item) => (
+                <div key={item.id} className="space-y-2">
                   <div className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      id="initial"
-                      checked={checklist.isChecklistInicial}
-                      onChange={() => setChecklist(prev => ({ ...prev, isChecklistInicial: true }))}
-                      className="h-4 w-4 text-blue-600"
+                    <Checkbox
+                      id={item.id}
+                      checked={item.checked}
+                      onCheckedChange={(checked) => handleItemCheck(item.id, checked as boolean)}
                     />
-                    <Label htmlFor="initial">Checklist Inicial (Saída)</Label>
+                    <Label htmlFor={item.id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      {item.item}
+                    </Label>
+                    {!item.checked && (
+                      <AlertTriangle className="h-4 w-4 text-amber-500" />
+                    )}
+                    {item.checked && (
+                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    )}
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      id="final"
-                      checked={!checklist.isChecklistInicial}
-                      onChange={() => setChecklist(prev => ({ ...prev, isChecklistInicial: false }))}
-                      className="h-4 w-4 text-blue-600"
-                    />
-                    <Label htmlFor="final">Checklist Final (Retorno)</Label>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="driver_name">Nome do Motorista</Label>
-                <Input
-                  id="driver_name"
-                  placeholder="Informe o nome do motorista"
-                  value={checklist.motoristaNome}
-                  onChange={(e) => setChecklist(prev => ({ ...prev, motoristaNome: e.target.value }))}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="km">
-                  {checklist.isChecklistInicial ? 'Quilometragem Inicial (KM)' : 'Quilometragem Final (KM)'}
-                </Label>
-                <Input
-                  id="km"
-                  type="number"
-                  placeholder="Informe a quilometragem atual"
-                  value={checklist.isChecklistInicial 
-                    ? checklist.kmInicial?.toString() || '' 
-                    : checklist.kmFinal?.toString() || ''}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value);
-                    if (checklist.isChecklistInicial) {
-                      setChecklist(prev => ({ ...prev, kmInicial: isNaN(value) ? undefined : value }));
-                    } else {
-                      setChecklist(prev => ({ ...prev, kmFinal: isNaN(value) ? undefined : value }));
-                    }
-                  }}
-                />
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-end">
-              <Button onClick={nextStep}>Próximo</Button>
-            </CardFooter>
-          </Card>
-        )}
-
-        {step === 'checklist' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Checklist do Veículo</CardTitle>
-              <CardDescription>Verifique as condições do veículo</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <Tabs defaultValue="condicoes" className="w-full">
-                <TabsList className="grid grid-cols-3 mb-4">
-                  <TabsTrigger value="condicoes">Condições</TabsTrigger>
-                  <TabsTrigger value="avarias">Avarias</TabsTrigger>
-                  <TabsTrigger value="fotos">Fotos</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="condicoes" className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <ConditionSelect
-                      label="Condição dos Pneus"
-                      value={checklist.condicaoPneus}
-                      onChange={(value) => setChecklist(prev => ({ ...prev, condicaoPneus: value }))}
-                    />
-                    
-                    <ConditionSelect
-                      label="Condição das Luzes"
-                      value={checklist.condicaoLuzes}
-                      onChange={(value) => setChecklist(prev => ({ ...prev, condicaoLuzes: value }))}
-                    />
-                    
-                    <ConditionSelect
-                      label="Condição dos Freios"
-                      value={checklist.condicaoFreios}
-                      onChange={(value) => setChecklist(prev => ({ ...prev, condicaoFreios: value }))}
-                    />
-                    
-                    <ConditionSelect
-                      label="Condição do Para-brisa"
-                      value={checklist.condicaoParabrisa}
-                      onChange={(value) => setChecklist(prev => ({ ...prev, condicaoParabrisa: value }))}
-                    />
-                    
-                    <ConditionSelect
-                      label="Nível de Óleo"
-                      value={checklist.nivelOleo}
-                      onChange={(value) => setChecklist(prev => ({ ...prev, nivelOleo: value }))}
-                    />
-                    
-                    <ConditionSelect
-                      label="Nível de Água"
-                      value={checklist.nivelAgua}
-                      onChange={(value) => setChecklist(prev => ({ ...prev, nivelAgua: value }))}
-                    />
-
-                    <ConditionSelect
-                      label="Condição do Cavalo Mecânico"
-                      value={checklist.condicaoCavalo}
-                      onChange={(value) => setChecklist(prev => ({ ...prev, condicaoCavalo: value }))}
-                    />
-                    
-                    <ConditionSelect
-                      label="Condição da Carreta"
-                      value={checklist.condicaoCarreta}
-                      onChange={(value) => setChecklist(prev => ({ ...prev, condicaoCarreta: value }))}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="observations">Observações</Label>
+                  
+                  {!item.checked && (
                     <Textarea
-                      id="observations"
-                      placeholder="Descreva observações adicionais sobre o estado do veículo..."
-                      value={checklist.observacoes || ''}
-                      onChange={(e) => setChecklist(prev => ({ ...prev, observacoes: e.target.value }))}
-                      rows={4}
+                      placeholder="Descreva o problema encontrado..."
+                      value={item.observation || ''}
+                      onChange={(e) => handleItemObservation(item.id, e.target.value)}
+                      className="ml-6 text-sm"
+                      rows={2}
                     />
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="avarias" className="space-y-4">
-                  <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 mb-4 flex items-start">
-                    <ShieldAlert className="h-5 w-5 text-amber-600 mr-2 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-amber-800 font-medium">
-                        Registro de Avarias
-                      </p>
-                      <p className="text-xs text-amber-700">
-                        Selecione todas as avarias identificadas no veículo. Recomendamos adicionar fotos de cada avaria na aba "Fotos".
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    {avariasOptions.map((avaria) => (
-                      <div key={avaria.id} className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={avaria.id} 
-                          checked={checklist.avarias.includes(avaria.id)}
-                          onCheckedChange={() => toggleAvaria(avaria.id)}
-                        />
-                        <label
-                          htmlFor={avaria.id}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >
-                          {avaria.label}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-
-                  {checklist.avarias.length > 0 && (
-                    <div className="mt-4 space-y-2">
-                      <Label htmlFor="damage-observations">Detalhes das Avarias</Label>
-                      <Textarea
-                        id="damage-observations"
-                        placeholder="Descreva em detalhes as avarias identificadas..."
-                        value={avisoAvaria}
-                        onChange={(e) => setAvisoAvaria(e.target.value)}
-                        rows={3}
-                      />
-                    </div>
                   )}
-                </TabsContent>
-
-                <TabsContent value="fotos" className="space-y-4">
-                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <div className="flex items-center mb-2">
-                      <Camera className="h-5 w-5 mr-2 text-blue-600" />
-                      <h3 className="font-medium text-gray-900">Adicionar Fotos</h3>
-                    </div>
-                    <p className="text-sm text-gray-500 mb-3">
-                      Adicione fotos do veículo, especialmente de qualquer avaria identificada
-                    </p>
-
-                    <div className="flex items-center justify-center w-full">
-                      <label htmlFor="image-upload" className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 border-gray-300">
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                          <Upload className="w-8 h-8 mb-2 text-gray-400" />
-                          <p className="mb-2 text-sm text-gray-500">
-                            Clique para enviar foto{" "}
-                            <span className="font-semibold">ou arraste e solte</span>
-                          </p>
-                          <p className="text-xs text-gray-500">PNG, JPG ou JPEG</p>
-                        </div>
-                        <input 
-                          id="image-upload" 
-                          type="file" 
-                          accept="image/*"
-                          className="hidden" 
-                          onChange={handleImageUpload}
-                          disabled={uploading}
-                        />
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Mostrar fotos enviadas */}
-                  {checklist.fotos.length > 0 && (
-                    <div className="mt-4">
-                      <h3 className="text-sm font-medium mb-2">Fotos Enviadas ({checklist.fotos.length})</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        {checklist.fotos.map((foto, index) => (
-                          <div key={index} className="relative aspect-square overflow-hidden rounded-md border border-gray-200">
-                            <img 
-                              src={foto} 
-                              alt={`Foto ${index + 1}`} 
-                              className="object-cover w-full h-full" 
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={prevStep}>Voltar</Button>
-              <Button onClick={nextStep}>Próximo</Button>
-            </CardFooter>
-          </Card>
-        )}
-
-        {step === 'requests' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Solicitações</CardTitle>
-              <CardDescription>Registre solicitações para essa viagem</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="maintenance_request"
-                    checked={showMaintenanceRequest}
-                    onChange={() => setShowMaintenanceRequest(!showMaintenanceRequest)}
-                    className="h-4 w-4 text-blue-600"
-                  />
-                  <Label htmlFor="maintenance_request" className="flex items-center">
-                    <Tool className="h-4 w-4 mr-2" />
-                    Solicitar Manutenção
-                  </Label>
                 </div>
-                
-                {showMaintenanceRequest && (
-                  <Card className="border-blue-100">
-                    <CardContent className="pt-4 space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="maintenance_description">Descrição do Problema</Label>
-                        <Textarea
-                          id="maintenance_description"
-                          placeholder="Descreva o problema que requer manutenção..."
-                          value={maintenanceRequest.descricao}
-                          onChange={(e) => setMaintenanceRequest(prev => ({ ...prev, descricao: e.target.value }))}
-                          rows={3}
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="urgency">Urgência</Label>
-                        <Select
-                          value={maintenanceRequest.urgencia}
-                          onValueChange={(value: any) => setMaintenanceRequest(prev => ({ ...prev, urgencia: value }))}
-                        >
-                          <SelectTrigger id="urgency">
-                            <SelectValue placeholder="Selecione a urgência" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="baixa">Baixa</SelectItem>
-                            <SelectItem value="normal">Normal</SelectItem>
-                            <SelectItem value="alta">Alta</SelectItem>
-                            <SelectItem value="emergencial">Emergencial</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-              
-              <Separator />
-              
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="refueling_request"
-                    checked={showRefuelingRequest}
-                    onChange={() => setShowRefuelingRequest(!showRefuelingRequest)}
-                    className="h-4 w-4 text-blue-600"
-                  />
-                  <Label htmlFor="refueling_request" className="flex items-center">
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Solicitar Recarga de Cartão
-                  </Label>
-                </div>
-                
-                {showRefuelingRequest && (
-                  <Card className="border-blue-100">
-                    <CardContent className="pt-4 space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="card_number">Número do Cartão (opcional)</Label>
-                        <Input
-                          id="card_number"
-                          placeholder="Informe o número do cartão"
-                          value={refuelingRequest.numeroCartao || ''}
-                          onChange={(e) => setRefuelingRequest(prev => ({ ...prev, numeroCartao: e.target.value }))}
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="amount">Valor Solicitado (R$)</Label>
-                        <Input
-                          id="amount"
-                          type="number"
-                          placeholder="0,00"
-                          value={refuelingRequest.valorSolicitado.toString()}
-                          onChange={(e) => {
-                            const value = parseFloat(e.target.value);
-                            setRefuelingRequest(prev => ({ 
-                              ...prev, 
-                              valorSolicitado: isNaN(value) ? 0 : value 
-                            }));
-                          }}
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="justification">Justificativa</Label>
-                        <Textarea
-                          id="justification"
-                          placeholder="Justifique a necessidade de recarga..."
-                          value={refuelingRequest.justificativa}
-                          onChange={(e) => setRefuelingRequest(prev => ({ ...prev, justificativa: e.target.value }))}
-                          rows={3}
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label>Anexar Comprovante</Label>
-                        <div className="border border-dashed border-gray-300 rounded-md p-4">
-                          <div className="flex items-center justify-center flex-col">
-                            <FileWarning className="h-8 w-8 text-blue-500 mb-2" />
-                            <p className="text-sm text-gray-500 mb-2 text-center">
-                              Anexe uma foto do comprovante de abastecimento ou nota fiscal
-                            </p>
-                            <label htmlFor="receipt-upload" className="inline-flex cursor-pointer">
-                              <Button 
-                                type="button" 
-                                variant="outline" 
-                                size="sm"
-                                disabled={uploading}
-                              >
-                                {uploading ? (
-                                  <span className="flex items-center">
-                                    <span className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" />
-                                    Enviando...
-                                  </span>
-                                ) : (
-                                  <span className="flex items-center">
-                                    <Upload className="h-4 w-4 mr-2" />
-                                    Selecionar Arquivo
-                                  </span>
-                                )}
-                              </Button>
-                              <input 
-                                id="receipt-upload" 
-                                type="file" 
-                                accept="image/*"
-                                className="hidden" 
-                                onChange={handleCardReceiptUpload}
-                                disabled={uploading}
-                              />
-                            </label>
-                          </div>
-                          
-                          {refuelingRequest.comprovante && (
-                            <div className="mt-3 flex items-center justify-center">
-                              <div className="relative w-32 h-32 border border-gray-200 rounded overflow-hidden">
-                                <img 
-                                  src={refuelingRequest.comprovante} 
-                                  alt="Comprovante" 
-                                  className="object-cover w-full h-full" 
-                                />
-                                <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                                  <Button 
-                                    variant="destructive" 
-                                    size="sm"
-                                    onClick={() => setRefuelingRequest(prev => ({ ...prev, comprovante: undefined }))}
-                                    className="w-8 h-8 p-0"
-                                  >
-                                    <XCircle className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
+              ))}
             </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={prevStep}>Voltar</Button>
-              <Button onClick={nextStep} disabled={isSubmitting}>
-                {isSubmitting ? 'Enviando...' : 'Concluir Checklist'}
-              </Button>
-            </CardFooter>
           </Card>
-        )}
+        ))}
 
-        {step === 'success' && (
-          <Card>
-            <CardHeader className="text-center">
-              <div className="flex justify-center mb-4">
-                <CircleCheck className="h-16 w-16 text-green-500" />
-              </div>
-              <CardTitle>Checklist Concluído!</CardTitle>
-              <CardDescription>Seu checklist foi registrado com sucesso.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-green-50 p-4 rounded-lg border border-green-100 text-center">
-                <p className="text-green-800">
-                  {checklist.isChecklistInicial 
-                    ? `Quilometragem inicial registrada: ${checklist.kmInicial} KM` 
-                    : `Quilometragem final registrada: ${checklist.kmFinal} KM`}
+        {/* Observações gerais */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Observações Gerais</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              placeholder="Adicione observações gerais sobre o veículo..."
+              value={observacoes}
+              onChange={(e) => setObservacoes(e.target.value)}
+              rows={4}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Submit button */}
+        <Card>
+          <CardContent className="pt-6">
+            <Button 
+              onClick={handleSubmit} 
+              className="w-full" 
+              size="lg"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Enviando Checklist...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Finalizar Checklist
+                </>
+              )}
+            </Button>
+            
+            {checkedCount < totalCount && (
+              <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <AlertTriangle className="h-5 w-5 text-amber-600" />
+                  <span className="text-sm font-medium text-amber-800">
+                    Atenção: {totalCount - checkedCount} item(ns) não verificado(s)
+                  </span>
+                </div>
+                <p className="text-sm text-amber-700 mt-1">
+                  Veículos com pendências podem ser impedidos de viajar até a correção dos problemas.
                 </p>
               </div>
-              
-              {showMaintenanceRequest && (
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                  <div className="flex items-center mb-2">
-                    <Info className="h-5 w-5 mr-2 text-blue-600" />
-                    <p className="font-medium text-blue-800">Solicitação de Manutenção</p>
-                  </div>
-                  <p className="text-blue-800 text-sm">
-                    Sua solicitação de manutenção foi registrada e será analisada pela equipe responsável.
-                  </p>
-                </div>
-              )}
-              
-              {showRefuelingRequest && (
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                  <div className="flex items-center mb-2">
-                    <Info className="h-5 w-5 mr-2 text-blue-600" />
-                    <p className="font-medium text-blue-800">Solicitação de Recarga</p>
-                  </div>
-                  <p className="text-blue-800 text-sm">
-                    Sua solicitação de recarga do cartão foi registrada e será analisada pela equipe responsável.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-            <CardFooter className="flex justify-center">
-              <Button onClick={() => window.close()}>Fechar</Button>
-            </CardFooter>
-          </Card>
-        )}
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
