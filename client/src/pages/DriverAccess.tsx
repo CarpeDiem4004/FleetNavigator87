@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, User, Truck, FileText, Wrench, MapPin, Clock, Calendar, LogOut } from 'lucide-react';
+import { Loader2, User, Truck, FileText, Wrench, MapPin, Clock, Calendar, LogOut, CreditCard } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
 interface DriverData {
@@ -34,6 +34,7 @@ const DriverAccess: React.FC = () => {
   const [tripStatus, setTripStatus] = useState<'programada' | 'em_andamento' | 'concluida'>('programada');
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [maintenanceRequests, setMaintenanceRequests] = useState<any[]>([]);
+  const [showFuelRequest, setShowFuelRequest] = useState(false);
   const { toast } = useToast();
 
   // Função para buscar solicitações de manutenção do motorista
@@ -181,6 +182,18 @@ const DriverAccess: React.FC = () => {
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const handleChecklistClick = () => {
+    setLocation('/line-hall/checklist/' + driver?.id);
+  };
+
+  const handleMaintenanceRequestClick = () => {
+    setLocation('/line-hall/maintenance-request/' + driver?.id);
+  };
+
+  const handleFuelRequestClick = () => {
+    setShowFuelRequest(true);
   };
 
   if (!driver) {
@@ -380,7 +393,7 @@ const DriverAccess: React.FC = () => {
         )}
 
         {/* Menu de opções */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={handleChecklistClick}>
             <CardHeader className="text-center">
               <div className="mx-auto mb-4 w-16 h-16 bg-green-600 rounded-full flex items-center justify-center">
@@ -413,6 +426,24 @@ const DriverAccess: React.FC = () => {
               <Button className="w-full" variant="default">
                 <Wrench className="mr-2 h-4 w-4" />
                 Nova Solicitação
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={handleFuelRequestClick}>
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-4 w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center">
+                <CreditCard className="w-8 h-8 text-white" />
+              </div>
+              <CardTitle className="text-xl">Solicitar Recarga</CardTitle>
+              <CardDescription>
+                Solicite recarga de cartão combustível para sua viagem
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" variant="default">
+                <CreditCard className="mr-2 h-4 w-4" />
+                Solicitar Recarga
               </Button>
             </CardContent>
           </Card>
@@ -498,6 +529,210 @@ const DriverAccess: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Modal de Solicitação de Recarga de Cartão */}
+        {showFuelRequest && (
+          <FuelRequestModal 
+            driver={driver}
+            onClose={() => setShowFuelRequest(false)}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Componente do Modal de Solicitação de Recarga
+const FuelRequestModal = ({ driver, onClose }: { driver: any; onClose: () => void }) => {
+  const [phone, setPhone] = useState('');
+  const [fuelTime, setFuelTime] = useState<'antes_17h' | 'apos_18h'>('antes_17h');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!phone.trim()) {
+      toast({
+        title: "Campo obrigatório",
+        description: "Por favor, informe seu número de telefone",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const now = new Date();
+      const requestData = {
+        motorista_id: driver.id,
+        motorista_nome: driver.nome,
+        motorista_cpf: driver.cpf,
+        veiculo_placa: driver.placa_veiculo,
+        veiculo_modelo: driver.tipo_veiculo,
+        rota_origem: driver.viagem?.local_carregamento,
+        rota_destino: driver.viagem?.local_descarregamento,
+        data_solicitacao: now.toISOString().split('T')[0],
+        horario_solicitacao: now.toTimeString().split(' ')[0],
+        km_total: calculateTotalKm(driver.viagem?.local_carregamento, driver.viagem?.local_destino),
+        horario_abastecimento: fuelTime,
+        telefone_motorista: phone,
+        status: 'pendente'
+      };
+
+      const response = await apiRequest('POST', '/api/line-hall/fuel-request', requestData);
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: "Solicitação enviada",
+          description: "Sua solicitação de recarga foi enviada com sucesso!"
+        });
+        onClose();
+      } else {
+        throw new Error(data.message || 'Erro ao enviar solicitação');
+      }
+    } catch (error) {
+      console.error('Erro ao enviar solicitação:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível enviar a solicitação",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const calculateTotalKm = (origem: string, destino: string) => {
+    // Aqui você pode implementar uma lógica para calcular KM
+    // Por enquanto, retornaremos um valor estimado baseado nas rotas comuns
+    const routes: { [key: string]: number } = {
+      'São Paulo - Campinas': 100,
+      'São Paulo - Santos': 80,
+      'Campinas - São Paulo': 100,
+      'Santos - São Paulo': 80
+    };
+    
+    const routeKey = `${origem} - ${destino}`;
+    return routes[routeKey] || 150; // valor padrão
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <form onSubmit={handleSubmit}>
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold">Solicitar Recarga de Cartão</h2>
+              <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+                ✕
+              </Button>
+            </div>
+
+            {/* Dados do Veículo (preenchidos automaticamente) */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Placa</Label>
+                  <div className="p-2 bg-gray-50 rounded border">
+                    {driver?.placa_veiculo || 'N/A'}
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Modelo</Label>
+                  <div className="p-2 bg-gray-50 rounded border">
+                    {driver?.tipo_veiculo || 'N/A'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Rota */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700">Rota</Label>
+                <div className="p-2 bg-gray-50 rounded border">
+                  {driver?.viagem?.local_carregamento || 'Origem'} → {driver?.viagem?.local_descarregamento || 'Destino'}
+                </div>
+              </div>
+
+              {/* Data e Horário (preenchidos automaticamente) */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Data</Label>
+                  <div className="p-2 bg-gray-50 rounded border">
+                    {new Date().toLocaleDateString('pt-BR')}
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Horário</Label>
+                  <div className="p-2 bg-gray-50 rounded border">
+                    {new Date().toTimeString().split(' ')[0]}
+                  </div>
+                </div>
+              </div>
+
+              {/* KM Total (calculado automaticamente) */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700">KM Total Estimado</Label>
+                <div className="p-2 bg-gray-50 rounded border">
+                  {calculateTotalKm(driver?.viagem?.local_carregamento, driver?.viagem?.local_destino)} km
+                </div>
+              </div>
+
+              {/* Campos editáveis */}
+              <div>
+                <Label htmlFor="fuelTime" className="text-sm font-medium text-gray-700">
+                  Horário de Abastecimento *
+                </Label>
+                <select
+                  id="fuelTime"
+                  value={fuelTime}
+                  onChange={(e) => setFuelTime(e.target.value as 'antes_17h' | 'apos_18h')}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  required
+                >
+                  <option value="antes_17h">Antes das 17h</option>
+                  <option value="apos_18h">Após as 18h</option>
+                </select>
+              </div>
+
+              <div>
+                <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
+                  Número de Telefone *
+                </Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="(11) 99999-9999"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Botões */}
+            <div className="flex gap-3 mt-6">
+              <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSubmitting} className="flex-1">
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Solicitar
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
   );
