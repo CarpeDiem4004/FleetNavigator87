@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, User, Truck, FileText, Wrench, MapPin, Clock, Calendar, LogOut, CreditCard } from 'lucide-react';
+import { Loader2, User, Truck, FileText, Wrench, MapPin, Clock, Calendar, LogOut, CreditCard, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
 interface DriverData {
@@ -35,7 +35,18 @@ const DriverAccess: React.FC = () => {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [maintenanceRequests, setMaintenanceRequests] = useState<any[]>([]);
   const [showFuelRequest, setShowFuelRequest] = useState(false);
+  const [fuelRequests, setFuelRequests] = useState<any[]>([]);
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
+
+  // Cleanup polling interval quando componente é desmontado
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [pollingInterval]);
 
   // Função para buscar solicitações de manutenção do motorista
   const fetchMaintenanceRequests = async (motoristaId: number) => {
@@ -51,19 +62,21 @@ const DriverAccess: React.FC = () => {
     }
   };
 
-  // Função para buscar notificações de solicitações de recarga
-  const fetchFuelRequestNotifications = async (motoristaId: number) => {
+  // Função para buscar todas as solicitações de recarga do motorista
+  const fetchFuelRequests = async (motoristaId: number) => {
     try {
       const response = await apiRequest('GET', `/api/line-hall/fuel-requests?motorista_id=${motoristaId}`);
       const data = await response.json();
       
       if (data.success) {
+        setFuelRequests(data.data || []);
+        
+        // Mostrar notificações apenas para solicitações processadas recentemente
         const recentRequests = data.data.filter((request: any) => 
           request.status !== 'pendente' && 
           new Date(request.updated_at) > new Date(Date.now() - 24 * 60 * 60 * 1000) // últimas 24 horas
         );
         
-        // Mostrar notificações para solicitações aprovadas ou rejeitadas
         recentRequests.forEach((request: any) => {
           if (request.status === 'aprovada') {
             toast({
@@ -82,7 +95,7 @@ const DriverAccess: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('Erro ao buscar notificações de recarga:', error);
+      console.error('Erro ao buscar solicitações de recarga:', error);
     }
   };
 
@@ -130,8 +143,15 @@ const DriverAccess: React.FC = () => {
         setDriver(data.motorista);
         // Buscar solicitações de manutenção do motorista
         await fetchMaintenanceRequests(data.motorista.id);
-        // Buscar notificações de solicitações de recarga
-        await fetchFuelRequestNotifications(data.motorista.id);
+        // Buscar solicitações de recarga
+        await fetchFuelRequests(data.motorista.id);
+        
+        // Iniciar polling para atualizações em tempo real
+        const interval = setInterval(() => {
+          fetchFuelRequests(data.motorista.id);
+        }, 10000); // Atualizar a cada 10 segundos
+        
+        setPollingInterval(interval);
         toast({
           title: "Login realizado com sucesso",
           description: `Bem-vindo, ${data.motorista.nome}!`
@@ -477,6 +497,119 @@ const DriverAccess: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Seção de Solicitações de Recarga de Cartão */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center">
+              <CreditCard className="h-5 w-5 mr-2 text-green-600" />
+              Minhas Solicitações de Recarga de Cartão
+              {fuelRequests.length > 0 && (
+                <RefreshCw className="h-4 w-4 ml-2 text-gray-400 animate-spin" />
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {fuelRequests.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Nenhuma solicitação de recarga encontrada</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {fuelRequests.map((request: any) => (
+                  <div key={request.id} className="border rounded-lg p-4 bg-gray-50">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="font-semibold text-gray-800">Solicitação #{request.id}</p>
+                        <p className="text-sm text-gray-600">Veículo: {request.veiculo_placa}</p>
+                        <p className="text-sm text-gray-600">Rota: {request.origem} → {request.destino}</p>
+                      </div>
+                      <Badge 
+                        variant={
+                          request.status === 'aprovada' ? 'default' :
+                          request.status === 'rejeitada' ? 'destructive' :
+                          'secondary'
+                        }
+                        className={
+                          request.status === 'aprovada' ? 'bg-green-100 text-green-800' :
+                          request.status === 'rejeitada' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }
+                      >
+                        {request.status === 'aprovada' ? (
+                          <><CheckCircle className="w-3 h-3 mr-1" /> Aprovada</>
+                        ) : request.status === 'rejeitada' ? (
+                          <><XCircle className="w-3 h-3 mr-1" /> Rejeitada</>
+                        ) : (
+                          <><Clock className="w-3 h-3 mr-1" /> Pendente</>
+                        )}
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-2">
+                      <div>
+                        <span className="font-medium">Data/Hora:</span> {new Date(request.data_hora).toLocaleString('pt-BR')}
+                      </div>
+                      <div>
+                        <span className="font-medium">KM Total:</span> {request.km_total} km
+                      </div>
+                      <div>
+                        <span className="font-medium">Horário Preferido:</span> {request.horario_abastecimento === 'antes_17h' ? 'Antes das 17h' : 'Após 18h'}
+                      </div>
+                      <div>
+                        <span className="font-medium">Telefone:</span> {request.telefone_motorista}
+                      </div>
+                    </div>
+                    
+                    {request.status === 'aprovada' && (
+                      <div className="mt-2 p-3 bg-green-50 rounded border-l-4 border-green-400">
+                        <p className="text-sm text-green-700 font-medium">
+                          ✅ Solicitação aprovada! Você pode abastecer conforme solicitado.
+                        </p>
+                        {request.observacoes_operador && (
+                          <p className="text-sm text-green-600 mt-1">
+                            <strong>Observações:</strong> {request.observacoes_operador}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    
+                    {request.status === 'rejeitada' && (
+                      <div className="mt-2 p-3 bg-red-50 rounded border-l-4 border-red-400">
+                        <p className="text-sm text-red-700 font-medium">
+                          ❌ Solicitação rejeitada.
+                        </p>
+                        {request.observacoes_operador && (
+                          <p className="text-sm text-red-600 mt-1">
+                            <strong>Motivo:</strong> {request.observacoes_operador}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    
+                    {request.status === 'pendente' && (
+                      <div className="mt-2 p-3 bg-yellow-50 rounded border-l-4 border-yellow-400">
+                        <p className="text-sm text-yellow-700 font-medium">
+                          ⏳ Aguardando análise do operador...
+                        </p>
+                        <p className="text-sm text-yellow-600 mt-1">
+                          Você será notificado quando a solicitação for aprovada ou rejeitada.
+                        </p>
+                      </div>
+                    )}
+                    
+                    <div className="mt-2 text-xs text-gray-400">
+                      Solicitado em: {new Date(request.created_at).toLocaleString('pt-BR')}
+                      {request.updated_at && request.status !== 'pendente' && (
+                        <> • Processado em: {new Date(request.updated_at).toLocaleString('pt-BR')}</>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Seção de Solicitações de Manutenção */}
         <Card>
