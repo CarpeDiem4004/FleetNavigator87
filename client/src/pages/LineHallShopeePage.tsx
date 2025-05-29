@@ -443,6 +443,25 @@ export default function LineHallShopeePage() {
                       onChange={(e) => setCurrentRoute(prev => ({ ...prev, km_total: parseFloat(e.target.value) || 0 }))}
                     />
                   </div>
+                  
+                  {/* Botão para consultar distância no Google Maps */}
+                  {currentRoute.nome_ponto_a && currentRoute.nome_ponto_b && (
+                    <div className="flex justify-center pt-4">
+                      <Button 
+                        type="button"
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(currentRoute.nome_ponto_a)}/${encodeURIComponent(currentRoute.nome_ponto_b)}`;
+                          window.open(mapsUrl, '_blank');
+                        }}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <MapPin className="mr-2 h-4 w-4" />
+                        Consultar Distância no Google Maps
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setIsCreatingRoute(false)}>Cancelar</Button>
@@ -832,6 +851,7 @@ export default function LineHallShopeePage() {
                         <TableHead>Ponto B (Destino)</TableHead>
                         <TableHead>Distância (KM)</TableHead>
                         <TableHead>Data de Cadastro</TableHead>
+                        <TableHead>Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -846,6 +866,20 @@ export default function LineHallShopeePage() {
                           </TableCell>
                           <TableCell className="text-muted-foreground">
                             {new Date(route.created_at).toLocaleDateString('pt-BR')}
+                          </TableCell>
+                          <TableCell>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => {
+                                const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(route.nome_ponto_a)}/${encodeURIComponent(route.nome_ponto_b)}`;
+                                window.open(mapsUrl, '_blank');
+                              }}
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              <MapPin className="mr-1 h-3 w-3" />
+                              Ver no Maps
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
