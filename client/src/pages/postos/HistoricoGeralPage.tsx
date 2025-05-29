@@ -736,20 +736,20 @@ const HistoricoGeralPage: React.FC = () => {
         return 'NÃO ESPECIFICADO';
       }
       
-      // Lista de projetos conhecidos para normalizar nomes
+      // Lista de projetos conhecidos para normalizar nomes - atualizada
       const projetosConhecidos = [
-        'GRUPO PEREIRA',
-        'COCA COLA',
         'SHOPEE',
         'MERCADO LIVRE',
-        'LINE HALL SHOPEE',
-        'FULL MELI',
+        'COCA COLA',
+        'GRUPO PEREIRA',
         'MADEIRA MADEIRA',
+        'OXXO',
+        'MANUTENÇÃO',
         'MAGALU',
         'NATURA',
-        'OXXO',
+        'LINE HALL SHOPEE',
+        'FULL MELI',
         'PETLOVE',
-        'MANUTENÇÃO',
         'USO OPERACIONAL'
       ];
       
@@ -1222,20 +1222,20 @@ const HistoricoGeralPage: React.FC = () => {
                   
                   {/* Lista de projetos conhecidos não utilizados */}
                   {(() => {
-                    // Lista completa de projetos conhecidos
+                    // Lista completa de projetos conhecidos - atualizada
                     const projetosConhecidos = [
-                      'GRUPO PEREIRA',
-                      'COCA COLA',
                       'SHOPEE',
                       'MERCADO LIVRE',
-                      'LINE HALL SHOPEE',
-                      'FULL MELI',
+                      'COCA COLA',
+                      'GRUPO PEREIRA',
                       'MADEIRA MADEIRA',
+                      'OXXO',
+                      'MANUTENÇÃO',
                       'MAGALU',
                       'NATURA',
-                      'OXXO',
+                      'LINE HALL SHOPEE',
+                      'FULL MELI',
                       'PETLOVE',
-                      'MANUTENÇÃO',
                       'USO OPERACIONAL'
                     ];
                     
