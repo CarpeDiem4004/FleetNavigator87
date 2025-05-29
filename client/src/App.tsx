@@ -115,6 +115,8 @@ import CartaoAbastecimentoPage from "@/pages/CartaoAbastecimentoPage";
 import PainelPostosPage from "@/pages/PainelPostosPage";
 import AbastecimentosPage from "@/pages/AbastecimentosPage";
 import StoppedVehicles from "@/pages/StoppedVehicles";
+import DriverAccess from "@/pages/DriverAccess";
+import DriverMaintenanceRequest from "@/pages/DriverMaintenanceRequest";
 
 // Importação das páginas da Base Campinas
 import BaseCampinas from "@/pages/bases/BaseCampinas";
@@ -312,6 +314,19 @@ function App() {
           {/* Rota para acesso de motoristas do Line Hall */}
           <Route path="/line-hall-driver">
             <LineHallDriverPage />
+          </Route>
+          
+          {/* Rotas para acesso do motorista Line Hall Shopee */}
+          <Route path="/driver-access">
+            <DriverAccess />
+          </Route>
+          
+          <Route path="/driver-checklist/:id">
+            <DriverChecklist />
+          </Route>
+          
+          <Route path="/driver-maintenance-request/:id">
+            <DriverMaintenanceRequest />
           </Route>
           
           {/* Rota para gerenciamento de manutenções do Line Hall */}

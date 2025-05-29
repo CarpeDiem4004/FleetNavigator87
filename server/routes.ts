@@ -10298,6 +10298,178 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar as rotas do Supabase específicas para postos
   // Usamos /api/posto-supabase como caminho para evitar conflitos com o Vite
   app.use('/api/posto-supabase', postoSupabaseRoutes);
+
+  // ===== ROTAS PARA ACESSO DE MOTORISTAS LINE HALL SHOPEE =====
+  
+  // Login de motorista por CPF
+  app.post('/api/line-hall/motorista/login', async (req, res) => {
+    try {
+      const { cpf } = req.body;
+
+      if (!cpf) {
+        return res.status(400).json({
+          success: false,
+          message: 'CPF é obrigatório'
+        });
+      }
+
+      // Buscar motorista na base de dados (usando uma tabela temporária)
+      const result = await pool.query(`
+        SELECT 
+          1 as id,
+          'João Silva' as nome,
+          '12345678901' as cpf,
+          '11999998888' as telefone,
+          'ABC-1234' as placa_veiculo
+        WHERE $1 = '12345678901'
+        UNION ALL
+        SELECT 
+          2 as id,
+          'Maria Santos' as nome,
+          '23456789012' as cpf,
+          '11888887777' as telefone,
+          'DEF-5678' as placa_veiculo
+        WHERE $1 = '23456789012'
+        UNION ALL
+        SELECT 
+          3 as id,
+          'Pedro Oliveira' as nome,
+          '34567890123' as cpf,
+          '11777776666' as telefone,
+          'GHI-9012' as placa_veiculo
+        WHERE $1 = '34567890123'
+      `, [cpf]);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Motorista não encontrado ou inativo'
+        });
+      }
+
+      const motorista = result.rows[0];
+
+      res.json({
+        success: true,
+        message: 'Login realizado com sucesso',
+        motorista: {
+          id: motorista.id,
+          nome: motorista.nome,
+          cpf: motorista.cpf,
+          telefone: motorista.telefone,
+          placa_veiculo: motorista.placa_veiculo
+        }
+      });
+
+    } catch (error) {
+      console.error('Erro no login do motorista:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  });
+
+  // Salvar checklist do motorista
+  app.post('/api/line-hall/checklist', async (req, res) => {
+    try {
+      const {
+        motorista_id,
+        itens_verificados,
+        total_itens,
+        itens_detalhes,
+        observacoes_gerais,
+        status
+      } = req.body;
+
+      if (!motorista_id || !itens_detalhes) {
+        return res.status(400).json({
+          success: false,
+          message: 'Dados obrigatórios não fornecidos'
+        });
+      }
+
+      // Simular inserção de checklist (seria salvo em tabela real)
+      const checklistId = Math.floor(Math.random() * 1000) + 1;
+
+      console.log(`Checklist salvo para motorista ${motorista_id}:`, {
+        checklistId,
+        itens_verificados,
+        total_itens,
+        status,
+        observacoes_gerais
+      });
+
+      res.json({
+        success: true,
+        message: 'Checklist salvo com sucesso',
+        checklistId,
+        status
+      });
+
+    } catch (error) {
+      console.error('Erro ao salvar checklist:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  });
+
+  // Solicitar manutenção
+  app.post('/api/line-hall/manutencao/solicitar', async (req, res) => {
+    try {
+      const {
+        motorista_id,
+        placa_veiculo,
+        tipo_problema,
+        prioridade,
+        descricao,
+        local_ocorrencia,
+        pode_continuar_viagem,
+        observacoes_adicionais
+      } = req.body;
+
+      if (!motorista_id || !placa_veiculo || !tipo_problema || !descricao) {
+        return res.status(400).json({
+          success: false,
+          message: 'Dados obrigatórios não fornecidos'
+        });
+      }
+
+      // Gerar protocolo único
+      const protocolo = `LH${Date.now()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+
+      // Simular inserção de solicitação de manutenção
+      const solicitacaoId = Math.floor(Math.random() * 1000) + 1;
+
+      console.log(`Solicitação de manutenção criada:`, {
+        protocolo,
+        motorista_id,
+        placa_veiculo: placa_veiculo.toUpperCase(),
+        tipo_problema,
+        prioridade,
+        descricao,
+        local_ocorrencia,
+        pode_continuar_viagem,
+        observacoes_adicionais
+      });
+
+      res.json({
+        success: true,
+        message: 'Solicitação enviada com sucesso',
+        protocolo: protocolo,
+        solicitacaoId: solicitacaoId
+      });
+
+    } catch (error) {
+      console.error('Erro ao criar solicitação de manutenção:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  });
   app.use('/api/posto-special', postoRoutes); // Adicionando novas rotas especiais para atualização de histórico
 
   // Para debugging, adicionar rota para listar todas as tabelas relacionadas a postos
