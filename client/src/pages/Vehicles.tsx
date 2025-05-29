@@ -436,7 +436,7 @@ const Vehicles: React.FC = () => {
       
       {/* Add Vehicle Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Adicionar Novo Veículo</DialogTitle>
             <DialogDescription>
