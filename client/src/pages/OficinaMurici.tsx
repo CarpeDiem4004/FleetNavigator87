@@ -61,12 +61,22 @@ interface Manutencao {
   custo_total?: number;
   observacoes?: string;
   peças_utilizadas?: string;
+  // Campos de oficina parceira
+  mechanic_name?: string;
+  used_partner_workshop?: boolean;
+  partner_workshop_name?: string;
+  labor_cost?: number;
   // Campos específicos para "Aguardando Peça"
   pendingPartDescription?: string;
   pendingPartValue?: string;
   pendingPartSupplier?: string;
   pendingPartPhone?: string;
   pendingPartDeadline?: string;
+  peca_descricao?: string;
+  peca_valor?: number;
+  fornecedor_nome?: string;
+  fornecedor_telefone?: string;
+  prazo_entrega?: string;
 }
 
 const statusOptions = [
@@ -153,7 +163,7 @@ const OficinaMurici: React.FC = () => {
     }));
   };
   
-  const handleSelectChange = (name: string, value: string) => {
+  const handleSelectChange = (name: string, value: string | boolean) => {
     setCurrentManutencao(prev => ({
       ...prev,
       [name]: value
@@ -194,13 +204,18 @@ const OficinaMurici: React.FC = () => {
         custo_total: valorTotalPecas || Number(currentManutencao.custo_total) || 0,
         observacoes: currentManutencao.observacoes || '',
         peças_utilizadas: pecasUtilizadasTexto || currentManutencao.peças_utilizadas || '',
+        // Campos de oficina parceira
+        mechanic_name: currentManutencao.mechanic_name || currentManutencao.mecanico,
+        used_partner_workshop: currentManutencao.used_partner_workshop || false,
+        partner_workshop_name: currentManutencao.partner_workshop_name || '',
+        labor_cost: Number(currentManutencao.labor_cost) || 0,
         // Campos específicos para "Aguardando Peça"
         ...(currentManutencao.status === 'aguardando_peca' && {
-          peca_descricao: currentManutencao.pendingPartDescription || '',
-          peca_valor: Number(currentManutencao.pendingPartValue) || 0,
-          fornecedor_nome: currentManutencao.pendingPartSupplier || '',
-          fornecedor_telefone: currentManutencao.pendingPartPhone || '',
-          prazo_entrega: currentManutencao.pendingPartDeadline || ''
+          peca_descricao: currentManutencao.pendingPartDescription || currentManutencao.peca_descricao || '',
+          peca_valor: Number(currentManutencao.pendingPartValue || currentManutencao.peca_valor) || 0,
+          fornecedor_nome: currentManutencao.pendingPartSupplier || currentManutencao.fornecedor_nome || '',
+          fornecedor_telefone: currentManutencao.pendingPartPhone || currentManutencao.fornecedor_telefone || '',
+          prazo_entrega: currentManutencao.pendingPartDeadline || currentManutencao.prazo_entrega || ''
         })
       };
 
@@ -798,6 +813,53 @@ const OficinaMurici: React.FC = () => {
                 />
               </div>
             </div>
+
+            {/* Seção de Oficina Parceira */}
+            <div className="space-y-3 p-4 border rounded-lg bg-blue-50">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="used_partner_workshop"
+                  checked={currentManutencao.used_partner_workshop || false}
+                  onChange={(e) => handleSelectChange('used_partner_workshop', e.target.checked)}
+                  className="rounded"
+                />
+                <Label htmlFor="used_partner_workshop" className="text-sm font-medium">
+                  Utilizou Oficina Parceira?
+                </Label>
+              </div>
+
+              {currentManutencao.used_partner_workshop && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="partner_workshop_name" className="text-sm">Nome da Oficina Parceira*</Label>
+                    <Input
+                      id="partner_workshop_name"
+                      name="partner_workshop_name"
+                      value={currentManutencao.partner_workshop_name || ''}
+                      onChange={handleInputChange}
+                      placeholder="Nome da oficina terceirizada"
+                      className="h-9"
+                    />
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <Label htmlFor="labor_cost" className="text-sm">Valor da Mão de Obra (R$)*</Label>
+                    <Input
+                      id="labor_cost"
+                      name="labor_cost"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={currentManutencao.labor_cost || ''}
+                      onChange={handleInputChange}
+                      placeholder="0,00"
+                      className="h-9"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
             
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
@@ -836,6 +898,31 @@ const OficinaMurici: React.FC = () => {
                 />
               </div>
             </div>
+
+            {/* Resumo de Custos - aparece quando há valor de mão de obra ou peças */}
+            {((currentManutencao.labor_cost && currentManutencao.labor_cost > 0) || (currentManutencao.custo_total && currentManutencao.custo_total > 0)) && (
+              <div className="p-4 border rounded-lg bg-green-50">
+                <h3 className="font-semibold text-green-800 mb-2">Resumo de Custos</h3>
+                <div className="space-y-1 text-sm">
+                  {currentManutencao.custo_total && currentManutencao.custo_total > 0 && (
+                    <div className="flex justify-between">
+                      <span>Total das Peças:</span>
+                      <span className="font-medium">R$ {Number(currentManutencao.custo_total || 0).toFixed(2)}</span>
+                    </div>
+                  )}
+                  {currentManutencao.labor_cost && currentManutencao.labor_cost > 0 && (
+                    <div className="flex justify-between">
+                      <span>Mão de Obra:</span>
+                      <span className="font-medium">R$ {Number(currentManutencao.labor_cost || 0).toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between border-t pt-1 font-bold text-green-800">
+                    <span>Custo Total:</span>
+                    <span>R$ {(Number(currentManutencao.custo_total || 0) + Number(currentManutencao.labor_cost || 0)).toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
             
             {/* Campos específicos para aguardando_peca */}
             {currentManutencao.status === 'aguardando_peca' && (
