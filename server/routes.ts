@@ -12050,6 +12050,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // === ROTA PARA SOLICITAÇÃO DE RECARGA DE CARTÃO COMBUSTÍVEL (LINE HALL SHOPEE) ===
+  
+  // Criar solicitação de recarga de cartão combustível
+  app.post('/api/line-hall/fuel-request', async (req, res) => {
+    try {
+      const {
+        motorista_id,
+        motorista_nome,
+        motorista_cpf,
+        veiculo_placa,
+        veiculo_modelo,
+        rota_origem,
+        rota_destino,
+        data_solicitacao,
+        horario_solicitacao,
+        km_total,
+        horario_abastecimento,
+        telefone_motorista,
+        status = 'pendente'
+      } = req.body;
+
+      const insertQuery = `
+        INSERT INTO linehall_fuel_card_requests (
+          motorista_id, motorista_nome, motorista_cpf, 
+          veiculo_placa, veiculo_modelo, rota_origem, rota_destino,
+          data_solicitacao, horario_solicitacao, km_total,
+          horario_abastecimento, telefone_motorista, status, created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+        RETURNING *
+      `;
+
+      const result = await pool.query(insertQuery, [
+        motorista_id, motorista_nome, motorista_cpf,
+        veiculo_placa, veiculo_modelo, rota_origem, rota_destino,
+        data_solicitacao, horario_solicitacao, km_total,
+        horario_abastecimento, telefone_motorista, status
+      ]);
+
+      res.status(201).json({
+        success: true,
+        message: 'Solicitação de recarga enviada com sucesso',
+        data: result.rows[0]
+      });
+
+    } catch (error) {
+      console.error('Erro ao criar solicitação de recarga:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao processar solicitação',
+        error: error.message
+      });
+    }
+  });
+
+  // Buscar solicitações de recarga de cartão combustível para operadores
+  app.get('/api/line-hall/fuel-requests', async (req, res) => {
+    try {
+      const { status, motorista_id } = req.query;
+      
+      let query = `
+        SELECT * FROM linehall_fuel_card_requests 
+        WHERE 1=1
+      `;
+      const params = [];
+      let paramCount = 0;
+
+      if (status) {
+        paramCount++;
+        query += ` AND status = $${paramCount}`;
+        params.push(status);
+      }
+
+      if (motorista_id) {
+        paramCount++;
+        query += ` AND motorista_id = $${paramCount}`;
+        params.push(motorista_id);
+      }
+
+      query += ` ORDER BY created_at DESC`;
+
+      const result = await pool.query(query, params);
+
+      res.status(200).json({
+        success: true,
+        data: result.rows
+      });
+
+    } catch (error) {
+      console.error('Erro ao buscar solicitações de recarga:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar solicitações',
+        error: error.message
+      });
+    }
+  });
+
+  // Atualizar status de solicitação de recarga
+  app.put('/api/line-hall/fuel-request/:id/status', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, observacoes_operador } = req.body;
+
+      const updateQuery = `
+        UPDATE linehall_fuel_card_requests 
+        SET status = $1, observacoes_operador = $2, updated_at = NOW()
+        WHERE id = $3
+        RETURNING *
+      `;
+
+      const result = await pool.query(updateQuery, [status, observacoes_operador, id]);
+
+      if (result.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Solicitação não encontrada'
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Status da solicitação atualizado com sucesso',
+        data: result.rows[0]
+      });
+
+    } catch (error) {
+      console.error('Erro ao atualizar status da solicitação:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao atualizar status',
+        error: error.message
+      });
+    }
+  });
+
   return httpServer;
 }
 

@@ -130,6 +130,10 @@ const DriverAccess: React.FC = () => {
     }
   };
 
+  const handleFuelRequestClick = () => {
+    setShowFuelRequest(true);
+  };
+
   const handleLogout = () => {
     setDriver(null);
     setCpf('');
@@ -182,18 +186,6 @@ const DriverAccess: React.FC = () => {
       default:
         return 'bg-gray-100 text-gray-800';
     }
-  };
-
-  const handleChecklistClick = () => {
-    setLocation('/line-hall/checklist/' + driver?.id);
-  };
-
-  const handleMaintenanceRequestClick = () => {
-    setLocation('/line-hall/maintenance-request/' + driver?.id);
-  };
-
-  const handleFuelRequestClick = () => {
-    setShowFuelRequest(true);
   };
 
   if (!driver) {
