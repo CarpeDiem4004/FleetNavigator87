@@ -435,36 +435,35 @@ export default function LineHallShopeePage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="km_total">Distância Total (KM) *</Label>
-                    <Input
-                      id="km_total"
-                      type="number"
-                      placeholder="Ex: 450"
-                      value={currentRoute.km_total || ''}
-                      onChange={(e) => setCurrentRoute(prev => ({ ...prev, km_total: parseFloat(e.target.value) || 0 }))}
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        id="km_total"
+                        type="number"
+                        placeholder="Ex: 450"
+                        value={currentRoute.km_total || ''}
+                        onChange={(e) => setCurrentRoute(prev => ({ ...prev, km_total: parseFloat(e.target.value) || 0 }))}
+                        className="flex-1"
+                      />
+                      {currentRoute.nome_ponto_a && currentRoute.nome_ponto_b && (
+                        <Button 
+                          type="button"
+                          variant="outline" 
+                          size="icon"
+                          onClick={() => {
+                            const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(currentRoute.nome_ponto_a)}/${encodeURIComponent(currentRoute.nome_ponto_b)}`;
+                            window.open(mapsUrl, '_blank');
+                          }}
+                          className="text-blue-600 hover:text-blue-800 shrink-0"
+                          title="Ver rota no Google Maps"
+                        >
+                          <MapPin className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   
-                  {/* Botão para consultar distância no Google Maps */}
-                  {currentRoute.nome_ponto_a && currentRoute.nome_ponto_b && (
-                    <div className="flex justify-center pt-4">
-                      <Button 
-                        type="button"
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(currentRoute.nome_ponto_a)}/${encodeURIComponent(currentRoute.nome_ponto_b)}`;
-                          window.open(mapsUrl, '_blank');
-                        }}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        <MapPin className="mr-2 h-4 w-4" />
-                        Ver Rota no Google Maps
-                      </Button>
-                    </div>
-                  )}
-                  
                   <div className="text-sm text-muted-foreground text-center">
-                    💡 Preencha origem e destino, depois use o botão acima para consultar a distância no Google Maps e insira o valor no campo "Distância Total"
+                    💡 Preencha origem e destino, depois clique no ícone ao lado do campo distância para consultar no Google Maps
                   </div>
                 </div>
                 <DialogFooter>
