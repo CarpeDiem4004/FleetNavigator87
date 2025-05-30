@@ -38,6 +38,43 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useToast } from '@/hooks/use-toast';
 
+// Função para formatar valor em Real brasileiro
+const formatCurrency = (value: number | string): string => {
+  const numValue = typeof value === 'string' ? parseFloat(value) || 0 : value;
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(numValue);
+};
+
+// Função para converter string formatada em número
+const parseCurrency = (value: string): number => {
+  const cleanValue = value.replace(/[R$\s.]/g, '').replace(',', '.');
+  return parseFloat(cleanValue) || 0;
+};
+
+// Função para formatar input enquanto digita
+const formatCurrencyInput = (value: string): string => {
+  // Remove tudo que não é número
+  const numericValue = value.replace(/\D/g, '');
+  
+  // Se vazio, retorna vazio
+  if (!numericValue) return '';
+  
+  // Converte para número (divide por 100 para ter centavos)
+  const numberValue = parseFloat(numericValue) / 100;
+  
+  // Formata como moeda brasileira
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(numberValue);
+};
+
 // Interfaces
 interface Part {
   id: number;
@@ -1299,7 +1336,17 @@ export default function PartsInventory() {
                     <FormItem>
                       <FormLabel>Valor Unitário (R$)*</FormLabel>
                       <FormControl>
-                        <Input type="number" min="0" step="0.01" {...field} />
+                        <Input 
+                          {...field}
+                          value={field.value ? formatCurrency(field.value) : ''}
+                          onChange={(e) => {
+                            const formattedValue = formatCurrencyInput(e.target.value);
+                            e.target.value = formattedValue;
+                            const numericValue = parseCurrency(formattedValue);
+                            field.onChange(numericValue);
+                          }}
+                          placeholder="R$ 0,00"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
