@@ -580,21 +580,21 @@ export async function createLineHallFuelCardRequest(req: Request, res: Response)
     const litrosNecessarios = kmComAcrescimo / consumoMedio;
     const valorCalculado = litrosNecessarios * 6.50;
 
-    // Inserir na tabela Line Hall
+    // Inserir na tabela Line Hall (motorista_id será auto-gerado)
     const query = `
       INSERT INTO linehall_fuel_card_requests (
-        motorista_id, motorista_nome, motorista_cpf, veiculo_placa, veiculo_modelo,
+        motorista_nome, motorista_cpf, veiculo_placa, veiculo_modelo,
         rota_origem, rota_destino, data_solicitacao, horario_solicitacao,
         km_total, horario_abastecimento, telefone_motorista, valor_calculado,
         status
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'pendente')
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pendente')
       RETURNING *
     `;
 
     const values = [
-      motorista_id, motorista_nome, motorista_cpf, veiculo_placa, veiculo_modelo,
-      rota_origem, rota_destino, data_solicitacao, horario_solicitacao,
+      motorista_nome, motorista_cpf, veiculo_placa, veiculo_modelo,
+      rota_origem, rota_destino, dataAtual, horarioAtual,
       km_total, horario_abastecimento, telefone_motorista, valorCalculado.toFixed(2)
     ];
 
