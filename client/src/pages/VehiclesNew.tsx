@@ -89,6 +89,175 @@ const getStatusBadgeClass = (status: string): string => {
   return classes[status] || 'bg-gray-100 text-gray-800';
 };
 
+// Schema de validação para edição de veículos
+const editVehicleSchema = z.object({
+  plate: z.string().min(1, "Placa é obrigatória"),
+  model: z.string().min(1, "Modelo é obrigatório"),
+  vehicleType: z.string().min(1, "Tipo de veículo é obrigatório"),
+  status: z.string().min(1, "Status é obrigatório"),
+  baseId: z.number().min(1, "Base é obrigatória"),
+});
+
+// Componente de formulário para edição de veículos
+interface EditVehicleFormProps {
+  vehicle: Vehicle;
+  onUpdate: (data: any) => void;
+  onCancel: () => void;
+}
+
+const EditVehicleForm: React.FC<EditVehicleFormProps> = ({ vehicle, onUpdate, onCancel }) => {
+  const [bases, setBases] = useState<any[]>([]);
+  
+  const form = useForm<z.infer<typeof editVehicleSchema>>({
+    resolver: zodResolver(editVehicleSchema),
+    defaultValues: {
+      plate: vehicle.placa || "",
+      model: vehicle.modelo || "",
+      vehicleType: vehicle.marca || "cavalo_mecanico",
+      status: vehicle.status || "em_operacao",
+      baseId: vehicle.base_id || 1,
+    },
+  });
+
+  // Carregar bases disponíveis
+  useEffect(() => {
+    const fetchBases = async () => {
+      try {
+        const response = await fetch('/api/bases');
+        if (response.ok) {
+          const data = await response.json();
+          setBases(data);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar bases:", error);
+      }
+    };
+    fetchBases();
+  }, []);
+
+  const onSubmit = (data: z.infer<typeof editVehicleSchema>) => {
+    onUpdate(data);
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="plate"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Placa</FormLabel>
+              <FormControl>
+                <Input placeholder="Digite a placa" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="model"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Modelo</FormLabel>
+              <FormControl>
+                <Input placeholder="Digite o modelo" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="vehicleType"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tipo de Veículo</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="cavalo_mecanico">Cavalo Mecânico</SelectItem>
+                  <SelectItem value="carreta">Carreta</SelectItem>
+                  <SelectItem value="van">Van</SelectItem>
+                  <SelectItem value="fiorino">Fiorino</SelectItem>
+                  <SelectItem value="vuc">VUC</SelectItem>
+                  <SelectItem value="toco">Toco</SelectItem>
+                  <SelectItem value="truck">Truck</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Status</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o status" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="em_operacao">Em Operação</SelectItem>
+                  <SelectItem value="em_manutencao">Em Manutenção</SelectItem>
+                  <SelectItem value="parado">Parado</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="baseId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Base</FormLabel>
+              <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value.toString()}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a base" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {bases.map((base) => (
+                    <SelectItem key={base.id} value={base.id.toString()}>
+                      {base.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex justify-end space-x-2 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancelar
+          </Button>
+          <Button type="submit">
+            Salvar Alterações
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+};
+
 const VehiclesNew: React.FC = () => {
   const { toast } = useToast();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
