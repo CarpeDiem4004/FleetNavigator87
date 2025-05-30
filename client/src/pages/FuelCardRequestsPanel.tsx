@@ -333,7 +333,8 @@ const FuelCardRequestsPanel: React.FC = () => {
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Motorista</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KM</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo Cartão</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Operação</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ação</th>
@@ -348,8 +349,17 @@ const FuelCardRequestsPanel: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{solicitacao.placa}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">{solicitacao.motorista}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{formatCurrency(solicitacao.valor_solicitado)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">{solicitacao.km_veiculo || '-'}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">{solicitacao.tipo_cartao || 'Padrão'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">{solicitacao.km_total || solicitacao.km_veiculo || '-'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <Badge variant="outline" className={
+                            solicitacao.origem_tipo === 'line_hall' 
+                              ? "bg-blue-100 text-blue-800" 
+                              : "bg-green-100 text-green-800"
+                          }>
+                            {solicitacao.origem_tipo === 'line_hall' ? 'Line Hall Shopee' : 'Tradicional'}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">{solicitacao.base || '-'}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">{getStatusBadge(solicitacao.status)}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">{formatDate(solicitacao.data_solicitacao).split(',')[0]}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
