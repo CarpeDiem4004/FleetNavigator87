@@ -68,7 +68,8 @@ import {
   getFuelCardSolicitationById, 
   createFuelCardSolicitation, 
   updateFuelCardSolicitationStatus,
-  setupFuelCardTable
+  setupFuelCardTable,
+  createLineHallFuelCardRequest
 } from "./fuelCardSolicitationsApi";
 import { runSupabaseDiagnostic } from "./supabaseDiagnostic";
 import { registerPneusRoutes } from "./pneusApi";
