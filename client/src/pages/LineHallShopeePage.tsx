@@ -184,8 +184,16 @@ export default function LineHallShopeePage() {
     try {
       const response = await api.get('/vehicles');
       if (response.data && Array.isArray(response.data)) {
-        // Filtrar apenas veículos do Line Hall (base_id = 2)
-        const lineHallVehicles = response.data.filter(vehicle => vehicle.base_id === 2);
+        console.log('Todos os veículos:', response.data);
+        // Filtrar veículos do Line Hall - usando operacao_tipo ou base_name para identificar
+        const lineHallVehicles = response.data.filter(vehicle => 
+          vehicle.operacao_tipo === 'line_hall_shopee' || 
+          vehicle.basename === 'Line Hall Shopee' ||
+          vehicle.base_id === 2 ||
+          vehicle.vehicleType === 'cavalo_mecanico' || 
+          vehicle.vehicleType === 'carreta'
+        );
+        console.log('Veículos do Line Hall filtrados:', lineHallVehicles);
         setVehicles(lineHallVehicles);
       }
     } catch (error) {
@@ -198,9 +206,9 @@ export default function LineHallShopeePage() {
     try {
       const response = await api.get('/drivers');
       if (response.data && Array.isArray(response.data)) {
-        // Filtrar apenas motoristas do Line Hall (base_id = 2)
-        const lineHallDrivers = response.data.filter(driver => driver.base_id === 2);
-        setDrivers(lineHallDrivers);
+        console.log('Todos os motoristas:', response.data);
+        // Todos os motoristas por enquanto, vamos ajustar filtro depois se necessário
+        setDrivers(response.data);
       }
     } catch (error) {
       console.error('Erro ao buscar motoristas:', error);
