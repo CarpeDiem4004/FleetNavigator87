@@ -46,7 +46,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           COALESCE(km_total, 0) as km,
           'Line Hall' as tipo_cartao,
           'Line Hall Shopee' as provedor_cartao,
-          '' as numero_cartao,
+          COALESCE(numero_cartao, '') as numero_cartao,
           COALESCE(motorista, motorista_nome, 'Motorista não informado') as motorista,
           CONCAT('Rota: ', COALESCE(rota_origem, 'N/I'), ' → ', COALESCE(rota_destino, 'N/I'), 
                  ' | Tel: ', COALESCE(telefone_motorista, 'N/I'), ' | Horário: ', 
