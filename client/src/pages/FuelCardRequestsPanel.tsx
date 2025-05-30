@@ -219,9 +219,28 @@ const FuelCardRequestsPanel: React.FC = () => {
   const getStatistics = () => {
     const pendentes = solicitations.filter(s => s.status === 'Pendente' || s.status === 'Em Análise').length;
     const atendidas = solicitations.filter(s => s.status === 'Recarga Efetuada').length;
+    
+    // Debug: verificar estrutura dos dados
+    console.log('Debugging valor calculation:', {
+      totalSolicitations: solicitations.length,
+      recargasEfetuadas: solicitations.filter(s => s.status === 'Recarga Efetuada'),
+      sampleData: solicitations.slice(0, 2)
+    });
+    
+    // Calcular valor total atendido com validação numérica
     const valorTotalAtendido = solicitations
       .filter(s => s.status === 'Recarga Efetuada')
-      .reduce((total, s) => total + (s.valor_solicitado || 0), 0);
+      .reduce((total, s) => {
+        const valor = parseFloat(s.valor_solicitado?.toString() || '0');
+        console.log('Processing value:', { 
+          status: s.status, 
+          valor_solicitado: s.valor_solicitado, 
+          parsed: valor 
+        });
+        return total + (isNaN(valor) ? 0 : valor);
+      }, 0);
+    
+    console.log('Final valorTotalAtendido:', valorTotalAtendido);
     
     return { pendentes, atendidas, valorTotalAtendido };
   };
