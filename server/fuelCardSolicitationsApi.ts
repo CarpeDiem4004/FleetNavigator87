@@ -26,7 +26,16 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           valor_solicitado,
           base,
           id_rota,
-          'tradicional' as origem_tipo
+          'tradicional' as origem_tipo,
+          -- Campos específicos do Line Hall (NULL para solicitações tradicionais)
+          NULL as veiculo_modelo,
+          NULL as rota_origem,
+          NULL as rota_destino,
+          km as km_total,
+          NULL as telefone_motorista,
+          NULL as horario_abastecimento,
+          NULL as valor_calculado,
+          NULL as calculo_detalhes
         FROM solicitacoes_fuel_card
 
         UNION ALL
@@ -52,7 +61,28 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           COALESCE(valor_calculado, 0) as valor_solicitado,
           'Line Hall Shopee' as base,
           NULL as id_rota,
-          'line_hall' as origem_tipo
+          'line_hall' as origem_tipo,
+          -- Campos específicos do Line Hall
+          veiculo_modelo,
+          rota_origem,
+          rota_destino,
+          km_total,
+          telefone_motorista,
+          horario_abastecimento,
+          valor_calculado,
+          CASE 
+            WHEN valor_calculado IS NOT NULL THEN
+              JSON_BUILD_OBJECT(
+                'km_rota', km_total,
+                'km_acrescimo', 30,
+                'km_total', km_total + 30,
+                'consumo_medio', 8,
+                'litros_necessarios', ROUND((km_total + 30) / 8.0, 2),
+                'valor_por_litro', 6.50,
+                'valor_total', valor_calculado
+              )
+            ELSE NULL
+          END as calculo_detalhes
         FROM linehall_fuel_card_requests
       ) unified_requests
       ORDER BY 
