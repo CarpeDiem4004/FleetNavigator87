@@ -9,58 +9,58 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
     const query = `
       SELECT * FROM (
         SELECT 
-          id,
-          placa,
-          km,
-          tipo_cartao,
-          provedor_cartao,
-          numero_cartao,
-          motorista,
-          observacoes,
+          id::text as id,
+          COALESCE(placa, veiculo_placa, 'SEM-PLACA') as placa,
+          COALESCE(km, 0) as km,
+          COALESCE(tipo_cartao, 'Padrão') as tipo_cartao,
+          COALESCE(provedor_cartao, 'Padrão') as provedor_cartao,
+          COALESCE(numero_cartao, '') as numero_cartao,
+          COALESCE(motorista, 'Motorista não informado') as motorista,
+          COALESCE(observacoes, 'Sem observações') as observacoes,
           status,
           data_solicitacao,
           atendido_por,
           data_atendimento,
           created_at,
           updated_at,
-          valor_solicitado,
-          base,
-          id_rota,
+          COALESCE(valor_solicitado, 0) as valor_solicitado,
+          COALESCE(base, 'Base Principal') as base,
+          COALESCE(id_rota, '') as id_rota,
           COALESCE(origem_tipo, 'tradicional') as origem_tipo,
           -- Campos específicos do Line Hall (NULL para solicitações tradicionais)
-          NULL as veiculo_modelo,
-          NULL as rota_origem,
-          NULL as rota_destino,
+          NULL::varchar as veiculo_modelo,
+          NULL::varchar as rota_origem,
+          NULL::varchar as rota_destino,
           km as km_total,
-          NULL as telefone_motorista,
-          NULL as horario_abastecimento,
-          NULL as valor_calculado,
-          NULL as calculo_detalhes
+          NULL::varchar as telefone_motorista,
+          NULL::varchar as horario_abastecimento,
+          COALESCE(valor_solicitado, 0) as valor_calculado,
+          NULL::json as calculo_detalhes
         FROM solicitacoes_fuel_card
 
         UNION ALL
 
         SELECT 
-          id,
-          veiculo_placa as placa,
-          km_total as km,
+          id::text as id,
+          COALESCE(veiculo_placa, 'LH-' || id) as placa,
+          COALESCE(km_total, 0) as km,
           'Line Hall' as tipo_cartao,
           'Line Hall Shopee' as provedor_cartao,
           '' as numero_cartao,
-          motorista_nome as motorista,
+          COALESCE(motorista, motorista_nome, 'Motorista não informado') as motorista,
           CONCAT('Rota: ', COALESCE(rota_origem, 'N/I'), ' → ', COALESCE(rota_destino, 'N/I'), 
-                 ' | Tel: ', telefone_motorista, ' | Horário: ', 
+                 ' | Tel: ', COALESCE(telefone_motorista, 'N/I'), ' | Horário: ', 
                  CASE WHEN horario_abastecimento = 'antes_17h' THEN 'Antes das 17h' 
                       ELSE 'Após 18h' END) as observacoes,
           status,
-          (data_solicitacao::date + horario_solicitacao::time)::timestamp as data_solicitacao,
-          operador_aprovacao as atendido_por,
+          COALESCE((data_solicitacao + horario_solicitacao)::timestamp, created_at) as data_solicitacao,
+          COALESCE(operador_aprovacao, 'Sistema') as atendido_por,
           updated_at as data_atendimento,
           created_at,
           updated_at,
           COALESCE(valor_calculado, 0) as valor_solicitado,
           'Line Hall Shopee' as base,
-          NULL as id_rota,
+          '' as id_rota,
           'line_hall' as origem_tipo,
           -- Campos específicos do Line Hall
           veiculo_modelo,
@@ -69,15 +69,15 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           km_total,
           telefone_motorista,
           horario_abastecimento,
-          valor_calculado,
+          COALESCE(valor_calculado, 0) as valor_calculado,
           CASE 
-            WHEN valor_calculado IS NOT NULL THEN
+            WHEN valor_calculado IS NOT NULL AND valor_calculado > 0 THEN
               JSON_BUILD_OBJECT(
-                'km_rota', km_total,
+                'km_rota', COALESCE(km_total, 0),
                 'km_acrescimo', 30,
-                'km_total', km_total + 30,
+                'km_total', COALESCE(km_total, 0) + 30,
                 'consumo_medio', 8,
-                'litros_necessarios', ROUND((km_total + 30) / 8.0, 2),
+                'litros_necessarios', ROUND((COALESCE(km_total, 0) + 30) / 8.0, 2),
                 'valor_por_litro', 6.50,
                 'valor_total', valor_calculado
               )
@@ -91,7 +91,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           WHEN status IN ('em_analise', 'aprovada', 'approved') THEN 2
           ELSE 3
         END,
-        data_solicitacao DESC
+        data_solicitacao DESC NULLS LAST
     `;
     
     const result = await pool.query(query);
