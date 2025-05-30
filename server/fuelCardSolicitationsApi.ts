@@ -49,7 +49,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           updated_at as data_atendimento,
           created_at,
           updated_at,
-          0 as valor_solicitado,
+          COALESCE(valor_calculado, 0) as valor_solicitado,
           'Line Hall Shopee' as base,
           NULL as id_rota,
           'line_hall' as origem_tipo
