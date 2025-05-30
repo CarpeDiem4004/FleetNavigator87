@@ -1296,7 +1296,12 @@ export default function PartsInventory() {
             </DialogDescription>
           </DialogHeader>
           <Form {...editPartForm}>
-            <form onSubmit={editPartForm.handleSubmit(onSubmitEditPart)} className="space-y-4">
+            <form onSubmit={(e) => {
+              console.log('Formulário de edição submetido');
+              console.log('Erros do formulário:', editPartForm.formState.errors);
+              console.log('Dados do formulário:', editPartForm.getValues());
+              editPartForm.handleSubmit(onSubmitEditPart)(e);
+            }} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={editPartForm.control}
