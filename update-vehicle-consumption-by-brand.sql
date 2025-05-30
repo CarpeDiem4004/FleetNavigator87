@@ -20,7 +20,7 @@ SET consumo_medio_km_l = CASE
     WHEN UPPER(model) LIKE '%MERCEDES%' OR UPPER(model) LIKE '%ACTROS%' THEN 2.5
     
     -- Man: 2,6 km/l
-    WHEN UPPER(model) LIKE '%MAN%' THEN 2.6
+    WHEN UPPER(model) LIKE '%MAN%' OR UPPER(model) LIKE '%R450%' THEN 2.6
     
     -- Scania: 2,7 km/l
     WHEN UPPER(model) LIKE '%SCANIA%' THEN 2.7
@@ -29,11 +29,10 @@ SET consumo_medio_km_l = CASE
     WHEN UPPER(model) LIKE '%DAF%' THEN 2.7
     
     -- Para cavalos mecânicos específicos baseados no modelo
-    WHEN vehicle_type = 'cavalo_mecanico' AND UPPER(model) LIKE '%R450%' THEN 2.6  -- Man R450
-    WHEN vehicle_type = 'cavalo_mecanico' AND UPPER(model) LIKE '%FH540%' THEN 2.7 -- Volvo FH540
+    WHEN vehicle_type = 'cavalo_mecanico' AND UPPER(model) LIKE '%FH540%' THEN 2.7
     
-    -- Manter valores existentes para outros tipos se já estiverem corretos
-    ELSE consumo_medio_km_l
+    -- Manter padrão de 2.5 para outros
+    ELSE 2.5
 END
 WHERE vehicle_type IN ('cavalo_mecanico', 'carreta', 'truck');
 
