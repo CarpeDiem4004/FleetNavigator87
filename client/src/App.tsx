@@ -117,6 +117,7 @@ import AbastecimentosPage from "@/pages/AbastecimentosPage";
 import StoppedVehicles from "@/pages/StoppedVehicles";
 import DriverAccess from "@/pages/DriverAccess";
 import DriverMaintenanceRequest from "@/pages/DriverMaintenanceRequest";
+import LineHallVehicleRegistration from "@/pages/LineHallVehicleRegistration";
 
 // Importação das páginas da Base Campinas
 import BaseCampinas from "@/pages/bases/BaseCampinas";
@@ -194,6 +195,7 @@ function App() {
           
           {/* Rotas protegidas com verificação de permissão de base */}
           <ProtectedRoute path="/vehicles" component={VehiclesNew} />
+          <ProtectedRoute path="/linehall-register" component={LineHallVehicleRegistration} />
           <ProtectedRoute path="/stopped-vehicles" component={StoppedVehicles} />
           {/* <ProtectedRoute path="/maintenance" component={MaintenanceNew} /> */}
           <ProtectedRoute path="/tires" component={TiresPage} />
