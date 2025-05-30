@@ -123,6 +123,7 @@ export const vehicles = pgTable("veiculos", {
   rentalCompany: text("rental_company"), // Empresa de locação, quando aplicável
   crlvUrl: text("crlv_url"), // URL para o documento CRLV (Certificado de Registro e Licenciamento de Veículo)
   anttUrl: text("antt_url"), // URL para o documento ANTT (Agência Nacional de Transportes Terrestres)
+  cartaoAbastecimento: text("cartao_abastecimento"), // Número do cartão de abastecimento para veículos Line Hall
 });
 
 // Create the workshops table (oficinas)

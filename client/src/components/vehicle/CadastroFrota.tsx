@@ -35,6 +35,9 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
   const [bases, setBases] = useState<{id: number, nome: string}[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   
+  // Estado para cartão de abastecimento (Line Hall apenas)
+  const [cartaoAbastecimento, setCartaoAbastecimento] = useState('')
+  
   // Novos estados para os arquivos
   const [crlvFile, setCrlvFile] = useState<File | null>(null)
   const [anttFile, setAnttFile] = useState<File | null>(null)
@@ -108,6 +111,17 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
       setMarcaCustomizada('')
       setMediaConsumo(undefined)
     }
+    
+    // Se for carreta, limpar o cartão de abastecimento
+    if (novoTipo === 'carreta') {
+      setCartaoAbastecimento('')
+    }
+  }
+
+  // Função para verificar se deve mostrar o campo de cartão de abastecimento
+  const shouldShowCartaoAbastecimento = () => {
+    // Só mostra para veículos do Line Hall (base_id 3) e que não sejam carretas
+    return baseId === '3' && tipoVeiculo !== 'carreta'
   }
 
   // Função para fazer upload de arquivos para o Supabase
@@ -298,6 +312,7 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
           rentalCompany: ownership === 'locado' ? leasingCompany : null,
           crlvUrl: crlvUrl, // Adicionar URL do CRLV
           anttUrl: anttUrl, // Adicionar URL do ANTT
+          cartaoAbastecimento: shouldShowCartaoAbastecimento() ? cartaoAbastecimento : null, // Campo específico para Line Hall
         })
       });
       
@@ -522,6 +537,26 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
                 onChange={(e) => setLeasingCompany(e.target.value)}
                 required={ownership === 'locado'}
               />
+            </div>
+          )}
+
+          {/* Campo específico para cartão de abastecimento do Line Hall */}
+          {shouldShowCartaoAbastecimento() && (
+            <div className="space-y-2 bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <Label htmlFor="cartaoAbastecimento" className="text-blue-700 font-medium">
+                Cartão de Abastecimento Line Hall
+              </Label>
+              <Input
+                id="cartaoAbastecimento"
+                type="text"
+                placeholder="Ex: CARD001 ou ABC-1234"
+                value={cartaoAbastecimento}
+                onChange={(e) => setCartaoAbastecimento(e.target.value)}
+                className="border-blue-300"
+              />
+              <p className="text-sm text-blue-600">
+                Número ou placa do cartão de abastecimento que será usado por este veículo nas solicitações.
+              </p>
             </div>
           )}
           
