@@ -9,34 +9,34 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
     const query = `
       SELECT * FROM (
         SELECT 
-          id::text as id,
-          COALESCE(placa, veiculo_placa, 'SEM-PLACA') as placa,
-          COALESCE(km, 0) as km,
-          COALESCE(tipo_cartao, 'Padrão') as tipo_cartao,
-          COALESCE(provedor_cartao, 'Padrão') as provedor_cartao,
-          COALESCE(numero_cartao, '') as numero_cartao,
-          COALESCE(motorista, 'Motorista não informado') as motorista,
-          COALESCE(observacoes, 'Sem observações') as observacoes,
-          status,
-          data_solicitacao,
-          atendido_por,
-          data_atendimento,
-          created_at,
-          updated_at,
-          COALESCE(valor_solicitado, 0) as valor_solicitado,
-          COALESCE(base, 'Base Principal') as base,
-          COALESCE(id_rota, '') as id_rota,
-          COALESCE(origem_tipo, 'tradicional') as origem_tipo,
+          s.id::text as id,
+          COALESCE(s.placa, s.veiculo_placa, 'SEM-PLACA') as placa,
+          COALESCE(s.km, 0) as km,
+          COALESCE(s.tipo_cartao, 'Padrão') as tipo_cartao,
+          COALESCE(s.provedor_cartao, 'Padrão') as provedor_cartao,
+          COALESCE(s.numero_cartao, '') as numero_cartao,
+          COALESCE(s.motorista, 'Motorista não informado') as motorista,
+          COALESCE(s.observacoes, 'Sem observações') as observacoes,
+          s.status,
+          s.data_solicitacao,
+          s.atendido_por,
+          s.data_atendimento,
+          s.created_at,
+          s.updated_at,
+          COALESCE(s.valor_solicitado, 0) as valor_solicitado,
+          COALESCE(s.base, 'Base Principal') as base,
+          COALESCE(s.id_rota, '') as id_rota,
+          COALESCE(s.origem_tipo, 'tradicional') as origem_tipo,
           -- Campos específicos do Line Hall (NULL para solicitações tradicionais)
           NULL::varchar as veiculo_modelo,
           NULL::varchar as rota_origem,
           NULL::varchar as rota_destino,
-          km as km_total,
+          s.km as km_total,
           NULL::varchar as telefone_motorista,
           NULL::varchar as horario_abastecimento,
-          COALESCE(valor_solicitado, 0) as valor_calculado,
+          COALESCE(s.valor_solicitado, 0) as valor_calculado,
           NULL::json as calculo_detalhes
-        FROM solicitacoes_fuel_card
+        FROM solicitacoes_fuel_card s
 
         UNION ALL
 
