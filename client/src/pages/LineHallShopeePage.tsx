@@ -632,51 +632,97 @@ export default function LineHallShopeePage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="placa_cavalo">Placa do Cavalo *</Label>
-                      <Input
-                        id="placa_cavalo"
+                      <Select 
                         name="placa_cavalo"
-                        placeholder="ABC1234"
-                        value={currentTrip.placa_cavalo || ''}
-                        onChange={handleInputChange}
-                      />
+                        value={currentTrip.placa_cavalo || ''} 
+                        onValueChange={(value) => handleSelectChange('placa_cavalo', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o cavalo mecânico" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {vehicles
+                            .filter(vehicle => vehicle.vehicleType === 'cavalo_mecanico')
+                            .map((vehicle) => (
+                            <SelectItem key={vehicle.id} value={vehicle.plate}>
+                              {vehicle.plate} - {vehicle.model}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="placa_carreta_1">Placa da Carreta 1 *</Label>
-                      <Input
-                        id="placa_carreta_1"
+                      <Select 
                         name="placa_carreta_1"
-                        placeholder="XYZ5678"
-                        value={currentTrip.placa_carreta_1 || ''}
-                        onChange={handleInputChange}
-                      />
+                        value={currentTrip.placa_carreta_1 || ''} 
+                        onValueChange={(value) => handleSelectChange('placa_carreta_1', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a primeira carreta" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {vehicles
+                            .filter(vehicle => vehicle.vehicleType === 'carreta')
+                            .map((vehicle) => (
+                            <SelectItem key={vehicle.id} value={vehicle.plate}>
+                              {vehicle.plate} - {vehicle.model}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="placa_carreta_2">Placa da Carreta 2</Label>
-                      <Input
-                        id="placa_carreta_2"
+                      <Select 
                         name="placa_carreta_2"
-                        placeholder="DEF9012"
-                        value={currentTrip.placa_carreta_2 || ''}
-                        onChange={handleInputChange}
-                      />
+                        value={currentTrip.placa_carreta_2 || ''} 
+                        onValueChange={(value) => handleSelectChange('placa_carreta_2', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a segunda carreta (opcional)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Nenhuma carreta adicional</SelectItem>
+                          {vehicles
+                            .filter(vehicle => vehicle.vehicleType === 'carreta' && vehicle.plate !== currentTrip.placa_carreta_1)
+                            .map((vehicle) => (
+                            <SelectItem key={vehicle.id} value={vehicle.plate}>
+                              {vehicle.plate} - {vehicle.model}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="motorista_nome">Nome do Motorista *</Label>
-                      <Input
-                        id="motorista_nome"
+                      <Select 
                         name="motorista_nome"
-                        placeholder="Nome do Motorista"
-                        value={currentTrip.motorista_nome || ''}
-                        onChange={handleInputChange}
-                      />
-                      <Input
-                        type="hidden"
-                        name="motorista_id"
-                        value={currentTrip.motorista_id || 0}
-                        onChange={handleInputChange}
-                      />
+                        value={currentTrip.motorista_nome || ''} 
+                        onValueChange={(value) => {
+                          const selectedDriver = drivers.find(driver => driver.nome === value);
+                          if (selectedDriver) {
+                            setCurrentTrip(prev => ({
+                              ...prev,
+                              motorista_nome: selectedDriver.nome,
+                              motorista_id: selectedDriver.id
+                            }));
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o motorista" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {drivers.map((driver) => (
+                            <SelectItem key={driver.id} value={driver.nome}>
+                              {driver.nome} - {driver.cpf}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
