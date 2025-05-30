@@ -53,33 +53,33 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
                  CASE WHEN lh.horario_abastecimento = 'antes_17h' THEN 'Antes das 17h' 
                       ELSE 'Após 18h' END) as observacoes,
           lh.status,
-          COALESCE((data_solicitacao + horario_solicitacao)::timestamp, created_at) as data_solicitacao,
-          COALESCE(operador_aprovacao, 'Sistema') as atendido_por,
-          updated_at as data_atendimento,
-          created_at,
-          updated_at,
-          COALESCE(valor_calculado, 0) as valor_solicitado,
+          COALESCE((lh.data_solicitacao + lh.horario_solicitacao)::timestamp, lh.created_at) as data_solicitacao,
+          COALESCE(lh.operador_aprovacao, 'Sistema') as atendido_por,
+          lh.updated_at as data_atendimento,
+          lh.created_at,
+          lh.updated_at,
+          COALESCE(lh.valor_calculado, 0) as valor_solicitado,
           'Line Hall Shopee' as base,
           '' as id_rota,
           'line_hall' as origem_tipo,
           -- Campos específicos do Line Hall
-          veiculo_modelo,
-          rota_origem,
-          rota_destino,
-          km_total,
-          telefone_motorista,
-          horario_abastecimento,
-          COALESCE(valor_calculado, 0) as valor_calculado,
+          lh.veiculo_modelo,
+          lh.rota_origem,
+          lh.rota_destino,
+          lh.km_total,
+          lh.telefone_motorista,
+          lh.horario_abastecimento,
+          COALESCE(lh.valor_calculado, 0) as valor_calculado,
           CASE 
-            WHEN valor_calculado IS NOT NULL AND valor_calculado > 0 THEN
+            WHEN lh.valor_calculado IS NOT NULL AND lh.valor_calculado > 0 THEN
               JSON_BUILD_OBJECT(
-                'km_rota', COALESCE(km_total, 0),
+                'km_rota', COALESCE(lh.km_total, 0),
                 'km_acrescimo', 30,
-                'km_total', COALESCE(km_total, 0) + 30,
+                'km_total', COALESCE(lh.km_total, 0) + 30,
                 'consumo_medio', 8,
-                'litros_necessarios', ROUND((COALESCE(km_total, 0) + 30) / 8.0, 2),
+                'litros_necessarios', ROUND((COALESCE(lh.km_total, 0) + 30) / 8.0, 2),
                 'valor_por_litro', 6.50,
-                'valor_total', valor_calculado
+                'valor_total', lh.valor_calculado
               )
             ELSE NULL
           END as calculo_detalhes
