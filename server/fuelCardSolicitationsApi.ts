@@ -48,11 +48,11 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           'Line Hall Shopee' as provedor_cartao,
           COALESCE(lhv.cartao_combustivel, lh.numero_cartao, '') as numero_cartao,
           COALESCE(lh.motorista, lh.motorista_nome, 'Motorista não informado') as motorista,
-          CONCAT('Rota: ', COALESCE(rota_origem, 'N/I'), ' → ', COALESCE(rota_destino, 'N/I'), 
-                 ' | Tel: ', COALESCE(telefone_motorista, 'N/I'), ' | Horário: ', 
-                 CASE WHEN horario_abastecimento = 'antes_17h' THEN 'Antes das 17h' 
+          CONCAT('Rota: ', COALESCE(lh.rota_origem, 'N/I'), ' → ', COALESCE(lh.rota_destino, 'N/I'), 
+                 ' | Tel: ', COALESCE(lh.telefone_motorista, 'N/I'), ' | Horário: ', 
+                 CASE WHEN lh.horario_abastecimento = 'antes_17h' THEN 'Antes das 17h' 
                       ELSE 'Após 18h' END) as observacoes,
-          status,
+          lh.status,
           COALESCE((data_solicitacao + horario_solicitacao)::timestamp, created_at) as data_solicitacao,
           COALESCE(operador_aprovacao, 'Sistema') as atendido_por,
           updated_at as data_atendimento,

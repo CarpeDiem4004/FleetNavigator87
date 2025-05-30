@@ -96,6 +96,7 @@ const editVehicleSchema = z.object({
   vehicleType: z.string().min(1, "Tipo de veículo é obrigatório"),
   status: z.string().min(1, "Status é obrigatório"),
   baseId: z.number().min(1, "Base é obrigatória"),
+  cartaoAbastecimento: z.string().optional(),
 });
 
 // Componente de formulário para edição de veículos
@@ -116,6 +117,7 @@ const EditVehicleForm: React.FC<EditVehicleFormProps> = ({ vehicle, onUpdate, on
       vehicleType: vehicle.marca || "cavalo_mecanico",
       status: vehicle.status || "em_operacao",
       baseId: vehicle.base_id || 1,
+      cartaoAbastecimento: vehicle.cartao_combustivel || "",
     },
   });
 
@@ -240,6 +242,23 @@ const EditVehicleForm: React.FC<EditVehicleFormProps> = ({ vehicle, onUpdate, on
                   ))}
                 </SelectContent>
               </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="cartaoAbastecimento"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cartão de Abastecimento</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="Ex: 5431-1234-5678-9012" 
+                  {...field} 
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
