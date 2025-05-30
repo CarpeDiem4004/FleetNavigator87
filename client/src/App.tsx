@@ -274,9 +274,9 @@ function App() {
           <ProtectedRoute path="/limpar-dados" component={LimparDados} />
           <ProtectedRoute path="/line-hall-shopee" component={LineHallShopeePage} />
           <ProtectedRoute path="/fuel-card-old" component={FuelCardPage} />
-          {/* Rota antiga comentada para evitar conflito */}
-          {/* <ProtectedRoute path="/fuel-card" component={FuelCard} /> */}
-          <ProtectedRoute path="/fuel-card-requests" component={FuelCardRequestsPanel} />
+          {/* Página principal de solicitações de cartão combustível */}
+          <ProtectedRoute path="/fuel-card" component={FuelCardRequestsPanel} />
+          <ProtectedRoute path="/fuel-card-dashboard" component={FuelCard} />
           <ProtectedRoute path="/posto-remedios" component={PostoRemediosPage} />
           <ProtectedRoute path="/cartao-abastecimento" component={CartaoAbastecimentoPage} />
           <ProtectedRoute path="/abastecimento" component={PainelPostosPage} />
