@@ -102,18 +102,8 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
       status: normalizeStatus(row.status, row.origem_tipo)
     }));
     
-    // Log temporário para debug dos dados do Line Hall
-    const lineHallData = normalizedData.filter(row => row.origem_tipo === 'line_hall');
-    if (lineHallData.length > 0) {
-      console.log('=== DADOS LINE HALL RETORNADOS ===');
-      lineHallData.forEach(item => {
-        console.log(`ID: ${item.id}, Placa: ${item.placa}`);
-        console.log(`Modelo: ${item.veiculo_modelo}`);
-        console.log(`Rota: ${item.rota_origem} → ${item.rota_destino}`);
-        console.log(`KM: ${item.km_total}, Tel: ${item.telefone_motorista}`);
-        console.log('---');
-      });
-    }
+    // Debug: verificar se dados estão sendo retornados
+    console.log(`Total de solicitações retornadas: ${normalizedData.length}`);
     
     return res.status(200).json({
       success: true,
