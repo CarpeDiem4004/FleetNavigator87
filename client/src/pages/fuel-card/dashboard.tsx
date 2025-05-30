@@ -310,8 +310,8 @@ function SolicitationsTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {solicitations.map((solicitation) => (
-          <TableRow key={solicitation.id}>
+        {solicitations.map((solicitation, index) => (
+          <TableRow key={`${solicitation.id}-${index}`}>
             <TableCell className="font-medium">{solicitation.id}</TableCell>
             <TableCell>{solicitation.placa}</TableCell>
             <TableCell>{solicitation.km}</TableCell>
