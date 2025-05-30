@@ -733,32 +733,10 @@ export default function LineHallShopeePage() {
                       </Select>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="local_carregamento">Local Carregamento *</Label>
-                      <Input
-                        id="local_carregamento"
-                        name="local_carregamento"
-                        placeholder="Local de Carregamento"
-                        value={currentTrip.local_carregamento || ''}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="local_descarregamento">Local Descarregamento *</Label>
-                      <Input
-                        id="local_descarregamento"
-                        name="local_descarregamento"
-                        placeholder="Local de Descarregamento"
-                        value={currentTrip.local_descarregamento || ''}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                  </div>
                   
                   <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="rota_selecionada">Rota Cadastrada</Label>
+                      <Label htmlFor="rota_selecionada">Rota Cadastrada *</Label>
                       <Select 
                         name="rota_selecionada"
                         value={currentTrip.rota_selecionada || ''} 
@@ -778,7 +756,7 @@ export default function LineHallShopeePage() {
                         }}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma rota cadastrada (opcional)" />
+                          <SelectValue placeholder="Selecione uma rota cadastrada" />
                         </SelectTrigger>
                         <SelectContent>
                           {routes.map((route) => (
@@ -789,7 +767,7 @@ export default function LineHallShopeePage() {
                         </SelectContent>
                       </Select>
                       <div className="text-xs text-muted-foreground">
-                        Ao selecionar uma rota, os campos de origem, destino e quilometragem serão preenchidos automaticamente
+                        A rota selecionada definirá automaticamente origem, destino e quilometragem da viagem
                       </div>
                     </div>
                   </div>
