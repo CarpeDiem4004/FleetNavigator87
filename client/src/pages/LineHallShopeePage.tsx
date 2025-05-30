@@ -43,6 +43,22 @@ interface RouteData {
   km_total: number;
 }
 
+interface Vehicle {
+  id: number;
+  plate: string;
+  model: string;
+  vehicleType: string;
+  status: string;
+  baseId: number;
+}
+
+interface Driver {
+  id: number;
+  nome: string;
+  cpf: string;
+  telefone?: string;
+}
+
 interface FuelCardRequest {
   id: number;
   motorista_id: number;
@@ -112,6 +128,10 @@ export default function LineHallShopeePage() {
   // Estado para solicitações de cartão combustível
   const [fuelCardRequests, setFuelCardRequests] = useState<FuelCardRequest[]>([]);
   const [showFuelRequests, setShowFuelRequests] = useState(false);
+
+  // Estados para veículos e motoristas cadastrados no Line Hall
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
   
   // Form states
   const [currentTrip, setCurrentTrip] = useState<Partial<LineHallTrip>>({
@@ -135,6 +155,8 @@ export default function LineHallShopeePage() {
     fetchDriverStats();
     fetchRoutesData();
     fetchFuelCardRequests();
+    fetchVehicles();
+    fetchDrivers();
     
     // Configurar polling para atualizações automáticas do status das viagens
     const interval = setInterval(() => {
@@ -154,6 +176,34 @@ export default function LineHallShopeePage() {
       }
     } catch (error) {
       console.error('Erro ao buscar rotas:', error);
+    }
+  };
+
+  // Função para buscar veículos cadastrados do Line Hall
+  const fetchVehicles = async () => {
+    try {
+      const response = await api.get('/vehicles');
+      if (response.data && Array.isArray(response.data)) {
+        // Filtrar apenas veículos do Line Hall (base_id = 2)
+        const lineHallVehicles = response.data.filter(vehicle => vehicle.base_id === 2);
+        setVehicles(lineHallVehicles);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar veículos:', error);
+    }
+  };
+
+  // Função para buscar motoristas cadastrados do Line Hall
+  const fetchDrivers = async () => {
+    try {
+      const response = await api.get('/drivers');
+      if (response.data && Array.isArray(response.data)) {
+        // Filtrar apenas motoristas do Line Hall (base_id = 2)
+        const lineHallDrivers = response.data.filter(driver => driver.base_id === 2);
+        setDrivers(lineHallDrivers);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar motoristas:', error);
     }
   };
 
