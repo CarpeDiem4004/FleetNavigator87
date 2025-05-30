@@ -386,9 +386,9 @@ const FuelCardRequestsPanel: React.FC = () => {
         
         {/* Painel Lateral */}
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-          <SheetContent className="w-[400px] sm:w-[540px]">
+          <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto max-h-screen">
             {selectedSolicitation ? (
-              <div className="space-y-6">
+              <div className="space-y-6 pb-6">
                 <SheetHeader>
                   <SheetTitle>Detalhes da Solicitação</SheetTitle>
                   <SheetDescription>
