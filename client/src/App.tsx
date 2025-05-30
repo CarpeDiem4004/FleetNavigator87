@@ -154,17 +154,7 @@ import PostoAcessoDireto from "@/pages/PostoAcessoDireto";
 import LinksExternosPostos from "@/pages/postos/LinksExternosPostos";
 import PartnerLogin from "@/pages/partner-login";
 import PartnerDashboard from "@/pages/partner-dashboard";
-
-// Componente para redirecionamento de /fuel-card para /fuel-card-requests
-function FuelCardRedirect() {
-  const [, setLocation] = useLocation();
-  
-  useEffect(() => {
-    setLocation("/fuel-card-requests");
-  }, [setLocation]);
-  
-  return <div>Redirecionando...</div>;
-}
+import FuelCardRedirect from "@/components/FuelCardRedirect";
 
 function App() {
   // Ativar o hook de injeção automática de token JWT em todas as requisições fetch
