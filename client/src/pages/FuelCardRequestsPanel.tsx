@@ -30,6 +30,23 @@ interface FuelCardSolicitation {
   data_solicitacao: string;
   atendido_por?: string;
   data_atendimento?: string;
+  // Campos do Line Hall Shopee
+  veiculo_modelo?: string;
+  rota_origem?: string;
+  rota_destino?: string;
+  km_total?: number;
+  horario_abastecimento?: string;
+  telefone_motorista?: string;
+  valor_calculado?: number;
+  calculo_detalhes?: {
+    km_rota: number;
+    km_acrescimo: number;
+    km_total: number;
+    consumo_medio: number;
+    litros_necessarios: string;
+    valor_por_litro: number;
+    valor_total: string;
+  };
 }
 
 const FuelCardRequestsPanel: React.FC = () => {
@@ -377,6 +394,13 @@ const FuelCardRequestsPanel: React.FC = () => {
                     </div>
                   </div>
                   
+                  {selectedSolicitation.veiculo_modelo && (
+                    <div>
+                      <Label>Modelo do Veículo</Label>
+                      <div className="text-lg font-medium">{selectedSolicitation.veiculo_modelo}</div>
+                    </div>
+                  )}
+                  
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Valor Solicitado</Label>
@@ -398,6 +422,67 @@ const FuelCardRequestsPanel: React.FC = () => {
                       <div className="mt-1">{getStatusBadge(selectedSolicitation.status)}</div>
                     </div>
                   </div>
+                  
+                  {/* Seção específica do Line Hall Shopee */}
+                  {selectedSolicitation.rota_origem && selectedSolicitation.rota_destino && (
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <Label className="text-blue-800 font-semibold">Detalhes da Rota (Line Hall)</Label>
+                      <div className="mt-2 space-y-2">
+                        <div className="text-sm">
+                          <span className="font-medium">Rota:</span> {selectedSolicitation.rota_origem} → {selectedSolicitation.rota_destino}
+                        </div>
+                        {selectedSolicitation.km_total && (
+                          <div className="text-sm">
+                            <span className="font-medium">KM da Rota:</span> {selectedSolicitation.km_total} km
+                          </div>
+                        )}
+                        {selectedSolicitation.telefone_motorista && (
+                          <div className="text-sm">
+                            <span className="font-medium">Telefone:</span> {selectedSolicitation.telefone_motorista}
+                          </div>
+                        )}
+                        {selectedSolicitation.horario_abastecimento && (
+                          <div className="text-sm">
+                            <span className="font-medium">Horário Abastecimento:</span> {selectedSolicitation.horario_abastecimento === 'antes_17h' ? 'Antes das 17h' : 'Após as 18h'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Detalhes do Cálculo */}
+                  {selectedSolicitation.calculo_detalhes && (
+                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                      <Label className="text-green-800 font-semibold">Detalhes do Cálculo</Label>
+                      <div className="mt-2 space-y-2">
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="font-medium">KM da Rota:</span> {selectedSolicitation.calculo_detalhes.km_rota} km
+                          </div>
+                          <div>
+                            <span className="font-medium">KM Adicional:</span> {selectedSolicitation.calculo_detalhes.km_acrescimo} km
+                          </div>
+                          <div>
+                            <span className="font-medium">Total KM:</span> {selectedSolicitation.calculo_detalhes.km_total} km
+                          </div>
+                          <div>
+                            <span className="font-medium">Consumo Médio:</span> {selectedSolicitation.calculo_detalhes.consumo_medio} km/l
+                          </div>
+                          <div>
+                            <span className="font-medium">Litros Necessários:</span> {selectedSolicitation.calculo_detalhes.litros_necessarios} L
+                          </div>
+                          <div>
+                            <span className="font-medium">Valor por Litro:</span> R$ {selectedSolicitation.calculo_detalhes.valor_por_litro.toFixed(2)}
+                          </div>
+                        </div>
+                        <div className="pt-2 border-t border-green-300">
+                          <div className="text-lg font-bold text-green-800">
+                            <span className="font-medium">Valor Total:</span> R$ {selectedSolicitation.calculo_detalhes.valor_total}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   
                   <div>
                     <Label>Observações</Label>
