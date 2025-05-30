@@ -54,6 +54,7 @@ interface Vehicle {
   base_id: number;
   base_nome?: string;
   status: string;
+  cartao_combustivel?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -427,7 +428,8 @@ const VehiclesNew: React.FC = () => {
           marca: updatedVehicle.vehicleType || vehicle.marca,
           modelo: updatedVehicle.model || vehicle.modelo,
           status: updatedVehicle.status || vehicle.status,
-          base_id: updatedVehicle.baseId || vehicle.base_id
+          base_id: updatedVehicle.baseId || vehicle.base_id,
+          cartao_combustivel: updatedVehicle.cartaoAbastecimento || vehicle.cartao_combustivel
         } : vehicle
       ));
       
