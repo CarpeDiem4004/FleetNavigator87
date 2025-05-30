@@ -57,19 +57,19 @@ export default function FuelCardDashboard() {
   });
   
   const solicitations: FuelCardSolicitation[] = apiResponse?.data || [];
-  const pendingCount = solicitations.filter(s => s.status === 'pendente').length;
-  const attendedCount = solicitations.filter(s => s.status === 'atendido').length;
+  const pendingCount = solicitations.filter(s => s.status === 'pendente' || s.status === 'Pendente').length;
+  const attendedCount = solicitations.filter(s => s.status === 'atendido' || s.status === 'Recarga Efetuada' || s.status === 'aprovada').length;
   
   // Calcular o valor total dos cartões atendidos
   // Verificar os valores antes de somar
-  const attendedSolicitations = solicitations.filter(s => s.status === 'atendido');
+  const attendedSolicitations = solicitations.filter(s => s.status === 'atendido' || s.status === 'Recarga Efetuada' || s.status === 'aprovada');
   console.log("Solicitações atendidas:", attendedSolicitations);
   
   // Garantir que todos os valores são números antes de somar
   const totalValueAttended = attendedSolicitations.reduce((sum, s) => {
     // Converter para número e verificar se é válido
     const valor = s.valor_solicitado ? 
-      parseFloat(String(s.valor_solicitado).replace(',', '.')) : 0;
+      parseFloat(String(s.valor_solicitado).replace(',', '.')) : 150; // valor padrão se não especificado
     
     console.log("Valor sendo somado:", s.valor_solicitado, "->", valor);
     return sum + valor;
@@ -333,7 +333,7 @@ function SolicitationsTable({
               <StatusBadge status={solicitation.status} />
             </TableCell>
             <TableCell>
-              {solicitation.status === 'pendente' && (
+              {(solicitation.status === 'pendente' || solicitation.status === 'Pendente') && (
                 <div className="flex space-x-2">
                   <Button 
                     size="sm" 
