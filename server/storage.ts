@@ -533,11 +533,11 @@ export class DatabaseStorage implements IStorage {
 
   async getAllVehicles(): Promise<Vehicle[]> {
     try {
-      // Usar SQL bruto com os nomes corretos das colunas
+      // Usar SQL bruto com os nomes corretos das colunas (sem referenciar make)
       const result = await db.execute(sql`
         SELECT id, placa as plate, 
-               COALESCE(model, modelo, '') as model,
-               COALESCE(make, '') as make,
+               COALESCE(modelo, '') as model,
+               COALESCE(marca, '') as make,
                tipo as "vehicleType", 
                status, base_id as "baseId",
                COALESCE(fuel_type, 'Diesel') as "fuelType",
@@ -579,16 +579,16 @@ export class DatabaseStorage implements IStorage {
         throw duplicateError;
       }
       
-      // Usar SQL bruto com os nomes corretos das colunas
+      // Usar SQL bruto com os nomes corretos das colunas (sem make)
       const result = await db.execute(sql`
         INSERT INTO veiculos 
-        (placa, model, make, tipo, status, base_id, fuel_type, year, media_consumo_combustivel)
+        (placa, modelo, marca, tipo, status, base_id, fuel_type, year, media_consumo_combustivel)
         VALUES 
-        (${vehicle.plate}, ${vehicle.model || ''}, ${vehicle.make || 'N/A'}, 
+        (${vehicle.plate}, ${vehicle.model || ''}, ${vehicle.make || 'Mercedes'}, 
          ${vehicle.vehicleType}, ${vehicle.status}, ${vehicle.baseId}, 
          ${vehicle.fuelType || 'Diesel'}, ${vehicle.year || null}, 
          ${vehicle.mediaConsumoCombutivel || null})
-        RETURNING id, placa as plate, model, make, tipo as "vehicleType", 
+        RETURNING id, placa as plate, modelo as model, marca as make, tipo as "vehicleType", 
                  status, base_id as "baseId", fuel_type as "fuelType", 
                  year, media_consumo_combustivel as "mediaConsumoCombutivel"
       `);
