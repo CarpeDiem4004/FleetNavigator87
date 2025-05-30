@@ -527,3 +527,96 @@ export async function setupFuelCardTable() {
     console.error("Erro ao verificar/criar tabela solicitacoes_fuel_card:", error);
   }
 }
+
+/**
+ * Cria uma solicitação específica do Line Hall Shopee com cálculo automático
+ */
+export async function createLineHallFuelCardRequest(req: Request, res: Response) {
+  try {
+    const {
+      motorista_id,
+      motorista_nome,
+      motorista_cpf,
+      veiculo_placa,
+      veiculo_modelo,
+      rota_origem,
+      rota_destino,
+      data_solicitacao,
+      horario_solicitacao,
+      km_total,
+      horario_abastecimento,
+      telefone_motorista
+    } = req.body;
+
+    if (!motorista_nome || !veiculo_placa || !km_total) {
+      return res.status(400).json({
+        success: false,
+        message: 'Motorista, placa e KM total são obrigatórios'
+      });
+    }
+
+    // Buscar consumo médio do veículo
+    const vehicleQuery = `
+      SELECT consumo_medio_km_l 
+      FROM vehicles 
+      WHERE plate = $1
+    `;
+    
+    const vehicleResult = await pool.query(vehicleQuery, [veiculo_placa]);
+    
+    let consumoMedio = 8.0; // Valor padrão
+    if (vehicleResult.rows.length > 0 && vehicleResult.rows[0].consumo_medio_km_l) {
+      consumoMedio = parseFloat(vehicleResult.rows[0].consumo_medio_km_l);
+    }
+
+    // Calcular valor segundo a regra:
+    // (KM da rota + 30km) ÷ Consumo médio × R$ 6,50
+    const kmComAcrescimo = parseInt(km_total) + 30;
+    const litrosNecessarios = kmComAcrescimo / consumoMedio;
+    const valorCalculado = litrosNecessarios * 6.50;
+
+    // Inserir na tabela Line Hall
+    const query = `
+      INSERT INTO linehall_fuel_card_requests (
+        motorista_id, motorista_nome, motorista_cpf, veiculo_placa, veiculo_modelo,
+        rota_origem, rota_destino, data_solicitacao, horario_solicitacao,
+        km_total, horario_abastecimento, telefone_motorista, valor_calculado,
+        status
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'pendente')
+      RETURNING *
+    `;
+
+    const values = [
+      motorista_id, motorista_nome, motorista_cpf, veiculo_placa, veiculo_modelo,
+      rota_origem, rota_destino, data_solicitacao, horario_solicitacao,
+      km_total, horario_abastecimento, telefone_motorista, valorCalculado.toFixed(2)
+    ];
+
+    const result = await pool.query(query, values);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Solicitação Line Hall criada com sucesso',
+      data: {
+        ...result.rows[0],
+        calculo_detalhes: {
+          km_rota: km_total,
+          km_acrescimo: 30,
+          km_total: kmComAcrescimo,
+          consumo_medio: consumoMedio,
+          litros_necessarios: litrosNecessarios.toFixed(2),
+          valor_por_litro: 6.50,
+          valor_total: valorCalculado.toFixed(2)
+        }
+      }
+    });
+  } catch (error: any) {
+    console.error('Erro ao criar solicitação Line Hall:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao criar solicitação Line Hall',
+      error: error.message
+    });
+  }
+}

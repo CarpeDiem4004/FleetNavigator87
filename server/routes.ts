@@ -11451,6 +11451,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rotas para o sistema de solicitação de cartão combustível
   app.get('/api/fuel-card-solicitations', getFuelCardSolicitations);
   app.post('/api/fuel-card-solicitations', createFuelCardSolicitation);
+  app.post('/api/fuel-card-solicitations/line-hall', createLineHallFuelCardRequest);
   app.get('/api/fuel-card-solicitations/:id', getFuelCardSolicitationById);
   app.put('/api/fuel-card-solicitations/:id/status', updateFuelCardSolicitationStatus);
   
