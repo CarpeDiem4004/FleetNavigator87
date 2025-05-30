@@ -771,12 +771,8 @@ router.get('/estoque-exportar', verifyAuth, sessionAuth, async (req, res) => {
 // GET - Obter template para importação
 router.get('/estoque-template', verifyAuth, sessionAuth, async (req, res) => {
   try {
-    // Obter estrutura do template
-    const result = await pool.query(`
-      SELECT * FROM gerar_template_excel_pecas()
-    `);
-    
-    const template = result.rows;
+    // Gerar template diretamente sem depender de função do banco
+    const template = [];
     
     // Transformar em formato adequado para o Excel
     const excelData = [
