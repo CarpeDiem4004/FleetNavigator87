@@ -30,6 +30,8 @@ interface FuelCardSolicitation {
   data_solicitacao: string;
   atendido_por?: string;
   data_atendimento?: string;
+  base?: string;
+  origem_tipo?: string;
   // Campos do Line Hall Shopee
   veiculo_modelo?: string;
   rota_origem?: string;
