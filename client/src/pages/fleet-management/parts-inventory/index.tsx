@@ -1253,7 +1253,17 @@ export default function PartsInventory() {
                     <FormItem>
                       <FormLabel>Valor Unitário (R$)*</FormLabel>
                       <FormControl>
-                        <Input type="number" min="0" step="0.01" {...field} />
+                        <Input 
+                          {...field}
+                          value={field.value ? formatCurrency(field.value) : ''}
+                          onChange={(e) => {
+                            const formattedValue = formatCurrencyInput(e.target.value);
+                            e.target.value = formattedValue;
+                            const numericValue = parseCurrency(formattedValue);
+                            field.onChange(numericValue);
+                          }}
+                          placeholder="R$ 0,00"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1303,6 +1313,20 @@ export default function PartsInventory() {
               editPartForm.handleSubmit(onSubmitEditPart)(e);
             }} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editPartForm.control}
+                  name="codigo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Código*</FormLabel>
+                      <FormControl>
+                        <Input {...field} readOnly className="bg-gray-100" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
                 <FormField
                   control={editPartForm.control}
                   name="nome"
