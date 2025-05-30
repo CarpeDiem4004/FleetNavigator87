@@ -412,11 +412,21 @@ export default function PartsInventory() {
 
   // Função para submeter edição de peça
   const onSubmitEditPart = async (data: any) => {
-    if (!selectedPart) return;
+    console.log('onSubmitEditPart chamada com dados:', data);
+    console.log('selectedPart:', selectedPart);
+    
+    if (!selectedPart) {
+      console.error('Nenhuma peça selecionada');
+      return;
+    }
     
     try {
+      console.log('Enviando requisição PUT para:', `/api/frota/estoque-pecas/${selectedPart.id}`);
       const response = await apiRequest('PUT', `/api/frota/estoque-pecas/${selectedPart.id}`, data);
+      console.log('Resposta recebida:', response.status);
+      
       const result = await response.json();
+      console.log('Resultado da resposta:', result);
       
       if (response.ok) {
         toast({
@@ -430,6 +440,7 @@ export default function PartsInventory() {
         throw new Error(result.message || 'Erro ao atualizar peça');
       }
     } catch (error: any) {
+      console.error('Erro ao atualizar peça:', error);
       toast({
         title: 'Erro',
         description: error.message || 'Ocorreu um erro ao atualizar a peça',
