@@ -26,7 +26,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           valor_solicitado,
           base,
           id_rota,
-          'tradicional' as origem_tipo,
+          COALESCE(origem_tipo, 'tradicional') as origem_tipo,
           -- Campos específicos do Line Hall (NULL para solicitações tradicionais)
           NULL as veiculo_modelo,
           NULL as rota_origem,
