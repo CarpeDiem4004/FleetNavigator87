@@ -345,9 +345,9 @@ const FuelCardRequestsPanel: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredSolicitations.map((solicitacao) => (
+                    {filteredSolicitations.map((solicitacao, index) => (
                       <tr 
-                        key={solicitacao.id} 
+                        key={`${solicitacao.id}-${solicitacao.origem_tipo}-${index}`} 
                         className={`hover:bg-gray-50 ${solicitacao.status === 'Pendente' ? 'bg-yellow-50' : ''}`}
                       >
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{solicitacao.placa}</td>
