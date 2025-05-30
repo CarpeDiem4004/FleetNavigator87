@@ -433,12 +433,7 @@ function App() {
             <AbastecimentoPostoRemediosPage />
           </Route>
           
-          {/* Rotas para o Sistema de Solicitação de Cartão Combustível */}
-          <ProtectedRoute path="/fuel-card" component={() => (
-            <div className="mt-16 pl-4 pr-4 md:pl-64">
-              <FuelCardDashboard />
-            </div>
-          )} />
+          {/* Rota removida - usar /fuel-card-requests como definitiva */}
           
           {/* Rota pública para solicitação de cartão combustível - acessível sem login */}
           <Route path="/fuel-card/solicitation">
