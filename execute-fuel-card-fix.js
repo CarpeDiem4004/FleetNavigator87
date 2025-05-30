@@ -3,7 +3,7 @@
  * Execute com: node execute-fuel-card-fix.js
  */
 
-const { Pool } = require('pg');
+import { Pool } from 'pg';
 
 // Configuração do banco
 const pool = new Pool({
@@ -101,8 +101,4 @@ async function main() {
 }
 
 // Executar script
-if (require.main === module) {
-  main();
-}
-
-module.exports = { main };
+main();
