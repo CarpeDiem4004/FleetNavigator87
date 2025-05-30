@@ -1,4 +1,5 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
+import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -153,6 +154,17 @@ import PostoAcessoDireto from "@/pages/PostoAcessoDireto";
 import LinksExternosPostos from "@/pages/postos/LinksExternosPostos";
 import PartnerLogin from "@/pages/partner-login";
 import PartnerDashboard from "@/pages/partner-dashboard";
+
+// Componente para redirecionamento de /fuel-card para /fuel-card-requests
+function FuelCardRedirect() {
+  const [, setLocation] = useLocation();
+  
+  useEffect(() => {
+    setLocation("/fuel-card-requests");
+  }, [setLocation]);
+  
+  return <div>Redirecionando...</div>;
+}
 
 function App() {
   // Ativar o hook de injeção automática de token JWT em todas as requisições fetch
@@ -433,7 +445,10 @@ function App() {
             <AbastecimentoPostoRemediosPage />
           </Route>
           
-          {/* Rota removida - usar /fuel-card-requests como definitiva */}
+          {/* Redirecionamento da rota antiga para a definitiva */}
+          <Route path="/fuel-card">
+            <FuelCardRedirect />
+          </Route>
           
           {/* Rota pública para solicitação de cartão combustível - acessível sem login */}
           <Route path="/fuel-card/solicitation">
