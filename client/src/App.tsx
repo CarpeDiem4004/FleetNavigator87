@@ -278,6 +278,7 @@ function App() {
           <ProtectedRoute path="/fuel-card-old" component={FuelCardPage} />
           {/* Página principal de solicitações de cartão combustível */}
           <ProtectedRoute path="/fuel-card" component={FuelCardRequestsPanel} />
+          <ProtectedRoute path="/fuel-card-requests" component={FuelCardRequestsPanel} />
           <ProtectedRoute path="/fuel-card-dashboard" component={FuelCard} />
           <ProtectedRoute path="/posto-remedios" component={PostoRemediosPage} />
           <ProtectedRoute path="/cartao-abastecimento" component={CartaoAbastecimentoPage} />
