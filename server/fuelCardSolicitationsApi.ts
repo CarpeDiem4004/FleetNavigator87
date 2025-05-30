@@ -41,13 +41,13 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
         UNION ALL
 
         SELECT 
-          id::text as id,
-          COALESCE(veiculo_placa, 'LH-' || id) as placa,
-          COALESCE(km_total, 0) as km,
+          lh.id::text as id,
+          COALESCE(lh.veiculo_placa, 'LH-' || lh.id) as placa,
+          COALESCE(lh.km_total, 0) as km,
           'Line Hall' as tipo_cartao,
           'Line Hall Shopee' as provedor_cartao,
-          COALESCE(numero_cartao, '') as numero_cartao,
-          COALESCE(motorista, motorista_nome, 'Motorista não informado') as motorista,
+          COALESCE(lhv.cartao_combustivel, lh.numero_cartao, '') as numero_cartao,
+          COALESCE(lh.motorista, lh.motorista_nome, 'Motorista não informado') as motorista,
           CONCAT('Rota: ', COALESCE(rota_origem, 'N/I'), ' → ', COALESCE(rota_destino, 'N/I'), 
                  ' | Tel: ', COALESCE(telefone_motorista, 'N/I'), ' | Horário: ', 
                  CASE WHEN horario_abastecimento = 'antes_17h' THEN 'Antes das 17h' 
@@ -83,7 +83,8 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
               )
             ELSE NULL
           END as calculo_detalhes
-        FROM linehall_fuel_card_requests
+        FROM linehall_fuel_card_requests lh
+        LEFT JOIN linehall_vehicles lhv ON lh.veiculo_placa = lhv.placa
       ) unified_requests
       ORDER BY 
         CASE 
