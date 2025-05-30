@@ -11454,7 +11454,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/fuel-card-solicitations', createFuelCardSolicitation);
   app.post('/api/fuel-card-solicitations/line-hall', createLineHallFuelCardRequest);
   app.get('/api/fuel-card-solicitations/:id', getFuelCardSolicitationById);
-  app.put('/api/fuel-card-solicitations/:id/status', updateFuelCardSolicitationStatus);
+  // Rota de status já registrada anteriormente na linha 6448
   
   // Rota para criar tabela de demonstração para o AutoSave
   app.post('/api/create-demo-table', async (req, res) => {
