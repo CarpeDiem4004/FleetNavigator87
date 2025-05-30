@@ -363,14 +363,27 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
       // Lógica para solicitações tradicionais
       tableName = 'solicitacoes_fuel_card';
       
-      if (!['atendido', 'rejeitado', 'em_analise', 'pendente'].includes(status)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Status inválido. Use: pendente, em_analise, atendido ou rejeitado'
-        });
+      // Mapear status da interface para o banco
+      let dbStatus;
+      switch (status) {
+        case 'Recarga Efetuada':
+          dbStatus = 'atendido';
+          break;
+        case 'Negado':
+          dbStatus = 'rejeitado';
+          break;
+        case 'Em Análise':
+          dbStatus = 'em_analise';
+          break;
+        case 'Pendente':
+          dbStatus = 'pendente';
+          break;
+        default:
+          dbStatus = status; // Para compatibilidade com status já no formato do banco
+          break;
       }
       
-      if (status === 'atendido') {
+      if (dbStatus === 'atendido') {
         query = `
           UPDATE ${tableName} 
           SET 
@@ -381,17 +394,18 @@ export async function updateFuelCardSolicitationStatus(req: Request, res: Respon
           WHERE id = $3
           RETURNING *
         `;
-        values = [status, user?.name || 'Sistema', id];
+        values = [dbStatus, user?.name || 'Sistema', id];
       } else {
         query = `
           UPDATE ${tableName} 
           SET 
             status = $1,
+            atendido_por = $2,
             updated_at = NOW()
-          WHERE id = $2
+          WHERE id = $3
           RETURNING *
         `;
-        values = [status, id];
+        values = [dbStatus, user?.name || 'Sistema', id];
       }
     }
     

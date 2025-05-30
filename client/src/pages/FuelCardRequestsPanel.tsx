@@ -116,10 +116,12 @@ const FuelCardRequestsPanel: React.FC = () => {
       const updateData = {
         id: selectedSolicitation.id,
         status: editedStatus,
-        atendido_por: user?.name
+        origem_tipo: selectedSolicitation.origem_tipo,
+        atendido_por: user?.name,
+        observacoes: selectedSolicitation.observacoes
       };
       
-      const response = await apiRequest('PATCH', `/api/fuel-card-solicitations/${selectedSolicitation.id}`, updateData);
+      const response = await apiRequest('PUT', `/api/fuel-card-solicitations/${selectedSolicitation.id}/status`, updateData);
       const data = await response.json();
       
       if (data.success) {
