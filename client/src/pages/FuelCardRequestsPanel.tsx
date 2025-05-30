@@ -525,29 +525,35 @@ const FuelCardRequestsPanel: React.FC = () => {
                   
                   <Separator />
                   
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="status">Alterar Status</Label>
-                      <Select value={editedStatus} onValueChange={setEditedStatus}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o novo status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Pendente">Pendente</SelectItem>
-                          <SelectItem value="Em Análise">Em Análise</SelectItem>
-                          <SelectItem value="Recarga Efetuada">Recarga Efetuada</SelectItem>
-                          <SelectItem value="Negado">Negado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  {/* Seção de Controle de Status */}
+                  <div className="bg-gray-50 p-4 rounded-lg border space-y-4">
+                    <h3 className="font-semibold text-lg text-gray-900">Controle de Status</h3>
                     
-                    <Button 
-                      onClick={handleStatusUpdate} 
-                      className="w-full" 
-                      disabled={updatingStatus || editedStatus === selectedSolicitation.status}
-                    >
-                      {updatingStatus ? 'Salvando...' : 'Salvar Alterações'}
-                    </Button>
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="status" className="text-sm font-medium">Alterar Status da Solicitação</Label>
+                        <Select value={editedStatus} onValueChange={setEditedStatus}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Selecione o novo status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Pendente">🟡 Pendente</SelectItem>
+                            <SelectItem value="Em Análise">🔵 Em Análise</SelectItem>
+                            <SelectItem value="Recarga Efetuada">🟢 Recarga Efetuada</SelectItem>
+                            <SelectItem value="Negado">🔴 Negado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <Button 
+                        onClick={handleStatusUpdate} 
+                        className="w-full bg-blue-600 hover:bg-blue-700" 
+                        disabled={updatingStatus || editedStatus === selectedSolicitation.status}
+                        size="lg"
+                      >
+                        {updatingStatus ? 'Salvando...' : 'Salvar Alterações'}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
