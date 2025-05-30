@@ -32,6 +32,7 @@ interface FuelCardSolicitation {
   data_atendimento?: string;
   base?: string;
   origem_tipo?: string;
+  numero_cartao?: string;
   // Campos do Line Hall Shopee
   veiculo_modelo?: string;
   rota_origem?: string;
@@ -436,6 +437,16 @@ const FuelCardRequestsPanel: React.FC = () => {
                       <div className="mt-1">{getStatusBadge(selectedSolicitation.status)}</div>
                     </div>
                   </div>
+                  
+                  {selectedSolicitation.numero_cartao && (
+                    <div>
+                      <Label>Número do Cartão de Combustível</Label>
+                      <div className="text-lg font-medium font-mono bg-gray-100 p-2 rounded border">
+                        <CreditCard className="inline mr-2 h-4 w-4" />
+                        {selectedSolicitation.numero_cartao}
+                      </div>
+                    </div>
+                  )}
                   
                   {/* Seção específica do Line Hall Shopee */}
                   {selectedSolicitation.rota_origem && selectedSolicitation.rota_destino && (
