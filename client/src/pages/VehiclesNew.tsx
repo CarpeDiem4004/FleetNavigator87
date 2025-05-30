@@ -31,8 +31,19 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import CadastroFrota from '@/components/vehicle/CadastroFrota';
 import { useToast } from '@/hooks/use-toast';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
 // Tipo para representar os dados de um veículo
 interface Vehicle {
@@ -84,7 +95,8 @@ const VehiclesNew: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("list");
-  // Estado simples apenas para a página principal
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
 
   // Função para carregar veículos usando a API REST
@@ -192,6 +204,63 @@ const VehiclesNew: React.FC = () => {
     }
   };
 
+  // Função para abrir o diálogo de edição
+  const handleEditVehicle = (vehicle: Vehicle) => {
+    setEditingVehicle(vehicle);
+    setIsEditDialogOpen(true);
+  };
+
+  // Função para editar veículo
+  const handleUpdateVehicle = async (vehicleData: any) => {
+    if (!editingVehicle) return;
+
+    try {
+      console.log(`Editando veículo com ID ${editingVehicle.id} via API REST`);
+      const response = await fetch(`/api/vehicles/${editingVehicle.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(vehicleData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao atualizar veículo');
+      }
+      
+      const updatedVehicle = await response.json();
+      
+      // Atualizar estado local
+      setVehicles(vehicles.map(vehicle => 
+        vehicle.id === editingVehicle.id ? {
+          ...vehicle,
+          placa: updatedVehicle.plate || vehicle.placa,
+          marca: updatedVehicle.vehicleType || vehicle.marca,
+          modelo: updatedVehicle.model || vehicle.modelo,
+          status: updatedVehicle.status || vehicle.status,
+          base_id: updatedVehicle.baseId || vehicle.base_id
+        } : vehicle
+      ));
+      
+      setIsEditDialogOpen(false);
+      setEditingVehicle(null);
+      
+      toast({
+        title: "Veículo atualizado",
+        description: "O veículo foi atualizado com sucesso.",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar veículo:", error);
+      toast({
+        title: "Erro ao atualizar veículo",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <MainLayoutSimple>
       <div className="space-y-6">
@@ -265,7 +334,11 @@ const VehiclesNew: React.FC = () => {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end space-x-2">
-                                <Button variant="outline" size="icon">
+                                <Button 
+                                  variant="outline" 
+                                  size="icon"
+                                  onClick={() => handleEditVehicle(vehicle)}
+                                >
                                   <FileEdit className="h-4 w-4" />
                                 </Button>
                                 <Button 
@@ -294,6 +367,28 @@ const VehiclesNew: React.FC = () => {
             }} />
           </TabsContent>
         </Tabs>
+
+        {/* Diálogo de edição */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Editar Veículo</DialogTitle>
+              <DialogDescription>
+                Atualize as informações do veículo selecionado.
+              </DialogDescription>
+            </DialogHeader>
+            {editingVehicle && (
+              <EditVehicleForm 
+                vehicle={editingVehicle}
+                onUpdate={handleUpdateVehicle}
+                onCancel={() => {
+                  setIsEditDialogOpen(false);
+                  setEditingVehicle(null);
+                }}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayoutSimple>
   );
