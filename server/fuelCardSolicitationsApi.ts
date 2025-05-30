@@ -569,6 +569,11 @@ export async function createLineHallFuelCardRequest(req: Request, res: Response)
       consumoMedio = parseFloat(vehicleResult.rows[0].consumo_medio_km_l);
     }
 
+    // Gerar ID único para o motorista se não fornecido
+    const motoristaIdGerado = motorista_id || Math.floor(Math.random() * 1000000);
+    const dataAtual = data_solicitacao || new Date().toISOString().split('T')[0];
+    const horarioAtual = horario_solicitacao || new Date().toTimeString().split(' ')[0];
+
     // Calcular valor segundo a regra:
     // (KM da rota + 30km) ÷ Consumo médio × R$ 6,50
     const kmComAcrescimo = parseInt(km_total) + 30;
