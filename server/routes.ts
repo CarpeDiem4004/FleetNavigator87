@@ -3994,7 +3994,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: req.body.status,
         baseId: req.body.baseId || 12, // Usar 12 (Gestão de Frotas) como fallback
         ownership: req.body.ownership || 'proprio', // Valor padrão: próprio
-        rentalCompany: req.body.rentalCompany || null // Empresa de locação, nullable
+        rentalCompany: req.body.rentalCompany || null, // Empresa de locação, nullable
+        crlvUrl: req.body.crlvUrl || null, // URL do documento CRLV
+        anttUrl: req.body.anttUrl || null, // URL do documento ANTT
+        cartaoAbastecimento: req.body.cartaoAbastecimento || null // Cartão de abastecimento para Line Hall
       };
       
       console.log("Dados ajustados:", JSON.stringify(vehicleData, null, 2));
