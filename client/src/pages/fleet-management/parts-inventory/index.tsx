@@ -390,6 +390,7 @@ export default function PartsInventory() {
     setSelectedPart(part);
     // Preencher o formulário com os dados da peça selecionada
     editPartForm.reset({
+      codigo: part.codigo,
       nome: part.nome,
       descricao: part.descricao || '',
       categoria: part.categoria || '',

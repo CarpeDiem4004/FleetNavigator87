@@ -350,7 +350,6 @@ router.put('/estoque-pecas/:id', verifyAuth, sessionAuth, async (req, res) => {
            estoque_maximo = $8, 
            localizacao = $9, 
            unidade_medida = $10,
-           valor_total = quantidade * $6,
            ultima_atualizacao = NOW()
        WHERE id = $11 
        RETURNING id, codigo, nome, valor_unitario, estoque_minimo`,
