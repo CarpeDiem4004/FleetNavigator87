@@ -161,7 +161,7 @@ export default function PartsInventory() {
   });
   
   // Formulário para edição de peça
-  const editPartForm = useForm<Omit<Part, 'id' | 'quantidade' | 'valor_total' | 'status_disponibilidade'>>({
+  const editPartForm = useForm<Omit<Part, 'id' | 'valor_total' | 'status_disponibilidade'>>({
     resolver: zodResolver(
       z.object({
         codigo: z.string().min(1, "Código é obrigatório"),
@@ -170,6 +170,7 @@ export default function PartsInventory() {
         categoria: z.string().optional().nullable(),
         fabricante: z.string().optional().nullable(),
         aplicacao: z.string().optional().nullable(),
+        quantidade: z.number().min(0, "Quantidade deve ser maior ou igual a zero"),
         valor_unitario: z.number().min(0, "Valor unitário deve ser maior ou igual a zero"),
         estoque_minimo: z.number().min(0, "Estoque mínimo deve ser maior ou igual a zero"),
         estoque_maximo: z.number().optional().nullable(),
@@ -184,6 +185,7 @@ export default function PartsInventory() {
       categoria: '',
       fabricante: '',
       aplicacao: '',
+      quantidade: 0,
       valor_unitario: 0,
       estoque_minimo: 0,
       estoque_maximo: null,
@@ -396,6 +398,7 @@ export default function PartsInventory() {
       categoria: part.categoria || '',
       fabricante: part.fabricante || '',
       aplicacao: part.aplicacao || '',
+      quantidade: part.quantidade,
       valor_unitario: part.valor_unitario,
       estoque_minimo: part.estoque_minimo,
       estoque_maximo: part.estoque_maximo || undefined,
@@ -1349,7 +1352,11 @@ export default function PartsInventory() {
                     <FormItem>
                       <FormLabel>Categoria</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input 
+                          {...field} 
+                          value={field.value || ''} 
+                          onChange={(e) => field.onChange(e.target.value)}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1363,7 +1370,11 @@ export default function PartsInventory() {
                     <FormItem>
                       <FormLabel>Fabricante</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input 
+                          {...field} 
+                          value={field.value || ''} 
+                          onChange={(e) => field.onChange(e.target.value)}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1387,6 +1398,25 @@ export default function PartsInventory() {
                             field.onChange(numericValue);
                           }}
                           placeholder="R$ 0,00"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editPartForm.control}
+                  name="quantidade"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Quantidade em Estoque*</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min="0" 
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
                         />
                       </FormControl>
                       <FormMessage />
@@ -1430,7 +1460,7 @@ export default function PartsInventory() {
                   <FormItem>
                     <FormLabel>Descrição</FormLabel>
                     <FormControl>
-                      <Textarea {...field} />
+                      <Textarea {...field} value={field.value || ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
