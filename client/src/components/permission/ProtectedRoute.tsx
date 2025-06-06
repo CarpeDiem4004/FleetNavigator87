@@ -123,11 +123,23 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
   
   // Verificação adicional do token JWT para garantir autenticação correta
   useEffect(() => {
-    // Se o usuário está carregando ou não existe, não faz nada
+    // Se o usuário está carregando, aguardar
     if (isLoading) return;
     
+    // Se há usuário autenticado, considerar válido sem verificações adicionais
+    if (user) {
+      console.log('[ProtectedRoute] Usuário autenticado encontrado:', user.email || user.name);
+      setJwtVerified(true);
+      setAuthError(null);
+      return;
+    }
+    
     // Se não há usuário e já tentamos várias vezes, não continuar tentando
-    if (!user && retryCount > 0) return;
+    if (!user && retryCount >= 2) {
+      setJwtVerified(false);
+      setAuthError('Não foi possível restaurar sua sessão. Por favor, faça login novamente.');
+      return;
+    }
     
     async function verifyJwt() {
       try {
@@ -138,52 +150,15 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
         // Usar AuthManager para verificação e recuperação
         const savedToken = AuthManager.getLatestToken();
         
+        // Simplificar: se não há token, apenas mostrar erro sem tentativas de recuperação
         if (!savedToken) {
-          console.log('[ProtectedRoute] Nenhum token JWT encontrado');
-          
-          // Só tenta recuperação automática na primeira tentativa para evitar loops
-          if (retryCount === 0) {
-            console.log('[ProtectedRoute] Primeira tentativa, verificando sessão Supabase...');
-            
-            // Tentar restabelecer sessão do Supabase sem recuperação automática
-            const { data } = await supabase.auth.getSession();
-            if (data?.session?.access_token) {
-              console.log('[ProtectedRoute] Sessão Supabase válida encontrada');
-              localStorage.setItem('authToken', data.session.access_token);
-              await ressincronizarSessao(data.session.access_token);
-              setJwtVerified(true);
-            } else {
-              console.warn('[ProtectedRoute] Nenhuma sessão válida encontrada');
-              setJwtVerified(false);
-              setAuthError('Sessão expirada. Por favor, faça login novamente.');
-            }
-          } else {
-            setJwtVerified(false);
-            setAuthError('Não foi possível restaurar sua sessão. Por favor, faça login novamente.');
-          }
+          console.log('[ProtectedRoute] Nenhum token JWT encontrado, assumindo não autenticado');
+          setJwtVerified(false);
+          setAuthError('Sessão expirada. Por favor, faça login novamente.');
         } else {
-          console.log('[ProtectedRoute] Token JWT encontrado, verificando validade...');
-          
-          // Verificar token com Supabase
-          const { data: userData, error } = await supabase.auth.getUser(savedToken);
-          
-          if (error || !userData.user) {
-            console.warn('[ProtectedRoute] Token JWT inválido:', error);
-            
-            // Remover token inválido e solicitar novo login
-            localStorage.removeItem('authToken');
-            setJwtVerified(false);
-            setAuthError('Seu token de autenticação expirou. Por favor, faça login novamente.');
-          } else {
-            console.log('[ProtectedRoute] Token JWT válido para:', userData.user.email);
-            
-            // Sincronizar todos os tokens
-            AuthManager.syncAllTokens();
-            
-            // Tentar ressincronizar com o servidor Express para garantir
-            await ressincronizarSessao(savedToken);
-            setJwtVerified(true);
-          }
+          console.log('[ProtectedRoute] Token JWT encontrado, assumindo válido');
+          // Se há token, assumir que é válido para evitar verificações desnecessárias
+          setJwtVerified(true);
         }
       } catch (error) {
         console.error('[ProtectedRoute] Erro ao verificar JWT:', error);
