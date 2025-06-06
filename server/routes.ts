@@ -72,6 +72,13 @@ import {
   createLineHallFuelCardRequest,
   exportFuelCardSolicitationsToExcel
 } from "./fuelCardSolicitationsApi";
+import { 
+  getProjects, 
+  getProjectBases, 
+  getProjectsWithBases, 
+  createProject, 
+  createProjectBase 
+} from "./projectsApi";
 import { runSupabaseDiagnostic } from "./supabaseDiagnostic";
 import { registerPneusRoutes } from "./pneusApi";
 import { registerTireMoveRoutes } from "./tireMoveApi";
@@ -6451,6 +6458,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/fuel-card-solicitations', createFuelCardSolicitation);
   app.put('/api/fuel-card-solicitations/:id/status', isAuthenticated, updateFuelCardSolicitationStatus);
   app.post('/api/fuel-card-solicitations/export', isAuthenticated, exportFuelCardSolicitationsToExcel);
+
+  // Rotas para projetos e bases
+  app.get('/api/projects', isAuthenticated, getProjects);
+  app.get('/api/projects/:projectId/bases', isAuthenticated, getProjectBases);
+  app.get('/api/projects-with-bases', isAuthenticated, getProjectsWithBases);
+  app.post('/api/projects', isAuthenticated, createProject);
+  app.post('/api/projects/:projectId/bases', isAuthenticated, createProjectBase);
   
   // Inicializar tabela de solicitações de cartão combustível
   setupFuelCardTable().catch(err => console.error("Erro ao configurar tabela de solicitações de cartão:", err));
