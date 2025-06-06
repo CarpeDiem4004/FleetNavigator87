@@ -33,6 +33,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Schema de validação
 const abastecimentoSchema = z.object({
@@ -89,6 +96,46 @@ const FormularioForm = ({
   const [tipoCombustivel, setTipoCombustivel] = useState("");
   const [valorLitro, setValorLitro] = useState("");
   const [valorTotal, setValorTotal] = useState("0");
+  const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [selectedBaseId, setSelectedBaseId] = useState("");
+
+  // Buscar projetos com bases usando fetch direto com autenticação
+  const [projects, setProjects] = useState<any[]>([]);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        setIsLoadingProjects(true);
+        const token = localStorage.getItem('auth_token');
+        const response = await fetch('/api/projects-with-bases', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setProjects(data.data || []);
+          } else {
+            console.error('Erro ao carregar projetos:', data.message);
+          }
+        } else {
+          console.error('Erro na requisição de projetos:', response.status);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar projetos:', error);
+      } finally {
+        setIsLoadingProjects(false);
+      }
+    };
+
+    fetchProjects();
+  }, []);
 
   // Formulário sempre instanciado uma única vez
   const form = useForm<AbastecimentoValues>({
@@ -109,6 +156,27 @@ const FormularioForm = ({
       tipo_veiculo: "frota",
     },
   });
+
+  const selectedProject = projects.find((p: any) => p.id.toString() === selectedProjectId);
+  const availableBases = selectedProject?.bases || [];
+
+  // Atualizar formulário quando projeto ou base mudarem
+  useEffect(() => {
+    if (selectedProjectId) {
+      form.setValue("projeto_id", selectedProjectId);
+      // Reset base quando projeto muda se a base atual não estiver disponível
+      if (selectedBaseId && !availableBases.find((b: any) => b.id.toString() === selectedBaseId)) {
+        setSelectedBaseId("");
+        form.setValue("base_id", "");
+      }
+    }
+  }, [selectedProjectId, availableBases, selectedBaseId, form]);
+
+  useEffect(() => {
+    if (selectedBaseId) {
+      form.setValue("base_id", selectedBaseId);
+    }
+  }, [selectedBaseId, form]);
 
   // Quando o tipo de combustível muda, atualize o valor por litro
   useEffect(() => {
@@ -337,19 +405,75 @@ const FormularioForm = ({
             <h3 className="text-md font-semibold mb-3">
               Projeto e Responsáveis
             </h3>
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Campo de seleção de Projeto */}
               <FormField
                 control={form.control}
-                name="projeto"
+                name="projeto_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormControl>
-                      <SeletorProjetos
-                        value={field.value}
-                        onChange={field.onChange}
-                        required={true}
-                      />
-                    </FormControl>
+                    <FormLabel>Projeto *</FormLabel>
+                    <Select
+                      value={selectedProjectId}
+                      onValueChange={(value) => {
+                        setSelectedProjectId(value);
+                        setSelectedBaseId(""); // Reset base quando projeto muda
+                        field.onChange(value);
+                      }}
+                      disabled={isLoadingProjects}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="h-12 text-lg">
+                          <SelectValue placeholder={isLoadingProjects ? "Carregando projetos..." : "Selecione um projeto"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {projects.map((project: any) => (
+                          <SelectItem key={project.id} value={project.id.toString()}>
+                            {project.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Campo de seleção de Base */}
+              <FormField
+                control={form.control}
+                name="base_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Base *</FormLabel>
+                    <Select
+                      value={selectedBaseId}
+                      onValueChange={(value) => {
+                        setSelectedBaseId(value);
+                        field.onChange(value);
+                      }}
+                      disabled={!selectedProjectId || availableBases.length === 0}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="h-12 text-lg">
+                          <SelectValue placeholder={
+                            !selectedProjectId 
+                              ? "Selecione primeiro um projeto" 
+                              : availableBases.length === 0 
+                                ? "Nenhuma base disponível" 
+                                : "Selecione uma base"
+                          } />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {availableBases.map((base: any) => (
+                          <SelectItem key={base.id} value={base.id.toString()}>
+                            {base.base_name} {base.base_code && `(${base.base_code})`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
