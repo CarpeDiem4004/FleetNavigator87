@@ -99,12 +99,21 @@ export default function FuelCardSolicitation() {
     async function loadProjects() {
       try {
         setIsLoadingProjects(true);
-        const response = await apiRequest("/api/projects-with-bases");
         
-        if (response.success) {
-          setProjects(response.data);
+        const response = await fetch("/api/projects-with-bases", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          credentials: "include"
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          setProjects(data.data);
         } else {
-          throw new Error(response.message || "Erro ao carregar projetos");
+          throw new Error(data.message || "Erro ao carregar projetos");
         }
       } catch (error) {
         console.error("Erro ao carregar projetos:", error);
