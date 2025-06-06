@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { pool } from './db';
+import * as XLSX from 'xlsx';
 
 /**
  * Obtém todas as solicitações de cartão de combustível (incluindo Line Hall Shopee)
@@ -668,6 +669,95 @@ export async function createLineHallFuelCardRequest(req: Request, res: Response)
     return res.status(500).json({
       success: false,
       message: 'Erro ao criar solicitação Line Hall',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Exporta solicitações de cartão de combustível para Excel
+ */
+export async function exportFuelCardSolicitationsToExcel(req: Request, res: Response) {
+  try {
+    const { solicitations } = req.body;
+    
+    if (!solicitations || !Array.isArray(solicitations)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Lista de solicitações é obrigatória'
+      });
+    }
+
+    // Preparar dados para Excel
+    const excelData = solicitations.map((sol: any) => ({
+      'ID': sol.id,
+      'Placa': sol.placa,
+      'Motorista': sol.motorista,
+      'Valor Solicitado (R$)': parseFloat(sol.valor_solicitado) || 0,
+      'KM': sol.km || sol.km_total || 0,
+      'Tipo Cartão': sol.tipo_cartao || 'Padrão',
+      'Provedor': sol.provedor_cartao || 'Padrão',
+      'Status': sol.status,
+      'Data Solicitação': sol.data_solicitacao ? new Date(sol.data_solicitacao).toLocaleDateString('pt-BR') : '',
+      'Atendido Por': sol.atendido_por || '',
+      'Data Atendimento': sol.data_atendimento ? new Date(sol.data_atendimento).toLocaleDateString('pt-BR') : '',
+      'Base': sol.base || 'Base Principal',
+      'Observações': sol.observacoes || '',
+      'Origem': sol.origem_tipo === 'line_hall' ? 'Line Hall Shopee' : 'Sistema Principal',
+      'Modelo Veículo': sol.veiculo_modelo || '',
+      'Rota Origem': sol.rota_origem || '',
+      'Rota Destino': sol.rota_destino || '',
+      'Telefone Motorista': sol.telefone_motorista || '',
+      'Horário Abastecimento': sol.horario_abastecimento || ''
+    }));
+
+    // Criar workbook e worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+    // Configurar largura das colunas
+    const columnWidths = [
+      { wch: 8 },   // ID
+      { wch: 12 },  // Placa
+      { wch: 20 },  // Motorista
+      { wch: 15 },  // Valor Solicitado
+      { wch: 8 },   // KM
+      { wch: 15 },  // Tipo Cartão
+      { wch: 20 },  // Provedor
+      { wch: 15 },  // Status
+      { wch: 15 },  // Data Solicitação
+      { wch: 15 },  // Atendido Por
+      { wch: 15 },  // Data Atendimento
+      { wch: 15 },  // Base
+      { wch: 30 },  // Observações
+      { wch: 15 },  // Origem
+      { wch: 15 },  // Modelo Veículo
+      { wch: 20 },  // Rota Origem
+      { wch: 20 },  // Rota Destino
+      { wch: 15 },  // Telefone Motorista
+      { wch: 15 },  // Horário Abastecimento
+    ];
+    worksheet['!cols'] = columnWidths;
+
+    // Adicionar worksheet ao workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Solicitações Cartão Combustível');
+
+    // Gerar buffer do Excel
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    // Configurar headers para download
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=solicitacoes-cartao-combustivel-${new Date().toISOString().split('T')[0]}.xlsx`);
+    res.setHeader('Content-Length', excelBuffer.length);
+
+    // Enviar arquivo
+    res.send(excelBuffer);
+
+  } catch (error: any) {
+    console.error('Erro ao exportar Excel:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao gerar arquivo Excel',
       error: error.message
     });
   }

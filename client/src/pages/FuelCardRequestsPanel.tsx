@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { apiRequest } from '@/lib/queryClient';
-import { CreditCard, Filter, Search, Calendar, CheckCircle2, XCircle, Clock, AlertCircle, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { CreditCard, Filter, Search, Calendar, CheckCircle2, XCircle, Clock, AlertCircle, TrendingUp, TrendingDown, DollarSign, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
@@ -128,7 +128,7 @@ const FuelCardRequestsPanel: React.FC = () => {
       if (data.success) {
         // Atualizar a lista de solicitações
         setSolicitations(solicitations.map(sol => 
-          sol.id === selectedSolicitation.id ? {...sol, status: editedStatus, atendido_por: user?.name, data_atendimento: new Date().toISOString()} : sol
+          sol.id === selectedSolicitation.id ? {...sol, status: editedStatus as FuelCardSolicitation['status'], atendido_por: user?.name, data_atendimento: new Date().toISOString()} : sol
         ));
         
         setSelectedSolicitation({
@@ -158,6 +158,42 @@ const FuelCardRequestsPanel: React.FC = () => {
       });
     } finally {
       setUpdatingStatus(false);
+    }
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      const filteredData = getFilteredSolicitations();
+      
+      const response = await apiRequest('POST', '/api/fuel-card-solicitations/export-excel', {
+        solicitations: filteredData
+      });
+      
+      if (response.ok) {
+        // Criar URL para download
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `solicitacoes-cartao-combustivel-${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        toast({
+          title: 'Exportação concluída',
+          description: 'Relatório Excel gerado com sucesso',
+        });
+      } else {
+        throw new Error('Erro ao exportar dados');
+      }
+    } catch (error) {
+      toast({
+        title: 'Erro na exportação',
+        description: 'Não foi possível gerar o arquivo Excel',
+        variant: 'destructive',
+      });
     }
   };
   
@@ -256,6 +292,10 @@ const FuelCardRequestsPanel: React.FC = () => {
             <CreditCard className="inline-block mr-2" />
             Painel de Solicitações de Cartão de Abastecimento
           </h1>
+          <Button onClick={handleExportExcel} variant="outline" className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            Baixar Relatório Excel
+          </Button>
         </div>
         
         {/* Cards de Estatísticas */}
