@@ -165,7 +165,7 @@ const FuelCardRequestsPanel: React.FC = () => {
     try {
       const filteredData = getFilteredSolicitations();
       
-      const response = await apiRequest('POST', '/api/fuel-card-solicitations/export-excel', {
+      const response = await apiRequest('POST', '/api/fuel-card-solicitations/export', {
         solicitations: filteredData
       });
       
