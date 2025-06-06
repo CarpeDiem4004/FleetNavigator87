@@ -116,6 +116,8 @@ export async function getProjectsWithBases(req: Request, res: Response) {
     
     const result = await pool.query(query);
     
+    console.log('[ProjectsAPI] Raw query result:', JSON.stringify(result.rows, null, 2));
+    
     // Agrupar dados por projeto
     const projectsMap = new Map();
     
@@ -145,6 +147,8 @@ export async function getProjectsWithBases(req: Request, res: Response) {
     });
     
     const projects = Array.from(projectsMap.values());
+    
+    console.log('[ProjectsAPI] Final projects data:', JSON.stringify(projects, null, 2));
     
     return res.status(200).json({
       success: true,
