@@ -548,13 +548,13 @@ const HistoricoGeralPage: React.FC = () => {
           const projeto = formatarTextoExcel(item.project || (item as any).projeto || 'OUTRO');
           const posto = formatarTextoExcel(item.posto);
           
-          // Garantir data válida
-          let dataHora = '-';
+          // Garantir data válida (apenas data, sem horário)
+          let dataFormatada = '-';
           try {
             if (item.created_at) {
               const data = new Date(item.created_at);
               if (!isNaN(data.getTime())) {
-                dataHora = format(data, 'dd/MM/yyyy HH:mm:ss');
+                dataFormatada = format(data, 'dd/MM/yyyy');
               }
             }
           } catch (e) {
@@ -565,7 +565,7 @@ const HistoricoGeralPage: React.FC = () => {
           const baseInfo = getBaseFromProject(projeto);
           
           return {
-            'Data/Hora': dataHora,
+            'Data': dataFormatada,
             'Placa': placa,
             'KM': kmAtual,
             'Combustível': tipoCombustivel,
@@ -582,7 +582,7 @@ const HistoricoGeralPage: React.FC = () => {
           console.error('Erro ao processar item para Excel:', itemError, item);
           // Retorna um objeto com valores padrão em caso de erro
           return {
-            'Data/Hora': '-',
+            'Data': '-',
             'Placa': item.placa || '-',
             'KM': 0,
             'Combustível': '-',
