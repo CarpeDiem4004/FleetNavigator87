@@ -7,16 +7,18 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { apiRequest } from '@/lib/queryClient';
-import { CreditCard, Filter, Search, Calendar, CheckCircle2, XCircle, Clock, AlertCircle, TrendingUp, TrendingDown, DollarSign, Download } from 'lucide-react';
+import { CreditCard, Filter, Search, Calendar, CheckCircle2, XCircle, Clock, AlertCircle, TrendingUp, TrendingDown, DollarSign, Download, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
+import FuelCardRequestForm from '@/components/FuelCardRequestForm';
 
 interface FuelCardSolicitation {
   id: number;
@@ -63,6 +65,7 @@ const FuelCardRequestsPanel: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [editedStatus, setEditedStatus] = useState<string>('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [isNewRequestDialogOpen, setIsNewRequestDialogOpen] = useState(false);
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -292,10 +295,32 @@ const FuelCardRequestsPanel: React.FC = () => {
             <CreditCard className="inline-block mr-2" />
             Painel de Solicitações de Cartão de Abastecimento
           </h1>
-          <Button onClick={handleExportExcel} variant="outline" className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
-            Baixar Relatório Excel
-          </Button>
+          <div className="flex items-center gap-3">
+            <Dialog open={isNewRequestDialogOpen} onOpenChange={setIsNewRequestDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Nova Solicitação
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Nova Solicitação de Cartão de Combustível</DialogTitle>
+                </DialogHeader>
+                <FuelCardRequestForm
+                  onRequestCreated={() => {
+                    fetchSolicitations();
+                    setIsNewRequestDialogOpen(false);
+                  }}
+                  onClose={() => setIsNewRequestDialogOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
+            <Button onClick={handleExportExcel} variant="outline" className="flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              Baixar Relatório Excel
+            </Button>
+          </div>
         </div>
         
         {/* Cards de Estatísticas */}
