@@ -38,6 +38,62 @@ interface Abastecimento {
 }
 
 const HistoricoGeralPage: React.FC = () => {
+  // Função para mapear projeto para sua base correspondente
+  const getBaseFromProject = (projeto: string): string => {
+    if (!projeto) return '-';
+    
+    const projectoUpper = projeto.toUpperCase();
+    
+    // Mapeamento completo de projetos para bases
+    const projectBaseMap: Record<string, string> = {
+      // COCA-COLA (9 bases)
+      'COCA-COLA': 'Bases: ABC, Alair, Campinas, Goiânia, Guarulhos, Osasco, São Paulo, Socorro, Sorocaba',
+      'COCA COLA': 'Bases: ABC, Alair, Campinas, Goiânia, Guarulhos, Osasco, São Paulo, Socorro, Sorocaba',
+      
+      // SHOPEE (1 base)
+      'SHOPEE': 'Base: Guarulhos',
+      'LINE HALL SHOPEE': 'Base: Guarulhos',
+      
+      // PETLOVE (3 bases)
+      'PETLOVE': 'Bases: Campinas, Goiânia, Guarulhos',
+      
+      // OXXO (1 base)
+      'OXXO': 'Base: Guarulhos',
+      
+      // MADEIRA MADEIRA (4 bases)
+      'MADEIRA MADEIRA': 'Bases: Campinas, Goiânia, Guarulhos, Osasco',
+      
+      // MERCADO LIVRE (64 bases - principais)
+      'MERCADO LIVRE': 'Bases: SP (42), Campinas (8), Goiânia (7), Guarulhos (7)',
+      'FULL MELI': 'Bases: SP (42), Campinas (8), Goiânia (7), Guarulhos (7)',
+      
+      // XPT - Crossdocking Mercado Livre (12 bases)
+      'XPT': 'Bases: Crossdocking ML (12 unidades)',
+      'XPT CROSSDOCKING': 'Bases: Crossdocking ML (12 unidades)',
+      
+      // Outros projetos conhecidos
+      'GRUPO PEREIRA': 'Base: Multiple',
+      'MANUTENÇÃO': 'Base: Operacional',
+      'MAGALU': 'Base: Multiple',
+      'NATURA': 'Base: Multiple',
+      'USO OPERACIONAL': 'Base: Operacional'
+    };
+    
+    // Busca exata primeiro
+    if (projectBaseMap[projectoUpper]) {
+      return projectBaseMap[projectoUpper];
+    }
+    
+    // Busca por correspondência parcial
+    for (const [key, value] of Object.entries(projectBaseMap)) {
+      if (projectoUpper.includes(key) || key.includes(projectoUpper)) {
+        return value;
+      }
+    }
+    
+    return 'Base não mapeada';
+  };
+
   // Implementação local da função fetchRecords para evitar problemas de importação
   const fetchRecords = async (
     table: string,
