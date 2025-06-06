@@ -160,6 +160,14 @@ const FormularioForm = ({
   const selectedProject = projects.find((p: any) => p.id.toString() === selectedProjectId);
   const availableBases = selectedProject?.bases || [];
 
+  // Debug log para verificar dados
+  useEffect(() => {
+    console.log("DEBUG FormAbastecimento - Projeto selecionado:", selectedProject);
+    console.log("DEBUG FormAbastecimento - Bases disponíveis:", availableBases);
+    console.log("DEBUG FormAbastecimento - Projects completos:", projects);
+    console.log("DEBUG FormAbastecimento - selectedProjectId:", selectedProjectId);
+  }, [selectedProject, availableBases, projects, selectedProjectId]);
+
   // Atualizar formulário quando projeto ou base mudarem
   useEffect(() => {
     if (selectedProjectId) {
