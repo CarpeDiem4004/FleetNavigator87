@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -12,7 +12,22 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { Loader2, CreditCard, AlertCircle } from "lucide-react";
+
+interface Project {
+  id: number;
+  name: string;
+  description?: string;
+  bases: ProjectBase[];
+}
+
+interface ProjectBase {
+  id: number;
+  base_name: string;
+  base_code: string;
+  description?: string;
+}
 
 // Schema de validação para solicitação de cartão combustível
 const solicitacaoSchema = z.object({
@@ -42,10 +57,10 @@ const solicitacaoSchema = z.object({
   numero_cartao: z.string().optional(),
   motorista: z.string()
     .min(3, { message: "O nome do motorista deve ter no mínimo 3 caracteres" }),
-  base: z.string()
-    .min(2, { message: "A base do veículo é obrigatória" }),
-  id_rota: z.string()
-    .min(1, { message: "O ID da rota é obrigatório" }),  
+  projeto_id: z.string()
+    .min(1, { message: "Selecione um projeto" }),
+  base_id: z.string()
+    .min(1, { message: "Selecione uma base" }),
   observacoes: z.string().optional()
 });
 
@@ -56,6 +71,8 @@ export default function FuelCardSolicitation() {
   const [, setLocation] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   
   const form = useForm<SolicitacaoValues>({
     resolver: zodResolver(solicitacaoSchema),
@@ -67,22 +84,68 @@ export default function FuelCardSolicitation() {
       provedor_cartao: "Ticket",
       numero_cartao: "",
       motorista: "",
-      base: "",
+      projeto_id: "",
+      base_id: "",
       observacoes: ""
     }
   });
   
   const tipoCartao = form.watch("tipo_cartao");
+  const selectedProjectId = form.watch("projeto_id");
+  const selectedProject = projects.find(p => p.id.toString() === selectedProjectId);
+
+  // Carregar projetos
+  useEffect(() => {
+    async function loadProjects() {
+      try {
+        setIsLoadingProjects(true);
+        const response = await apiRequest("/api/projects-with-bases");
+        
+        if (response.success) {
+          setProjects(response.data);
+        } else {
+          throw new Error(response.message || "Erro ao carregar projetos");
+        }
+      } catch (error) {
+        console.error("Erro ao carregar projetos:", error);
+        setError("Erro ao carregar a lista de projetos");
+      } finally {
+        setIsLoadingProjects(false);
+      }
+    }
+    
+    loadProjects();
+  }, []);
+
+  // Reset base selection when project changes
+  useEffect(() => {
+    if (selectedProjectId) {
+      form.setValue("base_id", "");
+    }
+  }, [selectedProjectId, form]);
   
   async function onSubmit(values: SolicitacaoValues) {
     setIsSubmitting(true);
     setError(null);
     
     try {
-      // Garantir que valor_solicitado seja um número para o backend
+      // Get selected base info for legacy compatibility
+      const selectedBase = selectedProject?.bases.find(b => b.id.toString() === values.base_id);
+      
+      // Prepare data with project/base info
       const processedValues = {
-        ...values,
-        valor_solicitado: parseFloat(values.valor_solicitado as unknown as string) || 0
+        placa: values.placa,
+        km: parseInt(values.km.toString()),
+        valor_solicitado: parseFloat(values.valor_solicitado.toString()),
+        tipo_cartao: values.tipo_cartao,
+        provedor_cartao: values.provedor_cartao,
+        numero_cartao: values.numero_cartao || "",
+        motorista: values.motorista,
+        base: selectedBase?.base_name || "",
+        id_rota: selectedBase?.base_code || "",
+        observacoes: values.observacoes || "",
+        projeto_id: parseInt(values.projeto_id),
+        base_id: parseInt(values.base_id)
       };
       
       console.log("Enviando dados da solicitação:", processedValues);
@@ -296,39 +359,73 @@ export default function FuelCardSolicitation() {
                   )}
                 />
                 
-                <FormField
-                  control={form.control}
-                  name="base"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Base do Veículo</FormLabel>
-                      <FormControl>
-                        <Input placeholder="São Paulo" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Base onde o veículo está alocado
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="id_rota"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ID da Rota</FormLabel>
-                      <FormControl>
-                        <Input placeholder="R123" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Código de identificação da rota
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="projeto_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Projeto</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={isLoadingProjects ? "Carregando projetos..." : "Selecione um projeto"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {projects.map((project) => (
+                              <SelectItem key={project.id} value={project.id.toString()}>
+                                {project.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Selecione o projeto para esta solicitação
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="base_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Base</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value}
+                          disabled={!selectedProject || selectedProject.bases.length === 0}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={
+                                !selectedProject 
+                                  ? "Selecione um projeto primeiro"
+                                  : selectedProject.bases.length === 0 
+                                    ? "Nenhuma base disponível"
+                                    : "Selecione uma base"
+                              } />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {selectedProject?.bases.map((base) => (
+                              <SelectItem key={base.id} value={base.id.toString()}>
+                                {base.base_name} ({base.base_code})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Base onde o veículo está alocado
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 
                 <FormField
                   control={form.control}
