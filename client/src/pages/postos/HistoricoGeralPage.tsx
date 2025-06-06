@@ -561,6 +561,9 @@ const HistoricoGeralPage: React.FC = () => {
             console.warn('Erro ao formatar data:', e);
           }
           
+          // Obter informação da base do projeto
+          const baseInfo = getBaseFromProject(projeto);
+          
           return {
             'Data/Hora': dataHora,
             'Placa': placa,
@@ -572,6 +575,7 @@ const HistoricoGeralPage: React.FC = () => {
             'Motorista': nomeMotorista,
             'Operador': nomeOperador,
             'Projeto': projeto || '-',
+            'Base': baseInfo,
             'Posto': posto
           };
         } catch (itemError) {
@@ -588,6 +592,7 @@ const HistoricoGeralPage: React.FC = () => {
             'Motorista': '-',
             'Operador': '-',
             'Projeto': '-',
+            'Base': '-',
             'Posto': item.posto || '-'
           };
         }
@@ -610,6 +615,7 @@ const HistoricoGeralPage: React.FC = () => {
         { wch: 20 }, // Motorista
         { wch: 20 }, // Operador
         { wch: 15 }, // Projeto
+        { wch: 30 }, // Base
         { wch: 15 }  // Posto
       ];
       worksheet['!cols'] = wscols;
@@ -1383,28 +1389,39 @@ const HistoricoGeralPage: React.FC = () => {
                     <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Combustível</th>
                     <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Litros</th>
                     <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Projeto</th>
+                    <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Base</th>
                     <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Motorista</th>
                     <th className="py-3 px-4 text-left font-medium text-gray-600 border-b">Valor</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredData.map((abast, index) => (
-                    <tr key={`${abast.posto}-${abast.id}-${index}`} className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="py-3 px-4">{formatarData(abast.created_at)}</td>
-                      <td className="py-3 px-4">
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium">
-                          {abast.posto}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 font-medium">{abast.placa}</td>
-                      <td className="py-3 px-4">{formatarNumero(abast.km_atual)}</td>
-                      <td className="py-3 px-4">{abast.tipo_combustivel}</td>
-                      <td className="py-3 px-4">{formatarNumero(abast.quantidade_litros || abast.litros || 0)}</td>
-                      <td className="py-3 px-4">{abast.project || abast.projeto || '-'}</td>
-                      <td className="py-3 px-4">{abast.nome_motorista}</td>
-                      <td className="py-3 px-4">{abast.valor_total ? formatarPreco(abast.valor_total) : '-'}</td>
-                    </tr>
-                  ))}
+                  {filteredData.map((abast, index) => {
+                    const projeto = abast.project || abast.projeto || '-';
+                    const baseInfo = getBaseFromProject(projeto);
+                    
+                    return (
+                      <tr key={`${abast.posto}-${abast.id}-${index}`} className="border-b border-gray-200 hover:bg-gray-50">
+                        <td className="py-3 px-4">{formatarData(abast.created_at)}</td>
+                        <td className="py-3 px-4">
+                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium">
+                            {abast.posto}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 font-medium">{abast.placa}</td>
+                        <td className="py-3 px-4">{formatarNumero(abast.km_atual)}</td>
+                        <td className="py-3 px-4">{abast.tipo_combustivel}</td>
+                        <td className="py-3 px-4">{formatarNumero(abast.quantidade_litros || abast.litros || 0)}</td>
+                        <td className="py-3 px-4">{projeto}</td>
+                        <td className="py-3 px-4 text-xs text-gray-600">
+                          <span className="max-w-xs truncate block" title={baseInfo}>
+                            {baseInfo}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">{abast.nome_motorista}</td>
+                        <td className="py-3 px-4">{abast.valor_total ? formatarPreco(abast.valor_total) : '-'}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
