@@ -139,18 +139,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
         const savedToken = AuthManager.getLatestToken();
         
         if (!savedToken) {
-          console.log('[ProtectedRoute] Nenhum token JWT encontrado, tentando recuperação automática...');
+          console.log('[ProtectedRoute] Nenhum token JWT encontrado');
           
-          const recovered = await AuthManager.attemptAutoRecovery();
-          
-          if (recovered) {
-            console.log('[ProtectedRoute] Recuperação automática bem-sucedida');
-            setJwtVerified(true);
-          } else {
-            console.warn('[ProtectedRoute] Recuperação automática falhou');
-            setJwtVerified(false);
+          // Só tenta recuperação automática na primeira tentativa para evitar loops
+          if (retryCount === 0) {
+            console.log('[ProtectedRoute] Primeira tentativa, verificando sessão Supabase...');
             
-            // Tentar restabelecer sessão do Supabase
+            // Tentar restabelecer sessão do Supabase sem recuperação automática
             const { data } = await supabase.auth.getSession();
             if (data?.session?.access_token) {
               console.log('[ProtectedRoute] Sessão Supabase válida encontrada');
@@ -158,10 +153,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
               await ressincronizarSessao(data.session.access_token);
               setJwtVerified(true);
             } else {
-              if (retryCount >= 2) {
-                setAuthError('Não foi possível restaurar sua sessão. Por favor, faça login novamente.');
-              }
+              console.warn('[ProtectedRoute] Nenhuma sessão válida encontrada');
+              setJwtVerified(false);
+              setAuthError('Sessão expirada. Por favor, faça login novamente.');
             }
+          } else {
+            setJwtVerified(false);
+            setAuthError('Não foi possível restaurar sua sessão. Por favor, faça login novamente.');
           }
         } else {
           console.log('[ProtectedRoute] Token JWT encontrado, verificando validade...');
@@ -172,18 +170,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
           if (error || !userData.user) {
             console.warn('[ProtectedRoute] Token JWT inválido:', error);
             
-            // Usar AuthManager para tentativa de recuperação
-            const recovered = await AuthManager.attemptAutoRecovery();
-            
-            if (recovered) {
-              console.log('[ProtectedRoute] Recuperação automática bem-sucedida após token inválido');
-              setJwtVerified(true);
-            } else {
-              setJwtVerified(false);
-              if (retryCount >= 2) {
-                setAuthError('Seu token de autenticação expirou. Por favor, faça login novamente.');
-              }
-            }
+            // Remover token inválido e solicitar novo login
+            localStorage.removeItem('authToken');
+            setJwtVerified(false);
+            setAuthError('Seu token de autenticação expirou. Por favor, faça login novamente.');
           } else {
             console.log('[ProtectedRoute] Token JWT válido para:', userData.user.email);
             
