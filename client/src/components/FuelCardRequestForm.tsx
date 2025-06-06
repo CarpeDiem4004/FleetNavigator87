@@ -207,6 +207,29 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
             />
           </div>
 
+          {/* Base do Veículo */}
+          <div className="space-y-2">
+            <Label htmlFor="base_veiculo">Base do Veículo</Label>
+            <Input
+              id="base_veiculo"
+              value={selectedProject?.bases.find(b => b.id.toString() === formData.base_id)?.base_name || ''}
+              placeholder="Base onde o veículo está alocado"
+              disabled
+            />
+            <p className="text-xs text-muted-foreground">Base selecionada automaticamente com base no projeto</p>
+          </div>
+
+          {/* ID da Base */}
+          <div className="space-y-2">
+            <Label htmlFor="id_base">ID da Base</Label>
+            <Input
+              id="id_base"
+              value={selectedProject?.bases.find(b => b.id.toString() === formData.base_id)?.base_code || ''}
+              placeholder="Código de identificação da rota"
+              disabled
+            />
+          </div>
+
           {/* Projeto e Base */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
