@@ -453,8 +453,14 @@ const HistoricoGeralPage: React.FC = () => {
 
   const formatarData = (dataString: string) => {
     try {
+      if (!dataString) return '-';
       const data = new Date(dataString);
-      return format(data, 'dd/MM/yyyy');
+      if (isNaN(data.getTime())) return '-';
+      
+      // Garantir que apenas a data seja mostrada, sem horário
+      const dataFormatada = format(data, 'dd/MM/yyyy');
+      console.log(`[DEBUG] Formatando data: ${dataString} -> ${dataFormatada}`);
+      return dataFormatada;
     } catch (error) {
       console.error('Erro ao formatar data:', error);
       return '-';
