@@ -6460,11 +6460,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/fuel-card-solicitations/export', isAuthenticated, exportFuelCardSolicitationsToExcel);
 
   // Rotas para projetos e bases
-  app.get('/api/projects', isAuthenticated, getProjects);
-  app.get('/api/projects/:projectId/bases', isAuthenticated, getProjectBases);
-  app.get('/api/projects-with-bases', isAuthenticated, getProjectsWithBases);
-  app.post('/api/projects', isAuthenticated, createProject);
-  app.post('/api/projects/:projectId/bases', isAuthenticated, createProjectBase);
+  app.get('/api/projects', isAuthenticatedHybrid, getProjects);
+  app.get('/api/projects/:projectId/bases', isAuthenticatedHybrid, getProjectBases);
+  app.get('/api/projects-with-bases', isAuthenticatedHybrid, getProjectsWithBases);
+  app.post('/api/projects', isAuthenticatedHybrid, createProject);
+  app.post('/api/projects/:projectId/bases', isAuthenticatedHybrid, createProjectBase);
   
   // Inicializar tabela de solicitações de cartão combustível
   setupFuelCardTable().catch(err => console.error("Erro ao configurar tabela de solicitações de cartão:", err));

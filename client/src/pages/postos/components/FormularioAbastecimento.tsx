@@ -5,6 +5,7 @@ import { CheckCircle2, Fuel } from "lucide-react";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSafeState } from "@/hooks/useSafeState"; // 👈 Importando o novo hook
 import eventosBus, { EVENTOS } from "@/lib/eventosBus";
+import { useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -45,7 +46,9 @@ const abastecimentoSchema = z.object({
   }),
   valor_litro: z.string().min(1, "O valor por litro é obrigatório"),
   valor_total: z.string().optional(),
-  projeto: z.string().min(2, "O projeto é obrigatório"),
+  projeto_id: z.string().min(1, "Selecione um projeto"),
+  base_id: z.string().min(1, "Selecione uma base"),
+  projeto: z.string().optional(), // Manter para compatibilidade
   motorista: z
     .string()
     .min(3, "O nome do motorista deve ter no mínimo 3 caracteres"),
@@ -97,6 +100,8 @@ const FormularioForm = ({
       quantidade: "",
       valor_litro: "",
       valor_total: "0",
+      projeto_id: "",
+      base_id: "",
       projeto: "",
       motorista: "",
       motorista_rg: "",
