@@ -35,6 +35,9 @@ interface FuelCardSolicitation {
   base?: string;
   origem_tipo?: string;
   numero_cartao?: string;
+  id_rota?: string;
+  tipo_combustivel?: string;
+  litros_solicitados?: number;
   // Campos do Line Hall Shopee
   veiculo_modelo?: string;
   rota_origem?: string;
@@ -582,6 +585,36 @@ const FuelCardRequestsPanel: React.FC = () => {
                       <div className="text-lg font-medium font-mono bg-gray-100 p-2 rounded border">
                         <CreditCard className="inline mr-2 h-4 w-4" />
                         {selectedSolicitation.numero_cartao}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* ID da Rota e Quantidade de Litros */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {selectedSolicitation.id_rota && (
+                      <div>
+                        <Label>ID da Rota</Label>
+                        <div className="text-lg font-medium bg-blue-50 p-2 rounded border border-blue-200">
+                          {selectedSolicitation.id_rota}
+                        </div>
+                      </div>
+                    )}
+                    {selectedSolicitation.litros_solicitados && (
+                      <div>
+                        <Label>Quantidade de Litros</Label>
+                        <div className="text-lg font-medium bg-green-50 p-2 rounded border border-green-200">
+                          {selectedSolicitation.litros_solicitados} L
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Tipo de Combustível */}
+                  {selectedSolicitation.tipo_combustivel && (
+                    <div>
+                      <Label>Tipo de Combustível</Label>
+                      <div className="text-lg font-medium bg-yellow-50 p-2 rounded border border-yellow-200 capitalize">
+                        {selectedSolicitation.tipo_combustivel}
                       </div>
                     </div>
                   )}
