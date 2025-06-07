@@ -661,6 +661,15 @@ const LineHallDriverPage: React.FC = () => {
       return;
     }
 
+    if (!fuelCardRequest.tipoCombustivel) {
+      toast({
+        title: 'Tipo de combustível necessário',
+        description: 'Por favor, selecione o tipo de combustível.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {

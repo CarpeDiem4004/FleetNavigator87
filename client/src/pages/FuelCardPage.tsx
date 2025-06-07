@@ -24,6 +24,7 @@ const fuelCardRequestSchema = z.object({
   amount: z.string().min(1, { message: 'O valor da recarga é obrigatório' }),
   reason: z.string().min(1, { message: 'O motivo da recarga é obrigatório' }),
   requestedBy: z.string().min(1, { message: 'Nome do solicitante é obrigatório' }),
+  fuelType: z.string().min(1, { message: 'O tipo de combustível é obrigatório' }),
   baseId: z.string().optional(),
 });
 
@@ -188,6 +189,7 @@ const FuelCardRequestForm: React.FC = () => {
       amount: '',
       reason: '',
       requestedBy: user?.name || '',
+      fuelType: '',
       baseId: user?.baseId?.toString() || '',
     },
   });
@@ -337,6 +339,30 @@ const FuelCardRequestForm: React.FC = () => {
                         }}
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="fuelType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo de Combustível</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo de combustível" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="gasolina">Gasolina</SelectItem>
+                        <SelectItem value="alcool">Álcool</SelectItem>
+                        <SelectItem value="diesel">Diesel</SelectItem>
+                        <SelectItem value="arla">Arla</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
