@@ -606,6 +606,7 @@ const FormularioAbastecimento: React.FC<
   const [isUserAdmin, setIsUserAdmin] = useSafeState(false);
   const [dieselValorLitro, setDieselValorLitro] = useSafeState("6.39"); // Valor fixo conforme solicitado
   const [arlaValorLitro, setArlaValorLitro] = useSafeState("4.25");
+  const [projects, setProjects] = useState<any[]>([]);
   const processingRef = useRef(false);
   const mountedRef = useRef(true);
 
@@ -615,6 +616,34 @@ const FormularioAbastecimento: React.FC<
     return () => {
       mountedRef.current = false;
     };
+  }, []);
+
+  // Carregar projetos para usar no processamento
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const response = await fetch('/api/projects-with-bases', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setProjects(data.data || []);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao buscar projetos:', error);
+      }
+    };
+
+    fetchProjects();
   }, []);
 
   // Função atualizada para garantir a atualização do histórico
