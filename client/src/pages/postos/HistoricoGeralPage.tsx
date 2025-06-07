@@ -45,8 +45,12 @@ const HistoricoGeralPage: React.FC = () => {
     const postoLower = posto?.toLowerCase() || '';
     const projectoUpper = projeto?.toUpperCase() || '';
     
-    // Mapeamento de posto para base específica
+    // Log para debug
+    console.log(`[BASE_MAPPING] Mapeando posto: "${posto}" (${postoLower}) e projeto: "${projeto}" (${projectoUpper})`);
+    
+    // Mapeamento de posto para base específica - padrões mais flexíveis
     const postoToBaseMap: Record<string, string> = {
+      // Mapeamentos exatos
       'posto osasco v2': 'OSASCO',
       'posto abc v2': 'ABC', 
       'posto alair v2': 'ALAIR',
@@ -60,37 +64,29 @@ const HistoricoGeralPage: React.FC = () => {
     };
     
     // Identificar a base específica do posto
-    const baseEspecifica = postoToBaseMap[postoLower];
+    let baseEspecifica = postoToBaseMap[postoLower];
+    
+    // Se não encontrou correspondência exata, tentar busca por palavras-chave
+    if (!baseEspecifica) {
+      if (postoLower.includes('osasco')) baseEspecifica = 'OSASCO';
+      else if (postoLower.includes('abc')) baseEspecifica = 'ABC';
+      else if (postoLower.includes('alair')) baseEspecifica = 'ALAIR';
+      else if (postoLower.includes('campinas')) baseEspecifica = 'CAMPINAS';
+      else if (postoLower.includes('socorro')) baseEspecifica = 'SOCORRO';
+      else if (postoLower.includes('sorocaba')) baseEspecifica = 'SOROCABA';
+      else if (postoLower.includes('guarulhos')) baseEspecifica = 'GUARULHOS';
+      else if (postoLower.includes('goiania')) baseEspecifica = 'GOIÂNIA';
+      else if (postoLower.includes('sao paulo') || postoLower.includes('são paulo')) baseEspecifica = 'SÃO PAULO';
+      else if (postoLower.includes('remedios') || postoLower.includes('remédios')) baseEspecifica = 'REMÉDIOS';
+    }
     
     if (baseEspecifica) {
-      // Para projetos específicos, mostrar base + projeto
-      if (projectoUpper === 'COCA-COLA' || projectoUpper === 'COCA COLA') {
-        return baseEspecifica;
-      }
-      if (projectoUpper === 'SHOPEE' || projectoUpper === 'LINE HALL SHOPEE') {
-        return baseEspecifica;
-      }
-      if (projectoUpper === 'MERCADO LIVRE') {
-        return baseEspecifica;
-      }
-      if (projectoUpper === 'FULL MELI') {
-        return baseEspecifica;
-      }
-      if (projectoUpper === 'MADEIRA MADEIRA') {
-        return baseEspecifica;
-      }
-      if (projectoUpper === 'PETLOVE') {
-        return baseEspecifica;
-      }
-      if (projectoUpper === 'OXXO') {
-        return baseEspecifica;
-      }
-      
-      // Para outros projetos, retornar apenas a base
+      console.log(`[BASE_MAPPING] Base encontrada: ${baseEspecifica}`);
       return baseEspecifica;
     }
     
     // Fallback: retornar o projeto se não conseguimos identificar o posto
+    console.log(`[BASE_MAPPING] Fallback para projeto: ${projectoUpper}`);
     return projectoUpper || '-';
   };
 
