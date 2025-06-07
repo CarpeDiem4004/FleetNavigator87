@@ -151,7 +151,10 @@ export async function getHistoricoPosto(req, res) {
         tableColumns.includes('tipo_veiculo') ? 'tipo_veiculo' : "'Não especificado' as tipo_veiculo",
         tableColumns.includes('observacoes') ? 'observacoes' : "'' as observacoes",
         tableColumns.includes('lavagem') ? 'lavagem' : 'false as lavagem',
-        tableColumns.includes('tipo_lavagem') ? 'tipo_lavagem' : "NULL as tipo_lavagem"
+        tableColumns.includes('tipo_lavagem') ? 'tipo_lavagem' : "NULL as tipo_lavagem",
+        tableColumns.includes('base_name') ? 'base_name' : "NULL as base_name",
+        tableColumns.includes('base_id') ? 'base_id' : "NULL as base_id",
+        tableColumns.includes('projeto_id') ? 'projeto_id' : "NULL as projeto_id"
       ];
       
       // Adicionar campo de projeto considerando ambos os nomes possíveis (projeto e project)
