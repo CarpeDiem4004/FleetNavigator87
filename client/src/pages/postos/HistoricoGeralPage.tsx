@@ -38,14 +38,15 @@ interface Abastecimento {
 }
 
 const HistoricoGeralPage: React.FC = () => {
-  // Função para mapear posto e projeto para base específica
-  const getBaseFromPostoAndProject = (posto: string, projeto: string): string => {
-    if (!posto && !projeto) return '-';
+  // Função para obter base do abastecimento - usa base registrada ou deriva do posto
+  const getBaseFromAbastecimento = (abastecimento: any): string => {
+    // 1. Se há base_name registrada no abastecimento, usar ela (dados novos)
+    if (abastecimento.base_name && abastecimento.base_name.trim() !== '') {
+      return abastecimento.base_name.trim();
+    }
     
-    const postoLower = posto?.toLowerCase() || '';
-    const projectoUpper = projeto?.toUpperCase() || '';
-    
-    // Mapeamento de posto para base específica
+    // 2. Para dados históricos sem base registrada, derivar do posto
+    const posto = abastecimento.posto?.toLowerCase() || '';
     const postoToBaseMap: Record<string, string> = {
       'posto osasco v2': 'OSASCO',
       'posto abc v2': 'ABC', 
@@ -59,39 +60,7 @@ const HistoricoGeralPage: React.FC = () => {
       'posto remedios': 'REMÉDIOS'
     };
     
-    // Identificar a base específica do posto
-    const baseEspecifica = postoToBaseMap[postoLower];
-    
-    if (baseEspecifica) {
-      // Para projetos específicos, mostrar base + projeto
-      if (projectoUpper === 'COCA-COLA' || projectoUpper === 'COCA COLA') {
-        return baseEspecifica;
-      }
-      if (projectoUpper === 'SHOPEE' || projectoUpper === 'LINE HALL SHOPEE') {
-        return baseEspecifica;
-      }
-      if (projectoUpper === 'MERCADO LIVRE') {
-        return baseEspecifica;
-      }
-      if (projectoUpper === 'FULL MELI') {
-        return baseEspecifica;
-      }
-      if (projectoUpper === 'MADEIRA MADEIRA') {
-        return baseEspecifica;
-      }
-      if (projectoUpper === 'PETLOVE') {
-        return baseEspecifica;
-      }
-      if (projectoUpper === 'OXXO') {
-        return baseEspecifica;
-      }
-      
-      // Para outros projetos, retornar apenas a base
-      return baseEspecifica;
-    }
-    
-    // Fallback: retornar o projeto se não conseguimos identificar o posto
-    return projectoUpper || '-';
+    return postoToBaseMap[posto] || posto.toUpperCase() || '-';
   };
 
   // Implementação local da função fetchRecords para evitar problemas de importação
@@ -567,8 +536,8 @@ const HistoricoGeralPage: React.FC = () => {
             console.warn('Erro ao formatar data:', e);
           }
           
-          // Obter informação da base do projeto
-          const baseInfo = getBaseFromPostoAndProject(posto, projeto);
+          // Obter informação da base do abastecimento
+          const baseInfo = getBaseFromAbastecimento(item);
           
           return {
             'Data': dataFormatada,
@@ -1403,7 +1372,7 @@ const HistoricoGeralPage: React.FC = () => {
                 <tbody>
                   {filteredData.map((abast, index) => {
                     const projeto = abast.project || abast.projeto || '-';
-                    const baseInfo = getBaseFromPostoAndProject(abast.posto, projeto);
+                    const baseInfo = getBaseFromAbastecimento(abast);
                     
                     return (
                       <tr key={`${abast.posto}-${abast.id}-${index}`} className="border-b border-gray-200 hover:bg-gray-50">
