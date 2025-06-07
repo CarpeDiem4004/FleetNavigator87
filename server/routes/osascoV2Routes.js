@@ -114,6 +114,8 @@ router.post('/abastecimento', async (req, res) => {
       dadosInserir.motorista_rg,
       dadosInserir.operador,
       dadosInserir.projeto,
+      dadosInserir.base_id,
+      dadosInserir.base_name,
       dadosInserir.tipo_veiculo,
       dadosInserir.observacoes,
       dadosInserir.lavagem,

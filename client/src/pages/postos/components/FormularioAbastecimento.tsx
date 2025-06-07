@@ -681,7 +681,7 @@ const FormularioAbastecimento: React.FC<
           
           // Campos de base
           base_id: data.base_id,
-          base_name: selectedProject?.bases.find((b: any) => b.id.toString() === data.base_id)?.base_name || "",
+          base_name: projects.find((p: any) => p.id.toString() === selectedProjectId)?.bases.find((b: any) => b.id.toString() === data.base_id)?.base_name || "",
           
           // Tipo de veículo
           tipo_veiculo: data.tipo_veiculo || "frota",

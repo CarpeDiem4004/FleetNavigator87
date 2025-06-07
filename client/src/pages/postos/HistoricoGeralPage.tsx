@@ -563,8 +563,14 @@ const HistoricoGeralPage: React.FC = () => {
             console.warn('Erro ao formatar data:', e);
           }
           
-          // Obter informação da base do projeto
-          const baseInfo = getBaseFromPostoAndProject(posto, projeto);
+          // Usar a base específica registrada no abastecimento se disponível
+          let baseInfo = '-';
+          if (item.base_name) {
+            baseInfo = item.base_name;
+          } else {
+            // Fallback para mapeamento baseado no posto se não há base registrada
+            baseInfo = getBaseFromPostoAndProject(posto, projeto);
+          }
           
           return {
             'Data': dataFormatada,
