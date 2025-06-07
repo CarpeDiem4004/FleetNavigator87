@@ -55,6 +55,9 @@ const solicitacaoSchema = z.object({
     required_error: "Selecione o provedor do cartão"
   }),
   numero_cartao: z.string().optional(),
+  tipo_combustivel: z.enum(["gasolina", "alcool", "diesel", "arla"], {
+    required_error: "Selecione o tipo de combustível"
+  }),
   motorista: z.string()
     .min(3, { message: "O nome do motorista deve ter no mínimo 3 caracteres" }),
   projeto_id: z.string()
@@ -83,6 +86,7 @@ export default function FuelCardSolicitation() {
       tipo_cartao: "placa",
       provedor_cartao: "Ticket",
       numero_cartao: "",
+      tipo_combustivel: "diesel",
       motorista: "",
       projeto_id: "",
       base_id: "",
@@ -326,6 +330,33 @@ export default function FuelCardSolicitation() {
                       </Select>
                       <FormDescription>
                         Empresa que fornece o cartão de combustível
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="tipo_combustivel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de Combustível</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo de combustível" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="gasolina">Gasolina</SelectItem>
+                          <SelectItem value="alcool">Álcool</SelectItem>
+                          <SelectItem value="diesel">Diesel</SelectItem>
+                          <SelectItem value="arla">Arla</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Tipo de combustível para o veículo
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

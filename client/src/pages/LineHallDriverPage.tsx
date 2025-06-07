@@ -1405,9 +1405,10 @@ const LineHallDriverPage: React.FC = () => {
                   <SelectValue placeholder="Selecione o combustível" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="diesel">Diesel</SelectItem>
                   <SelectItem value="gasolina">Gasolina</SelectItem>
-                  <SelectItem value="etanol">Etanol</SelectItem>
+                  <SelectItem value="alcool">Álcool</SelectItem>
+                  <SelectItem value="diesel">Diesel</SelectItem>
+                  <SelectItem value="arla">Arla</SelectItem>
                 </SelectContent>
               </Select>
             </div>
