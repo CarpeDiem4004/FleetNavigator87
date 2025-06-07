@@ -15,11 +15,24 @@ interface AbastecimentoItem {
   id: number;
   placa: string;
   km: number;
+  hodometro_atual?: number;
   tipo_combustivel: string;
   quantidade_litros: string | number;
   data_hora: string;
   created_at: string;
   valor_total: string | number;
+  valor_litro?: string | number;
+  nome_motorista?: string;
+  rg_motorista?: string;
+  nome_operador?: string;
+  tipo_veiculo?: string;
+  observacoes?: string;
+  lavagem?: boolean;
+  tipo_lavagem?: string;
+  projeto?: string;
+  base_name?: string;
+  base_id?: number;
+  projeto_id?: number;
 }
 
 /**
@@ -84,6 +97,8 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
             COALESCE(lavagem, false) as lavagem,
             tipo_lavagem,
             COALESCE(projeto, project, 'Não definido') as projeto,
+            COALESCE(base_name, 'Base não especificada') as base_name,
+            base_id,
             to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora,
             created_at
           FROM "${tabelaNome}"
@@ -482,6 +497,7 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
                 <th className="py-1 px-2 text-right border-b border-blue-200">Litros</th>
                 <th className="py-1 px-2 text-right border-b border-blue-200">Valor</th>
                 <th className="py-1 px-2 text-left border-b border-blue-200">Projeto</th>
+                <th className="py-1 px-2 text-left border-b border-blue-200">Base</th>
               </tr>
             </thead>
             <tbody>
@@ -510,6 +526,9 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
                   </td>
                   <td className="py-1 px-2 text-left whitespace-nowrap">
                     {item.projeto || "Não definido"}
+                  </td>
+                  <td className="py-1 px-2 text-left whitespace-nowrap text-xs">
+                    {item.base_name || "Base não especificada"}
                   </td>
                 </tr>
               ))}
