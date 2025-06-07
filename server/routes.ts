@@ -8092,6 +8092,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const hodometroColumnExists = await pool.query(checkHodometroColumn);
           const hasHodometroColumn = hodometroColumnExists.rows[0].exists;
           
+          // Verificar se tem colunas de base
+          const checkBaseColumns = `
+            SELECT 
+              EXISTS (SELECT FROM information_schema.columns WHERE table_name = '${tabelaPosto}' AND column_name = 'base_id') as has_base_id,
+              EXISTS (SELECT FROM information_schema.columns WHERE table_name = '${tabelaPosto}' AND column_name = 'base_name') as has_base_name,
+              EXISTS (SELECT FROM information_schema.columns WHERE table_name = '${tabelaPosto}' AND column_name = 'projeto_id') as has_projeto_id
+          `;
+          
+          const baseColumnsResult = await pool.query(checkBaseColumns);
+          const hasBaseId = baseColumnsResult.rows[0].has_base_id;
+          const hasBaseName = baseColumnsResult.rows[0].has_base_name;
+          const hasProjetoId = baseColumnsResult.rows[0].has_projeto_id;
+
           // Verificar se é o posto Guarulhos que tem estrutura diferente
           if (posto.toLowerCase() === 'guarulhos_v2') {
             // Consulta específica para o posto Guarulhos que já tem colunas nome_motorista, etc.
@@ -8113,6 +8126,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 NULL as lavagem,
                 NULL as tipo_lavagem,
                 ${hasProjetoColumn ? 'projeto as project' : "NULL as project"},
+                ${hasBaseName ? 'base_name' : 'NULL as base_name'},
+                ${hasBaseId ? 'base_id' : 'NULL as base_id'},
+                ${hasProjetoId ? 'projeto_id' : 'NULL as projeto_id'},
                 created_at,
                 created_at as updated_at,
                 '${posto}' as posto
@@ -8157,6 +8173,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               lavagem,
               tipo_lavagem,
               ${hasProjetoColumn ? 'projeto as project' : "NULL as project"},
+              ${hasBaseName ? 'base_name' : 'NULL as base_name'},
+              ${hasBaseId ? 'base_id' : 'NULL as base_id'},
+              ${hasProjetoId ? 'projeto_id' : 'NULL as projeto_id'},
               created_at,
               updated_at,
               '${posto}' as posto
