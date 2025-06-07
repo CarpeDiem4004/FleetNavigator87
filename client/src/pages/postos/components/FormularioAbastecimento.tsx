@@ -681,7 +681,7 @@ const FormularioAbastecimento: React.FC<
           
           // Campos de base - usar dados diretos do formulário
           base_id: data.base_id || null,
-          base_name: data.base_nome || data.base_name || "",
+          base_name: "", // Será preenchido pelo servidor com base no projeto selecionado
           
           // Tipo de veículo
           tipo_veiculo: data.tipo_veiculo || "frota",
