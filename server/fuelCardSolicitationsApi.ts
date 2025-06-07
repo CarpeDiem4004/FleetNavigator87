@@ -272,6 +272,8 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       motorista,
       observacoes || null,
       valorFinal, // Valor garantido como número fixo
+      tipo_combustivel || 'diesel',
+      litros_solicitados || 0,
       base || null,
       id_rota || null
     ];
