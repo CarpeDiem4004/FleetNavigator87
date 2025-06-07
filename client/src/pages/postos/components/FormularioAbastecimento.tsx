@@ -674,9 +674,9 @@ const FormularioAbastecimento: React.FC<
           nome_operador: data.operador,
           operador: data.operador,
           
-          // Campos de projeto com múltiplos nomes - usar dados diretos do formulário
-          project: data.projeto || 'NÃO ESPECIFICADO',
-          projeto: data.projeto || 'NÃO ESPECIFICADO',
+          // Campos de projeto com múltiplos nomes - buscar nome real do projeto pelo ID
+          project: projects.find((p: any) => p.id.toString() === data.projeto_id)?.name || 'NÃO ESPECIFICADO',
+          projeto: projects.find((p: any) => p.id.toString() === data.projeto_id)?.name || 'NÃO ESPECIFICADO',
           projeto_id: data.projeto_id || null,
           
           // Campos de base - usar dados diretos do formulário
@@ -971,10 +971,10 @@ const FormularioAbastecimento: React.FC<
               dadosAbastecimento
             );
             
-            if (supabaseResult.success) {
-              console.log(`Abastecimento registrado com sucesso no Supabase para o posto ${postId}:`, supabaseResult.data);
+            if (supabaseResult?.success) {
+              console.log(`Abastecimento registrado com sucesso no Supabase para o posto ${postId}:`, supabaseResult?.data);
             } else {
-              console.error(`Erro ao registrar abastecimento no Supabase para o posto ${postId}:`, supabaseResult.error);
+              console.error(`Erro ao registrar abastecimento no Supabase para o posto ${postId}:`, supabaseResult?.error);
               toast({
                 title: "Aviso",
                 description: "Registro salvo, mas houve erro ao enviar para o backup no Supabase",
@@ -1046,9 +1046,9 @@ const FormularioAbastecimento: React.FC<
           eventosBus.publish(EVENTOS.ABASTECIMENTO_REGISTRADO, {
             posto: postId,
             data: new Date().toISOString(),
-            placa: valores.placa,
-            tipo_combustivel: valores.tipo_combustivel,
-            quantidade_litros: valores.quantidade_litros
+            placa: data.placa,
+            tipo_combustivel: data.tipo,
+            quantidade_litros: data.quantidade
           });
 
           // SOLUÇÃO DIRETA: Forçar consulta ao banco usando fetch com SQL direto
@@ -1245,7 +1245,7 @@ const FormularioAbastecimento: React.FC<
         processingRef.current = false;
       }
     },
-    [postId, toast, onRegistroSucesso],
+    [postId, toast, onRegistroSucesso, projects],
   );
 
   // Funções de navegação atualizadas
