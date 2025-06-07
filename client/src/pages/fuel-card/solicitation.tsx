@@ -58,6 +58,13 @@ const solicitacaoSchema = z.object({
   tipo_combustivel: z.enum(["gasolina", "alcool", "diesel", "arla"], {
     required_error: "Selecione o tipo de combustível"
   }),
+  litros_solicitados: z.string()
+    .min(1, { message: "A quantidade de litros é obrigatória" })
+    .transform(val => parseFloat(val))
+    .refine(val => !isNaN(val) && val > 0, {
+      message: "A quantidade de litros deve ser um número positivo",
+      path: ["litros_solicitados"]
+    }),
   motorista: z.string()
     .min(3, { message: "O nome do motorista deve ter no mínimo 3 caracteres" }),
   projeto_id: z.string()
@@ -87,6 +94,7 @@ export default function FuelCardSolicitation() {
       provedor_cartao: "Ticket",
       numero_cartao: "",
       tipo_combustivel: "diesel",
+      litros_solicitados: "",
       motorista: "",
       projeto_id: "",
       base_id: "",
@@ -154,6 +162,7 @@ export default function FuelCardSolicitation() {
         provedor_cartao: values.provedor_cartao,
         numero_cartao: values.numero_cartao || "",
         tipo_combustivel: values.tipo_combustivel,
+        litros_solicitados: parseFloat(values.litros_solicitados.toString()),
         motorista: values.motorista,
         base: selectedBase?.base_name || "",
         id_rota: selectedBase?.base_code || "",
@@ -358,6 +367,29 @@ export default function FuelCardSolicitation() {
                       </Select>
                       <FormDescription>
                         Tipo de combustível para o veículo
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="litros_solicitados"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Quantidade de Litros</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          min="0.1"
+                          placeholder="Ex: 50.00" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Quantidade de litros de combustível necessária
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
