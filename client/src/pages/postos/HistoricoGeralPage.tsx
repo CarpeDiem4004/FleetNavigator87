@@ -33,6 +33,7 @@ interface Abastecimento {
   nome_operador: string;
   project?: string;  // Nome usado em algumas tabelas
   projeto?: string;  // Nome usado em outras tabelas
+  base_name?: string; // Campo para base específica registrada
   posto: string;
   created_at: string;
 }

@@ -633,6 +633,10 @@ const FormularioAbastecimento: React.FC<
           data.tipo === "Diesel" ? 6.39 : Number(data.valor_litro);
         const valorTotal = Number(data.quantidade) * valorPorLitro;
 
+        // Buscar projeto e base selecionados do formulário
+        const projetoSelecionado = projectsData?.find((p: any) => p.id.toString() === data.projeto_id?.toString());
+        const baseSelecionada = projetoSelecionado?.bases?.find((b: any) => b.id.toString() === data.base_id?.toString());
+
         // Prepara os dados com múltiplos nomes de campos para compatibilidade
         const dadosAbastecimento = {
           // Campos de quantidade com múltiplos nomes para garantir compatibilidade
@@ -675,13 +679,13 @@ const FormularioAbastecimento: React.FC<
           operador: data.operador,
           
           // Campos de projeto com múltiplos nomes
-          project: data.projeto,
-          projeto: data.projeto,
-          projeto_id: data.projeto_id,
+          project: projetoSelecionado?.name || data.projeto || 'NÃO ESPECIFICADO',
+          projeto: projetoSelecionado?.name || data.projeto || 'NÃO ESPECIFICADO',
+          projeto_id: data.projeto_id || null,
           
           // Campos de base
-          base_id: data.base_id,
-          base_name: projects.find((p: any) => p.id.toString() === selectedProjectId)?.bases.find((b: any) => b.id.toString() === data.base_id)?.base_name || "",
+          base_id: data.base_id || null,
+          base_name: baseSelecionada?.base_name || "",
           
           // Tipo de veículo
           tipo_veiculo: data.tipo_veiculo || "frota",
