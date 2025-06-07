@@ -89,6 +89,7 @@ interface FuelCardRequest {
   valorSolicitado: number;
   kmAtual: string;
   destino: string;
+  tipoCombustivel: string;
   observacoes?: string;
 }
 
@@ -169,6 +170,7 @@ const LineHallDriverPage: React.FC = () => {
     valorSolicitado: 0,
     kmAtual: '',
     destino: '',
+    tipoCombustivel: '',
     observacoes: ''
   });
 
@@ -692,8 +694,8 @@ const LineHallDriverPage: React.FC = () => {
           placa_veiculo: selectedVehicle,
           numero_cartao: fuelCardRequest.numeroCartao,
           valor_solicitado: fuelCardRequest.valorSolicitado,
-          justificativa: fuelCardRequest.justificativa,
-          comprovante: fuelCardRequest.comprovante,
+          tipo_combustivel: fuelCardRequest.tipoCombustivel,
+          observacoes: fuelCardRequest.observacoes,
           status: 'pendente'
         });
       
@@ -713,6 +715,7 @@ const LineHallDriverPage: React.FC = () => {
         valorSolicitado: 0,
         kmAtual: '',
         destino: '',
+        tipoCombustivel: '',
         observacoes: ''
       });
       
@@ -1227,6 +1230,28 @@ const LineHallDriverPage: React.FC = () => {
               value={fuelCardRequest.destino}
               onChange={(e) => setFuelCardRequest(prev => ({ ...prev, destino: e.target.value }))}
             />
+          </div>
+
+          {/* Tipo de Combustível */}
+          <div className="space-y-2">
+            <Label htmlFor="tipoCombustivel" className="flex items-center gap-2">
+              <Fuel className="h-4 w-4" />
+              Tipo de Combustível *
+            </Label>
+            <Select
+              value={fuelCardRequest.tipoCombustivel}
+              onValueChange={(value) => setFuelCardRequest(prev => ({ ...prev, tipoCombustivel: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo de combustível" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="gasolina">Gasolina</SelectItem>
+                <SelectItem value="alcool">Álcool</SelectItem>
+                <SelectItem value="diesel">Diesel</SelectItem>
+                <SelectItem value="arla">Arla</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Observações */}
