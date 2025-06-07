@@ -65,7 +65,7 @@ const HistoricoGeralPage: React.FC = () => {
       
       // MERCADO LIVRE (64 bases - principais)
       'MERCADO LIVRE': 'Bases: SP (42), Campinas (8), Goiânia (7), Guarulhos (7)',
-      'FULL MELI': 'Bases: SP (42), Campinas (8), Goiânia (7), Guarulhos (7)',
+      'FULL MELI': 'Base: FULL MELI',
       
       // XPT - Crossdocking Mercado Livre (12 bases)
       'XPT': 'Bases: Crossdocking ML (12 unidades)',
