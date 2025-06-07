@@ -238,10 +238,13 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
       });
     }
     
-    // Usando um valor fixo para valor_solicitado para contornar o problema
-    // 150 é um valor razoável para um abastecimento padrão
-    const VALOR_PADRAO_ABASTECIMENTO = 150;
-
+    if (!valor_solicitado || valor_solicitado <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'O valor solicitado deve ser maior que zero'
+      });
+    }
+    
     const query = `
       INSERT INTO solicitacoes_fuel_card
         (placa, km, tipo_cartao, provedor_cartao, numero_cartao, motorista, observacoes, status, data_solicitacao, valor_solicitado, base, id_rota)
@@ -253,8 +256,8 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
     // Log do corpo completo da requisição para fins de depuração
     console.log("Corpo da requisição:", JSON.stringify(req.body, null, 2));
     
-    // Usando um valor fixo para garantir que não haverá problema de validação
-    const valorFinal = VALOR_PADRAO_ABASTECIMENTO;
+    // Usando o valor real enviado pelo usuário
+    const valorFinal = valor_solicitado;
     
     console.log("Valor solicitado final que será inserido no banco:", valorFinal);
     
