@@ -39,19 +39,27 @@ interface Abastecimento {
 }
 
 const HistoricoGeralPage: React.FC = () => {
-  // Função para mapear posto e projeto para base específica
-  const getBaseFromPostoAndProject = (posto: string, projeto: string): string => {
+  // Função para obter a base específica registrada ou fazer fallback para mapeamento
+  const getBaseFromAbastecimento = (item: any): string => {
+    // Prioridade 1: Usar base_name se disponível (base específica registrada)
+    if (item.base_name && item.base_name.trim() !== '') {
+      console.log(`[BASE_MAPPING] Usando base específica registrada: ${item.base_name}`);
+      return item.base_name;
+    }
+    
+    // Prioridade 2: Fallback para mapeamento baseado em posto/projeto (apenas para registros antigos)
+    const posto = item.posto || '';
+    const projeto = item.project || item.projeto || '';
+    
     if (!posto && !projeto) return '-';
     
     const postoLower = posto?.toLowerCase() || '';
     const projectoUpper = projeto?.toUpperCase() || '';
     
-    // Log para debug
-    console.log(`[BASE_MAPPING] Mapeando posto: "${posto}" (${postoLower}) e projeto: "${projeto}" (${projectoUpper})`);
+    console.log(`[BASE_MAPPING] Fallback - mapeando posto: "${posto}" e projeto: "${projeto}"`);
     
-    // Mapeamento de posto para base específica - padrões mais flexíveis
+    // Mapeamento de posto para base genérica (apenas para registros antigos sem base_name)
     const postoToBaseMap: Record<string, string> = {
-      // Mapeamentos exatos
       'posto osasco v2': 'OSASCO',
       'posto abc v2': 'ABC', 
       'posto alair v2': 'ALAIR',
@@ -64,10 +72,8 @@ const HistoricoGeralPage: React.FC = () => {
       'posto remedios': 'REMÉDIOS'
     };
     
-    // Identificar a base específica do posto
     let baseEspecifica = postoToBaseMap[postoLower];
     
-    // Se não encontrou correspondência exata, tentar busca por palavras-chave
     if (!baseEspecifica) {
       if (postoLower.includes('osasco')) baseEspecifica = 'OSASCO';
       else if (postoLower.includes('abc')) baseEspecifica = 'ABC';
@@ -82,12 +88,11 @@ const HistoricoGeralPage: React.FC = () => {
     }
     
     if (baseEspecifica) {
-      console.log(`[BASE_MAPPING] Base encontrada: ${baseEspecifica}`);
+      console.log(`[BASE_MAPPING] Base genérica encontrada: ${baseEspecifica}`);
       return baseEspecifica;
     }
     
-    // Fallback: retornar o projeto se não conseguimos identificar o posto
-    console.log(`[BASE_MAPPING] Fallback para projeto: ${projectoUpper}`);
+    console.log(`[BASE_MAPPING] Fallback final: ${projectoUpper || '-'}`);
     return projectoUpper || '-';
   };
 
@@ -565,13 +570,7 @@ const HistoricoGeralPage: React.FC = () => {
           }
           
           // Usar a base específica registrada no abastecimento se disponível
-          let baseInfo = '-';
-          if (item.base_name) {
-            baseInfo = item.base_name;
-          } else {
-            // Fallback para mapeamento baseado no posto se não há base registrada
-            baseInfo = getBaseFromPostoAndProject(posto, projeto);
-          }
+          let baseInfo = getBaseFromAbastecimento(item);
           
           return {
             'Data': dataFormatada,
@@ -1406,7 +1405,7 @@ const HistoricoGeralPage: React.FC = () => {
                 <tbody>
                   {filteredData.map((abast, index) => {
                     const projeto = abast.project || abast.projeto || '-';
-                    const baseInfo = getBaseFromPostoAndProject(abast.posto, projeto);
+                    const baseInfo = getBaseFromAbastecimento(abast);
                     
                     return (
                       <tr key={`${abast.posto}-${abast.id}-${index}`} className="border-b border-gray-200 hover:bg-gray-50">
