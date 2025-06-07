@@ -38,60 +38,60 @@ interface Abastecimento {
 }
 
 const HistoricoGeralPage: React.FC = () => {
-  // Função para mapear projeto para sua base correspondente
-  const getBaseFromProject = (projeto: string): string => {
-    if (!projeto) return '-';
+  // Função para mapear posto e projeto para base específica
+  const getBaseFromPostoAndProject = (posto: string, projeto: string): string => {
+    if (!posto && !projeto) return '-';
     
-    const projectoUpper = projeto.toUpperCase();
+    const postoLower = posto?.toLowerCase() || '';
+    const projectoUpper = projeto?.toUpperCase() || '';
     
-    // Mapeamento completo de projetos para bases
-    const projectBaseMap: Record<string, string> = {
-      // COCA-COLA (9 bases)
-      'COCA-COLA': 'Bases: ABC, Alair, Campinas, Goiânia, Guarulhos, Osasco, São Paulo, Socorro, Sorocaba',
-      'COCA COLA': 'Bases: ABC, Alair, Campinas, Goiânia, Guarulhos, Osasco, São Paulo, Socorro, Sorocaba',
-      
-      // SHOPEE (1 base)
-      'SHOPEE': 'Base: Guarulhos',
-      'LINE HALL SHOPEE': 'Base: Guarulhos',
-      
-      // PETLOVE (3 bases)
-      'PETLOVE': 'Bases: Campinas, Goiânia, Guarulhos',
-      
-      // OXXO (1 base)
-      'OXXO': 'Base: Guarulhos',
-      
-      // MADEIRA MADEIRA (4 bases)
-      'MADEIRA MADEIRA': 'Bases: Campinas, Goiânia, Guarulhos, Osasco',
-      
-      // MERCADO LIVRE (64 bases - principais)
-      'MERCADO LIVRE': 'Bases: SP (42), Campinas (8), Goiânia (7), Guarulhos (7)',
-      'FULL MELI': 'Base: FULL MELI',
-      
-      // XPT - Crossdocking Mercado Livre (12 bases)
-      'XPT': 'Bases: Crossdocking ML (12 unidades)',
-      'XPT CROSSDOCKING': 'Bases: Crossdocking ML (12 unidades)',
-      
-      // Outros projetos conhecidos
-      'GRUPO PEREIRA': 'Base: Multiple',
-      'MANUTENÇÃO': 'Base: Operacional',
-      'MAGALU': 'Base: Multiple',
-      'NATURA': 'Base: Multiple',
-      'USO OPERACIONAL': 'Base: Operacional'
+    // Mapeamento de posto para base específica
+    const postoToBaseMap: Record<string, string> = {
+      'posto osasco v2': 'OSASCO',
+      'posto abc v2': 'ABC', 
+      'posto alair v2': 'ALAIR',
+      'posto campinas v2': 'CAMPINAS',
+      'posto socorro v2': 'SOCORRO',
+      'posto sorocaba v2': 'SOROCABA',
+      'posto guarulhos v2': 'GUARULHOS',
+      'posto goiania v2': 'GOIÂNIA',
+      'posto sao paulo v2': 'SÃO PAULO',
+      'posto remedios': 'REMÉDIOS'
     };
     
-    // Busca exata primeiro
-    if (projectBaseMap[projectoUpper]) {
-      return projectBaseMap[projectoUpper];
-    }
+    // Identificar a base específica do posto
+    const baseEspecifica = postoToBaseMap[postoLower];
     
-    // Busca por correspondência parcial
-    for (const [key, value] of Object.entries(projectBaseMap)) {
-      if (projectoUpper.includes(key) || key.includes(projectoUpper)) {
-        return value;
+    if (baseEspecifica) {
+      // Para projetos específicos, mostrar base + projeto
+      if (projectoUpper === 'COCA-COLA' || projectoUpper === 'COCA COLA') {
+        return baseEspecifica;
       }
+      if (projectoUpper === 'SHOPEE' || projectoUpper === 'LINE HALL SHOPEE') {
+        return baseEspecifica;
+      }
+      if (projectoUpper === 'MERCADO LIVRE') {
+        return baseEspecifica;
+      }
+      if (projectoUpper === 'FULL MELI') {
+        return baseEspecifica;
+      }
+      if (projectoUpper === 'MADEIRA MADEIRA') {
+        return baseEspecifica;
+      }
+      if (projectoUpper === 'PETLOVE') {
+        return baseEspecifica;
+      }
+      if (projectoUpper === 'OXXO') {
+        return baseEspecifica;
+      }
+      
+      // Para outros projetos, retornar apenas a base
+      return baseEspecifica;
     }
     
-    return 'Base não mapeada';
+    // Fallback: retornar o projeto se não conseguimos identificar o posto
+    return projectoUpper || '-';
   };
 
   // Implementação local da função fetchRecords para evitar problemas de importação
@@ -568,7 +568,7 @@ const HistoricoGeralPage: React.FC = () => {
           }
           
           // Obter informação da base do projeto
-          const baseInfo = getBaseFromProject(projeto);
+          const baseInfo = getBaseFromPostoAndProject(posto, projeto);
           
           return {
             'Data': dataFormatada,
@@ -852,7 +852,7 @@ const HistoricoGeralPage: React.FC = () => {
     const consumoPorProjeto = filteredData.reduce((acc, item) => {
       // Unificar campo de projeto (pode estar como project ou projeto dependendo do posto)
       // Verificar todos os possíveis campos que podem conter o nome do projeto
-      const projetoRaw = item.project || item.projeto || item.nome_projeto || '';
+      const projetoRaw = item.project || item.projeto || '';
       
       // Substituir "NÃO ESPECIFICADO" por "OUTRO" e tratar outros casos com normalização
       let projeto = "OUTRO";
@@ -1403,7 +1403,7 @@ const HistoricoGeralPage: React.FC = () => {
                 <tbody>
                   {filteredData.map((abast, index) => {
                     const projeto = abast.project || abast.projeto || '-';
-                    const baseInfo = getBaseFromProject(projeto);
+                    const baseInfo = getBaseFromPostoAndProject(abast.posto, projeto);
                     
                     return (
                       <tr key={`${abast.posto}-${abast.id}-${index}`} className="border-b border-gray-200 hover:bg-gray-50">
