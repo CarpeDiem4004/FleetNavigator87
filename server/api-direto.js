@@ -895,8 +895,34 @@ export async function registrarAbastecimentoPosto(req, res) {
       tipo_veiculo = req.body.tipo_veiculo || 'frota',
       lavagem = req.body.lavagem || false,
       tipo_lavagem = req.body.tipo_lavagem,
-      projeto = req.body.projeto || req.body.project || 'Não definido' // Tratamento especial para o campo projeto
+      projeto = req.body.projeto || req.body.project || 'Não definido', // Tratamento especial para o campo projeto
+      projeto_id = req.body.projeto_id ? Number(req.body.projeto_id) : null,
+      base_id = req.body.base_id ? Number(req.body.base_id) : null,
+      base_name = req.body.base_name || null
     } = req.body;
+
+    // Se base_id foi fornecido mas base_name está vazio, buscar o nome da base
+    let resolvedBaseName = base_name;
+    if (base_id && !resolvedBaseName) {
+      try {
+        const baseQuery = `
+          SELECT base_name, base_code 
+          FROM project_bases 
+          WHERE id = $1
+        `;
+        const baseResult = await pool.query(baseQuery, [base_id]);
+        
+        if (baseResult.rows.length > 0) {
+          const base = baseResult.rows[0];
+          resolvedBaseName = base.base_code ? 
+            `${base.base_name} (${base.base_code})` : 
+            base.base_name;
+          console.log(`[${postoName}] Base encontrada: ${resolvedBaseName}`);
+        }
+      } catch (baseError) {
+        console.error(`[${postoName}] Erro ao buscar nome da base:`, baseError);
+      }
+    }
     
     // Validar campos obrigatórios
     if (!placa || !litros) {

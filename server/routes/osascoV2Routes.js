@@ -74,6 +74,7 @@ router.post('/abastecimento', async (req, res) => {
       operador: dados.operador || dados.nome_operador || 'Sistema',
       // Garantir que o projeto seja salvo corretamente, incluindo valor padrão específico
       projeto: dados.projeto || dados.project || 'PROJETO NÃO INFORMADO',
+      projeto_id: dados.projeto_id ? Number(dados.projeto_id) : null,
       base_id: dados.base_id ? Number(dados.base_id) : null,
       base_name: dados.base_name || null,
       tipo_veiculo: dados.tipo_veiculo || 'frota',
@@ -81,6 +82,28 @@ router.post('/abastecimento', async (req, res) => {
       lavagem: dados.lavagem === true,
       tipo_lavagem: dados.tipo_lavagem || null
     };
+
+    // Se base_id foi fornecido mas base_name está vazio, buscar o nome da base
+    if (dadosInserir.base_id && !dadosInserir.base_name) {
+      try {
+        const baseQuery = `
+          SELECT base_name, base_code 
+          FROM project_bases 
+          WHERE id = $1
+        `;
+        const baseResult = await pool.query(baseQuery, [dadosInserir.base_id]);
+        
+        if (baseResult.rows.length > 0) {
+          const base = baseResult.rows[0];
+          dadosInserir.base_name = base.base_code ? 
+            `${base.base_name} (${base.base_code})` : 
+            base.base_name;
+          console.log(`[OsascoV2] Base encontrada: ${dadosInserir.base_name}`);
+        }
+      } catch (baseError) {
+        console.error('[OsascoV2] Erro ao buscar nome da base:', baseError);
+      }
+    }
     
     // Verificar se o projeto está vazio e definir um valor explícito
     if (!dadosInserir.projeto || dadosInserir.projeto.trim() === '') {
@@ -90,14 +113,14 @@ router.post('/abastecimento', async (req, res) => {
     
     console.log('[OsascoV2] Dados que serão inseridos:', dadosInserir);
     
-    // Consulta SQL para inserção com os campos projeto, base_id e base_name
+    // Consulta SQL para inserção com os campos projeto, projeto_id, base_id e base_name
     const query = `
       INSERT INTO abastecimentos_posto_osasco_v2 (
         placa, km_atual, hodometro_atual, tipo_combustivel, litros,
         valor_litro, valor_total, motorista, motorista_rg,
-        operador, projeto, base_id, base_name, tipo_veiculo, observacoes, lavagem, tipo_lavagem, created_at
+        operador, projeto, projeto_id, base_id, base_name, tipo_veiculo, observacoes, lavagem, tipo_lavagem, created_at
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, 
         NOW() at time zone 'America/Sao_Paulo'
       ) RETURNING *
     `;
@@ -114,6 +137,7 @@ router.post('/abastecimento', async (req, res) => {
       dadosInserir.motorista_rg,
       dadosInserir.operador,
       dadosInserir.projeto,
+      dadosInserir.projeto_id,
       dadosInserir.base_id,
       dadosInserir.base_name,
       dadosInserir.tipo_veiculo,
