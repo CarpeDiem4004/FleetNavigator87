@@ -153,6 +153,7 @@ export default function FuelCardSolicitation() {
         tipo_cartao: values.tipo_cartao,
         provedor_cartao: values.provedor_cartao,
         numero_cartao: values.numero_cartao || "",
+        tipo_combustivel: values.tipo_combustivel,
         motorista: values.motorista,
         base: selectedBase?.base_name || "",
         id_rota: selectedBase?.base_code || "",
