@@ -109,6 +109,13 @@ const FuelCardRequestsPanel: React.FC = () => {
   };
   
   const handleOpenSolicitation = (solicitation: FuelCardSolicitation) => {
+    console.log('Modal data:', {
+      id: solicitation.id,
+      placa: solicitation.placa,
+      id_rota: solicitation.id_rota,
+      litros_solicitados: solicitation.litros_solicitados,
+      tipo_combustivel: solicitation.tipo_combustivel
+    });
     setSelectedSolicitation(solicitation);
     setEditedStatus(solicitation.status);
     setIsSheetOpen(true);
@@ -599,7 +606,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                         </div>
                       </div>
                     )}
-                    {selectedSolicitation.litros_solicitados != null && selectedSolicitation.litros_solicitados !== undefined && (
+                    {(selectedSolicitation.litros_solicitados != null && selectedSolicitation.litros_solicitados !== undefined && selectedSolicitation.litros_solicitados > 0) && (
                       <div>
                         <Label>Quantidade de Litros</Label>
                         <div className="text-lg font-medium bg-green-50 p-2 rounded border border-green-200">
