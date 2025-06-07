@@ -74,6 +74,8 @@ router.post('/abastecimento', async (req, res) => {
       operador: dados.operador || dados.nome_operador || 'Sistema',
       // Garantir que o projeto seja salvo corretamente, incluindo valor padrão específico
       projeto: dados.projeto || dados.project || 'PROJETO NÃO INFORMADO',
+      base_id: dados.base_id ? Number(dados.base_id) : null,
+      base_name: dados.base_name || null,
       tipo_veiculo: dados.tipo_veiculo || 'frota',
       observacoes: dados.observacoes || null,
       lavagem: dados.lavagem === true,
@@ -88,14 +90,14 @@ router.post('/abastecimento', async (req, res) => {
     
     console.log('[OsascoV2] Dados que serão inseridos:', dadosInserir);
     
-    // Consulta SQL para inserção com o campo projeto
+    // Consulta SQL para inserção com os campos projeto, base_id e base_name
     const query = `
       INSERT INTO abastecimentos_posto_osasco_v2 (
         placa, km_atual, hodometro_atual, tipo_combustivel, litros,
         valor_litro, valor_total, motorista, motorista_rg,
-        operador, projeto, tipo_veiculo, observacoes, lavagem, tipo_lavagem, created_at
+        operador, projeto, base_id, base_name, tipo_veiculo, observacoes, lavagem, tipo_lavagem, created_at
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 
         NOW() at time zone 'America/Sao_Paulo'
       ) RETURNING *
     `;

@@ -677,6 +677,11 @@ const FormularioAbastecimento: React.FC<
           // Campos de projeto com múltiplos nomes
           project: data.projeto,
           projeto: data.projeto,
+          projeto_id: data.projeto_id,
+          
+          // Campos de base
+          base_id: data.base_id,
+          base_name: selectedProject?.bases.find((b: any) => b.id.toString() === data.base_id)?.base_name || "",
           
           // Tipo de veículo
           tipo_veiculo: data.tipo_veiculo || "frota",
