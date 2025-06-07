@@ -599,7 +599,7 @@ const FuelCardRequestsPanel: React.FC = () => {
                         </div>
                       </div>
                     )}
-                    {selectedSolicitation.litros_solicitados && (
+                    {selectedSolicitation.litros_solicitados != null && selectedSolicitation.litros_solicitados !== undefined && (
                       <div>
                         <Label>Quantidade de Litros</Label>
                         <div className="text-lg font-medium bg-green-50 p-2 rounded border border-green-200">
