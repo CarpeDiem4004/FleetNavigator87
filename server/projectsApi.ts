@@ -93,11 +93,24 @@ export async function getProjectBases(req: Request, res: Response) {
 }
 
 /**
- * Obtém todos os projetos com suas bases (otimizado para performance)
+ * Obtém todos os projetos com suas bases (otimizado com diagnóstico de performance)
  */
 export async function getProjectsWithBases(req: Request, res: Response) {
+  const startTime = Date.now();
+  const userAgent = req.get('User-Agent') || 'Desconhecido';
+  const isMobile = /Mobile|Android|iPhone|iPad/i.test(userAgent);
+  
+  console.log(`[BACKEND-PERF] 🚀 Iniciando getProjectsWithBases`);
+  console.log(`[BACKEND-PERF] 📱 Device: ${isMobile ? 'MOBILE' : 'DESKTOP'}`);
+  console.log(`[BACKEND-PERF] 🌐 User-Agent: ${userAgent}`);
+  console.log(`[BACKEND-PERF] 📡 Origin: ${req.get('Origin') || 'Sem origem'}`);
+  console.log(`[BACKEND-PERF] 🔗 Referer: ${req.get('Referer') || 'Sem referer'}`);
+  
   try {
-    // Usar consultas separadas é mais eficiente que LEFT JOIN com agrupamento
+    // Medir tempo de conexão com banco
+    const dbStart = Date.now();
+    console.log(`[BACKEND-PERF] 🗄️ Iniciando consultas paralelas ao banco...`);
+    
     const [projectsResult, basesResult] = await Promise.all([
       pool.query(`
         SELECT id, name, description, is_active 
@@ -114,6 +127,14 @@ export async function getProjectsWithBases(req: Request, res: Response) {
         ORDER BY pb.base_name ASC
       `)
     ]);
+    
+    const dbTime = Date.now() - dbStart;
+    console.log(`[BACKEND-PERF] ⏱️ Consultas DB: ${dbTime}ms`);
+    console.log(`[BACKEND-PERF] 📊 Projetos encontrados: ${projectsResult.rows.length}`);
+    console.log(`[BACKEND-PERF] 📊 Bases encontradas: ${basesResult.rows.length}`);
+    
+    // Medir tempo de processamento em memória
+    const processStart = Date.now();
     
     // Criar mapa de bases por projeto_id para performance O(1)
     const basesMap = new Map();
@@ -139,17 +160,55 @@ export async function getProjectsWithBases(req: Request, res: Response) {
       bases: basesMap.get(project.id) || []
     }));
     
-    return res.status(200).json({
+    const processTime = Date.now() - processStart;
+    const totalTime = Date.now() - startTime;
+    
+    console.log(`[BACKEND-PERF] 🔄 Processamento: ${processTime}ms`);
+    console.log(`[BACKEND-PERF] 🏁 TOTAL BACKEND: ${totalTime}ms`);
+    
+    // Alertas de performance
+    if (totalTime > 1000) {
+      console.warn(`[BACKEND-PERF] ⚠️ LENTO! ${totalTime}ms > 1000ms`);
+      if (dbTime > 800) {
+        console.warn(`[BACKEND-PERF] 🐌 PROBLEMA DE BANCO: ${dbTime}ms`);
+      }
+      if (processTime > 200) {
+        console.warn(`[BACKEND-PERF] 🐌 PROBLEMA DE PROCESSAMENTO: ${processTime}ms`);
+      }
+    }
+    
+    // Calcular tamanho da resposta
+    const responseData = {
       success: true,
       data: projects,
-      count: projects.length
-    });
+      count: projects.length,
+      _performance: {
+        totalTime,
+        dbTime,
+        processTime,
+        isMobile,
+        timestamp: new Date().toISOString()
+      }
+    };
+    
+    const responseSize = JSON.stringify(responseData).length;
+    console.log(`[BACKEND-PERF] 📦 Tamanho resposta: ${responseSize} bytes (${(responseSize/1024).toFixed(2)} KB)`);
+    
+    return res.status(200).json(responseData);
   } catch (error: any) {
-    console.error('Erro ao buscar projetos com bases:', error);
+    const errorTime = Date.now() - startTime;
+    console.error(`[BACKEND-PERF] 💥 ERRO após ${errorTime}ms:`, error.message);
+    console.error(`[BACKEND-PERF] 📚 Stack:`, error.stack);
+    
     return res.status(500).json({
       success: false,
       message: 'Erro ao buscar projetos com bases',
-      error: error.message
+      error: error.message,
+      _performance: {
+        errorTime,
+        isMobile,
+        timestamp: new Date().toISOString()
+      }
     });
   }
 }

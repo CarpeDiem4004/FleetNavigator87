@@ -167,30 +167,58 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     return () => window.removeEventListener('resize', checkMobile);
   }, [form]);
 
-  // Carregar projetos com bases (otimizado com cache)
+  // Carregar projetos com bases (otimizado com cache e diagnóstico detalhado)
   useEffect(() => {
     const fetchProjects = async () => {
       if (isLoadingProjects) return;
+      
+      const startTime = performance.now();
+      console.log('[PERF] 🚀 Iniciando carregamento de projetos...');
+      console.log('[PERF] 📱 User Agent:', navigator.userAgent);
+      console.log('[PERF] 🌐 Connection:', (navigator as any).connection ? {
+        effectiveType: (navigator as any).connection.effectiveType,
+        downlink: (navigator as any).connection.downlink,
+        rtt: (navigator as any).connection.rtt
+      } : 'Não disponível');
       
       // Verificar cache primeiro
       const cacheKey = 'projects_with_bases_cache';
       const cacheTimeKey = 'projects_cache_time';
       const cacheExpiry = 5 * 60 * 1000; // 5 minutos
       
+      const cacheStart = performance.now();
       const cachedData = localStorage.getItem(cacheKey);
       const cacheTime = localStorage.getItem(cacheTimeKey);
+      const cacheCheckTime = performance.now() - cacheStart;
+      console.log(`[PERF] 💾 Verificação cache: ${cacheCheckTime.toFixed(2)}ms`);
       
       if (cachedData && cacheTime) {
         const isExpired = Date.now() - parseInt(cacheTime) > cacheExpiry;
         if (!isExpired) {
-          console.log('Carregando projetos do cache');
-          setProjects(JSON.parse(cachedData));
+          const parseStart = performance.now();
+          const parsedData = JSON.parse(cachedData);
+          const parseTime = performance.now() - parseStart;
+          
+          console.log(`[PERF] 🔄 Parse cache: ${parseTime.toFixed(2)}ms`);
+          console.log(`[PERF] ✅ Total com cache: ${(performance.now() - startTime).toFixed(2)}ms`);
+          console.log('[CACHE] 📦 Carregando projetos do cache');
+          
+          setProjects(parsedData);
           return;
+        } else {
+          console.log('[CACHE] ⏰ Cache expirado, fazendo nova requisição');
         }
+      } else {
+        console.log('[CACHE] 🔍 Nenhum cache encontrado');
       }
       
       setIsLoadingProjects(true);
+      
       try {
+        const fetchStart = performance.now();
+        console.log('[NET] 🌐 Iniciando requisição HTTP...');
+        console.log('[NET] 🎯 URL:', '/api/public/projects-with-bases');
+        
         const response = await fetch('/api/public/projects-with-bases', {
           method: 'GET',
           headers: {
@@ -198,28 +226,76 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
           },
           credentials: 'include',
         });
+        
+        const fetchTime = performance.now() - fetchStart;
+        console.log(`[NET] ⏱️ Tempo de rede: ${fetchTime.toFixed(2)}ms`);
+        console.log(`[NET] 📊 Status: ${response.status}`);
+        console.log(`[NET] 📝 Headers:`, Object.fromEntries(response.headers.entries()));
 
         if (response.ok) {
+          const parseStart = performance.now();
           const data = await response.json();
+          const parseTime = performance.now() - parseStart;
+          console.log(`[NET] 🔧 Parse JSON: ${parseTime.toFixed(2)}ms`);
+          console.log(`[NET] 📋 Dados recebidos:`, {
+            success: data.success,
+            dataLength: data.data ? data.data.length : 0,
+            dataSize: JSON.stringify(data).length + ' bytes'
+          });
+          
           if (data.success && data.data) {
+            const setStateStart = performance.now();
             setProjects(data.data);
+            const setStateTime = performance.now() - setStateStart;
+            
             // Salvar no cache
+            const cacheStart = performance.now();
             localStorage.setItem(cacheKey, JSON.stringify(data.data));
             localStorage.setItem(cacheTimeKey, Date.now().toString());
-            console.log('Projetos carregados da API e salvos no cache');
+            const cacheTime = performance.now() - cacheStart;
+            
+            const totalTime = performance.now() - startTime;
+            
+            console.log(`[PERF] 🎨 setState: ${setStateTime.toFixed(2)}ms`);
+            console.log(`[PERF] 💾 Salvar cache: ${cacheTime.toFixed(2)}ms`);
+            console.log(`[PERF] 🏁 TOTAL: ${totalTime.toFixed(2)}ms`);
+            console.log(`[API] ✅ Projetos carregados: ${data.data.length}`);
+            
+            // Análise de performance para mobile
+            if (totalTime > 2000) {
+              console.warn(`[PERF] ⚠️ LENTO! ${totalTime.toFixed(2)}ms > 2000ms`);
+              if (fetchTime > 1500) {
+                console.warn('[PERF] 🐌 Problema de REDE detectado');
+              }
+              if (parseTime > 300) {
+                console.warn('[PERF] 🐌 Problema de PARSE detectado');
+              }
+            }
+          } else {
+            console.error('[API] ❌ Resposta inválida:', data);
           }
         } else {
-          console.warn('Falha ao carregar projetos, usando configuração mínima');
+          const errorText = await response.text();
+          console.error(`[NET] ❌ HTTP Error: ${response.status}`);
+          console.error(`[NET] 📄 Error body:`, errorText);
+          console.warn('[FALLBACK] 🔄 Usando configuração mínima');
           setProjects([
             { id: 1, name: "Operação Principal", bases: [{ id: 1, base_name: "Base Principal" }] }
           ]);
         }
       } catch (error) {
-        console.error('Erro ao buscar projetos:', error);
+        const totalTime = performance.now() - startTime;
+        console.error(`[ERROR] 💥 Erro após ${totalTime.toFixed(2)}ms:`, error);
+        console.error('[ERROR] 📚 Stack:', error.stack);
+        console.error('[ERROR] 🔍 Tipo:', error.name);
+        console.error('[ERROR] 💬 Mensagem:', error.message);
+        console.warn('[FALLBACK] 🔄 Usando configuração mínima');
         setProjects([
           { id: 1, name: "Operação Principal", bases: [{ id: 1, base_name: "Base Principal" }] }
         ]);
       } finally {
+        const finalTime = performance.now() - startTime;
+        console.log(`[PERF] 🎬 FINAL: ${finalTime.toFixed(2)}ms`);
         setIsLoadingProjects(false);
       }
     };
