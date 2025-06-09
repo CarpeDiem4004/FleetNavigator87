@@ -14,7 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Check } from "lucide-react";
 import { useSafeState } from "@/hooks/useSafeState";
-import { useAuth } from "@/components/AuthContext";
+// import { useAuth } from "@/components/AuthContext"; // Temporariamente desabilitado
 
 // Schema de validação
 const abastecimentoSchema = z.object({
@@ -104,9 +104,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       try {
         // Tentar API com token JWT
         const token = localStorage.getItem('auth_token');
-        const headers = {
-          'Content-Type': 'application/json',
-          'credentials': 'include'
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
         };
         
         if (token) {
@@ -131,10 +130,36 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
           }
         } else {
           console.warn('API /user retornou erro:', response.status);
+          // Fallback para nome padrão baseado no posto
+          const defaultOperator = getDefaultOperatorForPosto(postId);
+          if (defaultOperator) {
+            form.setValue("operador", defaultOperator);
+            console.log('Usando operador padrão:', defaultOperator);
+          }
         }
       } catch (error) {
         console.warn('Erro ao carregar operador da API:', error);
+        // Fallback para nome padrão baseado no posto
+        const defaultOperator = getDefaultOperatorForPosto(postId);
+        if (defaultOperator) {
+          form.setValue("operador", defaultOperator);
+          console.log('Usando operador padrão:', defaultOperator);
+        }
       }
+    };
+
+    // Função para obter operador padrão baseado no posto
+    const getDefaultOperatorForPosto = (postoId: string): string | null => {
+      const operatorMap: Record<string, string> = {
+        'osasco_v2': 'Alair',
+        'guarulhos_v2': 'Guarulhos',
+        'abc_v2': 'ABC',
+        'socorro_v2': 'Socorro',
+        'sorocaba_v2': 'Sorocaba',
+        'campinas_v2': 'Campinas',
+        'goiania_v2': 'Goiânia'
+      };
+      return operatorMap[postoId] || null;
     };
     
     carregarOperador();
