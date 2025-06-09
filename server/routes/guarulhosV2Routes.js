@@ -13,26 +13,29 @@ const router = express.Router();
 // Rota otimizada para histórico de Guarulhos V2
 router.get('/historico', async (req, res) => {
   try {
-    // Consulta SQL otimizada para Guarulhos V2 que mantém os campos originais
+    // Consulta SQL corrigida para Guarulhos V2 com colunas padronizadas
     const query = `
       SELECT 
         id,
         placa,
         km_atual as km,
-        NULL as hodometro_atual,
+        hodometro_atual,
         tipo_combustivel,
         litros as quantidade_litros,
-        nome_motorista,
-        rg_motorista,
-        nome_operador,
+        motorista as nome_motorista,
+        motorista_rg as rg_motorista,
+        operador as nome_operador,
         valor_litro,
         valor_total,
         tipo_veiculo,
         observacoes,
-        false as lavagem,
-        NULL as tipo_lavagem,
+        COALESCE(lavagem, false) as lavagem,
+        tipo_lavagem,
         COALESCE(projeto, 'Não definido') as projeto,
-        to_char(created_at AT TIME ZONE 'America/Sao_Paulo', 'DD/MM/YYYY HH24:MI') as data_hora,
+        base_name,
+        base_id,
+        projeto_id,
+        to_char(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo', 'DD/MM/YYYY HH24:MI') as data_hora,
         created_at
       FROM abastecimentos_posto_guarulhos_v2
       ORDER BY created_at DESC

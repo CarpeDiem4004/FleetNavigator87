@@ -8105,9 +8105,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const hasBaseName = baseColumnsResult.rows[0].has_base_name;
           const hasProjetoId = baseColumnsResult.rows[0].has_projeto_id;
 
-          // Verificar se é o posto Guarulhos que tem estrutura diferente
+          // Verificar se é o posto Guarulhos que tem estrutura padronizada
           if (posto.toLowerCase() === 'guarulhos_v2') {
-            // Consulta específica para o posto Guarulhos que já tem colunas nome_motorista, etc.
+            // Consulta corrigida para o posto Guarulhos com colunas padronizadas
             const queryGuarulhosV2 = `
               SELECT 
                 id,
@@ -8116,21 +8116,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 ${hasHodometroColumn ? 'hodometro_atual' : 'NULL as hodometro_atual'},
                 tipo_combustivel,
                 litros as quantidade_litros,
-                nome_motorista,
-                rg_motorista,
-                nome_operador,
+                motorista as nome_motorista,
+                motorista_rg as rg_motorista,
+                operador as nome_operador,
                 valor_litro,
                 valor_total,
                 tipo_veiculo,
                 observacoes,
-                NULL as lavagem,
-                NULL as tipo_lavagem,
+                COALESCE(lavagem, false) as lavagem,
+                tipo_lavagem,
                 ${hasProjetoColumn ? 'projeto as project' : "NULL as project"},
                 ${hasBaseName ? 'base_name' : 'NULL as base_name'},
                 ${hasBaseId ? 'base_id' : 'NULL as base_id'},
                 ${hasProjetoId ? 'projeto_id' : 'NULL as projeto_id'},
                 created_at,
-                created_at as updated_at,
+                updated_at,
                 '${posto}' as posto
               FROM ${tabelaPosto}
               ORDER BY created_at DESC
