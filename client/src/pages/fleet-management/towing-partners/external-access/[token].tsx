@@ -894,7 +894,7 @@ export default function TowingPartnerExternalAccess() {
                       </Card>
                     </div>
                     
-                    <div className="rounded-md border">
+                    <div className="rounded-md border overflow-x-auto">
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -938,9 +938,17 @@ export default function TowingPartnerExternalAccess() {
                                 <TableCell className="font-medium">{service.plate}</TableCell>
                                 <TableCell>{formattedDate}</TableCell>
                                 <TableCell>
-                                  <div className="flex flex-col">
-                                    <span className="text-xs text-muted-foreground">De: {service.pickup_location}</span>
-                                    <span className="text-xs mt-1">Para: {service.delivery_location}</span>
+                                  <div className="flex flex-col space-y-1">
+                                    <div className="flex items-center text-xs">
+                                      <MapPin className="w-3 h-3 mr-1 text-red-500" />
+                                      <span className="font-medium">De:</span>
+                                      <span className="ml-1 text-muted-foreground">{service.pickup_location}</span>
+                                    </div>
+                                    <div className="flex items-center text-xs">
+                                      <MapPin className="w-3 h-3 mr-1 text-green-500" />
+                                      <span className="font-medium">Para:</span>
+                                      <span className="ml-1 text-muted-foreground">{service.delivery_location}</span>
+                                    </div>
                                   </div>
                                 </TableCell>
                                 <TableCell className="font-semibold">
