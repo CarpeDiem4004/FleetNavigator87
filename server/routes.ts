@@ -11492,7 +11492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           p.company_name as parceiro_empresa,
           p.city as parceiro_cidade,
           p.status as parceiro_estado
-        FROM towing_service_notes s
+        FROM towing_partner_services s
         JOIN towing_partners p ON s.partner_id = p.id
         ORDER BY s.created_at DESC
       `;
@@ -11545,7 +11545,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const updateQuery = `
-        UPDATE towing_service_notes
+        UPDATE towing_partner_services
         SET 
           status = 'approved',
           approved_at = $3,
@@ -11587,7 +11587,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const updateQuery = `
-        UPDATE towing_service_notes
+        UPDATE towing_partner_services
         SET 
           status = 'rejected',
           updated_at = $3,
@@ -11634,7 +11634,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Primeiro verificar se o serviço existe
-      const checkQuery = `SELECT id FROM towing_service_notes WHERE id = $1`;
+      const checkQuery = `SELECT id FROM towing_partner_services WHERE id = $1`;
       const checkResult = await pool.query(checkQuery, [servicoId]);
       
       if (checkResult.rowCount === 0) {
@@ -11642,7 +11642,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Excluir o serviço
-      const deleteQuery = `DELETE FROM towing_service_notes WHERE id = $1`;
+      const deleteQuery = `DELETE FROM towing_partner_services WHERE id = $1`;
       const result = await pool.query(deleteQuery, [servicoId]);
       
       // Também excluir da tabela servicos_guincho se existir
