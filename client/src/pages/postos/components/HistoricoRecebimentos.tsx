@@ -45,10 +45,16 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const queryClient = useQueryClient();
+
+  // Forçar invalidação do cache ao montar o componente
+  React.useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: [`/api/recebimentos/${postId.toLowerCase()}`] });
+  }, [postId, queryClient]);
   
   const { data, isLoading, error } = useQuery({
     queryKey: [`/api/recebimentos/${postId.toLowerCase()}`],
-    staleTime: 1000 * 60 * 5 // 5 minutos
+    staleTime: 1000 * 30, // 30 segundos
+    refetchInterval: 1000 * 60 * 2 // Atualizar a cada 2 minutos
   });
 
   // Função para iniciar o processo de exclusão
