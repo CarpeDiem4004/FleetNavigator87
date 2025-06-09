@@ -19,10 +19,10 @@ ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 -- Migrar dados existentes para as novas colunas padronizadas
 UPDATE abastecimentos_posto_guarulhos_v2 
 SET 
-    motorista = nome_motorista,
-    motorista_rg = rg_motorista,
-    operador = nome_operador
-WHERE motorista IS NULL;
+    motorista = COALESCE(motorista, nome_motorista, 'Não informado'),
+    motorista_rg = COALESCE(motorista_rg, rg_motorista, ''),
+    operador = COALESCE(operador, nome_operador, 'Sistema')
+WHERE motorista IS NULL OR motorista = '';
 
 -- PARTE 2: Corrigir inconsistências na tabela Campinas V2
 -- ========================================================
