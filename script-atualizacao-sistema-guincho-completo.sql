@@ -44,14 +44,41 @@ END $$;
 INSERT INTO towing_partner_services (
     partner_id, plate, origin, destination, service_date, service_type, cost, 
     km_traveled, status, notes, driver_name, contact_phone, created_at, 
-    approved_by, approved_at, payment_status, pickup_location, delivery_location, mileage
+    approved_by, approved_at, payment_status, pickup_location, delivery_location, mileage,
+    rejected_by, rejected_at, rejection_reason, updated_at
 )
 SELECT 
-    partner_id, plate, pickup_location, delivery_location, service_date, 
-    COALESCE(service_description, 'guincho'), cost, mileage, 
-    COALESCE(status, 'pending'), notes, contact_name, contact_phone, created_at,
-    approved_by_user_id, approved_at, COALESCE(payment_status, 'pending'),
-    pickup_location, delivery_location, mileage
+    tsn.partner_id, 
+    tsn.plate, 
+    tsn.pickup_location, 
+    tsn.delivery_location, 
+    tsn.service_date::date, 
+    COALESCE(tsn.service_description, 'guincho'), 
+    tsn.cost, 
+    tsn.mileage, 
+    COALESCE(tsn.status, 'pending'), 
+    tsn.notes, 
+    tsn.contact_name, 
+    tsn.contact_phone, 
+    tsn.created_at,
+    CASE 
+        WHEN tsn.approved_by IS NOT NULL THEN 
+            (SELECT id FROM users WHERE name = tsn.approved_by LIMIT 1)
+        ELSE NULL
+    END,
+    tsn.approved_at, 
+    COALESCE(tsn.payment_status, 'pending'),
+    tsn.pickup_location, 
+    tsn.delivery_location, 
+    tsn.mileage,
+    CASE 
+        WHEN tsn.rejected_by IS NOT NULL THEN 
+            (SELECT id FROM users WHERE name = tsn.rejected_by LIMIT 1)
+        ELSE NULL
+    END,
+    tsn.rejected_at,
+    tsn.rejection_reason,
+    tsn.updated_at
 FROM towing_service_notes tsn
 WHERE NOT EXISTS (
     SELECT 1 FROM towing_partner_services tps 
