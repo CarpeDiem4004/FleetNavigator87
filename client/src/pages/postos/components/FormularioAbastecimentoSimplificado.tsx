@@ -604,49 +604,73 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Base *</FormLabel>
-                  <Select 
-                    value={selectedBaseId} 
-                    onValueChange={(value) => {
-                      console.log(`[Mobile-Select] Base selecionada: ${value}`);
-                      setSelectedBaseId(value);
-                      field.onChange(value);
-                    }}
-                    disabled={!selectedProjectId || availableBases.length === 0 || isLoadingProjects}
-                  >
+                  {isMobile ? (
+                    // Elemento SELECT nativo para mobile - melhor compatibilidade touch
                     <FormControl>
-                      <SelectTrigger 
-                        className={isMobile ? "h-14 text-lg border-2 focus:border-blue-500" : ""}
-                        onClick={() => isMobile && console.log(`[Mobile-Select] Base trigger clicado - ${availableBases.length} bases disponíveis`)}
+                      <select
+                        className="w-full h-14 text-lg border-2 border-gray-200 rounded-md px-4 bg-white focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
+                        value={selectedBaseId}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          console.log(`[Mobile-Native] Base selecionada: ${value}`);
+                          setSelectedBaseId(value);
+                          field.onChange(value);
+                        }}
+                        disabled={!selectedProjectId || availableBases.length === 0 || isLoadingProjects}
                       >
-                        <SelectValue 
-                          placeholder={
-                            !selectedProjectId 
-                              ? "Selecione primeiro um projeto" 
-                              : availableBases.length === 0 
-                                ? "Nenhuma base disponível" 
-                                : "Selecione a base"
-                          } 
-                        />
-                      </SelectTrigger>
+                        <option value="">
+                          {!selectedProjectId 
+                            ? "Selecione primeiro um projeto" 
+                            : availableBases.length === 0 
+                              ? "Nenhuma base disponível" 
+                              : "Selecione a base"
+                          }
+                        </option>
+                        {availableBases.map((base: any) => (
+                          <option 
+                            key={`base-${base.id}`} 
+                            value={base.id.toString()}
+                          >
+                            {base.base_name}
+                          </option>
+                        ))}
+                      </select>
                     </FormControl>
-                    <SelectContent 
-                      className={isMobile ? "max-h-56 overflow-y-auto z-[9999] bg-white border-2 shadow-xl" : ""}
-                      position="popper"
-                      side="bottom"
-                      align="start"
-                      sideOffset={4}
+                  ) : (
+                    // Componente Select normal para desktop
+                    <Select 
+                      value={selectedBaseId} 
+                      onValueChange={(value) => {
+                        setSelectedBaseId(value);
+                        field.onChange(value);
+                      }}
+                      disabled={!selectedProjectId || availableBases.length === 0 || isLoadingProjects}
                     >
-                      {availableBases.map((base: any) => (
-                        <SelectItem 
-                          key={`base-${base.id}`} 
-                          value={base.id.toString()}
-                          className={isMobile ? "h-12 text-base" : ""}
-                        >
-                          {base.base_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue 
+                            placeholder={
+                              !selectedProjectId 
+                                ? "Selecione primeiro um projeto" 
+                                : availableBases.length === 0 
+                                  ? "Nenhuma base disponível" 
+                                  : "Selecione a base"
+                            } 
+                          />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {availableBases.map((base: any) => (
+                          <SelectItem 
+                            key={`base-${base.id}`} 
+                            value={base.id.toString()}
+                          >
+                            {base.base_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
