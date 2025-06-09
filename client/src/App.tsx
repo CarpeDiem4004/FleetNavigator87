@@ -381,6 +381,9 @@ function App() {
           <Route path="/posto/osasco_v2/public">
             <OsascoV2Public />
           </Route>
+          <Route path="/posto-externo/osasco_v2">
+            <OsascoV2Public />
+          </Route>
           <Route path="/posto/guarulhos/public">
             <GuarulhosPublic />
           </Route>
