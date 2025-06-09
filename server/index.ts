@@ -56,6 +56,81 @@ process.env.SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.e
 
 const app = express();
 
+// ENDPOINT CRÍTICO PARA RECEBIMENTOS - Registrar ANTES de todos os middlewares
+app.post('/api/recebimentos', async (req, res) => {
+  try {
+    console.log('[RECEBIMENTOS] Endpoint direto chamado para posto:', req.body.posto);
+    
+    // Configurar headers de resposta
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    const { posto, tipo_produto, litros_recebidos, valor_total, nome_fornecedor, nome_operador, observacoes } = req.body;
+    
+    // Map stations to receipt table names
+    const tableMap: { [key: string]: string } = {
+      'osasco_v2': 'recebimentos_posto_osasco_v2',
+      'abc_v2': 'recebimentos_posto_abc_v2',
+      'alair_v2': 'recebimentos_posto_alair_v2',
+      'campinas_v2': 'recebimentos_posto_campinas_v2',
+      'socorro_v2': 'recebimentos_posto_socorro_v2',
+      'sorocaba_v2': 'recebimentos_posto_sorocaba_v2',
+      'guarulhos_v2': 'recebimentos_posto_guarulhos_v2'
+    };
+    
+    const tableName = tableMap[posto.toLowerCase()];
+    
+    if (!tableName) {
+      return res.status(400).json({
+        success: false,
+        message: `Posto "${posto}" não encontrado`
+      });
+    }
+    
+    // Insert new fuel receipt
+    const insertQuery = `
+      INSERT INTO ${tableName} (
+        tipo_produto, 
+        litros_recebidos, 
+        valor_total, 
+        nome_fornecedor, 
+        nome_operador, 
+        observacoes,
+        created_at,
+        updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+      RETURNING *
+    `;
+    
+    const result = await pool.query(insertQuery, [
+      tipo_produto,
+      litros_recebidos,
+      valor_total,
+      nome_fornecedor,
+      nome_operador,
+      observacoes || ''
+    ]);
+    
+    console.log(`[RECEBIMENTOS] Registrado com sucesso - ID: ${result.rows[0].id}, Posto: ${posto}`);
+    
+    return res.status(201).json({
+      success: true,
+      message: 'Recebimento registrado com sucesso',
+      data: result.rows[0]
+    });
+    
+  } catch (error: any) {
+    console.error('[RECEBIMENTOS] Erro ao registrar:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao registrar recebimento',
+      error: error.message
+    });
+  }
+});
+
 // ENDPOINT CRÍTICO - Registrar ANTES de todos os middlewares do Vite
 // Usando um prefixo que não será interceptado pelo Vite
 app.get('/consumo-data/postos', async (req, res) => {

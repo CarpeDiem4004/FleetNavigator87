@@ -1030,8 +1030,14 @@ async function criarTabelaDemoForms() {
 import sqlSeguroRouter from './routes/sql-seguro';
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // ENDPOINT PARA REGISTRAR RECEBIMENTOS DE COMBUSTÍVEL
-  app.post('/api/recebimentos', unifiedAuthMiddleware, async (req, res) => {
+  // ENDPOINT PARA REGISTRAR RECEBIMENTOS DE COMBUSTÍVEL (PÚBLICO - SEM AUTENTICAÇÃO)
+  app.post('/recebimentos-combustivel', async (req, res) => {
+    // Force JSON response headers
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     try {
       const { posto, tipo_produto, litros_recebidos, valor_total, nome_fornecedor, nome_operador, observacoes } = req.body;
       
