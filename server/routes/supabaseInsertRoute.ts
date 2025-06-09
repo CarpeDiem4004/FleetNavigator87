@@ -2,8 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 import { Request, Response } from "express";
 import { pool } from "../db";
 
-// Nova versão da função de inserção no Supabase
-export async function supabaseInsertHandler(req: Request, res: Response) {
+// DESABILITADA - Nova versão da função de inserção no Supabase
+export async function supabaseInsertHandler_DISABLED(req: Request, res: Response) {
   try {
     const { table, data } = req.body;
     
