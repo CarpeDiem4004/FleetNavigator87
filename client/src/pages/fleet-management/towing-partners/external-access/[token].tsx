@@ -172,8 +172,8 @@ export default function TowingPartnerExternalAccess() {
       });
 
       if (response.ok && data.success) {
-        console.log('[ExternalAccess] Serviços carregados:', data.data.services?.length || 0);
-        setServiceHistory(data.data.services || []);
+        console.log('[ExternalAccess] Serviços carregados:', data.services?.length || 0);
+        setServiceHistory(data.services || []);
       } else {
         console.error('[ExternalAccess] Erro ao carregar histórico:', data);
         setHistoryError(data.message || 'Erro ao carregar histórico de serviços');
