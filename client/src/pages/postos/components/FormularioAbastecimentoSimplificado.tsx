@@ -79,14 +79,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     },
   });
 
-  // Detectar dispositivo móvel e carregar operador
+  // Carregar operador automaticamente
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
     
     // Carregar nome do operador logado automaticamente
     const carregarOperador = async () => {
@@ -165,8 +159,6 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     };
     
     carregarOperador();
-    
-    return () => window.removeEventListener('resize', checkMobile);
   }, [form]);
 
   // Carregar projetos - VERSÃO SIMPLIFICADA E CORRIGIDA
