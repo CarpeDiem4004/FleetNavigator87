@@ -79,6 +79,7 @@ interface PartnerReport {
 export default function FinanceiroGuincho() {
   const [selectedService, setSelectedService] = useState<FinancialService | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedPartner, setSelectedPartner] = useState('');
@@ -429,7 +430,10 @@ export default function FinanceiroGuincho() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => setSelectedService(service)}
+                              onClick={() => {
+                                setSelectedService(service);
+                                setIsDetailsModalOpen(true);
+                              }}
                             >
                               <Eye className="w-4 h-4 mr-1" />
                               Detalhes
@@ -595,6 +599,164 @@ export default function FinanceiroGuincho() {
                 )}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Detalhes do Serviço */}
+      <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <FileText className="w-5 h-5 mr-2" />
+              Detalhes do Serviço de Guincho
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedService && (
+            <div className="space-y-6">
+              {/* Informações Gerais */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center">
+                    <Truck className="w-5 h-5 mr-2" />
+                    Informações Gerais
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="font-semibold">ID do Serviço</Label>
+                      <p className="text-sm text-muted-foreground">#{selectedService.id}</p>
+                    </div>
+                    <div>
+                      <Label className="font-semibold">Parceiro</Label>
+                      <p className="text-sm">{selectedService.partner_name}</p>
+                    </div>
+                    <div>
+                      <Label className="font-semibold">Veículo</Label>
+                      <p className="text-sm">{selectedService.vehicle_plate}</p>
+                    </div>
+                    <div>
+                      <Label className="font-semibold">Data do Serviço</Label>
+                      <p className="text-sm">
+                        {format(new Date(selectedService.service_date), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="font-semibold">Status do Pagamento</Label>
+                      <div className="mt-1">
+                        {getStatusBadge(selectedService.payment_status)}
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="font-semibold">Valor Total</Label>
+                      <p className="text-sm font-bold text-green-600">
+                        R$ {parseFloat(String(selectedService.total_amount || 0)).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Descrição do Serviço */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Descrição do Serviço</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm whitespace-pre-wrap">
+                      {selectedService.service_description || 'Nenhuma descrição disponível'}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Localização */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Informações de Localização</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label className="font-semibold">Local de Coleta</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedService.pickup_location || 'Não informado'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="font-semibold">Destino</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedService.destination || 'Não informado'}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Informações de Aprovação */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Aprovação e Pagamento</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="font-semibold">Data de Aprovação</Label>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedService.approved_at 
+                          ? format(new Date(selectedService.approved_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })
+                          : 'Não aprovado'}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="font-semibold">Aprovado por (ID)</Label>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedService.approved_by || 'Não informado'}
+                      </p>
+                    </div>
+                    {selectedService.payment_date && (
+                      <div>
+                        <Label className="font-semibold">Data do Pagamento</Label>
+                        <p className="text-sm text-muted-foreground">
+                          {format(new Date(selectedService.payment_date), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                        </p>
+                      </div>
+                    )}
+                    {selectedService.payment_method && (
+                      <div>
+                        <Label className="font-semibold">Método de Pagamento</Label>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedService.payment_method}
+                        </p>
+                      </div>
+                    )}
+                    {selectedService.payment_reference && (
+                      <div>
+                        <Label className="font-semibold">Referência do Pagamento</Label>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedService.payment_reference}
+                        </p>
+                      </div>
+                    )}
+                    {selectedService.payment_number && (
+                      <div>
+                        <Label className="font-semibold">Número do Pagamento</Label>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedService.payment_number}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+          
+          <div className="flex justify-end pt-4">
+            <Button onClick={() => setIsDetailsModalOpen(false)}>
+              Fechar
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
