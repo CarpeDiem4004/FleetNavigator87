@@ -99,17 +99,35 @@ export async function getProjectsWithBases(req: Request, res: Response) {
   const startTime = Date.now();
   const userAgent = req.get('User-Agent') || 'Desconhecido';
   const isMobile = /Mobile|Android|iPhone|iPad/i.test(userAgent);
+  const isMobileRequest = req.get('X-Mobile-Request') === 'true';
+  const origin = req.get('Origin') || 'Sem origem';
+  const referer = req.get('Referer') || 'Sem referer';
   
-  console.log(`[BACKEND-PERF] 🚀 Iniciando getProjectsWithBases`);
-  console.log(`[BACKEND-PERF] 📱 Device: ${isMobile ? 'MOBILE' : 'DESKTOP'}`);
-  console.log(`[BACKEND-PERF] 🌐 User-Agent: ${userAgent}`);
-  console.log(`[BACKEND-PERF] 📡 Origin: ${req.get('Origin') || 'Sem origem'}`);
-  console.log(`[BACKEND-PERF] 🔗 Referer: ${req.get('Referer') || 'Sem referer'}`);
+  console.log(`[PROJECTS-API] 🚀 Iniciando getProjectsWithBases`);
+  console.log(`[PROJECTS-API] 📱 Device: ${isMobile ? 'MOBILE' : 'DESKTOP'} (Header: ${isMobileRequest})`);
+  console.log(`[PROJECTS-API] 🌐 User-Agent: ${userAgent.substring(0, 100)}...`);
+  console.log(`[PROJECTS-API] 📡 Origin: ${origin}`);
+  console.log(`[PROJECTS-API] 🔗 Referer: ${referer}`);
+  console.log(`[PROJECTS-API] 🔒 Headers Recebidos:`, {
+    authorization: req.get('Authorization') ? 'Bearer ***' : 'Ausente',
+    contentType: req.get('Content-Type'),
+    accept: req.get('Accept'),
+    cacheControl: req.get('Cache-Control')
+  });
   
   try {
+    // Headers específicos para mobile
+    if (isMobile || isMobileRequest) {
+      res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+      res.set('Vary', 'User-Agent, X-Mobile-Request');
+      res.set('Access-Control-Allow-Origin', '*');
+      res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+      res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Mobile-Request');
+    }
+    
     // Medir tempo de conexão com banco
     const dbStart = Date.now();
-    console.log(`[BACKEND-PERF] 🗄️ Iniciando consultas paralelas ao banco...`);
+    console.log(`[PROJECTS-API] 🗄️ Iniciando consultas paralelas ao banco...`);
     
     const [projectsResult, basesResult] = await Promise.all([
       pool.query(`
@@ -129,9 +147,9 @@ export async function getProjectsWithBases(req: Request, res: Response) {
     ]);
     
     const dbTime = Date.now() - dbStart;
-    console.log(`[BACKEND-PERF] ⏱️ Consultas DB: ${dbTime}ms`);
-    console.log(`[BACKEND-PERF] 📊 Projetos encontrados: ${projectsResult.rows.length}`);
-    console.log(`[BACKEND-PERF] 📊 Bases encontradas: ${basesResult.rows.length}`);
+    console.log(`[PROJECTS-API] ⏱️ Consultas DB: ${dbTime}ms`);
+    console.log(`[PROJECTS-API] 📊 Projetos encontrados: ${projectsResult.rows.length}`);
+    console.log(`[PROJECTS-API] 📊 Bases encontradas: ${basesResult.rows.length}`);
     
     // Medir tempo de processamento em memória
     const processStart = Date.now();
