@@ -10314,6 +10314,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const nomeTabela = `abastecimentos_posto_${posto.toLowerCase().replace(/\s+/g, '_')}`;
         
         console.log(`[SUPABASE-INSERT] Inserindo abastecimento na tabela: ${nomeTabela}`);
+        console.log(`[SUPABASE-INSERT] Dados recebidos completos:`, JSON.stringify(data, null, 2));
         
         // Verificar se a tabela existe
         const tableCheck = await pool.query(`
@@ -10322,47 +10323,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
           WHERE table_name = $1
         `, [nomeTabela]);
         
+        console.log(`[SUPABASE-INSERT] Verificação de tabela - encontradas: ${tableCheck.rows.length}`);
+        
         if (tableCheck.rows.length === 0) {
+          console.error(`[SUPABASE-INSERT] ERRO: Tabela ${nomeTabela} não encontrada`);
           return res.status(400).json({
             success: false,
             message: `Tabela ${nomeTabela} não encontrada`
           });
         }
         
-        // Mapear campos para formato da tabela específica
+        // Mapear campos corretamente para a tabela específica
         const dadosAbastecimento = {
           placa: data.placa || 'DESCONHECIDO',
           km_atual: Number(data.km_atual) || 0,
-          hodometro_atual: Number(data.hodometro_atual) || null,
+          hodometro_atual: data.hodometro_atual ? Number(data.hodometro_atual) : null,
           tipo_combustivel: data.tipo_combustivel || 'Diesel',
           litros: Number(data.quantidade_litros) || 0,
+          valor_litro: Number(data.preco_litro) || 0,
+          valor_total: Number(data.valor_total) || 0,
           motorista: data.motorista || 'Não informado',
           motorista_rg: data.rg_motorista || 'Não informado',
           operador: data.operador || 'Sistema',
-          valor_litro: Number(data.preco_litro) || 0,
-          valor_total: Number(data.valor_total) || 0,
+          projeto: data.projeto || 'Não informado',
           tipo_veiculo: data.tipo_veiculo || 'frota',
           observacoes: data.observacoes || '',
-          lavagem: data.lavagem || false,
+          lavagem: Boolean(data.lavagem) || false,
           tipo_lavagem: data.tipo_lavagem || null,
-          projeto: data.projeto || 'Não informado',
+          base_id: data.base_id ? Number(data.base_id) : null,
           base_name: data.base_name || null,
-          base_id: data.base_id || null,
-          projeto_id: data.projeto_id || null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          projeto_id: data.projeto_id ? Number(data.projeto_id) : null,
+          created_at: new Date(),
+          updated_at: new Date()
         };
+        
+        console.log(`[SUPABASE-INSERT] Dados mapeados:`, JSON.stringify(dadosAbastecimento, null, 2));
         
         // Construir query de inserção dinamicamente
         const campos = Object.keys(dadosAbastecimento);
         const placeholders = campos.map((_, index) => `$${index + 1}`);
-        const valores = campos.map(campo => dadosAbastecimento[campo]);
+        const valores = campos.map(campo => (dadosAbastecimento as any)[campo]);
         
         const insertQuery = `
           INSERT INTO ${nomeTabela} (${campos.join(', ')})
           VALUES (${placeholders.join(', ')})
           RETURNING id
         `;
+        
+        console.log(`[SUPABASE-INSERT] Query SQL:`, insertQuery);
+        console.log(`[SUPABASE-INSERT] Valores:`, valores);
         
         const result = await pool.query(insertQuery, valores);
         
