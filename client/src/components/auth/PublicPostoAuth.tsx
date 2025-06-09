@@ -113,18 +113,28 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
         const userData = await response.json();
         console.log('PublicPostoAuth: Login realizado com sucesso', userData);
         
+        // Handle both response formats (direct user data or nested under user property)
+        const userInfo = userData.user || userData;
+        
         setUser({
-          id: userData.user.id.toString(),
-          email: userData.user.email,
-          name: userData.user.name || userData.user.email,
-          role: userData.user.role || 'operador'
+          id: userInfo.id.toString(),
+          email: userInfo.email,
+          name: userInfo.name || userInfo.email,
+          role: userInfo.role || 'operador'
         });
         
         setShowDialog(false);
         
+        // Store authentication data
         if (userData.token) {
           localStorage.setItem('access_token', userData.token);
         }
+        
+        // Store user data for external fuel station access
+        localStorage.setItem('user_id', userInfo.id.toString());
+        localStorage.setItem('user_email', userInfo.email);
+        localStorage.setItem('user_name', userInfo.name || '');
+        localStorage.setItem('user_role', userInfo.role || 'operador');
       } else {
         const errorData = await response.json();
         setError(errorData.message || 'Credenciais inválidas');
