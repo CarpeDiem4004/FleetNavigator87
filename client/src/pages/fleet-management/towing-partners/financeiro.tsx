@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,61 +24,78 @@ import {
   Users,
   Truck,
   Eye,
-  FileText
+  FileText,
+  Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-interface Payment {
+interface FinancialService {
   id: number;
-  service_id: number;
+  guincho_service_id: number;
   partner_id: number;
   partner_name: string;
   vehicle_plate: string;
-  service_value: string;
-  payment_status: 'pendente' | 'pago' | 'em_processamento' | 'cancelado';
-  payment_date: string | null;
-  payment_method: string | null;
-  payment_reference: string | null;
-  notes: string | null;
+  service_description: string;
+  service_date: string;
+  total_amount: number;
+  pickup_location: string;
+  destination: string;
+  approved_at: string;
+  approved_by: number;
+  payment_status: 'pending' | 'paid' | 'cancelled';
+  payment_date?: string;
+  payment_reference?: string;
+  payment_method?: string;
+  invoice_number?: string;
+  notes?: string;
   created_at: string;
-  service_table: string;
 }
 
-interface PaymentSummary {
-  total_services: number;
-  paid_services: number;
-  pending_services: number;
-  processing_services: number;
-  total_value: string;
-  paid_value: string;
-  pending_value: string;
+interface FinancialSummary {
+  summary: {
+    totalServices: number;
+    paidServices: number;
+    pendingServices: number;
+    totalValue: number;
+    paidValue: number;
+    pendingValue: number;
+  };
 }
 
-interface PartnerSummary {
-  id: number;
-  partner_name: string;
-  total_services: number;
-  paid_services: number;
-  pending_services: number;
-  total_value: string;
-  paid_value: string;
-  pending_value: string;
+interface PartnerReport {
+  partners: Array<{
+    id: number;
+    partner_name: string;
+    total_services: number;
+    paid_services: number;
+    pending_services: number;
+    total_value: string;
+    paid_value: string;
+    pending_value: string;
+  }>;
 }
 
 export default function FinanceiroGuincho() {
-  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<FinancialService | null>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedPartner, setSelectedPartner] = useState('');
-  const [activeTab, setActiveTab] = useState('report');
+  const [activeTab, setActiveTab] = useState('services');
+  const [paymentData, setPaymentData] = useState({
+    payment_date: '',
+    payment_reference: '',
+    payment_method: '',
+    invoice_number: '',
+    notes: ''
+  });
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Buscar resumo financeiro
-  const { data: financialSummary, isLoading: summaryLoading } = useQuery({
+  const { data: financialSummary, isLoading: summaryLoading } = useQuery<FinancialSummary>({
     queryKey: ['/api/towing/financial/summary', startDate, endDate, selectedPartner || undefined],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -108,7 +125,7 @@ export default function FinanceiroGuincho() {
   });
 
   // Buscar relatório por parceiro
-  const { data: partnerReport, isLoading: reportLoading } = useQuery({
+  const { data: partnerReport, isLoading: reportLoading } = useQuery<PartnerReport>({
     queryKey: ['/api/towing/financial/report', startDate, endDate, selectedPartner || undefined],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -122,212 +139,82 @@ export default function FinanceiroGuincho() {
     },
   });
 
-  // Buscar resumo financeiro
-  const { data: summary } = useQuery<PaymentSummary>({
-    queryKey: ['/api/towing/payments/summary'],
-  });
-
-  // Buscar resumo por parceiro
-  const { data: partnerSummary = [] } = useQuery<PartnerSummary[]>({
-    queryKey: ['/api/towing/payments/by-partner'],
-  });
-
-  // Mutation para atualizar pagamento
-  const updatePaymentMutation = useMutation({
-    mutationFn: async (data: { id: number; paymentData: any }) => {
-      const response = await fetch(`/api/towing/payments/${data.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data.paymentData),
-      });
-      if (!response.ok) throw new Error('Erro ao atualizar pagamento');
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/towing/payments'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/towing/payments/summary'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/towing/payments/by-partner'] });
-      toast({ title: 'Sucesso', description: 'Pagamento atualizado com sucesso!' });
-      setIsEditModalOpen(false);
-      setSelectedPayment(null);
-    },
-    onError: () => {
-      toast({ title: 'Erro', description: 'Erro ao atualizar pagamento', variant: 'destructive' });
-    },
-  });
-
-  // Mutation para criar pagamento
-  const createPaymentMutation = useMutation({
-    mutationFn: async (paymentData: any) => {
-      const response = await fetch('/api/towing/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(paymentData),
-      });
-      if (!response.ok) throw new Error('Erro ao criar pagamento');
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/towing/payments'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/towing/payments/summary'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/towing/payments/by-partner'] });
-      toast({ title: 'Sucesso', description: 'Pagamento criado com sucesso!' });
-      setIsCreateModalOpen(false);
-    },
-    onError: () => {
-      toast({ title: 'Erro', description: 'Erro ao criar pagamento', variant: 'destructive' });
-    },
-  });
-
-  // Mutation para excluir pagamento
-  const deletePaymentMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await fetch(`/api/towing/payments/${id}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) throw new Error('Erro ao excluir pagamento');
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/towing/payments'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/towing/payments/summary'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/towing/payments/by-partner'] });
-      toast({ title: 'Sucesso', description: 'Pagamento excluído com sucesso!' });
-    },
-    onError: () => {
-      toast({ title: 'Erro', description: 'Erro ao excluir pagamento', variant: 'destructive' });
-    },
-  });
-
-  // Mutation para excluir serviço de guincho
-  const deleteServiceMutation = useMutation({
+  // Processar pagamento
+  const processPaymentMutation = useMutation({
     mutationFn: async (serviceId: number) => {
-      // Usar apiRequest para garantir autenticação adequada
-      const response = await apiRequest('DELETE', `/api/towing/payments/services/${serviceId}`);
-      return response;
-    },
-    onSuccess: (data) => {
-      // Invalidar todas as queries relacionadas
-      queryClient.invalidateQueries({ queryKey: ['/api/towing/payments'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/towing/payments/summary'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/towing/payments/by-partner'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/towing/payments/detailed-report'] });
-      
-      // Forçar um refetch imediato
-      queryClient.refetchQueries({ queryKey: ['/api/towing/payments'] });
-      
-      toast({ 
-        title: 'Sucesso', 
-        description: `Serviço #${data.deletedServiceId} excluído com sucesso!`
+      return apiRequest(`/api/towing/financial/payment/${serviceId}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          ...paymentData,
+          payment_date: paymentData.payment_date || new Date().toISOString().split('T')[0]
+        })
       });
     },
-    onError: (error: Error) => {
-      console.error('Erro ao excluir serviço:', error);
-      toast({ 
-        title: 'Erro', 
-        description: error.message || 'Erro ao excluir serviço', 
-        variant: 'destructive' 
+    onSuccess: () => {
+      toast({
+        title: "Sucesso",
+        description: "Pagamento processado com sucesso",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/towing/financial/services'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/towing/financial/summary'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/towing/financial/report'] });
+      setIsPaymentModalOpen(false);
+      setSelectedService(null);
+      setPaymentData({
+        payment_date: '',
+        payment_reference: '',
+        payment_method: '',
+        invoice_number: '',
+        notes: ''
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao processar pagamento",
+        variant: "destructive",
       });
     },
   });
 
-  const getStatusIcon = (status: string) => {
+  const handleProcessPayment = () => {
+    if (!selectedService) return;
+    processPaymentMutation.mutate(selectedService.id);
+  };
+
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pago':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'pendente':
-        return <Clock className="w-4 h-4 text-yellow-500" />;
-      case 'em_processamento':
-        return <CreditCard className="w-4 h-4 text-blue-500" />;
-      case 'cancelado':
-        return <XCircle className="w-4 h-4 text-red-500" />;
+      case 'paid':
+        return <Badge variant="default" className="bg-green-100 text-green-800">Pago</Badge>;
+      case 'pending':
+        return <Badge variant="secondary" className="bg-orange-100 text-orange-800">Pendente</Badge>;
+      case 'cancelled':
+        return <Badge variant="destructive">Cancelado</Badge>;
       default:
-        return <Clock className="w-4 h-4 text-gray-500" />;
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pago':
-        return 'bg-green-100 text-green-800';
-      case 'pendente':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'em_processamento':
-        return 'bg-blue-100 text-blue-800';
-      case 'cancelado':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const formatCurrency = (value: string | number | null | undefined) => {
-    const numericValue = parseFloat(String(value || 0));
-    if (isNaN(numericValue)) {
-      return 'R$ 0,00';
-    }
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(numericValue);
-  };
-
-  const handleQuickStatusUpdate = (payment: Payment, newStatus: string) => {
-    const updateData = {
-      paymentStatus: newStatus,
-      paymentDate: newStatus === 'pago' ? new Date().toISOString() : null,
-      paymentMethod: payment.payment_method,
-      paymentReference: payment.payment_reference,
-      notes: payment.notes,
-    };
-
-    updatePaymentMutation.mutate({
-      id: payment.id,
-      paymentData: updateData,
-    });
-  };
+  const services = servicesData?.services || [];
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Módulo Financeiro - Serviços de Guincho</h1>
-          <p className="text-gray-600 mt-2">Gerencie pagamentos e acompanhe o faturamento dos serviços prestados</p>
-        </div>
-        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Pagamento
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Registrar Novo Pagamento</DialogTitle>
-            </DialogHeader>
-            <CreatePaymentForm 
-              onSubmit={(data) => createPaymentMutation.mutate(data)}
-              isLoading={createPaymentMutation.isPending}
-            />
-          </DialogContent>
-        </Dialog>
+        <h1 className="text-3xl font-bold">Módulo Financeiro - Serviços de Guincho</h1>
       </div>
 
-      {/* Filtros para Relatório Detalhado */}
+      {/* Filtros */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Relatório Detalhado de Serviços por Parceiro
-          </CardTitle>
+          <CardTitle>Filtros</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 flex-wrap">
+          <div className="flex flex-wrap gap-4 items-end">
             <div>
               <Label className="text-sm font-medium">Data Inicial</Label>
-              <Input 
-                type="date" 
-                value={startDate} 
+              <Input
+                type="date"
+                value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 className="w-48"
               />
@@ -335,9 +222,9 @@ export default function FinanceiroGuincho() {
             
             <div>
               <Label className="text-sm font-medium">Data Final</Label>
-              <Input 
-                type="date" 
-                value={endDate} 
+              <Input
+                type="date"
+                value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 className="w-48"
               />
@@ -351,9 +238,9 @@ export default function FinanceiroGuincho() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Todos os parceiros</SelectItem>
-                  {detailedReport?.services_by_partner?.map((partner: any) => (
-                    <SelectItem key={partner.partner_info.id} value={partner.partner_info.id.toString()}>
-                      {partner.partner_info.name}
+                  {partnerReport?.partners?.map((partner) => (
+                    <SelectItem key={partner.id} value={partner.id.toString()}>
+                      {partner.partner_name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -363,15 +250,15 @@ export default function FinanceiroGuincho() {
         </CardContent>
       </Card>
 
-      {/* Resumo Geral do Relatório */}
-      {detailedReport?.summary && (
+      {/* Resumo Financeiro */}
+      {financialSummary?.summary && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total de Serviços</p>
-                  <p className="text-2xl font-bold">{detailedReport.summary.total_services}</p>
+                  <p className="text-2xl font-bold">{financialSummary.summary.totalServices}</p>
                 </div>
                 <Truck className="w-8 h-8 text-blue-600" />
               </div>
@@ -383,7 +270,7 @@ export default function FinanceiroGuincho() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Parceiros Ativos</p>
-                  <p className="text-2xl font-bold">{detailedReport.summary.total_partners}</p>
+                  <p className="text-2xl font-bold">{partnerReport?.partners?.length || 0}</p>
                 </div>
                 <Users className="w-8 h-8 text-purple-600" />
               </div>
@@ -395,7 +282,7 @@ export default function FinanceiroGuincho() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Valor Total</p>
-                  <p className="text-2xl font-bold">R$ {detailedReport.summary.total_value?.toFixed(2)}</p>
+                  <p className="text-2xl font-bold">R$ {financialSummary.summary.totalValue?.toFixed(2)}</p>
                 </div>
                 <DollarSign className="w-8 h-8 text-blue-600" />
               </div>
@@ -407,7 +294,7 @@ export default function FinanceiroGuincho() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Valor Pago</p>
-                  <p className="text-2xl font-bold text-green-600">R$ {detailedReport.summary.paid_value?.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-green-600">R$ {financialSummary.summary.paidValue?.toFixed(2)}</p>
                 </div>
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
@@ -419,509 +306,240 @@ export default function FinanceiroGuincho() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Valor Pendente</p>
-                  <p className="text-2xl font-bold text-yellow-600">R$ {detailedReport.summary.pending_value?.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-orange-500">R$ {financialSummary.summary.pendingValue?.toFixed(2)}</p>
                 </div>
-                <Clock className="w-8 h-8 text-yellow-600" />
+                <Clock className="w-8 h-8 text-orange-500" />
               </div>
             </CardContent>
           </Card>
         </div>
       )}
 
-      {/* Serviços Detalhados por Parceiro */}
-      {detailedReport?.services_by_partner && detailedReport.services_by_partner.length > 0 && (
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold">Serviços por Parceiro</h2>
-          {detailedReport.services_by_partner.map((partnerData: any) => (
-            <Card key={partnerData.partner_info.id} className="overflow-hidden">
-              <CardHeader className="bg-gray-50">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-xl">{partnerData.partner_info.name}</CardTitle>
-                    {partnerData.partner_info.company_name && (
-                      <p className="text-sm text-gray-600">{partnerData.partner_info.company_name}</p>
-                    )}
-                    <div className="flex gap-4 mt-2 text-sm text-gray-600">
-                      {partnerData.partner_info.phone && (
-                        <span>📞 {partnerData.partner_info.phone}</span>
-                      )}
-                      {partnerData.partner_info.email && (
-                        <span>📧 {partnerData.partner_info.email}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-blue-600">
-                      R$ {partnerData.totals.total_value.toFixed(2)}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {partnerData.totals.count} serviços
-                    </div>
-                    <div className="flex gap-2 mt-1">
-                      <Badge variant="outline" className="text-green-600 border-green-600">
-                        {partnerData.totals.paid_count} pagos
-                      </Badge>
-                      <Badge variant="outline" className="text-yellow-600 border-yellow-600">
-                        {partnerData.totals.pending_count} pendentes
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-100">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Nº Serviço</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Data</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Placa</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Serviço</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Origem → Destino</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Motorista</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Valor</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Status</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {partnerData.services.map((service: any, index: number) => (
-                        <tr key={service.id} className="border-b hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              #{index + 1}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            {service.service_date ? format(new Date(service.service_date), 'dd/MM/yyyy', { locale: ptBR }) : '-'}
-                          </td>
-                          <td className="px-4 py-3 text-sm font-medium">{service.vehicle_plate}</td>
-                          <td className="px-4 py-3 text-sm">{service.service_type}</td>
-                          <td className="px-4 py-3 text-sm">
-                            <div className="text-xs">
-                              <div>📍 {service.pickup_location}</div>
-                              <div>🎯 {service.destination}</div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-sm">{service.driver_name || '-'}</td>
-                          <td className="px-4 py-3 text-sm font-bold text-blue-600">
-                            R$ {parseFloat(service.actual_cost || 0).toFixed(2)}
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            <Badge 
-                              variant={service.status === 'aprovado' ? 'default' : 'secondary'}
-                              className={service.status === 'aprovado' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}
-                            >
-                              {service.payment_status_display}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => {
-                                if (window.confirm(`Tem certeza que deseja excluir o serviço #${index + 1}? Esta ação não pode ser desfeita.`)) {
-                                  deleteServiceMutation.mutate(service.id);
-                                }
-                              }}
-                              disabled={deleteServiceMutation.isPending}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      {/* Abas */}
+      <div className="flex space-x-1 border-b">
+        <Button
+          variant={activeTab === 'services' ? 'default' : 'ghost'}
+          onClick={() => setActiveTab('services')}
+          className="rounded-b-none"
+        >
+          Serviços Aprovados
+        </Button>
+        <Button
+          variant={activeTab === 'partners' ? 'default' : 'ghost'}
+          onClick={() => setActiveTab('partners')}
+          className="rounded-b-none"
+        >
+          Relatório por Parceiros
+        </Button>
+      </div>
 
-      {reportLoading && (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
-            <p className="mt-4 text-gray-600">Carregando relatório detalhado...</p>
-          </CardContent>
-        </Card>
-      )}
-
-
-
-      {/* Resumo por Parceiro */}
-      {partnerSummary.length > 0 && (
+      {/* Conteúdo das Abas */}
+      {activeTab === 'services' && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Users className="w-5 h-5 mr-2" />
-              Resumo por Parceiro
-            </CardTitle>
+            <CardTitle>Serviços Aprovados - Gestão de Pagamentos</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-2">Parceiro</th>
-                    <th className="text-center p-2">Serviços</th>
-                    <th className="text-center p-2">Pagos</th>
-                    <th className="text-right p-2">Valor Total</th>
-                    <th className="text-right p-2">Valor Pago</th>
-                    <th className="text-right p-2">Pendente</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {partnerSummary.map((partner) => (
-                    <tr key={partner.id} className="border-b hover:bg-gray-50">
-                      <td className="p-2 font-medium">{partner.partner_name}</td>
-                      <td className="text-center p-2">{partner.total_services}</td>
-                      <td className="text-center p-2">
-                        <Badge variant="outline" className="text-green-600">
-                          {partner.paid_services}
-                        </Badge>
-                      </td>
-                      <td className="text-right p-2">{formatCurrency(partner.total_value)}</td>
-                      <td className="text-right p-2 text-green-600">{formatCurrency(partner.paid_value)}</td>
-                      <td className="text-right p-2 text-yellow-600">{formatCurrency(partner.pending_value)}</td>
+            {servicesLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-3">Parceiro</th>
+                      <th className="text-left p-3">Veículo</th>
+                      <th className="text-left p-3">Data Serviço</th>
+                      <th className="text-center p-3">Valor</th>
+                      <th className="text-center p-3">Status</th>
+                      <th className="text-center p-3">Ações</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Lista de Pagamentos */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Histórico de Pagamentos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {paymentsLoading ? (
-            <div className="flex justify-center p-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : payments.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">Nenhum pagamento registrado ainda.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-3">Serviço</th>
-                    <th className="text-left p-3">Parceiro</th>
-                    <th className="text-left p-3">Veículo</th>
-                    <th className="text-right p-3">Valor</th>
-                    <th className="text-center p-3">Status</th>
-                    <th className="text-center p-3">Data Pagamento</th>
-                    <th className="text-center p-3">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {payments.map((payment) => (
-                    <tr key={payment.id} className="border-b hover:bg-gray-50">
-                      <td className="p-3">
-                        <div className="text-sm">
-                          <div className="font-medium">Serviço #{payment.service_id}</div>
-                          <div className="text-gray-500">
-                            {format(new Date(payment.created_at), 'dd/MM/yyyy', { locale: ptBR })}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-3">{payment.partner_name}</td>
-                      <td className="p-3 font-mono">{payment.vehicle_plate}</td>
-                      <td className="p-3 text-right font-bold">{formatCurrency(payment.service_value)}</td>
-                      <td className="p-3 text-center">
-                        <Badge className={getStatusColor(payment.payment_status)}>
-                          <span className="flex items-center gap-1">
-                            {getStatusIcon(payment.payment_status)}
-                            {payment.payment_status.replace('_', ' ')}
-                          </span>
-                        </Badge>
-                      </td>
-                      <td className="p-3 text-center">
-                        {payment.payment_date 
-                          ? format(new Date(payment.payment_date), 'dd/MM/yyyy', { locale: ptBR })
-                          : '-'
-                        }
-                      </td>
-                      <td className="p-3 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          {payment.payment_status === 'pendente' && (
+                  </thead>
+                  <tbody>
+                    {services.map((service: FinancialService) => (
+                      <tr key={service.id} className="border-b hover:bg-muted/50">
+                        <td className="p-3">{service.partner_name}</td>
+                        <td className="p-3">{service.vehicle_plate}</td>
+                        <td className="p-3">
+                          {format(new Date(service.service_date), 'dd/MM/yyyy', { locale: ptBR })}
+                        </td>
+                        <td className="p-3 text-center">R$ {service.total_amount.toFixed(2)}</td>
+                        <td className="p-3 text-center">{getStatusBadge(service.payment_status)}</td>
+                        <td className="p-3 text-center">
+                          <div className="flex justify-center space-x-2">
+                            {service.payment_status === 'pending' && (
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedService(service);
+                                  setIsPaymentModalOpen(true);
+                                }}
+                              >
+                                <CreditCard className="w-4 h-4 mr-1" />
+                                Processar Pagamento
+                              </Button>
+                            )}
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleQuickStatusUpdate(payment, 'pago')}
-                              className="text-green-600 hover:text-green-700"
+                              onClick={() => setSelectedService(service)}
                             >
-                              <CheckCircle className="w-4 h-4" />
+                              <Eye className="w-4 h-4 mr-1" />
+                              Detalhes
                             </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedPayment(payment);
-                              setIsEditModalOpen(true);
-                            }}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => deletePaymentMutation.mutate(payment.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Modal de Edição */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-md">
+      {activeTab === 'partners' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Relatório por Parceiros</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {reportLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-3">Parceiro</th>
+                      <th className="text-center p-3">Total de Serviços</th>
+                      <th className="text-center p-3">Valor Total</th>
+                      <th className="text-center p-3">Valor Pago</th>
+                      <th className="text-center p-3">Valor Pendente</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {partnerReport?.partners?.map((partner) => (
+                      <tr key={partner.id} className="border-b hover:bg-muted/50">
+                        <td className="p-3 font-medium">{partner.partner_name}</td>
+                        <td className="p-3 text-center">{partner.total_services}</td>
+                        <td className="p-3 text-center">R$ {parseFloat(partner.total_value).toFixed(2)}</td>
+                        <td className="p-3 text-center text-green-600">R$ {parseFloat(partner.paid_value).toFixed(2)}</td>
+                        <td className="p-3 text-center text-orange-500">R$ {parseFloat(partner.pending_value).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Modal de Processamento de Pagamento */}
+      <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Editar Pagamento</DialogTitle>
+            <DialogTitle>Processar Pagamento</DialogTitle>
           </DialogHeader>
-          {selectedPayment && (
-            <EditPaymentForm
-              payment={selectedPayment}
-              onSubmit={(data) => 
-                updatePaymentMutation.mutate({
-                  id: selectedPayment.id,
-                  paymentData: data,
-                })
-              }
-              isLoading={updatePaymentMutation.isPending}
-            />
-          )}
+          <div className="space-y-4">
+            {selectedService && (
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-2">Detalhes do Serviço</h4>
+                <p><strong>Parceiro:</strong> {selectedService.partner_name}</p>
+                <p><strong>Veículo:</strong> {selectedService.vehicle_plate}</p>
+                <p><strong>Valor:</strong> R$ {selectedService.total_amount.toFixed(2)}</p>
+                <p><strong>Local:</strong> {selectedService.pickup_location} → {selectedService.destination}</p>
+              </div>
+            )}
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="payment_date">Data do Pagamento</Label>
+                <Input
+                  id="payment_date"
+                  type="date"
+                  value={paymentData.payment_date}
+                  onChange={(e) => setPaymentData({ ...paymentData, payment_date: e.target.value })}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="payment_method">Método de Pagamento</Label>
+                <Select
+                  value={paymentData.payment_method}
+                  onValueChange={(value) => setPaymentData({ ...paymentData, payment_method: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o método" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PIX">PIX</SelectItem>
+                    <SelectItem value="Transferência">Transferência Bancária</SelectItem>
+                    <SelectItem value="Boleto">Boleto</SelectItem>
+                    <SelectItem value="Cheque">Cheque</SelectItem>
+                    <SelectItem value="Dinheiro">Dinheiro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="payment_reference">Referência do Pagamento</Label>
+                <Input
+                  id="payment_reference"
+                  placeholder="Ex: PIX-20250609-001"
+                  value={paymentData.payment_reference}
+                  onChange={(e) => setPaymentData({ ...paymentData, payment_reference: e.target.value })}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="invoice_number">Número da Nota Fiscal</Label>
+                <Input
+                  id="invoice_number"
+                  placeholder="Ex: NF-2025-001"
+                  value={paymentData.invoice_number}
+                  onChange={(e) => setPaymentData({ ...paymentData, invoice_number: e.target.value })}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="notes">Observações</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Observações sobre o pagamento..."
+                  value={paymentData.notes}
+                  onChange={(e) => setPaymentData({ ...paymentData, notes: e.target.value })}
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => setIsPaymentModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleProcessPayment}
+                disabled={processPaymentMutation.isPending}
+              >
+                {processPaymentMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Processando...
+                  </>
+                ) : (
+                  'Confirmar Pagamento'
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-// Componente de formulário para criar pagamento
-function CreatePaymentForm({ onSubmit, isLoading }: { onSubmit: (data: any) => void; isLoading: boolean }) {
-  const [formData, setFormData] = useState({
-    serviceId: '',
-    partnerId: '',
-    vehiclePlate: '',
-    serviceValue: '',
-    paymentStatus: 'pendente',
-    paymentMethod: '',
-    paymentReference: '',
-    notes: '',
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit({
-      serviceId: parseInt(formData.serviceId),
-      partnerId: parseInt(formData.partnerId),
-      vehiclePlate: formData.vehiclePlate,
-      serviceValue: parseFloat(formData.serviceValue),
-      paymentStatus: formData.paymentStatus,
-      paymentMethod: formData.paymentMethod || null,
-      paymentReference: formData.paymentReference || null,
-      notes: formData.notes || null,
-    });
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="serviceId">ID do Serviço</Label>
-          <Input
-            id="serviceId"
-            type="number"
-            value={formData.serviceId}
-            onChange={(e) => setFormData({ ...formData, serviceId: e.target.value })}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="partnerId">ID do Parceiro</Label>
-          <Input
-            id="partnerId"
-            type="number"
-            value={formData.partnerId}
-            onChange={(e) => setFormData({ ...formData, partnerId: e.target.value })}
-            required
-          />
-        </div>
-      </div>
-
-      <div>
-        <Label htmlFor="vehiclePlate">Placa do Veículo</Label>
-        <Input
-          id="vehiclePlate"
-          value={formData.vehiclePlate}
-          onChange={(e) => setFormData({ ...formData, vehiclePlate: e.target.value })}
-          required
-        />
-      </div>
-
-      <div>
-        <Label htmlFor="serviceValue">Valor do Serviço (R$)</Label>
-        <Input
-          id="serviceValue"
-          type="number"
-          step="0.01"
-          value={formData.serviceValue}
-          onChange={(e) => setFormData({ ...formData, serviceValue: e.target.value })}
-          required
-        />
-      </div>
-
-      <div>
-        <Label htmlFor="paymentStatus">Status do Pagamento</Label>
-        <Select value={formData.paymentStatus} onValueChange={(value) => setFormData({ ...formData, paymentStatus: value })}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="pendente">Pendente</SelectItem>
-            <SelectItem value="pago">Pago</SelectItem>
-            <SelectItem value="em_processamento">Em Processamento</SelectItem>
-            <SelectItem value="cancelado">Cancelado</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div>
-        <Label htmlFor="paymentMethod">Método de Pagamento</Label>
-        <Input
-          id="paymentMethod"
-          value={formData.paymentMethod}
-          onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-          placeholder="PIX, Transferência, etc."
-        />
-      </div>
-
-      <div>
-        <Label htmlFor="paymentReference">Referência do Pagamento</Label>
-        <Input
-          id="paymentReference"
-          value={formData.paymentReference}
-          onChange={(e) => setFormData({ ...formData, paymentReference: e.target.value })}
-          placeholder="Comprovante, ID da transação, etc."
-        />
-      </div>
-
-      <div>
-        <Label htmlFor="notes">Observações</Label>
-        <Textarea
-          id="notes"
-          value={formData.notes}
-          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-          rows={3}
-        />
-      </div>
-
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? 'Criando...' : 'Criar Pagamento'}
-      </Button>
-    </form>
-  );
-}
-
-// Componente de formulário para editar pagamento
-function EditPaymentForm({ payment, onSubmit, isLoading }: { payment: Payment; onSubmit: (data: any) => void; isLoading: boolean }) {
-  const [formData, setFormData] = useState({
-    paymentStatus: payment.payment_status,
-    paymentMethod: payment.payment_method || '',
-    paymentReference: payment.payment_reference || '',
-    notes: payment.notes || '',
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit({
-      paymentStatus: formData.paymentStatus,
-      paymentDate: formData.paymentStatus === 'pago' ? new Date().toISOString() : payment.payment_date,
-      paymentMethod: formData.paymentMethod || null,
-      paymentReference: formData.paymentReference || null,
-      notes: formData.notes || null,
-    });
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="bg-gray-50 p-3 rounded-lg mb-4">
-        <div className="text-sm text-gray-600">
-          <div><strong>Serviço:</strong> #{payment.service_id}</div>
-          <div><strong>Parceiro:</strong> {payment.partner_name}</div>
-          <div><strong>Veículo:</strong> {payment.vehicle_plate}</div>
-          <div><strong>Valor:</strong> {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(payment.service_value))}</div>
-        </div>
-      </div>
-
-      <div>
-        <Label htmlFor="paymentStatus">Status do Pagamento</Label>
-        <Select value={formData.paymentStatus} onValueChange={(value) => setFormData({ ...formData, paymentStatus: value })}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="pendente">Pendente</SelectItem>
-            <SelectItem value="pago">Pago</SelectItem>
-            <SelectItem value="em_processamento">Em Processamento</SelectItem>
-            <SelectItem value="cancelado">Cancelado</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div>
-        <Label htmlFor="paymentMethod">Método de Pagamento</Label>
-        <Input
-          id="paymentMethod"
-          value={formData.paymentMethod}
-          onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-          placeholder="PIX, Transferência, etc."
-        />
-      </div>
-
-      <div>
-        <Label htmlFor="paymentReference">Referência do Pagamento</Label>
-        <Input
-          id="paymentReference"
-          value={formData.paymentReference}
-          onChange={(e) => setFormData({ ...formData, paymentReference: e.target.value })}
-          placeholder="Comprovante, ID da transação, etc."
-        />
-      </div>
-
-      <div>
-        <Label htmlFor="notes">Observações</Label>
-        <Textarea
-          id="notes"
-          value={formData.notes}
-          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-          rows={3}
-        />
-      </div>
-
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? 'Salvando...' : 'Salvar Alterações'}
-      </Button>
-    </form>
   );
 }
