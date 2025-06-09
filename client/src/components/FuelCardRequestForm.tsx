@@ -56,25 +56,62 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
   const loadProjectsWithBases = async () => {
     try {
       setIsLoading(true);
-      const response = await apiRequest('GET', '/api/projects-with-bases');
-      const data = await response.json();
+      console.log('[FuelCardForm] Iniciando carregamento de projetos...');
       
-      if (data.success) {
+      // Usar endpoint público com timeout estendido para mobile
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      
+      const response = await fetch('/api/public/projects-with-bases', {
+        method: 'GET',
+        credentials: 'include',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('[FuelCardForm] Resposta recebida:', data);
+      
+      if (data.success && Array.isArray(data.data)) {
         setProjects(data.data);
+        console.log('[FuelCardForm] Projetos carregados:', data.data.length);
+        
+        toast({
+          title: 'Projetos carregados',
+          description: `${data.data.length} projetos disponíveis`,
+        });
       } else {
+        console.error('[FuelCardForm] Resposta inválida:', data);
         toast({
           title: 'Erro ao carregar projetos',
-          description: data.message || 'Não foi possível carregar a lista de projetos',
+          description: data.message || 'Dados de projetos não encontrados',
           variant: 'destructive'
         });
       }
     } catch (error) {
-      console.error('Erro ao carregar projetos:', error);
-      toast({
-        title: 'Erro de conexão',
-        description: 'Não foi possível conectar ao servidor',
-        variant: 'destructive'
-      });
+      console.error('[FuelCardForm] Erro ao carregar projetos:', error);
+      
+      if (error.name === 'AbortError') {
+        toast({
+          title: 'Timeout de conexão',
+          description: 'A conexão demorou muito. Tente novamente.',
+          variant: 'destructive'
+        });
+      } else {
+        toast({
+          title: 'Erro de conexão',
+          description: 'Não foi possível conectar ao servidor',
+          variant: 'destructive'
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -237,14 +274,27 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
               {isLoading ? (
                 <div className="flex items-center justify-center h-10 border rounded">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="ml-2 text-sm">Carregando...</span>
+                  <span className="ml-2 text-sm">Carregando projetos...</span>
+                </div>
+              ) : projects.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-20 border rounded p-4">
+                  <p className="text-sm text-muted-foreground mb-2">Erro ao carregar projetos</p>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={loadProjectsWithBases}
+                    className="text-xs"
+                  >
+                    Tentar novamente
+                  </Button>
                 </div>
               ) : (
                 <Select value={formData.projeto_id} onValueChange={handleProjectChange}>
-                  <SelectTrigger>
+                  <SelectTrigger className="touch-manipulation">
                     <SelectValue placeholder="Selecione o projeto" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[200px] overflow-y-auto">
                     {projects.map((project) => (
                       <SelectItem key={project.id} value={project.id.toString()}>
                         {project.name}
@@ -252,6 +302,11 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
                     ))}
                   </SelectContent>
                 </Select>
+              )}
+              {projects.length > 0 && (
+                <p className="text-xs text-green-600">
+                  {projects.length} projetos carregados
+                </p>
               )}
             </div>
 
