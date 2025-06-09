@@ -167,27 +167,37 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       setIsLoadingProjects(true);
       
       try {
+        console.log(`[FormularioAbastecimento] 📱 Modo Mobile: ${isMobile}`);
+        console.log(`[FormularioAbastecimento] 🚀 Iniciando fetch de projetos...`);
+        
         const response = await fetch('/api/public/projects-with-bases', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Mobile-Request': isMobile ? 'true' : 'false',
+            'User-Agent': navigator.userAgent,
+            'Cache-Control': 'no-cache, no-store, must-revalidate'
           },
           credentials: 'include',
         });
         
+        console.log(`[FormularioAbastecimento] ✅ Response Status: ${response.status}`);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log(`[FormularioAbastecimento] 📦 Dados recebidos:`, data);
           
           if (data.success && Array.isArray(data.data) && data.data.length > 0) {
             setProjects(data.data);
-            console.log(`[FormularioAbastecimento] ${data.data.length} projetos carregados com sucesso`);
+            console.log(`[FormularioAbastecimento] ✅ ${data.data.length} projetos carregados com sucesso`);
           } else {
-            console.error('[FormularioAbastecimento] Dados inválidos recebidos:', data);
+            console.error('[FormularioAbastecimento] ❌ Dados inválidos recebidos:', data);
             setProjects([]);
           }
         } else {
           const errorText = await response.text();
-          console.error(`[FormularioAbastecimento] Erro HTTP ${response.status}:`, errorText);
+          console.error(`[FormularioAbastecimento] ❌ Erro HTTP ${response.status}:`, errorText);
           setProjects([]);
         }
       } catch (error) {
