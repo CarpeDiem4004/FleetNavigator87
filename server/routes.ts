@@ -91,7 +91,7 @@ import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
 import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoutes";
 import { registerPostosMapeamentoRoutes } from "./routes/postosMapeamentoRoutes";
 import { registerUsuariosSupabaseRoutes } from "./routes/usuariosSupabaseRoutes";
-import { supabaseInsertHandler } from "./routes/supabaseInsertRoute";
+// import { supabaseInsertHandler } from "./routes/supabaseInsertRoute"; // Desabilitado - usando versão PostgreSQL direta
 import postoSupabaseRoutes from "./routes/postoSupabaseRoutes";
 import postoRoutes from "./routes/postoRoutes.js";
 import frotaEstoqueRoutes from "./routes/frotaEstoqueRoutes";
@@ -8532,8 +8532,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
-  // Rota para inserir dados no Supabase usando a chave de serviço do servidor
-  app.post("/api/supabase-insert", supabaseInsertHandler);
+  // Rota para inserir dados no Supabase usando a chave de serviço do servidor - DESABILITADA
+  // app.post("/api/supabase-insert", supabaseInsertHandler);
   
   // Rotas para a base de Campinas
   app.get("/api/bases/campinas/despesas", async (req, res) => {
@@ -10295,76 +10295,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   */
   
-  // Rota para inserir dados no Supabase
+  // Rota para inserir dados diretamente no PostgreSQL
   app.post("/api/supabase-insert", async (req, res) => {
     try {
-      console.log('[SUPABASE-INSERT] Recebendo requisição:', req.body);
+      console.log('[POSTGRES-INSERT] Recebendo requisição:', req.body);
       
       const { table, data, posto } = req.body;
       
-      if (!table || !data) {
+      if (!table || !data || !posto) {
         return res.status(400).json({
           success: false,
-          message: 'Parâmetros obrigatórios: table e data'
+          message: 'Parâmetros obrigatórios: table, data e posto'
         });
       }
 
-      // Validação específica para abastecimentos com logs detalhados
+      // Para dados de abastecimento, inserir diretamente na tabela específica do posto
       if (table === 'abastecimentos_supabase') {
-        console.log(`[SUPABASE-INSERT] Validando campos obrigatórios. Dados recebidos:`, data);
-        
-        const camposObrigatorios = ['placa', 'km_atual', 'tipo_combustivel', 'litros', 'valor_litro', 'valor_total'];
-        const camposFaltando = camposObrigatorios.filter(campo => {
-          const valor = data[campo];
-          const faltando = !valor || valor === '' || valor === 0;
-          console.log(`[SUPABASE-INSERT] Campo ${campo}: valor=${valor}, faltando=${faltando}`);
-          return faltando;
-        });
-        
-        if (camposFaltando.length > 0) {
-          console.error(`[SUPABASE-INSERT] ERRO: Campos obrigatórios faltando:`, camposFaltando);
-          return res.status(400).json({
-            success: false,
-            message: `Campos obrigatórios faltando: ${camposFaltando.join(', ')}`
-          });
-        }
-      }
-      
-      // Para dados de abastecimento, salvar na tabela específica do posto
-      if (table === 'abastecimentos_supabase' && posto) {
         const nomeTabela = `abastecimentos_posto_${posto.toLowerCase().replace(/\s+/g, '_')}`;
         
-        console.log(`[SUPABASE-INSERT] Inserindo abastecimento na tabela: ${nomeTabela}`);
-        console.log(`[SUPABASE-INSERT] Dados recebidos completos:`, JSON.stringify(data, null, 2));
+        console.log(`[POSTGRES-INSERT] Inserindo na tabela PostgreSQL: ${nomeTabela}`);
+        console.log(`[POSTGRES-INSERT] Dados recebidos:`, JSON.stringify(data, null, 2));
         
         // Verificar se a tabela existe
         const tableCheck = await pool.query(`
           SELECT table_name 
           FROM information_schema.tables 
-          WHERE table_name = $1
+          WHERE table_name = $1 AND table_schema = 'public'
         `, [nomeTabela]);
         
-        console.log(`[SUPABASE-INSERT] Verificação de tabela - encontradas: ${tableCheck.rows.length}`);
-        
         if (tableCheck.rows.length === 0) {
-          console.error(`[SUPABASE-INSERT] ERRO: Tabela ${nomeTabela} não encontrada`);
+          console.error(`[POSTGRES-INSERT] ERRO: Tabela ${nomeTabela} não encontrada`);
           return res.status(400).json({
             success: false,
-            message: `Tabela ${nomeTabela} não encontrada`
+            message: `Tabela ${nomeTabela} não encontrada no banco de dados`
           });
         }
         
-        // Mapear campos corretamente para a tabela específica
-        const dadosAbastecimento = {
+        // Preparar dados para inserção direta
+        const dadosInserir = {
           placa: data.placa || 'DESCONHECIDO',
           km_atual: Number(data.km_atual) || 0,
           hodometro_atual: data.hodometro_atual ? Number(data.hodometro_atual) : null,
-          tipo_combustivel: data.tipo_combustivel || 'Diesel',
-          litros: Number(data.litros) || 0, // Corrigido: usar 'litros' diretamente
-          valor_litro: Number(data.valor_litro) || 0, // Corrigido: usar 'valor_litro' diretamente
+          tipo_combustivel: data.tipo_combustivel || 'diesel',
+          litros: Number(data.litros) || Number(data.quantidade_litros) || 0,
+          valor_litro: Number(data.valor_litro) || Number(data.preco_litro) || 0,
           valor_total: Number(data.valor_total) || 0,
           motorista: data.motorista || 'Não informado',
-          motorista_rg: data.motorista_rg || 'Não informado', // Corrigido campo
+          motorista_rg: data.motorista_rg || data.rg_motorista || 'Não informado',
           operador: data.operador || 'Sistema',
           projeto: data.projeto || 'Não informado',
           tipo_veiculo: data.tipo_veiculo || 'frota',
@@ -10373,56 +10350,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tipo_lavagem: data.tipo_lavagem || null,
           base_id: data.base_id ? Number(data.base_id) : null,
           base_name: data.base_name || null,
-          projeto_id: data.projeto_id ? Number(data.projeto_id) : null,
-          created_at: new Date(),
-          updated_at: new Date()
+          projeto_id: data.projeto_id ? Number(data.projeto_id) : null
         };
         
-        console.log(`[SUPABASE-INSERT] Dados mapeados:`, JSON.stringify(dadosAbastecimento, null, 2));
+        console.log(`[POSTGRES-INSERT] Dados preparados para inserção:`, dadosInserir);
         
-        // Construir query de inserção dinamicamente
-        const campos = Object.keys(dadosAbastecimento);
+        // Construir query de inserção
+        const campos = Object.keys(dadosInserir);
         const placeholders = campos.map((_, index) => `$${index + 1}`);
-        const valores = campos.map(campo => (dadosAbastecimento as any)[campo]);
+        const valores = campos.map(campo => (dadosInserir as any)[campo]);
         
         const insertQuery = `
           INSERT INTO ${nomeTabela} (${campos.join(', ')})
           VALUES (${placeholders.join(', ')})
-          RETURNING id
+          RETURNING id, placa, valor_total, created_at
         `;
         
-        console.log(`[SUPABASE-INSERT] Query SQL:`, insertQuery);
-        console.log(`[SUPABASE-INSERT] Valores:`, valores);
+        console.log(`[POSTGRES-INSERT] Executando query:`, insertQuery);
+        console.log(`[POSTGRES-INSERT] Com valores:`, valores);
         
         const result = await pool.query(insertQuery, valores);
         
         if (result.rows.length > 0) {
-          console.log(`[SUPABASE-INSERT] Abastecimento inserido com sucesso. ID: ${result.rows[0].id}`);
+          const registro = result.rows[0];
+          console.log(`[POSTGRES-INSERT] ✅ Abastecimento inserido com sucesso! ID: ${registro.id}`);
           
           return res.status(201).json({
             success: true,
-            id: result.rows[0].id,
-            message: 'Abastecimento registrado com sucesso',
-            data: result.rows[0]
+            id: registro.id,
+            message: 'Abastecimento registrado com sucesso no banco de dados',
+            data: {
+              id: registro.id,
+              placa: registro.placa,
+              valor_total: registro.valor_total,
+              created_at: registro.created_at
+            }
           });
         } else {
-          throw new Error('Nenhum ID retornado após inserção');
+          throw new Error('Nenhum registro retornado após inserção');
         }
       }
       
-      // Para outras tabelas (implementação futura)
       return res.status(400).json({
         success: false,
-        message: `Inserção na tabela ${table} não implementada ainda`
+        message: `Tipo de inserção ${table} não suportado`
       });
       
     } catch (error: any) {
-      console.error('[SUPABASE-INSERT] Erro ao inserir dados:', error);
+      console.error('[POSTGRES-INSERT] ❌ Erro ao inserir dados:', error);
       
       return res.status(500).json({
         success: false,
-        message: 'Erro interno ao inserir dados',
-        error: error.message
+        message: 'Erro interno ao inserir dados no banco',
+        error: error.message || 'Erro desconhecido'
       });
     }
   });
