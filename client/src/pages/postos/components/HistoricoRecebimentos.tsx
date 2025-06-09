@@ -61,31 +61,48 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
     setIsDeleting(true);
     
     try {
-      console.log(`[DELETE] Tentando excluir registro ${deleteItemId} do posto ${postId}`);
+      console.log(`[DELETE SUPABASE] Excluindo registro ${deleteItemId} do posto ${postId} via Supabase`);
       
-      // Fazer a chamada para excluir o registro de recebimento usando o novo endpoint
-      const response = await apiRequest('DELETE', `/api/delete-fuel-receipt/${postId.toLowerCase()}/${deleteItemId}`);
+      // Mapear posto para nome da tabela de recebimentos
+      const tableMap: { [key: string]: string } = {
+        'osasco_v2': 'recebimentos_posto_osasco_v2',
+        'abc_v2': 'recebimentos_posto_abc_v2',
+        'alair_v2': 'recebimentos_posto_alair_v2',
+        'campinas_v2': 'recebimentos_posto_campinas_v2',
+        'socorro_v2': 'recebimentos_posto_socorro_v2',
+        'sorocaba_v2': 'recebimentos_posto_sorocaba_v2',
+        'guarulhos_v2': 'recebimentos_posto_guarulhos_v2'
+      };
       
-      console.log('[DELETE] Response object received:', response);
+      const tableName = tableMap[postId.toLowerCase()];
       
-      // Parse the JSON response
-      const responseData = await response.json();
+      if (!tableName) {
+        throw new Error(`Posto "${postId}" não encontrado no mapeamento de tabelas`);
+      }
       
-      console.log('[DELETE] Dados da resposta parseados:', responseData);
+      // Excluir diretamente via Supabase
+      const { data, error } = await supabaseAdmin
+        .from(tableName)
+        .delete()
+        .eq('id', deleteItemId)
+        .select();
       
-      if (responseData && responseData.success) {
+      if (error) {
+        console.error('[DELETE SUPABASE] Erro na exclusão:', error);
+        throw new Error(error.message || 'Erro ao executar exclusão no banco');
+      }
+      
+      if (data && data.length > 0) {
+        console.log(`[DELETE SUPABASE] Registro ${deleteItemId} excluído com sucesso`);
+        
         // Invalidar a query para recarregar os dados
         queryClient.invalidateQueries({ queryKey: [`/api/recebimentos/${postId.toLowerCase()}`] });
         setIsDeleteDialogOpen(false);
         setDeleteItemId(null);
         
-        // Exibir mensagem de sucesso
-        console.log(`✅ Registro de recebimento #${deleteItemId} excluído com sucesso`);
         alert('Registro excluído com sucesso!');
       } else {
-        const errorMsg = responseData?.message || responseData?.error || 'Erro desconhecido';
-        console.error('❌ Erro ao excluir o registro:', errorMsg);
-        alert(`Erro ao excluir o registro: ${errorMsg}`);
+        throw new Error('Registro não encontrado ou não foi possível excluir');
       }
     } catch (err: any) {
       console.error('❌ Erro ao excluir recebimento:', err);
