@@ -93,62 +93,51 @@ export async function getProjectBases(req: Request, res: Response) {
 }
 
 /**
- * Obtém todos os projetos com suas bases
+ * Obtém todos os projetos com suas bases (otimizado para performance)
  */
 export async function getProjectsWithBases(req: Request, res: Response) {
   try {
-    const query = `
-      SELECT 
-        p.id as project_id,
-        p.name as project_name,
-        p.description as project_description,
-        p.is_active as project_active,
-        pb.id as base_id,
-        pb.base_name,
-        pb.base_code,
-        pb.description as base_description,
-        pb.is_active as base_active
-      FROM projects p
-      LEFT JOIN project_bases pb ON p.id = pb.project_id
-      WHERE p.is_active = true AND (pb.is_active = true OR pb.id IS NULL)
-      ORDER BY p.name ASC, pb.base_name ASC
-    `;
+    // Usar consultas separadas é mais eficiente que LEFT JOIN com agrupamento
+    const [projectsResult, basesResult] = await Promise.all([
+      pool.query(`
+        SELECT id, name, description, is_active 
+        FROM projects 
+        WHERE is_active = true 
+        ORDER BY name ASC
+        LIMIT 50
+      `),
+      pool.query(`
+        SELECT pb.id, pb.project_id, pb.base_name, pb.base_code, pb.description, pb.is_active
+        FROM project_bases pb
+        INNER JOIN projects p ON pb.project_id = p.id
+        WHERE pb.is_active = true AND p.is_active = true
+        ORDER BY pb.base_name ASC
+      `)
+    ]);
     
-    const result = await pool.query(query);
-    
-    console.log('[ProjectsAPI] Raw query result:', JSON.stringify(result.rows, null, 2));
-    
-    // Agrupar dados por projeto
-    const projectsMap = new Map();
-    
-    result.rows.forEach(row => {
-      const projectId = row.project_id;
-      
-      if (!projectsMap.has(projectId)) {
-        projectsMap.set(projectId, {
-          id: row.project_id,
-          name: row.project_name,
-          description: row.project_description,
-          is_active: row.project_active,
-          bases: []
-        });
+    // Criar mapa de bases por projeto_id para performance O(1)
+    const basesMap = new Map();
+    basesResult.rows.forEach(base => {
+      if (!basesMap.has(base.project_id)) {
+        basesMap.set(base.project_id, []);
       }
-      
-      // Adicionar base se existir
-      if (row.base_id) {
-        projectsMap.get(projectId).bases.push({
-          id: row.base_id,
-          base_name: row.base_name,
-          base_code: row.base_code,
-          description: row.base_description,
-          is_active: row.base_active
-        });
-      }
+      basesMap.get(base.project_id).push({
+        id: base.id,
+        base_name: base.base_name,
+        base_code: base.base_code,
+        description: base.description,
+        is_active: base.is_active
+      });
     });
     
-    const projects = Array.from(projectsMap.values());
-    
-    console.log('[ProjectsAPI] Final projects data:', JSON.stringify(projects, null, 2));
+    // Combinar projetos com suas bases
+    const projects = projectsResult.rows.map(project => ({
+      id: project.id,
+      name: project.name,
+      description: project.description,
+      is_active: project.is_active,
+      bases: basesMap.get(project.id) || []
+    }));
     
     return res.status(200).json({
       success: true,

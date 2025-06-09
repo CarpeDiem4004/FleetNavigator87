@@ -167,14 +167,30 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     return () => window.removeEventListener('resize', checkMobile);
   }, [form]);
 
-  // Carregar projetos com bases (otimizado para performance)
+  // Carregar projetos com bases (otimizado com cache)
   useEffect(() => {
     const fetchProjects = async () => {
       if (isLoadingProjects) return;
       
+      // Verificar cache primeiro
+      const cacheKey = 'projects_with_bases_cache';
+      const cacheTimeKey = 'projects_cache_time';
+      const cacheExpiry = 5 * 60 * 1000; // 5 minutos
+      
+      const cachedData = localStorage.getItem(cacheKey);
+      const cacheTime = localStorage.getItem(cacheTimeKey);
+      
+      if (cachedData && cacheTime) {
+        const isExpired = Date.now() - parseInt(cacheTime) > cacheExpiry;
+        if (!isExpired) {
+          console.log('Carregando projetos do cache');
+          setProjects(JSON.parse(cachedData));
+          return;
+        }
+      }
+      
       setIsLoadingProjects(true);
       try {
-        // Usar fetch simples para evitar problemas de autenticação em postos externos
         const response = await fetch('/api/projects-with-bases', {
           method: 'GET',
           headers: {
@@ -185,19 +201,21 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
 
         if (response.ok) {
           const data = await response.json();
-          if (data.success) {
-            setProjects(data.data || []);
+          if (data.success && data.data) {
+            setProjects(data.data);
+            // Salvar no cache
+            localStorage.setItem(cacheKey, JSON.stringify(data.data));
+            localStorage.setItem(cacheTimeKey, Date.now().toString());
+            console.log('Projetos carregados da API e salvos no cache');
           }
         } else {
           console.warn('Falha ao carregar projetos, usando configuração mínima');
-          // Configuração básica como fallback
           setProjects([
             { id: 1, name: "Operação Principal", bases: [{ id: 1, base_name: "Base Principal" }] }
           ]);
         }
       } catch (error) {
         console.error('Erro ao buscar projetos:', error);
-        // Configuração básica em caso de erro
         setProjects([
           { id: 1, name: "Operação Principal", bases: [{ id: 1, base_name: "Base Principal" }] }
         ]);
