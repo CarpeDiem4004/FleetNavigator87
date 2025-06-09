@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, History, Clock, MapPin, Truck, DollarSign, FileClock } from 'lucide-react';
+import { Loader2, History, Clock, MapPin, Truck, DollarSign, FileClock, FileText, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { formatDateShortBrasilia } from '@/lib/date-utils';
@@ -831,6 +831,69 @@ export default function TowingPartnerExternalAccess() {
                   </div>
                 ) : (
                   <div className="space-y-6">
+                    {/* Resumo Financeiro */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-muted-foreground">Total de Serviços</p>
+                              <p className="text-2xl font-bold">{serviceHistory.length}</p>
+                            </div>
+                            <FileText className="w-8 h-8 text-blue-500" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-muted-foreground">Aprovados</p>
+                              <p className="text-2xl font-bold text-green-600">
+                                {serviceHistory.filter(s => s.status === 'approved').length}
+                              </p>
+                            </div>
+                            <CheckCircle className="w-8 h-8 text-green-500" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-muted-foreground">Valor Total Aprovado</p>
+                              <p className="text-xl font-bold text-green-600">
+                                R$ {serviceHistory
+                                  .filter(s => s.status === 'approved')
+                                  .reduce((sum, s) => sum + (parseFloat(s.cost) || 0), 0)
+                                  .toFixed(2)}
+                              </p>
+                            </div>
+                            <DollarSign className="w-8 h-8 text-green-500" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-muted-foreground">A Receber</p>
+                              <p className="text-xl font-bold text-orange-600">
+                                R$ {serviceHistory
+                                  .filter(s => s.status === 'approved' && s.payment_status !== 'paid')
+                                  .reduce((sum, s) => sum + (parseFloat(s.cost) || 0), 0)
+                                  .toFixed(2)}
+                              </p>
+                            </div>
+                            <Clock className="w-8 h-8 text-orange-500" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    
                     <div className="rounded-md border">
                       <Table>
                         <TableHeader>
@@ -839,7 +902,8 @@ export default function TowingPartnerExternalAccess() {
                             <TableHead>Data</TableHead>
                             <TableHead>Origem/Destino</TableHead>
                             <TableHead>Valor</TableHead>
-                            <TableHead>Status</TableHead>
+                            <TableHead>Status Aprovação</TableHead>
+                            <TableHead>Status Pagamento</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -847,20 +911,26 @@ export default function TowingPartnerExternalAccess() {
                             // Formatar a data do serviço com fuso horário de Brasília
                             const formattedDate = formatDateShortBrasilia(service.service_date);
                             
-                            // Determinar o status
-                            let statusBadge;
+                            // Determinar o status de aprovação
+                            let approvalStatusBadge;
                             if (service.status === 'approved') {
-                              statusBadge = <Badge className="bg-green-500">Aprovado</Badge>;
+                              approvalStatusBadge = <Badge className="bg-green-500">Aprovado</Badge>;
                             } else if (service.status === 'rejected') {
-                              statusBadge = <Badge variant="destructive">Rejeitado</Badge>;
+                              approvalStatusBadge = <Badge variant="destructive">Rejeitado</Badge>;
                             } else {
-                              statusBadge = <Badge variant="outline">Pendente</Badge>;
+                              approvalStatusBadge = <Badge variant="outline">Pendente Análise</Badge>;
                             }
                             
                             // Determinar o status de pagamento
-                            let paymentBadge;
+                            let paymentStatusBadge;
                             if (service.payment_status === 'paid') {
-                              paymentBadge = <Badge className="bg-blue-500 ml-2">Pago</Badge>;
+                              paymentStatusBadge = <Badge className="bg-blue-500">Pago</Badge>;
+                            } else if (service.status === 'approved') {
+                              paymentStatusBadge = <Badge className="bg-orange-500">A Receber</Badge>;
+                            } else if (service.status === 'rejected') {
+                              paymentStatusBadge = <Badge variant="secondary">Não Aplicável</Badge>;
+                            } else {
+                              paymentStatusBadge = <Badge variant="outline">Aguardando Aprovação</Badge>;
                             }
                             
                             return (
@@ -873,14 +943,16 @@ export default function TowingPartnerExternalAccess() {
                                     <span className="text-xs mt-1">Para: {service.delivery_location}</span>
                                   </div>
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="font-semibold">
                                   {typeof service.cost === 'string' 
                                     ? `R$ ${parseFloat(service.cost).toFixed(2)}` 
                                     : `R$ ${service.cost.toFixed(2)}`}
                                 </TableCell>
                                 <TableCell>
-                                  {statusBadge}
-                                  {paymentBadge}
+                                  {approvalStatusBadge}
+                                </TableCell>
+                                <TableCell>
+                                  {paymentStatusBadge}
                                 </TableCell>
                               </TableRow>
                             );
@@ -891,17 +963,51 @@ export default function TowingPartnerExternalAccess() {
                     
                     <Accordion type="single" collapsible className="mt-6">
                       <AccordionItem value="details">
-                        <AccordionTrigger>Detalhes adicionais</AccordionTrigger>
+                        <AccordionTrigger>Informações sobre Pagamentos</AccordionTrigger>
                         <AccordionContent>
-                          <div className="space-y-2 text-sm">
-                            <p className="text-muted-foreground">
-                              Os serviços registrados são enviados automaticamente para aprovação pela equipe de gestão de frotas.
-                              Serviços aprovados serão incluídos no relatório de pagamento no final do mês.
-                            </p>
-                            <p className="text-muted-foreground">
-                              Serviços com status "Pendente" estão aguardando análise. Serviços "Aprovados" já foram verificados
-                              e estão confirmados para pagamento. Serviços "Rejeitados" não serão incluídos no pagamento.
-                            </p>
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <h4 className="text-sm font-semibold text-green-600">Serviços Aprovados</h4>
+                                <p className="text-xs text-muted-foreground">
+                                  Total aprovado: <span className="font-semibold">
+                                    R$ {serviceHistory
+                                      .filter(s => s.status === 'approved')
+                                      .reduce((sum, s) => sum + (parseFloat(s.cost) || 0), 0)
+                                      .toFixed(2)}
+                                  </span>
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  Serviços confirmados para pagamento no próximo relatório mensal.
+                                </p>
+                              </div>
+                              
+                              <div className="space-y-2">
+                                <h4 className="text-sm font-semibold text-orange-600">Valores a Receber</h4>
+                                <p className="text-xs text-muted-foreground">
+                                  Total pendente: <span className="font-semibold">
+                                    R$ {serviceHistory
+                                      .filter(s => s.status === 'approved' && s.payment_status !== 'paid')
+                                      .reduce((sum, s) => sum + (parseFloat(s.cost) || 0), 0)
+                                      .toFixed(2)}
+                                  </span>
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  Valores aprovados aguardando processamento de pagamento.
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <div className="border-t pt-4">
+                              <h4 className="text-sm font-semibold mb-2">Status dos Serviços</h4>
+                              <div className="space-y-1 text-xs text-muted-foreground">
+                                <p><Badge variant="outline" className="mr-2">Pendente Análise</Badge> Aguardando aprovação da equipe de frotas</p>
+                                <p><Badge className="bg-green-500 mr-2">Aprovado</Badge> Confirmado para pagamento</p>
+                                <p><Badge variant="destructive" className="mr-2">Rejeitado</Badge> Não será incluído no pagamento</p>
+                                <p><Badge className="bg-blue-500 mr-2">Pago</Badge> Valor já processado e pago</p>
+                                <p><Badge className="bg-orange-500 mr-2">A Receber</Badge> Aprovado, aguardando pagamento</p>
+                              </div>
+                            </div>
                           </div>
                         </AccordionContent>
                       </AccordionItem>
