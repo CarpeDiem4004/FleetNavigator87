@@ -49,10 +49,12 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
   const [registroSucesso, setRegistroSucesso] = useSafeState(false);
   const processingRef = useRef(false);
   
-  // Estados para projeto e base
+  // Estados para projeto e base com debouncing para mobile
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [selectedBaseId, setSelectedBaseId] = useState("");
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const form = useForm<AbastecimentoValues>({
     resolver: zodResolver(abastecimentoSchema),
@@ -74,9 +76,24 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     },
   });
 
-  // Carregar projetos com bases
+  // Detectar dispositivo móvel
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Carregar projetos com bases (otimizado para mobile)
   useEffect(() => {
     const fetchProjects = async () => {
+      if (isLoadingProjects) return;
+      
+      setIsLoadingProjects(true);
       try {
         const token = localStorage.getItem('auth_token');
         const response = await fetch('/api/projects-with-bases', {
@@ -96,6 +113,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         }
       } catch (error) {
         console.error('Erro ao buscar projetos:', error);
+      } finally {
+        setIsLoadingProjects(false);
       }
     };
 
@@ -106,26 +125,36 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
   const selectedProject = projects.find((p: any) => p.id.toString() === selectedProjectId);
   const availableBases = selectedProject?.bases || [];
 
-  // Atualizar projeto no formulário quando selecionado
+  // Atualizar projeto no formulário quando selecionado (com debounce para mobile)
   useEffect(() => {
-    if (selectedProjectId) {
+    if (!selectedProjectId) return;
+
+    const timeoutId = setTimeout(() => {
       form.setValue("projeto_id", selectedProjectId);
       const project = projects.find((p: any) => p.id.toString() === selectedProjectId);
       if (project) {
         form.setValue("projeto", project.name);
       }
       // Reset base quando projeto muda
-      setSelectedBaseId("");
-      form.setValue("base_id", "");
-    }
-  }, [selectedProjectId, projects, form]);
+      if (selectedBaseId) {
+        setSelectedBaseId("");
+        form.setValue("base_id", "");
+      }
+    }, isMobile ? 300 : 0);
 
-  // Atualizar base no formulário quando selecionada
+    return () => clearTimeout(timeoutId);
+  }, [selectedProjectId, projects, isMobile]);
+
+  // Atualizar base no formulário quando selecionada (com debounce para mobile)
   useEffect(() => {
-    if (selectedBaseId) {
+    if (!selectedBaseId) return;
+
+    const timeoutId = setTimeout(() => {
       form.setValue("base_id", selectedBaseId);
-    }
-  }, [selectedBaseId, form]);
+    }, isMobile ? 300 : 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [selectedBaseId, isMobile]);
 
   // Calcular valor total automaticamente
   const calcularValorTotal = useCallback(() => {
@@ -268,6 +297,13 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
 
   return (
     <div className="space-y-6">
+      {/* Indicador para Mobile */}
+      {isMobile && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
+          📱 Modo Mobile Ativado - Interface otimizada para seu dispositivo
+        </div>
+      )}
+      
       <Form {...form}>
         <form onSubmit={form.handleSubmit(processarSubmissao)} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -373,7 +409,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               )}
             />
 
-            {/* Seleção de Projeto */}
+            {/* Seleção de Projeto - Otimizado para Mobile */}
             <FormField
               control={form.control}
               name="projeto_id"
@@ -383,18 +419,35 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
                   <Select 
                     value={selectedProjectId} 
                     onValueChange={(value) => {
-                      setSelectedProjectId(value);
-                      field.onChange(value);
+                      if (isMobile) {
+                        // Para mobile, usar timeout para evitar travamentos
+                        setTimeout(() => {
+                          setSelectedProjectId(value);
+                          field.onChange(value);
+                        }, 100);
+                      } else {
+                        setSelectedProjectId(value);
+                        field.onChange(value);
+                      }
                     }}
+                    disabled={isLoadingProjects}
                   >
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o projeto" />
+                      <SelectTrigger className={isMobile ? "h-12 text-base" : ""}>
+                        <SelectValue placeholder={isLoadingProjects ? "Carregando..." : "Selecione o projeto"} />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent 
+                      className={isMobile ? "max-h-48 overflow-y-auto" : ""}
+                      position={isMobile ? "popper" : "item-aligned"}
+                      sideOffset={isMobile ? 8 : 4}
+                    >
                       {projects.map((project) => (
-                        <SelectItem key={project.id} value={project.id.toString()}>
+                        <SelectItem 
+                          key={`project-${project.id}`} 
+                          value={project.id.toString()}
+                          className={isMobile ? "h-12 text-base" : ""}
+                        >
                           {project.name}
                         </SelectItem>
                       ))}
@@ -405,7 +458,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               )}
             />
 
-            {/* Seleção de Base */}
+            {/* Seleção de Base - Otimizado para Mobile */}
             <FormField
               control={form.control}
               name="base_id"
@@ -415,19 +468,43 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
                   <Select 
                     value={selectedBaseId} 
                     onValueChange={(value) => {
-                      setSelectedBaseId(value);
-                      field.onChange(value);
+                      if (isMobile) {
+                        // Para mobile, usar timeout para evitar travamentos
+                        setTimeout(() => {
+                          setSelectedBaseId(value);
+                          field.onChange(value);
+                        }, 100);
+                      } else {
+                        setSelectedBaseId(value);
+                        field.onChange(value);
+                      }
                     }}
-                    disabled={!selectedProjectId || availableBases.length === 0}
+                    disabled={!selectedProjectId || availableBases.length === 0 || isLoadingProjects}
                   >
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a base" />
+                      <SelectTrigger className={isMobile ? "h-12 text-base" : ""}>
+                        <SelectValue 
+                          placeholder={
+                            !selectedProjectId 
+                              ? "Selecione primeiro um projeto" 
+                              : availableBases.length === 0 
+                                ? "Nenhuma base disponível" 
+                                : "Selecione a base"
+                          } 
+                        />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent 
+                      className={isMobile ? "max-h-48 overflow-y-auto" : ""}
+                      position={isMobile ? "popper" : "item-aligned"}
+                      sideOffset={isMobile ? 8 : 4}
+                    >
                       {availableBases.map((base: any) => (
-                        <SelectItem key={base.id} value={base.id.toString()}>
+                        <SelectItem 
+                          key={`base-${base.id}`} 
+                          value={base.id.toString()}
+                          className={isMobile ? "h-12 text-base" : ""}
+                        >
                           {base.base_name}
                         </SelectItem>
                       ))}
@@ -522,20 +599,38 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
             />
           </div>
 
-          <Button 
-            type="submit" 
-            disabled={isSubmitting}
-            className="w-full"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Registrando...
-              </>
-            ) : (
-              "Registrar Abastecimento"
+          {/* Botões de ação - Otimizados para Mobile */}
+          <div className={`flex gap-3 ${isMobile ? 'flex-col' : 'flex-row'}`}>
+            {isMobile && (
+              <Button 
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  form.reset();
+                  setSelectedProjectId("");
+                  setSelectedBaseId("");
+                }}
+                className="h-12 text-base"
+              >
+                🔄 Limpar Formulário
+              </Button>
             )}
-          </Button>
+            
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || !selectedProjectId || !selectedBaseId}
+              className={`w-full ${isMobile ? 'h-12 text-base' : ''}`}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {isMobile ? "Salvando..." : "Registrando..."}
+                </>
+              ) : (
+                isMobile ? "💾 Salvar Abastecimento" : "Registrar Abastecimento"
+              )}
+            </Button>
+          </div>
         </form>
       </Form>
     </div>
