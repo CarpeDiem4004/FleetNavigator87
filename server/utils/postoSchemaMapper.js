@@ -219,7 +219,7 @@ export function obterCamposMapeadosParaLeitura(posto) {
       tipo_veiculo,
       observacoes,
       projeto,
-      to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora,
+      to_char(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo', 'DD/MM/YYYY HH24:MI') as data_hora,
       created_at
     `;
   }
@@ -239,7 +239,7 @@ export function obterCamposMapeadosParaLeitura(posto) {
     `${schema.fields.tipo_veiculo} as tipo_veiculo`,
     `${schema.fields.observacoes} as observacoes`,
     `${schema.fields.projeto} as projeto`,
-    `to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora`,
+    `to_char(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo', 'DD/MM/YYYY HH24:MI') as data_hora`,
     'created_at'
   ];
   

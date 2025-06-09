@@ -168,8 +168,8 @@ export async function getHistoricoPosto(req, res) {
         columns.push("'Não definido' as projeto");
       }
       
-      // Adicionar data_hora e created_at
-      columns.push("to_char(created_at, 'DD/MM/YYYY HH24:MI') as data_hora");
+      // Adicionar data_hora e created_at com fuso horário do Brasil
+      columns.push("to_char(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo', 'DD/MM/YYYY HH24:MI') as data_hora");
       columns.push("created_at");
       
       // Montar a consulta
