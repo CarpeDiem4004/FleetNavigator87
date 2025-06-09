@@ -14,6 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Check } from "lucide-react";
 import { useSafeState } from "@/hooks/useSafeState";
+import { useAuth } from "@/components/AuthContext";
 
 // Schema de validação
 const abastecimentoSchema = z.object({
@@ -76,7 +77,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     },
   });
 
-  // Detectar dispositivo móvel
+  // Detectar dispositivo móvel e carregar operador
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
@@ -85,22 +86,74 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     checkMobile();
     window.addEventListener('resize', checkMobile);
     
+    // Carregar nome do operador logado automaticamente
+    const carregarOperador = async () => {
+      console.log('Carregando operador...');
+      
+      // Primeiro tentar localStorage (mais rápido)
+      const userNameLS = localStorage.getItem('userName') || 
+                        localStorage.getItem('currentUserName') ||
+                        localStorage.getItem('user_name');
+      
+      if (userNameLS) {
+        console.log('Operador encontrado no localStorage:', userNameLS);
+        form.setValue("operador", userNameLS);
+        return;
+      }
+      
+      try {
+        // Tentar API com token JWT
+        const token = localStorage.getItem('auth_token');
+        const headers = {
+          'Content-Type': 'application/json',
+          'credentials': 'include'
+        };
+        
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        const response = await fetch('/api/user', {
+          method: 'GET',
+          headers,
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          console.log('Dados do usuário da API:', userData);
+          
+          if (userData.name) {
+            form.setValue("operador", userData.name);
+            // Salvar no localStorage para próximas vezes
+            localStorage.setItem('userName', userData.name);
+            console.log('Operador definido:', userData.name);
+          }
+        } else {
+          console.warn('API /user retornou erro:', response.status);
+        }
+      } catch (error) {
+        console.warn('Erro ao carregar operador da API:', error);
+      }
+    };
+    
+    carregarOperador();
+    
     return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  }, [form]);
 
-  // Carregar projetos com bases (otimizado para mobile)
+  // Carregar projetos com bases (otimizado para performance)
   useEffect(() => {
     const fetchProjects = async () => {
       if (isLoadingProjects) return;
       
       setIsLoadingProjects(true);
       try {
-        const token = localStorage.getItem('auth_token');
+        // Usar fetch simples para evitar problemas de autenticação em postos externos
         const response = await fetch('/api/projects-with-bases', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
           },
           credentials: 'include',
         });
@@ -110,9 +163,19 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
           if (data.success) {
             setProjects(data.data || []);
           }
+        } else {
+          console.warn('Falha ao carregar projetos, usando configuração mínima');
+          // Configuração básica como fallback
+          setProjects([
+            { id: 1, name: "Operação Principal", bases: [{ id: 1, base_name: "Base Principal" }] }
+          ]);
         }
       } catch (error) {
         console.error('Erro ao buscar projetos:', error);
+        // Configuração básica em caso de erro
+        setProjects([
+          { id: 1, name: "Operação Principal", bases: [{ id: 1, base_name: "Base Principal" }] }
+        ]);
       } finally {
         setIsLoadingProjects(false);
       }
