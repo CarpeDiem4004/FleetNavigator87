@@ -11280,10 +11280,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Inserir novo serviço
       const insertQuery = `
-        INSERT INTO towing_service_notes (
-          partner_id, plate, pickup_location, delivery_location, 
-          service_description, service_date, cost, mileage, 
-          notes, contact_name, contact_phone, status, created_at, payment_status
+        INSERT INTO towing_partner_services (
+          partner_id, plate, origin, destination, 
+          service_type, service_date, cost, km_traveled, 
+          notes, driver_name, contact_phone, status, created_at, payment_status
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending', $12, 'pending')
         RETURNING *
@@ -11358,7 +11358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const kmColumn = columns.includes('quilometragem') ? 'quilometragem' : 'km_reboque';
       const photosColumn = columns.includes('fotos_servico') ? 'fotos_servico' : 'service_photos';
       
-      // 1. Buscar todos os registros na tabela towing_service_notes que não estão em servicos_guincho
+      // 1. Buscar todos os registros na tabela towing_partner_services que não estão em servicos_guincho
       const query = `
         WITH inseridos AS (
           INSERT INTO servicos_guincho (
@@ -11366,14 +11366,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             status, observacoes, endereco_origem, quilometragem
           )
           SELECT 
-            t.partner_id, t.plate, 'Não informado', t.cost, t.service_date,
-            'pendente', COALESCE(t.notes, ''), COALESCE(t.pickup_location, ''), COALESCE(t.mileage, 0)
+            t.partner_id, t.plate, 'Não informado', COALESCE(t.cost, 0), t.service_date,
+            COALESCE(t.status, 'pending'), COALESCE(t.notes, ''), COALESCE(t.origin, ''), COALESCE(t.km_traveled, 0)
           FROM 
-            towing_service_notes t
+            towing_partner_services t
           LEFT JOIN 
             servicos_guincho s ON t.partner_id = s.parceiro_id AND t.plate = s.placa_veiculo AND t.service_date::date = s.data_servico::date
           WHERE 
-            s.id IS NULL AND t.status = 'pending'
+            s.id IS NULL
           RETURNING id
         )
         SELECT COUNT(*) as count FROM inseridos
@@ -11385,11 +11385,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const count = parseInt(result.rows[0].count, 10);
       
-      // 2. Atualizar a view para incluir os novos registros
+      // 2. Atualizar a view para incluir os novos registros (apenas se for materializada)
       try {
-        await pool.query(`
-          REFRESH MATERIALIZED VIEW IF EXISTS vw_servicos_guincho
+        // Verificar se a view é materializada antes de tentar refresh
+        const viewCheck = await pool.query(`
+          SELECT schemaname, matviewname 
+          FROM pg_matviews 
+          WHERE matviewname = 'vw_servicos_guincho'
         `);
+        
+        if (viewCheck.rows.length > 0) {
+          await pool.query(`REFRESH MATERIALIZED VIEW vw_servicos_guincho`);
+        }
       } catch (viewError) {
         console.warn('A view materializada não existe ou não pôde ser atualizada:', viewError);
       }
@@ -11420,7 +11427,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Limpar serviços que foram rejeitados ou excluídos
       const deleteQuery = `
-        DELETE FROM towing_service_notes 
+        DELETE FROM towing_partner_services 
         WHERE status IN ('rejected', 'deleted', 'cancelled')
         AND created_at < NOW() - INTERVAL '30 days'
       `;
