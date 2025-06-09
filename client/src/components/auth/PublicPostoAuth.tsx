@@ -291,88 +291,10 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
     );
   }
 
-  // Define o componente de login fora do componente principal para evitar inconsistência de hooks
-  const renderLoginDialog = () => {
-    if (!dialogState.isOpen) return null;
-    
-    return (
-      <Dialog open={true} onOpenChange={dialogState.setIsOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Login para Acesso ao Posto {postoName}</DialogTitle>
-            <DialogDescription>
-              Digite suas credenciais para acessar o formulário de abastecimento.
-            </DialogDescription>
-          </DialogHeader>
-          
-          {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-          
-          <form onSubmit={handleLogin} className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                placeholder="seu.email@exemplo.com"
-                value={loginData.email}
-                onChange={(e) => {
-                  if (isMountedRef.current) {
-                    setLoginData({ ...loginData, email: e.target.value });
-                  }
-                }}
-                disabled={isSubmitting}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                value={loginData.password}
-                onChange={(e) => {
-                  if (isMountedRef.current) {
-                    setLoginData({ ...loginData, password: e.target.value });
-                  }
-                }}
-                disabled={isSubmitting}
-                required
-              />
-            </div>
-            
-            <DialogFooter className="pt-4">
-              <p className="text-sm text-gray-500 mr-auto">
-                Contate o administrador para obter acesso ao sistema
-              </p>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Entrando...
-                  </>
-                ) : (
-                  'Entrar'
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    );
-  };
-  
-  // Modal de login
+  // Renderização principal corrigida
   return (
     <>
-      {/* Renderiza o diálogo apenas quando necessário */}
-      {renderLoginDialog()}
-      
-      {/* Renderiza o conteúdo apenas se o usuário estiver autenticado */}
+      {/* Se o usuário estiver autenticado, renderiza o conteúdo */}
       {user ? (
         <>
           {/* Badge identificadora do posto e operador */}
@@ -416,7 +338,76 @@ const PublicPostoAuth: React.FC<PublicPostoAuthProps> = ({ children, postoId, po
           </div>
           {children}
         </>
-      ) : null}
+      ) : (
+        /* Se não estiver autenticado, sempre mostra o diálogo de login */
+        <Dialog open={dialogState.isOpen || !user} onOpenChange={dialogState.setIsOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Login para Acesso ao Posto {postoName}</DialogTitle>
+              <DialogDescription>
+                Digite suas credenciais para acessar o formulário de abastecimento.
+              </DialogDescription>
+            </DialogHeader>
+            
+            {error && (
+              <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+            
+            <form onSubmit={handleLogin} className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  placeholder="seu.email@exemplo.com"
+                  value={loginData.email}
+                  onChange={(e) => {
+                    if (isMountedRef.current) {
+                      setLoginData({ ...loginData, email: e.target.value });
+                    }
+                  }}
+                  disabled={isSubmitting}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={loginData.password}
+                  onChange={(e) => {
+                    if (isMountedRef.current) {
+                      setLoginData({ ...loginData, password: e.target.value });
+                    }
+                  }}
+                  disabled={isSubmitting}
+                  required
+                />
+              </div>
+              
+              <DialogFooter className="pt-4">
+                <p className="text-sm text-gray-500 mr-auto">
+                  Contate o administrador para obter acesso ao sistema
+                </p>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Entrando...
+                    </>
+                  ) : (
+                    'Entrar'
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 };
