@@ -58,7 +58,6 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [selectedBaseId, setSelectedBaseId] = useState("");
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
   const form = useForm<AbastecimentoValues>({
     resolver: zodResolver(abastecimentoSchema),
