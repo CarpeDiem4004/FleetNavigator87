@@ -101,7 +101,7 @@ import { getTowingFinancialSummary, getTowingFinancialServices, processPayment, 
 // Arquivo com problemas de sintaxe, desativado temporariamente
 // import simpleExternalAccess from './routes/simpleExternalAccess';
 // import simpleExternalAccessRepair from './routes/simpleExternalAccess_repair';
-import towingServiceEmergency from './routes/towingServiceEmergency-clean';
+import towingServiceEmergency from './routes/towingServiceEmergency';
 import historicoConsolidadoRoutes from "./routes/historicoConsolidadoRoutes";
 import patioRoutes from "./routes/patioRoutes";
 import pneusRoutes from "./routes/pneusRoutes";
