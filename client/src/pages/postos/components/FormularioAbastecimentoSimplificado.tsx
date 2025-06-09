@@ -220,16 +220,39 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         observacoes: data.observacoes || null,
       };
 
-      // Usar a nova rota unificada
-      const endpoint = `/api/abastecimento/${postId.toLowerCase()}`;
+      // Usar a rota de inserção do Supabase que foi implementada
+      const dadosSupabase = {
+        posto_id: postId.toLowerCase(),
+        codigo_posto: postId.toLowerCase(),
+        nome_posto: postId.charAt(0).toUpperCase() + postId.slice(1).toLowerCase(),
+        placa: dadosEnvio.placa,
+        km_atual: dadosEnvio.km,
+        tipo_combustivel: dadosEnvio.tipo_combustivel,
+        quantidade_litros: dadosEnvio.quantidade,
+        preco_litro: dadosEnvio.valor_litro,
+        valor_total: dadosEnvio.valor_total,
+        motorista: dadosEnvio.motorista,
+        rg_motorista: dadosEnvio.motorista_rg,
+        operador: dadosEnvio.operador,
+        projeto: dadosEnvio.projeto,
+        projeto_id: dadosEnvio.projeto_id,
+        base_name: dadosEnvio.base_name,
+        base_id: dadosEnvio.base_id,
+        tipo_veiculo: dadosEnvio.tipo_veiculo,
+        observacoes: dadosEnvio.observacoes
+      };
       
-      const response = await fetch(endpoint, {
+      const response = await fetch('/api/supabase-insert', {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${localStorage.getItem("authToken")}`,
         },
-        body: JSON.stringify(dadosEnvio),
+        body: JSON.stringify({
+          table: 'abastecimentos_supabase',
+          data: dadosSupabase,
+          posto: postId.toLowerCase()
+        }),
       });
 
       const resultado = await response.json();
