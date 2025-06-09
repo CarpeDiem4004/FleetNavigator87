@@ -97,6 +97,7 @@ import postoRoutes from "./routes/postoRoutes.js";
 import frotaEstoqueRoutes from "./routes/frotaEstoqueRoutes";
 import parceirosGuinchoRoutes from "./routes/parceirosGuinchoRoutes";
 import towingPartnersRoutes from "./routes/towingPartnersRoutes";
+import { getTowingFinancialSummary, getTowingFinancialServices, processPayment, getPartnerReport } from "./routes/towingFinancialRoutes";
 // Arquivo com problemas de sintaxe, desativado temporariamente
 // import simpleExternalAccess from './routes/simpleExternalAccess';
 // import simpleExternalAccessRepair from './routes/simpleExternalAccess_repair';
