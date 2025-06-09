@@ -580,33 +580,6 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
                       )}
                     </select>
                   </FormControl>
-                  {!isMobile && (
-                    // Componente Select normal para desktop
-                    <Select 
-                      value={selectedProjectId} 
-                      onValueChange={(value) => {
-                        setSelectedProjectId(value);
-                        field.onChange(value);
-                      }}
-                      disabled={isLoadingProjects}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={isLoadingProjects ? "Carregando..." : "Selecione o projeto"} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {projects.map((project) => (
-                          <SelectItem 
-                            key={`project-${project.id}`} 
-                            value={project.id.toString()}
-                          >
-                            {project.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -619,73 +592,36 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Base *</FormLabel>
-                  {isMobile ? (
-                    // Elemento SELECT nativo para mobile - melhor compatibilidade touch
-                    <FormControl>
-                      <select
-                        className="w-full h-14 text-lg border-2 border-gray-200 rounded-md px-4 bg-white focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
-                        value={selectedBaseId}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          console.log(`[Mobile-Native] Base selecionada: ${value}`);
-                          setSelectedBaseId(value);
-                          field.onChange(value);
-                        }}
-                        disabled={!selectedProjectId || availableBases.length === 0 || isLoadingProjects}
-                      >
-                        <option value="">
-                          {!selectedProjectId 
-                            ? "Selecione primeiro um projeto" 
-                            : availableBases.length === 0 
-                              ? "Nenhuma base disponível" 
-                              : "Selecione a base"
-                          }
-                        </option>
-                        {availableBases.map((base: any) => (
-                          <option 
-                            key={`base-${base.id}`} 
-                            value={base.id.toString()}
-                          >
-                            {base.base_name}
-                          </option>
-                        ))}
-                      </select>
-                    </FormControl>
-                  ) : (
-                    // Componente Select normal para desktop
-                    <Select 
-                      value={selectedBaseId} 
-                      onValueChange={(value) => {
+                  <FormControl>
+                    <select
+                      className="w-full h-14 text-lg border-2 border-gray-200 rounded-md px-4 bg-white focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
+                      value={selectedBaseId}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        console.log(`[Select-Change] Base selecionada: ${value} (isMobile: ${isMobile})`);
                         setSelectedBaseId(value);
                         field.onChange(value);
                       }}
                       disabled={!selectedProjectId || availableBases.length === 0 || isLoadingProjects}
                     >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue 
-                            placeholder={
-                              !selectedProjectId 
-                                ? "Selecione primeiro um projeto" 
-                                : availableBases.length === 0 
-                                  ? "Nenhuma base disponível" 
-                                  : "Selecione a base"
-                            } 
-                          />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {availableBases.map((base: any) => (
-                          <SelectItem 
-                            key={`base-${base.id}`} 
-                            value={base.id.toString()}
-                          >
-                            {base.base_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
+                      <option value="">
+                        {!selectedProjectId 
+                          ? "Selecione primeiro um projeto" 
+                          : availableBases.length === 0 
+                            ? "Nenhuma base disponível" 
+                            : "Selecione a base"
+                        }
+                      </option>
+                      {availableBases.map((base: any) => (
+                        <option 
+                          key={`base-${base.id}`} 
+                          value={base.id.toString()}
+                        >
+                          {base.base_name}
+                        </option>
+                      ))}
+                    </select>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
