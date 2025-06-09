@@ -194,6 +194,13 @@ export async function getProjectsWithBases(req: Request, res: Response) {
     const responseSize = JSON.stringify(responseData).length;
     console.log(`[BACKEND-PERF] 📦 Tamanho resposta: ${responseSize} bytes (${(responseSize/1024).toFixed(2)} KB)`);
     
+    // Aplicar compressão específica para mobile
+    if (isMobile) {
+      res.set('Cache-Control', 'public, max-age=300'); // 5 minutos cache para mobile
+      res.set('Vary', 'User-Agent');
+      res.set('Content-Encoding', 'gzip');
+    }
+    
     return res.status(200).json(responseData);
   } catch (error: any) {
     const errorTime = Date.now() - startTime;

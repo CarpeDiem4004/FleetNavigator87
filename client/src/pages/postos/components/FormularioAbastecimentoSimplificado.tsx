@@ -223,8 +223,11 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Priority': 'u=1, i',
           },
           credentials: 'include',
+          signal: AbortSignal.timeout(15000),
         });
         
         const fetchTime = performance.now() - fetchStart;
