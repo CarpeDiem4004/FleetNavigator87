@@ -10295,6 +10295,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   */
   
+  // Rota para inserir dados no Supabase
+  app.post("/api/supabase-insert", async (req, res) => {
+    try {
+      console.log('[SUPABASE-INSERT] Recebendo requisição:', req.body);
+      
+      const { table, data, posto } = req.body;
+      
+      if (!table || !data) {
+        return res.status(400).json({
+          success: false,
+          message: 'Parâmetros obrigatórios: table e data'
+        });
+      }
+      
+      // Para dados de abastecimento, salvar na tabela específica do posto
+      if (table === 'abastecimentos_supabase' && posto) {
+        const nomeTabela = `abastecimentos_posto_${posto.toLowerCase().replace(/\s+/g, '_')}`;
+        
+        console.log(`[SUPABASE-INSERT] Inserindo abastecimento na tabela: ${nomeTabela}`);
+        
+        // Verificar se a tabela existe
+        const tableCheck = await pool.query(`
+          SELECT table_name 
+          FROM information_schema.tables 
+          WHERE table_name = $1
+        `, [nomeTabela]);
+        
+        if (tableCheck.rows.length === 0) {
+          return res.status(400).json({
+            success: false,
+            message: `Tabela ${nomeTabela} não encontrada`
+          });
+        }
+        
+        // Mapear campos para formato da tabela específica
+        const dadosAbastecimento = {
+          placa: data.placa || 'DESCONHECIDO',
+          km_atual: Number(data.km_atual) || 0,
+          hodometro_atual: Number(data.hodometro_atual) || null,
+          tipo_combustivel: data.tipo_combustivel || 'Diesel',
+          litros: Number(data.quantidade_litros) || 0,
+          motorista: data.motorista || 'Não informado',
+          motorista_rg: data.rg_motorista || 'Não informado',
+          operador: data.operador || 'Sistema',
+          valor_litro: Number(data.preco_litro) || 0,
+          valor_total: Number(data.valor_total) || 0,
+          tipo_veiculo: data.tipo_veiculo || 'frota',
+          observacoes: data.observacoes || '',
+          lavagem: data.lavagem || false,
+          tipo_lavagem: data.tipo_lavagem || null,
+          projeto: data.projeto || 'Não informado',
+          base_name: data.base_name || null,
+          base_id: data.base_id || null,
+          projeto_id: data.projeto_id || null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
+        // Construir query de inserção dinamicamente
+        const campos = Object.keys(dadosAbastecimento);
+        const placeholders = campos.map((_, index) => `$${index + 1}`);
+        const valores = campos.map(campo => dadosAbastecimento[campo]);
+        
+        const insertQuery = `
+          INSERT INTO ${nomeTabela} (${campos.join(', ')})
+          VALUES (${placeholders.join(', ')})
+          RETURNING id
+        `;
+        
+        const result = await pool.query(insertQuery, valores);
+        
+        if (result.rows.length > 0) {
+          console.log(`[SUPABASE-INSERT] Abastecimento inserido com sucesso. ID: ${result.rows[0].id}`);
+          
+          return res.status(201).json({
+            success: true,
+            id: result.rows[0].id,
+            message: 'Abastecimento registrado com sucesso',
+            data: result.rows[0]
+          });
+        } else {
+          throw new Error('Nenhum ID retornado após inserção');
+        }
+      }
+      
+      // Para outras tabelas (implementação futura)
+      return res.status(400).json({
+        success: false,
+        message: `Inserção na tabela ${table} não implementada ainda`
+      });
+      
+    } catch (error: any) {
+      console.error('[SUPABASE-INSERT] Erro ao inserir dados:', error);
+      
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno ao inserir dados',
+        error: error.message
+      });
+    }
+  });
+
   // Rota para buscar abastecimentos não sincronizados com o Supabase
   app.get("/api/sincronizar-supabase/:posto", async (req, res) => {
     const posto = req.params.posto;
