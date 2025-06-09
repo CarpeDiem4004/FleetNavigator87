@@ -191,7 +191,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       
       setIsLoadingProjects(true);
       try {
-        const response = await fetch('/api/projects-with-bases', {
+        const response = await fetch('/api/public/projects-with-bases', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

@@ -6538,6 +6538,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/projects', isAuthenticated, getProjects);
   app.get('/api/projects/:projectId/bases', isAuthenticated, getProjectBases);
   app.get('/api/projects-with-bases', isAuthenticated, getProjectsWithBases);
+  app.get('/api/public/projects-with-bases', getProjectsWithBases); // Endpoint público para postos externos
   app.post('/api/projects', isAuthenticated, createProject);
   app.post('/api/projects/:projectId/bases', isAuthenticated, createProjectBase);
   
