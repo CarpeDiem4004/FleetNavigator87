@@ -9,21 +9,33 @@ router.post('/sincronizar-servicos-guincho', isAuthenticated, async (req, res) =
   try {
     console.log("[Sincronização] Iniciando sincronização global de serviços de guincho...");
     
-    // 1. Primeiro, sincronizar towing_service_notes com servicos_guincho
+    // 1. Primeiro, sincronizar towing_partner_services com servicos_guincho
     const syncToServicosGuinchoQuery = `
       INSERT INTO servicos_guincho (
-        id, parceiro_id, placa, origem, destino, 
-        tipo_servico, data_lancamento, valor, km_percorrido, 
-        observacoes, status, prioridade
+        id, parceiro_id, placa_veiculo, endereco_origem, endereco_destino, 
+        quilometragem, valor, data_servico, data_lancamento, status, 
+        observacoes, usuario_aprovacao, data_aprovacao
       )
       SELECT 
-        tsn.id, tsn.partner_id, tsn.plate, tsn.pickup_location, tsn.delivery_location,
-        tsn.service_description, tsn.service_date, tsn.cost, tsn.mileage,
-        tsn.notes, tsn.status, tsn.priority
-      FROM towing_service_notes tsn
-      LEFT JOIN servicos_guincho sg ON tsn.id = sg.id
+        tps.id, tps.partner_id, tps.plate, tps.origin, tps.destination,
+        COALESCE(tps.km_traveled, 0), COALESCE(tps.cost, 0), tps.service_date, 
+        COALESCE(tps.created_at, NOW()), COALESCE(tps.status, 'pending'),
+        tps.notes, tps.approved_by, tps.approved_at
+      FROM towing_partner_services tps
+      LEFT JOIN servicos_guincho sg ON tps.id = sg.id
       WHERE sg.id IS NULL
-      ON CONFLICT (id) DO NOTHING
+      ON CONFLICT (id) DO UPDATE SET
+        parceiro_id = EXCLUDED.parceiro_id,
+        placa_veiculo = EXCLUDED.placa_veiculo,
+        endereco_origem = EXCLUDED.endereco_origem,
+        endereco_destino = EXCLUDED.endereco_destino,
+        quilometragem = EXCLUDED.quilometragem,
+        valor = EXCLUDED.valor,
+        data_servico = EXCLUDED.data_servico,
+        status = EXCLUDED.status,
+        observacoes = EXCLUDED.observacoes,
+        usuario_aprovacao = EXCLUDED.usuario_aprovacao,
+        data_aprovacao = EXCLUDED.data_aprovacao
     `;
     
     const servicosGuinchoResult = await pool.query(syncToServicosGuinchoQuery);
