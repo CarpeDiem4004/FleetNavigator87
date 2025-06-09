@@ -48,6 +48,9 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useSafeState(false);
   const [registroSucesso, setRegistroSucesso] = useSafeState(false);
+  
+  // Mobile detection for touch optimization
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   const processingRef = useRef(false);
   
   // Estados para projeto e base com debouncing para mobile
