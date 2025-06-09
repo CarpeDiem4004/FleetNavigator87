@@ -220,16 +220,14 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         observacoes: data.observacoes || null,
       };
 
-      // Usar a rota de inserção do Supabase que foi implementada
+      // Dados mapeados corretamente para a tabela abastecimentos_posto_osasco_v2
       const dadosSupabase = {
-        posto_id: postId.toLowerCase(),
-        codigo_posto: postId.toLowerCase(),
-        nome_posto: postId.charAt(0).toUpperCase() + postId.slice(1).toLowerCase(),
         placa: dadosEnvio.placa,
         km_atual: dadosEnvio.km,
+        hodometro_atual: null, // Campo opcional
         tipo_combustivel: dadosEnvio.tipo_combustivel,
-        quantidade_litros: dadosEnvio.quantidade,
-        preco_litro: dadosEnvio.valor_litro,
+        quantidade_litros: dadosEnvio.quantidade, // Será mapeado para 'litros' no servidor
+        preco_litro: dadosEnvio.valor_litro, // Será mapeado para 'valor_litro' no servidor
         valor_total: dadosEnvio.valor_total,
         motorista: dadosEnvio.motorista,
         rg_motorista: dadosEnvio.motorista_rg,
@@ -239,7 +237,9 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         base_name: dadosEnvio.base_name,
         base_id: dadosEnvio.base_id,
         tipo_veiculo: dadosEnvio.tipo_veiculo,
-        observacoes: dadosEnvio.observacoes
+        observacoes: dadosEnvio.observacoes,
+        lavagem: false, // Campo obrigatório na tabela
+        tipo_lavagem: null // Campo opcional
       };
       
       const response = await fetch('/api/supabase-insert', {

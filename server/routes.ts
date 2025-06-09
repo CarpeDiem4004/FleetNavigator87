@@ -10308,6 +10308,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: 'Parâmetros obrigatórios: table e data'
         });
       }
+
+      // Validação específica para abastecimentos
+      if (table === 'abastecimentos_supabase') {
+        const camposObrigatorios = ['placa', 'quantidade_litros', 'preco_litro', 'valor_total'];
+        const camposFaltando = camposObrigatorios.filter(campo => !data[campo] || data[campo] === '' || data[campo] === 0);
+        
+        if (camposFaltando.length > 0) {
+          console.error(`[SUPABASE-INSERT] ERRO: Campos obrigatórios faltando:`, camposFaltando);
+          return res.status(400).json({
+            success: false,
+            message: `Campos obrigatórios faltando: ${camposFaltando.join(', ')}`
+          });
+        }
+      }
       
       // Para dados de abastecimento, salvar na tabela específica do posto
       if (table === 'abastecimentos_supabase' && posto) {
