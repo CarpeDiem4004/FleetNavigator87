@@ -23,7 +23,9 @@ const abastecimentoSchema = z.object({
   quantidade: z.string().min(1, "Quantidade é obrigatória"),
   valor_litro: z.string().min(1, "Valor por litro é obrigatório"),
   valor_total: z.string().min(1, "Valor total é obrigatório"),
-  projeto: z.string().min(1, "Projeto é obrigatório"),
+  projeto: z.string().optional(), // Manter para compatibilidade
+  projeto_id: z.string().min(1, "Selecione um projeto"),
+  base_id: z.string().min(1, "Selecione uma base"),
   motorista: z.string().min(1, "Nome do motorista é obrigatório"),
   motorista_rg: z.string().min(1, "RG do motorista é obrigatório"),
   operador: z.string().min(1, "Nome do operador é obrigatório"),
@@ -46,6 +48,11 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
   const [isSubmitting, setIsSubmitting] = useSafeState(false);
   const [registroSucesso, setRegistroSucesso] = useSafeState(false);
   const processingRef = useRef(false);
+  
+  // Estados para projeto e base
+  const [projects, setProjects] = useState<any[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [selectedBaseId, setSelectedBaseId] = useState("");
 
   const form = useForm<AbastecimentoValues>({
     resolver: zodResolver(abastecimentoSchema),
@@ -66,6 +73,59 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       observacoes: "",
     },
   });
+
+  // Carregar projetos com bases
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const response = await fetch('/api/projects-with-bases', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setProjects(data.data || []);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao buscar projetos:', error);
+      }
+    };
+
+    fetchProjects();
+  }, []);
+
+  // Obter projeto selecionado
+  const selectedProject = projects.find((p: any) => p.id.toString() === selectedProjectId);
+  const availableBases = selectedProject?.bases || [];
+
+  // Atualizar projeto no formulário quando selecionado
+  useEffect(() => {
+    if (selectedProjectId) {
+      form.setValue("projeto_id", selectedProjectId);
+      const project = projects.find((p: any) => p.id.toString() === selectedProjectId);
+      if (project) {
+        form.setValue("projeto", project.name);
+      }
+      // Reset base quando projeto muda
+      setSelectedBaseId("");
+      form.setValue("base_id", "");
+    }
+  }, [selectedProjectId, projects, form]);
+
+  // Atualizar base no formulário quando selecionada
+  useEffect(() => {
+    if (selectedBaseId) {
+      form.setValue("base_id", selectedBaseId);
+    }
+  }, [selectedBaseId, form]);
 
   // Calcular valor total automaticamente
   const calcularValorTotal = useCallback(() => {
@@ -107,7 +167,10 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       console.log(`[FormularioAbastecimento] Registrando para posto: ${postId}`);
       console.log(`[FormularioAbastecimento] Dados:`, data);
 
-      // Preparar dados para envio
+      // Preparar dados para envio com projeto_id e base_id
+      const selectedProject = projects.find((p: any) => p.id.toString() === data.projeto_id);
+      const selectedBase = selectedProject?.bases.find((b: any) => b.id.toString() === data.base_id);
+      
       const dadosEnvio = {
         placa: data.placa.toUpperCase().trim(),
         km: Number(data.km),
@@ -115,7 +178,12 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         quantidade: Number(data.quantidade),
         valor_litro: Number(data.valor_litro),
         valor_total: Number(data.valor_total),
-        projeto: data.projeto,
+        // Campos de projeto - enviar tanto nome quanto ID para compatibilidade
+        projeto: selectedProject?.name || data.projeto || "NÃO ESPECIFICADO",
+        projeto_id: Number(data.projeto_id),
+        // Campos de base - enviar tanto nome quanto ID para compatibilidade
+        base_name: selectedBase?.base_name || "",
+        base_id: Number(data.base_id),
         motorista: data.motorista,
         motorista_rg: data.motorista_rg,
         operador: data.operador,
@@ -305,16 +373,66 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               )}
             />
 
-            {/* Projeto */}
+            {/* Seleção de Projeto */}
             <FormField
               control={form.control}
-              name="projeto"
+              name="projeto_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Projeto</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Nome do projeto" {...field} />
-                  </FormControl>
+                  <FormLabel>Projeto *</FormLabel>
+                  <Select 
+                    value={selectedProjectId} 
+                    onValueChange={(value) => {
+                      setSelectedProjectId(value);
+                      field.onChange(value);
+                    }}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o projeto" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {projects.map((project) => (
+                        <SelectItem key={project.id} value={project.id.toString()}>
+                          {project.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Seleção de Base */}
+            <FormField
+              control={form.control}
+              name="base_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Base *</FormLabel>
+                  <Select 
+                    value={selectedBaseId} 
+                    onValueChange={(value) => {
+                      setSelectedBaseId(value);
+                      field.onChange(value);
+                    }}
+                    disabled={!selectedProjectId || availableBases.length === 0}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a base" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {availableBases.map((base: any) => (
+                        <SelectItem key={base.id} value={base.id.toString()}>
+                          {base.base_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
