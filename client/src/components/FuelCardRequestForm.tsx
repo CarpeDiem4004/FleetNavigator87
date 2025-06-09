@@ -54,133 +54,57 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
   }, []);
 
   const loadProjectsWithBases = async (retryCount = 0) => {
-    const maxRetries = 3;
+    const maxRetries = 2;
     const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
     try {
       setIsLoading(true);
-      console.log(`[FuelCardForm] Tentativa ${retryCount + 1}/${maxRetries + 1} - Carregando projetos...`);
-      console.log('[FuelCardForm] Device:', isMobile ? 'MOBILE' : 'DESKTOP');
-      console.log('[FuelCardForm] URL atual:', window.location.href);
+      console.log(`[FuelCardForm] Tentativa ${retryCount + 1}/${maxRetries + 1}`);
       
-      // Para mobile, usar múltiplas estratégias de fallback
-      const endpoints = [
-        '/api/public/projects-with-bases',
-        '/api/projects-with-bases' // Fallback para endpoint autenticado
-      ];
+      // Estratégia simplificada: usar apenas o endpoint público com configuração otimizada
+      const controller = new AbortController();
+      const timeoutMs = 30000; // 30s timeout fixo
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
       
-      let lastError = null;
-      
-      for (const endpoint of endpoints) {
-        try {
-          console.log(`[FuelCardForm] Tentando endpoint: ${endpoint}`);
-          
-          const controller = new AbortController();
-          const timeoutMs = isMobile ? 20000 : 10000; // 20s para mobile, 10s para desktop
-          const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-          
-          // Headers diferentes para mobile
-          const headers: Record<string, string> = {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          };
-          
-          // Para mobile, adicionar headers específicos
-          if (isMobile) {
-            headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
-            headers['Pragma'] = 'no-cache';
-            headers['X-Mobile-Request'] = 'true';
-          }
-          
-          // Tentar com token JWT se disponível
-          const token = localStorage.getItem('auth_token');
-          if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-            console.log('[FuelCardForm] Token JWT adicionado à requisição');
-          }
-          
-          const response = await fetch(endpoint, {
-            method: 'GET',
-            credentials: 'include',
-            signal: controller.signal,
-            headers
-          });
-          
-          clearTimeout(timeoutId);
-          
-          console.log(`[FuelCardForm] Resposta de ${endpoint}:`, {
-            status: response.status,
-            statusText: response.statusText,
-            headers: Object.fromEntries(response.headers.entries())
-          });
-          
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`[FuelCardForm] Erro HTTP ${response.status}:`, errorText);
-            lastError = new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
-            continue; // Tentar próximo endpoint
-          }
-          
-          const data = await response.json();
-          console.log('[FuelCardForm] Dados recebidos:', data);
-          
-          if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-            setProjects(data.data);
-            console.log('[FuelCardForm] ✅ Projetos carregados com sucesso:', data.data.length);
-            
-            toast({
-              title: 'Projetos carregados com sucesso',
-              description: `${data.data.length} projetos disponíveis`,
-            });
-            return; // Sucesso - sair da função
-          } else {
-            console.warn(`[FuelCardForm] Dados inválidos de ${endpoint}:`, data);
-            lastError = new Error(`Dados inválidos: ${JSON.stringify(data)}`);
-            continue; // Tentar próximo endpoint
-          }
-        } catch (endpointError) {
-          console.error(`[FuelCardForm] Erro no endpoint ${endpoint}:`, endpointError);
-          lastError = endpointError;
-          continue; // Tentar próximo endpoint
+      const response = await fetch('/api/public/projects-with-bases', {
+        method: 'GET',
+        credentials: 'include',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         }
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
-      // Se chegou aqui, todos os endpoints falharam
-      throw lastError || new Error('Todos os endpoints falharam');
+      const data = await response.json();
       
-    } catch (error) {
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+        setProjects(data.data);
+        console.log(`[FuelCardForm] Projetos carregados: ${data.data.length}`);
+        return; // Sucesso
+      } else {
+        throw new Error('Dados de projetos inválidos ou vazios');
+      }
+      
+    } catch (error: any) {
       console.error(`[FuelCardForm] Erro na tentativa ${retryCount + 1}:`, error);
       
-      // Retry automático para mobile
-      if (retryCount < maxRetries && isMobile) {
-        console.log(`[FuelCardForm] Tentando novamente em 2 segundos... (${retryCount + 1}/${maxRetries})`);
-        setTimeout(() => loadProjectsWithBases(retryCount + 1), 2000);
+      // Retry automático apenas uma vez
+      if (retryCount < maxRetries) {
+        setTimeout(() => loadProjectsWithBases(retryCount + 1), 3000);
         return;
       }
       
-      // Exibir erro específico
-      let errorTitle = 'Erro ao carregar projetos';
-      let errorDescription = 'Não foi possível conectar ao servidor';
-      
-      if (error.name === 'AbortError') {
-        errorTitle = 'Timeout de conexão';
-        errorDescription = isMobile ? 
-          'Conexão lenta detectada. Verifique sua internet e tente novamente.' :
-          'A conexão demorou muito. Tente novamente.';
-      } else if (error.message.includes('HTTP 401')) {
-        errorTitle = 'Erro de autenticação';
-        errorDescription = 'Sessão expirada. Recarregue a página e tente novamente.';
-      } else if (error.message.includes('HTTP 404')) {
-        errorTitle = 'Serviço não encontrado';
-        errorDescription = 'O serviço de projetos está temporariamente indisponível.';
-      } else if (error.message.includes('HTTP 500')) {
-        errorTitle = 'Erro no servidor';
-        errorDescription = 'Problema temporário no servidor. Tente novamente em alguns minutos.';
-      }
-      
+      // Exibir erro final
       toast({
-        title: errorTitle,
-        description: errorDescription,
+        title: 'Erro ao carregar projetos',
+        description: 'Verifique sua conexão e tente novamente',
         variant: 'destructive'
       });
       
