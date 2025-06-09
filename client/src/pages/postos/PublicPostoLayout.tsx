@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Fuel, TruckIcon, Truck, History } from 'lucide-react';
-import FormularioAbastecimento from './components/FormularioAbastecimento';
+import { FormularioAbastecimento as FormularioAbastecimentoOtimizado } from './components/FormularioAbastecimentoSimplificado';
 import FormularioRecebimento from './components/FormularioRecebimento';
 import FormularioControlePatio from './components/FormularioControlePatio';
 import HistoricoMovimentacoes from './components/HistoricoMovimentacoes';
@@ -111,17 +111,23 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
                   </TabsTrigger>
                 </TabsList>
                 
-                <FormularioAbastecimento 
-                  postId={id} 
-                  onRegistroSucesso={atualizarHistoricos} 
-                />
-                <FormularioRecebimento 
-                  postId={id} 
-                />
-                <FormularioControlePatio 
-                  postId={id} 
-                  onRegistroSucesso={atualizarHistoricos} 
-                />
+                <TabsContent value="abastecimento">
+                  <FormularioAbastecimentoOtimizado 
+                    postId={id} 
+                    onRegistroSucesso={atualizarHistoricos} 
+                  />
+                </TabsContent>
+                <TabsContent value="recebimento">
+                  <FormularioRecebimento 
+                    postId={id} 
+                  />
+                </TabsContent>
+                <TabsContent value="patio">
+                  <FormularioControlePatio 
+                    postId={id} 
+                    onRegistroSucesso={atualizarHistoricos} 
+                  />
+                </TabsContent>
               </Tabs>
             </CardContent>
           </Card>
