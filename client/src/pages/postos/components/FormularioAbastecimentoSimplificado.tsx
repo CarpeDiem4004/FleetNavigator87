@@ -189,8 +189,14 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
           console.log(`[FormularioAbastecimento] 📦 Dados recebidos:`, data);
           
           if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-            setProjects(data.data);
-            console.log(`[FormularioAbastecimento] ✅ ${data.data.length} projetos carregados com sucesso`);
+            console.log(`[FormularioAbastecimento] ✅ ${data.data.length} projetos carregados:`, data.data.slice(0, 3));
+            
+            // Força re-render imediato para mobile
+            setProjects([]);
+            setTimeout(() => {
+              setProjects(data.data);
+              console.log(`[Mobile-Fix] Projetos definidos após timeout:`, data.data.length);
+            }, 100);
           } else {
             console.error('[FormularioAbastecimento] ❌ Dados inválidos recebidos:', data);
             setProjects([]);
@@ -417,12 +423,20 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     );
   }
 
+  // Log de debugging para mobile
+  console.log(`[Render-Debug] isMobile: ${isMobile}, projects: ${projects.length}, isLoading: ${isLoadingProjects}`);
+  if (projects.length > 0) {
+    console.log(`[Render-Debug] Primeiros 3 projetos:`, projects.slice(0, 3));
+  }
+
   return (
     <div className="space-y-6">
       {/* Indicador para Mobile */}
       {isMobile && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
           📱 Modo Mobile Ativado - Interface otimizada para seu dispositivo
+          <br />
+          <strong>Debug:</strong> {projects.length} projetos carregados | Loading: {isLoadingProjects.toString()}
         </div>
       )}
       
@@ -538,34 +552,35 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Projeto *</FormLabel>
-                  {isMobile ? (
-                    // Elemento SELECT nativo para mobile - melhor compatibilidade touch
-                    <FormControl>
-                      <select
-                        className="w-full h-14 text-lg border-2 border-gray-200 rounded-md px-4 bg-white focus:border-blue-500 focus:outline-none"
-                        value={selectedProjectId}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          console.log(`[Mobile-Native] Projeto selecionado: ${value}`);
-                          setSelectedProjectId(value);
-                          field.onChange(value);
-                        }}
-                        disabled={isLoadingProjects}
-                      >
-                        <option value="">
-                          {isLoadingProjects ? "Carregando..." : "Selecione o projeto"}
+                  <FormControl>
+                    <select
+                      className="w-full h-14 text-lg border-2 border-gray-200 rounded-md px-4 bg-white focus:border-blue-500 focus:outline-none"
+                      value={selectedProjectId}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        console.log(`[Select-Change] Projeto selecionado: ${value} (isMobile: ${isMobile})`);
+                        setSelectedProjectId(value);
+                        field.onChange(value);
+                      }}
+                      disabled={isLoadingProjects}
+                    >
+                      <option value="">
+                        {isLoadingProjects ? "Carregando..." : "Selecione o projeto"}
+                      </option>
+                      {projects.map((project) => (
+                        <option 
+                          key={`project-${project.id}`} 
+                          value={project.id.toString()}
+                        >
+                          {project.name}
                         </option>
-                        {projects.map((project) => (
-                          <option 
-                            key={`project-${project.id}`} 
-                            value={project.id.toString()}
-                          >
-                            {project.name}
-                          </option>
-                        ))}
-                      </select>
-                    </FormControl>
-                  ) : (
+                      ))}
+                      {projects.length === 0 && !isLoadingProjects && (
+                        <option value="" disabled>Nenhum projeto encontrado</option>
+                      )}
+                    </select>
+                  </FormControl>
+                  {!isMobile && (
                     // Componente Select normal para desktop
                     <Select 
                       value={selectedProjectId} 
