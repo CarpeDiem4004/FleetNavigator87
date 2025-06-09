@@ -465,14 +465,20 @@ function normalizarCamposAbastecimento(dados: any, posto: string): any {
     }
   }
   
-  // Data de registro padrão
+  // Data de registro padrão (horário brasileiro)
   if (!normalizado.data_registro) {
-    normalizado.data_registro = new Date();
+    const agora = new Date();
+    // Ajustar para horário brasileiro (UTC-3)
+    const horarioBrasil = new Date(agora.getTime() - (3 * 60 * 60 * 1000));
+    normalizado.data_registro = horarioBrasil;
   }
   
-  // Adicionar timestamp de criação
+  // Adicionar timestamp de criação (horário brasileiro)
   if (!normalizado.created_at) {
-    normalizado.created_at = new Date();
+    const agora = new Date();
+    // Ajustar para horário brasileiro (UTC-3)
+    const horarioBrasil = new Date(agora.getTime() - (3 * 60 * 60 * 1000));
+    normalizado.created_at = horarioBrasil;
   }
   
   return normalizado;

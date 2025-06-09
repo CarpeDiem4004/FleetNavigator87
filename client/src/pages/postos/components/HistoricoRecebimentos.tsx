@@ -53,8 +53,7 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
   
   const { data, isLoading, error } = useQuery({
     queryKey: [`/api/recebimentos/${postId.toLowerCase()}`],
-    staleTime: 0, // Sem cache
-    cacheTime: 0, // Limpar cache imediatamente
+    staleTime: 0,
     refetchOnMount: true,
     refetchOnWindowFocus: true
   });
