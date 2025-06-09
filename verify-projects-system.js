@@ -226,7 +226,7 @@ async function verifyProjectsSystem() {
 }
 
 // Executar verificação se chamado diretamente
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   verifyProjectsSystem()
     .then(result => {
       console.log('\n🏁 VERIFICAÇÃO CONCLUÍDA');
@@ -238,4 +238,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { verifyProjectsSystem };
+export { verifyProjectsSystem };
