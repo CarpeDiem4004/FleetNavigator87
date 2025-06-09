@@ -57,6 +57,8 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       valor_litro: "6.39", // Valor padrão do diesel
       valor_total: "0",
       projeto: "",
+      projeto_id: "",
+      base_id: "",
       motorista: "",
       motorista_rg: "",
       operador: "",
