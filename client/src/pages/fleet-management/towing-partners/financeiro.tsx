@@ -38,7 +38,7 @@ interface FinancialService {
   vehicle_plate: string;
   service_description: string;
   service_date: string;
-  total_amount: number;
+  total_amount: string | number;
   pickup_location: string;
   destination: string;
   approved_at: string;
@@ -47,7 +47,7 @@ interface FinancialService {
   payment_date?: string;
   payment_reference?: string;
   payment_method?: string;
-  invoice_number?: string;
+  payment_number?: string;
   notes?: string;
   created_at: string;
 }
@@ -142,13 +142,23 @@ export default function FinanceiroGuincho() {
   // Processar pagamento
   const processPaymentMutation = useMutation({
     mutationFn: async (serviceId: number) => {
-      return apiRequest(`/api/towing/financial/payment/${serviceId}`, {
+      const response = await fetch(`/api/towing/financial/payment/${serviceId}`, {
         method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
         body: JSON.stringify({
           ...paymentData,
           payment_date: paymentData.payment_date || new Date().toISOString().split('T')[0]
         })
       });
+      
+      if (!response.ok) {
+        throw new Error('Erro ao processar pagamento');
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -365,7 +375,7 @@ export default function FinanceiroGuincho() {
                         <td className="p-3">
                           {format(new Date(service.service_date), 'dd/MM/yyyy', { locale: ptBR })}
                         </td>
-                        <td className="p-3 text-center">R$ {service.total_amount.toFixed(2)}</td>
+                        <td className="p-3 text-center">R$ {parseFloat(String(service.total_amount || 0)).toFixed(2)}</td>
                         <td className="p-3 text-center">{getStatusBadge(service.payment_status)}</td>
                         <td className="p-3 text-center">
                           <div className="flex justify-center space-x-2">
@@ -453,7 +463,7 @@ export default function FinanceiroGuincho() {
                 <h4 className="font-semibold mb-2">Detalhes do Serviço</h4>
                 <p><strong>Parceiro:</strong> {selectedService.partner_name}</p>
                 <p><strong>Veículo:</strong> {selectedService.vehicle_plate}</p>
-                <p><strong>Valor:</strong> R$ {selectedService.total_amount.toFixed(2)}</p>
+                <p><strong>Valor:</strong> R$ {parseFloat(String(selectedService.total_amount || 0)).toFixed(2)}</p>
                 <p><strong>Local:</strong> {selectedService.pickup_location} → {selectedService.destination}</p>
               </div>
             )}
