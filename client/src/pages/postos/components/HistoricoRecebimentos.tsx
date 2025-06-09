@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/utils';
 import { apiRequest } from '@/lib/queryClient';
 import { supabaseAdmin } from '@/lib/supabase-compat';
+import { useAuth } from '@/context/AuthContext';
 
 interface RecebimentoItem {
   id: number;
@@ -41,6 +42,8 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [recebimentosList, setRecebimentosList] = useState<RecebimentoItem[]>([]);
   
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const queryClient = useQueryClient();
   
   const { data, isLoading, error } = useQuery({
@@ -286,15 +289,19 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
                   {recebimento.nome_operador || recebimento.operador || recebimento.usuario_operador || 'N/D'}
                 </TableCell>
                 <TableCell className="text-center">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteRecebimento(recebimento.id)}
-                    className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
-                    title="Excluir registro"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {isAdmin ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteRecebimento(recebimento.id)}
+                      className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                      title="Excluir registro (apenas administradores)"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">-</span>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
