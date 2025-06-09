@@ -109,13 +109,6 @@ const FuelCardRequestsPanel: React.FC = () => {
   };
   
   const handleOpenSolicitation = (solicitation: FuelCardSolicitation) => {
-    console.log('Modal data:', {
-      id: solicitation.id,
-      placa: solicitation.placa,
-      id_rota: solicitation.id_rota,
-      litros_solicitados: solicitation.litros_solicitados,
-      tipo_combustivel: solicitation.tipo_combustivel
-    });
     setSelectedSolicitation(solicitation);
     setEditedStatus(solicitation.status);
     setIsSheetOpen(true);
