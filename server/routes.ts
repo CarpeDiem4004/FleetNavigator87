@@ -1030,6 +1030,75 @@ async function criarTabelaDemoForms() {
 import sqlSeguroRouter from './routes/sql-seguro';
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // ENDPOINT PARA REGISTRAR RECEBIMENTOS DE COMBUSTÍVEL
+  app.post('/api/recebimentos', unifiedAuthMiddleware, async (req, res) => {
+    try {
+      const { posto, tipo_produto, litros_recebidos, valor_total, nome_fornecedor, nome_operador, observacoes } = req.body;
+      
+      console.log(`[RECEBIMENTOS] Registrando recebimento para posto: ${posto}`);
+      
+      // Map stations to receipt table names
+      const tableMap: { [key: string]: string } = {
+        'osasco_v2': 'recebimentos_posto_osasco_v2',
+        'abc_v2': 'recebimentos_posto_abc_v2',
+        'alair_v2': 'recebimentos_posto_alair_v2',
+        'campinas_v2': 'recebimentos_posto_campinas_v2',
+        'socorro_v2': 'recebimentos_posto_socorro_v2',
+        'sorocaba_v2': 'recebimentos_posto_sorocaba_v2',
+        'guarulhos_v2': 'recebimentos_posto_guarulhos_v2'
+      };
+      
+      const tableName = tableMap[posto.toLowerCase()];
+      
+      if (!tableName) {
+        return res.status(400).json({
+          success: false,
+          message: `Posto "${posto}" não encontrado`
+        });
+      }
+      
+      // Insert new fuel receipt
+      const insertQuery = `
+        INSERT INTO ${tableName} (
+          tipo_produto, 
+          litros_recebidos, 
+          valor_total, 
+          nome_fornecedor, 
+          nome_operador, 
+          observacoes,
+          created_at,
+          updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+        RETURNING *
+      `;
+      
+      const result = await pool.query(insertQuery, [
+        tipo_produto,
+        litros_recebidos,
+        valor_total,
+        nome_fornecedor,
+        nome_operador,
+        observacoes || ''
+      ]);
+      
+      console.log(`[RECEBIMENTOS] Recebimento registrado com sucesso. ID: ${result.rows[0].id}`);
+      
+      res.status(201).json({
+        success: true,
+        message: 'Recebimento registrado com sucesso',
+        data: result.rows[0]
+      });
+      
+    } catch (error: any) {
+      console.error('[RECEBIMENTOS] Erro ao registrar recebimento:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao registrar recebimento',
+        error: error.message
+      });
+    }
+  });
+
   // ENDPOINT CRÍTICO: DELETE para recebimentos (deve ser registrado PRIMEIRO)
   app.delete('/api/delete-fuel-receipt/:posto/:id', unifiedAuthMiddleware, async (req, res) => {
     const { posto, id } = req.params;
