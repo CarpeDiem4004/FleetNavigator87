@@ -317,10 +317,14 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
                 onValueChange={(value) => setFormData(prev => ({ ...prev, base_id: value }))}
                 disabled={!selectedProject || selectedProject.bases.length === 0}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a base" />
+                <SelectTrigger className="touch-manipulation">
+                  <SelectValue placeholder={
+                    selectedProject ? 
+                      `Selecione entre ${selectedProject.bases.length} bases` : 
+                      "Primeiro selecione um projeto"
+                  } />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[200px] overflow-y-auto">
                   {selectedProject?.bases.map((base) => (
                     <SelectItem key={base.id} value={base.id.toString()}>
                       {base.base_name}
@@ -328,6 +332,11 @@ export default function FuelCardRequestForm({ onRequestCreated, onClose }: FuelC
                   ))}
                 </SelectContent>
               </Select>
+              {selectedProject && selectedProject.bases.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {selectedProject.bases.length} bases disponíveis para {selectedProject.name}
+                </p>
+              )}
             </div>
           </div>
 
