@@ -92,17 +92,20 @@ export const HistoricoRecebimentos: React.FC<HistoricoRecebimentosProps> = ({
         throw new Error(error.message || 'Erro ao executar exclusão no banco');
       }
       
+      // Verificar se algum registro foi afetado pela operação de DELETE
+      console.log(`[DELETE SUPABASE] Operação executada. Registros afetados:`, data ? data.length : 0);
+      
+      // Sempre invalidar a query para recarregar os dados atualizados
+      queryClient.invalidateQueries({ queryKey: [`/api/recebimentos/${postId.toLowerCase()}`] });
+      setIsDeleteDialogOpen(false);
+      setDeleteItemId(null);
+      
       if (data && data.length > 0) {
         console.log(`[DELETE SUPABASE] Registro ${deleteItemId} excluído com sucesso`);
-        
-        // Invalidar a query para recarregar os dados
-        queryClient.invalidateQueries({ queryKey: [`/api/recebimentos/${postId.toLowerCase()}`] });
-        setIsDeleteDialogOpen(false);
-        setDeleteItemId(null);
-        
         alert('Registro excluído com sucesso!');
       } else {
-        throw new Error('Registro não encontrado ou não foi possível excluir');
+        console.log(`[DELETE SUPABASE] Registro ${deleteItemId} não encontrado - pode ter sido removido por outra operação`);
+        alert('Registro não encontrado. A lista foi atualizada.');
       }
     } catch (err: any) {
       console.error('❌ Erro ao excluir recebimento:', err);
