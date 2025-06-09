@@ -11647,7 +11647,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Também excluir da tabela servicos_guincho se existir
       try {
-        const deleteFromServicosGuincho = `DELETE FROM servicos_guincho WHERE towing_note_id = $1`;
+        const deleteFromServicosGuincho = `DELETE FROM servicos_guincho WHERE id = $1`;
         await pool.query(deleteFromServicosGuincho, [servicoId]);
       } catch (error) {
         // Não é crítico se essa tabela não existir ou falhar
