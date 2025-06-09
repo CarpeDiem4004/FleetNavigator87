@@ -1,0 +1,16 @@
+{
+  "name": "Murici Fleet Management",
+  "short_name": "Murici Fleet",
+  "description": "Sistema de Gestão de Frotas Murici",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/assets/murici-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
