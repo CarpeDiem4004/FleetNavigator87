@@ -41,25 +41,35 @@ router.post('/sincronizar-servicos-guincho', isAuthenticated, async (req, res) =
     const servicosGuinchoResult = await pool.query(syncToServicosGuinchoQuery);
     console.log(`[Sincronização] Serviços atualizados em servicos_guincho: ${servicosGuinchoResult.rowCount || 0}`);
     
-    // 2. Em seguida, atualizar a tabela towing_services
-    const syncToTowingServicesQuery = `
-      INSERT INTO towing_services (
-        id, partner_id, vehicle_plate, origin_location, destination_location,
-        service_type, service_date, cost, distance,
-        notes, status, priority, created_at, updated_at
+    // 2. Em seguida, sincronizar de volta para towing_partner_services qualquer dado novo
+    const syncBackToPartnerServicesQuery = `
+      INSERT INTO towing_partner_services (
+        id, partner_id, plate, origin, destination, 
+        cost, service_date, notes, status, 
+        approved_by, approved_at, created_at
       )
       SELECT 
-        tsn.id, tsn.partner_id, tsn.plate, tsn.pickup_location, tsn.delivery_location,
-        tsn.service_description, tsn.service_date, tsn.cost, tsn.mileage,
-        tsn.notes, tsn.status, tsn.priority, tsn.created_at, NOW()
-      FROM towing_service_notes tsn
-      LEFT JOIN towing_services ts ON tsn.id = ts.id
-      WHERE ts.id IS NULL
-      ON CONFLICT (id) DO NOTHING
+        sg.id, sg.parceiro_id, sg.placa_veiculo, sg.endereco_origem, sg.endereco_destino,
+        sg.valor, sg.data_servico, sg.observacoes, sg.status,
+        sg.usuario_aprovacao, sg.data_aprovacao, COALESCE(sg.data_lancamento, NOW())
+      FROM servicos_guincho sg
+      LEFT JOIN towing_partner_services tps ON sg.id = tps.id
+      WHERE tps.id IS NULL
+      ON CONFLICT (id) DO UPDATE SET
+        partner_id = EXCLUDED.partner_id,
+        plate = EXCLUDED.plate,
+        origin = EXCLUDED.origin,
+        destination = EXCLUDED.destination,
+        cost = EXCLUDED.cost,
+        service_date = EXCLUDED.service_date,
+        notes = EXCLUDED.notes,
+        status = EXCLUDED.status,
+        approved_by = EXCLUDED.approved_by,
+        approved_at = EXCLUDED.approved_at
     `;
     
-    const towingServicesResult = await pool.query(syncToTowingServicesQuery);
-    console.log(`[Sincronização] Serviços atualizados em towing_services: ${towingServicesResult.rowCount || 0}`);
+    const towingServicesResult = await pool.query(syncBackToPartnerServicesQuery);
+    console.log(`[Sincronização] Serviços sincronizados de volta para towing_partner_services: ${towingServicesResult.rowCount || 0}`);
     
     // 3. Atualizar a view vw_servicos_guincho (apenas se necessário)
     // Esta etapa só é necessária se a view não for refreshed automaticamente pelo sistema
@@ -77,9 +87,8 @@ router.post('/sincronizar-servicos-guincho', isAuthenticated, async (req, res) =
     // 4. Verificar quantos serviços estão em cada tabela após a sincronização
     const counts = await pool.query(`
       SELECT 
-        (SELECT COUNT(*) FROM towing_service_notes) AS notes_count,
+        (SELECT COUNT(*) FROM towing_partner_services) AS partner_services_count,
         (SELECT COUNT(*) FROM servicos_guincho) AS servicos_count,
-        (SELECT COUNT(*) FROM towing_services) AS towing_count,
         (SELECT COUNT(*) FROM vw_servicos_guincho) AS view_count
     `);
     
@@ -91,8 +100,8 @@ router.post('/sincronizar-servicos-guincho', isAuthenticated, async (req, res) =
       message: "Sincronização de serviços realizada com sucesso",
       statistics: {
         totalServicosSincronizados: (servicosGuinchoResult.rowCount || 0) + (towingServicesResult.rowCount || 0),
-        servicosGuincho: servicosGuinchoResult.rowCount || 0,
-        towingServices: towingServicesResult.rowCount || 0,
+        servicosGuinchoSincronizados: servicosGuinchoResult.rowCount || 0,
+        partnerServicesSincronizados: towingServicesResult.rowCount || 0,
         contagens: totals
       }
     });
