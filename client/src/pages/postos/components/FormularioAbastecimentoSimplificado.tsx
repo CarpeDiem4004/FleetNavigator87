@@ -538,43 +538,60 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Projeto *</FormLabel>
-                  <Select 
-                    value={selectedProjectId} 
-                    onValueChange={(value) => {
-                      if (isMobile) {
-                        // Para mobile, usar timeout para evitar travamentos
-                        setTimeout(() => {
+                  {isMobile ? (
+                    // Elemento SELECT nativo para mobile - melhor compatibilidade touch
+                    <FormControl>
+                      <select
+                        className="w-full h-14 text-lg border-2 border-gray-200 rounded-md px-4 bg-white focus:border-blue-500 focus:outline-none"
+                        value={selectedProjectId}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          console.log(`[Mobile-Native] Projeto selecionado: ${value}`);
                           setSelectedProjectId(value);
                           field.onChange(value);
-                        }, 100);
-                      } else {
+                        }}
+                        disabled={isLoadingProjects}
+                      >
+                        <option value="">
+                          {isLoadingProjects ? "Carregando..." : "Selecione o projeto"}
+                        </option>
+                        {projects.map((project) => (
+                          <option 
+                            key={`project-${project.id}`} 
+                            value={project.id.toString()}
+                          >
+                            {project.name}
+                          </option>
+                        ))}
+                      </select>
+                    </FormControl>
+                  ) : (
+                    // Componente Select normal para desktop
+                    <Select 
+                      value={selectedProjectId} 
+                      onValueChange={(value) => {
                         setSelectedProjectId(value);
                         field.onChange(value);
-                      }
-                    }}
-                    disabled={isLoadingProjects}
-                  >
-                    <FormControl>
-                      <SelectTrigger className={isMobile ? "h-12 text-base" : ""}>
-                        <SelectValue placeholder={isLoadingProjects ? "Carregando..." : "Selecione o projeto"} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent 
-                      className={isMobile ? "max-h-48 overflow-y-auto" : ""}
-                      position={isMobile ? "popper" : "item-aligned"}
-                      sideOffset={isMobile ? 8 : 4}
+                      }}
+                      disabled={isLoadingProjects}
                     >
-                      {projects.map((project) => (
-                        <SelectItem 
-                          key={`project-${project.id}`} 
-                          value={project.id.toString()}
-                          className={isMobile ? "h-12 text-base" : ""}
-                        >
-                          {project.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={isLoadingProjects ? "Carregando..." : "Selecione o projeto"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {projects.map((project) => (
+                          <SelectItem 
+                            key={`project-${project.id}`} 
+                            value={project.id.toString()}
+                          >
+                            {project.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -590,21 +607,17 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
                   <Select 
                     value={selectedBaseId} 
                     onValueChange={(value) => {
-                      if (isMobile) {
-                        // Para mobile, usar timeout para evitar travamentos
-                        setTimeout(() => {
-                          setSelectedBaseId(value);
-                          field.onChange(value);
-                        }, 100);
-                      } else {
-                        setSelectedBaseId(value);
-                        field.onChange(value);
-                      }
+                      console.log(`[Mobile-Select] Base selecionada: ${value}`);
+                      setSelectedBaseId(value);
+                      field.onChange(value);
                     }}
                     disabled={!selectedProjectId || availableBases.length === 0 || isLoadingProjects}
                   >
                     <FormControl>
-                      <SelectTrigger className={isMobile ? "h-12 text-base" : ""}>
+                      <SelectTrigger 
+                        className={isMobile ? "h-14 text-lg border-2 focus:border-blue-500" : ""}
+                        onClick={() => isMobile && console.log(`[Mobile-Select] Base trigger clicado - ${availableBases.length} bases disponíveis`)}
+                      >
                         <SelectValue 
                           placeholder={
                             !selectedProjectId 
@@ -617,9 +630,11 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent 
-                      className={isMobile ? "max-h-48 overflow-y-auto" : ""}
-                      position={isMobile ? "popper" : "item-aligned"}
-                      sideOffset={isMobile ? 8 : 4}
+                      className={isMobile ? "max-h-56 overflow-y-auto z-[9999] bg-white border-2 shadow-xl" : ""}
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      sideOffset={4}
                     >
                       {availableBases.map((base: any) => (
                         <SelectItem 
