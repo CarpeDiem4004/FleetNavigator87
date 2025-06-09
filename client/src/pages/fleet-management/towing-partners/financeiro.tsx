@@ -187,6 +187,41 @@ export default function FinanceiroGuincho() {
     },
   });
 
+  // Excluir serviço financeiro
+  const deleteServiceMutation = useMutation({
+    mutationFn: async (serviceId: number) => {
+      const response = await fetch(`/api/towing/financial/services/${serviceId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Erro ao excluir serviço');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Sucesso",
+        description: "Serviço excluído com sucesso",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/towing/financial/services'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/towing/financial/summary'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/towing/financial/report'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao excluir serviço",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleProcessPayment = () => {
     if (!selectedService) return;
     processPaymentMutation.mutate(selectedService.id);
@@ -398,6 +433,19 @@ export default function FinanceiroGuincho() {
                             >
                               <Eye className="w-4 h-4 mr-1" />
                               Detalhes
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => {
+                                if (confirm('Tem certeza de que deseja excluir este serviço financeiro?')) {
+                                  deleteServiceMutation.mutate(service.id);
+                                }
+                              }}
+                              disabled={deleteServiceMutation.isPending}
+                            >
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              Excluir
                             </Button>
                           </div>
                         </td>

@@ -233,4 +233,35 @@ export const getPartnerReport = async (pool: Pool, req: Request, res: Response) 
   }
 };
 
+// Função para excluir serviço financeiro
+export const deleteFinancialService = async (pool: Pool, req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (!id || isNaN(Number(id))) {
+      return res.status(400).json({ error: 'ID do serviço é obrigatório e deve ser um número válido' });
+    }
+
+    // Verificar se o serviço existe
+    const checkQuery = 'SELECT id FROM towing_financial_records WHERE id = $1';
+    const checkResult = await pool.query(checkQuery, [id]);
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Serviço financeiro não encontrado' });
+    }
+
+    // Excluir o serviço
+    const deleteQuery = 'DELETE FROM towing_financial_records WHERE id = $1';
+    await pool.query(deleteQuery, [id]);
+
+    res.json({ 
+      success: true, 
+      message: 'Serviço financeiro excluído com sucesso' 
+    });
+  } catch (error) {
+    console.error('Erro ao excluir serviço financeiro:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
 export default router;

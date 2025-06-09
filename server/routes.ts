@@ -97,7 +97,7 @@ import postoRoutes from "./routes/postoRoutes.js";
 import frotaEstoqueRoutes from "./routes/frotaEstoqueRoutes";
 import parceirosGuinchoRoutes from "./routes/parceirosGuinchoRoutes";
 import towingPartnersRoutes from "./routes/towingPartnersRoutes";
-import { getTowingFinancialSummary, getTowingFinancialServices, processPayment, getPartnerReport } from "./routes/towingFinancialRoutes";
+import { getTowingFinancialSummary, getTowingFinancialServices, processPayment, getPartnerReport, deleteFinancialService } from "./routes/towingFinancialRoutes";
 // Arquivo com problemas de sintaxe, desativado temporariamente
 // import simpleExternalAccess from './routes/simpleExternalAccess';
 // import simpleExternalAccessRepair from './routes/simpleExternalAccess_repair';
@@ -11674,6 +11674,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.put('/api/towing/financial/payment/:id', unifiedAuthMiddleware, (req: Request, res: Response) => 
     processPayment(pool, req, res)
+  );
+  
+  app.delete('/api/towing/financial/services/:id', unifiedAuthMiddleware, (req: Request, res: Response) => 
+    deleteFinancialService(pool, req, res)
   );
   
   app.get('/api/towing/financial/report', unifiedAuthMiddleware, (req: Request, res: Response) => 
