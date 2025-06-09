@@ -56,8 +56,12 @@ process.env.SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.e
 
 const app = express();
 
+// Middleware para processar JSON ANTES dos endpoints críticos
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
 // ENDPOINT CRÍTICO PARA RECEBIMENTOS - Registrar ANTES de todos os middlewares
-app.post('/api/recebimentos', async (req, res) => {
+app.post('/fuel-receipts', async (req, res) => {
   try {
     console.log('[RECEBIMENTOS] Endpoint direto chamado para posto:', req.body.posto);
     
