@@ -32,11 +32,18 @@ Esta análise verifica todos os links externos de abastecimento quanto a:
 
 ### 2. GUARULHOS V2
 **Link:** `/posto/guarulhos_v2/public`
-**Status:** 🔄 ANALISANDO...
+**Status:** ❌ DESATIVADO
+- **Motivo:** Posto desativado pelo cliente
 
 ### 3. ABC V2
 **Link:** `/posto/abc_v2/public`
-**Status:** 🔄 ANALISANDO...
+**Status:** ✅ FUNCIONANDO
+- **Mobile:** ✅ Otimizado
+- **Projetos:** ✅ Carrega 10 projetos
+- **Bases:** ✅ Carrega bases dinamicamente
+- **Registro:** ✅ Funcional
+- **API:** ✅ Resposta rápida
+- **Operador:** ✅ Auto-preenchido
 
 ### 4. SOCORRO V2
 **Link:** `/posto/socorro_v2/public`
