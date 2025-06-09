@@ -281,10 +281,9 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
           const errorText = await response.text();
           console.error(`[NET] ❌ HTTP Error: ${response.status}`);
           console.error(`[NET] 📄 Error body:`, errorText);
-          console.warn('[FALLBACK] 🔄 Usando configuração mínima');
-          setProjects([
-            { id: 1, name: "Operação Principal", bases: [{ id: 1, base_name: "Base Principal" }] }
-          ]);
+          console.error('[CRITICAL] Não foi possível carregar projetos!');
+          // NÃO usar fallback - deixar vazio para forçar correção
+          setProjects([]);
         }
       } catch (error) {
         const totalTime = performance.now() - startTime;
