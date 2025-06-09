@@ -96,12 +96,12 @@ emergencyRouter.post('/submit', async (req, res) => {
     
     // Inserir serviço no banco
     const insertQuery = `
-      INSERT INTO towing_service_notes (
-        partner_id, plate, pickup_location, delivery_location, 
-        service_description, service_date, cost, mileage, 
-        notes, contact_name, contact_phone, status, created_at, payment_status
+      INSERT INTO towing_partner_services (
+        partner_id, plate, origin, destination, 
+        service_type, service_date, cost, km_traveled, 
+        notes, driver_name, contact_phone, status, created_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending', NOW(), 'pending')
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending', NOW())
       RETURNING *
     `;
     
@@ -110,7 +110,7 @@ emergencyRouter.post('/submit', async (req, res) => {
       normalizedPlate.toUpperCase(),
       normalizedPickup,
       normalizedDelivery,
-      normalizedService,
+      'guincho', // service_type
       normalizedDate,
       parseFloat(normalizedCost.toString()),
       parseInt(normalizedMileage.toString()),
