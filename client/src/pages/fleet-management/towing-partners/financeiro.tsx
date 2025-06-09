@@ -77,24 +77,49 @@ export default function FinanceiroGuincho() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Buscar relatório detalhado
-  const { data: detailedReport, isLoading: reportLoading } = useQuery({
-    queryKey: ['/api/towing/payments/detailed-report', startDate, endDate, selectedPartner || undefined],
+  // Buscar resumo financeiro
+  const { data: financialSummary, isLoading: summaryLoading } = useQuery({
+    queryKey: ['/api/towing/financial/summary', startDate, endDate, selectedPartner || undefined],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (startDate) params.append('start_date', startDate);
       if (endDate) params.append('end_date', endDate);
       if (selectedPartner) params.append('partner_id', selectedPartner);
       
-      const response = await fetch(`/api/towing/payments/detailed-report?${params}`);
-      if (!response.ok) throw new Error('Erro ao buscar relatório');
+      const response = await fetch(`/api/towing/financial/summary?${params}`);
+      if (!response.ok) throw new Error('Erro ao buscar resumo financeiro');
       return response.json();
     },
   });
 
-  // Buscar pagamentos
-  const { data: payments = [], isLoading: paymentsLoading } = useQuery<Payment[]>({
-    queryKey: ['/api/towing/payments'],
+  // Buscar serviços financeiros
+  const { data: servicesData, isLoading: servicesLoading } = useQuery({
+    queryKey: ['/api/towing/financial/services', startDate, endDate, selectedPartner || undefined],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
+      if (selectedPartner) params.append('partner_id', selectedPartner);
+      
+      const response = await fetch(`/api/towing/financial/services?${params}`);
+      if (!response.ok) throw new Error('Erro ao buscar serviços');
+      return response.json();
+    },
+  });
+
+  // Buscar relatório por parceiro
+  const { data: partnerReport, isLoading: reportLoading } = useQuery({
+    queryKey: ['/api/towing/financial/report', startDate, endDate, selectedPartner || undefined],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
+      if (selectedPartner) params.append('partner_id', selectedPartner);
+      
+      const response = await fetch(`/api/towing/financial/report?${params}`);
+      if (!response.ok) throw new Error('Erro ao buscar relatório');
+      return response.json();
+    },
   });
 
   // Buscar resumo financeiro

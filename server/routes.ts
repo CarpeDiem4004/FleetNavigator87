@@ -11663,6 +11663,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registrar rotas para o novo módulo de parceiros de guincho
   app.use('/api/towing', towingPartnersRoutes);
   
+  // Rotas do módulo financeiro de guincho
+  app.get('/api/towing/financial/summary', unifiedAuthMiddleware, (req: Request, res: Response) => 
+    getTowingFinancialSummary(pool, req, res)
+  );
+  
+  app.get('/api/towing/financial/services', unifiedAuthMiddleware, (req: Request, res: Response) => 
+    getTowingFinancialServices(pool, req, res)
+  );
+  
+  app.put('/api/towing/financial/payment/:id', unifiedAuthMiddleware, (req: Request, res: Response) => 
+    processPayment(pool, req, res)
+  );
+  
+  app.get('/api/towing/financial/report', unifiedAuthMiddleware, (req: Request, res: Response) => 
+    getPartnerReport(pool, req, res)
+  );
+  
   // Registrar rotas de autenticação de parceiros de guincho
   const { default: partnerAuthRoutes } = await import('./routes/partnerAuth.js');
   app.use('/api/auth', partnerAuthRoutes);
