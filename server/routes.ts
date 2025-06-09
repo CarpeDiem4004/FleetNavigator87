@@ -10309,10 +10309,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Validação específica para abastecimentos
+      // Validação específica para abastecimentos com logs detalhados
       if (table === 'abastecimentos_supabase') {
-        const camposObrigatorios = ['placa', 'quantidade_litros', 'preco_litro', 'valor_total'];
-        const camposFaltando = camposObrigatorios.filter(campo => !data[campo] || data[campo] === '' || data[campo] === 0);
+        console.log(`[SUPABASE-INSERT] Validando campos obrigatórios. Dados recebidos:`, data);
+        
+        const camposObrigatorios = ['placa', 'km_atual', 'tipo_combustivel', 'litros', 'valor_litro', 'valor_total'];
+        const camposFaltando = camposObrigatorios.filter(campo => {
+          const valor = data[campo];
+          const faltando = !valor || valor === '' || valor === 0;
+          console.log(`[SUPABASE-INSERT] Campo ${campo}: valor=${valor}, faltando=${faltando}`);
+          return faltando;
+        });
         
         if (camposFaltando.length > 0) {
           console.error(`[SUPABASE-INSERT] ERRO: Campos obrigatórios faltando:`, camposFaltando);
@@ -10353,11 +10360,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           km_atual: Number(data.km_atual) || 0,
           hodometro_atual: data.hodometro_atual ? Number(data.hodometro_atual) : null,
           tipo_combustivel: data.tipo_combustivel || 'Diesel',
-          litros: Number(data.quantidade_litros) || 0,
-          valor_litro: Number(data.preco_litro) || 0,
+          litros: Number(data.litros) || 0, // Corrigido: usar 'litros' diretamente
+          valor_litro: Number(data.valor_litro) || 0, // Corrigido: usar 'valor_litro' diretamente
           valor_total: Number(data.valor_total) || 0,
           motorista: data.motorista || 'Não informado',
-          motorista_rg: data.rg_motorista || 'Não informado',
+          motorista_rg: data.motorista_rg || 'Não informado', // Corrigido campo
           operador: data.operador || 'Sistema',
           projeto: data.projeto || 'Não informado',
           tipo_veiculo: data.tipo_veiculo || 'frota',

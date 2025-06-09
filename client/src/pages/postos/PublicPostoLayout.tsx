@@ -29,6 +29,17 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
   
   // Estado para controlar atualizações
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Identificação automática do posto ao carregar
+  useEffect(() => {
+    console.log(`[POSTO-IDENTIFICACAO] Posto detectado: ${id} (${nomePosto})`);
+    console.log(`[POSTO-IDENTIFICACAO] URL atual: ${window.location.href}`);
+    console.log(`[POSTO-IDENTIFICACAO] Usuario logado: ${localStorage.getItem('userName') || 'Não identificado'}`);
+    
+    // Salvar informações do posto no localStorage para uso posterior
+    localStorage.setItem('currentPosto', id);
+    localStorage.setItem('currentPostoName', nomePosto);
+  }, [id, nomePosto]);
   
   // Efeito para controlar ciclo de vida do componente
   useEffect(() => {

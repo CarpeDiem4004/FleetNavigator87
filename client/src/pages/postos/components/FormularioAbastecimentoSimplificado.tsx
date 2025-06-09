@@ -242,6 +242,12 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         tipo_lavagem: null // Campo opcional
       };
       
+      console.log(`[FormularioAbastecimento] Dados sendo enviados:`, {
+        table: 'abastecimentos_supabase',
+        data: dadosSupabase,
+        posto: postId.toLowerCase()
+      });
+
       const response = await fetch('/api/supabase-insert', {
         method: "POST",
         headers: {
@@ -255,7 +261,10 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         }),
       });
 
+      console.log(`[FormularioAbastecimento] Status da resposta:`, response.status);
+      
       const resultado = await response.json();
+      console.log(`[FormularioAbastecimento] Resposta completa:`, resultado);
 
       if (response.ok && resultado.success) {
         console.log(`[FormularioAbastecimento] Sucesso:`, resultado);
