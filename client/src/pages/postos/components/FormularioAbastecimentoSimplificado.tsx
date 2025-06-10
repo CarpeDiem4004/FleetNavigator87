@@ -59,6 +59,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
   const [selectedBaseId, setSelectedBaseId] = useState("");
   const [isLoadingProjects, setIsLoadingProjects] = useState(true); // Iniciar como carregando
   const [debugStatus, setDebugStatus] = useState(isMobile ? "📱 Carregando para mobile..." : "Inicializando...");
+  const [autoReloadTrigger, setAutoReloadTrigger] = useState(0); // Trigger para recarregamento automático
 
   const form = useForm<AbastecimentoValues>({
     resolver: zodResolver(abastecimentoSchema),
@@ -162,7 +163,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     carregarOperador();
   }, [form]);
 
-  // Carregar projetos automaticamente no mount (especialmente otimizado para mobile)
+  // Carregar projetos automaticamente no mount, login e após registros de abastecimento
   useEffect(() => {
     let isCancelled = false;
     
@@ -352,7 +353,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     return () => {
       isCancelled = true;
     };
-  }, []); // Executar apenas uma vez no mount
+  }, [autoReloadTrigger]); // Executar no mount e quando autoReloadTrigger mudar
 
   // Obter projeto selecionado
   const selectedProject = projects.find((p: any) => p.id.toString() === selectedProjectId);
@@ -520,12 +521,14 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         // Limpar formulário
         form.reset();
         
+        // Recarregar projetos automaticamente após registro bem-sucedido
+        console.log(`[AUTO-RELOAD] 🔄 Triggering automatic project reload after successful registration`);
+        setAutoReloadTrigger(prev => prev + 1);
+        
         // Callback de sucesso
         if (onRegistroSucesso) {
           onRegistroSucesso();
         }
-
-        // Remover o reload automático - deixar para o componente pai decidir
         
       } else {
         throw new Error(resultado.message || "Erro ao registrar abastecimento");
