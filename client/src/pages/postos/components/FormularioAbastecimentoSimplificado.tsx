@@ -214,19 +214,23 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
           if (data.success && Array.isArray(data.data) && data.data.length > 0) {
             if (!isCancelled) {
               setProjects(data.data);
+              setDebugStatus(`✅ ${data.data.length} projetos carregados`);
               console.log(`[MOBILE-DEBUG] ✅ Projetos carregados com sucesso: ${data.data.length}`);
             }
           } else {
             console.error(`[MOBILE-DEBUG] ❌ Estrutura de dados inválida:`, data);
+            setDebugStatus(`❌ Dados inválidos: ${JSON.stringify(data).substring(0, 50)}...`);
             if (!isCancelled) setProjects([]);
           }
         } else {
           const errorText = await response.text();
           console.error(`[MOBILE-DEBUG] ❌ Erro HTTP ${response.status}:`, errorText);
+          setDebugStatus(`❌ HTTP ${response.status}: ${errorText.substring(0, 30)}...`);
           if (!isCancelled) setProjects([]);
         }
       } catch (error) {
         console.error(`[MOBILE-DEBUG] ❌ Erro de rede/JavaScript:`, error);
+        setDebugStatus(`❌ Erro: ${String(error).substring(0, 50)}...`);
         if (!isCancelled) setProjects([]);
       } finally {
         if (!isCancelled) {
@@ -579,6 +583,11 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Projeto *</FormLabel>
+                  {isMobile && (
+                    <div className="text-xs bg-gray-100 p-2 rounded mb-2">
+                      Debug: {debugStatus}
+                    </div>
+                  )}
                   <div className="flex gap-2">
                     <FormControl className="flex-1">
                       <select
