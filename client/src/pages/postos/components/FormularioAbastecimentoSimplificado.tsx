@@ -31,7 +31,7 @@ const abastecimentoSchema = z.object({
   motorista_rg: z.string().min(1, "RG do motorista é obrigatório"),
   operador: z.string().min(1, "Nome do operador é obrigatório"),
   tipo_veiculo: z.string().default("frota"),
-  observacoes: z.string().optional(),
+
 });
 
 type AbastecimentoValues = z.infer<typeof abastecimentoSchema>;
@@ -76,7 +76,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       motorista_rg: "",
       operador: "",
       tipo_veiculo: "frota",
-      observacoes: "",
+
     },
   });
 
@@ -773,20 +773,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               )}
             />
 
-            {/* Observações */}
-            <FormField
-              control={form.control}
-              name="observacoes"
-              render={({ field }) => (
-                <FormItem className="md:col-span-2">
-                  <FormLabel>Observações (opcional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Observações adicionais..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
           </div>
 
           {/* Botões de ação - Otimizados para Mobile */}
