@@ -25,6 +25,74 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const router = Router();
 
+// Rota para verificar token de acesso externo
+router.get('/simple-external/verify/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token não fornecido'
+      });
+    }
+
+    // Mapear tokens de teste para parceiros
+    const tokenMapping: Record<string, { id: number; name: string }> = {
+      'teste_daiane_do_vale_amaral__token': { id: 16, name: 'Daiane do Vale Amaral' },
+      'teste_gilson_fernandes_gonçalves__token': { id: 11, name: 'Gilson Fernandes Gonçalves' },
+      'teste_claudio_de_oliveira_silva_token': { id: 9, name: 'Claudio de Oliveira Silva' },
+      'teste_caio_ramos_de_souza_token': { id: 8, name: 'Caio Ramos de Souza' },
+      'teste_allan_de_souza_vieira_token': { id: 15, name: 'Allan de Souza Vieira' },
+    };
+
+    const tokenLower = token.toLowerCase();
+    const partner = tokenMapping[tokenLower];
+    
+    if (partner) {
+      return res.status(200).json({
+        success: true,
+        partner: {
+          id: partner.id,
+          name: partner.name,
+          status: 'ativo',
+          isTestPartner: true
+        }
+      });
+    }
+
+    // Se não encontrou nos tokens de teste, verificar no banco
+    const query = `
+      SELECT p.id, p.name, p.status 
+      FROM towing_partners p
+      JOIN towing_access_tokens t ON p.id = t.partner_id
+      WHERE t.token = $1 AND t.active = true
+        AND (t.expires_at IS NULL OR t.expires_at > NOW())
+    `;
+    
+    const result = await pool.query(query, [token]);
+    
+    if (result.rows.length > 0) {
+      return res.status(200).json({
+        success: true,
+        partner: result.rows[0]
+      });
+    }
+
+    return res.status(404).json({
+      success: false,
+      message: 'Token inválido ou expirado'
+    });
+
+  } catch (error) {
+    console.error('[SimpleExternalAccess] Erro ao verificar token:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro interno ao verificar token'
+    });
+  }
+});
+
 // Rota para buscar serviços de teste para um parceiro específico
 router.get('/test-services/:id', async (req, res) => {
   try {

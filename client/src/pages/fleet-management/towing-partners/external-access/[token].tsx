@@ -263,6 +263,10 @@ export default function TowingPartnerExternalAccess() {
             partnerId = 9;
             partnerName = 'Claudio de Oliveira Silva';
             companyName = 'Claudio Oliveira Guinchos LTDA';
+          } else if (token.includes('DAIANE_DO_VALE_AMARAL')) {
+            partnerId = 16;
+            partnerName = 'Daiane do Vale Amaral';
+            companyName = 'Daiane do Vale Amaral Guincho LTDA';
           }
           
           // Tratar o token como válido diretamente
