@@ -64,10 +64,18 @@ emergencyRouter.post('/submit', async (req, res) => {
         'parceiro_12_permanente_2025_token': 12, // Fluxo Guinchos
         'parceiro_5_permanente_2025_token': 5,   // Guincho Águia
         'parceiro_7_permanente_2025_token': 7,   // Rafael Abner Transporte
-        'teste_gilson_fernandes_gonçalves': 16
+        'teste_gilson_fernandes_gonçalves': 16,
+        'teste_deloes_guinchos_e_munck_token': 14,
+        'teste_deloes_guinchos_e_munck__token': 14  // com duplo underscore
       };
       
       partnerId = tokenMapping[tokenLower];
+      
+      console.log('[EmergencyRouter] Debug token mapping:', {
+        tokenLower,
+        availableTokens: Object.keys(tokenMapping).filter(t => t.includes('deloes')),
+        foundPartnerId: partnerId
+      });
       
       if (partnerId) {
         console.log(`[EmergencyRouter] Serviço sendo criado para parceiro ID: ${partnerId}`);
@@ -167,7 +175,9 @@ emergencyRouter.get('/history/:token', async (req, res) => {
       'parceiro_12_permanente_2025_token': 12, // Fluxo Guinchos
       'parceiro_5_permanente_2025_token': 5,   // Guincho Águia
       'parceiro_7_permanente_2025_token': 7,   // Rafael Abner Transporte
-      'teste_gilson_fernandes_gonçalves': 16
+      'teste_gilson_fernandes_gonçalves': 16,
+      'teste_deloes_guinchos_e_munck_token': 14,
+      'teste_deloes_guinchos_e_munck__token': 14  // com duplo underscore
     };
     
     partnerId = tokenMapping[tokenLower];
