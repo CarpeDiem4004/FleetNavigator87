@@ -237,7 +237,8 @@ export default function TowingPartnerExternalAccess() {
             token.includes('CLAUDIO_DE_OLIVEIRA') ||
             token.includes('GILSON_FERNANDES') ||
             token.includes('FERNANDES_GONCALVES') ||
-            token.includes('DAIANE_DO_VALE_AMARAL')) {
+            token.includes('DAIANE_DO_VALE_AMARAL') ||
+            token.includes('DELOES_GUINCHOS')) {
           // Determinar qual parceiro mostrar com base no token
           let partnerId = 6;
           let partnerName = 'Ford Service';
@@ -267,6 +268,10 @@ export default function TowingPartnerExternalAccess() {
             partnerId = 16;
             partnerName = 'Daiane do Vale Amaral';
             companyName = 'Daiane do Vale Amaral Guincho LTDA';
+          } else if (token.includes('DELOES_GUINCHOS')) {
+            partnerId = 14;
+            partnerName = 'deloes guinchos e munck';
+            companyName = 'Delões Guinchos e Munck LTDA';
           }
           
           // Tratar o token como válido diretamente

@@ -44,6 +44,7 @@ router.get('/simple-external/verify/:token', async (req, res) => {
       'teste_claudio_de_oliveira_silva_token': { id: 9, name: 'Claudio de Oliveira Silva' },
       'teste_caio_ramos_de_souza_token': { id: 8, name: 'Caio Ramos de Souza' },
       'teste_allan_de_souza_vieira_token': { id: 15, name: 'Allan de Souza Vieira' },
+      'teste_deloes_guinchos_e_munck_token': { id: 14, name: 'deloes guinchos e munck' },
     };
 
     const tokenLower = token.toLowerCase();
