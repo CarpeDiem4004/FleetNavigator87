@@ -6542,9 +6542,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/fuel-card-solicitations/export', isAuthenticated, exportFuelCardSolicitationsToExcel);
 
   // Rotas para projetos e bases
-  app.get('/api/projects', isAuthenticated, getProjects);
-  app.get('/api/projects/:projectId/bases', isAuthenticated, getProjectBases);
-  app.get('/api/projects-with-bases', isAuthenticated, getProjectsWithBases);
+  app.get('/api/projects', isAuthenticatedHybrid, getProjects);
+  app.get('/api/projects/:projectId/bases', isAuthenticatedHybrid, getProjectBases);
+  app.get('/api/projects-with-bases', isAuthenticatedHybrid, getProjectsWithBases);
   app.get('/api/public/projects-with-bases', getProjectsWithBases); // Endpoint público para postos externos
   
   // API de teste específica para celular com dados estáticos

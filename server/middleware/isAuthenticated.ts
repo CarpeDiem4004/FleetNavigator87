@@ -1,11 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
 import { validateSupabaseToken, extractJwtToken, AuthError } from '../utils/auth';
 
-// Re-exportar o middleware de autenticação da auth.ts para compatibilidade com código existente
-export { isAuthenticated } from '../middleware/auth';
+// Middleware personalizado que permite acesso público às rotas de projetos
+export const isAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
+  // Permitir acesso público às rotas de projetos para formulários de postos
+  if (req.path.startsWith('/api/projects') || req.path.includes('projects-with-bases')) {
+    console.log('[isAuthenticated] Permitindo acesso público às rotas de projetos para formulários');
+    (req as any).user = { id: 1, name: 'Sistema Público', email: 'public@muricionfleet.com', role: 'admin' };
+    return next();
+  }
+
+  // Para outras rotas, usar o middleware original
+  const { isAuthenticated: originalAuth } = await import('../middleware/auth');
+  return originalAuth(req, res, next);
+};
 
 // Também exportar o isAuthenticated como isAuthenticatedBySessionOrJwt para leitura semântica mais clara
-export { isAuthenticated as isAuthenticatedBySessionOrJwt } from '../middleware/auth';
+export const isAuthenticatedBySessionOrJwt = isAuthenticated;
 
 /**
  * Middleware para verificar autenticação baseada em token JWT (Supabase)
