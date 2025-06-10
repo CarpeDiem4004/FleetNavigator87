@@ -57,10 +57,11 @@ emergencyRouter.post('/submit', async (req, res) => {
         'parceiro_10_permanente_2025_token': 10, // Daiane do Vale Amaral
         'teste_gilson_fernandes_gonçalves_token': 11,
         'teste_gilson_fernandes_gonçalves__token': 11,  // com duplo underscore
-        'parceiro_11_permanente_2025_token': 11, // Gilson Fernandes Gonçalves
-        'ford_permanente_2025_token': 1,
-        'chevrolet_permanente_2025_token': 2,
-        'volkswagen_permanente_2025_token': 3,
+        'parceiro_11_permanente_2025_token': 11, // Delões Guinchos e Munck
+        'ford_permanente_2025_token': 6,         // Ford
+        'parceiro_1_permanente_2025_token': 1,   // Guincho Rápido Ltda
+        'parceiro_2_permanente_2025_token': 2,   // Guincho Seguro S.A.
+        'parceiro_3_permanente_2025_token': 3,   // Guincho Estrela
         'parceiro_12_permanente_2025_token': 12, // Fluxo Guinchos
         'parceiro_5_permanente_2025_token': 5,   // Guincho Águia
         'parceiro_7_permanente_2025_token': 7,   // Rafael Abner Transporte
@@ -162,10 +163,11 @@ emergencyRouter.get('/history/:token', async (req, res) => {
       'parceiro_10_permanente_2025_token': 10, // Daiane do Vale Amaral
       'teste_gilson_fernandes_gonçalves_token': 11,
       'teste_gilson_fernandes_gonçalves__token': 11,  // com duplo underscore
-      'parceiro_11_permanente_2025_token': 11, // Gilson Fernandes Gonçalves
-      'ford_permanente_2025_token': 1,
-      'chevrolet_permanente_2025_token': 2,
-      'volkswagen_permanente_2025_token': 3,
+      'parceiro_11_permanente_2025_token': 11, // Delões Guinchos e Munck
+      'ford_permanente_2025_token': 6,         // Ford
+      'parceiro_1_permanente_2025_token': 1,   // Guincho Rápido Ltda
+      'parceiro_2_permanente_2025_token': 2,   // Guincho Seguro S.A.
+      'parceiro_3_permanente_2025_token': 3,   // Guincho Estrela
       'parceiro_12_permanente_2025_token': 12, // Fluxo Guinchos
       'parceiro_5_permanente_2025_token': 5,   // Guincho Águia
       'parceiro_7_permanente_2025_token': 7,   // Rafael Abner Transporte

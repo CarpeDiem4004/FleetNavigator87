@@ -46,6 +46,18 @@ router.get('/simple-external/verify/:token', async (req, res) => {
       'teste_allan_de_souza_vieira_token': { id: 15, name: 'Allan de Souza Vieira' },
       'teste_deloes_guinchos_e_munck_token': { id: 11, name: 'Delões Guinchos e Munck' },
       'teste_deloes_guinchos_e_munck__token': { id: 11, name: 'Delões Guinchos e Munck' },
+      'parceiro_1_permanente_2025_token': { id: 1, name: 'Guincho Rápido Ltda' },
+      'parceiro_2_permanente_2025_token': { id: 2, name: 'Guincho Seguro S.A.' },
+      'parceiro_3_permanente_2025_token': { id: 3, name: 'Guincho Estrela' },
+      'ford_permanente_2025_token': { id: 6, name: 'Ford' },
+      'parceiro_5_permanente_2025_token': { id: 5, name: 'Guincho Águia' },
+      'parceiro_7_permanente_2025_token': { id: 7, name: 'Rafael Abner Transporte' },
+      'parceiro_8_permanente_2025_token': { id: 8, name: 'Caio Ramos de Souza' },
+      'parceiro_9_permanente_2025_token': { id: 9, name: 'Claudio de Oliveira Silva' },
+      'parceiro_10_permanente_2025_token': { id: 10, name: 'Daiane do Vale Amaral' },
+      'parceiro_11_permanente_2025_token': { id: 11, name: 'Delões Guinchos e Munck' },
+      'parceiro_12_permanente_2025_token': { id: 12, name: 'Fluxo Guinchos' },
+      'allan_permanente_2025_token': { id: 15, name: 'Allan de Souza Vieira' },
     };
 
     const tokenLower = token.toLowerCase();
