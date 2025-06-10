@@ -133,20 +133,20 @@ import ManutencaoFrotaCampinas from "@/pages/bases/ManutencaoFrotaCampinas";
 // Importação das páginas da Base Goiânia
 import BaseGoiania from "@/pages/bases/BaseGoiania";
 
-// Importação das páginas públicas de postos - redirecionamento para Remédios (Maio/2025)
+// Importação das páginas públicas de postos
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
-import OsascoV2Public from "@/pages/postos/public/Osasco_v2V2Public";
+import OsascoV2Public from "@/pages/postos/public/OsascoV2Public";
 import GuarulhosPublic from "@/pages/postos/public/GuarulhosPublic";
-import GuarulhosV2Public from "@/pages/postos/public/Guarulhos_v2V2Public";
-import AlairV2Public from "@/pages/postos/public/Alair_v2V2Public";
-import SaoPauloPublic from "@/pages/postos/public/SaopauloPublic";
+import GuarulhosV2Public from "@/pages/postos/public/GuarulhosV2Public";
+import AlairV2Public from "@/pages/postos/public/AlairV2Public";
+import SaoPauloPublic from "@/pages/postos/public/SaoPauloPublic";
 import CampinasPublic from "@/pages/postos/public/CampinasPublic";
-import CampinasV2Public from "@/pages/postos/public/Campinas_v2V2Public";
-import ABCPublic from "@/pages/postos/public/AbcPublic";
+import CampinasV2Public from "@/pages/postos/public/CampinasV2Public";
+import ABCPublic from "@/pages/postos/public/ABCPublic";
 import SocorroPublic from "@/pages/postos/public/SocorroPublic";
-import SocorroV2Public from "@/pages/postos/public/Socorro_v2V2Public";
+import SocorroV2Public from "@/pages/postos/public/SocorroV2Public";
 import SorocabaPublic from "@/pages/postos/public/SorocabaPublic";
-import SorocabaV2Public from "@/pages/postos/public/Sorocaba_v2V2Public";
+import SorocabaV2Public from "@/pages/postos/public/SorocabaV2Public";
 import RegisterPostoUser from "@/pages/postos/RegisterPostoUser";
 import RedirectToPosto from "@/pages/RedirectToPosto";
 import PostoAcessoDireto from "@/pages/PostoAcessoDireto";
@@ -404,7 +404,7 @@ function App() {
           <Route path="/posto/abc/public">
             <ABCPublic />
           </Route>
-{/* ABC_V2 removido - Maio/2025 */}
+          {/* ABC_V2 removido - Maio/2025 */}
           <Route path="/posto/socorro/public">
             <SocorroPublic />
           </Route>
