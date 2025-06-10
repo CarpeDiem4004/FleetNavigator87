@@ -562,6 +562,9 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
           onClick={() => {
             setRegistroSucesso(false);
             form.reset();
+            // Recarregar projetos ao iniciar novo registro
+            console.log(`[AUTO-RELOAD] 🔄 Triggering project reload on new registration start`);
+            setAutoReloadTrigger(prev => prev + 1);
           }}
           variant="outline"
         >
