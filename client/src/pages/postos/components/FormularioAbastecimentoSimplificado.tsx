@@ -172,13 +172,35 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       setIsLoadingProjects(true);
       
       setDebugStatus(`🔄 Carregando projetos...`);
-      console.log(`[MOBILE-AUTO-LOAD] 📱 Iniciando carregamento automático para celular`);
-      console.log(`[MOBILE-AUTO-LOAD] Device:`, {
+      console.log(`[MOBILE-DIAGNOSTICO] 📱 Iniciando análise completa do carregamento`);
+      
+      // Diagnóstico completo do dispositivo
+      const deviceInfo = {
         isMobile,
         isTouch: 'ontouchstart' in window,
         screenWidth: window.screen.width,
+        screenHeight: window.screen.height,
+        devicePixelRatio: window.devicePixelRatio,
         userAgent: navigator.userAgent,
-        origin: window.location.origin
+        platform: navigator.platform,
+        language: navigator.language,
+        online: navigator.onLine,
+        connection: (navigator as any).connection?.effectiveType || 'unknown',
+        memory: (performance as any).memory?.usedJSHeapSize || 'unknown',
+        maxTouchPoints: navigator.maxTouchPoints || 0,
+        orientation: window.screen.orientation?.type || 'unknown',
+        cookieEnabled: navigator.cookieEnabled,
+        origin: window.location.origin,
+        pathname: window.location.pathname,
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log(`[MOBILE-DIAGNOSTICO] 📊 Device Info:`, deviceInfo);
+      console.log(`[MOBILE-DIAGNOSTICO] 🌐 Environment:`, {
+        localStorage: typeof localStorage !== 'undefined',
+        sessionStorage: typeof sessionStorage !== 'undefined',
+        fetch: typeof fetch !== 'undefined',
+        Promise: typeof Promise !== 'undefined'
       });
       
       try {
@@ -218,6 +240,27 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               setDebugStatus(`✅ ${data.data.length} projetos carregados automaticamente`);
               console.log(`[AUTO-LOAD] ✅ Projetos carregados com sucesso: ${data.data.length}`);
               console.log(`[AUTO-LOAD] 📋 Lista de projetos:`, data.data.map((p: any) => p.name).join(', '));
+              
+              // Diagnóstico específico de bases para celular
+              const totalBases = data.data.reduce((total: number, project: any) => total + (project.bases?.length || 0), 0);
+              console.log(`[MOBILE-BASES] 🏢 Total de bases carregadas: ${totalBases}`);
+              
+              // Verificar projetos sem bases
+              const projetosSemBases = data.data.filter((p: any) => !p.bases || p.bases.length === 0);
+              if (projetosSemBases.length > 0) {
+                console.warn(`[MOBILE-BASES] ⚠️ Projetos sem bases:`, projetosSemBases.map((p: any) => p.name));
+              }
+              
+              // Log detalhado do primeiro projeto para teste
+              if (data.data[0]) {
+                console.log(`[MOBILE-BASES] 🔍 Primeiro projeto detalhado:`, {
+                  id: data.data[0].id,
+                  name: data.data[0].name,
+                  basesCount: data.data[0].bases?.length || 0,
+                  firstBase: data.data[0].bases?.[0]?.base_name || 'Sem bases',
+                  allBases: data.data[0].bases?.map((b: any) => `${b.base_name} (${b.base_code})`).slice(0, 3) || []
+                });
+              }
             }
           } else {
             console.error(`[AUTO-LOAD] ❌ Estrutura de dados inválida:`, data);
@@ -639,23 +682,33 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
                 <FormItem>
                   <FormLabel>Projeto *</FormLabel>
                   {isMobile && (
-                    <div className="text-sm bg-blue-50 border border-blue-200 p-3 rounded-lg mb-3 flex items-center gap-2">
-                      {isLoadingProjects ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                          <span className="text-blue-700">Carregando projetos...</span>
-                        </>
-                      ) : projects.length > 0 ? (
-                        <>
-                          <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                          <span className="text-green-700">{projects.length} projetos carregados</span>
-                        </>
-                      ) : (
-                        <>
-                          <div className="w-4 h-4 bg-red-500 rounded-full"></div>
-                          <span className="text-red-700">Erro no carregamento</span>
-                        </>
+                    <div className="text-sm bg-blue-50 border border-blue-200 p-3 rounded-lg mb-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        {isLoadingProjects ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                            <span className="text-blue-700">Carregando projetos...</span>
+                          </>
+                        ) : projects.length > 0 ? (
+                          <>
+                            <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+                            <span className="text-green-700">{projects.length} projetos carregados</span>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-4 h-4 bg-red-500 rounded-full"></div>
+                            <span className="text-red-700">Erro no carregamento</span>
+                          </>
+                        )}
+                      </div>
+                      {projects.length > 0 && (
+                        <div className="text-xs text-gray-600">
+                          {projects.reduce((total: number, p: any) => total + (p.bases?.length || 0), 0)} bases disponíveis
+                        </div>
                       )}
+                      <div className="text-xs text-gray-500 mt-1">
+                        {debugStatus}
+                      </div>
                     </div>
                   )}
                   <div className="flex gap-2">
