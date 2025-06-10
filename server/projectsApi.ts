@@ -116,13 +116,23 @@ export async function getProjectsWithBases(req: Request, res: Response) {
   });
   
   try {
-    // Headers específicos para mobile
+    // Headers específicos para mobile com CORS melhorado
     if (isMobile || isMobileRequest) {
+      const allowedOrigins = [
+        'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev',
+        'https://muricionfleet-joaopaulo60.replit.app',
+        req.get('Origin')
+      ].filter(Boolean);
+      
+      res.set('Access-Control-Allow-Origin', allowedOrigins[0] || '*');
+      res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Mobile-Request, Cookie');
+      res.set('Access-Control-Allow-Credentials', 'true');
       res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
-      res.set('Vary', 'User-Agent, X-Mobile-Request');
-      res.set('Access-Control-Allow-Origin', '*');
-      res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
-      res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Mobile-Request');
+      res.set('Vary', 'User-Agent, X-Mobile-Request, Origin');
+      
+      console.log(`[PROJECTS-API] 📱 Headers CORS configurados para mobile`);
+      console.log(`[PROJECTS-API] 🌐 Origin permitida: ${allowedOrigins[0] || '*'}`);
     }
     
     // Medir tempo de conexão com banco

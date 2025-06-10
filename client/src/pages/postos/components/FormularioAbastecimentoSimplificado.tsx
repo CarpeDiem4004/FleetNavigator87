@@ -216,15 +216,31 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         console.log(`[MOBILE-DIAGNOSTIC] 🕐 Timestamp: ${new Date().toISOString()}`);
         
         const startTime = Date.now();
+        
+        // Headers otimizados para mobile com autenticação melhorada
+        const headers: Record<string, string> = {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-Mobile-Request': isMobile ? 'true' : 'false',
+          'Cache-Control': 'no-cache'
+        };
+        
+        // Tentar usar token JWT se disponível (para compatibilidade mobile)
+        const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+          console.log(`[MOBILE-AUTH] 🔐 Token JWT adicionado para requisição mobile`);
+        }
+        
+        console.log(`[MOBILE-REQUEST] 📱 Fazendo requisição mobile otimizada para: ${apiUrl}`);
+        console.log(`[MOBILE-REQUEST] 🔒 Headers:`, Object.keys(headers));
+        
         const response = await fetch(apiUrl, {
           method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'X-Mobile-Request': isMobile ? 'true' : 'false',
-            'Cache-Control': 'no-cache'
-          },
-          credentials: 'include'
+          headers,
+          credentials: 'include',
+          // Timeout específico para mobile (mais tempo em redes lentas)
+          signal: AbortSignal.timeout(isMobile ? 15000 : 8000)
         });
         
         const responseTime = Date.now() - startTime;
@@ -278,6 +294,40 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         } else {
           const errorText = await response.text();
           console.error(`[AUTO-LOAD] ❌ Erro HTTP ${response.status}:`, errorText);
+          
+          // Implementar fallback específico para mobile em caso de erro 401/403
+          if ((response.status === 401 || response.status === 403) && (isMobile || isMobileRequest)) {
+            console.log(`[MOBILE-FALLBACK] 🔄 Tentando fallback sem autenticação para mobile...`);
+            
+            try {
+              const fallbackResponse = await fetch(apiUrl, {
+                method: 'GET',
+                headers: {
+                  'Accept': 'application/json',
+                  'X-Mobile-Request': 'true',
+                  'Cache-Control': 'no-cache'
+                },
+                credentials: 'omit'
+              });
+              
+              if (fallbackResponse.ok) {
+                const fallbackData = await fallbackResponse.json();
+                if (fallbackData.success && Array.isArray(fallbackData.data) && fallbackData.data.length > 0) {
+                  console.log(`[MOBILE-FALLBACK] ✅ Fallback bem-sucedido! ${fallbackData.data.length} projetos carregados`);
+                  if (!isCancelled) {
+                    setProjects(fallbackData.data);
+                    setDebugStatus(`✅ ${fallbackData.data.length} projetos carregados (modo compatibilidade mobile)`);
+                    return;
+                  }
+                }
+              } else {
+                console.error(`[MOBILE-FALLBACK] ❌ Fallback também falhou: ${fallbackResponse.status}`);
+              }
+            } catch (fallbackError) {
+              console.error(`[MOBILE-FALLBACK] ❌ Erro no fallback:`, fallbackError);
+            }
+          }
+          
           setDebugStatus(`❌ HTTP ${response.status}: ${errorText.substring(0, 30)}...`);
           if (!isCancelled) setProjects([]);
         }
