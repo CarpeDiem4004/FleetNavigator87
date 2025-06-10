@@ -37,14 +37,12 @@ router.get('/test-services/:id', async (req, res) => {
       });
     }
     
-    // Buscar serviços de teste deste parceiro
-    const testServicesList = getTestServices(partnerId);
-    
-    console.log(`[TowingPartners] Serviços de teste encontrados para parceiro ${partnerId}:`, testServicesList.length);
+    // Retornar serviços vazios por enquanto - funcionalidade será implementada futuramente
+    console.log(`[TowingPartners] Buscando serviços de teste para parceiro ${partnerId}`);
     
     return res.status(200).json({
       success: true,
-      services: testServicesList
+      services: []
     });
   } catch (error) {
     console.error('[TowingPartners] Erro ao buscar serviços de teste:', error);
@@ -175,29 +173,10 @@ router.get('/partners/:id', (req, res, next) => {
     
     console.log(`Resultado da busca: ${data ? 'Parceiro encontrado' : 'Parceiro não encontrado'}`);
     
-    // Se encontrou o parceiro, verificar se há serviços de teste para ele
+    // Se encontrou o parceiro, os dados já estão corretos do banco de dados
     if (data) {
-      try {
-        // Buscar serviços de teste para o parceiro
-        const testServices = getTestServices(numericId);
-        if (testServices && testServices.length > 0) {
-          console.log(`Encontrados ${testServices.length} serviços de teste para o parceiro ID: ${numericId}`);
-          
-          // Atualizar os contadores de serviços para incluir os serviços de teste
-          data.total_requests = (data.total_requests || 0) + testServices.length;
-          
-          // Contar serviços de teste completados (assumindo que status === 'concluído' significa completado)
-          const completedTestServices = testServices.filter(service => 
-            service.status === 'concluído' || service.status === 'aprovado' || service.status === 'pago'
-          );
-          
-          data.completed_requests = (data.completed_requests || 0) + completedTestServices.length;
-          console.log(`Contadores atualizados: total_requests=${data.total_requests}, completed_requests=${data.completed_requests}`);
-        }
-      } catch (e) {
-        console.error(`Erro ao processar serviços de teste para parceiro ID: ${numericId}`, e);
-        // Não deixamos o erro interromper a resposta
-      }
+      console.log(`Parceiro encontrado: ${data.name} (ID: ${data.id})`);
+      // Os contadores de serviços vêm diretamente do banco de dados
     }
     
     if (error) {

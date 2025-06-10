@@ -52,6 +52,8 @@ emergencyRouter.post('/submit', async (req, res) => {
         'teste_caio_ramos_de_souza_token': 8,
         'teste_caio_ramos_de_souza__token': 8,  // com duplo underscore
         'parceiro_8_permanente_2025_token': 8,
+        'teste_daiane_do_vale_amaral_token': 10,
+        'teste_daiane_do_vale_amaral__token': 10,  // com duplo underscore
         'parceiro_10_permanente_2025_token': 10, // Daiane do Vale Amaral
         'parceiro_11_permanente_2025_token': 11, // Delões Guinchos e Munck
         'ford_permanente_2025_token': 1,
@@ -151,6 +153,8 @@ emergencyRouter.get('/history/:token', async (req, res) => {
       'teste_caio_ramos_de_souza_token': 8,
       'teste_caio_ramos_de_souza__token': 8,  // com duplo underscore
       'parceiro_8_permanente_2025_token': 8,
+      'teste_daiane_do_vale_amaral_token': 10,
+      'teste_daiane_do_vale_amaral__token': 10,  // com duplo underscore
       'parceiro_10_permanente_2025_token': 10, // Daiane do Vale Amaral
       'parceiro_11_permanente_2025_token': 11, // Delões Guinchos e Munck
       'ford_permanente_2025_token': 1,
