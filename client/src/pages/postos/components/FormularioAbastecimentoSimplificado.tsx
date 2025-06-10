@@ -343,8 +343,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         motorista: data.motorista,
         motorista_rg: data.motorista_rg,
         operador: data.operador,
-        tipo_veiculo: data.tipo_veiculo,
-        observacoes: data.observacoes || null,
+        tipo_veiculo: data.tipo_veiculo
       };
 
       // Dados mapeados corretamente para a tabela abastecimentos_posto_osasco_v2
@@ -364,7 +363,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         base_name: dadosEnvio.base_name,
         base_id: dadosEnvio.base_id,
         tipo_veiculo: dadosEnvio.tipo_veiculo,
-        observacoes: dadosEnvio.observacoes,
+        observacoes: "",
         lavagem: false, // Campo obrigatório na tabela
         tipo_lavagem: null // Campo opcional
       };
