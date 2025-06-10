@@ -633,30 +633,8 @@ router.get('/partners/:id/requests', authenticateJWT, async (req, res) => {
       // Continuamos mesmo com erro para buscar serviços de teste
     }
     
-    // Buscar serviços de teste armazenados em memória
-    const testServices = getTestServices(partnerId);
-    
-    if (testServices && testServices.length > 0) {
-      console.log(`[TowingPartnersRoutes] Encontrados ${testServices.length} serviços de teste para parceiro ID: ${partnerId}`);
-      
-      // Formatar serviços de teste para corresponder ao formato esperado
-      const formattedTestServices = testServices.map(service => {
-        return {
-          ...service,
-          partner_name: service.partner_name || "Parceiro Teste",
-          company_name: service.company_name || "Empresa Teste",
-          is_paid: service.payment_status === "paid",
-          is_test_service: true,  // Marca para identificação
-          status: service.status || "pendente"
-        };
-      });
-      
-      // Combinar resultados
-      services = [...formattedTestServices, ...services];
-      console.log(`[TowingPartnersRoutes] Total de serviços retornados (reais + teste): ${services.length}`);
-    } else {
-      console.log(`[TowingPartnersRoutes] Nenhum serviço de teste encontrado para parceiro ID: ${partnerId}`);
-    }
+    // Retornar apenas serviços reais do banco de dados
+    console.log(`[TowingPartnersRoutes] Total de serviços retornados: ${services.length}`);
     
     res.json(services);
   } catch (error: any) {
