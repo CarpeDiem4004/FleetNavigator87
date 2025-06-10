@@ -6541,11 +6541,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/fuel-card-solicitations/:id/status', isAuthenticated, updateFuelCardSolicitationStatus);
   app.post('/api/fuel-card-solicitations/export', isAuthenticated, exportFuelCardSolicitationsToExcel);
 
+  // Função específica para acesso público aos projetos
+  const getProjectsWithBasesPublic = async (req: Request, res: Response) => {
+    console.log('[PUBLIC-PROJECTS] Processando requisição pública para projetos e bases');
+    try {
+      const startTime = Date.now();
+      
+      // Consultas paralelas para melhor performance
+      const [projectsResult, basesResult] = await Promise.all([
+        pool.query(`
+          SELECT id, name, description, is_active 
+          FROM projects 
+          WHERE is_active = true 
+          ORDER BY name ASC
+          LIMIT 50
+        `),
+        pool.query(`
+          SELECT pb.id, pb.project_id, pb.base_name, pb.base_code, pb.description, pb.is_active
+          FROM project_bases pb
+          INNER JOIN projects p ON pb.project_id = p.id
+          WHERE pb.is_active = true AND p.is_active = true
+          ORDER BY pb.base_name ASC
+        `)
+      ]);
+      
+      // Criar mapa de bases por projeto_id
+      const basesMap = new Map();
+      basesResult.rows.forEach(base => {
+        if (!basesMap.has(base.project_id)) {
+          basesMap.set(base.project_id, []);
+        }
+        basesMap.get(base.project_id).push({
+          id: base.id,
+          base_name: base.base_name,
+          base_code: base.base_code,
+          description: base.description,
+          is_active: base.is_active
+        });
+      });
+      
+      // Combinar projetos com suas bases
+      const projects = projectsResult.rows.map(project => ({
+        id: project.id,
+        name: project.name,
+        description: project.description,
+        is_active: project.is_active,
+        bases: basesMap.get(project.id) || []
+      }));
+      
+      const totalTime = Date.now() - startTime;
+      console.log(`[PUBLIC-PROJECTS] Processamento concluído em ${totalTime}ms`);
+      
+      return res.status(200).json({
+        success: true,
+        data: projects,
+        count: projects.length,
+        performance: { total_time_ms: totalTime }
+      });
+      
+    } catch (error: any) {
+      console.error('[PUBLIC-PROJECTS] Erro ao buscar projetos:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar projetos e bases',
+        error: error.message
+      });
+    }
+  };
+
   // Rotas para projetos e bases
   app.get('/api/projects', isAuthenticatedHybrid, getProjects);
   app.get('/api/projects/:projectId/bases', isAuthenticatedHybrid, getProjectBases);
-  app.get('/api/projects-with-bases', isAuthenticatedHybrid, getProjectsWithBases);
-  app.get('/api/public/projects-with-bases', getProjectsWithBases); // Endpoint público para postos externos
+  app.get('/api/projects-with-bases', getProjectsWithBasesPublic); // Rota pública para formulários de postos
+  app.get('/api/public/projects-with-bases', getProjectsWithBasesPublic); // Endpoint público para postos externos
   
   // API de teste específica para celular com dados estáticos
   app.get('/api/mobile/test-projects', (req, res) => {
