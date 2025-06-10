@@ -47,6 +47,9 @@ emergencyRouter.post('/submit', async (req, res) => {
       if (tokenLower === 'teste_allan_de_souza_vieira_token') {
         partnerId = 15;
         console.log('[EmergencyRouter] Serviço sendo criado para Allan de Souza Vieira (ID: 15)');
+      } else if (tokenLower === 'teste_claudio_de_oliveira_silva_token') {
+        partnerId = 9;
+        console.log('[EmergencyRouter] Serviço sendo criado para Claudio de Oliveira Silva (ID: 9)');
       }
     }
     
@@ -117,9 +120,20 @@ emergencyRouter.get('/history/:token', async (req, res) => {
     console.log('[EmergencyRouter] Buscando histórico para token:', token);
     
     let partnerId;
-    if (token.toLowerCase() === 'teste_allan_de_souza_vieira_token') {
+    const tokenLower = token.toLowerCase();
+    
+    console.log('[EmergencyRouter] Token recebido:', token);
+    console.log('[EmergencyRouter] Token em lowercase:', tokenLower);
+    
+    if (tokenLower === 'teste_allan_de_souza_vieira_token') {
       partnerId = 15;
+      console.log('[EmergencyRouter] Token Allan reconhecido, ID: 15');
+    } else if (tokenLower === 'teste_claudio_de_oliveira_silva_token') {
+      partnerId = 9;
+      console.log('[EmergencyRouter] Token Claudio reconhecido, ID: 9');
     }
+    
+    console.log('[EmergencyRouter] Partner ID encontrado:', partnerId);
     
     if (!partnerId) {
       return res.status(404).json({ success: false, message: "Token não reconhecido" });
