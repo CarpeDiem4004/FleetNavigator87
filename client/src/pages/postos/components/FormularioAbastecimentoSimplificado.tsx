@@ -161,61 +161,92 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     carregarOperador();
   }, [form]);
 
-  // Carregar projetos - VERSÃO SIMPLIFICADA E CORRIGIDA
+  // Carregar projetos com múltiplas tentativas para mobile
   useEffect(() => {
+    let attempts = 0;
+    const maxAttempts = 3;
+    
     const fetchProjects = async () => {
+      attempts++;
       setIsLoadingProjects(true);
       
       try {
+        console.log(`[FormularioAbastecimento] 🔄 Tentativa ${attempts}/${maxAttempts}`);
         console.log(`[FormularioAbastecimento] 📱 Modo Mobile: ${isMobile}`);
-        console.log(`[FormularioAbastecimento] 🚀 Iniciando fetch de projetos...`);
         
-        const response = await fetch('/api/public/projects-with-bases', {
+        // URL absoluta para garantir que funcione em links externos
+        const baseUrl = window.location.origin;
+        const apiUrl = `${baseUrl}/api/public/projects-with-bases`;
+        
+        console.log(`[FormularioAbastecimento] 🌐 URL da API: ${apiUrl}`);
+        
+        const response = await fetch(apiUrl, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
             'X-Mobile-Request': isMobile ? 'true' : 'false',
-            'User-Agent': navigator.userAgent,
-            'Cache-Control': 'no-cache, no-store, must-revalidate'
+            'X-Requested-With': 'XMLHttpRequest',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
           },
           credentials: 'include',
+          mode: 'cors'
         });
         
         console.log(`[FormularioAbastecimento] ✅ Response Status: ${response.status}`);
         
         if (response.ok) {
           const data = await response.json();
-          console.log(`[FormularioAbastecimento] 📦 Dados recebidos:`, data);
+          console.log(`[FormularioAbastecimento] 📦 Dados recebidos (tentativa ${attempts}):`, data?.data?.length || 0, 'projetos');
           
           if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-            console.log(`[FormularioAbastecimento] ✅ ${data.data.length} projetos carregados:`, data.data.slice(0, 3));
+            console.log(`[FormularioAbastecimento] ✅ SUCESSO - ${data.data.length} projetos carregados na tentativa ${attempts}`);
             
-            // Força re-render imediato para mobile
+            // Força atualização dupla para garantir render
             setProjects([]);
-            setTimeout(() => {
-              setProjects(data.data);
-              console.log(`[Mobile-Fix] Projetos definidos após timeout:`, data.data.length);
-            }, 100);
+            await new Promise(resolve => setTimeout(resolve, 10));
+            setProjects(data.data);
+            
+            console.log(`[Mobile-Success] Projetos definidos com sucesso:`, data.data.length);
+            return; // Sucesso, para aqui
           } else {
-            console.error('[FormularioAbastecimento] ❌ Dados inválidos recebidos:', data);
-            setProjects([]);
+            console.error(`[FormularioAbastecimento] ❌ Dados inválidos na tentativa ${attempts}:`, data);
           }
         } else {
-          const errorText = await response.text();
-          console.error(`[FormularioAbastecimento] ❌ Erro HTTP ${response.status}:`, errorText);
+          console.error(`[FormularioAbastecimento] ❌ Erro HTTP ${response.status} na tentativa ${attempts}`);
+        }
+        
+        // Se chegou aqui, houve erro - tenta novamente se possível
+        if (attempts < maxAttempts) {
+          console.log(`[FormularioAbastecimento] 🔁 Tentando novamente em 1 segundo...`);
+          setTimeout(() => fetchProjects(), 1000);
+          return;
+        } else {
+          console.error('[FormularioAbastecimento] ❌ Todas as tentativas falharam');
           setProjects([]);
         }
+        
       } catch (error) {
-        console.error('[FormularioAbastecimento] Erro na requisição:', error);
-        setProjects([]);
+        console.error(`[FormularioAbastecimento] ❌ Erro na tentativa ${attempts}:`, error);
+        
+        if (attempts < maxAttempts) {
+          console.log(`[FormularioAbastecimento] 🔁 Tentando novamente em 1 segundo...`);
+          setTimeout(() => fetchProjects(), 1000);
+          return;
+        } else {
+          setProjects([]);
+        }
       } finally {
-        setIsLoadingProjects(false);
+        if (attempts >= maxAttempts) {
+          setIsLoadingProjects(false);
+        }
       }
     };
 
+    // Inicia o carregamento
     fetchProjects();
-  }, []);
+  }, [isMobile]);
 
   // Obter projeto selecionado
   const selectedProject = projects.find((p: any) => p.id.toString() === selectedProjectId);
@@ -552,34 +583,76 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Projeto *</FormLabel>
-                  <FormControl>
-                    <select
-                      className="w-full h-14 text-lg border-2 border-gray-200 rounded-md px-4 bg-white focus:border-blue-500 focus:outline-none"
-                      value={selectedProjectId}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        console.log(`[Select-Change] Projeto selecionado: ${value} (isMobile: ${isMobile})`);
-                        setSelectedProjectId(value);
-                        field.onChange(value);
-                      }}
-                      disabled={isLoadingProjects}
-                    >
-                      <option value="">
-                        {isLoadingProjects ? "Carregando..." : "Selecione o projeto"}
-                      </option>
-                      {projects.map((project) => (
-                        <option 
-                          key={`project-${project.id}`} 
-                          value={project.id.toString()}
-                        >
-                          {project.name}
+                  <div className="flex gap-2">
+                    <FormControl className="flex-1">
+                      <select
+                        className="w-full h-14 text-lg border-2 border-gray-200 rounded-md px-4 bg-white focus:border-blue-500 focus:outline-none"
+                        value={selectedProjectId}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          console.log(`[Select-Change] Projeto selecionado: ${value} (isMobile: ${isMobile})`);
+                          setSelectedProjectId(value);
+                          field.onChange(value);
+                        }}
+                        disabled={isLoadingProjects}
+                      >
+                        <option value="">
+                          {isLoadingProjects 
+                            ? "Carregando..." 
+                            : projects.length > 0 
+                              ? `Selecione o projeto (${projects.length} disponíveis)` 
+                              : "❌ Nenhum projeto carregado"}
                         </option>
-                      ))}
-                      {projects.length === 0 && !isLoadingProjects && (
-                        <option value="" disabled>Nenhum projeto encontrado</option>
-                      )}
-                    </select>
-                  </FormControl>
+                        {projects.length > 0 ? (
+                          projects.map((project) => {
+                            console.log(`[SELECT-RENDER] Renderizando: ${project.name} (ID: ${project.id})`);
+                            return (
+                              <option 
+                                key={`project-${project.id}`} 
+                                value={project.id.toString()}
+                              >
+                                {project.name}
+                              </option>
+                            );
+                          })
+                        ) : (
+                          !isLoadingProjects && (
+                            <option value="" disabled>❌ Erro: API não retornou projetos</option>
+                          )
+                        )}
+                      </select>
+                    </FormControl>
+                    {projects.length === 0 && !isLoadingProjects && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setIsLoadingProjects(true);
+                          try {
+                            const response = await fetch(`${window.location.origin}/api/public/projects-with-bases`, {
+                              method: 'GET',
+                              headers: { 'Accept': 'application/json' },
+                              credentials: 'include'
+                            });
+                            if (response.ok) {
+                              const data = await response.json();
+                              if (data.success && data.data?.length > 0) {
+                                setProjects(data.data);
+                                console.log(`[Manual-Load] ${data.data.length} projetos carregados`);
+                              }
+                            }
+                          } catch (error) {
+                            console.error('[Manual-Load] Erro:', error);
+                          } finally {
+                            setIsLoadingProjects(false);
+                          }
+                        }}
+                        className="h-14 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm font-medium"
+                        disabled={isLoadingProjects}
+                      >
+                        🔄
+                      </button>
+                    )}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
