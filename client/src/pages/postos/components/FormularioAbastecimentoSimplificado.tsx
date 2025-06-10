@@ -59,7 +59,10 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
   const [selectedBaseId, setSelectedBaseId] = useState("");
   const [isLoadingProjects, setIsLoadingProjects] = useState(true); // Iniciar como carregando
   const [debugStatus, setDebugStatus] = useState(isMobile ? "📱 Carregando para mobile..." : "Inicializando...");
-  const [autoReloadTrigger, setAutoReloadTrigger] = useState(0); // Trigger para recarregamento automático
+  const [autoReloadTrigger, setAutoReloadTrigger] = useState(0);
+  const [connectionAttempts, setConnectionAttempts] = useState(0);
+  const [lastError, setLastError] = useState<string | null>(null);
+  const [apiStrategy, setApiStrategy] = useState<'test' | 'public' | 'direct' | 'fallback'>('test');
 
   const form = useForm<AbastecimentoValues>({
     resolver: zodResolver(abastecimentoSchema),
@@ -171,49 +174,106 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       if (isCancelled) return;
       
       setIsLoadingProjects(true);
+      const attemptNumber = connectionAttempts + 1;
+      setConnectionAttempts(attemptNumber);
       
-      setDebugStatus(`🔄 Carregando projetos...`);
-      console.log(`[MOBILE-DIAGNOSTICO] 📱 Iniciando análise completa do carregamento`);
+      setDebugStatus(`Tentativa ${attemptNumber} - Carregando projetos...`);
+      console.log(`[DIAGNOSTICO-LINKS] Iniciando tentativa ${attemptNumber} de carregamento`);
       
-      // Diagnóstico completo do dispositivo
-      const deviceInfo = {
+      // Diagnóstico completo do dispositivo e conectividade
+      const diagnosticInfo = {
         isMobile,
         isTouch: 'ontouchstart' in window,
         screenWidth: window.screen.width,
         screenHeight: window.screen.height,
-        devicePixelRatio: window.devicePixelRatio,
-        userAgent: navigator.userAgent,
+        userAgent: navigator.userAgent.substring(0, 100),
         platform: navigator.platform,
         language: navigator.language,
         online: navigator.onLine,
         connection: (navigator as any).connection?.effectiveType || 'unknown',
-        memory: (performance as any).memory?.usedJSHeapSize || 'unknown',
-        maxTouchPoints: navigator.maxTouchPoints || 0,
-        orientation: window.screen.orientation?.type || 'unknown',
         cookieEnabled: navigator.cookieEnabled,
         origin: window.location.origin,
         pathname: window.location.pathname,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        attempts: attemptNumber,
+        lastError: lastError || 'Nenhum erro anterior'
       };
       
-      console.log(`[MOBILE-DIAGNOSTICO] 📊 Device Info:`, deviceInfo);
-      console.log(`[MOBILE-DIAGNOSTICO] 🌐 Environment:`, {
-        localStorage: typeof localStorage !== 'undefined',
-        sessionStorage: typeof sessionStorage !== 'undefined',
-        fetch: typeof fetch !== 'undefined',
-        Promise: typeof Promise !== 'undefined'
-      });
+      console.log(`[DIAGNOSTICO-LINKS] Info do dispositivo:`, diagnosticInfo);
+      
+      // Estratégia de API baseada no número de tentativas e tipo de dispositivo
+      let currentStrategy = apiStrategy;
+      if (attemptNumber === 1) {
+        currentStrategy = isMobile ? 'test' : 'public';
+      } else if (attemptNumber === 2) {
+        currentStrategy = isMobile ? 'public' : 'direct';
+      } else if (attemptNumber === 3) {
+        currentStrategy = 'direct';
+      } else {
+        currentStrategy = 'fallback';
+      }
+      
+      setApiStrategy(currentStrategy);
+      console.log(`[DIAGNOSTICO-LINKS] Usando estratégia: ${currentStrategy}`);
       
       try {
-        // Para celular, tentar primeiro a API de teste, depois a principal
-        const testApiUrl = `${window.location.origin}/api/mobile/test-projects`;
-        const mainApiUrl = `${window.location.origin}/api/public/projects-with-bases`;
-        const apiUrl = isMobile ? testApiUrl : mainApiUrl;
+        // Definir URL baseada na estratégia atual
+        let apiUrl: string;
+        let headers: Record<string, string> = {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        };
         
-        console.log(`[AUTO-LOAD] 🔗 Fazendo requisição para: ${apiUrl}`);
-        if (isMobile) {
-          console.log(`[MOBILE-TEST] 📱 Usando API de teste específica para celular`);
+        switch (currentStrategy) {
+          case 'test':
+            apiUrl = `${window.location.origin}/api/mobile/test-projects`;
+            headers['X-Mobile-Request'] = 'true';
+            headers['X-Strategy'] = 'test';
+            break;
+          case 'public':
+            apiUrl = `${window.location.origin}/api/public/projects-with-bases`;
+            headers['X-Mobile-Request'] = isMobile ? 'true' : 'false';
+            headers['X-Strategy'] = 'public';
+            break;
+          case 'direct':
+            apiUrl = `${window.location.origin}/api/projects-with-bases`;
+            headers['X-Mobile-Request'] = isMobile ? 'true' : 'false';
+            headers['X-Strategy'] = 'direct';
+            // Tentar incluir autenticação para API direta
+            const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+            if (token) {
+              headers['Authorization'] = `Bearer ${token}`;
+            }
+            break;
+          case 'fallback':
+            // Estratégia de emergência: dados estáticos mínimos
+            console.log(`[DIAGNOSTICO-LINKS] Usando dados de emergência após ${attemptNumber} tentativas`);
+            if (!isCancelled) {
+              const emergencyData = [
+                {
+                  id: 1,
+                  name: "SISTEMA RECUPERAÇÃO",
+                  description: "Modo emergência ativo",
+                  is_active: true,
+                  bases: [
+                    { id: 1, base_name: "Base Emergência", base_code: "EMG01", description: "Base de emergência" }
+                  ]
+                }
+              ];
+              setProjects(emergencyData);
+              setDebugStatus(`⚠️ Modo emergência ativo - ${emergencyData.length} projeto disponível`);
+              setLastError("Todas as APIs falharam, usando modo emergência");
+              setIsLoadingProjects(false);
+              return;
+            }
+            return;
+          default:
+            apiUrl = `${window.location.origin}/api/public/projects-with-bases`;
         }
+        
+        console.log(`[DIAGNOSTICO-LINKS] Tentativa ${attemptNumber} - URL: ${apiUrl}`);
+        console.log(`[DIAGNOSTICO-LINKS] Headers:`, Object.keys(headers));
         
         // Diagnóstico de conectividade específico para celular
         console.log(`[MOBILE-DIAGNOSTIC] 🌐 Testando conectividade...`);
@@ -224,23 +284,16 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         
         const startTime = Date.now();
         
-        // Headers otimizados para mobile com autenticação melhorada
-        const headers: Record<string, string> = {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'X-Mobile-Request': isMobile ? 'true' : 'false',
-          'Cache-Control': 'no-cache'
-        };
+        // Configurar timeout baseado na estratégia e dispositivo
+        const timeout = currentStrategy === 'test' ? 5000 : 
+                       currentStrategy === 'public' ? 10000 :
+                       currentStrategy === 'direct' ? 15000 : 20000;
         
-        // Tentar usar token JWT se disponível (para compatibilidade mobile)
-        const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-          console.log(`[MOBILE-AUTH] 🔐 Token JWT adicionado para requisição mobile`);
-        }
+        setDebugStatus(`${currentStrategy.toUpperCase()} - Conectando...`);
         
-        console.log(`[MOBILE-REQUEST] 📱 Fazendo requisição mobile otimizada para: ${apiUrl}`);
-        console.log(`[MOBILE-REQUEST] 🔒 Headers:`, Object.keys(headers));
+        // Fazer a requisição com a configuração apropriada
+        console.log(`[DIAGNOSTICO-LINKS] Iniciando requisição com timeout de ${timeout}ms`);
+        console.log(`[DIAGNOSTICO-LINKS] URL: ${apiUrl}`);
         
         const response = await fetch(apiUrl, {
           method: 'GET',
