@@ -236,7 +236,8 @@ export default function TowingPartnerExternalAccess() {
             token.includes('CAIO_RAMOS') ||
             token.includes('CLAUDIO_DE_OLIVEIRA') ||
             token.includes('GILSON_FERNANDES') ||
-            token.includes('FERNANDES_GONCALVES')) {
+            token.includes('FERNANDES_GONCALVES') ||
+            token.includes('DAIANE_DO_VALE_AMARAL')) {
           // Determinar qual parceiro mostrar com base no token
           let partnerId = 6;
           let partnerName = 'Ford Service';
