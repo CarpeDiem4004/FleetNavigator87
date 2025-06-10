@@ -230,9 +230,54 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
           setDebugStatus(`❌ HTTP ${response.status}: ${errorText.substring(0, 30)}...`);
           if (!isCancelled) setProjects([]);
         }
-      } catch (error) {
-        console.error(`[AUTO-LOAD] ❌ Erro de rede/JavaScript:`, error);
-        setDebugStatus(`❌ Erro: ${String(error).substring(0, 50)}...`);
+      } catch (error: any) {
+        // Diagnóstico completo para telefones dos operadores
+        const mobileInfo = {
+          userAgent: navigator.userAgent,
+          online: navigator.onLine,
+          connection: (navigator as any).connection?.effectiveType || 'unknown',
+          memory: (performance as any).memory?.usedJSHeapSize || 'unknown',
+          screen: `${window.screen.width}x${window.screen.height}`,
+          viewport: `${window.innerWidth}x${window.innerHeight}`,
+          touch: 'ontouchstart' in window,
+          platform: navigator.platform,
+          language: navigator.language,
+          cookieEnabled: navigator.cookieEnabled,
+          doNotTrack: navigator.doNotTrack,
+          maxTouchPoints: navigator.maxTouchPoints || 0
+        };
+
+        console.error(`[MOBILE-DIAGNOSTICO] 📱 Erro completo:`, {
+          error: {
+            message: error.message,
+            name: error.name,
+            stack: error.stack?.substring(0, 300)
+          },
+          device: mobileInfo,
+          url: window.location.href,
+          timestamp: new Date().toISOString()
+        });
+
+        // Detecção de problemas específicos
+        let errorMessage = "Erro desconhecido";
+        if (error.message?.includes('fetch') || error.message?.includes('network')) {
+          errorMessage = "Problema de rede - verificando conexão...";
+          // Retry automático para problemas de rede
+          setTimeout(() => {
+            if (!isCancelled && navigator.onLine) {
+              console.log(`[MOBILE-RETRY] 🔄 Tentativa automática de reconexão`);
+              fetchProjects();
+            }
+          }, 2000);
+        } else if (error.message?.includes('timeout')) {
+          errorMessage = "Conexão lenta detectada";
+        } else if (error.message?.includes('JSON')) {
+          errorMessage = "Resposta inválida do servidor";
+        } else if (error.message?.includes('CORS')) {
+          errorMessage = "Bloqueio de segurança detectado";
+        }
+
+        setDebugStatus(`❌ ${errorMessage}`);
         if (!isCancelled) setProjects([]);
       } finally {
         if (!isCancelled) {
