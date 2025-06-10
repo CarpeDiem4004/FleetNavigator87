@@ -39,12 +39,13 @@ router.get('/simple-external/verify/:token', async (req, res) => {
 
     // Mapear tokens de teste para parceiros
     const tokenMapping: Record<string, { id: number; name: string }> = {
-      'teste_daiane_do_vale_amaral__token': { id: 16, name: 'Daiane do Vale Amaral' },
-      'teste_gilson_fernandes_gonçalves__token': { id: 11, name: 'Gilson Fernandes Gonçalves' },
+      'teste_daiane_do_vale_amaral__token': { id: 10, name: 'Daiane do Vale Amaral' },
+      'teste_gilson_fernandes_gonçalves__token': { id: 16, name: 'Gilson Fernandes Gonçalves' },
       'teste_claudio_de_oliveira_silva_token': { id: 9, name: 'Claudio de Oliveira Silva' },
       'teste_caio_ramos_de_souza_token': { id: 8, name: 'Caio Ramos de Souza' },
       'teste_allan_de_souza_vieira_token': { id: 15, name: 'Allan de Souza Vieira' },
-      'teste_deloes_guinchos_e_munck_token': { id: 14, name: 'deloes guinchos e munck' },
+      'teste_deloes_guinchos_e_munck_token': { id: 11, name: 'Delões Guinchos e Munck' },
+      'teste_deloes_guinchos_e_munck__token': { id: 11, name: 'Delões Guinchos e Munck' },
     };
 
     const tokenLower = token.toLowerCase();

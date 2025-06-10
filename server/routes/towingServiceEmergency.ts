@@ -71,12 +71,6 @@ emergencyRouter.post('/submit', async (req, res) => {
       
       partnerId = tokenMapping[tokenLower];
       
-      console.log('[EmergencyRouter] Debug token mapping:', {
-        tokenLower,
-        availableTokens: Object.keys(tokenMapping).filter(t => t.includes('deloes')),
-        foundPartnerId: partnerId
-      });
-      
       if (partnerId) {
         console.log(`[EmergencyRouter] Serviço sendo criado para parceiro ID: ${partnerId}`);
       }
