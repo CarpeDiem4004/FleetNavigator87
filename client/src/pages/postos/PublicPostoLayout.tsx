@@ -14,6 +14,8 @@ import HistoricoPostoNovo from './components/HistoricoPostoNovo';
 import HistoricoAbastecimentosCompacto from './components/HistoricoAbastecimentosCompacto';
 import HistoricoRecebimentos from './components/HistoricoRecebimentos';
 import { useSafeDialog } from '@/hooks/use-safe-dialog';
+import MobileOptimizedLayout from '@/components/mobile/MobileOptimizedLayout';
+import { useMobileDetection } from '@/hooks/use-mobile-detection';
 
 interface PublicPostoLayoutProps {
   id: string;
@@ -29,6 +31,9 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
   
   // Estado para controlar atualizações
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
+  // Detecção de dispositivo móvel
+  const mobileDetection = useMobileDetection();
 
   // Identificação automática do posto ao carregar
   useEffect(() => {
@@ -85,6 +90,56 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
     }
   };
   
+  // Usar layout mobile otimizado se for dispositivo móvel
+  if (mobileDetection.isMobile) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Header Mobile Fixo */}
+        <div className="sticky top-0 z-50 bg-white border-b shadow-sm">
+          <div className="flex items-center justify-between p-4">
+            <h1 className="text-lg font-semibold truncate">Posto {nomePosto}</h1>
+            <div className="flex items-center space-x-2">
+              <div className={`w-2 h-2 rounded-full ${navigator.onLine ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span className="text-xs text-gray-600">{navigator.onLine ? 'Online' : 'Offline'}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Content Mobile */}
+        <div className="p-4 pb-20 space-y-6">
+          {/* Formulário de Abastecimento Mobile */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-base">
+                <Fuel className="mr-2" size={20} />
+                Abastecimento
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <FormularioAbastecimentoMobileOptimized 
+                postId={id} 
+                onRegistroSucesso={atualizarHistoricos}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Histórico Compacto Mobile */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-base">
+                <History className="mr-2" size={20} />
+                Histórico Recente
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <HistoricoAbastecimentosCompacto posto={id} refreshTrigger={refreshTrigger} />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
