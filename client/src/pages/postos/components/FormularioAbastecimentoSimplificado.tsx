@@ -515,17 +515,17 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tipo de Combustível</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o combustível" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Diesel">Diesel</SelectItem>
-                      <SelectItem value="Arla">Arla</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <select
+                      className="w-full h-14 text-lg border-2 border-gray-200 rounded-md px-4 bg-white focus:border-blue-500 focus:outline-none"
+                      value={field.value || ""}
+                      onChange={(e) => field.onChange(e.target.value)}
+                    >
+                      <option value="">Selecione o combustível</option>
+                      <option value="Diesel">Diesel</option>
+                      <option value="Arla">Arla</option>
+                    </select>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
