@@ -142,9 +142,14 @@ export function normalizeFuelData(req, res, next) {
     body.valor_total = parseFloat(body.valor_total);
   }
   
-  // Adicionar timestamp se não fornecido
+  // Adicionar timestamp com fuso horário do Brasil se não fornecido
   if (!body.created_at) {
-    body.created_at = new Date().toISOString();
+    // Criar data atual no fuso horário do Brasil (UTC-3)
+    const brasiliaTime = new Date();
+    brasiliaTime.setHours(brasiliaTime.getHours() - 3);
+    body.created_at = brasiliaTime.toISOString();
+    
+    console.log(`[Timestamp] Horário Brasil aplicado: ${body.created_at}`);
   }
   
   console.log(`[Normalization] Dados normalizados - Placa: ${body.placa}, Valor Total: ${body.valor_total}`);

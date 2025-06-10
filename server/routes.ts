@@ -10408,6 +10408,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
+        // Criar timestamp correto do Brasil se fornecido, senão usar atual
+        let timestampBrasil;
+        if (data.created_at) {
+          timestampBrasil = data.created_at; // Usar timestamp já fornecido pelo frontend
+          console.log(`[POSTGRES-INSERT] Usando timestamp do frontend: ${timestampBrasil}`);
+        } else {
+          // Criar timestamp do Brasil (UTC-3) se não fornecido
+          const agora = new Date();
+          const brasilTime = new Date(agora.getTime() - (3 * 60 * 60 * 1000));
+          timestampBrasil = brasilTime.toISOString();
+          console.log(`[POSTGRES-INSERT] Criando timestamp do Brasil: ${timestampBrasil}`);
+        }
+
         // Preparar dados para inserção direta
         const dadosInserir = {
           placa: data.placa || 'DESCONHECIDO',
@@ -10427,7 +10440,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tipo_lavagem: data.tipo_lavagem || null,
           base_id: data.base_id ? Number(data.base_id) : null,
           base_name: data.base_name || null,
-          projeto_id: data.projeto_id ? Number(data.projeto_id) : null
+          projeto_id: data.projeto_id ? Number(data.projeto_id) : null,
+          created_at: timestampBrasil, // Garantir horário correto do Brasil
+          data_hora: timestampBrasil // Campo adicional para compatibilidade
         };
         
         console.log(`[POSTGRES-INSERT] Dados preparados para inserção:`, dadosInserir);

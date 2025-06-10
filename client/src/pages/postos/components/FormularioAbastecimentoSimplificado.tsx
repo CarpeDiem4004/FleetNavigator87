@@ -445,6 +445,13 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         tipo_veiculo: data.tipo_veiculo
       };
 
+      // Criar timestamp com horário correto do Brasil (UTC-3)
+      const agora = new Date();
+      const brasiliaTime = new Date(agora.getTime() - (3 * 60 * 60 * 1000)); // UTC-3
+      const timestampBrasil = brasiliaTime.toISOString();
+      
+      console.log(`[TIMESTAMP-BRASIL] Horário atual do Brasil: ${timestampBrasil}`);
+
       // Dados mapeados corretamente para a tabela abastecimentos_posto_osasco_v2
       const dadosSupabase = {
         placa: dadosEnvio.placa,
@@ -464,7 +471,9 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         tipo_veiculo: dadosEnvio.tipo_veiculo,
         observacoes: "",
         lavagem: false, // Campo obrigatório na tabela
-        tipo_lavagem: null // Campo opcional
+        tipo_lavagem: null, // Campo opcional
+        created_at: timestampBrasil, // Horário correto do Brasil
+        data_hora: timestampBrasil // Campo adicional para compatibilidade
       };
       
       console.log(`[FormularioAbastecimento] Dados sendo enviados:`, {
