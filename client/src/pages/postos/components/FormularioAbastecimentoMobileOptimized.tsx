@@ -1,10 +1,6 @@
 /**
- * Formulário de Abastecimento Otimizado para Mobile - VERSÃO CORRIGIDA
- * Soluções implementadas:
- * - Correção de timezone para postos externos
- * - Campos Select otimizados para touch em dispositivos móveis
- * - Debouncing para melhor performance mobile
- * - Validação aprimorada de dados
+ * Formulário de Abastecimento Otimizado para Mobile
+ * Solução robusta para problemas de carregamento de projetos em links externos
  */
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
@@ -13,10 +9,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Check, Smartphone } from "lucide-react";
+import { Loader2, Check, RefreshCw, AlertTriangle } from "lucide-react";
 import { useSafeState } from "@/hooks/useSafeState";
 
 // Schema de validação
@@ -27,14 +22,12 @@ const abastecimentoSchema = z.object({
   quantidade: z.string().min(1, "Quantidade é obrigatória"),
   valor_litro: z.string().min(1, "Valor por litro é obrigatório"),
   valor_total: z.string().min(1, "Valor total é obrigatório"),
-  projeto: z.string().optional(),
   projeto_id: z.string().min(1, "Selecione um projeto"),
   base_id: z.string().min(1, "Selecione uma base"),
   motorista: z.string().min(1, "Nome do motorista é obrigatório"),
   motorista_rg: z.string().min(1, "RG do motorista é obrigatório"),
   operador: z.string().min(1, "Nome do operador é obrigatório"),
   tipo_veiculo: z.string().default("frota"),
-  observacoes: z.string().optional(),
 });
 
 type AbastecimentoValues = z.infer<typeof abastecimentoSchema>;
@@ -42,6 +35,27 @@ type AbastecimentoValues = z.infer<typeof abastecimentoSchema>;
 interface FormularioAbastecimentoProps {
   postId: string;
   onRegistroSucesso?: () => void;
+}
+
+interface ProjectData {
+  id: number;
+  name: string;
+  description?: string;
+  is_active: boolean;
+  bases: Array<{
+    id: number;
+    base_name: string;
+    base_code: string;
+    description?: string;
+  }>;
+}
+
+interface ConnectionStrategy {
+  name: string;
+  url: string;
+  headers: Record<string, string>;
+  timeout: number;
+  credentials: RequestCredentials;
 }
 
 export const FormularioAbastecimentoMobileOptimized: React.FC<FormularioAbastecimentoProps> = ({ 
@@ -52,15 +66,22 @@ export const FormularioAbastecimentoMobileOptimized: React.FC<FormularioAbasteci
   const [isSubmitting, setIsSubmitting] = useSafeState(false);
   const [registroSucesso, setRegistroSucesso] = useSafeState(false);
   
-  // Mobile detection com melhor detecção
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+  // Detecção de dispositivo móvel
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   const processingRef = useRef(false);
   
-  // Estados para projeto e base com debouncing otimizado para mobile
-  const [projects, setProjects] = useState<any[]>([]);
+  // Estados para projetos e bases
+  const [projects, setProjects] = useState<ProjectData[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [selectedBaseId, setSelectedBaseId] = useState("");
-  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
+  
+  // Estados de diagnóstico
+  const [connectionAttempts, setConnectionAttempts] = useState(0);
+  const [currentStrategy, setCurrentStrategy] = useState<string>('initial');
+  const [debugStatus, setDebugStatus] = useState(isMobile ? "Inicializando modo mobile..." : "Inicializando...");
+  const [lastError, setLastError] = useState<string | null>(null);
+  const [retryTrigger, setRetryTrigger] = useState(0);
 
   const form = useForm<AbastecimentoValues>({
     resolver: zodResolver(abastecimentoSchema),
@@ -69,227 +90,235 @@ export const FormularioAbastecimentoMobileOptimized: React.FC<FormularioAbasteci
       km: "",
       tipo: "",
       quantidade: "",
-      valor_litro: "6.39",
-      valor_total: "0",
-      projeto: "",
+      valor_litro: "",
+      valor_total: "",
       projeto_id: "",
       base_id: "",
       motorista: "",
       motorista_rg: "",
       operador: "",
       tipo_veiculo: "frota",
-      observacoes: "",
     },
   });
 
-  // Carregar operador automaticamente
-  useEffect(() => {
-    const operadorSalvo = localStorage.getItem('operador_atual');
-    if (operadorSalvo) {
-      form.setValue("operador", operadorSalvo);
-    }
-  }, [form]);
-
-  // Buscar projetos e bases disponíveis com otimização mobile
-  useEffect(() => {
-    const fetchProjects = async () => {
-      if (isLoadingProjects) return;
-      
-      setIsLoadingProjects(true);
-      
-      try {
-        console.log(`[FormularioMobile] Buscando projetos para posto: ${postId}`);
-        
-        const response = await fetch(`/api/postos/${postId}/projects`, {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-            'User-Agent': navigator.userAgent,
-            'X-Mobile-Device': isMobile ? 'true' : 'false'
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log(`[FormularioMobile] Projetos recebidos:`, data);
-          
-          if (Array.isArray(data) && data.length > 0) {
-            setProjects(data);
-          } else {
-            console.warn('[FormularioMobile] Nenhum projeto encontrado');
-            setProjects([]);
-          }
-        } else {
-          console.error('[FormularioMobile] Erro ao buscar projetos:', response.status);
-          setProjects([]);
-        }
-      } catch (error) {
-        console.error('[FormularioMobile] Erro na requisição:', error);
-        setProjects([]);
-      } finally {
-        setIsLoadingProjects(false);
-      }
+  // Estratégias de conexão para diferentes cenários
+  const getConnectionStrategies = useCallback((): ConnectionStrategy[] => {
+    const origin = window.location.origin;
+    const baseHeaders = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache',
+      'X-Mobile-Request': isMobile ? 'true' : 'false',
     };
 
-    fetchProjects();
-  }, [postId, isLoadingProjects, isMobile]);
+    const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+    const authHeaders = token ? { ...baseHeaders, 'Authorization': `Bearer ${token}` } : baseHeaders;
 
-  // Obter projeto selecionado
-  const selectedProject = projects.find((p: any) => p.id.toString() === selectedProjectId);
-  const availableBases = selectedProject?.bases || [];
-
-  // Atualizar projeto no formulário com debounce otimizado para mobile
-  useEffect(() => {
-    if (!selectedProjectId) return;
-
-    const timeoutId = setTimeout(() => {
-      form.setValue("projeto_id", selectedProjectId);
-      const project = projects.find((p: any) => p.id.toString() === selectedProjectId);
-      if (project) {
-        form.setValue("projeto", project.name);
+    return [
+      {
+        name: 'mobile_optimized',
+        url: `${origin}/api/mobile/test-projects`,
+        headers: { ...baseHeaders, 'X-Strategy': 'mobile-test' },
+        timeout: 5000,
+        credentials: 'omit'
+      },
+      {
+        name: 'public_api',
+        url: `${origin}/api/public/projects-with-bases`,
+        headers: { ...baseHeaders, 'X-Strategy': 'public' },
+        timeout: 10000,
+        credentials: 'include'
+      },
+      {
+        name: 'authenticated_api',
+        url: `${origin}/api/projects-with-bases`,
+        headers: { ...authHeaders, 'X-Strategy': 'authenticated' },
+        timeout: 15000,
+        credentials: 'include'
+      },
+      {
+        name: 'fallback_direct',
+        url: `${origin}/api/projects-with-bases`,
+        headers: { ...baseHeaders, 'X-Strategy': 'fallback', 'X-Force-Reload': 'true' },
+        timeout: 20000,
+        credentials: 'omit'
       }
-      if (selectedBaseId) {
-        setSelectedBaseId("");
-        form.setValue("base_id", "");
-      }
-    }, isMobile ? 500 : 200); // Maior delay em mobile para evitar múltiplas chamadas
+    ];
+  }, [isMobile]);
 
-    return () => clearTimeout(timeoutId);
-  }, [selectedProjectId, projects, selectedBaseId, form, isMobile]);
+  // Função principal para carregar projetos
+  const loadProjects = useCallback(async () => {
+    const attemptNumber = connectionAttempts + 1;
+    setConnectionAttempts(attemptNumber);
+    setIsLoadingProjects(true);
 
-  // Atualizar base no formulário com debounce
-  useEffect(() => {
-    if (!selectedBaseId) return;
-
-    const timeoutId = setTimeout(() => {
-      form.setValue("base_id", selectedBaseId);
-    }, isMobile ? 300 : 100);
-
-    return () => clearTimeout(timeoutId);
-  }, [selectedBaseId, form, isMobile]);
-
-  // Calcular valor total automaticamente
-  const calcularValorTotal = useCallback(() => {
-    const quantidade = form.watch("quantidade");
-    const valorLitro = form.watch("valor_litro");
+    const strategies = getConnectionStrategies();
+    const strategyIndex = Math.min(attemptNumber - 1, strategies.length - 1);
+    const strategy = strategies[strategyIndex];
     
-    if (quantidade && valorLitro) {
-      const total = (parseFloat(quantidade) * parseFloat(valorLitro)).toFixed(2);
-      form.setValue("valor_total", total);
-    }
-  }, [form]);
+    setCurrentStrategy(strategy.name);
+    setDebugStatus(`Tentativa ${attemptNumber}: ${strategy.name}`);
 
-  // Atualizar valor por litro baseado no tipo de combustível
-  useEffect(() => {
-    const subscription = form.watch((value, { name }) => {
-      if (name === "tipo") {
-        if (value.tipo === "Diesel") {
-          form.setValue("valor_litro", "6.39");
-        } else if (value.tipo === "Arla") {
-          form.setValue("valor_litro", "4.25");
-        }
-      }
-      
-      if (name === "quantidade" || name === "valor_litro") {
-        calcularValorTotal();
-      }
+    console.log(`[MOBILE-DIAGNOSTICO] Tentativa ${attemptNumber} usando estratégia: ${strategy.name}`);
+    console.log(`[MOBILE-DIAGNOSTICO] URL: ${strategy.url}`);
+    console.log(`[MOBILE-DIAGNOSTICO] Device Info:`, {
+      isMobile,
+      userAgent: navigator.userAgent.substring(0, 100),
+      online: navigator.onLine,
+      connection: (navigator as any).connection?.effectiveType || 'unknown',
+      timestamp: new Date().toISOString()
     });
-    
-    return () => subscription.unsubscribe();
-  }, [form, calcularValorTotal]);
 
+    try {
+      const startTime = Date.now();
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), strategy.timeout);
+
+      const response = await fetch(strategy.url, {
+        method: 'GET',
+        headers: strategy.headers,
+        credentials: strategy.credentials,
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+      const responseTime = Date.now() - startTime;
+
+      console.log(`[MOBILE-DIAGNOSTICO] Resposta em ${responseTime}ms - Status: ${response.status}`);
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setProjects(data.data);
+          setDebugStatus(`Sucesso: ${data.data.length} projetos carregados`);
+          setLastError(null);
+          setConnectionAttempts(0); // Reset para próximas tentativas
+          
+          console.log(`[MOBILE-DIAGNOSTICO] Sucesso! ${data.data.length} projetos carregados`);
+          return;
+        } else {
+          throw new Error(`Dados inválidos recebidos: ${JSON.stringify(data).substring(0, 100)}`);
+        }
+      } else {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 100)}`);
+      }
+    } catch (error: any) {
+      const errorMessage = error.message || 'Erro desconhecido';
+      setLastError(errorMessage);
+      
+      console.error(`[MOBILE-DIAGNOSTICO] Erro na tentativa ${attemptNumber}:`, {
+        strategy: strategy.name,
+        error: errorMessage,
+        stack: error.stack?.substring(0, 200)
+      });
+
+      // Decidir se deve tentar novamente
+      const shouldRetry = attemptNumber < strategies.length && (
+        errorMessage.includes('timeout') ||
+        errorMessage.includes('network') ||
+        errorMessage.includes('fetch') ||
+        errorMessage.includes('CORS')
+      );
+
+      if (shouldRetry) {
+        setDebugStatus(`Falha: ${errorMessage.substring(0, 30)}... Tentando novamente...`);
+        
+        // Agendar próxima tentativa com delay progressivo
+        const delay = Math.min(attemptNumber * 1000, 5000);
+        setTimeout(() => {
+          setRetryTrigger(prev => prev + 1);
+        }, delay);
+      } else {
+        setDebugStatus(`Falha final: ${errorMessage.substring(0, 50)}`);
+        setProjects([]);
+      }
+    } finally {
+      setIsLoadingProjects(false);
+    }
+  }, [connectionAttempts, getConnectionStrategies]);
+
+  // Effect para carregar projetos
+  useEffect(() => {
+    loadProjects();
+  }, [retryTrigger]); // Triggered by retry mechanism
+
+  // Effect para resetar tentativas quando o componente é montado novamente
+  useEffect(() => {
+    const resetConnection = () => {
+      setConnectionAttempts(0);
+      setRetryTrigger(prev => prev + 1);
+    };
+
+    // Reset automático se não há projetos após 30 segundos
+    const autoResetTimer = setTimeout(resetConnection, 30000);
+    
+    return () => clearTimeout(autoResetTimer);
+  }, []);
+
+  // Função para retry manual
+  const handleManualRetry = () => {
+    setConnectionAttempts(0);
+    setLastError(null);
+    setRetryTrigger(prev => prev + 1);
+  };
+
+  // Atualizar bases quando projeto é selecionado
+  const selectedProject = projects.find(p => p.id.toString() === selectedProjectId);
+
+  // Submissão do formulário
   const processarSubmissao = async (data: AbastecimentoValues) => {
     if (processingRef.current) return;
-
+    
     processingRef.current = true;
     setIsSubmitting(true);
 
     try {
-      console.log(`[FormularioMobile] Registrando para posto: ${postId}`);
-      console.log(`[FormularioMobile] Dados:`, data);
-
-      // Preparar dados para envio com correção de timezone
-      const selectedProject = projects.find((p: any) => p.id.toString() === data.projeto_id);
-      const selectedBase = selectedProject?.bases.find((b: any) => b.id.toString() === data.base_id);
-      
-      // Aplicar correção de timezone para postos externos
-      const currentTime = new Date();
-      const isExternalStation = ['abc_v2', 'osasco_v2', 'campinas_v2'].includes(postId);
-      
-      const dadosEnvio = {
-        placa: data.placa.toUpperCase().trim(),
-        km: Number(data.km),
-        tipo_combustivel: data.tipo,
-        quantidade: Number(data.quantidade),
-        valor_litro: Number(data.valor_litro),
-        valor_total: Number(data.valor_total),
-        projeto: selectedProject?.name || data.projeto || "NÃO ESPECIFICADO",
-        projeto_id: data.projeto_id,
-        base_id: data.base_id,
-        base: selectedBase?.name || "NÃO ESPECIFICADO",
-        motorista: data.motorista.trim(),
-        motorista_rg: data.motorista_rg.trim(),
-        operador: data.operador.trim(),
-        tipo_veiculo: data.tipo_veiculo,
-        observacoes: data.observacoes || null,
-        // Metadados para correção de timezone
-        is_mobile_device: isMobile,
-        is_external_station: isExternalStation,
-        timezone_offset: currentTime.getTimezoneOffset(),
-        user_agent: navigator.userAgent
+      const payload = {
+        ...data,
+        posto_id: postId,
+        data_abastecimento: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
+        mobile_device: isMobile,
+        projeto_nome: selectedProject?.name || '',
+        base_nome: selectedProject?.bases.find(b => b.id.toString() === data.base_id)?.base_name || ''
       };
 
-      console.log(`[FormularioMobile] Enviando dados com correção de timezone:`, dadosEnvio);
-
-      const response = await fetch(`/api/postos/${postId}/abastecimentos`, {
+      const response = await fetch(`${window.location.origin}/api/abastecimentos`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Mobile-Device': isMobile ? 'true' : 'false',
-          'X-Timezone-Correction': isExternalStation ? 'required' : 'none'
+          'X-Mobile-Request': isMobile ? 'true' : 'false'
         },
         credentials: 'include',
-        body: JSON.stringify(dadosEnvio),
+        body: JSON.stringify(payload)
       });
 
       if (response.ok) {
-        const resultado = await response.json();
-        console.log('[FormularioMobile] Registro salvo com sucesso:', resultado);
-        
-        // Salvar operador para próximas utilizações
-        localStorage.setItem('operador_atual', data.operador);
-        
         setRegistroSucesso(true);
-        
         toast({
-          title: "✅ Registro Salvo!",
-          description: `Abastecimento de ${data.quantidade}L registrado com sucesso${isExternalStation ? ' (timezone corrigido)' : ''}.`,
-          duration: 3000,
+          title: "Abastecimento registrado com sucesso!",
+          description: `Placa: ${data.placa} - ${data.quantidade}L`,
         });
 
+        form.reset();
+        setSelectedProjectId("");
+        setSelectedBaseId("");
+        
         if (onRegistroSucesso) {
           onRegistroSucesso();
         }
       } else {
-        const errorData = await response.json();
-        console.error('[FormularioMobile] Erro no servidor:', errorData);
-        
-        toast({
-          title: "❌ Erro ao Salvar",
-          description: errorData.message || "Erro interno do servidor. Tente novamente.",
-          variant: "destructive",
-          duration: 5000,
-        });
+        const errorData = await response.text();
+        throw new Error(`Erro ${response.status}: ${errorData}`);
       }
-    } catch (error) {
-      console.error('[FormularioMobile] Erro na requisição:', error);
-      
+    } catch (error: any) {
+      console.error('Erro ao registrar abastecimento:', error);
       toast({
-        title: "❌ Erro de Conexão",
-        description: "Falha na comunicação com o servidor. Verifique sua conexão.",
+        title: "Erro ao registrar abastecimento",
+        description: error.message || "Erro desconhecido",
         variant: "destructive",
-        duration: 5000,
       });
     } finally {
       setIsSubmitting(false);
@@ -297,55 +326,129 @@ export const FormularioAbastecimentoMobileOptimized: React.FC<FormularioAbasteci
     }
   };
 
-  if (registroSucesso) {
-    return (
-      <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6 text-center">
-        <Check className="w-12 h-12 text-green-600 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-green-800 mb-2">
-          Abastecimento Registrado!
-        </h3>
-        <p className="text-green-600 text-center mb-4">
-          O registro foi salvo com sucesso no sistema{isMobile ? ' (mobile)' : ''}.
-        </p>
-        <Button 
-          onClick={() => {
-            setRegistroSucesso(false);
-            form.reset();
-          }}
-          variant="outline"
-        >
-          Registrar Novo Abastecimento
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      {/* Indicador para Mobile */}
-      {isMobile && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700 flex items-center gap-2">
-          <Smartphone className="w-4 h-4" />
-          Modo Mobile Ativado - Interface otimizada para touch
+      {/* Status de diagnóstico */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            {isLoadingProjects ? (
+              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+            ) : projects.length > 0 ? (
+              <Check className="h-4 w-4 text-green-600" />
+            ) : (
+              <AlertTriangle className="h-4 w-4 text-orange-600" />
+            )}
+            <span className="text-sm font-medium">
+              {isMobile ? "Modo Mobile" : "Modo Desktop"} - {debugStatus}
+            </span>
+          </div>
+          {!isLoadingProjects && projects.length === 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleManualRetry}
+              className="ml-2"
+            >
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Tentar Novamente
+            </Button>
+          )}
         </div>
-      )}
-      
+        {lastError && (
+          <p className="text-xs text-red-600 mt-1">
+            Último erro: {lastError}
+          </p>
+        )}
+        <p className="text-xs text-gray-600 mt-1">
+          Tentativas: {connectionAttempts} | Estratégia: {currentStrategy} | Projetos: {projects.length}
+        </p>
+      </div>
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(processarSubmissao)} className="space-y-4">
+          {/* Seleção de Projeto */}
+          <FormField
+            control={form.control}
+            name="projeto_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Projeto *</FormLabel>
+                <FormControl>
+                  <select
+                    {...field}
+                    value={selectedProjectId}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setSelectedProjectId(value);
+                      setSelectedBaseId("");
+                      field.onChange(value);
+                      form.setValue("base_id", "");
+                    }}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                    disabled={isLoadingProjects}
+                  >
+                    <option value="">
+                      {isLoadingProjects ? "Carregando projetos..." : "Selecione um projeto"}
+                    </option>
+                    {projects.map((projeto) => (
+                      <option key={projeto.id} value={projeto.id.toString()}>
+                        {projeto.name}
+                      </option>
+                    ))}
+                  </select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Seleção de Base */}
+          <FormField
+            control={form.control}
+            name="base_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Base *</FormLabel>
+                <FormControl>
+                  <select
+                    {...field}
+                    value={selectedBaseId}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setSelectedBaseId(value);
+                      field.onChange(value);
+                    }}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                    disabled={!selectedProjectId}
+                  >
+                    <option value="">Selecione uma base</option>
+                    {selectedProject?.bases.map((base) => (
+                      <option key={base.id} value={base.id.toString()}>
+                        {base.base_name} ({base.base_code})
+                      </option>
+                    ))}
+                  </select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Campos básicos do formulário */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Placa */}
             <FormField
               control={form.control}
               name="placa"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Placa do Veículo</FormLabel>
+                  <FormLabel>Placa do Veículo *</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="ABC1234" 
-                      {...field} 
+                    <Input
+                      {...field}
+                      placeholder="ABC-1234"
+                      className="uppercase"
                       onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                      style={{ fontSize: isMobile ? '16px' : 'inherit' }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -353,19 +456,17 @@ export const FormularioAbastecimentoMobileOptimized: React.FC<FormularioAbasteci
               )}
             />
 
-            {/* Quilometragem */}
             <FormField
               control={form.control}
               name="km"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Quilometragem Atual</FormLabel>
+                  <FormLabel>Quilometragem *</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
-                      placeholder="150000" 
+                    <Input
                       {...field}
-                      style={{ fontSize: isMobile ? '16px' : 'inherit' }}
+                      type="number"
+                      placeholder="12345"
                     />
                   </FormControl>
                   <FormMessage />
@@ -373,62 +474,38 @@ export const FormularioAbastecimentoMobileOptimized: React.FC<FormularioAbasteci
               )}
             />
 
-            {/* Tipo de Combustível - Otimizado para Mobile */}
             <FormField
               control={form.control}
               name="tipo"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tipo de Combustível</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger 
-                        className={isMobile ? "min-h-[48px] text-base" : ""}
-                        style={{ 
-                          fontSize: isMobile ? '16px' : 'inherit',
-                          touchAction: 'manipulation'
-                        }}
-                      >
-                        <SelectValue placeholder="Selecione o combustível" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent 
-                      className={isMobile ? "max-h-[60vh]" : ""}
-                      style={{ touchAction: 'manipulation' }}
-                    >
-                      <SelectItem 
-                        value="Diesel" 
-                        className={isMobile ? "min-h-[44px] text-base" : ""}
-                      >
-                        Diesel
-                      </SelectItem>
-                      <SelectItem 
-                        value="Arla" 
-                        className={isMobile ? "min-h-[44px] text-base" : ""}
-                      >
-                        Arla
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Tipo de Combustível *</FormLabel>
+                  <FormControl>
+                    <select {...field} className="w-full p-2 border border-gray-300 rounded-md">
+                      <option value="">Selecione o tipo</option>
+                      <option value="gasolina">Gasolina</option>
+                      <option value="etanol">Etanol</option>
+                      <option value="diesel">Diesel</option>
+                      <option value="gnv">GNV</option>
+                    </select>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            {/* Quantidade */}
             <FormField
               control={form.control}
               name="quantidade"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Quantidade (Litros)</FormLabel>
+                  <FormLabel>Quantidade (Litros) *</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
-                      step="0.01" 
-                      placeholder="150.50" 
+                    <Input
                       {...field}
-                      style={{ fontSize: isMobile ? '16px' : 'inherit' }}
+                      type="number"
+                      step="0.01"
+                      placeholder="50.00"
                     />
                   </FormControl>
                   <FormMessage />
@@ -436,20 +513,18 @@ export const FormularioAbastecimentoMobileOptimized: React.FC<FormularioAbasteci
               )}
             />
 
-            {/* Valor por Litro */}
             <FormField
               control={form.control}
               name="valor_litro"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Valor por Litro (R$)</FormLabel>
+                  <FormLabel>Valor por Litro *</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
-                      step="0.01" 
-                      placeholder="6.39" 
+                    <Input
                       {...field}
-                      style={{ fontSize: isMobile ? '16px' : 'inherit' }}
+                      type="number"
+                      step="0.001"
+                      placeholder="5.459"
                     />
                   </FormControl>
                   <FormMessage />
@@ -457,121 +532,35 @@ export const FormularioAbastecimentoMobileOptimized: React.FC<FormularioAbasteci
               )}
             />
 
-            {/* Valor Total */}
             <FormField
               control={form.control}
               name="valor_total"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Valor Total (R$)</FormLabel>
+                  <FormLabel>Valor Total *</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
-                      step="0.01" 
-                      placeholder="962.85" 
-                      {...field} 
-                      readOnly
-                      className="bg-gray-50"
-                      style={{ fontSize: isMobile ? '16px' : 'inherit' }}
+                    <Input
+                      {...field}
+                      type="number"
+                      step="0.01"
+                      placeholder="272.95"
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          </div>
 
-          {/* Seção de Projeto e Base - Otimizada para Mobile */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
-            <h4 className="font-medium text-blue-800">Seleção de Projeto e Base</h4>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Projeto */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Projeto</label>
-                {isLoadingProjects ? (
-                  <div className="flex items-center gap-2 p-2 bg-white rounded border">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span className="text-sm">Carregando projetos...</span>
-                  </div>
-                ) : (
-                  <Select onValueChange={setSelectedProjectId} value={selectedProjectId}>
-                    <SelectTrigger 
-                      className={isMobile ? "min-h-[48px] text-base" : ""}
-                      style={{ 
-                        fontSize: isMobile ? '16px' : 'inherit',
-                        touchAction: 'manipulation'
-                      }}
-                    >
-                      <SelectValue placeholder="Selecione um projeto" />
-                    </SelectTrigger>
-                    <SelectContent 
-                      className={isMobile ? "max-h-[60vh]" : ""}
-                      style={{ touchAction: 'manipulation' }}
-                    >
-                      {projects.map((project) => (
-                        <SelectItem 
-                          key={project.id} 
-                          value={project.id.toString()}
-                          className={isMobile ? "min-h-[44px] text-base" : ""}
-                        >
-                          {project.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-
-              {/* Base */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Base</label>
-                <Select 
-                  onValueChange={setSelectedBaseId} 
-                  value={selectedBaseId}
-                  disabled={!selectedProjectId || availableBases.length === 0}
-                >
-                  <SelectTrigger 
-                    className={isMobile ? "min-h-[48px] text-base" : ""}
-                    style={{ 
-                      fontSize: isMobile ? '16px' : 'inherit',
-                      touchAction: 'manipulation'
-                    }}
-                  >
-                    <SelectValue placeholder="Selecione uma base" />
-                  </SelectTrigger>
-                  <SelectContent 
-                    className={isMobile ? "max-h-[60vh]" : ""}
-                    style={{ touchAction: 'manipulation' }}
-                  >
-                    {availableBases.map((base: any) => (
-                      <SelectItem 
-                        key={base.id} 
-                        value={base.id.toString()}
-                        className={isMobile ? "min-h-[44px] text-base" : ""}
-                      >
-                        {base.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          {/* Dados do Motorista */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
               name="motorista"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome do Motorista</FormLabel>
+                  <FormLabel>Nome do Motorista *</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Nome completo" 
+                    <Input
                       {...field}
-                      style={{ fontSize: isMobile ? '16px' : 'inherit' }}
+                      placeholder="Nome completo"
                     />
                   </FormControl>
                   <FormMessage />
@@ -584,12 +573,28 @@ export const FormularioAbastecimentoMobileOptimized: React.FC<FormularioAbasteci
               name="motorista_rg"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>RG do Motorista</FormLabel>
+                  <FormLabel>RG do Motorista *</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="12.345.678-9" 
+                    <Input
                       {...field}
-                      style={{ fontSize: isMobile ? '16px' : 'inherit' }}
+                      placeholder="12.345.678-9"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="operador"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome do Operador *</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="Nome do operador"
                     />
                   </FormControl>
                   <FormMessage />
@@ -598,62 +603,35 @@ export const FormularioAbastecimentoMobileOptimized: React.FC<FormularioAbasteci
             />
           </div>
 
-          {/* Operador */}
-          <FormField
-            control={form.control}
-            name="operador"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nome do Operador</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="Nome do operador responsável" 
-                    {...field}
-                    style={{ fontSize: isMobile ? '16px' : 'inherit' }}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Observações */}
-          <FormField
-            control={form.control}
-            name="observacoes"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Observações (Opcional)</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="Informações adicionais..." 
-                    {...field}
-                    style={{ fontSize: isMobile ? '16px' : 'inherit' }}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Botão de Envio */}
-          <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={isSubmitting}
-            style={{ minHeight: isMobile ? '48px' : 'auto' }}
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isSubmitting || projects.length === 0}
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Registrando...
               </>
             ) : (
-              `Registrar Abastecimento${isMobile ? ' (Mobile)' : ''}`
+              "Registrar Abastecimento"
             )}
           </Button>
+
+          {registroSucesso && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-center">
+                <Check className="h-4 w-4 text-green-600 mr-2" />
+                <span className="text-green-800 font-medium">
+                  Abastecimento registrado com sucesso!
+                </span>
+              </div>
+            </div>
+          )}
         </form>
       </Form>
     </div>
   );
 };
+
+export default FormularioAbastecimentoMobileOptimized;

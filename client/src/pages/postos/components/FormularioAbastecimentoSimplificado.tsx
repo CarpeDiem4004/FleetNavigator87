@@ -299,8 +299,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
           method: 'GET',
           headers,
           credentials: 'include',
-          // Timeout específico para mobile (mais tempo em redes lentas)
-          signal: AbortSignal.timeout(isMobile ? 15000 : 8000)
+          signal: AbortSignal.timeout(timeout)
         });
         
         const responseTime = Date.now() - startTime;
@@ -352,75 +351,29 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
             if (!isCancelled) setProjects([]);
           }
         } else {
-          const errorText = await response.text();
-          console.error(`[AUTO-LOAD] ❌ Erro HTTP ${response.status}:`, errorText);
+          const responseText = await response.text();
+          console.error(`[DIAGNOSTICO-LINKS] Erro HTTP ${response.status}:`, responseText);
           
-          // Implementar fallback específico para mobile em caso de erro 401/403
-          if ((response.status === 401 || response.status === 403) && isMobile) {
-            console.log(`[MOBILE-FALLBACK] 🔄 Tentando fallback sem autenticação para mobile...`);
+          // Se a requisição falhou, tentar nova estratégia automaticamente
+          if (response.status !== 200 && attemptNumber < 4) {
+            console.log(`[DIAGNOSTICO-LINKS] Tentativa ${attemptNumber} falhou com status ${response.status}, tentando próxima estratégia...`);
             
-            try {
-              const fallbackResponse = await fetch(apiUrl, {
-                method: 'GET',
-                headers: {
-                  'Accept': 'application/json',
-                  'X-Mobile-Request': 'true',
-                  'Cache-Control': 'no-cache'
-                },
-                credentials: 'omit'
-              });
-              
-              if (fallbackResponse.ok) {
-                const fallbackData = await fallbackResponse.json();
-                if (fallbackData.success && Array.isArray(fallbackData.data) && fallbackData.data.length > 0) {
-                  console.log(`[MOBILE-FALLBACK] ✅ Fallback bem-sucedido! ${fallbackData.data.length} projetos carregados`);
-                  if (!isCancelled) {
-                    setProjects(fallbackData.data);
-                    setDebugStatus(`✅ ${fallbackData.data.length} projetos carregados (modo compatibilidade mobile)`);
-                    return;
-                  }
-                }
-              } else {
-                console.error(`[MOBILE-FALLBACK] ❌ Fallback também falhou: ${fallbackResponse.status}`);
+            setLastError(`HTTP ${response.status}: ${responseText.substring(0, 50)}`);
+            setDebugStatus(`Tentativa ${attemptNumber} falhou - Reagendando...`);
+            
+            // Reagendar nova tentativa com delay progressivo
+            setTimeout(() => {
+              if (!isCancelled) {
+                setAutoReloadTrigger(prev => prev + 1);
               }
-            } catch (fallbackError) {
-              console.error(`[MOBILE-FALLBACK] ❌ Erro no fallback:`, fallbackError);
-            }
+            }, attemptNumber * 1000);
+            
+            if (!isCancelled) setProjects([]);
+            return;
           }
           
-          // Se falhou e é mobile, tentar API principal como último recurso
-          if (isMobile && response.status !== 200) {
-            console.log(`[MOBILE-FALLBACK] 🔄 Tentando API principal como último recurso...`);
-            
-            try {
-              const mainApiResponse = await fetch(mainApiUrl, {
-                method: 'GET',
-                headers: {
-                  'Accept': 'application/json',
-                  'X-Mobile-Request': 'true',
-                  'Cache-Control': 'no-cache'
-                },
-                credentials: 'include',
-                signal: AbortSignal.timeout(20000)
-              });
-              
-              if (mainApiResponse.ok) {
-                const mainApiData = await mainApiResponse.json();
-                if (mainApiData.success && Array.isArray(mainApiData.data) && mainApiData.data.length > 0) {
-                  console.log(`[MOBILE-FALLBACK] ✅ API principal funcionou! ${mainApiData.data.length} projetos`);
-                  if (!isCancelled) {
-                    setProjects(mainApiData.data);
-                    setDebugStatus(`✅ ${mainApiData.data.length} projetos (fallback para API principal)`);
-                    return;
-                  }
-                }
-              }
-            } catch (mainApiError) {
-              console.error(`[MOBILE-FALLBACK] ❌ API principal também falhou:`, mainApiError);
-            }
-          }
-          
-          setDebugStatus(`❌ HTTP ${response.status}: ${errorText.substring(0, 30)}...`);
+          setDebugStatus(`Todas as tentativas falharam - ${responseText.substring(0, 30)}...`);
+          setLastError(`Final error: HTTP ${response.status}`);
           if (!isCancelled) setProjects([]);
         }
       } catch (error: any) {

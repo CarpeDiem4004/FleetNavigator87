@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Fuel, TruckIcon, Truck, History } from 'lucide-react';
-import { FormularioAbastecimento as FormularioAbastecimentoOtimizado } from './components/FormularioAbastecimentoSimplificado';
+import { FormularioAbastecimentoMobileOptimized } from './components/FormularioAbastecimentoMobileOptimized';
 import FormularioRecebimentoCombustivel from './components/FormularioRecebimentoCombustivel';
 import FormularioControlePatio from './components/FormularioControlePatio';
 import HistoricoMovimentacoes from './components/HistoricoMovimentacoes';
@@ -123,7 +123,7 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
                 </TabsList>
                 
                 <TabsContent value="abastecimento">
-                  <FormularioAbastecimentoOtimizado 
+                  <FormularioAbastecimentoMobileOptimized 
                     postId={id} 
                     onRegistroSucesso={atualizarHistoricos} 
                   />
