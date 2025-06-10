@@ -43,13 +43,30 @@ emergencyRouter.post('/submit', async (req, res) => {
       const tokenLower = token.toLowerCase();
       console.log('[EmergencyRouter] Token em lowercase:', tokenLower);
       
-      // Buscar parceiro pelo token
-      if (tokenLower === 'teste_allan_de_souza_vieira_token') {
-        partnerId = 15;
-        console.log('[EmergencyRouter] Serviço sendo criado para Allan de Souza Vieira (ID: 15)');
-      } else if (tokenLower === 'teste_claudio_de_oliveira_silva_token') {
-        partnerId = 9;
-        console.log('[EmergencyRouter] Serviço sendo criado para Claudio de Oliveira Silva (ID: 9)');
+      // Mapeamento de tokens para partner IDs (mesmo do endpoint de histórico)
+      const tokenMapping: Record<string, number> = {
+        'teste_allan_de_souza_vieira_token': 15,
+        'allan_permanente_2025_token': 15,
+        'teste_claudio_de_oliveira_silva_token': 9,
+        'parceiro_9_permanente_2025_token': 9,
+        'teste_caio_ramos_de_souza_token': 8,
+        'teste_caio_ramos_de_souza__token': 8,  // com duplo underscore
+        'parceiro_8_permanente_2025_token': 8,
+        'parceiro_10_permanente_2025_token': 10, // Daiane do Vale Amaral
+        'parceiro_11_permanente_2025_token': 11, // Delões Guinchos e Munck
+        'ford_permanente_2025_token': 1,
+        'chevrolet_permanente_2025_token': 2,
+        'volkswagen_permanente_2025_token': 3,
+        'parceiro_12_permanente_2025_token': 12, // Fluxo Guinchos
+        'parceiro_5_permanente_2025_token': 5,   // Guincho Águia
+        'parceiro_7_permanente_2025_token': 7,   // Rafael Abner Transporte
+        'teste_gilson_fernandes_gonçalves': 16
+      };
+      
+      partnerId = tokenMapping[tokenLower];
+      
+      if (partnerId) {
+        console.log(`[EmergencyRouter] Serviço sendo criado para parceiro ID: ${partnerId}`);
       }
     }
     
@@ -125,12 +142,30 @@ emergencyRouter.get('/history/:token', async (req, res) => {
     console.log('[EmergencyRouter] Token recebido:', token);
     console.log('[EmergencyRouter] Token em lowercase:', tokenLower);
     
-    if (tokenLower === 'teste_allan_de_souza_vieira_token') {
-      partnerId = 15;
-      console.log('[EmergencyRouter] Token Allan reconhecido, ID: 15');
-    } else if (tokenLower === 'teste_claudio_de_oliveira_silva_token') {
-      partnerId = 9;
-      console.log('[EmergencyRouter] Token Claudio reconhecido, ID: 9');
+    // Mapeamento de tokens para partner IDs
+    const tokenMapping: Record<string, number> = {
+      'teste_allan_de_souza_vieira_token': 15,
+      'allan_permanente_2025_token': 15,
+      'teste_claudio_de_oliveira_silva_token': 9,
+      'parceiro_9_permanente_2025_token': 9,
+      'teste_caio_ramos_de_souza_token': 8,
+      'teste_caio_ramos_de_souza__token': 8,  // com duplo underscore
+      'parceiro_8_permanente_2025_token': 8,
+      'parceiro_10_permanente_2025_token': 10, // Daiane do Vale Amaral
+      'parceiro_11_permanente_2025_token': 11, // Delões Guinchos e Munck
+      'ford_permanente_2025_token': 1,
+      'chevrolet_permanente_2025_token': 2,
+      'volkswagen_permanente_2025_token': 3,
+      'parceiro_12_permanente_2025_token': 12, // Fluxo Guinchos
+      'parceiro_5_permanente_2025_token': 5,   // Guincho Águia
+      'parceiro_7_permanente_2025_token': 7,   // Rafael Abner Transporte
+      'teste_gilson_fernandes_gonçalves': 16
+    };
+    
+    partnerId = tokenMapping[tokenLower];
+    
+    if (partnerId) {
+      console.log(`[EmergencyRouter] Token reconhecido para parceiro ID: ${partnerId}`);
     }
     
     console.log('[EmergencyRouter] Partner ID encontrado:', partnerId);
