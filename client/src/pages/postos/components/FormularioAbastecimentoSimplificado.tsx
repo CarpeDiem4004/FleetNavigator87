@@ -162,7 +162,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     carregarOperador();
   }, [form]);
 
-  // Carregar projetos com diagnóstico completo para mobile
+  // Carregar projetos automaticamente no mount
   useEffect(() => {
     let isCancelled = false;
     
@@ -171,9 +171,9 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       
       setIsLoadingProjects(true);
       
-      setDebugStatus(`Mobile: ${isMobile} | Carregando...`);
-      console.log(`[MOBILE-DEBUG] 🚀 Iniciando carregamento de projetos`);
-      console.log(`[MOBILE-DEBUG] 📱 Device Info:`, {
+      setDebugStatus(`Carregando projetos...`);
+      console.log(`[AUTO-LOAD] 🚀 Iniciando carregamento automático de projetos`);
+      console.log(`[AUTO-LOAD] 📱 Device Info:`, {
         isMobile,
         userAgent: navigator.userAgent,
         origin: window.location.origin,
@@ -182,7 +182,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       
       try {
         const apiUrl = `${window.location.origin}/api/public/projects-with-bases`;
-        console.log(`[MOBILE-DEBUG] 🔗 Fazendo requisição para: ${apiUrl}`);
+        console.log(`[AUTO-LOAD] 🔗 Fazendo requisição para: ${apiUrl}`);
         
         const startTime = Date.now();
         const response = await fetch(apiUrl, {
@@ -197,13 +197,13 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         });
         
         const responseTime = Date.now() - startTime;
-        console.log(`[MOBILE-DEBUG] ⏱️ Tempo de resposta: ${responseTime}ms`);
-        console.log(`[MOBILE-DEBUG] 📊 Status HTTP: ${response.status}`);
-        console.log(`[MOBILE-DEBUG] 📋 Headers de resposta:`, Object.fromEntries(response.headers.entries()));
+        console.log(`[AUTO-LOAD] ⏱️ Tempo de resposta: ${responseTime}ms`);
+        console.log(`[AUTO-LOAD] 📊 Status HTTP: ${response.status}`);
+        console.log(`[AUTO-LOAD] 📋 Headers de resposta:`, Object.fromEntries(response.headers.entries()));
         
         if (response.ok) {
           const data = await response.json();
-          console.log(`[MOBILE-DEBUG] 📦 Dados JSON recebidos:`, {
+          console.log(`[AUTO-LOAD] 📦 Dados JSON recebidos:`, {
             success: data.success,
             dataType: typeof data.data,
             isArray: Array.isArray(data.data),
@@ -214,22 +214,23 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
           if (data.success && Array.isArray(data.data) && data.data.length > 0) {
             if (!isCancelled) {
               setProjects(data.data);
-              setDebugStatus(`✅ ${data.data.length} projetos carregados`);
-              console.log(`[MOBILE-DEBUG] ✅ Projetos carregados com sucesso: ${data.data.length}`);
+              setDebugStatus(`✅ ${data.data.length} projetos carregados automaticamente`);
+              console.log(`[AUTO-LOAD] ✅ Projetos carregados com sucesso: ${data.data.length}`);
+              console.log(`[AUTO-LOAD] 📋 Lista de projetos:`, data.data.map((p: any) => p.name).join(', '));
             }
           } else {
-            console.error(`[MOBILE-DEBUG] ❌ Estrutura de dados inválida:`, data);
+            console.error(`[AUTO-LOAD] ❌ Estrutura de dados inválida:`, data);
             setDebugStatus(`❌ Dados inválidos: ${JSON.stringify(data).substring(0, 50)}...`);
             if (!isCancelled) setProjects([]);
           }
         } else {
           const errorText = await response.text();
-          console.error(`[MOBILE-DEBUG] ❌ Erro HTTP ${response.status}:`, errorText);
+          console.error(`[AUTO-LOAD] ❌ Erro HTTP ${response.status}:`, errorText);
           setDebugStatus(`❌ HTTP ${response.status}: ${errorText.substring(0, 30)}...`);
           if (!isCancelled) setProjects([]);
         }
       } catch (error) {
-        console.error(`[MOBILE-DEBUG] ❌ Erro de rede/JavaScript:`, error);
+        console.error(`[AUTO-LOAD] ❌ Erro de rede/JavaScript:`, error);
         setDebugStatus(`❌ Erro: ${String(error).substring(0, 50)}...`);
         if (!isCancelled) setProjects([]);
       } finally {
@@ -246,7 +247,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       isCancelled = true;
       clearTimeout(timer);
     };
-  }, [isMobile]);
+  }, []); // Executar apenas uma vez no mount
 
   // Obter projeto selecionado
   const selectedProject = projects.find((p: any) => p.id.toString() === selectedProjectId);
