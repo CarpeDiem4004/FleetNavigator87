@@ -207,6 +207,13 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
         const apiUrl = `${window.location.origin}/api/public/projects-with-bases`;
         console.log(`[AUTO-LOAD] 🔗 Fazendo requisição para: ${apiUrl}`);
         
+        // Diagnóstico de conectividade específico para celular
+        console.log(`[MOBILE-DIAGNOSTIC] 🌐 Testando conectividade...`);
+        console.log(`[MOBILE-DIAGNOSTIC] 📡 Navigator online: ${navigator.onLine}`);
+        console.log(`[MOBILE-DIAGNOSTIC] 🔗 Window origin: ${window.location.origin}`);
+        console.log(`[MOBILE-DIAGNOSTIC] 📱 Device info: ${navigator.userAgent.substring(0, 50)}...`);
+        console.log(`[MOBILE-DIAGNOSTIC] 🕐 Timestamp: ${new Date().toISOString()}`);
+        
         const startTime = Date.now();
         const response = await fetch(apiUrl, {
           method: 'GET',
