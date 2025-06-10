@@ -58,6 +58,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [selectedBaseId, setSelectedBaseId] = useState("");
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+  const [debugStatus, setDebugStatus] = useState("Inicializando...");
 
   const form = useForm<AbastecimentoValues>({
     resolver: zodResolver(abastecimentoSchema),
@@ -161,91 +162,86 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     carregarOperador();
   }, [form]);
 
-  // Carregar projetos com múltiplas tentativas para mobile
+  // Carregar projetos com diagnóstico completo para mobile
   useEffect(() => {
-    let attempts = 0;
-    const maxAttempts = 3;
+    let isCancelled = false;
     
     const fetchProjects = async () => {
-      attempts++;
+      if (isCancelled) return;
+      
       setIsLoadingProjects(true);
       
+      setDebugStatus(`Mobile: ${isMobile} | Carregando...`);
+      console.log(`[MOBILE-DEBUG] 🚀 Iniciando carregamento de projetos`);
+      console.log(`[MOBILE-DEBUG] 📱 Device Info:`, {
+        isMobile,
+        userAgent: navigator.userAgent,
+        origin: window.location.origin,
+        pathname: window.location.pathname
+      });
+      
       try {
-        console.log(`[FormularioAbastecimento] 🔄 Tentativa ${attempts}/${maxAttempts}`);
-        console.log(`[FormularioAbastecimento] 📱 Modo Mobile: ${isMobile}`);
+        const apiUrl = `${window.location.origin}/api/public/projects-with-bases`;
+        console.log(`[MOBILE-DEBUG] 🔗 Fazendo requisição para: ${apiUrl}`);
         
-        // URL absoluta para garantir que funcione em links externos
-        const baseUrl = window.location.origin;
-        const apiUrl = `${baseUrl}/api/public/projects-with-bases`;
-        
-        console.log(`[FormularioAbastecimento] 🌐 URL da API: ${apiUrl}`);
-        
+        const startTime = Date.now();
         const response = await fetch(apiUrl, {
           method: 'GET',
           headers: {
-            'Content-Type': 'application/json',
             'Accept': 'application/json',
+            'Content-Type': 'application/json',
             'X-Mobile-Request': isMobile ? 'true' : 'false',
-            'X-Requested-With': 'XMLHttpRequest',
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache'
+            'Cache-Control': 'no-cache'
           },
-          credentials: 'include',
-          mode: 'cors'
+          credentials: 'include'
         });
         
-        console.log(`[FormularioAbastecimento] ✅ Response Status: ${response.status}`);
+        const responseTime = Date.now() - startTime;
+        console.log(`[MOBILE-DEBUG] ⏱️ Tempo de resposta: ${responseTime}ms`);
+        console.log(`[MOBILE-DEBUG] 📊 Status HTTP: ${response.status}`);
+        console.log(`[MOBILE-DEBUG] 📋 Headers de resposta:`, Object.fromEntries(response.headers.entries()));
         
         if (response.ok) {
           const data = await response.json();
-          console.log(`[FormularioAbastecimento] 📦 Dados recebidos (tentativa ${attempts}):`, data?.data?.length || 0, 'projetos');
+          console.log(`[MOBILE-DEBUG] 📦 Dados JSON recebidos:`, {
+            success: data.success,
+            dataType: typeof data.data,
+            isArray: Array.isArray(data.data),
+            length: data.data?.length || 0,
+            firstProject: data.data?.[0]?.name || 'N/A'
+          });
           
           if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-            console.log(`[FormularioAbastecimento] ✅ SUCESSO - ${data.data.length} projetos carregados na tentativa ${attempts}`);
-            
-            // Força atualização dupla para garantir render
-            setProjects([]);
-            await new Promise(resolve => setTimeout(resolve, 10));
-            setProjects(data.data);
-            
-            console.log(`[Mobile-Success] Projetos definidos com sucesso:`, data.data.length);
-            return; // Sucesso, para aqui
+            if (!isCancelled) {
+              setProjects(data.data);
+              console.log(`[MOBILE-DEBUG] ✅ Projetos carregados com sucesso: ${data.data.length}`);
+            }
           } else {
-            console.error(`[FormularioAbastecimento] ❌ Dados inválidos na tentativa ${attempts}:`, data);
+            console.error(`[MOBILE-DEBUG] ❌ Estrutura de dados inválida:`, data);
+            if (!isCancelled) setProjects([]);
           }
         } else {
-          console.error(`[FormularioAbastecimento] ❌ Erro HTTP ${response.status} na tentativa ${attempts}`);
+          const errorText = await response.text();
+          console.error(`[MOBILE-DEBUG] ❌ Erro HTTP ${response.status}:`, errorText);
+          if (!isCancelled) setProjects([]);
         }
-        
-        // Se chegou aqui, houve erro - tenta novamente se possível
-        if (attempts < maxAttempts) {
-          console.log(`[FormularioAbastecimento] 🔁 Tentando novamente em 1 segundo...`);
-          setTimeout(() => fetchProjects(), 1000);
-          return;
-        } else {
-          console.error('[FormularioAbastecimento] ❌ Todas as tentativas falharam');
-          setProjects([]);
-        }
-        
       } catch (error) {
-        console.error(`[FormularioAbastecimento] ❌ Erro na tentativa ${attempts}:`, error);
-        
-        if (attempts < maxAttempts) {
-          console.log(`[FormularioAbastecimento] 🔁 Tentando novamente em 1 segundo...`);
-          setTimeout(() => fetchProjects(), 1000);
-          return;
-        } else {
-          setProjects([]);
-        }
+        console.error(`[MOBILE-DEBUG] ❌ Erro de rede/JavaScript:`, error);
+        if (!isCancelled) setProjects([]);
       } finally {
-        if (attempts >= maxAttempts) {
+        if (!isCancelled) {
           setIsLoadingProjects(false);
         }
       }
     };
 
-    // Inicia o carregamento
-    fetchProjects();
+    // Delay pequeno para garantir que o componente está montado
+    const timer = setTimeout(fetchProjects, 100);
+    
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
   }, [isMobile]);
 
   // Obter projeto selecionado
