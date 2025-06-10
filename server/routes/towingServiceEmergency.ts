@@ -55,7 +55,9 @@ emergencyRouter.post('/submit', async (req, res) => {
         'teste_daiane_do_vale_amaral_token': 10,
         'teste_daiane_do_vale_amaral__token': 10,  // com duplo underscore
         'parceiro_10_permanente_2025_token': 10, // Daiane do Vale Amaral
-        'parceiro_11_permanente_2025_token': 11, // Delões Guinchos e Munck
+        'teste_gilson_fernandes_gonçalves_token': 11,
+        'teste_gilson_fernandes_gonçalves__token': 11,  // com duplo underscore
+        'parceiro_11_permanente_2025_token': 11, // Gilson Fernandes Gonçalves
         'ford_permanente_2025_token': 1,
         'chevrolet_permanente_2025_token': 2,
         'volkswagen_permanente_2025_token': 3,
@@ -156,7 +158,9 @@ emergencyRouter.get('/history/:token', async (req, res) => {
       'teste_daiane_do_vale_amaral_token': 10,
       'teste_daiane_do_vale_amaral__token': 10,  // com duplo underscore
       'parceiro_10_permanente_2025_token': 10, // Daiane do Vale Amaral
-      'parceiro_11_permanente_2025_token': 11, // Delões Guinchos e Munck
+      'teste_gilson_fernandes_gonçalves_token': 11,
+      'teste_gilson_fernandes_gonçalves__token': 11,  // com duplo underscore
+      'parceiro_11_permanente_2025_token': 11, // Gilson Fernandes Gonçalves
       'ford_permanente_2025_token': 1,
       'chevrolet_permanente_2025_token': 2,
       'volkswagen_permanente_2025_token': 3,
