@@ -205,8 +205,15 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       });
       
       try {
-        const apiUrl = `${window.location.origin}/api/public/projects-with-bases`;
+        // Para celular, tentar primeiro a API de teste, depois a principal
+        const testApiUrl = `${window.location.origin}/api/mobile/test-projects`;
+        const mainApiUrl = `${window.location.origin}/api/public/projects-with-bases`;
+        const apiUrl = isMobile ? testApiUrl : mainApiUrl;
+        
         console.log(`[AUTO-LOAD] 🔗 Fazendo requisição para: ${apiUrl}`);
+        if (isMobile) {
+          console.log(`[MOBILE-TEST] 📱 Usando API de teste específica para celular`);
+        }
         
         // Diagnóstico de conectividade específico para celular
         console.log(`[MOBILE-DIAGNOSTIC] 🌐 Testando conectividade...`);
@@ -296,7 +303,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
           console.error(`[AUTO-LOAD] ❌ Erro HTTP ${response.status}:`, errorText);
           
           // Implementar fallback específico para mobile em caso de erro 401/403
-          if ((response.status === 401 || response.status === 403) && (isMobile || isMobileRequest)) {
+          if ((response.status === 401 || response.status === 403) && isMobile) {
             console.log(`[MOBILE-FALLBACK] 🔄 Tentando fallback sem autenticação para mobile...`);
             
             try {
@@ -325,6 +332,38 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
               }
             } catch (fallbackError) {
               console.error(`[MOBILE-FALLBACK] ❌ Erro no fallback:`, fallbackError);
+            }
+          }
+          
+          // Se falhou e é mobile, tentar API principal como último recurso
+          if (isMobile && response.status !== 200) {
+            console.log(`[MOBILE-FALLBACK] 🔄 Tentando API principal como último recurso...`);
+            
+            try {
+              const mainApiResponse = await fetch(mainApiUrl, {
+                method: 'GET',
+                headers: {
+                  'Accept': 'application/json',
+                  'X-Mobile-Request': 'true',
+                  'Cache-Control': 'no-cache'
+                },
+                credentials: 'include',
+                signal: AbortSignal.timeout(20000)
+              });
+              
+              if (mainApiResponse.ok) {
+                const mainApiData = await mainApiResponse.json();
+                if (mainApiData.success && Array.isArray(mainApiData.data) && mainApiData.data.length > 0) {
+                  console.log(`[MOBILE-FALLBACK] ✅ API principal funcionou! ${mainApiData.data.length} projetos`);
+                  if (!isCancelled) {
+                    setProjects(mainApiData.data);
+                    setDebugStatus(`✅ ${mainApiData.data.length} projetos (fallback para API principal)`);
+                    return;
+                  }
+                }
+              }
+            } catch (mainApiError) {
+              console.error(`[MOBILE-FALLBACK] ❌ API principal também falhou:`, mainApiError);
             }
           }
           

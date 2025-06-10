@@ -6540,6 +6540,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/projects/:projectId/bases', isAuthenticated, getProjectBases);
   app.get('/api/projects-with-bases', isAuthenticated, getProjectsWithBases);
   app.get('/api/public/projects-with-bases', getProjectsWithBases); // Endpoint público para postos externos
+  
+  // API de teste específica para celular com dados estáticos
+  app.get('/api/mobile/test-projects', (req, res) => {
+    console.log(`[MOBILE-TEST] 📱 Requisição de teste recebida`);
+    console.log(`[MOBILE-TEST] 🌐 User-Agent: ${req.get('User-Agent')}`);
+    console.log(`[MOBILE-TEST] 📡 Origin: ${req.get('Origin')}`);
+    console.log(`[MOBILE-TEST] 🔗 Referer: ${req.get('Referer')}`);
+    
+    const testData = {
+      success: true,
+      data: [
+        {
+          id: 1,
+          name: "GRUPO PEREIRA",
+          description: "Projeto teste",
+          is_active: true,
+          bases: [
+            { id: 1, base_name: "Base GP01", base_code: "GP01", description: "Base teste" },
+            { id: 2, base_name: "Base GP02", base_code: "GP02", description: "Base teste" }
+          ]
+        },
+        {
+          id: 3,
+          name: "MERCADO LIVRE",
+          description: "Projeto teste",
+          is_active: true,
+          bases: [
+            { id: 3, base_name: "Base ML01", base_code: "ML01", description: "Base teste" }
+          ]
+        }
+      ],
+      count: 2,
+      mobile_test: true,
+      timestamp: new Date().toISOString()
+    };
+    
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, X-Mobile-Request');
+    res.json(testData);
+  });
   app.post('/api/projects', isAuthenticated, createProject);
   app.post('/api/projects/:projectId/bases', isAuthenticated, createProjectBase);
   

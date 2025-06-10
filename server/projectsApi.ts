@@ -103,17 +103,28 @@ export async function getProjectsWithBases(req: Request, res: Response) {
   const origin = req.get('Origin') || 'Sem origem';
   const referer = req.get('Referer') || 'Sem referer';
   
-  console.log(`[PROJECTS-API] 🚀 Iniciando getProjectsWithBases`);
+  console.log(`[PROJECTS-API] 🚀 REQUISIÇÃO RECEBIDA - getProjectsWithBases`);
   console.log(`[PROJECTS-API] 📱 Device: ${isMobile ? 'MOBILE' : 'DESKTOP'} (Header: ${isMobileRequest})`);
-  console.log(`[PROJECTS-API] 🌐 User-Agent: ${userAgent.substring(0, 100)}...`);
+  console.log(`[PROJECTS-API] 🌐 User-Agent: ${userAgent}`);
   console.log(`[PROJECTS-API] 📡 Origin: ${origin}`);
   console.log(`[PROJECTS-API] 🔗 Referer: ${referer}`);
-  console.log(`[PROJECTS-API] 🔒 Headers Recebidos:`, {
-    authorization: req.get('Authorization') ? 'Bearer ***' : 'Ausente',
-    contentType: req.get('Content-Type'),
-    accept: req.get('Accept'),
-    cacheControl: req.get('Cache-Control')
-  });
+  console.log(`[PROJECTS-API] 🔒 Todos os Headers:`, req.headers);
+  console.log(`[PROJECTS-API] 🎯 URL completa: ${req.protocol}://${req.get('host')}${req.originalUrl}`);
+  console.log(`[PROJECTS-API] 📊 Método: ${req.method}`);
+  console.log(`[PROJECTS-API] 🔑 Session ID: ${(req as any).sessionID || 'Não definido'}`);
+  console.log(`[PROJECTS-API] 👤 Usuário: ${(req as any).user?.id || 'Não autenticado'}`);
+  
+  // Log específico para detecção de problemas mobile
+  if (isMobile || isMobileRequest) {
+    console.log(`[MOBILE-API-DEBUG] 📱 PROCESSANDO REQUISIÇÃO MOBILE`);
+    console.log(`[MOBILE-API-DEBUG] 🔍 Headers críticos:`, {
+      accept: req.get('Accept'),
+      contentType: req.get('Content-Type'),
+      authorization: req.get('Authorization') ? 'Presente' : 'Ausente',
+      cookie: req.get('Cookie') ? 'Presente' : 'Ausente',
+      xMobileRequest: req.get('X-Mobile-Request')
+    });
+  }
   
   try {
     // Headers específicos para mobile com CORS melhorado
