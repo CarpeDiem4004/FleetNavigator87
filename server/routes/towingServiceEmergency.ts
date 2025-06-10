@@ -65,8 +65,8 @@ emergencyRouter.post('/submit', async (req, res) => {
         'parceiro_5_permanente_2025_token': 5,   // Guincho Águia
         'parceiro_7_permanente_2025_token': 7,   // Rafael Abner Transporte
         'teste_gilson_fernandes_gonçalves': 16,
-        'teste_deloes_guinchos_e_munck_token': 14,
-        'teste_deloes_guinchos_e_munck__token': 14  // com duplo underscore
+        'teste_deloes_guinchos_e_munck_token': 11,
+        'teste_deloes_guinchos_e_munck__token': 11  // com duplo underscore
       };
       
       partnerId = tokenMapping[tokenLower];
@@ -176,8 +176,8 @@ emergencyRouter.get('/history/:token', async (req, res) => {
       'parceiro_5_permanente_2025_token': 5,   // Guincho Águia
       'parceiro_7_permanente_2025_token': 7,   // Rafael Abner Transporte
       'teste_gilson_fernandes_gonçalves': 16,
-      'teste_deloes_guinchos_e_munck_token': 14,
-      'teste_deloes_guinchos_e_munck__token': 14  // com duplo underscore
+      'teste_deloes_guinchos_e_munck_token': 11,
+      'teste_deloes_guinchos_e_munck__token': 11  // com duplo underscore
     };
     
     partnerId = tokenMapping[tokenLower];
