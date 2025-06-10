@@ -53,12 +53,12 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   const processingRef = useRef(false);
   
-  // Estados para projeto e base com debouncing para mobile
+  // Estados para projeto e base com prioridade mobile
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [selectedBaseId, setSelectedBaseId] = useState("");
-  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
-  const [debugStatus, setDebugStatus] = useState("Inicializando...");
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true); // Iniciar como carregando
+  const [debugStatus, setDebugStatus] = useState(isMobile ? "📱 Carregando para mobile..." : "Inicializando...");
 
   const form = useForm<AbastecimentoValues>({
     resolver: zodResolver(abastecimentoSchema),
@@ -162,7 +162,7 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
     carregarOperador();
   }, [form]);
 
-  // Carregar projetos automaticamente no mount
+  // Carregar projetos automaticamente no mount (especialmente otimizado para mobile)
   useEffect(() => {
     let isCancelled = false;
     
@@ -171,13 +171,14 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       
       setIsLoadingProjects(true);
       
-      setDebugStatus(`Carregando projetos...`);
-      console.log(`[AUTO-LOAD] 🚀 Iniciando carregamento automático de projetos`);
-      console.log(`[AUTO-LOAD] 📱 Device Info:`, {
+      setDebugStatus(`🔄 Carregando projetos...`);
+      console.log(`[MOBILE-AUTO-LOAD] 📱 Iniciando carregamento automático para celular`);
+      console.log(`[MOBILE-AUTO-LOAD] Device:`, {
         isMobile,
+        isTouch: 'ontouchstart' in window,
+        screenWidth: window.screen.width,
         userAgent: navigator.userAgent,
-        origin: window.location.origin,
-        pathname: window.location.pathname
+        origin: window.location.origin
       });
       
       try {
@@ -240,12 +241,21 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
       }
     };
 
-    // Delay pequeno para garantir que o componente está montado
-    const timer = setTimeout(fetchProjects, 100);
+    // Carregamento imediato para celular - sem delay
+    if (isMobile || 'ontouchstart' in window) {
+      console.log(`[MOBILE-AUTO-LOAD] 🚀 Carregamento imediato ativado para mobile`);
+      fetchProjects(); // Executar imediatamente para mobile
+    } else {
+      // Delay mínimo apenas para desktop
+      const timer = setTimeout(fetchProjects, 50);
+      return () => {
+        isCancelled = true;
+        clearTimeout(timer);
+      };
+    }
     
     return () => {
       isCancelled = true;
-      clearTimeout(timer);
     };
   }, []); // Executar apenas uma vez no mount
 
@@ -584,8 +594,23 @@ export const FormularioAbastecimento: React.FC<FormularioAbastecimentoProps> = (
                 <FormItem>
                   <FormLabel>Projeto *</FormLabel>
                   {isMobile && (
-                    <div className="text-xs bg-gray-100 p-2 rounded mb-2">
-                      Debug: {debugStatus}
+                    <div className="text-sm bg-blue-50 border border-blue-200 p-3 rounded-lg mb-3 flex items-center gap-2">
+                      {isLoadingProjects ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                          <span className="text-blue-700">Carregando projetos...</span>
+                        </>
+                      ) : projects.length > 0 ? (
+                        <>
+                          <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+                          <span className="text-green-700">{projects.length} projetos carregados</span>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-4 h-4 bg-red-500 rounded-full"></div>
+                          <span className="text-red-700">Erro no carregamento</span>
+                        </>
+                      )}
                     </div>
                   )}
                   <div className="flex gap-2">
