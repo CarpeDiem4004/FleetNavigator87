@@ -295,11 +295,15 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
   }));
 
   const selectedProject = projects.find(p => p.id.toString() === selectedProjectId);
-  const baseOptions = selectedProject?.bases.map(base => ({
+  
+  // Projetos únicos que não requerem base
+  const isUniqueProject = selectedProject?.name === 'Manutenção' || selectedProject?.name === 'Uso Operacional';
+  
+  const baseOptions = isUniqueProject ? [] : (selectedProject?.bases.map(base => ({
     value: base.id.toString(),
     label: `${base.base_name} (${base.base_code})`,
     disabled: false
-  })) || [];
+  })) || []);
 
   // Opções de combustível fixas conforme projeto original - apenas ARLA e Diesel
   const combustivelOptions = [
@@ -310,10 +314,20 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
   // Handlers com eventos touch otimizados
   const handleProjectChange = useCallback((value: string) => {
     setSelectedProjectId(value);
-    setSelectedBaseId(""); // Reset base selection
+    const project = projects.find(p => p.id.toString() === value);
+    const isUnique = project?.name === 'Manutenção' || project?.name === 'Uso Operacional';
+    
+    if (isUnique) {
+      // Para projetos únicos, definir base_id como "unique" ou o próprio projeto_id
+      setSelectedBaseId("unique");
+      form.setValue("base_id", "unique");
+    } else {
+      setSelectedBaseId(""); // Reset base selection para projetos com bases
+      form.setValue("base_id", "");
+    }
+    
     form.setValue("projeto_id", value);
-    form.setValue("base_id", "");
-  }, [form]);
+  }, [form, projects]);
 
   const handleBaseChange = useCallback((value: string) => {
     setSelectedBaseId(value);
@@ -565,27 +579,44 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
             )}
           />
 
-          {/* Seleção de Base - Mobile Optimized */}
-          <FormField
-            control={form.control}
-            name="base_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-base font-medium">Base *</FormLabel>
-                <FormControl>
-                  <MobileSelect
-                    options={baseOptions}
-                    value={selectedBaseId}
-                    onChange={handleBaseChange}
-                    placeholder={selectedProjectId ? "Selecione uma base" : "Primeiro selecione um projeto"}
-                    disabled={!selectedProjectId}
-                    error={!!form.formState.errors.base_id}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* Seleção de Base - Mobile Optimized - Condicional */}
+          {!isUniqueProject && (
+            <FormField
+              control={form.control}
+              name="base_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-base font-medium">Base *</FormLabel>
+                  <FormControl>
+                    <MobileSelect
+                      options={baseOptions}
+                      value={selectedBaseId}
+                      onChange={handleBaseChange}
+                      placeholder={selectedProjectId ? "Selecione uma base" : "Primeiro selecione um projeto"}
+                      disabled={!selectedProjectId}
+                      error={!!form.formState.errors.base_id}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+          
+          {/* Mensagem informativa para projetos únicos */}
+          {isUniqueProject && (
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-sm text-blue-700 font-medium">
+                  Projeto único: {selectedProject?.name}
+                </span>
+              </div>
+              <p className="text-xs text-blue-600 mt-1">
+                Este projeto não requer seleção de base específica.
+              </p>
+            </div>
+          )}
 
           {/* Campos do formulário em grid responsivo */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
