@@ -1287,6 +1287,8 @@ const ConsumptionReports: React.FC = () => {
 const FuelCardPage: React.FC = () => {
   const { user } = useAuth();
   
+  console.log('FuelCardPage - User role:', user?.role); // Debug log
+  
   return (
     <AppLayout>
       <div className="container mx-auto py-6">
@@ -1298,7 +1300,7 @@ const FuelCardPage: React.FC = () => {
         </div>
 
         <Tabs defaultValue="request" className="space-y-4">
-          <TabsList>
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5">
             <TabsTrigger value="request">
               <Plus className="w-4 h-4 mr-2" />
               Solicitar Recarga
@@ -1322,7 +1324,7 @@ const FuelCardPage: React.FC = () => {
             {(user?.role === 'admin' || user?.role === 'gestor') && (
               <TabsTrigger value="reports">
                 <BarChart3 className="w-4 h-4 mr-2" />
-                Relatórios de Consumo
+                Relatórios
               </TabsTrigger>
             )}
           </TabsList>
