@@ -1283,13 +1283,22 @@ const ConsumptionReports: React.FC = () => {
   );
 };
 
-// Página principal do Cartão de Abastecimento - Updated v2.1
+// Página principal do Cartão de Abastecimento - Updated v3.0
 const FuelCardPage: React.FC = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('request');
   const { toast } = useToast();
   
   console.log('FuelCardPage - User data:', user);
+  console.log('FuelCardPage - Component rendering at:', new Date().toISOString());
+  
+  // Forçar re-render para debug
+  const [forceUpdate, setForceUpdate] = useState(0);
+  
+  useEffect(() => {
+    console.log('FuelCardPage mounted/updated');
+    setForceUpdate(prev => prev + 1);
+  }, [user]);
   
   const handleExportExcel = async () => {
     try {
@@ -1352,28 +1361,26 @@ const FuelCardPage: React.FC = () => {
             <CreditCard className="inline-block mr-2" />
             Cartão de Abastecimento
           </h1>
-          <div className="flex flex-wrap gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
+          <div className="flex flex-wrap gap-2" style={{minHeight: '40px', border: '1px solid red'}} data-testid="buttons-container">
+            <button 
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 bg-blue-50 hover:bg-blue-100 border-blue-200"
               onClick={() => {
                 console.log('Clicado em Ver Relatórios');
                 setActiveTab('reports');
               }}
-              className="bg-blue-50 hover:bg-blue-100 border-blue-200"
+              data-testid="reports-button"
             >
               <BarChart3 className="w-4 h-4 mr-2" />
               Ver Relatórios
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
+            </button>
+            <button 
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 bg-green-50 hover:bg-green-100 border-green-200"
               onClick={handleExportExcel}
-              className="bg-green-50 hover:bg-green-100 border-green-200"
+              data-testid="export-button"
             >
               <FileText className="w-4 h-4 mr-2" />
               Baixar Excel
-            </Button>
+            </button>
           </div>
         </div>
 
