@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Check, RefreshCw, AlertTriangle, Smartphone } from "lucide-react";
+import { Loader2, Check, RefreshCw, AlertTriangle, Smartphone, Plus } from "lucide-react";
 import { useMobileDetection } from "@/hooks/useMobileDetection";
 import { MobileSelect } from "@/components/ui/mobile-select";
 import { useAuth } from "@/context/AuthContext";
@@ -104,7 +104,7 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
       base_id: "",
       motorista: "",
       motorista_rg: "",
-      operador: "",
+      operador: user?.name || "Administrador",
       tipo_veiculo: "frota",
     },
   });
@@ -502,12 +502,41 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
       {/* Sucesso */}
       {registroSucesso && (
         <div className="mb-6 p-4 bg-green-50 rounded-lg border border-green-200">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-3">
             <Check className="w-5 h-5 text-green-600" />
             <span className="text-green-800 font-medium">
               Abastecimento registrado com sucesso!
             </span>
           </div>
+          <Button 
+            onClick={() => {
+              setRegistroSucesso(false);
+              form.reset({
+                placa: "",
+                km: "",
+                tipo: "diesel",
+                quantidade: "",
+                valor_litro: fuelConfig.diesel_valor_litro.toFixed(3),
+                valor_total: "",
+                motorista: "",
+                motorista_rg: "",
+                operador: user?.name || "Administrador",
+                tipo_veiculo: "frota",
+                observacoes: "",
+                lavagem: false,
+                tipo_lavagem: "",
+                projeto_id: "",
+                base_id: ""
+              });
+              setSelectedProjectId("");
+              setSelectedBaseId("");
+            }}
+            className="w-full"
+            variant="outline"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Realizar Novo Abastecimento
+          </Button>
         </div>
       )}
 
