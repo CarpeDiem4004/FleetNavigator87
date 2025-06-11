@@ -1286,8 +1286,61 @@ const ConsumptionReports: React.FC = () => {
 // Página principal do Cartão de Abastecimento
 const FuelCardPage: React.FC = () => {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('request');
+  const { toast } = useToast();
   
-  console.log('FuelCardPage - User role:', user?.role); // Debug log
+  const handleExportExcel = async () => {
+    try {
+      const response = await apiRequest('GET', '/api/fuel-consumption-reports?format=excel');
+      const data = await response.json();
+      
+      if (data.success && data.data.length > 0) {
+        // Criar CSV dos dados
+        const csvContent = [
+          ['Placa', 'Base', 'Projeto', 'Período', 'Total Litros', 'Total Valor', 'Nº Abastecimentos', 'Média Consumo', 'Combustível'],
+          ...data.data.map((report: any) => [
+            report.placa,
+            report.base_name,
+            report.projeto,
+            report.periodo,
+            report.total_litros,
+            report.total_valor,
+            report.numero_abastecimentos,
+            report.media_consumo,
+            report.tipo_combustivel
+          ])
+        ].map(row => row.join(',')).join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a') as HTMLAnchorElement;
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `relatorio_consumo_completo_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast({
+          title: 'Relatório exportado com sucesso',
+          description: 'O arquivo foi baixado para seu computador',
+        });
+      } else {
+        toast({
+          title: 'Nenhum dado encontrado',
+          description: 'Não há dados de consumo disponíveis para exportar',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao exportar relatório:', error);
+      toast({
+        title: 'Erro ao exportar relatório',
+        description: 'Não foi possível gerar o arquivo de relatório',
+        variant: 'destructive',
+      });
+    }
+  };
   
   return (
     <AppLayout>
@@ -1297,9 +1350,21 @@ const FuelCardPage: React.FC = () => {
             <CreditCard className="inline-block mr-2" />
             Cartão de Abastecimento
           </h1>
+          {(user?.role === 'admin' || user?.role === 'gestor') && (
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setActiveTab('reports')}>
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Ver Relatórios
+              </Button>
+              <Button variant="outline" onClick={handleExportExcel}>
+                <FileText className="w-4 h-4 mr-2" />
+                Baixar Relatório Excel
+              </Button>
+            </div>
+          )}
         </div>
 
-        <Tabs defaultValue="request" className="space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5">
             <TabsTrigger value="request">
               <Plus className="w-4 h-4 mr-2" />
