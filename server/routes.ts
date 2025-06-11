@@ -3774,6 +3774,237 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para relatórios de consumo agrupados por bases
+  app.get('/api/fuel-consumption-reports-by-base', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      // Verificar permissões
+      if (user.role !== 'admin' && user.role !== 'gestor') {
+        return res.status(403).json({
+          success: false,
+          message: 'Acesso negado: apenas administradores e gestores podem visualizar relatórios'
+        });
+      }
+
+      const { dateFrom, dateTo, base, fuelType, project, searchTerm } = req.query;
+
+      // Construir condições WHERE
+      let whereConditions = [];
+      let queryParams: any[] = [];
+      let paramIndex = 1;
+
+      if (dateFrom) {
+        whereConditions.push(`created_at >= $${paramIndex}`);
+        queryParams.push(dateFrom);
+        paramIndex++;
+      }
+
+      if (dateTo) {
+        whereConditions.push(`created_at <= $${paramIndex}`);
+        queryParams.push(dateTo);
+        paramIndex++;
+      }
+
+      if (base) {
+        whereConditions.push(`base_name ILIKE $${paramIndex}`);
+        queryParams.push(`%${base}%`);
+        paramIndex++;
+      }
+
+      if (fuelType) {
+        whereConditions.push(`tipo_combustivel ILIKE $${paramIndex}`);
+        queryParams.push(`%${fuelType}%`);
+        paramIndex++;
+      }
+
+      if (project) {
+        whereConditions.push(`projeto ILIKE $${paramIndex}`);
+        queryParams.push(`%${project}%`);
+        paramIndex++;
+      }
+
+      if (searchTerm) {
+        whereConditions.push(`placa ILIKE $${paramIndex}`);
+        queryParams.push(`%${searchTerm}%`);
+        paramIndex++;
+      }
+
+      const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+      // Query consolidada para buscar dados agrupados por base e projeto
+      const query = `
+        WITH consolidated_data AS (
+          -- Dados do posto Osasco V2
+          SELECT 
+            placa,
+            COALESCE(base_name, 'Não definida') as base_name,
+            COALESCE(projeto, 'Não definido') as projeto,
+            CASE 
+              WHEN tipo_combustivel = 'Diesel' THEN 'diesel'
+              WHEN tipo_combustivel = 'Arla' THEN 'arla'
+              ELSE LOWER(tipo_combustivel)
+            END as tipo_combustivel,
+            litros as quantidade_litros,
+            valor_total,
+            km_atual as km,
+            created_at
+          FROM abastecimentos_posto_osasco_v2
+          WHERE litros > 0 AND valor_total > 0
+          
+          UNION ALL
+          
+          -- Dados do posto Campinas V2
+          SELECT 
+            placa,
+            COALESCE(base_name, 'Não definida') as base_name,
+            COALESCE(projeto, 'Não definido') as projeto,
+            CASE 
+              WHEN tipo_combustivel = 'Diesel' THEN 'diesel'
+              WHEN tipo_combustivel = 'Arla' THEN 'arla'
+              ELSE LOWER(tipo_combustivel)
+            END as tipo_combustivel,
+            litros as quantidade_litros,
+            valor_total,
+            km_atual as km,
+            created_at
+          FROM abastecimentos_posto_campinas_v2
+          WHERE litros > 0 AND valor_total > 0
+          
+          UNION ALL
+          
+          -- Dados do posto ABC V2
+          SELECT 
+            placa,
+            COALESCE(base_name, 'Não definida') as base_name,
+            COALESCE(projeto, 'Não definido') as projeto,
+            CASE 
+              WHEN tipo_combustivel = 'Diesel' THEN 'diesel'
+              WHEN tipo_combustivel = 'Arla' THEN 'arla'
+              ELSE LOWER(tipo_combustivel)
+            END as tipo_combustivel,
+            litros as quantidade_litros,
+            valor_total,
+            km_atual as km,
+            created_at
+          FROM abastecimentos_posto_abc_v2
+          WHERE litros > 0 AND valor_total > 0
+          
+          UNION ALL
+          
+          -- Dados do posto Guarulhos V2
+          SELECT 
+            placa,
+            COALESCE(base_name, 'Não definida') as base_name,
+            COALESCE(projeto, 'Não definido') as projeto,
+            CASE 
+              WHEN tipo_combustivel = 'Diesel' THEN 'diesel'
+              WHEN tipo_combustivel = 'Arla' THEN 'arla'
+              ELSE LOWER(tipo_combustivel)
+            END as tipo_combustivel,
+            litros as quantidade_litros,
+            valor_total,
+            km_atual as km,
+            created_at
+          FROM abastecimentos_posto_guarulhos_v2
+          WHERE litros > 0 AND valor_total > 0
+          
+          UNION ALL
+          
+          -- Dados do posto Alair V2
+          SELECT 
+            placa,
+            COALESCE(base_name, 'Não definida') as base_name,
+            COALESCE(projeto, 'Não definido') as projeto,
+            CASE 
+              WHEN tipo_combustivel = 'Diesel' THEN 'diesel'
+              WHEN tipo_combustivel = 'Arla' THEN 'arla'
+              ELSE LOWER(tipo_combustivel)
+            END as tipo_combustivel,
+            litros as quantidade_litros,
+            valor_total,
+            km_atual as km,
+            created_at
+          FROM abastecimentos_posto_alair_v2
+          WHERE litros > 0 AND valor_total > 0
+          
+          UNION ALL
+          
+          -- Dados do posto Socorro V2
+          SELECT 
+            placa,
+            COALESCE(base_name, 'Não definida') as base_name,
+            COALESCE(projeto, 'Não definido') as projeto,
+            CASE 
+              WHEN tipo_combustivel = 'Diesel' THEN 'diesel'
+              WHEN tipo_combustivel = 'Arla' THEN 'arla'
+              ELSE LOWER(tipo_combustivel)
+            END as tipo_combustivel,
+            litros as quantidade_litros,
+            valor_total,
+            km_atual as km,
+            created_at
+          FROM abastecimentos_posto_socorro_v2
+          WHERE litros > 0 AND valor_total > 0
+          
+          UNION ALL
+          
+          -- Dados do posto Sorocaba V2
+          SELECT 
+            placa,
+            COALESCE(base_name, 'Não definida') as base_name,
+            COALESCE(projeto, 'Não definido') as projeto,
+            CASE 
+              WHEN tipo_combustivel = 'Diesel' THEN 'diesel'
+              WHEN tipo_combustivel = 'Arla' THEN 'arla'
+              ELSE LOWER(tipo_combustivel)
+            END as tipo_combustivel,
+            litros as quantidade_litros,
+            valor_total,
+            km_atual as km,
+            created_at
+          FROM abastecimentos_posto_sorocaba_v2
+          WHERE litros > 0 AND valor_total > 0
+        )
+        SELECT 
+          base_name,
+          projeto,
+          COUNT(DISTINCT placa) as total_veiculos,
+          SUM(quantidade_litros) as total_litros,
+          SUM(valor_total) as total_valor,
+          COUNT(*) as numero_abastecimentos,
+          CASE 
+            WHEN MAX(km) > MIN(km) AND SUM(quantidade_litros) > 0 
+            THEN ROUND((MAX(km) - MIN(km)) / SUM(quantidade_litros), 2)
+            ELSE 0
+          END as media_consumo
+        FROM consolidated_data
+        ${whereClause}
+        GROUP BY base_name, projeto
+        HAVING COUNT(*) > 0
+        ORDER BY total_valor DESC, base_name ASC
+        LIMIT 200
+      `;
+
+      const result = await pool.query(query, queryParams);
+
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        count: result.rows.length,
+        message: 'Relatórios de consumo por base carregados com sucesso'
+      });
+
+    } catch (error: any) {
+      console.error('Erro ao gerar relatórios de consumo por base:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor ao gerar relatórios por base',
+        error: error.message
+      });
+    }
+  });
+
   // GET - Obter detalhes de uma solicitação específica
   app.get('/api/fuel-card/:id', isAuthenticated, async (req, res) => {
     try {
