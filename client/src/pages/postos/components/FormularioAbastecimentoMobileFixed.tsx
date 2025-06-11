@@ -13,7 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Check, RefreshCw, AlertTriangle, Smartphone } from "lucide-react";
 import { useMobileDetection } from "@/hooks/useMobileDetection";
-import MobileSelect from "@/components/ui/mobile-select";
+import { MobileSelect } from "@/components/ui/mobile-select";
 import { useAuth } from "@/context/AuthContext";
 
 // Schema de validação

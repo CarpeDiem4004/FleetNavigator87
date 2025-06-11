@@ -151,56 +151,90 @@ export const MobileSelect: React.FC<MobileSelectProps> = ({
           {/* Overlay para mobile */}
           <div className="fixed inset-0 z-40 md:hidden" />
           
-          {/* Lista de opções */}
-          <div className={cn(
-            "absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg",
-            "max-h-60 overflow-auto",
-            // Mobile optimization
-            "md:relative md:z-auto",
-            // Em mobile, ocupar mais espaço vertical
-            "mobile:max-h-[50vh] mobile:overflow-y-scroll"
-          )}>
-            {options.length === 0 ? (
-              <div className="px-3 py-2 text-gray-500 text-sm">
-                Nenhuma opção disponível
-              </div>
-            ) : (
-              options.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => handleSelect(option.value)}
-                  onTouchStart={() => handleSelect(option.value)}
-                  disabled={option.disabled}
-                  className={cn(
-                    "w-full px-3 py-2 text-left text-sm",
-                    "flex items-center justify-between",
-                    "transition-colors duration-150",
-                    // Mobile touch targets
-                    "min-h-[44px] touch-manipulation",
-                    // Estados
-                    option.disabled
-                      ? "text-gray-400 cursor-not-allowed bg-gray-50"
-                      : cn(
-                          "text-gray-900 cursor-pointer",
-                          "hover:bg-gray-100 active:bg-gray-200",
-                          // Highlight da opção selecionada
-                          value === option.value && "bg-blue-50 text-blue-700"
-                        )
-                  )}
-                  role="option"
-                  aria-selected={value === option.value}
-                >
-                  <span className="block truncate">
-                    {option.label}
+          {/* Container com header de contagem */}
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+            {/* Header com contador de itens */}
+            {options.length > 0 && (
+              <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 rounded-t-md">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-gray-600">
+                    {options.length} {options.length === 1 ? 'opção disponível' : 'opções disponíveis'}
                   </span>
-                  
-                  {value === option.value && (
-                    <Check className="w-4 h-4 text-blue-600" />
+                  {options.length > 5 && (
+                    <span className="text-xs text-gray-500 flex items-center gap-1">
+                      <span>↕</span> Role para ver mais
+                    </span>
                   )}
-                </button>
-              ))
+                </div>
+              </div>
             )}
+            
+            {/* Lista de opções com scroll */}
+            <div className={cn(
+              // Altura fixa com scroll visível
+              "h-60 overflow-y-auto",
+              // Estilo da barra de rolagem
+              "scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100",
+              "hover:scrollbar-thumb-gray-500",
+              // Mobile optimization - altura maior em dispositivos móveis
+              "md:h-60 sm:h-80",
+              // Scroll suave e indicadores visuais
+              "scroll-smooth",
+              // Border radius interno para o scroll
+              "[&::-webkit-scrollbar]:w-3",
+              "[&::-webkit-scrollbar-track]:bg-gray-100",
+              "[&::-webkit-scrollbar-track]:rounded-r-md",
+              "[&::-webkit-scrollbar-thumb]:bg-gray-400",
+              "[&::-webkit-scrollbar-thumb]:rounded-full",
+              "[&::-webkit-scrollbar-thumb:hover]:bg-gray-500",
+              // Gradiente nas bordas para indicar scroll
+              "relative",
+              "before:absolute before:top-0 before:left-0 before:right-0 before:h-2 before:bg-gradient-to-b before:from-white before:to-transparent before:pointer-events-none before:z-10",
+              "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-2 after:bg-gradient-to-t after:from-white after:to-transparent after:pointer-events-none after:z-10"
+            )}>
+              {options.length === 0 ? (
+                <div className="px-3 py-8 text-center text-gray-500 text-sm">
+                  <div className="mb-2">📭</div>
+                  Nenhuma opção disponível
+                </div>
+              ) : (
+                options.map((option, index) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleSelect(option.value)}
+                    onTouchStart={() => handleSelect(option.value)}
+                    disabled={option.disabled}
+                    className={cn(
+                      "w-full px-3 py-2 text-left text-sm",
+                      "flex items-center justify-between",
+                      "transition-colors duration-150",
+                      // Mobile touch targets
+                      "min-h-[44px] touch-manipulation",
+                      // Estados
+                      option.disabled
+                        ? "text-gray-400 cursor-not-allowed bg-gray-50"
+                        : cn(
+                            "text-gray-900 cursor-pointer",
+                            "hover:bg-gray-100 active:bg-gray-200",
+                            // Highlight da opção selecionada
+                            value === option.value && "bg-blue-50 text-blue-700"
+                          )
+                    )}
+                    role="option"
+                    aria-selected={value === option.value}
+                  >
+                    <span className="block truncate">
+                      {option.label}
+                    </span>
+                    
+                    {value === option.value && (
+                      <Check className="w-4 h-4 text-blue-600" />
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
           </div>
         </>
       )}
