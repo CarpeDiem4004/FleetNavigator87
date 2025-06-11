@@ -143,6 +143,7 @@ import SaoPauloPublic from "@/pages/postos/public/SaoPauloPublic";
 import CampinasPublic from "@/pages/postos/public/CampinasPublic";
 import CampinasV2Public from "@/pages/postos/public/CampinasV2Public";
 import ABCPublic from "@/pages/postos/public/ABCPublic";
+import ABCV2Public from "@/pages/postos/public/ABCV2Public";
 import SocorroPublic from "@/pages/postos/public/SocorroPublic";
 import SocorroV2Public from "@/pages/postos/public/SocorroV2Public";
 import SorocabaPublic from "@/pages/postos/public/SorocabaPublic";
@@ -404,7 +405,9 @@ function App() {
           <Route path="/posto/abc/public">
             <ABCPublic />
           </Route>
-          {/* ABC_V2 removido - Maio/2025 */}
+          <Route path="/posto/abc_v2/public">
+            <ABCV2Public />
+          </Route>
           <Route path="/posto/socorro/public">
             <SocorroPublic />
           </Route>
