@@ -1283,6 +1283,257 @@ const ConsumptionReports: React.FC = () => {
   );
 };
 
+// Componente de Histórico Geral de Operações Financeiras
+const GeneralOperationsHistory: React.FC = () => {
+  const [operations, setOperations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [filters, setFilters] = useState({
+    dateStart: '',
+    dateEnd: '',
+    operationType: 'all',
+    base: 'all'
+  });
+
+  // Buscar dados de operações
+  const fetchOperations = async () => {
+    try {
+      setLoading(true);
+      const queryParams = new URLSearchParams();
+      if (filters.dateStart) queryParams.append('dateStart', filters.dateStart);
+      if (filters.dateEnd) queryParams.append('dateEnd', filters.dateEnd);
+      if (filters.operationType !== 'all') queryParams.append('operationType', filters.operationType);
+      if (filters.base !== 'all') queryParams.append('base', filters.base);
+
+      const response = await fetch(`/api/general-operations-history?${queryParams}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setOperations(data.data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar operações:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOperations();
+  }, [filters]);
+
+  const toggleExpanded = (id: string) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedRows(newExpanded);
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+        <div className="h-64 bg-gray-200 rounded animate-pulse"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Cabeçalho */}
+      <div>
+        <h2 className="text-2xl font-bold">Histórico Geral de Operações</h2>
+        <p className="text-gray-600">Resumo consolidado de custos por operação e base</p>
+      </div>
+
+      {/* Filtros */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Data Início</label>
+              <input
+                type="date"
+                value={filters.dateStart}
+                onChange={(e) => setFilters(prev => ({ ...prev, dateStart: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Data Fim</label>
+              <input
+                type="date"
+                value={filters.dateEnd}
+                onChange={(e) => setFilters(prev => ({ ...prev, dateEnd: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Tipo de Operação</label>
+              <select
+                value={filters.operationType}
+                onChange={(e) => setFilters(prev => ({ ...prev, operationType: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              >
+                <option value="all">Todas</option>
+                <option value="abastecimento">Abastecimento</option>
+                <option value="recarga_cartao">Recarga de Cartão</option>
+                <option value="manutencao">Manutenção</option>
+                <option value="multa">Multas</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Base</label>
+              <select
+                value={filters.base}
+                onChange={(e) => setFilters(prev => ({ ...prev, base: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              >
+                <option value="all">Todas</option>
+                <option value="Osasco V2">Osasco V2</option>
+                <option value="Guarulhos V2">Guarulhos V2</option>
+                <option value="Line Hall Shopee">Line Hall Shopee</option>
+                <option value="Campinas V2">Campinas V2</option>
+              </select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Resumo */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-2xl font-bold text-blue-600">
+              {formatCurrency(operations.reduce((sum, op) => sum + (parseFloat(op.custo_total) || 0), 0))}
+            </div>
+            <p className="text-sm text-gray-600">Custo Total</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-2xl font-bold text-green-600">{operations.length}</div>
+            <p className="text-sm text-gray-600">Total de Operações</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-2xl font-bold text-purple-600">
+              {new Set(operations.map(op => op.base)).size}
+            </div>
+            <p className="text-sm text-gray-600">Bases Envolvidas</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tabela de Operações */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Operações por Base</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-3 font-medium">Operação</th>
+                  <th className="text-left p-3 font-medium">Base</th>
+                  <th className="text-left p-3 font-medium">Custo Total</th>
+                  <th className="text-left p-3 font-medium">Data</th>
+                  <th className="text-left p-3 font-medium">Detalhes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {operations.map((operation) => (
+                  <>
+                    <tr key={operation.id} className="border-b hover:bg-gray-50">
+                      <td className="p-3">
+                        <div className="font-medium">{operation.tipo_operacao}</div>
+                        <div className="text-sm text-gray-600">{operation.descricao}</div>
+                      </td>
+                      <td className="p-3">{operation.base}</td>
+                      <td className="p-3 font-medium text-green-600">
+                        {formatCurrency(parseFloat(operation.custo_total) || 0)}
+                      </td>
+                      <td className="p-3">{formatDate(operation.data_operacao)}</td>
+                      <td className="p-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleExpanded(operation.id)}
+                        >
+                          {expandedRows.has(operation.id) ? 'Ocultar' : 'Ver'} Detalhes
+                        </Button>
+                      </td>
+                    </tr>
+                    {expandedRows.has(operation.id) && (
+                      <tr>
+                        <td colSpan={5} className="p-4 bg-gray-50">
+                          <div className="space-y-2">
+                            <h4 className="font-medium">Detalhes da Operação</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <strong>Placa:</strong> {operation.placa || 'N/A'}
+                              </div>
+                              <div>
+                                <strong>Motorista:</strong> {operation.motorista || 'N/A'}
+                              </div>
+                              <div>
+                                <strong>KM:</strong> {operation.km || 'N/A'}
+                              </div>
+                              <div>
+                                <strong>Combustível:</strong> {operation.tipo_combustivel || 'N/A'}
+                              </div>
+                              <div>
+                                <strong>Litros:</strong> {operation.litros || 'N/A'}
+                              </div>
+                              <div>
+                                <strong>Status:</strong> {operation.status || 'N/A'}
+                              </div>
+                            </div>
+                            {operation.observacoes && (
+                              <div>
+                                <strong>Observações:</strong> {operation.observacoes}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          {operations.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              Nenhuma operação encontrada para os filtros selecionados
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
 // Página principal do Cartão de Abastecimento - Updated v3.0
 const FuelCardPage: React.FC = () => {
   const { user } = useAuth();
@@ -1415,7 +1666,7 @@ const FuelCardPage: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6">
             <TabsTrigger value="request">
               <Plus className="w-4 h-4 mr-2" />
               Solicitar Recarga
@@ -1424,6 +1675,12 @@ const FuelCardPage: React.FC = () => {
               <History className="w-4 h-4 mr-2" />
               Histórico
             </TabsTrigger>
+            {(user?.role === 'admin' || user?.role === 'gestor') && (
+              <TabsTrigger value="general-history">
+                <FileText className="w-4 h-4 mr-2" />
+                Histórico Geral
+              </TabsTrigger>
+            )}
             {(user?.role === 'admin' || user?.role === 'gestor') && (
               <TabsTrigger value="approval">
                 <CheckCircle2 className="w-4 h-4 mr-2" />
@@ -1461,6 +1718,12 @@ const FuelCardPage: React.FC = () => {
           {(user?.role === 'admin' || user?.role === 'gestor') && (
             <TabsContent value="operations" className="space-y-4">
               <FuelCardOperations />
+            </TabsContent>
+          )}
+          
+          {(user?.role === 'admin' || user?.role === 'gestor') && (
+            <TabsContent value="general-history" className="space-y-4">
+              <GeneralOperationsHistory />
             </TabsContent>
           )}
           

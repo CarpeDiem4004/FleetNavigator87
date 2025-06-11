@@ -1,0 +1,101 @@
+Perfeito! O que você está pedindo para a IA fazer é basicamente o seguinte:
+
+---
+
+## ✅ **Objetivo**
+
+**Criar um histórico geral de operações financeiras**, com:
+
+1. **Resumo dos custos por operação e base**
+2. **Filtro por data, tipo de operação ou base**
+3. **Opção de mostrar os dados detalhados de cada operação**
+
+---
+
+## 🧠 O que isso envolve?
+
+### 🔹 1. **Exibir histórico geral**
+
+* Uma **tabela ou lista** com:
+
+  * Nome da operação
+  * Base envolvida (ex: filial, conta, projeto etc.)
+  * Custo total
+  * Data
+
+### 🔹 2. **Mostrar custo por operação e base**
+
+* Agrupar por operação + base
+* Somar os custos relacionados
+
+Exemplo:
+
+| Operação | Base   | Custo Total  |
+| -------- | ------ | ------------ |
+| Compra   | Base A | R\$ 1.500,00 |
+| Venda    | Base B | R\$ 3.200,00 |
+
+### 🔹 3. **Filtro interativo**
+
+* Campos como:
+
+  * Data de início / fim
+  * Tipo de operação
+  * Base (dropdown ou multiselect)
+
+### 🔹 4. **Mostrar detalhes**
+
+* Botão ou seta para **expandir linha** da tabela e ver:
+
+  * Itens da operação
+  * Quantidades
+  * Custos individuais
+  * Responsável, etc.
+
+---
+
+## 🧰 Tecnologias esperadas (exemplo)
+
+Se você estiver usando React com Tailwind + shadcn/ui e Supabase, isso envolveria:
+
+* `DataTable` do `shadcn/ui`
+* Filtros usando `useState` e `useEffect`
+* Consulta SQL no Supabase (com `GROUP BY`, `SUM`, etc.)
+* Expansão de linha com componente de detalhamento
+
+---
+
+## 📦 Exemplo de estrutura de dados
+
+```ts
+type Operacao = {
+  id: string;
+  tipo: "compra" | "venda" | "ajuste";
+  base: string;
+  custo: number;
+  data: string;
+  detalhes: {
+    item: string;
+    quantidade: number;
+    custoUnitario: number;
+  }[];
+}
+```
+
+---
+
+## ✅ Próximo passo
+
+Se quiser, posso:
+
+* Gerar o **esboço da UI em React com shadcn/ui**
+* Escrever a **query SQL** para buscar os dados agrupados no Supabase
+* Ajudar a implementar os filtros
+
+Me diga:
+
+* Está usando **Supabase**, **PostgreSQL**, **React**?
+* Quer que o histórico seja **tabela com expansão** ou **página detalhada separada**?
+* Quais filtros são obrigatórios (ex: data, tipo, base)?
+
+Com isso posso começar a montar o código exato pra você.

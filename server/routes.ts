@@ -13159,6 +13159,180 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
+  // API para Histórico Geral de Operações Financeiras
+  app.get('/api/general-operations-history', hybridAuthMiddleware, async (req, res) => {
+    try {
+      const { dateStart, dateEnd, operationType, base } = req.query;
+      
+      let whereConditions = [];
+      let params = [];
+      let paramIndex = 1;
+
+      // Construir condições de filtro
+      if (dateStart) {
+        whereConditions.push(`data_operacao >= $${paramIndex}`);
+        params.push(dateStart);
+        paramIndex++;
+      }
+      
+      if (dateEnd) {
+        whereConditions.push(`data_operacao <= $${paramIndex}`);
+        params.push(dateEnd);
+        paramIndex++;
+      }
+      
+      if (base && base !== 'all') {
+        whereConditions.push(`base = $${paramIndex}`);
+        params.push(base);
+        paramIndex++;
+      }
+      
+      if (operationType && operationType !== 'all') {
+        whereConditions.push(`tipo_operacao = $${paramIndex}`);
+        params.push(operationType);
+        paramIndex++;
+      }
+
+      const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+      // Query unificada para buscar operações de múltiplas fontes
+      const query = `
+        WITH operacoes_consolidadas AS (
+          -- Abastecimentos (múltiplas tabelas)
+          SELECT 
+            CONCAT('abastecimento_', id) as id,
+            'abastecimento' as tipo_operacao,
+            'Abastecimento de combustível' as descricao,
+            COALESCE(base, 'Base não especificada') as base,
+            COALESCE(valor_calculado::text, '0') as custo_total,
+            COALESCE(data_abastecimento, created_at, NOW()) as data_operacao,
+            placa,
+            motorista,
+            km::text as km,
+            tipo_combustivel,
+            litros::text as litros,
+            status,
+            observacoes
+          FROM abastecimentos_posto_osasco_v2
+          WHERE data_abastecimento IS NOT NULL
+          
+          UNION ALL
+          
+          SELECT 
+            CONCAT('abastecimento_guarulhos_', id) as id,
+            'abastecimento' as tipo_operacao,
+            'Abastecimento de combustível' as descricao,
+            COALESCE(base, 'Guarulhos V2') as base,
+            COALESCE(valor_calculado::text, '0') as custo_total,
+            COALESCE(data_abastecimento, created_at, NOW()) as data_operacao,
+            placa,
+            motorista,
+            km::text as km,
+            tipo_combustivel,
+            litros::text as litros,
+            status,
+            observacoes
+          FROM abastecimentos_posto_guarulhos_v2
+          WHERE data_abastecimento IS NOT NULL
+          
+          UNION ALL
+          
+          SELECT 
+            CONCAT('abastecimento_campinas_', id) as id,
+            'abastecimento' as tipo_operacao,
+            'Abastecimento de combustível' as descricao,
+            COALESCE(base, 'Campinas V2') as base,
+            COALESCE(valor_calculado::text, '0') as custo_total,
+            COALESCE(data_abastecimento, created_at, NOW()) as data_operacao,
+            placa,
+            motorista,
+            km::text as km,
+            tipo_combustivel,
+            litros::text as litros,
+            status,
+            observacoes
+          FROM abastecimentos_posto_campinas_v2
+          WHERE data_abastecimento IS NOT NULL
+          
+          UNION ALL
+          
+          -- Recargas de cartão
+          SELECT 
+            CONCAT('recarga_', id) as id,
+            'recarga_cartao' as tipo_operacao,
+            'Recarga de cartão de combustível' as descricao,
+            COALESCE(base, 'Base não especificada') as base,
+            COALESCE(valor_solicitado::text, '0') as custo_total,
+            COALESCE(data_solicitacao, created_at, NOW()) as data_operacao,
+            placa,
+            motorista,
+            km::text as km,
+            tipo_combustivel,
+            litros_solicitados::text as litros,
+            status,
+            observacoes
+          FROM fuel_card_solicitations
+          WHERE status = 'Recarga Efetuada'
+          
+          UNION ALL
+          
+          -- Manutenções (se existir tabela)
+          SELECT 
+            CONCAT('manutencao_', id) as id,
+            'manutencao' as tipo_operacao,
+            CONCAT('Manutenção - ', maintenance_type) as descricao,
+            COALESCE(base_name, 'Base não especificada') as base,
+            COALESCE(estimated_cost::text, total_cost::text, '0') as custo_total,
+            COALESCE(created_at, NOW()) as data_operacao,
+            vehicle_plate as placa,
+            assigned_technician as motorista,
+            NULL as km,
+            NULL as tipo_combustivel,
+            NULL as litros,
+            status,
+            description as observacoes
+          FROM maintenance_requests
+          WHERE status IN ('completed', 'approved')
+        )
+        SELECT * FROM operacoes_consolidadas 
+        ${whereClause}
+        ORDER BY data_operacao DESC 
+        LIMIT 100
+      `;
+
+      console.log('Query para histórico geral:', query);
+      console.log('Parâmetros:', params);
+
+      const result = await pool.query(query, params);
+      
+      // Processar e formatar os dados
+      const operations = result.rows.map(row => ({
+        ...row,
+        custo_total: parseFloat(row.custo_total) || 0
+      }));
+
+      console.log(`Histórico geral retornou ${operations.length} operações`);
+
+      res.json({
+        success: true,
+        data: operations,
+        summary: {
+          total_operations: operations.length,
+          total_cost: operations.reduce((sum, op) => sum + op.custo_total, 0),
+          bases_count: new Set(operations.map(op => op.base)).size
+        }
+      });
+      
+    } catch (error: any) {
+      console.error('Erro ao buscar histórico geral de operações:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar histórico de operações',
+        error: error.message
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
