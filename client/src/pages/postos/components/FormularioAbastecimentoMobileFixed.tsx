@@ -469,6 +469,42 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
     }
   };
 
+  // Se registro foi bem-sucedido, mostrar tela de sucesso
+  if (registroSucesso) {
+    return (
+      <div className="w-full max-w-4xl mx-auto p-4">
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+          <div className="mb-6 p-8 bg-green-50 rounded-xl border-2 border-green-200">
+            <div className="flex items-center justify-center w-20 h-20 mx-auto mb-4 bg-green-100 rounded-full">
+              <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-green-800 mb-2">
+              Abastecimento Realizado com Sucesso!
+            </h2>
+            <p className="text-green-700 mb-6">
+              O registro foi salvo no sistema e está disponível no histórico.
+            </p>
+            <Button
+              onClick={() => {
+                setRegistroSucesso(false);
+                form.reset();
+                setSelectedProjectId("");
+                setSelectedBaseId("");
+              }}
+              size="lg"
+              className="w-full max-w-sm min-h-[50px] text-lg font-medium bg-blue-600 hover:bg-blue-700"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Realizar Novo Registro de Abastecimento
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-4xl mx-auto p-4">
       {/* Header com indicador de dispositivo */}
