@@ -1283,11 +1283,13 @@ const ConsumptionReports: React.FC = () => {
   );
 };
 
-// Página principal do Cartão de Abastecimento
+// Página principal do Cartão de Abastecimento - Updated v2.1
 const FuelCardPage: React.FC = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('request');
   const { toast } = useToast();
+  
+  console.log('FuelCardPage - User data:', user);
   
   const handleExportExcel = async () => {
     try {
@@ -1345,23 +1347,33 @@ const FuelCardPage: React.FC = () => {
   return (
     <AppLayout>
       <div className="container mx-auto py-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
           <h1 className="text-3xl font-bold tracking-tight">
             <CreditCard className="inline-block mr-2" />
             Cartão de Abastecimento
           </h1>
-          {(user?.role === 'admin' || user?.role === 'gestor') && (
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setActiveTab('reports')}>
+          {user?.role === 'admin' || user?.role === 'gestor' ? (
+            <div className="flex flex-wrap gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setActiveTab('reports')}
+                className="bg-blue-50 hover:bg-blue-100 border-blue-200"
+              >
                 <BarChart3 className="w-4 h-4 mr-2" />
                 Ver Relatórios
               </Button>
-              <Button variant="outline" onClick={handleExportExcel}>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleExportExcel}
+                className="bg-green-50 hover:bg-green-100 border-green-200"
+              >
                 <FileText className="w-4 h-4 mr-2" />
-                Baixar Relatório Excel
+                Baixar Excel
               </Button>
             </div>
-          )}
+          ) : null}
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
