@@ -33,7 +33,11 @@ export const MobileSelect: React.FC<MobileSelectProps> = ({
   error = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  const [touchStartTime, setTouchStartTime] = useState<number | null>(null);
+  const [isScrolling, setIsScrolling] = useState(false);
   const selectRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Fechar dropdown ao clicar fora
   useEffect(() => {
@@ -65,6 +69,45 @@ export const MobileSelect: React.FC<MobileSelectProps> = ({
     if (!disabled) {
       setIsOpen(!isOpen);
     }
+  };
+
+  // Detectar início do toque
+  const handleTouchStart = (e: React.TouchEvent, optionValue: string) => {
+    const touch = e.touches[0];
+    setTouchStartY(touch.clientY);
+    setTouchStartTime(Date.now());
+    setIsScrolling(false);
+  };
+
+  // Detectar movimento durante o toque (scroll)
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartY !== null) {
+      const touch = e.touches[0];
+      const deltaY = Math.abs(touch.clientY - touchStartY);
+      
+      // Se moveu mais de 10px, considera como scroll
+      if (deltaY > 10) {
+        setIsScrolling(true);
+      }
+    }
+  };
+
+  // Detectar fim do toque e decidir se seleciona
+  const handleTouchEnd = (e: React.TouchEvent, optionValue: string) => {
+    if (touchStartTime !== null) {
+      const touchDuration = Date.now() - touchStartTime;
+      
+      // Se não está rolando e o toque foi rápido (menos de 300ms), seleciona
+      if (!isScrolling && touchDuration < 300) {
+        e.preventDefault();
+        handleSelect(optionValue);
+      }
+    }
+    
+    // Reset estados
+    setTouchStartY(null);
+    setTouchStartTime(null);
+    setIsScrolling(false);
   };
 
   // Handler para seleção de opção
@@ -162,36 +205,47 @@ export const MobileSelect: React.FC<MobileSelectProps> = ({
                   </span>
                   {options.length > 5 && (
                     <span className="text-xs text-gray-500 flex items-center gap-1">
-                      <span>↕</span> Role para ver mais
+                      <span>↕</span> Role para navegar
                     </span>
                   )}
                 </div>
+                {options.length > 5 && (
+                  <div className="mt-1">
+                    <span className="text-xs text-blue-600 font-medium">
+                      💡 Dica: Role primeiro, depois toque para selecionar
+                    </span>
+                  </div>
+                )}
               </div>
             )}
             
             {/* Lista de opções com scroll */}
-            <div className={cn(
-              // Altura fixa com scroll visível
-              "h-60 overflow-y-auto",
-              // Estilo da barra de rolagem
-              "scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100",
-              "hover:scrollbar-thumb-gray-500",
-              // Mobile optimization - altura maior em dispositivos móveis
-              "md:h-60 sm:h-80",
-              // Scroll suave e indicadores visuais
-              "scroll-smooth",
-              // Border radius interno para o scroll
-              "[&::-webkit-scrollbar]:w-3",
-              "[&::-webkit-scrollbar-track]:bg-gray-100",
-              "[&::-webkit-scrollbar-track]:rounded-r-md",
-              "[&::-webkit-scrollbar-thumb]:bg-gray-400",
-              "[&::-webkit-scrollbar-thumb]:rounded-full",
-              "[&::-webkit-scrollbar-thumb:hover]:bg-gray-500",
-              // Gradiente nas bordas para indicar scroll
-              "relative",
-              "before:absolute before:top-0 before:left-0 before:right-0 before:h-2 before:bg-gradient-to-b before:from-white before:to-transparent before:pointer-events-none before:z-10",
-              "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-2 after:bg-gradient-to-t after:from-white after:to-transparent after:pointer-events-none after:z-10"
-            )}>
+            <div 
+              ref={scrollContainerRef}
+              onTouchMove={handleTouchMove}
+              className={cn(
+                // Altura fixa com scroll visível
+                "h-60 overflow-y-auto",
+                // Estilo da barra de rolagem
+                "scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100",
+                "hover:scrollbar-thumb-gray-500",
+                // Mobile optimization - altura maior em dispositivos móveis
+                "md:h-60 sm:h-80",
+                // Scroll suave e indicadores visuais
+                "scroll-smooth",
+                // Border radius interno para o scroll
+                "[&::-webkit-scrollbar]:w-3",
+                "[&::-webkit-scrollbar-track]:bg-gray-100",
+                "[&::-webkit-scrollbar-track]:rounded-r-md",
+                "[&::-webkit-scrollbar-thumb]:bg-gray-400",
+                "[&::-webkit-scrollbar-thumb]:rounded-full",
+                "[&::-webkit-scrollbar-thumb:hover]:bg-gray-500",
+                // Gradiente nas bordas para indicar scroll
+                "relative",
+                "before:absolute before:top-0 before:left-0 before:right-0 before:h-2 before:bg-gradient-to-b before:from-white before:to-transparent before:pointer-events-none before:z-10",
+                "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-2 after:bg-gradient-to-t after:from-white after:to-transparent after:pointer-events-none after:z-10"
+              )}
+            >
               {options.length === 0 ? (
                 <div className="px-3 py-8 text-center text-gray-500 text-sm">
                   <div className="mb-2">📭</div>
@@ -203,7 +257,8 @@ export const MobileSelect: React.FC<MobileSelectProps> = ({
                     key={option.value}
                     type="button"
                     onClick={() => handleSelect(option.value)}
-                    onTouchStart={() => handleSelect(option.value)}
+                    onTouchStart={(e) => handleTouchStart(e, option.value)}
+                    onTouchEnd={(e) => handleTouchEnd(e, option.value)}
                     disabled={option.disabled}
                     className={cn(
                       "w-full px-3 py-2 text-left text-sm",
