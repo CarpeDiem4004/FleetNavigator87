@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { apiRequest } from '@/lib/queryClient';
-import { CreditCard, Plus, FileText, History, CheckCircle2, XCircle, DollarSign, CircleCheck, BarChart3, Search, Calendar, Filter, Car, Building2 } from 'lucide-react';
+import { CreditCard, Plus, FileText, History, CheckCircle2, XCircle, DollarSign, CircleCheck, BarChart3, Search, Calendar, Filter } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -964,9 +964,7 @@ const FuelCardApproval: React.FC = () => {
 // Componente para relatórios de consumo das operações
 const ConsumptionReports: React.FC = () => {
   const [reports, setReports] = useState<ConsumptionReport[]>([]);
-  const [baseReports, setBaseReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'vehicles' | 'bases'>('vehicles');
   const [filters, setFilters] = useState({
     dateFrom: '',
     dateTo: '',
@@ -990,21 +988,15 @@ const ConsumptionReports: React.FC = () => {
         if (value) queryParams.append(key, value);
       });
 
-      // Buscar dados por veículos
-      const vehicleResponse = await apiRequest('GET', `/api/fuel-consumption-reports?${queryParams}`);
-      const vehicleData = await vehicleResponse.json();
+      const response = await apiRequest('GET', `/api/fuel-consumption-reports?${queryParams}`);
+      const data = await response.json();
       
-      // Buscar dados agrupados por bases
-      const baseResponse = await apiRequest('GET', `/api/fuel-consumption-reports-by-base?${queryParams}`);
-      const baseData = await baseResponse.json();
-      
-      if (vehicleData.success && baseData.success) {
-        setReports(vehicleData.data);
-        setBaseReports(baseData.data);
+      if (data.success) {
+        setReports(data.data);
       } else {
         toast({
           title: 'Erro ao carregar relatórios',
-          description: vehicleData.message || baseData.message || 'Não foi possível carregar os relatórios de consumo',
+          description: data.message || 'Não foi possível carregar os relatórios de consumo',
           variant: 'destructive',
         });
       }
@@ -1066,32 +1058,10 @@ const ConsumptionReports: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-semibold">Relatórios de Consumo das Operações</h3>
-        <div className="flex gap-2">
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            <Button
-              variant={viewMode === 'vehicles' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('vehicles')}
-              className="text-xs"
-            >
-              <Car className="w-4 h-4 mr-1" />
-              Por Veículos
-            </Button>
-            <Button
-              variant={viewMode === 'bases' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('bases')}
-              className="text-xs"
-            >
-              <Building2 className="w-4 h-4 mr-1" />
-              Por Bases
-            </Button>
-          </div>
-          <Button onClick={exportToCSV} variant="outline">
-            <FileText className="w-4 h-4 mr-2" />
-            Exportar CSV
-          </Button>
-        </div>
+        <Button onClick={exportToCSV} variant="outline">
+          <FileText className="w-4 h-4 mr-2" />
+          Exportar CSV
+        </Button>
       </div>
 
       {/* Filtros */}
@@ -1191,12 +1161,8 @@ const ConsumptionReports: React.FC = () => {
             <div className="flex items-center space-x-2">
               <BarChart3 className="h-4 w-4 text-blue-600" />
               <div>
-                <p className="text-sm font-medium text-gray-600">
-                  {viewMode === 'vehicles' ? 'Total de Veículos' : 'Total de Bases'}
-                </p>
-                <p className="text-xl font-bold">
-                  {viewMode === 'vehicles' ? reports.length : baseReports.length}
-                </p>
+                <p className="text-sm font-medium text-gray-600">Total de Veículos</p>
+                <p className="text-xl font-bold">{reports.length}</p>
               </div>
             </div>
           </CardContent>
@@ -1209,10 +1175,7 @@ const ConsumptionReports: React.FC = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Gasto</p>
                 <p className="text-xl font-bold">
-                  {viewMode === 'vehicles' 
-                    ? formatCurrency(reports.reduce((sum, r) => sum + r.total_valor, 0))
-                    : formatCurrency(baseReports.reduce((sum, r) => sum + (r.total_valor || 0), 0))
-                  }
+                  {formatCurrency(reports.reduce((sum, r) => sum + r.total_valor, 0))}
                 </p>
               </div>
             </div>
@@ -1226,10 +1189,7 @@ const ConsumptionReports: React.FC = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Litros</p>
                 <p className="text-xl font-bold">
-                  {viewMode === 'vehicles' 
-                    ? `${reports.reduce((sum, r) => sum + r.total_litros, 0).toLocaleString('pt-BR')} L`
-                    : `${baseReports.reduce((sum, r) => sum + (r.total_litros || 0), 0).toLocaleString('pt-BR')} L`
-                  }
+                  {reports.reduce((sum, r) => sum + r.total_litros, 0).toLocaleString('pt-BR')} L
                 </p>
               </div>
             </div>
@@ -1243,10 +1203,7 @@ const ConsumptionReports: React.FC = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Abastecimentos</p>
                 <p className="text-xl font-bold">
-                  {viewMode === 'vehicles' 
-                    ? reports.reduce((sum, r) => sum + r.numero_abastecimentos, 0)
-                    : baseReports.reduce((sum, r) => sum + (r.numero_abastecimentos || 0), 0)
-                  }
+                  {reports.reduce((sum, r) => sum + r.numero_abastecimentos, 0)}
                 </p>
               </div>
             </div>
@@ -1255,134 +1212,72 @@ const ConsumptionReports: React.FC = () => {
       </div>
 
       {/* Tabela de Relatórios */}
-      {viewMode === 'vehicles' ? (
-        reports.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <p className="text-gray-500">Nenhum dado encontrado para os filtros aplicados.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>Detalhamento por Veículo</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Placa</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Projeto</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Combustível</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Litros</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor Total</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Abastecimentos</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Média Consumo</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {reports.map((report) => (
-                      <tr key={report.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {report.placa}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {report.base_name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {report.projeto}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            report.tipo_combustivel === 'diesel' 
-                              ? 'bg-blue-100 text-blue-800' 
-                              : 'bg-green-100 text-green-800'
-                          }`}>
-                            {report.tipo_combustivel}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {report.total_litros.toLocaleString('pt-BR')} L
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatCurrency(report.total_valor)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {report.numero_abastecimentos}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {report.media_consumo.toFixed(2)} km/L
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        )
+      {reports.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-gray-500">Nenhum dado encontrado para os filtros aplicados.</p>
+          </CardContent>
+        </Card>
       ) : (
-        baseReports.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <p className="text-gray-500">Nenhum dado encontrado para os filtros aplicados.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>Consumo por Base/Projeto</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Projeto</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Veículos</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Litros</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Valor</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Abastecimentos</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Média Consumo</th>
+        <Card>
+          <CardHeader>
+            <CardTitle>Detalhamento por Veículo</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Placa</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Projeto</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Combustível</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Litros</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor Total</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Abastecimentos</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Média Consumo</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {reports.map((report) => (
+                    <tr key={report.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {report.placa}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {report.base_name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {report.projeto}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          report.tipo_combustivel === 'diesel' 
+                            ? 'bg-blue-100 text-blue-800' 
+                            : 'bg-green-100 text-green-800'
+                        }`}>
+                          {report.tipo_combustivel}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {report.total_litros.toLocaleString('pt-BR')} L
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatCurrency(report.total_valor)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {report.numero_abastecimentos}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {report.media_consumo.toFixed(2)} km/L
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {baseReports.map((baseReport, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {baseReport.base_name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {baseReport.projeto}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                            {baseReport.total_veiculos || 0}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {(baseReport.total_litros || 0).toLocaleString('pt-BR')} L
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatCurrency(baseReport.total_valor || 0)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {baseReport.numero_abastecimentos || 0}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {(baseReport.media_consumo || 0).toFixed(2)} km/L
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        )
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
@@ -1449,12 +1344,6 @@ const FuelCardPage: React.FC = () => {
           {(user?.role === 'admin' || user?.role === 'gestor') && (
             <TabsContent value="operations" className="space-y-4">
               <FuelCardOperations />
-            </TabsContent>
-          )}
-          
-          {(user?.role === 'admin' || user?.role === 'gestor') && (
-            <TabsContent value="reports" className="space-y-4">
-              <ConsumptionReports />
             </TabsContent>
           )}
         </Tabs>
