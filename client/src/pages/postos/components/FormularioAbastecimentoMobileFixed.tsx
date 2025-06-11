@@ -98,6 +98,13 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
     },
   });
 
+  // Preencher automaticamente o nome do operador quando o usuário for carregado
+  useEffect(() => {
+    if (user?.name) {
+      form.setValue("operador", user.name);
+    }
+  }, [user, form]);
+
   // Função otimizada para carregar projetos em mobile
   const loadProjectsMobile = useCallback(async () => {
     console.log(`[MOBILE-FIX] Iniciando carregamento para ${deviceType}`);
@@ -594,9 +601,14 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
                     <Input
                       {...field}
                       placeholder="Operador do posto"
-                      className="min-h-[44px]"
+                      className="min-h-[44px] bg-gray-50 cursor-not-allowed"
+                      readOnly
+                      disabled
                     />
                   </FormControl>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Preenchido automaticamente com o operador logado
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}
