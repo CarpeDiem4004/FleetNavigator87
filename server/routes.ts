@@ -4005,6 +4005,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // POST - Criar solicitação pública de cartão combustível (sem autenticação)
+  app.post('/api/fuel-card/public-request', async (req, res) => {
+    try {
+      const {
+        plate,
+        cardNumber,
+        amount,
+        reason,
+        requestedBy,
+        fuelType,
+        baseId,
+        baseName,
+        projectName,
+        phone,
+        email,
+        status = 'pendente',
+        requestType = 'public'
+      } = req.body;
+
+      // Validação básica
+      if (!plate || !cardNumber || !amount || !reason || !requestedBy || !fuelType || !phone || !email) {
+        return res.status(400).json({
+          success: false,
+          message: 'Todos os campos obrigatórios devem ser preenchidos'
+        });
+      }
+
+      // Validar e-mail
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          success: false,
+          message: 'E-mail inválido'
+        });
+      }
+
+      // Validar valor
+      const numericAmount = parseFloat(amount);
+      if (isNaN(numericAmount) || numericAmount <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Valor deve ser um número positivo'
+        });
+      }
+
+      // Inserir na tabela fuel_card_requests
+      const insertQuery = `
+        INSERT INTO fuel_card_requests (
+          plate, card_number, amount, reason, requested_by, fuel_type,
+          base_id, base_name, project_name, phone, email, status,
+          request_type, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
+        RETURNING *
+      `;
+
+      const values = [
+        plate.toUpperCase(),
+        cardNumber,
+        numericAmount,
+        reason,
+        requestedBy,
+        fuelType,
+        baseId || null,
+        baseName || null,
+        projectName || null,
+        phone,
+        email,
+        status,
+        requestType
+      ];
+
+      const result = await pool.query(insertQuery, values);
+      const newRequest = result.rows[0];
+
+      return res.status(201).json({
+        success: true,
+        data: {
+          id: newRequest.id,
+          protocol: `FC-${newRequest.id.toString().padStart(6, '0')}`,
+          plate: newRequest.plate,
+          amount: newRequest.amount,
+          status: newRequest.status,
+          createdAt: newRequest.created_at
+        },
+        message: 'Solicitação criada com sucesso'
+      });
+
+    } catch (error: any) {
+      console.error('Erro ao criar solicitação pública:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor ao processar solicitação',
+        error: error.message
+      });
+    }
+  });
+
   // GET - Obter detalhes de uma solicitação específica
   app.get('/api/fuel-card/:id', isAuthenticated, async (req, res) => {
     try {

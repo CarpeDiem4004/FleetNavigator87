@@ -96,8 +96,7 @@ import LineHallChecklistManager from "@/pages/LineHallChecklistManager";
 import FuelCardPage from "@/pages/FuelCardPage";
 import FuelCard from "@/pages/FuelCard";
 import FuelCardRequestsPanel from "@/pages/FuelCardRequestsPanel";
-import FuelCardSolicitation from "@/pages/fuel-card/solicitation";
-import FuelCardConfirmation from "@/pages/fuel-card/confirmation";
+import FuelCardSolicitation from "@/pages/FuelCardSolicitation";
 import FuelCardDashboard from "@/pages/fuel-card/dashboard";
 import StationProfile from "@/pages/fuel-card/station-profile";
 import PostoRemediosPage from "@/pages/PostoRemediosPage";
@@ -450,12 +449,7 @@ function App() {
             </div>
           </Route>
           
-          {/* Rota pública para confirmação de solicitação de cartão combustível */}
-          <Route path="/fuel-card/confirmation">
-            <div className="mt-16 pl-4 pr-4 md:pl-16">
-              <FuelCardConfirmation />
-            </div>
-          </Route>
+
           
           <ProtectedRoute path="/fuel-card/station-profile" component={() => (
             <div className="mt-16 pl-4 pr-4 md:pl-64">
