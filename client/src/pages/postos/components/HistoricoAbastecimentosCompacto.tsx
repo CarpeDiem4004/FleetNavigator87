@@ -482,7 +482,7 @@ const HistoricoAbastecimentosCompacto: React.FC<HistoricoAbastecimentosCompactoP
         <div className="bg-red-50 text-red-600 p-2 rounded-md text-xs">
           {error}
         </div>
-      ) : historico.length === 0 ? (
+      ) : historicoOrdenado.length === 0 ? (
         <div className="text-center py-2 text-xs text-gray-500">
           Nenhum registro encontrado.
         </div>
