@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Check, RefreshCw, AlertTriangle, Smartphone } from "lucide-react";
 import { useMobileDetection } from "@/hooks/useMobileDetection";
 import MobileSelect from "@/components/ui/mobile-select";
+import { useAuth } from "@/context/AuthContext";
 
 // Schema de validação
 const abastecimentoSchema = z.object({
@@ -56,6 +57,7 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
   onRegistroSucesso 
 }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const { isMobile, deviceType, isTouchDevice } = useMobileDetection();
   
   // Estados do formulário
