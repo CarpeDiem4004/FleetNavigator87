@@ -1346,6 +1346,12 @@ const FuelCardPage: React.FC = () => {
               <FuelCardOperations />
             </TabsContent>
           )}
+          
+          {(user?.role === 'admin' || user?.role === 'gestor') && (
+            <TabsContent value="reports" className="space-y-4">
+              <ConsumptionReports />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </AppLayout>

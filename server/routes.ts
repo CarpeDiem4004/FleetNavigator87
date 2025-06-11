@@ -3534,6 +3534,222 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para relatórios de consumo das operações
+  app.get('/api/fuel-consumption-reports', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      // Verificar permissões
+      if (user.role !== 'admin' && user.role !== 'gestor') {
+        return res.status(403).json({
+          success: false,
+          message: 'Sem permissão para acessar relatórios de consumo'
+        });
+      }
+
+      const { dateFrom, dateTo, base, fuelType, project, searchTerm } = req.query;
+      
+      // Construir consulta para agregação de dados de todas as tabelas de abastecimentos
+      let whereConditions = [];
+      let queryParams = [];
+      let paramIndex = 1;
+
+      // Filtros de data
+      if (dateFrom) {
+        whereConditions.push(`created_at >= $${paramIndex}`);
+        queryParams.push(dateFrom);
+        paramIndex++;
+      }
+      
+      if (dateTo) {
+        whereConditions.push(`created_at <= $${paramIndex}`);
+        queryParams.push(dateTo);
+        paramIndex++;
+      }
+
+      // Filtros de base
+      if (base) {
+        whereConditions.push(`(base_name ILIKE $${paramIndex} OR base ILIKE $${paramIndex})`);
+        queryParams.push(`%${base}%`);
+        paramIndex++;
+      }
+
+      // Filtros de combustível
+      if (fuelType) {
+        whereConditions.push(`(tipo_combustivel ILIKE $${paramIndex} OR tipo ILIKE $${paramIndex})`);
+        queryParams.push(`%${fuelType}%`);
+        paramIndex++;
+      }
+
+      // Filtros de projeto
+      if (project) {
+        whereConditions.push(`projeto ILIKE $${paramIndex}`);
+        queryParams.push(`%${project}%`);
+        paramIndex++;
+      }
+
+      // Filtros de placa
+      if (searchTerm) {
+        whereConditions.push(`placa ILIKE $${paramIndex}`);
+        queryParams.push(`%${searchTerm}%`);
+        paramIndex++;
+      }
+
+      const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+      // Query unificada para todas as tabelas de abastecimentos
+      const consumptionQuery = `
+        WITH unified_data AS (
+          -- Osasco V2
+          SELECT 
+            placa,
+            COALESCE(base_name, 'Osasco V2') as base_name,
+            COALESCE(projeto, 'Não definido') as projeto,
+            COALESCE(tipo_combustivel, tipo, 'diesel') as tipo_combustivel,
+            COALESCE(litros, quantidade_litros, 0) as litros,
+            COALESCE(valor_total, 0) as valor_total,
+            COALESCE(km_atual, km, 0) as km,
+            created_at,
+            'osasco_v2' as origem
+          FROM abastecimentos_posto_osasco_v2
+          ${whereClause}
+          
+          UNION ALL
+          
+          -- Guarulhos V2  
+          SELECT 
+            placa,
+            COALESCE(base_name, 'Guarulhos V2') as base_name,
+            COALESCE(projeto, 'Não definido') as projeto,
+            COALESCE(tipo_combustivel, tipo, 'diesel') as tipo_combustivel,
+            COALESCE(litros, quantidade_litros, 0) as litros,
+            COALESCE(valor_total, 0) as valor_total,
+            COALESCE(km_atual, km, 0) as km,
+            created_at,
+            'guarulhos_v2' as origem
+          FROM abastecimentos_posto_guarulhos_v2
+          ${whereClause}
+          
+          UNION ALL
+          
+          -- ABC V2
+          SELECT 
+            placa,
+            COALESCE(base_name, 'ABC V2') as base_name,
+            COALESCE(projeto, 'Não definido') as projeto,
+            COALESCE(tipo_combustivel, tipo, 'diesel') as tipo_combustivel,
+            COALESCE(litros, quantidade_litros, 0) as litros,
+            COALESCE(valor_total, 0) as valor_total,
+            COALESCE(km_atual, km, 0) as km,
+            created_at,
+            'abc_v2' as origem
+          FROM abastecimentos_posto_abc_v2
+          ${whereClause}
+          
+          UNION ALL
+          
+          -- Campinas V2
+          SELECT 
+            placa,
+            COALESCE(base_name, 'Campinas V2') as base_name,
+            COALESCE(projeto, 'Não definido') as projeto,
+            COALESCE(tipo_combustivel, tipo, 'diesel') as tipo_combustivel,
+            COALESCE(litros, quantidade_litros, 0) as litros,
+            COALESCE(valor_total, 0) as valor_total,
+            COALESCE(km_atual, km, 0) as km,
+            created_at,
+            'campinas_v2' as origem
+          FROM abastecimentos_posto_campinas_v2
+          ${whereClause}
+          
+          UNION ALL
+          
+          -- Socorro V2
+          SELECT 
+            placa,
+            COALESCE(base_name, 'Socorro V2') as base_name,
+            COALESCE(projeto, 'Não definido') as projeto,
+            COALESCE(tipo_combustivel, tipo, 'diesel') as tipo_combustivel,
+            COALESCE(litros, quantidade_litros, 0) as litros,
+            COALESCE(valor_total, 0) as valor_total,
+            COALESCE(km_atual, km, 0) as km,
+            created_at,
+            'socorro_v2' as origem
+          FROM abastecimentos_posto_socorro_v2
+          ${whereClause}
+          
+          UNION ALL
+          
+          -- Alair V2
+          SELECT 
+            placa,
+            COALESCE(base_name, 'Alair V2') as base_name,
+            COALESCE(projeto, 'Não definido') as projeto,
+            COALESCE(tipo_combustivel, tipo, 'diesel') as tipo_combustivel,
+            COALESCE(litros, quantidade_litros, 0) as litros,
+            COALESCE(valor_total, 0) as valor_total,
+            COALESCE(km_atual, km, 0) as km,
+            created_at,
+            'alair_v2' as origem
+          FROM abastecimentos_posto_alair_v2
+          ${whereClause}
+          
+          UNION ALL
+          
+          -- Posto Remédios
+          SELECT 
+            placa,
+            'Posto Remédios' as base_name,
+            COALESCE(projeto, 'Não definido') as projeto,
+            COALESCE(tipo_combustivel, 'diesel') as tipo_combustivel,
+            COALESCE(quantidade_litros, 0) as litros,
+            COALESCE(valor_total, 0) as valor_total,
+            COALESCE(km, 0) as km,
+            created_at,
+            'posto_remedios' as origem
+          FROM posto_remedios_abastecimentos
+          ${whereClause}
+        )
+        SELECT 
+          ROW_NUMBER() OVER (ORDER BY base_name, projeto, placa) as id,
+          placa,
+          base_name,
+          projeto,
+          tipo_combustivel,
+          SUM(litros) as total_litros,
+          SUM(valor_total) as total_valor,
+          COUNT(*) as numero_abastecimentos,
+          CASE 
+            WHEN MAX(km) > MIN(km) AND SUM(litros) > 0 
+            THEN ROUND((MAX(km) - MIN(km)) / SUM(litros), 2)
+            ELSE 0
+          END as media_consumo,
+          TO_CHAR(MIN(created_at), 'MM/YYYY') as periodo
+        FROM unified_data
+        WHERE litros > 0 AND valor_total > 0
+        GROUP BY placa, base_name, projeto, tipo_combustivel
+        ORDER BY total_valor DESC, base_name, projeto, placa
+        LIMIT 500
+      `;
+
+      const result = await pool.query(consumptionQuery, queryParams);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        count: result.rowCount || 0
+      });
+      
+    } catch (error: any) {
+      console.error('Erro ao buscar relatórios de consumo:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar relatórios de consumo',
+        error: error.message
+      });
+    }
+  });
+
   // Mobile-optimized API endpoints for external posto links
   app.get('/api/mobile/test-projects', getProjectsWithBases);
 
