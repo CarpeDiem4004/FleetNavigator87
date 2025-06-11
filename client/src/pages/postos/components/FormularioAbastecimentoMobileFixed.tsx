@@ -68,6 +68,15 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
   const [selectedBaseId, setSelectedBaseId] = useState("");
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [loadingError, setLoadingError] = useState<string | null>(null);
+  
+  // Estados para configuração de combustível
+  const [fuelConfig, setFuelConfig] = useState<{
+    diesel_valor_litro: number;
+    arla_valor_litro: number;
+  }>({
+    diesel_valor_litro: 5.00,
+    arla_valor_litro: 3.00
+  });
 
   const form = useForm<AbastecimentoValues>({
     resolver: zodResolver(abastecimentoSchema),
@@ -143,10 +152,32 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
     setIsLoadingProjects(false);
   }, [deviceType]);
 
-  // Carregar projetos ao montar o componente
+  // Função para carregar configuração de combustível do posto
+  const loadFuelConfig = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/configuracao-tanques/${postId}`, {
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          setFuelConfig({
+            diesel_valor_litro: data.data.diesel_valor_litro || 5.00,
+            arla_valor_litro: data.data.arla_valor_litro || 3.00
+          });
+        }
+      }
+    } catch (error) {
+      console.log('[FUEL-CONFIG] Usando valores padrão:', error);
+    }
+  }, [postId]);
+
+  // Carregar projetos e configuração ao montar o componente
   useEffect(() => {
     loadProjectsMobile();
-  }, [loadProjectsMobile]);
+    loadFuelConfig();
+  }, [loadProjectsMobile, loadFuelConfig]);
 
   // Preparar opções para os selects mobile
   const projectOptions = projects.map(project => ({
@@ -162,11 +193,10 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
     disabled: false
   })) || [];
 
+  // Opções de combustível fixas conforme projeto original - apenas ARLA e Diesel
   const combustivelOptions = [
-    { value: "gasolina", label: "Gasolina" },
-    { value: "etanol", label: "Etanol" },
     { value: "diesel", label: "Diesel" },
-    { value: "gnv", label: "GNV" },
+    { value: "arla", label: "ARLA" },
   ];
 
   // Handlers com eventos touch otimizados
@@ -181,6 +211,21 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
     setSelectedBaseId(value);
     form.setValue("base_id", value);
   }, [form]);
+
+  // Handler para mudança de combustível com valores fixos do admin
+  const handleFuelTypeChange = useCallback((value: string) => {
+    form.setValue("tipo", value);
+    
+    // Definir valor por litro baseado na configuração do admin
+    if (value === "diesel") {
+      form.setValue("valor_litro", fuelConfig.diesel_valor_litro.toFixed(2));
+    } else if (value === "arla") {
+      form.setValue("valor_litro", fuelConfig.arla_valor_litro.toFixed(2));
+    }
+    
+    // Recalcular valor total se já tiver quantidade
+    setTimeout(calcularValorTotal, 100);
+  }, [form, fuelConfig, calcularValorTotal]);
 
   // Cálculo automático do valor total
   const calcularValorTotal = useCallback(() => {
@@ -404,7 +449,7 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
                     <MobileSelect
                       options={combustivelOptions}
                       value={field.value}
-                      onChange={field.onChange}
+                      onChange={handleFuelTypeChange}
                       placeholder="Selecione o combustível"
                       error={!!form.formState.errors.tipo}
                     />
