@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { apiRequest } from '@/lib/queryClient';
-import { CreditCard, Plus, FileText, History, CheckCircle2, XCircle, DollarSign, CircleCheck } from 'lucide-react';
+import { CreditCard, Plus, FileText, History, CheckCircle2, XCircle, DollarSign, CircleCheck, BarChart3, Search, Calendar, Filter } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -58,6 +58,20 @@ const cardOperationSchema = z.object({
   confirmationCode: z.string().min(1, { message: 'O código de confirmação é obrigatório' }),
   operationNotes: z.string().optional(),
 });
+
+// Interface para dados de relatório de consumo
+interface ConsumptionReport {
+  id: number;
+  placa: string;
+  base_name: string;
+  projeto: string;
+  periodo: string;
+  total_litros: number;
+  total_valor: number;
+  numero_abastecimentos: number;
+  media_consumo: number;
+  tipo_combustivel: string;
+}
 
 // Componente para exibir o histórico de solicitações
 const FuelCardHistory: React.FC = () => {
@@ -947,6 +961,328 @@ const FuelCardApproval: React.FC = () => {
   );
 };
 
+// Componente para relatórios de consumo das operações
+const ConsumptionReports: React.FC = () => {
+  const [reports, setReports] = useState<ConsumptionReport[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({
+    dateFrom: '',
+    dateTo: '',
+    base: '',
+    fuelType: '',
+    project: '',
+    searchTerm: ''
+  });
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchConsumptionReports();
+  }, [filters]);
+
+  const fetchConsumptionReports = async () => {
+    try {
+      setLoading(true);
+      const queryParams = new URLSearchParams();
+      
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) queryParams.append(key, value);
+      });
+
+      const response = await apiRequest('GET', `/api/fuel-consumption-reports?${queryParams}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setReports(data.data);
+      } else {
+        toast({
+          title: 'Erro ao carregar relatórios',
+          description: data.message || 'Não foi possível carregar os relatórios de consumo',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao buscar relatórios:', error);
+      toast({
+        title: 'Erro ao carregar relatórios',
+        description: 'Não foi possível carregar os relatórios de consumo',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  const exportToCSV = () => {
+    const csvContent = [
+      ['Placa', 'Base', 'Projeto', 'Período', 'Total Litros', 'Total Valor', 'Nº Abastecimentos', 'Média Consumo', 'Combustível'],
+      ...reports.map(report => [
+        report.placa,
+        report.base_name,
+        report.projeto,
+        report.periodo,
+        report.total_litros,
+        report.total_valor,
+        report.numero_abastecimentos,
+        report.media_consumo,
+        report.tipo_combustivel
+      ])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `relatorio_consumo_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-semibold">Relatórios de Consumo das Operações</h3>
+        <Button onClick={exportToCSV} variant="outline">
+          <FileText className="w-4 h-4 mr-2" />
+          Exportar CSV
+        </Button>
+      </div>
+
+      {/* Filtros */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="w-5 h-5" />
+            Filtros de Pesquisa
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="dateFrom">Data Inicial</Label>
+              <Input
+                id="dateFrom"
+                type="date"
+                value={filters.dateFrom}
+                onChange={(e) => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="dateTo">Data Final</Label>
+              <Input
+                id="dateTo"
+                type="date"
+                value={filters.dateTo}
+                onChange={(e) => setFilters(prev => ({ ...prev, dateTo: e.target.value }))}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="fuelType">Combustível</Label>
+              <Select value={filters.fuelType} onValueChange={(value) => setFilters(prev => ({ ...prev, fuelType: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="diesel">Diesel</SelectItem>
+                  <SelectItem value="arla">Arla</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="project">Projeto</Label>
+              <Input
+                id="project"
+                placeholder="Nome do projeto"
+                value={filters.project}
+                onChange={(e) => setFilters(prev => ({ ...prev, project: e.target.value }))}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="base">Base</Label>
+              <Input
+                id="base"
+                placeholder="Nome da base"
+                value={filters.base}
+                onChange={(e) => setFilters(prev => ({ ...prev, base: e.target.value }))}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="searchTerm">Buscar Placa</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="searchTerm"
+                  placeholder="Placa do veículo"
+                  value={filters.searchTerm}
+                  onChange={(e) => setFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-end mt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setFilters({ dateFrom: '', dateTo: '', base: '', fuelType: '', project: '', searchTerm: '' })}
+            >
+              Limpar Filtros
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Estatísticas Resumidas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <BarChart3 className="h-4 w-4 text-blue-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total de Veículos</p>
+                <p className="text-xl font-bold">{reports.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <DollarSign className="h-4 w-4 text-green-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Gasto</p>
+                <p className="text-xl font-bold">
+                  {formatCurrency(reports.reduce((sum, r) => sum + r.total_valor, 0))}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <CreditCard className="h-4 w-4 text-orange-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Litros</p>
+                <p className="text-xl font-bold">
+                  {reports.reduce((sum, r) => sum + r.total_litros, 0).toLocaleString('pt-BR')} L
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <History className="h-4 w-4 text-purple-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Abastecimentos</p>
+                <p className="text-xl font-bold">
+                  {reports.reduce((sum, r) => sum + r.numero_abastecimentos, 0)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tabela de Relatórios */}
+      {reports.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-gray-500">Nenhum dado encontrado para os filtros aplicados.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Detalhamento por Veículo</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Placa</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Projeto</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Combustível</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Litros</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor Total</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Abastecimentos</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Média Consumo</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {reports.map((report) => (
+                    <tr key={report.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {report.placa}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {report.base_name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {report.projeto}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          report.tipo_combustivel === 'diesel' 
+                            ? 'bg-blue-100 text-blue-800' 
+                            : 'bg-green-100 text-green-800'
+                        }`}>
+                          {report.tipo_combustivel}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {report.total_litros.toLocaleString('pt-BR')} L
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatCurrency(report.total_valor)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {report.numero_abastecimentos}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {report.media_consumo.toFixed(2)} km/L
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+};
+
 // Página principal do Cartão de Abastecimento
 const FuelCardPage: React.FC = () => {
   const { user } = useAuth();
@@ -981,6 +1317,12 @@ const FuelCardPage: React.FC = () => {
               <TabsTrigger value="operations">
                 <DollarSign className="w-4 h-4 mr-2" />
                 Operações
+              </TabsTrigger>
+            )}
+            {(user?.role === 'admin' || user?.role === 'gestor') && (
+              <TabsTrigger value="reports">
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Relatórios de Consumo
               </TabsTrigger>
             )}
           </TabsList>
