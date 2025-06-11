@@ -1356,31 +1356,61 @@ const FuelCardPage: React.FC = () => {
   return (
     <AppLayout>
       <div className="container mx-auto py-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-          <h1 className="text-3xl font-bold tracking-tight">
-            <CreditCard className="inline-block mr-2" />
-            Cartão de Abastecimento
-          </h1>
-          <div className="flex flex-wrap gap-2" style={{minHeight: '40px', border: '1px solid red'}} data-testid="buttons-container">
-            <button 
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 bg-blue-50 hover:bg-blue-100 border-blue-200"
-              onClick={() => {
-                console.log('Clicado em Ver Relatórios');
-                setActiveTab('reports');
+        <div className="w-full mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <h1 className="text-3xl font-bold tracking-tight">
+              <CreditCard className="inline-block mr-2" />
+              Cartão de Abastecimento
+            </h1>
+            
+            {/* BOTÕES FORÇADOS - SEMPRE VISÍVEIS */}
+            <div 
+              className="flex gap-3 p-3" 
+              style={{
+                backgroundColor: '#ff0000', 
+                border: '3px solid #000', 
+                borderRadius: '8px',
+                minWidth: '300px',
+                minHeight: '60px',
+                zIndex: 9999,
+                position: 'relative'
               }}
-              data-testid="reports-button"
             >
-              <BarChart3 className="w-4 h-4 mr-2" />
-              Ver Relatórios
-            </button>
-            <button 
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 bg-green-50 hover:bg-green-100 border-green-200"
-              onClick={handleExportExcel}
-              data-testid="export-button"
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              Baixar Excel
-            </button>
+              <div 
+                style={{
+                  backgroundColor: '#0066cc',
+                  color: 'white',
+                  padding: '10px 15px',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  border: '2px solid white'
+                }}
+                onClick={() => {
+                  console.log('BOTÃO RELATÓRIOS CLICADO!');
+                  setActiveTab('reports');
+                }}
+              >
+                📊 VER RELATÓRIOS
+              </div>
+              
+              <div 
+                style={{
+                  backgroundColor: '#00aa00',
+                  color: 'white',
+                  padding: '10px 15px',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  border: '2px solid white'
+                }}
+                onClick={handleExportExcel}
+              >
+                📄 BAIXAR EXCEL
+              </div>
+            </div>
           </div>
         </div>
 
