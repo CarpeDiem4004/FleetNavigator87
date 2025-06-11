@@ -105,22 +105,78 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
                 Selecione o tipo de operação que deseja registrar
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 md:p-6">
               <Tabs defaultValue="abastecimento" className="w-full">
-                <TabsList className="grid w-full grid-cols-1 md:grid-cols-3">
-                  <TabsTrigger value="abastecimento" className="flex items-center gap-2">
-                    <Fuel className="h-4 w-4" />
-                    <span>Abastecimento</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="recebimento" className="flex items-center gap-2">
-                    <TruckIcon className="h-4 w-4" />
-                    <span>Entrada de Combustível</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="patio" className="flex items-center gap-2">
-                    <Truck className="h-4 w-4" />
-                    <span>Controle de Pátio</span>
-                  </TabsTrigger>
-                </TabsList>
+                {/* Versão Mobile - Lista Vertical */}
+                <div className="block md:hidden">
+                  <TabsList className="flex flex-col w-full gap-3 h-auto p-3 bg-gray-50/50 rounded-xl">
+                    <TabsTrigger 
+                      value="abastecimento" 
+                      className="flex items-center justify-start gap-4 w-full h-16 px-4 py-3 text-left bg-white border-2 border-gray-200 rounded-xl hover:bg-blue-50 hover:border-blue-300 hover:shadow-md data-[state=active]:bg-blue-100 data-[state=active]:border-blue-500 data-[state=active]:text-blue-800 data-[state=active]:shadow-lg transition-all duration-300 touch-manipulation"
+                    >
+                      <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg data-[state=active]:bg-blue-200">
+                        <Fuel className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div className="flex flex-col items-start flex-1">
+                        <span className="font-semibold text-base">Abastecimento</span>
+                        <span className="text-sm text-gray-600">Registrar combustível usado</span>
+                      </div>
+                    </TabsTrigger>
+                    
+                    <TabsTrigger 
+                      value="recebimento" 
+                      className="flex items-center justify-start gap-4 w-full h-16 px-4 py-3 text-left bg-white border-2 border-gray-200 rounded-xl hover:bg-green-50 hover:border-green-300 hover:shadow-md data-[state=active]:bg-green-100 data-[state=active]:border-green-500 data-[state=active]:text-green-800 data-[state=active]:shadow-lg transition-all duration-300 touch-manipulation"
+                    >
+                      <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg data-[state=active]:bg-green-200">
+                        <TruckIcon className="h-6 w-6 text-green-600" />
+                      </div>
+                      <div className="flex flex-col items-start flex-1">
+                        <span className="font-semibold text-base">Entrada de Combustível</span>
+                        <span className="text-sm text-gray-600">Registrar recebimento de tanque</span>
+                      </div>
+                    </TabsTrigger>
+                    
+                    <TabsTrigger 
+                      value="patio" 
+                      className="flex items-center justify-start gap-4 w-full h-16 px-4 py-3 text-left bg-white border-2 border-gray-200 rounded-xl hover:bg-orange-50 hover:border-orange-300 hover:shadow-md data-[state=active]:bg-orange-100 data-[state=active]:border-orange-500 data-[state=active]:text-orange-800 data-[state=active]:shadow-lg transition-all duration-300 touch-manipulation"
+                    >
+                      <div className="flex items-center justify-center w-12 h-12 bg-orange-100 rounded-lg data-[state=active]:bg-orange-200">
+                        <Truck className="h-6 w-6 text-orange-600" />
+                      </div>
+                      <div className="flex flex-col items-start flex-1">
+                        <span className="font-semibold text-base">Controle de Pátio</span>
+                        <span className="text-sm text-gray-600">Movimentação de veículos</span>
+                      </div>
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+
+                {/* Versão Desktop - Grid Horizontal */}
+                <div className="hidden md:block">
+                  <TabsList className="grid w-full grid-cols-3 gap-3 h-auto p-2 bg-gray-50 rounded-lg">
+                    <TabsTrigger 
+                      value="abastecimento" 
+                      className="flex items-center justify-center gap-3 h-14 px-4 text-center bg-white border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 data-[state=active]:bg-blue-100 data-[state=active]:border-blue-500 data-[state=active]:text-blue-700 transition-all duration-200"
+                    >
+                      <Fuel className="h-5 w-5" />
+                      <span className="font-medium">Abastecimento</span>
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="recebimento" 
+                      className="flex items-center justify-center gap-3 h-14 px-4 text-center bg-white border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-300 data-[state=active]:bg-green-100 data-[state=active]:border-green-500 data-[state=active]:text-green-700 transition-all duration-200"
+                    >
+                      <TruckIcon className="h-5 w-5" />
+                      <span className="font-medium">Entrada de Combustível</span>
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="patio" 
+                      className="flex items-center justify-center gap-3 h-14 px-4 text-center bg-white border border-gray-200 rounded-lg hover:bg-orange-50 hover:border-orange-300 data-[state=active]:bg-orange-100 data-[state=active]:border-orange-500 data-[state=active]:text-orange-700 transition-all duration-200"
+                    >
+                      <Truck className="h-5 w-5" />
+                      <span className="font-medium">Controle de Pátio</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
                 
                 <TabsContent value="abastecimento">
                   <FormularioAbastecimentoMobileFixed 
