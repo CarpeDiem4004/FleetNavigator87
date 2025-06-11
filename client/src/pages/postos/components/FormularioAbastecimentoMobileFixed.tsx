@@ -334,10 +334,11 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
     const project = projects.find(p => p.id.toString() === value);
     const isUnique = project?.name === 'Manutenção' || project?.name === 'Uso Operacional';
     
-    if (isUnique) {
-      // Para projetos únicos, definir base_id como "1" (base padrão)
-      setSelectedBaseId("1");
-      form.setValue("base_id", "1");
+    if (isUnique && project?.bases.length > 0) {
+      // Para projetos únicos, usar a base específica criada para eles
+      const uniqueBase = project.bases[0];
+      setSelectedBaseId(uniqueBase.id.toString());
+      form.setValue("base_id", uniqueBase.id.toString());
     } else {
       setSelectedBaseId(""); // Reset base selection para projetos com bases
       form.setValue("base_id", "");
@@ -399,13 +400,14 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
     console.log(`[MOBILE-FIX] Enviando formulário via ${deviceType}`);
 
     try {
-      // Para projetos únicos, garantir que base_id seja definido
+      // Para projetos únicos, garantir que base_id seja definido corretamente
       const adjustedData = { ...data };
       const selectedProject = projects.find(p => p.id.toString() === data.projeto_id);
       const isUniqueProject = selectedProject?.name === 'Manutenção' || selectedProject?.name === 'Uso Operacional';
       
-      if (isUniqueProject) {
-        adjustedData.base_id = "1"; // Usar base padrão para projetos únicos
+      if (isUniqueProject && selectedProject?.bases.length > 0) {
+        // Usar a base específica do projeto único
+        adjustedData.base_id = selectedProject.bases[0].id.toString();
       }
 
       console.log('[SUBMIT-DEBUG] Dados ajustados:', adjustedData);
