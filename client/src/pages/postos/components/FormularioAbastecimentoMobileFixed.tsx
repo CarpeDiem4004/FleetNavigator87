@@ -93,53 +93,26 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
     setIsLoadingProjects(true);
     setLoadingError(null);
 
-    // Estratégias específicas para mobile sem dependência de window.innerWidth
-    const mobileStrategies = [
-      // Estratégia 1: API pública simples
-      {
-        url: '/api/projects-with-bases',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'X-Device-Type': deviceType,
-          'X-Mobile-Request': isMobile ? 'true' : 'false',
-        },
-        credentials: 'include' as RequestCredentials,
-      },
-      // Estratégia 2: Fallback sem credenciais
-      {
-        url: '/api/projects-with-bases',
-        headers: {
-          'Accept': 'application/json',
-          'X-Device-Type': deviceType,
-          'Cache-Control': 'no-cache',
-        },
-        credentials: 'omit' as RequestCredentials,
-      },
-      // Estratégia 3: Com origem explícita
-      {
-        url: `${window.location.origin}/api/projects-with-bases`,
-        headers: {
-          'Accept': 'application/json',
-          'X-Mobile-Fallback': 'true',
-        },
-        credentials: 'same-origin' as RequestCredentials,
-      }
+    // Múltiplas tentativas com diferentes abordagens
+    const urls = [
+      '/api/projects-with-bases',
+      `${window.location.origin}/api/projects-with-bases`
     ];
 
-    for (let i = 0; i < mobileStrategies.length; i++) {
-      const strategy = mobileStrategies[i];
-      
+    for (let i = 0; i < urls.length; i++) {
       try {
-        console.log(`[MOBILE-FIX] Tentativa ${i + 1}: ${strategy.url}`);
+        console.log(`[MOBILE-FIX] Tentativa ${i + 1}: ${urls[i]}`);
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        const response = await fetch(strategy.url, {
+        const response = await fetch(urls[i], {
           method: 'GET',
-          headers: strategy.headers,
-          credentials: strategy.credentials,
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          credentials: i === 0 ? 'include' : 'omit',
           signal: controller.signal
         });
 
@@ -161,14 +134,14 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
       } catch (error) {
         console.log(`[MOBILE-FIX] Erro na tentativa ${i + 1}:`, error);
         
-        if (i === mobileStrategies.length - 1) {
+        if (i === urls.length - 1) {
           setLoadingError(`Erro ao carregar projetos. Verifique sua conexão e tente novamente.`);
         }
       }
     }
 
     setIsLoadingProjects(false);
-  }, [deviceType, isMobile]);
+  }, [deviceType]);
 
   // Carregar projetos ao montar o componente
   useEffect(() => {

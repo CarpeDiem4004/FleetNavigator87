@@ -123,7 +123,7 @@ export const PublicPostoLayout: React.FC<PublicPostoLayoutProps> = ({ id, nomePo
                 </TabsList>
                 
                 <TabsContent value="abastecimento">
-                  <FormularioAbastecimentoMobileOptimized 
+                  <FormularioAbastecimentoMobileFixed 
                     postId={id} 
                     onRegistroSucesso={atualizarHistoricos} 
                   />
