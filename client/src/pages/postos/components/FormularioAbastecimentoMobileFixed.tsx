@@ -609,9 +609,9 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
                       disabled
                     />
                   </FormControl>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <div className="text-xs text-gray-500 mt-1">
                     Preenchido automaticamente com o operador logado
-                  </p>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
