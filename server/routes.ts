@@ -2869,6 +2869,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // API centralizada para configuração de combustível
+  app.get('/api/fuel-config/:postoId?', async (req, res) => {
+    try {
+      const { postoId } = req.params;
+      
+      // Buscar configuração centralizada de preços
+      const priceQuery = `
+        SELECT tipo, valor_litro 
+        FROM preco_combustivel 
+        WHERE tipo IN ('Diesel', 'ARLA')
+        ORDER BY tipo
+      `;
+      
+      const priceResult = await pool.query(priceQuery);
+      
+      if (!priceResult.rows || priceResult.rows.length === 0) {
+        return res.status(200).json({
+          success: true,
+          data: {
+            diesel_valor_litro: 6.39,
+            arla_valor_litro: 4.25
+          },
+          message: 'Usando valores padrão - configuração não encontrada'
+        });
+      }
+      
+      // Organizar dados de preços
+      const fuelConfig = {
+        diesel_valor_litro: 6.39, // valor padrão
+        arla_valor_litro: 4.25    // valor padrão
+      };
+      
+      priceResult.rows.forEach(row => {
+        if (row.tipo === 'Diesel') {
+          fuelConfig.diesel_valor_litro = parseFloat(row.valor_litro);
+        } else if (row.tipo === 'ARLA') {
+          fuelConfig.arla_valor_litro = parseFloat(row.valor_litro);
+        }
+      });
+      
+      return res.status(200).json({
+        success: true,
+        data: fuelConfig,
+        posto_id: postoId || 'global',
+        message: 'Configuração de combustível obtida com sucesso'
+      });
+      
+    } catch (error: any) {
+      console.error('Erro ao buscar configuração de combustível:', error);
+      
+      // Retornar valores atualizados mesmo em caso de erro
+      return res.status(200).json({
+        success: true,
+        data: {
+          diesel_valor_litro: 6.39,
+          arla_valor_litro: 4.25
+        },
+        message: 'Usando valores padrão devido a erro na consulta'
+      });
+    }
+  });
+
   // Estatísticas de manutenções solicitadas por motoristas do Line Hall
   app.get('/api/line-hall/maintenance-stats', isAuthenticated, async (req, res) => {
     try {

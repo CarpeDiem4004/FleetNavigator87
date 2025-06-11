@@ -277,10 +277,10 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
     setIsLoadingProjects(false);
   }, [deviceType, testConnectionSpeed]);
 
-  // Função para carregar configuração de combustível do posto
+  // Função para carregar configuração de combustível centralizada
   const loadFuelConfig = useCallback(async () => {
     try {
-      const response = await fetch(`/api/configuracao-tanques/${postId}`, {
+      const response = await fetch(`/api/fuel-config/${postId}`, {
         credentials: 'include',
       });
 
@@ -288,13 +288,18 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
         const data = await response.json();
         if (data.success && data.data) {
           setFuelConfig({
-            diesel_valor_litro: parseFloat(data.data.diesel_valor_litro) || 5.00,
-            arla_valor_litro: parseFloat(data.data.arla_valor_litro) || 3.00
+            diesel_valor_litro: parseFloat(data.data.diesel_valor_litro) || 6.39,
+            arla_valor_litro: parseFloat(data.data.arla_valor_litro) || 4.25
           });
+          console.log('[FUEL-CONFIG] Valores atualizados:', data.data);
         }
       }
     } catch (error) {
       console.log('[FUEL-CONFIG] Usando valores padrão:', error);
+      setFuelConfig({
+        diesel_valor_litro: 6.39,
+        arla_valor_litro: 4.25
+      });
     }
   }, [postId]);
 
