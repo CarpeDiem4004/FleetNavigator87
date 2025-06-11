@@ -111,8 +111,16 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
 
   // Preencher automaticamente o nome do operador quando o usuário for carregado
   useEffect(() => {
+    console.log(`[OPERADOR-DEBUG] Verificando usuário:`, user);
     if (user?.name) {
+      console.log(`[OPERADOR-DEBUG] Preenchendo campo operador com: ${user.name}`);
       form.setValue("operador", user.name);
+      
+      // Verificar se o valor foi definido corretamente
+      const currentValue = form.getValues("operador");
+      console.log(`[OPERADOR-DEBUG] Valor atual do campo operador: ${currentValue}`);
+    } else {
+      console.log(`[OPERADOR-DEBUG] Usuário não encontrado ou sem nome`);
     }
   }, [user, form]);
 
