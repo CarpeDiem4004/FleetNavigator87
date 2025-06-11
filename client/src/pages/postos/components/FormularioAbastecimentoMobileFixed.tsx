@@ -212,6 +212,17 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
     form.setValue("base_id", value);
   }, [form]);
 
+  // Cálculo automático do valor total
+  const calcularValorTotal = useCallback(() => {
+    const quantidade = parseFloat(form.getValues("quantidade") || "0");
+    const valorLitro = parseFloat(form.getValues("valor_litro") || "0");
+    const total = quantidade * valorLitro;
+    
+    if (total > 0) {
+      form.setValue("valor_total", total.toFixed(2));
+    }
+  }, [form]);
+
   // Handler para mudança de combustível com valores fixos do admin
   const handleFuelTypeChange = useCallback((value: string) => {
     form.setValue("tipo", value);
@@ -224,19 +235,16 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
     }
     
     // Recalcular valor total se já tiver quantidade
-    setTimeout(calcularValorTotal, 100);
-  }, [form, fuelConfig, calcularValorTotal]);
-
-  // Cálculo automático do valor total
-  const calcularValorTotal = useCallback(() => {
-    const quantidade = parseFloat(form.getValues("quantidade") || "0");
-    const valorLitro = parseFloat(form.getValues("valor_litro") || "0");
-    const total = quantidade * valorLitro;
-    
-    if (total > 0) {
-      form.setValue("valor_total", total.toFixed(2));
-    }
-  }, [form]);
+    setTimeout(() => {
+      const quantidade = parseFloat(form.getValues("quantidade") || "0");
+      const valorLitro = parseFloat(form.getValues("valor_litro") || "0");
+      const total = quantidade * valorLitro;
+      
+      if (total > 0) {
+        form.setValue("valor_total", total.toFixed(2));
+      }
+    }, 100);
+  }, [form, fuelConfig]);
 
   // Submit do formulário
   const onSubmit = async (data: AbastecimentoValues) => {
@@ -494,14 +502,15 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
                       {...field}
                       type="number"
                       step="0.001"
-                      placeholder="5.50"
-                      className="min-h-[44px]"
-                      onChange={(e) => {
-                        field.onChange(e.target.value);
-                        setTimeout(calcularValorTotal, 100);
-                      }}
+                      placeholder="Será definido automaticamente"
+                      className="min-h-[44px] bg-gray-50 cursor-not-allowed"
+                      readOnly
+                      disabled
                     />
                   </FormControl>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Valor fixo definido pelo administrador
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}

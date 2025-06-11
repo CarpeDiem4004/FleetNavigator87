@@ -1,6 +1,24 @@
-# CORREÇÕES MOBILE IMPLEMENTADAS - Sistema de Links Externos dos Postos
+# SISTEMA DE LINKS EXTERNOS DOS POSTOS - CORREÇÕES FINAIS IMPLEMENTADAS
 
-## PROBLEMAS IDENTIFICADOS E SOLUÇÕES APLICADAS
+## CONFIGURAÇÃO DE COMBUSTÍVEIS CORRIGIDA
+
+### ✅ COMBUSTÍVEIS FIXOS CONFORME PROJETO ORIGINAL
+**Problema:** Sistema mostrava múltiplos tipos de combustível (gasolina, etanol, GNV, etc.)
+
+**Solução Implementada:**
+- ✅ Apenas "ARLA" e "Diesel" disponíveis nos links externos
+- ✅ Valores fixos definidos pelo administrador na tabela `configuracao_tanques`
+- ✅ Campo valor/litro como somente leitura
+- ✅ Carregamento automático da configuração do posto
+
+**Configuração dos Valores:**
+```typescript
+// Valores padrão carregados da configuração do admin
+diesel_valor_litro: 5.00  // Configurável pelo admin
+arla_valor_litro: 3.00    // Configurável pelo admin
+```
+
+## PROBLEMAS MOBILE RESOLVIDOS
 
 ### ✅ 1. PROBLEMAS DE RESPONSIVIDADE NO FRONTEND
 
