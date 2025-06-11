@@ -302,7 +302,11 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
           onRegistroSucesso();
         }
         
-        setTimeout(() => setRegistroSucesso(false), 3000);
+        // Forçar atualização da página para mostrar o novo registro no histórico
+        setTimeout(() => {
+          setRegistroSucesso(false);
+          window.location.reload();
+        }, 1500);
       } else {
         throw new Error(`Erro ${response.status}: ${response.statusText}`);
       }
