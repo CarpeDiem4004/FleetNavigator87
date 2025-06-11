@@ -8533,150 +8533,132 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Rota para registrar abastecimento usando o modelo de duas tabelas do Supabase
-  // Não exige autenticação para facilitar o registro de abastecimentos em postos externos
-  app.post('/api/abastecimentos', async (req, res) => {
+  // Rota para registrar abastecimento diretamente na tabela específica do posto
+  app.post('/api/abastecimentos/:posto_id', async (req, res) => {
     try {
-      console.log('Recebendo requisição para abastecimento (modelo Supabase):', JSON.stringify(req.body));
-      console.log('Headers:', JSON.stringify(req.headers, null, 2));
+      const { posto_id } = req.params;
+      console.log(`[ABASTECIMENTO] Registrando para posto: ${posto_id}`);
+      console.log('[ABASTECIMENTO] Dados recebidos:', JSON.stringify(req.body, null, 2));
       
-      // Adicionar um log para verificar o objeto req e detectar inconsistências
-      console.log('Método da requisição:', req.method);
-      console.log('URL da requisição:', req.url);
-      console.log('Query params:', req.query);
-      console.log('Tipo de combustível:', req.body.tipo_combustivel);
+      // Mapear dados do formulário para o formato da tabela
+      const {
+        placa,
+        km,
+        tipo,
+        quantidade,
+        valor_litro,
+        valor_total,
+        motorista,
+        motorista_rg,
+        operador,
+        projeto_id,
+        base_id,
+        tipo_veiculo = 'frota'
+      } = req.body;
       
-      // Extrair os dados necessários
-      // Mapeamento para permitir flexibilidade nos nomes dos campos
-      const quantidade_litros = req.body.quantidade_litros || req.body.quantidade || req.body.litros;
-      const placa = req.body.placa;
-      const km_atual = req.body.km_atual || req.body.km;
-      const posto_id = req.body.posto_id || req.body.posto;
-      const preco_litro = req.body.preco_litro || req.body.valor_litro;
-      const valor_total = req.body.valor_total;
-      const tipo_combustivel = req.body.tipo_combustivel || req.body.tipo;
-      const nome_motorista = req.body.nome_motorista || req.body.motorista;
-      const nome_operador = req.body.nome_operador || req.body.operador;
-      const rg_motorista = req.body.rg_motorista || req.body.motorista_rg;
-      const project = req.body.project || req.body.projeto;
-      
-      console.log('Dados mapeados:',
-        {quantidade_litros, placa, km_atual, posto_id, tipo_combustivel, nome_motorista, rg_motorista});
-      
-      // Validar os campos obrigatórios
-      if (!quantidade_litros || !placa || !posto_id) {
+      // Validar campos obrigatórios
+      if (!placa || !km || !tipo || !quantidade || !motorista || !operador) {
         return res.status(400).json({
           success: false,
-          message: 'Dados incompletos para registro de abastecimento (modelo Supabase)'
+          message: 'Dados obrigatórios não fornecidos'
         });
       }
       
-      // Garantir que posto_id seja tratado como string
-      const postoIdFormatado = typeof posto_id === 'string' 
-        ? posto_id.charAt(0).toUpperCase() + posto_id.slice(1).toLowerCase()
-        : String(posto_id);
+      // Determinar tabela do posto
+      const nomeTabela = `abastecimentos_posto_${posto_id.toLowerCase()}`;
+      console.log(`[ABASTECIMENTO] Inserindo na tabela: ${nomeTabela}`);
       
-      console.log(`Posto formatado para registro: ${postoIdFormatado}`);
-      
-      // 1. Criar registro na tabela abastecimentos
-      const insertAbastecimentoQuery = `
-        INSERT INTO abastecimentos (
-          data, 
-          valor
-        ) VALUES (
-          (NOW() AT TIME ZONE 'America/Sao_Paulo'), 
-          $1
-        ) RETURNING id, data, valor
-      `;
-      
-      const calculatedValor = valor_total || (quantidade_litros * (preco_litro || 0));
-      
-      const abastecimentoResult = await pool.query(insertAbastecimentoQuery, [
-        calculatedValor
-      ]);
-      
-      if (!abastecimentoResult.rows || !abastecimentoResult.rows.length) {
-        throw new Error('Falha ao criar registro de abastecimento');
+      // Buscar informações da base se base_id foi fornecido
+      let base_name = null;
+      if (base_id) {
+        try {
+          const baseQuery = `SELECT base_name FROM project_bases WHERE id = $1`;
+          const baseResult = await pool.query(baseQuery, [base_id]);
+          if (baseResult.rows.length > 0) {
+            base_name = baseResult.rows[0].base_name;
+          }
+        } catch (baseError) {
+          console.warn('[ABASTECIMENTO] Erro ao buscar base:', baseError);
+        }
       }
       
-      const abastecimentoId = abastecimentoResult.rows[0].id;
-      
-      // 2. Criar registro na tabela abastecimentos_supabase
-      const insertAbastecimentoPostoQuery = `
-        INSERT INTO abastecimentos_supabase (
-          abastecimento_id,
-          posto_id,
-          quantidade_litros
-        ) VALUES (
-          $1, 
-          $2, 
-          $3
-        ) RETURNING id
-      `;
-      
-      const abastecimentoPostoResult = await pool.query(insertAbastecimentoPostoQuery, [
-        abastecimentoId,
-        postoIdFormatado, // Usar posto formatado
-        quantidade_litros
-      ]);
-      
-      // 3. Também inserir no formato antigo para manter a compatibilidade
-      try {
-        const insertLegacyQuery = `
-          INSERT INTO abastecimentos_postos (
-            placa, 
-            km_atual, 
-            tipo_combustivel, 
-            litros, 
-            quantity_litros,
-            nome_motorista, 
-            nome_operador, 
-            posto, 
-            project,
-            preco_litro,
-            valor_total,
-            created_at,
-            rg_motorista
-          ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, (NOW() AT TIME ZONE 'America/Sao_Paulo'), $12
-          )
-        `;
-        
-        await pool.query(insertLegacyQuery, [
-          placa.toUpperCase(),
-          km_atual || 0,
-          tipo_combustivel || 'Diesel',
-          quantidade_litros,
-          quantidade_litros,
-          nome_motorista || 'Não informado',
-          nome_operador || 'Não informado',
-          postoIdFormatado, // Usar posto formatado
-          project || req.body.projeto || null, // Usar req.body.projeto como fallback
-          preco_litro || 0,
-          calculatedValor || 0,
-          rg_motorista || 'Não informado'
-        ]);
-      } catch (legacyError) {
-        console.warn('Aviso: Falha ao inserir registro no formato legado:', legacyError);
+      // Buscar nome do projeto se projeto_id foi fornecido
+      let projeto_nome = null;
+      if (projeto_id) {
+        try {
+          const projetoQuery = `SELECT name FROM projects WHERE id = $1`;
+          const projetoResult = await pool.query(projetoQuery, [projeto_id]);
+          if (projetoResult.rows.length > 0) {
+            projeto_nome = projetoResult.rows[0].name;
+          }
+        } catch (projetoError) {
+          console.warn('[ABASTECIMENTO] Erro ao buscar projeto:', projetoError);
+        }
       }
       
-      return res.status(200).json({
-        success: true,
-        data: {
-          abastecimento: abastecimentoResult.rows[0],
-          abastecimento_posto_id: abastecimentoPostoResult.rows[0].id,
+      // Query de inserção na tabela específica do posto
+      const insertQuery = `
+        INSERT INTO ${nomeTabela} (
           placa,
-          posto_id,
-          quantidade_litros
-        },
-        message: 'Abastecimento registrado com sucesso (modelo Supabase)'
-      });
+          km_atual,
+          tipo_combustivel,
+          litros,
+          valor_litro,
+          valor_total,
+          motorista,
+          motorista_rg,
+          operador,
+          projeto,
+          projeto_id,
+          base_name,
+          base_id,
+          tipo_veiculo,
+          created_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW()
+        ) RETURNING *
+      `;
+      
+      const valores = [
+        placa.toUpperCase().trim(),
+        parseInt(km),
+        tipo,
+        parseFloat(quantidade),
+        parseFloat(valor_litro),
+        parseFloat(valor_total),
+        motorista.trim(),
+        motorista_rg?.trim() || '',
+        operador.trim(),
+        projeto_nome || 'Não definido',
+        projeto_id ? parseInt(projeto_id) : null,
+        base_name || 'Base não especificada',
+        base_id ? parseInt(base_id) : null,
+        tipo_veiculo
+      ];
+      
+      console.log('[ABASTECIMENTO] Valores a inserir:', valores);
+      
+      const result = await pool.query(insertQuery, valores);
+      
+      if (result.rows && result.rows.length > 0) {
+        console.log('[ABASTECIMENTO] Sucesso! ID:', result.rows[0].id);
+        
+        return res.status(200).json({
+          success: true,
+          id: result.rows[0].id,
+          message: 'Abastecimento registrado com sucesso',
+          data: result.rows[0]
+        });
+      } else {
+        throw new Error('Nenhum registro retornado após inserção');
+      }
+      
     } catch (error) {
-      console.error('Erro ao registrar abastecimento (modelo Supabase):', error);
+      console.error('[ABASTECIMENTO] Erro:', error);
       return res.status(500).json({
         success: false,
-        message: 'Erro ao registrar abastecimento (modelo Supabase)',
-        error: String(error)
+        message: 'Erro ao registrar abastecimento',
+        error: error.message
       });
     }
   });
