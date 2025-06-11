@@ -16,8 +16,8 @@ import { useMobileDetection } from "@/hooks/useMobileDetection";
 import { MobileSelect } from "@/components/ui/mobile-select";
 import { useAuth } from "@/context/AuthContext";
 
-// Schema de validação
-const abastecimentoSchema = z.object({
+// Schema de validação base
+const baseAbastecimentoSchema = z.object({
   placa: z.string().min(1, "Placa é obrigatória").max(8, "Placa deve ter no máximo 8 caracteres"),
   km: z.string().min(1, "Quilometragem é obrigatória"),
   tipo: z.string().min(1, "Tipo de combustível é obrigatório"),
@@ -25,11 +25,28 @@ const abastecimentoSchema = z.object({
   valor_litro: z.string().min(1, "Valor por litro é obrigatório"),
   valor_total: z.string().min(1, "Valor total é obrigatório"),
   projeto_id: z.string().min(1, "Selecione um projeto"),
-  base_id: z.string().min(1, "Selecione uma base"),
+  base_id: z.string().optional(),
   motorista: z.string().min(1, "Nome do motorista é obrigatório"),
   motorista_rg: z.string().min(1, "RG do motorista é obrigatório"),
   operador: z.string().min(1, "Nome do operador é obrigatório"),
   tipo_veiculo: z.string().default("frota"),
+});
+
+// Schema condicional que verifica se base_id é obrigatório baseado no projeto
+const abastecimentoSchema = baseAbastecimentoSchema.refine((data) => {
+  // Se projeto_id não está definido, não pode validar ainda
+  if (!data.projeto_id) return true;
+  
+  // Para projetos únicos, base_id é opcional
+  if (data.projeto_id === "14" || data.projeto_id === "15") {
+    return true;
+  }
+  
+  // Para outros projetos, base_id é obrigatório
+  return data.base_id && data.base_id.length > 0;
+}, {
+  message: "Selecione uma base",
+  path: ["base_id"]
 });
 
 type AbastecimentoValues = z.infer<typeof abastecimentoSchema>;
@@ -318,9 +335,9 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
     const isUnique = project?.name === 'Manutenção' || project?.name === 'Uso Operacional';
     
     if (isUnique) {
-      // Para projetos únicos, definir base_id como "unique" ou o próprio projeto_id
-      setSelectedBaseId("unique");
-      form.setValue("base_id", "unique");
+      // Para projetos únicos, definir base_id como "1" (base padrão)
+      setSelectedBaseId("1");
+      form.setValue("base_id", "1");
     } else {
       setSelectedBaseId(""); // Reset base selection para projetos com bases
       form.setValue("base_id", "");
@@ -382,8 +399,19 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
     console.log(`[MOBILE-FIX] Enviando formulário via ${deviceType}`);
 
     try {
+      // Para projetos únicos, garantir que base_id seja definido
+      const adjustedData = { ...data };
+      const selectedProject = projects.find(p => p.id.toString() === data.projeto_id);
+      const isUniqueProject = selectedProject?.name === 'Manutenção' || selectedProject?.name === 'Uso Operacional';
+      
+      if (isUniqueProject) {
+        adjustedData.base_id = "1"; // Usar base padrão para projetos únicos
+      }
+
+      console.log('[SUBMIT-DEBUG] Dados ajustados:', adjustedData);
+
       const formData = {
-        ...data,
+        ...adjustedData,
         posto_id: postId,
         device_type: deviceType,
         is_mobile: isMobile,
