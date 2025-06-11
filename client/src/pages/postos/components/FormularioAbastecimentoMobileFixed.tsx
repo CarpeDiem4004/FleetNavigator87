@@ -163,8 +163,8 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
         const data = await response.json();
         if (data.success && data.data) {
           setFuelConfig({
-            diesel_valor_litro: data.data.diesel_valor_litro || 5.00,
-            arla_valor_litro: data.data.arla_valor_litro || 3.00
+            diesel_valor_litro: parseFloat(data.data.diesel_valor_litro) || 5.00,
+            arla_valor_litro: parseFloat(data.data.arla_valor_litro) || 3.00
           });
         }
       }
@@ -229,9 +229,15 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
     
     // Definir valor por litro baseado na configuração do admin
     if (value === "diesel") {
-      form.setValue("valor_litro", fuelConfig.diesel_valor_litro.toFixed(2));
+      const dieselPrice = typeof fuelConfig.diesel_valor_litro === 'number' 
+        ? fuelConfig.diesel_valor_litro 
+        : parseFloat(fuelConfig.diesel_valor_litro) || 5.00;
+      form.setValue("valor_litro", dieselPrice.toFixed(2));
     } else if (value === "arla") {
-      form.setValue("valor_litro", fuelConfig.arla_valor_litro.toFixed(2));
+      const arlaPrice = typeof fuelConfig.arla_valor_litro === 'number' 
+        ? fuelConfig.arla_valor_litro 
+        : parseFloat(fuelConfig.arla_valor_litro) || 3.00;
+      form.setValue("valor_litro", arlaPrice.toFixed(2));
     }
     
     // Recalcular valor total se já tiver quantidade
