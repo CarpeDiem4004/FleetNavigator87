@@ -1119,7 +1119,7 @@ export default function LineHallShopeePage() {
                             <div>Rota: {request.rota_origem} → {request.rota_destino}</div>
                             {request.status === 'aprovada' && request.valor_aprovado && (
                               <div className="text-green-600 font-medium mt-1">
-                                Valor aprovado: R$ {request.valor_aprovado.toFixed(2)}
+                                Valor aprovado: R$ {Number(request.valor_aprovado).toFixed(2)}
                               </div>
                             )}
                             {request.valor_solicitado && (
@@ -1233,7 +1233,7 @@ export default function LineHallShopeePage() {
                         <TableCell>
                           {request.valor_aprovado ? (
                             <span className="text-green-600 font-bold">
-                              R$ {request.valor_aprovado.toFixed(2)}
+                              R$ {Number(request.valor_aprovado).toFixed(2)}
                             </span>
                           ) : '-'}
                         </TableCell>
