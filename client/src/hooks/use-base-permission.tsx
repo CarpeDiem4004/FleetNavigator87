@@ -44,7 +44,6 @@ const allRoutes = [
   '/multas',                           // Alias para Multas
   '/line-hall',                        // Line Hall (antigo)
   '/line-hall-shopee',                 // Line Hall Shopee (novo)
-  '/line-hall/fuel-card-request',      // Solicitação Direta de Cartão Line Hall
   '/fleet-management',                 // Gestão de Frota
   '/gestao-de-frotas',                 // Alias para Gestão de Frota
   '/fleet-management/inventory',       // Gestão de Estoque
@@ -169,7 +168,6 @@ const basicRoutes = [
   '/abastecimentos',                     // Dashboard de Abastecimento
   '/fuel-card',                          // Cartão de Combustível
   '/fuel-card-requests',                 // Painel de Solicitações Fuel Card
-  '/line-hall/fuel-card-request',        // Solicitação Direta de Cartão Line Hall
   '/posto-remedios',                     // Posto Remédios
   '/cartao-abastecimento',               // Cartão de Abastecimento
   '/work-safety',                        // Informar acidentes de trabalho
@@ -277,7 +275,6 @@ export const useBasePermission = (): BasePermissionHook => {
         '/maintenance',               // Manutenções
         '/manutencao',               // Alias para Manutenções
         '/fuel-card-requests',        // Liberação de solicitações de cartão
-        '/line-hall/fuel-card-request', // Solicitação Direta de Cartão Line Hall
         '/fuel-card',                 // Cartão de Combustível
         '/fuel-card-dashboard',       // Dashboard do Cartão de Combustível
         '/cartao-abastecimento',      // Cartão de Abastecimento

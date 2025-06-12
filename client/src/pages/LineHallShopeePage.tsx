@@ -561,19 +561,6 @@ export default function LineHallShopeePage() {
             </p>
           </div>
           <div className="flex space-x-2">
-            {/* Botão destacado para Atendimento de Solicitações de Cartão */}
-            <Button 
-              onClick={() => setLocation('/fuel-card-requests')} 
-              className="flex items-center bg-blue-600 hover:bg-blue-700 text-white relative"
-            >
-              <CreditCard className="mr-2 h-4 w-4" />
-              Atender Solicitações
-              {pendingFuelRequests > 0 && (
-                <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold animate-pulse">
-                  {pendingFuelRequests}
-                </div>
-              )}
-            </Button>
             <Button 
               variant="outline" 
               onClick={() => setLocation('/vehicles')} 
@@ -596,7 +583,7 @@ export default function LineHallShopeePage() {
               className="flex items-center relative"
             >
               <CreditCard className="mr-2 h-4 w-4" />
-              Painel de Solicitações
+              Solicitações de Cartão
               {pendingFuelRequests > 0 && (
                 <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold animate-pulse">
                   {pendingFuelRequests}
