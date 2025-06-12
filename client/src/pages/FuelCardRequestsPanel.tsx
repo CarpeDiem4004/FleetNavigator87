@@ -689,12 +689,12 @@ const FuelCardRequestsPanel: React.FC = () => {
                     </div>
                   </div>
                   
-                  {selectedSolicitation.numero_cartao && (
+                  {(selectedSolicitation.numero_cartao || selectedSolicitation.cartao_combustivel) && (
                     <div>
-                      <Label>Número do Cartão de Combustível</Label>
-                      <div className="text-lg font-medium font-mono bg-gray-100 p-2 rounded border">
-                        <CreditCard className="inline mr-2 h-4 w-4" />
-                        {selectedSolicitation.numero_cartao}
+                      <Label>Cartão de Combustível Vinculado</Label>
+                      <div className="text-lg font-medium font-mono bg-blue-50 p-2 rounded border border-blue-200">
+                        <CreditCard className="inline mr-2 h-4 w-4 text-blue-600" />
+                        {selectedSolicitation.cartao_combustivel || selectedSolicitation.numero_cartao}
                       </div>
                     </div>
                   )}

@@ -12858,8 +12858,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { status, motorista_id } = req.query;
       
+      console.log('[LINE-HALL-FUEL-REQUESTS] Parâmetros recebidos:', { status, motorista_id });
+      
       let query = `
-        SELECT * FROM linehall_fuel_card_requests 
+        SELECT 
+          lr.id,
+          lr.motorista_nome,
+          lr.motorista_cpf,
+          lr.veiculo_placa,
+          lr.veiculo_modelo,
+          lr.rota_origem,
+          lr.rota_destino,
+          lr.data_viagem,
+          lr.valor_solicitado,
+          lr.valor_aprovado,
+          lr.status,
+          lr.observacoes_operador,
+          lr.created_at,
+          lr.updated_at,
+          lr.operador_aprovacao,
+          lr.telefone_motorista,
+          lr.km_total,
+          lr.horario_abastecimento,
+          lr.valor_calculado,
+          v.cartao_abastecimento as cartao_combustivel
+        FROM linehall_fuel_card_requests lr
+        LEFT JOIN veiculos v ON lr.veiculo_placa = v.plate
         WHERE 1=1
       `;
       const params = [];
@@ -12867,7 +12891,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (status) {
         paramCount++;
-        query += ` AND status = $${paramCount}`;
+        query += ` AND lr.status = $${paramCount}`;
         params.push(status);
       }
 
@@ -12879,7 +12903,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       query += ` ORDER BY created_at DESC`;
 
+      console.log('[LINE-HALL-FUEL-REQUESTS] Query SQL:', query);
+      console.log('[LINE-HALL-FUEL-REQUESTS] Parâmetros SQL:', params);
+
       const result = await pool.query(query, params);
+
+      console.log('[LINE-HALL-FUEL-REQUESTS] Resultado da query:', {
+        rowCount: result.rowCount,
+        sampleData: result.rows.slice(0, 1)
+      });
 
       res.status(200).json({
         success: true,

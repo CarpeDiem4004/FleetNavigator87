@@ -94,8 +94,11 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           NULL::varchar as telefone_motorista,
           NULL::varchar as horario_abastecimento,
           COALESCE(s.valor_solicitado, 0) as valor_calculado,
-          NULL::json as calculo_detalhes
+          NULL::json as calculo_detalhes,
+          -- Incluir cartão combustível do veículo
+          COALESCE(v.cartao_abastecimento, s.numero_cartao, '') as cartao_combustivel
         FROM solicitacoes_fuel_card s
+        LEFT JOIN veiculos v ON s.placa = v.plate
 
         UNION ALL
 
@@ -105,7 +108,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           COALESCE(lh.km_total, 0) as km,
           'Line Hall' as tipo_cartao,
           'Line Hall Shopee' as provedor_cartao,
-          COALESCE(lhv.cartao_combustivel, lh.numero_cartao, '') as numero_cartao,
+          COALESCE(lhv.cartao_combustivel, v.cartao_abastecimento, lh.numero_cartao, '') as numero_cartao,
           COALESCE(lh.motorista, lh.motorista_nome, 'Motorista não informado') as motorista,
           CONCAT('Rota: ', COALESCE(lh.rota_origem, 'N/I'), ' → ', COALESCE(lh.rota_destino, 'N/I'), 
                  ' | Tel: ', COALESCE(lh.telefone_motorista, 'N/I'), ' | Horário: ', 
@@ -143,9 +146,12 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
                 'valor_total', lh.valor_calculado
               )
             ELSE NULL
-          END as calculo_detalhes
+          END as calculo_detalhes,
+          -- Incluir cartão combustível do veículo para Line Hall também
+          COALESCE(lhv.cartao_combustivel, v.cartao_abastecimento, lh.numero_cartao, '') as cartao_combustivel
         FROM linehall_fuel_card_requests lh
         LEFT JOIN linehall_vehicles lhv ON lh.veiculo_placa = lhv.placa
+        LEFT JOIN veiculos v ON lh.veiculo_placa = v.plate
       ) unified_requests
       ORDER BY 
         CASE 
