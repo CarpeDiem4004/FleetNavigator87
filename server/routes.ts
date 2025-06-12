@@ -12634,26 +12634,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Buscar solicitações de cartão combustível do Line Hall
       let query = `
         SELECT 
-          id,
-          motorista_nome,
-          motorista_cpf,
-          veiculo_placa,
-          veiculo_modelo,
-          rota_origem,
-          rota_destino,
-          data_viagem,
-          valor_solicitado,
-          valor_aprovado,
-          status,
-          observacoes_operador,
-          created_at,
-          updated_at,
-          operador_aprovacao,
-          telefone_motorista,
-          km_total,
-          horario_abastecimento,
-          valor_calculado
-        FROM linehall_fuel_card_requests 
+          lr.id,
+          lr.motorista_nome,
+          lr.motorista_cpf,
+          lr.veiculo_placa,
+          lr.veiculo_modelo,
+          lr.rota_origem,
+          lr.rota_destino,
+          lr.data_viagem,
+          lr.valor_solicitado,
+          lr.valor_aprovado,
+          lr.status,
+          lr.observacoes_operador,
+          lr.created_at,
+          lr.updated_at,
+          lr.operador_aprovacao,
+          lr.telefone_motorista,
+          lr.km_total,
+          lr.horario_abastecimento,
+          lr.valor_calculado,
+          v.cartao_abastecimento as cartao_combustivel
+        FROM linehall_fuel_card_requests lr
+        LEFT JOIN veiculos v ON lr.veiculo_placa = v.plate
         WHERE 1=1
       `;
       const params = [];

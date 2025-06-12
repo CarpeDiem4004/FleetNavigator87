@@ -1758,6 +1758,12 @@ const LineHallDriverPage: React.FC = () => {
                             <p className="text-sm">{solicitacao.veiculo_placa}</p>
                           </div>
                           <div>
+                            <Label className="text-sm font-medium text-gray-700">Cartão de Combustível</Label>
+                            <p className="text-sm font-mono bg-blue-50 px-2 py-1 rounded border">
+                              {solicitacao.cartao_combustivel || 'Não informado'}
+                            </p>
+                          </div>
+                          <div>
                             <Label className="text-sm font-medium text-gray-700">Rota</Label>
                             <p className="text-sm">{solicitacao.rota_origem} → {solicitacao.rota_destino}</p>
                           </div>
@@ -1768,6 +1774,10 @@ const LineHallDriverPage: React.FC = () => {
                           <div>
                             <Label className="text-sm font-medium text-gray-700">Horário de Abastecimento</Label>
                             <p className="text-sm">{solicitacao.horario_abastecimento === 'apos_18h' ? 'Após 18h' : solicitacao.horario_abastecimento}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700">Tipo de Cartão</Label>
+                            <p className="text-sm">Line Hall</p>
                           </div>
                         </div>
 
