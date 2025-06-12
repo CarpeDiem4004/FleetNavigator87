@@ -11041,7 +11041,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           '08:00:00' as horario_carregamento,
           'Aguardando' as status_viagem
         FROM motoristas m
-        WHERE REGEXP_REPLACE(m.cpf, '[^0-9]', '', 'g') = $1 AND m.base_id = 3
+        WHERE REPLACE(REPLACE(REPLACE(m.cpf, '.', ''), '-', ''), ' ', '') = $1 AND m.base_id = 3
       `, [cpf]);
 
       if (result.rows.length === 0) {
