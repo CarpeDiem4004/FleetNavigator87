@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
+import MainLayoutSimple from '@/components/layout/MainLayoutSimple';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -75,6 +76,9 @@ const FuelCardRequestsPanel: React.FC = () => {
   
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  // Verificar se é usuário Line Hall para usar layout sem sidebar
+  const isLineHallUser = user?.role === 'line_hall';
   
   useEffect(() => {
     fetchSolicitations();
