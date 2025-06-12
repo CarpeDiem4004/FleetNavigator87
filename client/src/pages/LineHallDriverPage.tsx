@@ -1306,24 +1306,39 @@ const LineHallDriverPage: React.FC = () => {
     return (
       <Card className="w-full max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">Solicitar Recarga de Cartão de Abastecimento</CardTitle>
+          <CardTitle className="text-2xl font-bold">Solicitar Recarga de Cartão</CardTitle>
           <CardDescription>
-            Veículo: {selectedVehicle}
+            Informe os dados da viagem para cálculo do combustível
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Número do cartão */}
-          <div className="space-y-2">
-            <Label htmlFor="numeroCartao" className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
-              Número do Cartão
-            </Label>
-            <Input
-              id="numeroCartao"
-              placeholder="Informe o número do cartão de abastecimento"
-              value={fuelCardRequest.numeroCartao}
-              onChange={(e) => setFuelCardRequest(prev => ({ ...prev, numeroCartao: e.target.value }))}
-            />
+          {/* Informações do Veículo */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Placa</Label>
+              <Input
+                value={selectedVehicle || 'SYH4260'}
+                readOnly
+                className="bg-gray-50"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Modelo</Label>
+              <Input
+                value="Cavalo Mecânico"
+                readOnly
+                className="bg-gray-50"
+              />
+            </div>
+          </div>
+
+          {/* Cartão de Combustível Vinculado */}
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <Label className="text-sm font-medium text-blue-700">Cartão de Combustível Vinculado</Label>
+            <p className="text-lg font-mono font-semibold text-blue-800 mt-1">
+              SQ3365
+            </p>
+            <p className="text-xs text-blue-600 mt-1">Este cartão está associado ao veículo {selectedVehicle || 'SYH4260'}</p>
           </div>
 
           {/* Campos para cálculo automático */}
