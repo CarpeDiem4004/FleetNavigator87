@@ -333,6 +333,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ path, component:
     return <Redirect to="/tires" />;
   }
   
+  // Verificação especial para usuários Line Hall - redirecionar para a página específica do Line Hall
+  if (path === "/" && user && (user.role === 'line_hall' || user.baseId === 3)) {
+    console.log("[ProtectedRoute] Usuário Line Hall tentando acessar o dashboard - redirecionando para a página do Line Hall...");
+    return <Redirect to="/line-hall-shopee" />;
+  }
+  
   // Verifica se o usuário tem permissão para acessar a rota
   const hasRoutePermission = hasPermission(path);
   console.log(`[ProtectedRoute] Verificação de permissão para ${path}: ${hasRoutePermission ? 'PERMITIDO' : 'NEGADO'}`);
