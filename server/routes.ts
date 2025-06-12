@@ -11025,52 +11025,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Buscar motorista na base de dados com informações da viagem
+      // Buscar motorista na base de dados real - normalizar CPF para comparação
       const result = await pool.query(`
         SELECT 
-          1 as id,
-          'João Silva' as nome,
-          '12345678901' as cpf,
-          '11999998888' as telefone,
-          'ABC-1234' as placa_veiculo,
+          m.id,
+          m.nome,
+          m.cpf,
+          m.telefone,
+          'Line Hall Shopee' as placa_veiculo,
           'Cavalo Mecânico' as tipo_veiculo,
-          'DEF-5678' as placa_carreta,
+          null as placa_carreta,
           'Centro de Distribuição Shopee - São Paulo' as local_carregamento,
-          'Loja Magazine Luiza - Campinas' as local_descarregamento,
-          'Invalid Date' as data_viagem,
+          'Destino conforme programação' as local_descarregamento,
+          TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD') as data_viagem,
           '08:00:00' as horario_carregamento,
           'Aguardando' as status_viagem
-        WHERE $1 = '12345678901'
-        UNION ALL
-        SELECT 
-          2 as id,
-          'Maria Santos' as nome,
-          '23456789012' as cpf,
-          '11888887777' as telefone,
-          'DEF-5678' as placa_veiculo,
-          'Carreta' as tipo_veiculo,
-          'GHI-9012' as placa_carreta,
-          'Armazém Central Shopee - Guarulhos' as local_carregamento,
-          'Centro de Distribuição - Santos' as local_descarregamento,
-          '2025-05-30' as data_viagem,
-          '06:30:00' as horario_carregamento,
-          'Em Andamento' as status_viagem
-        WHERE $1 = '23456789012'
-        UNION ALL
-        SELECT 
-          3 as id,
-          'Pedro Oliveira' as nome,
-          '34567890123' as cpf,
-          '11777776666' as telefone,
-          'GHI-9012' as placa_veiculo,
-          'Van' as tipo_veiculo,
-          null as placa_carreta,
-          'Hub Logístico Shopee - Osasco' as local_carregamento,
-          'Loja Americanas - Sorocaba' as local_descarregamento,
-          '2025-05-30' as data_viagem,
-          '14:00:00' as horario_carregamento,
-          'Programado' as status_viagem
-        WHERE $1 = '34567890123'
+        FROM motoristas m
+        WHERE REGEXP_REPLACE(m.cpf, '[^0-9]', '', 'g') = $1 AND m.base_id = 3
       `, [cpf]);
 
       if (result.rows.length === 0) {
