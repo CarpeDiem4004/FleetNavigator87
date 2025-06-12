@@ -174,6 +174,41 @@ const LineHallDriverPage: React.FC = () => {
     observacoes: ''
   });
 
+  // Estado para cálculo automático do Line Hall
+  const [fuelCalculation, setFuelCalculation] = useState({
+    kmRota: 0,
+    kmAdicional: 0,
+    totalKm: 0,
+    consumoMedio: 8, // km/l fixo conforme regra
+    litrosNecessarios: 0,
+    valorPorLitro: 5.50, // R$ fixo conforme regra
+    valorTotal: 0
+  });
+
+  // Função para calcular automaticamente o valor da recarga
+  const calculateFuelValue = (kmRota: number, kmAdicional: number) => {
+    const totalKm = kmRota + kmAdicional;
+    const litrosNecessarios = totalKm / fuelCalculation.consumoMedio;
+    const valorTotal = litrosNecessarios * fuelCalculation.valorPorLitro;
+    
+    setFuelCalculation(prev => ({
+      ...prev,
+      kmRota,
+      kmAdicional,
+      totalKm,
+      litrosNecessarios: Math.round(litrosNecessarios * 100) / 100, // 2 casas decimais
+      valorTotal: Math.round(valorTotal * 100) / 100 // 2 casas decimais
+    }));
+
+    // Atualiza automaticamente o valor solicitado
+    setFuelCardRequest(prev => ({
+      ...prev,
+      valorSolicitado: Math.round(valorTotal * 100) / 100
+    }));
+
+    return valorTotal;
+  };
+
   // Estado para solicitação de abastecimento
   const [fuelRequest, setFuelRequest] = useState({
     vehiclePlate: '',
@@ -634,10 +669,19 @@ const LineHallDriverPage: React.FC = () => {
       return;
     }
 
-    if (!fuelCardRequest.valorSolicitado || fuelCardRequest.valorSolicitado <= 0) {
+    if (fuelCalculation.kmRota <= 0) {
       toast({
-        title: 'Valor inválido',
-        description: 'Por favor, informe um valor válido para a recarga.',
+        title: 'KM da rota necessário',
+        description: 'Por favor, informe a quilometragem da rota.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (fuelCalculation.valorTotal <= 0) {
+      toast({
+        title: 'Valor não calculado',
+        description: 'O valor total deve ser calculado automaticamente com base na quilometragem.',
         variant: 'destructive',
       });
       return;
@@ -1203,19 +1247,68 @@ const LineHallDriverPage: React.FC = () => {
             />
           </div>
 
-          {/* Valor da recarga */}
-          <div className="space-y-2">
-            <Label htmlFor="valorSolicitado">Valor da Recarga (R$)</Label>
-            <Input
-              id="valorSolicitado"
-              type="number"
-              placeholder="0,00"
-              value={fuelCardRequest.valorSolicitado || ''}
-              onChange={(e) => setFuelCardRequest(prev => ({ 
-                ...prev, 
-                valorSolicitado: parseFloat(e.target.value) || 0
-              }))}
-            />
+          {/* Campos para cálculo automático */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* KM da Rota */}
+            <div className="space-y-2">
+              <Label htmlFor="kmRota">KM da Rota *</Label>
+              <Input
+                id="kmRota"
+                type="number"
+                placeholder="Ex: 120"
+                value={fuelCalculation.kmRota || ''}
+                onChange={(e) => {
+                  const kmRota = parseFloat(e.target.value) || 0;
+                  calculateFuelValue(kmRota, fuelCalculation.kmAdicional);
+                }}
+              />
+            </div>
+
+            {/* KM Adicional */}
+            <div className="space-y-2">
+              <Label htmlFor="kmAdicional">KM Adicional</Label>
+              <Input
+                id="kmAdicional"
+                type="number"
+                placeholder="Ex: 30"
+                value={fuelCalculation.kmAdicional || ''}
+                onChange={(e) => {
+                  const kmAdicional = parseFloat(e.target.value) || 0;
+                  calculateFuelValue(fuelCalculation.kmRota, kmAdicional);
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Detalhes do Cálculo - Read Only */}
+          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+            <h4 className="font-semibold mb-3 text-green-800 flex items-center">
+              <span className="mr-2">📊</span> Detalhes do Cálculo
+            </h4>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-gray-600">Total KM:</span>
+                <span className="font-medium ml-2">{fuelCalculation.totalKm} km</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Consumo Médio:</span>
+                <span className="font-medium ml-2">{fuelCalculation.consumoMedio} km/l</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Litros Necessários:</span>
+                <span className="font-medium ml-2">{fuelCalculation.litrosNecessarios.toFixed(2)}L</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Valor por Litro:</span>
+                <span className="font-medium ml-2">R$ {fuelCalculation.valorPorLitro.toFixed(2)}</span>
+              </div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-green-300">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-green-800">Valor Total:</span>
+                <span className="font-bold text-green-700 text-xl">R$ {fuelCalculation.valorTotal.toFixed(2)}</span>
+              </div>
+            </div>
           </div>
 
           {/* Quilometragem atual */}
@@ -1232,16 +1325,16 @@ const LineHallDriverPage: React.FC = () => {
 
           {/* Destino */}
           <div className="space-y-2">
-            <Label htmlFor="destino">Destino</Label>
+            <Label htmlFor="destino">Destino da Viagem *</Label>
             <Input
               id="destino"
-              placeholder="Ex: São Paulo - SP"
+              placeholder="Ex: Loja Magazine Luiza - Campinas"
               value={fuelCardRequest.destino}
               onChange={(e) => setFuelCardRequest(prev => ({ ...prev, destino: e.target.value }))}
             />
           </div>
 
-          {/* Tipo de Combustível */}
+          {/* Tipo de Combustível - Apenas Diesel e Arla */}
           <div className="space-y-2">
             <Label htmlFor="tipoCombustivel" className="flex items-center gap-2">
               <Fuel className="h-4 w-4" />
@@ -1255,8 +1348,6 @@ const LineHallDriverPage: React.FC = () => {
                 <SelectValue placeholder="Selecione o tipo de combustível" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="gasolina">Gasolina</SelectItem>
-                <SelectItem value="alcool">Álcool</SelectItem>
                 <SelectItem value="diesel">Diesel</SelectItem>
                 <SelectItem value="arla">Arla</SelectItem>
               </SelectContent>
