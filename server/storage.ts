@@ -450,10 +450,11 @@ export class DatabaseStorage implements IStorage {
     try {
       // Usar SQL bruto para evitar problemas com mapeamento de campos
       const result = await db.execute(sql`
-        SELECT id, plate, model, vehicle_type as "vehicleType", 
-               status, base_id as "baseId", 'murici' as ownership,
-               null as "rentalCompany"
-        FROM vehicles
+        SELECT id, placa as "plate", modelo as "model", tipo as "vehicleType", 
+               status, base_id as "baseId", fuel_type as "fuelType", ano as "year",
+               km_atual as "mileage", cartao_abastecimento as "cartaoAbastecimento",
+               'murici' as ownership, null as "rentalCompany"
+        FROM veiculos
         WHERE id = ${id}
       `);
       return result.rows[0] as Vehicle || undefined;
@@ -615,14 +616,14 @@ export class DatabaseStorage implements IStorage {
       // Preparar os campos para update, com seus nomes corretos no banco de dados
       const updateData: Record<string, any> = {};
       
-      if (vehicle.plate !== undefined) updateData.plate = vehicle.plate;
-      if (vehicle.model !== undefined) updateData.model = vehicle.model;
-      if (vehicle.vehicleType !== undefined) updateData.vehicletype = vehicle.vehicleType;
+      if (vehicle.plate !== undefined) updateData.placa = vehicle.plate;
+      if (vehicle.model !== undefined) updateData.modelo = vehicle.model;
+      if (vehicle.vehicleType !== undefined) updateData.tipo = vehicle.vehicleType;
       if (vehicle.status !== undefined) updateData.status = vehicle.status;
-      if (vehicle.baseId !== undefined) updateData.baseid = vehicle.baseId;
-      if (vehicle.fuelType !== undefined) updateData.fueltype = vehicle.fuelType;
-      if (vehicle.year !== undefined) updateData.year = vehicle.year;
-      if (vehicle.mileage !== undefined) updateData.mileage = vehicle.mileage;
+      if (vehicle.baseId !== undefined) updateData.base_id = vehicle.baseId;
+      if (vehicle.fuelType !== undefined) updateData.fuel_type = vehicle.fuelType;
+      if (vehicle.year !== undefined) updateData.ano = vehicle.year;
+      if (vehicle.mileage !== undefined) updateData.km_atual = vehicle.mileage;
       if (vehicle.color !== undefined) updateData.color = vehicle.color;
       if (vehicle.cartaoAbastecimento !== undefined) updateData.cartao_abastecimento = vehicle.cartaoAbastecimento;
       
@@ -636,9 +637,9 @@ export class DatabaseStorage implements IStorage {
           sql`, `
         )}
         WHERE id = ${id}
-        RETURNING id, plate, model, vehicletype as "vehicleType", 
-                 status, baseid as "baseId", fueltype, year, mileage, color,
-                 cartao_abastecimento as "cartaoAbastecimento"
+        RETURNING id, placa as "plate", modelo as "model", tipo as "vehicleType", 
+                 status, base_id as "baseId", fuel_type as "fuelType", ano as "year", 
+                 km_atual as "mileage", cartao_abastecimento as "cartaoAbastecimento"
       `);
       
       if (!result.rows[0]) return undefined;
@@ -651,10 +652,9 @@ export class DatabaseStorage implements IStorage {
         vehicleType: result.rows[0].vehicleType,
         status: result.rows[0].status,
         baseId: result.rows[0].baseId,
-        fuelType: result.rows[0].fueltype,
+        fuelType: result.rows[0].fuelType,
         year: result.rows[0].year,
         mileage: result.rows[0].mileage,
-        color: result.rows[0].color,
         cartaoAbastecimento: result.rows[0].cartaoAbastecimento,
         // Add default values for fields expected by Vehicle interface but not in DB
         ownership: 'murici',
