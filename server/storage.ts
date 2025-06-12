@@ -504,7 +504,7 @@ export class DatabaseStorage implements IStorage {
       const result = await db.execute(sql`
         SELECT id, plate, model, vehicletype as "vehicleType", 
                status, baseid as "baseId", fueltype,
-               year, mileage, color
+               year, mileage, color, cartao_abastecimento as "cartaoAbastecimento"
         FROM veiculos
         WHERE baseid = ${baseId}
       `);
@@ -521,6 +521,7 @@ export class DatabaseStorage implements IStorage {
         year: row.year,
         mileage: row.mileage,
         color: row.color,
+        cartaoAbastecimento: row.cartaoAbastecimento,
         // Add default/null values for any fields expected by Vehicle interface but not in DB
         ownership: 'murici',
         rentalCompany: null
