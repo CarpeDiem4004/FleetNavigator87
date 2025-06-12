@@ -2622,8 +2622,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.user as any;
       
-      // Verifica se o usuário tem permissão (apenas admin ou gestor)
-      if (user.role !== 'admin' && user.role !== 'gestor') {
+      // Verifica se o usuário tem permissão (admin, gestor ou line_hall)
+      if (user.role !== 'admin' && user.role !== 'gestor' && user.role !== 'line_hall') {
         return res.status(403).json({
           success: false,
           message: 'Sem permissão para acessar solicitações pendentes'
@@ -2780,8 +2780,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { rejectionReason } = req.body;
       const user = req.user as any;
       
-      // Verifica se o usuário tem permissão para rejeitar (admin ou gestor)
-      if (user.role !== 'admin' && user.role !== 'gestor') {
+      // Verifica se o usuário tem permissão para rejeitar (admin, gestor ou line_hall)
+      if (user.role !== 'admin' && user.role !== 'gestor' && user.role !== 'line_hall') {
         return res.status(403).json({
           success: false,
           message: 'Sem permissão para rejeitar solicitações'

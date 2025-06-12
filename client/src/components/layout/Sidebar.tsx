@@ -332,6 +332,22 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     ]},
   ];
   
+  // Itens específicos para usuários Line Hall
+  const lineHallItems: NavItem[] = [
+    { name: 'Dashboard', href: '/', icon: Gauge },
+    { name: 'Line Hall Shopee', href: '/line-hall-shopee', icon: Map },
+    { name: 'Veículos', href: '/vehicles', icon: Truck },
+    { name: 'Motoristas', href: '/drivers', icon: Users },
+    { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
+      { name: 'Operações', href: '/fuel-card', icon: CreditCard },
+      { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList }
+    ]},
+    { name: 'Abastecimentos', href: '#', icon: Fuel, subItems: [
+      { name: 'Histórico Geral', href: '/refueling', icon: ClipboardList },
+      { name: 'Cartão de Abastecimento', href: '/cartao-abastecimento', icon: CreditCard }
+    ]},
+  ];
+  
   // Verifique se o usuário é da gestão de frotas
   // Adicionamos verificação adicional para papel 'gestor_frota'
   const isFleetUser = user.basename === "Gestão de Frotas" || user.baseId === 12 || user.role === 'gestor_frota' || user.role === 'admin';
@@ -339,9 +355,12 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   // Verifique se o usuário é gestor de combustível
   const isFuelManager = user.role === 'gestor_combustivel';
   
+  // Verifique se o usuário é Line Hall
+  const isLineHallUser = user.role === 'line_hall';
+  
   // Para debugging - exiba o tipo de usuário e os menus disponíveis
-  console.log(`Tipo de usuário: ${isFleetUser ? 'Gestão de Frotas' : isFuelManager ? 'Gestor de Combustível' : 'Normal'} (${user.role})`);
-  console.log(`Menu principal: ${isFleetUser ? 'fleetManagementItems' : isFuelManager ? 'fuelManagerItems' : 'allNavItems'}`);
+  console.log(`Tipo de usuário: ${isFleetUser ? 'Gestão de Frotas' : isFuelManager ? 'Gestor de Combustível' : isLineHallUser ? 'Line Hall' : 'Normal'} (${user.role})`);
+  console.log(`Menu principal: ${isFleetUser ? 'fleetManagementItems' : isFuelManager ? 'fuelManagerItems' : isLineHallUser ? 'lineHallItems' : 'allNavItems'}`);
   
   // Selecionando os itens de navegação apropriados
   let navItemsBase;
@@ -349,6 +368,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     navItemsBase = fleetManagementItems;
   } else if (isFuelManager) {
     navItemsBase = fuelManagerItems;
+  } else if (isLineHallUser) {
+    navItemsBase = lineHallItems;
   } else {
     navItemsBase = allNavItems;
   }
