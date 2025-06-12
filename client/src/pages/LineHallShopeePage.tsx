@@ -570,6 +570,14 @@ export default function LineHallShopeePage() {
             </Button>
             <Button 
               variant="outline" 
+              onClick={() => setLocation('/drivers')} 
+              className="flex items-center"
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              Cadastrar Motorista
+            </Button>
+            <Button 
+              variant="outline" 
               onClick={() => setLocation('/fuel-card-requests')} 
               className="flex items-center relative"
             >
