@@ -718,38 +718,32 @@ const LineHallDriverPage: React.FC = () => {
     
     try {
       // Enviar solicitação para API do sistema (conectando ao módulo Fuel Card)
-      const response = await fetch('/api/line-hall/fuel-card-request', {
+      const response = await fetch('/api/line-hall/fuel-request', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          plate: selectedVehicle,
-          km_atual: fuelCardRequest.kmAtual,
-          card_number: fuelCardRequest.numeroCartao,
-          amount: fuelCalculation.valorTotal, // Valor calculado automaticamente
-          destino: fuelCardRequest.destino,
-          tipo_combustivel: fuelCardRequest.tipoCombustivel,
-          observacoes: fuelCardRequest.observacoes || null,
-          // Campos de cálculo automático do Line Hall
-          km_rota: fuelCalculation.kmRota,
-          km_adicional: fuelCalculation.kmAdicional,
-          total_km: fuelCalculation.totalKm,
-          litros_necessarios: fuelCalculation.litrosNecessarios,
-          valor_por_litro: fuelCalculation.valorPorLitro,
-          valor_calculado: fuelCalculation.valorTotal,
-          consumo_medio: fuelCalculation.consumoMedio,
-          // Dados específicos do Line Hall
-          rota_origem: 'Centro de Distribuição Shopee - São Paulo',
+          motorista_id: motorista?.id || 6, // ID do motorista
+          motorista_nome: motorista?.nome || 'Adeilton Lima Cavalcante',
+          motorista_cpf: motorista?.cpf || '736.117.861-67',
+          veiculo_placa: selectedVehicle,
+          veiculo_modelo: 'Cavalo Mecânico',
+          rota_origem: 'Artur Alvim SP',
           rota_destino: fuelCardRequest.destino,
-          telefone_motorista: '(11) 98765-4321',
-          motorista_nome: 'João Silva',
-          motorista_cpf: '12345678901'
+          data_solicitacao: new Date().toISOString().split('T')[0],
+          horario_solicitacao: new Date().toLocaleTimeString('pt-BR'),
+          km_total: fuelCalculation.totalKm,
+          horario_abastecimento: 'apos_18h',
+          telefone_motorista: '(11) 98765-4321'
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
+        if (response.status === 400 && errorData.message?.includes('já possui uma solicitação')) {
+          throw new Error(errorData.message);
+        }
         throw new Error(errorData.message || 'Erro ao processar solicitação de recarga');
       }
       

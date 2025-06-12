@@ -559,14 +559,18 @@ const DriverAccess: React.FC = () => {
                       <div>
                         <span className="font-medium">Telefone:</span> {request.telefone_motorista}
                       </div>
-                      {request.valor_solicitado && (
+                      {((request as any).valor_calculado || request.valor_solicitado) && (
                         <div>
-                          <span className="font-medium">Valor Solicitado:</span> R$ {parseFloat(request.valor_solicitado).toFixed(2)}
+                          <span className="font-medium">Valor Solicitado:</span> R$ {parseFloat((request as any).valor_calculado || request.valor_solicitado || 0).toFixed(2)}
                         </div>
                       )}
-                      {request.valor_aprovado && (
+                      {request.valor_aprovado ? (
                         <div className="text-green-700 font-semibold">
                           <span className="font-medium">Valor Aprovado:</span> R$ {parseFloat(request.valor_aprovado).toFixed(2)}
+                        </div>
+                      ) : request.status === 'aprovada' && (request as any).valor_calculado && (
+                        <div className="text-green-700 font-semibold">
+                          <span className="font-medium">Valor Aprovado:</span> R$ {parseFloat((request as any).valor_calculado).toFixed(2)}
                         </div>
                       )}
                     </div>
@@ -576,9 +580,9 @@ const DriverAccess: React.FC = () => {
                         <p className="text-sm text-green-700 font-medium">
                           ✅ Solicitação aprovada! Você pode abastecer conforme solicitado.
                         </p>
-                        {request.valor_aprovado && (
+                        {(request.valor_aprovado || (request as any).valor_calculado) && (
                           <p className="text-sm text-green-700 mt-2 font-bold bg-green-100 p-2 rounded">
-                            💰 <strong>Valor Liberado para Recarga:</strong> R$ {parseFloat(request.valor_aprovado).toFixed(2)}
+                            💰 <strong>Valor Liberado para Recarga:</strong> R$ {parseFloat(request.valor_aprovado || (request as any).valor_calculado || 0).toFixed(2)}
                           </p>
                         )}
                         {request.operador_aprovacao && (

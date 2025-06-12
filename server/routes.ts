@@ -12768,13 +12768,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status = 'pendente'
       } = req.body;
 
+      // Verificar se já existe uma solicitação aprovada para a mesma rota pelo mesmo motorista
+      const checkRouteQuery = `
+        SELECT id, status FROM linehall_fuel_card_requests 
+        WHERE motorista_id = $1 
+          AND rota_origem = $2 
+          AND rota_destino = $3 
+          AND status IN ('aprovada', 'pendente')
+        ORDER BY created_at DESC
+        LIMIT 1
+      `;
+
+      const existingRoute = await pool.query(checkRouteQuery, [
+        motorista_id, rota_origem, rota_destino
+      ]);
+
+      if (existingRoute.rows.length > 0) {
+        const existing = existingRoute.rows[0];
+        return res.status(400).json({
+          success: false,
+          message: existing.status === 'aprovada' 
+            ? 'Você já possui uma solicitação aprovada para esta rota. Cada rota permite apenas uma solicitação de abastecimento por viagem.'
+            : 'Você já possui uma solicitação pendente para esta rota. Aguarde a aprovação antes de solicitar novamente.',
+          existingRequest: existing
+        });
+      }
+
+      // Calcular valor com base na quilometragem e consumo do veículo
+      function getConsumoByModel(modelo) {
+        const consumos = {
+          'iveco': 2.5,
+          'volvo': 2.7,
+          'constellation': 2.0,
+          'mercedes': 2.5,
+          'man': 2.6,
+          'scania': 2.7,
+          'daf': 2.7
+        };
+        
+        const modeloLower = modelo.toLowerCase();
+        for (const [marca, consumo] of Object.entries(consumos)) {
+          if (modeloLower.includes(marca)) {
+            return consumo;
+          }
+        }
+        return 2.5; // Default
+      }
+
+      const consumo = getConsumoByModel(veiculo_modelo);
+      const valorCalculado = ((km_total + 30) / consumo * 6.50).toFixed(2);
+
       const insertQuery = `
         INSERT INTO linehall_fuel_card_requests (
           motorista_id, motorista_nome, motorista_cpf, 
           veiculo_placa, veiculo_modelo, rota_origem, rota_destino,
           data_solicitacao, horario_solicitacao, km_total,
-          horario_abastecimento, telefone_motorista, status, created_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+          horario_abastecimento, telefone_motorista, status, valor_calculado, created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
         RETURNING *
       `;
 
@@ -12782,7 +12832,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         motorista_id, motorista_nome, motorista_cpf,
         veiculo_placa, veiculo_modelo, rota_origem, rota_destino,
         data_solicitacao, horario_solicitacao, km_total,
-        horario_abastecimento, telefone_motorista, status
+        horario_abastecimento, telefone_motorista, status, valorCalculado
       ]);
 
       res.status(201).json({
