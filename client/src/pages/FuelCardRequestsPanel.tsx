@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { apiRequest } from '@/lib/queryClient';
-import { CreditCard, Filter, Search, Calendar, CheckCircle2, XCircle, Clock, AlertCircle, TrendingUp, TrendingDown, DollarSign, Download, Plus } from 'lucide-react';
+import { CreditCard, Filter, Search, Calendar, CheckCircle2, XCircle, Clock, AlertCircle, TrendingUp, TrendingDown, DollarSign, Download, Plus, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
@@ -128,6 +128,58 @@ const FuelCardRequestsPanel: React.FC = () => {
     setSelectedSolicitation(solicitation);
     setEditedStatus(solicitation.status);
     setIsSheetOpen(true);
+  };
+
+  const handleDeleteSolicitation = async (solicitacao: FuelCardSolicitation) => {
+    if (!user || user.role !== 'admin') {
+      toast({
+        title: 'Acesso negado',
+        description: 'Apenas administradores podem excluir solicitações.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Tem certeza que deseja excluir a solicitação de ${solicitacao.motorista} (${solicitacao.placa})?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      let endpoint = '';
+      
+      // Determinar endpoint baseado no tipo de origem
+      if (solicitacao.origem_tipo === 'line_hall') {
+        endpoint = `/api/line-hall/fuel-requests/${solicitacao.id}`;
+      } else {
+        endpoint = `/api/fuel-card-solicitations/${solicitacao.id}`;
+      }
+
+      const response = await apiRequest('DELETE', endpoint);
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: 'Solicitação excluída',
+          description: 'A solicitação foi removida com sucesso.',
+        });
+        
+        // Remover da lista local
+        setSolicitations(prev => prev.filter(s => 
+          !(s.id === solicitacao.id && s.origem_tipo === solicitacao.origem_tipo)
+        ));
+      } else {
+        throw new Error(data.message || 'Erro ao excluir solicitação');
+      }
+    } catch (error) {
+      console.error('Erro ao excluir solicitação:', error);
+      toast({
+        title: 'Erro ao excluir',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      });
+    }
   };
   
   const handleStatusUpdate = async () => {
@@ -554,13 +606,25 @@ const FuelCardRequestsPanel: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm">{getStatusBadge(solicitacao.status)}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">{formatDate(solicitacao.data_solicitacao).split(',')[0]}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleOpenSolicitation(solicitacao)}
-                          >
-                            Visualizar
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleOpenSolicitation(solicitacao)}
+                            >
+                              Visualizar
+                            </Button>
+                            {user?.role === 'admin' && (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleDeleteSolicitation(solicitacao)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
