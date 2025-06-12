@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, RefreshCcw, Search, Edit, Trash2, Truck, FileText, CheckSquare, Wrench, AlertCircle, Car, UserPlus, MapPin } from 'lucide-react';
+import { Loader2, Plus, RefreshCcw, Search, Edit, Trash2, Truck, FileText, CheckSquare, Wrench, AlertCircle, Car, UserPlus, MapPin, CreditCard } from 'lucide-react';
 import { api } from '@/services/api';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -128,6 +128,7 @@ export default function LineHallShopeePage() {
   // Estado para solicitações de cartão combustível
   const [fuelCardRequests, setFuelCardRequests] = useState<FuelCardRequest[]>([]);
   const [showFuelRequests, setShowFuelRequests] = useState(false);
+  const [pendingFuelRequests, setPendingFuelRequests] = useState(0);
 
   // Estados para veículos e motoristas cadastrados no Line Hall
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -155,6 +156,7 @@ export default function LineHallShopeePage() {
     fetchDriverStats();
     fetchRoutesData();
     fetchFuelCardRequests();
+    fetchPendingLineHallRequests();
     fetchVehicles();
     fetchDrivers();
     
@@ -162,6 +164,7 @@ export default function LineHallShopeePage() {
     const interval = setInterval(() => {
       fetchTrips();
       fetchFuelCardRequests();
+      fetchPendingLineHallRequests();
     }, 30000); // Atualiza a cada 30 segundos
     
     return () => clearInterval(interval);
@@ -423,6 +426,26 @@ export default function LineHallShopeePage() {
     }
   };
 
+  // Função para buscar solicitações pendentes do Line Hall no sistema geral
+  const fetchPendingLineHallRequests = async () => {
+    try {
+      const response = await api.get('/fuel-card-solicitations');
+      if (response.data.success) {
+        const allRequests = response.data.data || [];
+        // Filtrar solicitações do Line Hall que estão pendentes
+        const lineHallPending = allRequests.filter((request: any) => 
+          (request.base === 'Line Hall Shopee' || 
+           request.origem_tipo === 'line_hall' ||
+           request.provedor_cartao === 'Line Hall Shopee') &&
+          (request.status === 'Pendente' || request.status === 'Em Análise')
+        );
+        setPendingFuelRequests(lineHallPending.length);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar solicitações pendentes:', error);
+    }
+  };
+
   // Função para aprovar/rejeitar solicitação de cartão
   const handleFuelRequestAction = async (requestId: number, action: 'aprovar' | 'rejeitar', observacoes?: string) => {
     try {
@@ -537,6 +560,19 @@ export default function LineHallShopeePage() {
             >
               <UserPlus className="mr-2 h-4 w-4" />
               Cadastrar Veículo
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setLocation('/fuel-card-requests')} 
+              className="flex items-center relative"
+            >
+              <CreditCard className="mr-2 h-4 w-4" />
+              Solicitações de Cartão
+              {pendingFuelRequests > 0 && (
+                <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold animate-pulse">
+                  {pendingFuelRequests}
+                </div>
+              )}
             </Button>
             <Button variant="outline" onClick={fetchTrips} className="flex items-center">
               <RefreshCcw className="mr-2 h-4 w-4" />
