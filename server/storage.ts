@@ -623,6 +623,7 @@ export class DatabaseStorage implements IStorage {
       if (vehicle.year !== undefined) updateData.year = vehicle.year;
       if (vehicle.mileage !== undefined) updateData.mileage = vehicle.mileage;
       if (vehicle.color !== undefined) updateData.color = vehicle.color;
+      if (vehicle.cartaoAbastecimento !== undefined) updateData.cartao_abastecimento = vehicle.cartaoAbastecimento;
       
       // Usar SQL bruto para evitar problemas com mapeamento de campos
       const result = await db.execute(sql`
@@ -635,7 +636,8 @@ export class DatabaseStorage implements IStorage {
         )}
         WHERE id = ${id}
         RETURNING id, plate, model, vehicletype as "vehicleType", 
-                 status, baseid as "baseId", fueltype, year, mileage, color
+                 status, baseid as "baseId", fueltype, year, mileage, color,
+                 cartao_abastecimento as "cartaoAbastecimento"
       `);
       
       if (!result.rows[0]) return undefined;
@@ -652,6 +654,7 @@ export class DatabaseStorage implements IStorage {
         year: result.rows[0].year,
         mileage: result.rows[0].mileage,
         color: result.rows[0].color,
+        cartaoAbastecimento: result.rows[0].cartaoAbastecimento,
         // Add default values for fields expected by Vehicle interface but not in DB
         ownership: 'murici',
         rentalCompany: null
