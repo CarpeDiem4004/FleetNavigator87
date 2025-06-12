@@ -68,6 +68,7 @@ import {
   getFuelCardSolicitationById, 
   createFuelCardSolicitation, 
   updateFuelCardSolicitationStatus,
+  deleteFuelCardSolicitation,
   setupFuelCardTable,
   createLineHallFuelCardRequest,
   exportFuelCardSolicitationsToExcel
@@ -12869,6 +12870,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         message: 'Erro ao atualizar status',
+        error: error.message
+      });
+    }
+  });
+
+  // Excluir solicitação de recarga Line Hall (apenas administradores)
+  app.delete('/api/line-hall/fuel-requests/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
+
+      console.log(`[DELETE-LINE-HALL] Tentativa de exclusão da solicitação ID: ${id} por usuário:`, user?.email);
+
+      // Verificar se o usuário é administrador
+      if (!user || user.role !== 'admin') {
+        console.log('[DELETE-LINE-HALL] Acesso negado - usuário não é administrador');
+        return res.status(403).json({
+          success: false,
+          message: 'Apenas administradores podem excluir solicitações'
+        });
+      }
+
+      if (!id || isNaN(Number(id))) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID da solicitação inválido'
+        });
+      }
+
+      // Verificar se a solicitação existe
+      const checkQuery = 'SELECT * FROM linehall_fuel_card_requests WHERE id = $1';
+      const checkResult = await pool.query(checkQuery, [id]);
+
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Solicitação não encontrada'
+        });
+      }
+
+      // Executar a exclusão
+      const deleteQuery = 'DELETE FROM linehall_fuel_card_requests WHERE id = $1';
+      const deleteResult = await pool.query(deleteQuery, [id]);
+
+      if (deleteResult.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Solicitação não encontrada para exclusão'
+        });
+      }
+
+      console.log(`[DELETE-LINE-HALL] Solicitação ${id} excluída com sucesso pelo usuário ${user.email}`);
+
+      res.status(200).json({
+        success: true,
+        message: 'Solicitação excluída com sucesso',
+        deletedId: id
+      });
+
+    } catch (error) {
+      console.error('[DELETE-LINE-HALL] Erro ao excluir solicitação:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
         error: error.message
       });
     }

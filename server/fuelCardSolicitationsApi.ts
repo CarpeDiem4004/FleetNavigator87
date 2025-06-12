@@ -773,3 +773,102 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
     });
   }
 }
+
+/**
+ * Exclui uma solicitação de cartão de combustível (tradicional ou Line Hall)
+ */
+export async function deleteFuelCardSolicitation(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
+
+    console.log(`[DELETE-FUEL-CARD] Tentativa de exclusão da solicitação ID: ${id} por usuário:`, user?.email);
+
+    // Verificar se o usuário é administrador
+    if (!user || user.role !== 'admin') {
+      console.log('[DELETE-FUEL-CARD] Acesso negado - usuário não é administrador');
+      return res.status(403).json({
+        success: false,
+        message: 'Apenas administradores podem excluir solicitações'
+      });
+    }
+
+    if (!id || isNaN(Number(id))) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID da solicitação inválido'
+      });
+    }
+
+    // Primeiro, verificar se a solicitação existe em qualquer uma das tabelas
+    let tableName = '';
+    let solicitationData = null;
+
+    // Verificar na tabela tradicional
+    try {
+      const traditionalCheck = await pool.query(
+        'SELECT * FROM solicitacoes_fuel_card WHERE id = $1',
+        [id]
+      );
+      if (traditionalCheck.rows.length > 0) {
+        tableName = 'solicitacoes_fuel_card';
+        solicitationData = traditionalCheck.rows[0];
+      }
+    } catch (err) {
+      console.log('[DELETE-FUEL-CARD] Tabela tradicional não encontrada ou erro:', err);
+    }
+
+    // Se não encontrou na tradicional, verificar na Line Hall
+    if (!solicitationData) {
+      try {
+        const lineHallCheck = await pool.query(
+          'SELECT * FROM linehall_fuel_card_requests WHERE id = $1',
+          [id]
+        );
+        if (lineHallCheck.rows.length > 0) {
+          tableName = 'linehall_fuel_card_requests';
+          solicitationData = lineHallCheck.rows[0];
+        }
+      } catch (err) {
+        console.log('[DELETE-FUEL-CARD] Tabela Line Hall não encontrada ou erro:', err);
+      }
+    }
+
+    if (!solicitationData) {
+      return res.status(404).json({
+        success: false,
+        message: 'Solicitação não encontrada'
+      });
+    }
+
+    console.log(`[DELETE-FUEL-CARD] Solicitação encontrada na tabela: ${tableName}`);
+
+    // Executar a exclusão
+    const deleteQuery = `DELETE FROM ${tableName} WHERE id = $1`;
+    const deleteResult = await pool.query(deleteQuery, [id]);
+
+    if (deleteResult.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Solicitação não encontrada para exclusão'
+      });
+    }
+
+    console.log(`[DELETE-FUEL-CARD] Solicitação ${id} excluída com sucesso da tabela ${tableName} pelo usuário ${user.email}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Solicitação excluída com sucesso',
+      deletedFrom: tableName,
+      deletedId: id
+    });
+
+  } catch (error: any) {
+    console.error('[DELETE-FUEL-CARD] Erro ao excluir solicitação:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor ao excluir solicitação',
+      error: error.message
+    });
+  }
+}
