@@ -277,6 +277,7 @@ export const useBasePermission = (): BasePermissionHook => {
         '/maintenance',               // Manutenções
         '/manutencao',               // Alias para Manutenções
         '/fuel-card-requests',        // Liberação de solicitações de cartão
+        '/line-hall/fuel-card-request', // Solicitação Direta de Cartão Line Hall
         '/fuel-card',                 // Cartão de Combustível
         '/fuel-card-dashboard',       // Dashboard do Cartão de Combustível
         '/cartao-abastecimento',      // Cartão de Abastecimento
