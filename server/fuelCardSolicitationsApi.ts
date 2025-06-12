@@ -3,6 +3,62 @@ import { pool } from './db';
 import * as XLSX from 'xlsx';
 
 /**
+ * Determina o consumo médio baseado no modelo do veículo
+ * Regras atualizadas conforme solicitação
+ */
+function getConsumoByModel(modelo: string): number {
+  const modeloUpper = modelo.toUpperCase();
+  
+  // Iveco: 2,5 km/l
+  if (modeloUpper.includes('IVECO')) {
+    return 2.5;
+  }
+  
+  // Volvo: 2,7 km/l  
+  if (modeloUpper.includes('VOLVO') || modeloUpper.includes('FH')) {
+    return 2.7;
+  }
+  
+  // Volkswagen Constellation: 2,0 km/l (atualizado)
+  if (modeloUpper.includes('VOLKSWAGEN') || modeloUpper.includes('CONSTELLATION')) {
+    return 2.0;
+  }
+  
+  // Volkswagen Meteor: 2,7 km/l
+  if (modeloUpper.includes('METEOR')) {
+    return 2.7;
+  }
+  
+  // Mercedes: 2,5 km/l
+  if (modeloUpper.includes('MERCEDES') || modeloUpper.includes('ACTROS') || modeloUpper.includes('M.BENZ')) {
+    return 2.5;
+  }
+  
+  // Man: 2,6 km/l
+  if (modeloUpper.includes('MAN')) {
+    return 2.6;
+  }
+  
+  // Scania: 2,7 km/l
+  if (modeloUpper.includes('SCANIA')) {
+    return 2.7;
+  }
+  
+  // Daf: 2,7 km/l
+  if (modeloUpper.includes('DAF')) {
+    return 2.7;
+  }
+  
+  // Padrão para cavalos mecânicos: 2,5 km/l
+  if (modeloUpper.includes('CAVALO') || modeloUpper.includes('MECÂNICO') || modeloUpper.includes('MECANICO')) {
+    return 2.5;
+  }
+  
+  // Padrão geral: 2,5 km/l
+  return 2.5;
+}
+
+/**
  * Obtém todas as solicitações de cartão de combustível (incluindo Line Hall Shopee)
  */
 export async function getFuelCardSolicitations(req: Request, res: Response) {
@@ -615,18 +671,44 @@ export async function createLineHallFuelCardRequest(req: Request, res: Response)
       });
     }
 
-    // Buscar consumo médio do veículo
-    const vehicleQuery = `
-      SELECT consumo_medio_km_l 
-      FROM vehicles 
-      WHERE plate = $1
+    // Buscar consumo médio do veículo nas diferentes tabelas
+    let consumoMedio = 2.5; // Valor padrão para cavalos mecânicos
+    
+    // Primeiro tenta na tabela veiculos
+    const vehicleQuery1 = `
+      SELECT media_consumo_combustivel, modelo 
+      FROM veiculos 
+      WHERE placa = $1
     `;
+    const vehicleResult1 = await pool.query(vehicleQuery1, [veiculo_placa]);
     
-    const vehicleResult = await pool.query(vehicleQuery, [veiculo_placa]);
-    
-    let consumoMedio = 8.0; // Valor padrão
-    if (vehicleResult.rows.length > 0 && vehicleResult.rows[0].consumo_medio_km_l) {
-      consumoMedio = parseFloat(vehicleResult.rows[0].consumo_medio_km_l);
+    if (vehicleResult1.rows.length > 0) {
+      if (vehicleResult1.rows[0].media_consumo_combustivel) {
+        consumoMedio = parseFloat(vehicleResult1.rows[0].media_consumo_combustivel);
+      } else {
+        // Determinar consumo por modelo se não estiver definido
+        const modelo = vehicleResult1.rows[0].modelo?.toUpperCase() || '';
+        consumoMedio = getConsumoByModel(modelo);
+      }
+    } else {
+      // Tenta na tabela vehicles
+      const vehicleQuery2 = `
+        SELECT consumo_medio_km_l, model 
+        FROM vehicles 
+        WHERE plate = $1
+      `;
+      const vehicleResult2 = await pool.query(vehicleQuery2, [veiculo_placa]);
+      
+      if (vehicleResult2.rows.length > 0 && vehicleResult2.rows[0].consumo_medio_km_l) {
+        consumoMedio = parseFloat(vehicleResult2.rows[0].consumo_medio_km_l);
+      } else if (vehicleResult2.rows.length > 0) {
+        const modelo = vehicleResult2.rows[0].model?.toUpperCase() || '';
+        consumoMedio = getConsumoByModel(modelo);
+      } else {
+        // Por último, usa o modelo informado na solicitação
+        const modelo = veiculo_modelo?.toUpperCase() || '';
+        consumoMedio = getConsumoByModel(modelo);
+      }
     }
 
     // Gerar ID único para o motorista se não fornecido
