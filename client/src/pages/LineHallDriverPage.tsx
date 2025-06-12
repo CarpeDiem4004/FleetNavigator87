@@ -273,6 +273,7 @@ const LineHallDriverPage: React.FC = () => {
       }
       
       const data = await response.json();
+      console.log('Dados das solicitações recebidos:', data.data);
       setMinhasSolicitacoes(data.data || []);
     } catch (error) {
       console.error('Erro ao buscar solicitações:', error);
@@ -1759,8 +1760,8 @@ const LineHallDriverPage: React.FC = () => {
                           </div>
                           <div>
                             <Label className="text-sm font-medium text-gray-700">Cartão de Combustível</Label>
-                            <p className="text-sm font-mono bg-blue-50 px-2 py-1 rounded border">
-                              {solicitacao.cartao_combustivel || 'Não informado'}
+                            <p className="text-sm font-mono bg-blue-50 px-2 py-1 rounded border font-semibold">
+                              {solicitacao.cartao_combustivel || 'Cartão não vinculado'}
                             </p>
                           </div>
                           <div>
