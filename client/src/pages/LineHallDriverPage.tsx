@@ -727,9 +727,24 @@ const LineHallDriverPage: React.FC = () => {
           plate: selectedVehicle,
           km_atual: fuelCardRequest.kmAtual,
           card_number: fuelCardRequest.numeroCartao,
-          amount: fuelCardRequest.valorSolicitado,
+          amount: fuelCalculation.valorTotal, // Valor calculado automaticamente
           destino: fuelCardRequest.destino,
+          tipo_combustivel: fuelCardRequest.tipoCombustivel,
           observacoes: fuelCardRequest.observacoes || null,
+          // Campos de cálculo automático do Line Hall
+          km_rota: fuelCalculation.kmRota,
+          km_adicional: fuelCalculation.kmAdicional,
+          total_km: fuelCalculation.totalKm,
+          litros_necessarios: fuelCalculation.litrosNecessarios,
+          valor_por_litro: fuelCalculation.valorPorLitro,
+          valor_calculado: fuelCalculation.valorTotal,
+          consumo_medio: fuelCalculation.consumoMedio,
+          // Dados específicos do Line Hall
+          rota_origem: 'Centro de Distribuição Shopee - São Paulo',
+          rota_destino: fuelCardRequest.destino,
+          telefone_motorista: '(11) 98765-4321',
+          motorista_nome: 'João Silva',
+          motorista_cpf: '12345678901'
         }),
       });
 
@@ -746,10 +761,18 @@ const LineHallDriverPage: React.FC = () => {
           motorista_nome: motorista?.nome,
           placa_veiculo: selectedVehicle,
           numero_cartao: fuelCardRequest.numeroCartao,
-          valor_solicitado: fuelCardRequest.valorSolicitado,
+          valor_solicitado: fuelCalculation.valorTotal,
           tipo_combustivel: fuelCardRequest.tipoCombustivel,
           observacoes: fuelCardRequest.observacoes,
-          status: 'pendente'
+          status: 'pendente',
+          // Campos de cálculo automático
+          km_rota: fuelCalculation.kmRota,
+          km_adicional: fuelCalculation.kmAdicional,
+          total_km: fuelCalculation.totalKm,
+          litros_necessarios: fuelCalculation.litrosNecessarios,
+          valor_por_litro: fuelCalculation.valorPorLitro,
+          valor_calculado: fuelCalculation.valorTotal,
+          consumo_medio: fuelCalculation.consumoMedio
         });
       
       if (supabaseError) {
@@ -770,6 +793,17 @@ const LineHallDriverPage: React.FC = () => {
         destino: '',
         tipoCombustivel: '',
         observacoes: ''
+      });
+      
+      // Reset calculation fields
+      setFuelCalculation({
+        kmRota: 0,
+        kmAdicional: 0,
+        totalKm: 0,
+        litrosNecessarios: 0,
+        valorPorLitro: 5.50,
+        valorTotal: 0,
+        consumoMedio: 8
       });
       
       // Voltar para o menu
