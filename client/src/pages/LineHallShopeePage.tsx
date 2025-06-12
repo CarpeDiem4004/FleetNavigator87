@@ -75,6 +75,7 @@ interface FuelCardRequest {
   observacoes_operador?: string;
   valor_solicitado?: number;
   valor_aprovado?: number;
+  valor_calculado?: number;
   operador_aprovacao?: string;
   created_at: string;
   updated_at: string;
@@ -1130,9 +1131,9 @@ export default function LineHallShopeePage() {
                                 Valor aprovado: R$ {Number(request.valor_aprovado).toFixed(2)}
                               </div>
                             )}
-                            {request.valor_solicitado && (
+                            {(request.valor_calculado || request.valor_solicitado) && (
                               <div className="text-blue-600">
-                                Valor solicitado: R$ {Number(request.valor_solicitado).toFixed(2)}
+                                Valor solicitado: R$ {Number(request.valor_calculado || request.valor_solicitado || 0).toFixed(2)}
                               </div>
                             )}
                             {request.observacoes_operador && (
@@ -1232,9 +1233,9 @@ export default function LineHallShopeePage() {
                           {format(new Date(request.data_viagem), "dd/MM/yyyy", { locale: ptBR })}
                         </TableCell>
                         <TableCell>
-                          {request.valor_solicitado ? (
+                          {(request.valor_calculado || request.valor_solicitado) ? (
                             <span className="text-blue-600 font-medium">
-                              R$ {Number(request.valor_solicitado).toFixed(2)}
+                              R$ {Number(request.valor_calculado || request.valor_solicitado || 0).toFixed(2)}
                             </span>
                           ) : '-'}
                         </TableCell>
