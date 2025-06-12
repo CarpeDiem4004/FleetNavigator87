@@ -11051,9 +11051,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           '08:00:00' as horario_carregamento,
           COALESCE(lhs.status, 'Aguardando') as status_viagem
         FROM motoristas m
-        LEFT JOIN linehall_shopee lhs ON m.nome = lhs.motorista_nome AND lhs.status = 'ativo'
+        LEFT JOIN linehall_shopee lhs ON m.nome = lhs.motorista_nome 
         WHERE REPLACE(REPLACE(REPLACE(m.cpf, '.', ''), '-', ''), ' ', '') = $1 AND m.base_id = 3
-        ORDER BY lhs.data_viagem DESC
+        ORDER BY 
+          CASE WHEN lhs.status = 'ativo' THEN 1 ELSE 2 END,
+          lhs.data_viagem DESC,
+          lhs.id DESC
         LIMIT 1
       `, [cpf]);
 
