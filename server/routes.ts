@@ -12658,7 +12658,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (motorista_id) {
         paramCount++;
-        query += ` AND motorista_nome = $${paramCount}`;
+        query += ` AND motorista_id = $${paramCount}`;
         params.push(motorista_id);
       }
 
