@@ -1,5 +1,8 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+import multer from "multer";
+import path from "path";
+import { promises as fs } from "fs";
 
 // Função utilitária para obter data/hora no fuso horário de Brasília (UTC-3)
 function getCurrentDateBrasilia() {
@@ -194,6 +197,22 @@ function generateRandomPassword(length: number): string {
 // Middleware de autenticação que suporta tanto sessão quanto token JWT
 import { isAuthenticatedBySessionOrJwt } from './middleware/isAuthenticated';
 const isAuthenticated = isAuthenticatedBySessionOrJwt;
+
+// Configuração do multer para upload de arquivos
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Tipo de arquivo não permitido'), false);
+    }
+  }
+});
 
 // Definindo funções middleware para compatibilidade com o código existente
 const isAdmin = adminMiddleware;  
@@ -12934,6 +12953,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         message: 'Erro interno do servidor',
+        error: error.message
+      });
+    }
+  });
+
+  // Upload de documentos de veículos (CRLV e ANTT)
+  app.post('/api/upload-vehicle-document', isAuthenticated, upload.single('file'), async (req, res) => {
+    try {
+      const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
+      
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: 'Nenhum arquivo foi enviado'
+        });
+      }
+
+      const { folder, vehiclePlate } = req.body;
+      
+      if (!folder || !vehiclePlate) {
+        return res.status(400).json({
+          success: false,
+          message: 'Pasta e placa do veículo são obrigatórios'
+        });
+      }
+
+      // Validar tipo de arquivo
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+      if (!allowedTypes.includes(req.file.mimetype)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Tipo de arquivo não permitido. Use PDF, JPG ou PNG.'
+        });
+      }
+
+      // Criar diretório se não existir
+      const uploadDir = path.join(process.cwd(), 'uploads', 'vehicle-documents', folder);
+      await fs.mkdir(uploadDir, { recursive: true });
+
+      // Nome único para o arquivo
+      const fileExt = path.extname(req.file.originalname);
+      const fileName = `${vehiclePlate}_${folder}_${Date.now()}${fileExt}`;
+      const filePath = path.join(uploadDir, fileName);
+
+      // Salvar arquivo
+      await fs.writeFile(filePath, req.file.buffer);
+
+      // Retornar URL relativa para acesso
+      const fileUrl = `/uploads/vehicle-documents/${folder}/${fileName}`;
+
+      console.log(`[UPLOAD-VEHICLE-DOC] Arquivo ${folder} salvo para veículo ${vehiclePlate} por ${user?.email}`);
+
+      res.status(200).json({
+        success: true,
+        message: 'Arquivo enviado com sucesso',
+        url: fileUrl,
+        fileName: fileName
+      });
+
+    } catch (error) {
+      console.error('[UPLOAD-VEHICLE-DOC] Erro ao fazer upload:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor ao fazer upload',
         error: error.message
       });
     }

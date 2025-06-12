@@ -124,33 +124,34 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
     return baseId === '3' && tipoVeiculo !== 'carreta'
   }
 
-  // Função para fazer upload de arquivos para o Supabase
-  const uploadFileToSupabase = async (file: File, folder: string, vehiclePlate: string): Promise<string | null> => {
+  // Função para fazer upload de arquivos via API do servidor
+  const uploadFileToServer = async (file: File, folder: string, vehiclePlate: string): Promise<string | null> => {
     if (!file) return null;
     
     try {
-      // Nome único para o arquivo: placa_tipo_timestamp.extensão
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${vehiclePlate}_${folder}_${Date.now()}.${fileExt}`;
-      const filePath = `${folder}/${fileName}`;
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', folder);
+      formData.append('vehiclePlate', vehiclePlate);
       
-      const { data, error } = await supabase
-        .storage
-        .from('vehicle-documents')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+      const response = await fetch('/api/upload-vehicle-document', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      });
       
-      if (error) throw error;
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Erro no upload: ${response.status} - ${errorText}`);
+      }
       
-      // Retornar o URL público do arquivo
-      const { data: publicUrlData } = supabase
-        .storage
-        .from('vehicle-documents')
-        .getPublicUrl(filePath);
+      const result = await response.json();
       
-      return publicUrlData.publicUrl;
+      if (!result.success) {
+        throw new Error(result.message || 'Erro desconhecido no upload');
+      }
+      
+      return result.url;
     } catch (error) {
       console.error(`Erro ao fazer upload do arquivo ${folder}:`, error);
       toast({
@@ -172,7 +173,7 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
     if (placa) {
       setIsUploadingCrlv(true);
       try {
-        const url = await uploadFileToSupabase(file, 'crlv', placa);
+        const url = await uploadFileToServer(file, 'crlv', placa);
         if (url) {
           setCrlvUrl(url);
           toast({
@@ -203,7 +204,7 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
     if (placa) {
       setIsUploadingAntt(true);
       try {
-        const url = await uploadFileToSupabase(file, 'antt', placa);
+        const url = await uploadFileToServer(file, 'antt', placa);
         if (url) {
           setAnttUrl(url);
           toast({
@@ -283,12 +284,12 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
     try {
       // Realizar upload dos documentos se ainda não foram carregados
       if (crlvFile && !crlvUrl) {
-        const url = await uploadFileToSupabase(crlvFile, 'crlv', placa);
+        const url = await uploadFileToServer(crlvFile, 'crlv', placa);
         if (url) setCrlvUrl(url);
       }
       
       if (anttFile && !anttUrl) {
-        const url = await uploadFileToSupabase(anttFile, 'antt', placa);
+        const url = await uploadFileToServer(anttFile, 'antt', placa);
         if (url) setAnttUrl(url);
       }
       
