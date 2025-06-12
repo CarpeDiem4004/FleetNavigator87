@@ -239,7 +239,7 @@ const FuelCardRequestsPanel: React.FC = () => {
         // Buscar o projeto selecionado e suas bases
         const selectedProject = projects.find(p => p.id.toString() === projectFilter);
         if (selectedProject) {
-          const projectBases = selectedProject.bases?.map((b: any) => b.name) || [];
+          const projectBases = selectedProject.bases?.map((b: any) => b.base_name) || [];
           if (!projectBases.includes(sol.base)) {
             return false;
           }
