@@ -548,7 +548,7 @@ const DriverAccess: React.FC = () => {
                     
                     <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-2">
                       <div>
-                        <span className="font-medium">Data/Hora:</span> {new Date(request.data_hora).toLocaleString('pt-BR')}
+                        <span className="font-medium">Data/Hora:</span> {new Date(request.created_at).toLocaleString('pt-BR')}
                       </div>
                       <div>
                         <span className="font-medium">KM Total:</span> {request.km_total} km
@@ -559,6 +559,16 @@ const DriverAccess: React.FC = () => {
                       <div>
                         <span className="font-medium">Telefone:</span> {request.telefone_motorista}
                       </div>
+                      {request.valor_solicitado && (
+                        <div>
+                          <span className="font-medium">Valor Solicitado:</span> R$ {parseFloat(request.valor_solicitado).toFixed(2)}
+                        </div>
+                      )}
+                      {request.valor_aprovado && (
+                        <div className="text-green-700 font-semibold">
+                          <span className="font-medium">Valor Aprovado:</span> R$ {parseFloat(request.valor_aprovado).toFixed(2)}
+                        </div>
+                      )}
                     </div>
                     
                     {request.status === 'aprovada' && (
@@ -566,6 +576,16 @@ const DriverAccess: React.FC = () => {
                         <p className="text-sm text-green-700 font-medium">
                           ✅ Solicitação aprovada! Você pode abastecer conforme solicitado.
                         </p>
+                        {request.valor_aprovado && (
+                          <p className="text-sm text-green-700 mt-2 font-bold bg-green-100 p-2 rounded">
+                            💰 <strong>Valor Liberado para Recarga:</strong> R$ {parseFloat(request.valor_aprovado).toFixed(2)}
+                          </p>
+                        )}
+                        {request.operador_aprovacao && (
+                          <p className="text-sm text-green-600 mt-1">
+                            <strong>Aprovado por:</strong> {request.operador_aprovacao}
+                          </p>
+                        )}
                         {request.observacoes_operador && (
                           <p className="text-sm text-green-600 mt-1">
                             <strong>Observações:</strong> {request.observacoes_operador}
