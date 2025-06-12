@@ -228,23 +228,18 @@ const FuelCardRequestsPanel: React.FC = () => {
     });
 
     const valorTotalAtendido = recargasEfetuadas.reduce((total, sol) => {
-      let valorNumerico = 0;
+      const valor = sol.valor_solicitado;
+      if (!valor) return total;
       
-      if (sol.valor_solicitado) {
-        if (typeof sol.valor_solicitado === 'string') {
-          valorNumerico = parseFloat(sol.valor_solicitado.replace(',', '.'));
-        } else {
-          valorNumerico = sol.valor_solicitado;
-        }
-      }
+      const valorNumerico = Number(valor) || 0;
       
       console.log('Processing value:', {
         status: sol.status,
-        valor_solicitado: sol.valor_solicitado,
+        valor_solicitado: valor,
         parsed: valorNumerico
       });
       
-      return total + (isNaN(valorNumerico) ? 0 : valorNumerico);
+      return total + valorNumerico;
     }, 0);
 
     console.log('Final valorTotalAtendido:', valorTotalAtendido);
