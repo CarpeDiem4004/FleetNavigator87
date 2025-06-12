@@ -11025,23 +11025,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Buscar motorista na base de dados real - normalizar CPF para comparação
+      // Buscar motorista na base de dados real com informações da viagem programada
       const result = await pool.query(`
         SELECT 
           m.id,
           m.nome,
           m.cpf,
           m.telefone,
-          'Line Hall Shopee' as placa_veiculo,
+          COALESCE(lhs.cavalo_placa, 'Line Hall Shopee') as placa_veiculo,
           'Cavalo Mecânico' as tipo_veiculo,
-          null as placa_carreta,
-          'Centro de Distribuição Shopee - São Paulo' as local_carregamento,
-          'Destino conforme programação' as local_descarregamento,
-          TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD') as data_viagem,
+          lhs.carreta1_placa as placa_carreta,
+          CASE 
+            WHEN lhs.rota IS NOT NULL THEN SPLIT_PART(lhs.rota, ' - ', 1)
+            ELSE 'Centro de Distribuição Shopee - São Paulo'
+          END as local_carregamento,
+          CASE 
+            WHEN lhs.rota IS NOT NULL THEN 
+              CASE 
+                WHEN SPLIT_PART(lhs.rota, ' - ', 3) ~ '^[0-9]+ km$' THEN SPLIT_PART(lhs.rota, ' - ', 2)
+                ELSE SPLIT_PART(lhs.rota, ' - ', 2)
+              END
+            ELSE 'Destino conforme programação'
+          END as local_descarregamento,
+          COALESCE(TO_CHAR(lhs.data_viagem, 'YYYY-MM-DD'), TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD')) as data_viagem,
           '08:00:00' as horario_carregamento,
-          'Aguardando' as status_viagem
+          COALESCE(lhs.status, 'Aguardando') as status_viagem
         FROM motoristas m
+        LEFT JOIN linehall_shopee lhs ON m.nome = lhs.motorista_nome AND lhs.status = 'ativo'
         WHERE REPLACE(REPLACE(REPLACE(m.cpf, '.', ''), '-', ''), ' ', '') = $1 AND m.base_id = 3
+        ORDER BY lhs.data_viagem DESC
+        LIMIT 1
       `, [cpf]);
 
       if (result.rows.length === 0) {
