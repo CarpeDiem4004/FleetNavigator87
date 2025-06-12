@@ -143,11 +143,13 @@ const LineHallDriverPage: React.FC = () => {
   const [, setLocation] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [step, setStep] = useState<'auth' | 'menu' | 'checklist' | 'maintenance' | 'fuelcard' | 'fuel-request' | 'success'>('auth');
+  const [step, setStep] = useState<'auth' | 'menu' | 'checklist' | 'maintenance' | 'fuelcard' | 'fuel-request' | 'success' | 'status'>('auth');
   const [progress, setProgress] = useState(0);
   const [cpf, setCpf] = useState<string>('');
   const [motorista, setMotorista] = useState<{id: number, nome: string, cpf: string} | null>(null);
   const [vehicles, setVehicles] = useState<{placa: string, tipo: string}[]>([]);
+  const [minhasSolicitacoes, setMinhasSolicitacoes] = useState<any[]>([]);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<string>('');
   
   // Checklist state
@@ -258,6 +260,45 @@ const LineHallDriverPage: React.FC = () => {
         break;
     }
   }, [step]);
+
+  // Buscar solicitações do motorista
+  const buscarMinhasSolicitacoes = async () => {
+    if (!motorista) return;
+    
+    setIsLoadingStatus(true);
+    try {
+      const response = await fetch(`/api/line-hall/fuel-requests?motorista_id=${motorista.id}`);
+      if (!response.ok) {
+        throw new Error('Erro ao buscar solicitações');
+      }
+      
+      const data = await response.json();
+      setMinhasSolicitacoes(data.data || []);
+    } catch (error) {
+      console.error('Erro ao buscar solicitações:', error);
+      toast({
+        title: 'Erro ao carregar solicitações',
+        description: 'Não foi possível carregar suas solicitações.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingStatus(false);
+    }
+  };
+
+  // Auto-refresh das solicitações a cada 30 segundos quando na tela de status
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (step === 'status' && motorista) {
+      buscarMinhasSolicitacoes(); // Buscar imediatamente
+      interval = setInterval(buscarMinhasSolicitacoes, 30000); // A cada 30 segundos
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [step, motorista]);
 
   // Verificar o motorista por CPF
   const verificarMotorista = async () => {
@@ -941,6 +982,15 @@ const LineHallDriverPage: React.FC = () => {
               <CreditCard className="h-5 w-5" />
               Solicitar Recarga de Cartão
             </Button>
+            
+            <Button
+              className="flex items-center gap-2"
+              onClick={() => setStep('status')}
+              variant="outline"
+            >
+              <Info className="h-5 w-5" />
+              Status das Solicitações
+            </Button>
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
@@ -1610,6 +1660,171 @@ const LineHallDriverPage: React.FC = () => {
     );
   };
 
+  // Renderização da tela de status das solicitações
+  const renderStatusScreen = () => {
+    const getStatusIcon = (status: string) => {
+      switch (status) {
+        case 'pendente':
+          return <div className="w-3 h-3 rounded-full bg-yellow-500"></div>;
+        case 'em_analise':
+          return <div className="w-3 h-3 rounded-full bg-blue-500"></div>;
+        case 'recarga_efetuada':
+          return <div className="w-3 h-3 rounded-full bg-green-500"></div>;
+        case 'aprovada':
+          return <div className="w-3 h-3 rounded-full bg-green-600"></div>;
+        case 'negado':
+          return <div className="w-3 h-3 rounded-full bg-red-500"></div>;
+        default:
+          return <div className="w-3 h-3 rounded-full bg-gray-400"></div>;
+      }
+    };
+
+    const getStatusText = (status: string) => {
+      switch (status) {
+        case 'pendente':
+          return 'Pendente';
+        case 'em_analise':
+          return 'Em Análise';
+        case 'recarga_efetuada':
+          return 'Recarga Efetuada';
+        case 'aprovada':
+          return 'Aprovada';
+        case 'negado':
+          return 'Negado';
+        default:
+          return status;
+      }
+    };
+
+    const formatCurrency = (value: number | string) => {
+      const numValue = typeof value === 'string' ? parseFloat(value) : value;
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      }).format(numValue || 0);
+    };
+
+    const formatDate = (dateString: string) => {
+      return new Date(dateString).toLocaleDateString('pt-BR');
+    };
+
+    return (
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold flex items-center gap-2">
+            <Info className="h-6 w-6" />
+            Status das Solicitações
+          </CardTitle>
+          <CardDescription>
+            Acompanhe o status das suas solicitações de recarga de cartão combustível
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {isLoadingStatus ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-2">Carregando solicitações...</span>
+            </div>
+          ) : minhasSolicitacoes.length === 0 ? (
+            <div className="text-center py-8">
+              <Info className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Nenhuma solicitação encontrada
+              </h3>
+              <p className="text-gray-500">
+                Você ainda não fez nenhuma solicitação de recarga de cartão combustível.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {minhasSolicitacoes.map((solicitacao) => (
+                <Card key={solicitacao.id} className="border-l-4 border-l-blue-500">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-3 flex-1">
+                        <div className="flex items-center gap-3">
+                          {getStatusIcon(solicitacao.status)}
+                          <span className="font-medium text-lg">
+                            {getStatusText(solicitacao.status)}
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            • {formatDate(solicitacao.data_solicitacao)}
+                          </span>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700">Veículo</Label>
+                            <p className="text-sm">{solicitacao.veiculo_placa}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700">Rota</Label>
+                            <p className="text-sm">{solicitacao.rota_origem} → {solicitacao.rota_destino}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700">Quilometragem</Label>
+                            <p className="text-sm">{solicitacao.km_total} km</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700">Horário de Abastecimento</Label>
+                            <p className="text-sm">{solicitacao.horario_abastecimento === 'apos_18h' ? 'Após 18h' : solicitacao.horario_abastecimento}</p>
+                          </div>
+                        </div>
+
+                        {/* Exibir valor aprovado se o status for aprovado */}
+                        {solicitacao.status === 'aprovada' && solicitacao.valor_calculado && (
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
+                            <div className="flex items-center gap-2">
+                              <CircleCheck className="h-5 w-5 text-green-600" />
+                              <Label className="text-green-800 font-medium">Valor Aprovado para Recarga</Label>
+                            </div>
+                            <p className="text-2xl font-bold text-green-700 mt-2">
+                              {formatCurrency(solicitacao.valor_calculado)}
+                            </p>
+                            <p className="text-sm text-green-600 mt-1">
+                              Aguarde a liberação do cartão para abastecimento
+                            </p>
+                          </div>
+                        )}
+
+                        {solicitacao.status === 'negado' && (
+                          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
+                            <div className="flex items-center gap-2">
+                              <XCircle className="h-5 w-5 text-red-600" />
+                              <Label className="text-red-800 font-medium">Solicitação Negada</Label>
+                            </div>
+                            <p className="text-sm text-red-600 mt-1">
+                              Entre em contato com a gestão para mais informações
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between pt-4 border-t">
+            <Button 
+              variant="outline"
+              onClick={() => buscarMinhasSolicitacoes()}
+              disabled={isLoadingStatus}
+            >
+              Atualizar Status
+            </Button>
+            <Button 
+              onClick={() => setStep('menu')}
+            >
+              Voltar ao Menu
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="bg-primary py-4 px-6 shadow-md">
@@ -1630,6 +1845,7 @@ const LineHallDriverPage: React.FC = () => {
           {step === 'maintenance' && renderMaintenanceScreen()}
           {step === 'fuelcard' && renderFuelCardScreen()}
           {step === 'fuel-request' && renderFuelRequestScreen()}
+          {step === 'status' && renderStatusScreen()}
         </div>
       </main>
       
