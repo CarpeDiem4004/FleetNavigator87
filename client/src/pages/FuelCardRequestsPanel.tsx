@@ -35,6 +35,7 @@ interface FuelCardSolicitation {
   base?: string;
   origem_tipo?: string;
   numero_cartao?: string;
+  cartao_combustivel?: string; // Cartão vinculado ao veículo
   id_rota?: string;
   tipo_combustivel?: string;
   litros_solicitados?: number;
