@@ -12620,6 +12620,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { status, motorista_id } = req.query;
       
+      console.log('[LINE-HALL-FUEL-REQUESTS] Parâmetros recebidos:', { status, motorista_id });
+      
       // Buscar solicitações de cartão combustível do Line Hall
       let query = `
         SELECT 
@@ -12662,11 +12664,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       query += ' ORDER BY created_at DESC';
 
+      console.log('[LINE-HALL-FUEL-REQUESTS] Query SQL:', query);
+      console.log('[LINE-HALL-FUEL-REQUESTS] Parâmetros SQL:', params);
+
       const result = await pool.query(query, params);
+
+      console.log('[LINE-HALL-FUEL-REQUESTS] Resultado da query:', {
+        rowCount: result.rowCount,
+        sampleData: result.rows.slice(0, 2)
+      });
+
+      // Forçar que não use cache
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
 
       res.status(200).json({
         success: true,
-        data: result.rows
+        data: result.rows,
+        count: result.rowCount
       });
 
     } catch (error) {

@@ -420,7 +420,11 @@ export default function LineHallShopeePage() {
   // Função para buscar solicitações de cartão combustível
   const fetchFuelCardRequests = async () => {
     try {
-      const response = await api.get('/line-hall/fuel-requests');
+      // Adicionar timestamp para quebrar cache
+      const timestamp = Date.now();
+      const response = await api.get(`/line-hall/fuel-requests?_t=${timestamp}`);
+      console.log('Solicitações do Line Hall API Response:', response.data);
+      
       if (response.data.success) {
         setFuelCardRequests(response.data.data || []);
       }
