@@ -736,7 +736,7 @@ export async function createLineHallFuelCardRequest(req: Request, res: Response)
     const values = [
       motorista_nome, motorista_cpf, veiculo_placa, veiculo_modelo,
       rota_origem, rota_destino, km_total, horario_abastecimento, 
-      telefone_motorista, valorCalculado.toFixed(2)
+      telefone_motorista, parseFloat(valorCalculado.toFixed(2))
     ];
 
     const result = await pool.query(query, values);
