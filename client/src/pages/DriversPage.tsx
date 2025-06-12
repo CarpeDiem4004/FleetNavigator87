@@ -129,8 +129,8 @@ const DriversPage: React.FC = () => {
   // Filtrar motoristas
   const filteredDrivers = Array.isArray(drivers) ? drivers.filter(
     (driver) =>
-      driver.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      driver.cpf.includes(searchTerm) ||
+      (driver.nome && driver.nome.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (driver.cpf && driver.cpf.includes(searchTerm)) ||
       (driver.telefone && driver.telefone.includes(searchTerm)) ||
       (driver.base_nome && driver.base_nome.toLowerCase().includes(searchTerm.toLowerCase()))
   ) : [];
