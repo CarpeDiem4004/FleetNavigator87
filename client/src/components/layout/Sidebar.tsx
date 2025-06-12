@@ -332,20 +332,49 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     ]},
   ];
   
-  // Itens específicos para usuários Line Hall
+  // Itens específicos para usuários Line Hall - acesso completo a todas as funcionalidades
   const lineHallItems: NavItem[] = [
     { name: 'Dashboard', href: '/', icon: Gauge },
+    { name: 'Dashboard Executivo', href: '/executive-dashboard', icon: BarChart4 },
     { name: 'Line Hall Shopee', href: '/line-hall-shopee', icon: Map },
     { name: 'Veículos', href: '/vehicles', icon: Truck },
     { name: 'Motoristas', href: '/drivers', icon: Users },
+    { name: 'Sol. Manutenção', href: '/manutencao', icon: FileText },
+    { name: 'Trat. Manutenção', href: '/tratativa-manutencao', icon: Wrench },
+    { name: 'Pneus', href: '/tires', icon: CircleDot },
     { name: 'Cartão', href: '#', icon: CreditCard, subItems: [
       { name: 'Operações', href: '/fuel-card', icon: CreditCard },
-      { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList }
+      { name: 'Painel de Solicitações', href: '/fuel-card-requests', icon: ClipboardList },
+      { name: 'Dashboard Cartão', href: '/fuel-card-dashboard', icon: BarChart4 }
     ]},
+    // Menu de Abastecimentos com submenu completo
     { name: 'Abastecimentos', href: '#', icon: Fuel, subItems: [
+      { name: 'Posto Osasco V2', href: '/posto/osasco_v2', icon: Fuel },
+      { name: 'Posto Alair V2', href: '/posto/alair_v2', icon: Fuel },
+      { name: 'Posto Campinas V2', href: '/posto/campinas_v2', icon: Fuel },
+      { name: 'Posto ABC V2', href: '/posto/abc_v2', icon: Fuel },
+      { name: 'Posto Socorro V2', href: '/posto/socorro_v2', icon: Fuel },
+      { name: 'Posto Sorocaba V2', href: '/posto/sorocaba_v2', icon: Fuel },
       { name: 'Histórico Geral', href: '/refueling', icon: ClipboardList },
+      { name: 'Histórico Pátio', href: '/abastecimentos', icon: Gauge },
+      { name: 'Visão Geral dos Postos', href: '/postos/visao-geral', icon: BarChart4 },
+      { name: 'Consumo Diário', href: '/postos/consumo-diario', icon: BarChart4 },
+      { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 },
       { name: 'Cartão de Abastecimento', href: '/cartao-abastecimento', icon: CreditCard }
     ]},
+    { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
+      { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
+    ]},
+    { name: 'Multas', href: '/fines', icon: AlertTriangle },
+    { name: 'Gestão de Frotas', href: '/fleet-management', icon: Truck },
+    { name: 'Parceiros de Guincho', href: '#', icon: Truck, subItems: [
+      { name: 'Parceiros', href: '/fleet-management/towing-partners', icon: Truck },
+      { name: 'Solicitações', href: '/fleet-management/towing-partners/requests', icon: FileText },
+      { name: 'Pagamentos', href: '/fleet-management/towing-partners-payments', icon: CreditCard }
+    ] },
+    // Submenu para Bases com opções completas
+    { name: 'Bases', href: '#', icon: Warehouse, subItems: baseItems },
+    { name: 'Usuários', href: '/users', icon: Users },
   ];
   
   // Verifique se o usuário é da gestão de frotas
