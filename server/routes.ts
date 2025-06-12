@@ -11048,7 +11048,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ELSE 'Destino conforme programação'
           END as local_descarregamento,
           COALESCE(TO_CHAR(lhs.data_viagem, 'YYYY-MM-DD'), TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD')) as data_viagem,
-          '08:00:00' as horario_carregamento,
+          COALESCE(TO_CHAR(lhs.created_at, 'HH24:MI:SS'), '08:00:00') as horario_carregamento,
           COALESCE(lhs.status, 'Aguardando') as status_viagem
         FROM motoristas m
         LEFT JOIN linehall_shopee lhs ON m.nome = lhs.motorista_nome 
