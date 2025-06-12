@@ -2711,8 +2711,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const user = req.user as any;
       
-      // Verifica se o usuário tem permissão para aprovar (admin ou gestor)
-      if (user.role !== 'admin' && user.role !== 'gestor') {
+      // Verifica se o usuário tem permissão para aprovar (admin, gestor ou line_hall)
+      if (user.role !== 'admin' && user.role !== 'gestor' && user.role !== 'line_hall') {
         return res.status(403).json({
           success: false,
           message: 'Sem permissão para aprovar solicitações'

@@ -263,7 +263,26 @@ export const useBasePermission = (): BasePermissionHook => {
       return true;
     }
     
-    // Line Hall - permite acesso somente ao Line Hall e bloqueia outras rotas específicas
+    // Line Hall Role - acesso específico para perfil line_hall
+    if (user.role === 'line_hall') {
+      const lineHallRoutes = [
+        '/',                          // Dashboard
+        '/line-hall',                 // Line Hall (antigo)
+        '/line-hall-shopee',          // Line Hall Shopee (novo)
+        '/vehicles',                  // Cadastro de veículos
+        '/drivers',                   // Cadastro de motoristas
+        '/fuel-card-requests',        // Liberação de solicitações de cartão
+        '/fuel-card',                 // Cartão de Combustível
+        '/cartao-abastecimento',      // Cartão de Abastecimento
+        '/refueling',                 // Abastecimentos
+        '/abastecimento'              // Alias para abastecimentos
+      ];
+      const hasAccess = lineHallRoutes.includes(route);
+      console.log(`Line Hall role permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'} (role=${user.role})`);
+      return hasAccess;
+    }
+    
+    // Line Hall Base - permite acesso somente ao Line Hall e bloqueia outras rotas específicas
     if (user.basename === "Line Hall" || user.baseId === 11) {
       // Se o usuário for Line Hall, só mostra Line Hall no menu e dashboard
       const hasAccess = route === '/line-hall' || route === '/line-hall-shopee' || route === '/';
