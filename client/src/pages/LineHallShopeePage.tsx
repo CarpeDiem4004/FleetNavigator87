@@ -1120,7 +1120,7 @@ export default function LineHallShopeePage() {
                             )}
                             {request.valor_solicitado && (
                               <div className="text-blue-600">
-                                Valor solicitado: R$ {request.valor_solicitado.toFixed(2)}
+                                Valor solicitado: R$ {Number(request.valor_solicitado).toFixed(2)}
                               </div>
                             )}
                             {request.observacoes_operador && (
@@ -1222,7 +1222,7 @@ export default function LineHallShopeePage() {
                         <TableCell>
                           {request.valor_solicitado ? (
                             <span className="text-blue-600 font-medium">
-                              R$ {request.valor_solicitado.toFixed(2)}
+                              R$ {Number(request.valor_solicitado).toFixed(2)}
                             </span>
                           ) : '-'}
                         </TableCell>

@@ -12619,7 +12619,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/line-hall/fuel-requests', isAuthenticated, async (req, res) => {
     try {
       const { status, motorista_id } = req.query;
-      let query = 'SELECT * FROM fuel_requests WHERE 1=1';
+      
+      // Buscar solicitações de cartão combustível do Line Hall
+      let query = `
+        SELECT 
+          id,
+          motorista_nome,
+          motorista_cpf,
+          veiculo_placa,
+          veiculo_modelo,
+          rota_origem,
+          rota_destino,
+          data_viagem,
+          valor_solicitado,
+          valor_aprovado,
+          status,
+          observacoes_operador,
+          created_at,
+          updated_at,
+          operador_aprovacao,
+          telefone_motorista,
+          km_total,
+          horario_abastecimento,
+          valor_calculado
+        FROM linehall_fuel_card_requests 
+        WHERE 1=1
+      `;
       const params = [];
       let paramCount = 0;
 
@@ -12631,7 +12656,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (motorista_id) {
         paramCount++;
-        query += ` AND motorista_id = $${paramCount}`;
+        query += ` AND motorista_nome = $${paramCount}`;
         params.push(motorista_id);
       }
 
