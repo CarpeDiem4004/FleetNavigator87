@@ -66,6 +66,8 @@ const FuelCardRequestsPanel: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [projectFilter, setProjectFilter] = useState<string>('all');
+  const [projects, setProjects] = useState<any[]>([]);
   const [editedStatus, setEditedStatus] = useState<string>('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [isNewRequestDialogOpen, setIsNewRequestDialogOpen] = useState(false);
@@ -75,6 +77,7 @@ const FuelCardRequestsPanel: React.FC = () => {
   
   useEffect(() => {
     fetchSolicitations();
+    fetchProjects();
   }, []);
 
   const fetchSolicitations = async () => {
@@ -105,6 +108,19 @@ const FuelCardRequestsPanel: React.FC = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProjects = async () => {
+    try {
+      const response = await apiRequest('GET', '/api/projects-with-bases');
+      const data = await response.json();
+      
+      if (data.success) {
+        setProjects(data.data);
+      }
+    } catch (err) {
+      console.error('Erro ao buscar projetos:', err);
     }
   };
   
@@ -215,6 +231,18 @@ const FuelCardRequestsPanel: React.FC = () => {
         const solDate = new Date(sol.data_solicitacao).toISOString().split('T')[0];
         if (solDate !== dateFilter) {
           return false;
+        }
+      }
+      
+      // Filtro por projeto
+      if (projectFilter !== 'all') {
+        // Buscar o projeto selecionado e suas bases
+        const selectedProject = projects.find(p => p.id.toString() === projectFilter);
+        if (selectedProject) {
+          const projectBases = selectedProject.bases?.map((b: any) => b.name) || [];
+          if (!projectBases.includes(sol.base)) {
+            return false;
+          }
         }
       }
       
@@ -374,7 +402,7 @@ const FuelCardRequestsPanel: React.FC = () => {
             <CardTitle className="text-lg">Filtros</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="status-filter">Status</Label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -411,6 +439,23 @@ const FuelCardRequestsPanel: React.FC = () => {
                     </Button>
                   )}
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="project-filter">Projeto</Label>
+                <Select value={projectFilter} onValueChange={setProjectFilter}>
+                  <SelectTrigger id="project-filter">
+                    <SelectValue placeholder="Selecione o projeto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os Projetos</SelectItem>
+                    {projects.map((project) => (
+                      <SelectItem key={project.id} value={project.id.toString()}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               
               <div className="space-y-2">
