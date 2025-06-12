@@ -450,11 +450,11 @@ const FuelCardRequestsPanel: React.FC = () => {
               <p className="text-gray-600">Não há solicitações que correspondam aos filtros aplicados.</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {filteredSolicitations.map((solicitation, index) => (
                 <div
                   key={`solicitation-${solicitation.id}-${solicitation.placa}-${index}`}
-                  className="bg-gradient-to-r from-blue-50 to-purple-50 border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 cursor-pointer"
+                  className="bg-white border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
                   onClick={() => handleOpenSolicitation(solicitation)}
                 >
                   <div className="flex items-center justify-between">
@@ -463,29 +463,10 @@ const FuelCardRequestsPanel: React.FC = () => {
                         <div>
                           <h4 className="text-lg font-bold text-gray-900">{solicitation.placa}</h4>
                           <p className="text-sm text-gray-600">{solicitation.motorista}</p>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {(() => {
-                              const project = getProjectForSolicitation(solicitation);
-                              return (
-                                <>
-                                  {project && (
-                                    <span className="text-xs text-purple-600 font-medium bg-purple-50 px-2 py-1 rounded-md">
-                                      🏢 {project.name}
-                                    </span>
-                                  )}
-                                  {solicitation.base && (
-                                    <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-md">
-                                      📍 {solicitation.base}
-                                    </span>
-                                  )}
-                                </>
-                              );
-                            })()}
-                          </div>
                         </div>
                         
-                        <div className="text-right mr-4">
-                          <p className="text-xl font-bold text-gray-900">{formatCurrency(solicitation.valor_solicitado)}</p>
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-green-600">{formatCurrency(solicitation.valor_solicitado)}</p>
                           <p className="text-sm text-gray-500">{format(new Date(solicitation.data_solicitacao), 'dd \'de\' MMMM \'de\' yyyy, HH:mm', { locale: ptBR })}</p>
                         </div>
                         
