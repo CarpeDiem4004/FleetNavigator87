@@ -579,7 +579,7 @@ export default function LineHallShopeePage() {
             </Button>
             <Button 
               variant="outline" 
-              onClick={() => setLocation('/fuel-card-requests')} 
+              onClick={() => setLocation('/line-hall-fuel-requests')} 
               className="flex items-center relative"
             >
               <CreditCard className="mr-2 h-4 w-4" />

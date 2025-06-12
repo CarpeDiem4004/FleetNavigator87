@@ -1,12 +1,22 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/context/AuthContext";
 
 export default function FuelCardRedirect() {
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   
   useEffect(() => {
-    setLocation("/fuel-card-requests");
-  }, [setLocation]);
+    if (user) {
+      // Redirect Line Hall users to their dedicated page
+      if (user.role === 'line_hall') {
+        setLocation("/line-hall-fuel-requests");
+      } else {
+        // All other users go to the general fuel card requests page
+        setLocation("/fuel-card-requests");
+      }
+    }
+  }, [setLocation, user]);
   
   return (
     <div className="flex items-center justify-center min-h-screen">

@@ -12928,6 +12928,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Atualizar solicitação de recarga Line Hall (endpoint para a página dedicada)
+  app.put('/api/line-hall/fuel-requests/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, observacoes_operador, operador_aprovacao } = req.body;
+      const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
+
+      console.log(`[UPDATE-LINE-HALL-REQUEST] Atualizando solicitação ID: ${id}`, { status, operador_aprovacao });
+
+      if (!id || isNaN(Number(id))) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID da solicitação inválido'
+        });
+      }
+
+      if (!status) {
+        return res.status(400).json({
+          success: false,
+          message: 'Status é obrigatório'
+        });
+      }
+
+      const updateQuery = `
+        UPDATE linehall_fuel_card_requests 
+        SET 
+          status = $1, 
+          observacoes_operador = $2, 
+          operador_aprovacao = $3,
+          updated_at = NOW()
+        WHERE id = $4
+        RETURNING *
+      `;
+
+      const result = await pool.query(updateQuery, [
+        status, 
+        observacoes_operador || '', 
+        operador_aprovacao || user?.name || 'Sistema',
+        id
+      ]);
+
+      if (result.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Solicitação não encontrada'
+        });
+      }
+
+      console.log(`[UPDATE-LINE-HALL-REQUEST] Solicitação ${id} atualizada com sucesso para status: ${status}`);
+
+      res.status(200).json({
+        success: true,
+        message: 'Solicitação atualizada com sucesso',
+        data: result.rows[0]
+      });
+
+    } catch (error) {
+      console.error('Erro ao atualizar solicitação Line Hall:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao atualizar solicitação',
+        error: error.message
+      });
+    }
+  });
+
   // Atualizar status de solicitação de recarga
   app.put('/api/line-hall/fuel-request/:id/status', async (req, res) => {
     try {

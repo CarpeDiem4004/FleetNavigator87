@@ -119,6 +119,7 @@ import StoppedVehicles from "@/pages/StoppedVehicles";
 import DriverAccess from "@/pages/DriverAccess";
 import DriverMaintenanceRequest from "@/pages/DriverMaintenanceRequest";
 import LineHallVehicleRegistration from "@/pages/LineHallVehicleRegistration";
+import LineHallFuelCardRequests from "@/pages/LineHallFuelCardRequests";
 
 // Importação das páginas da Base Campinas
 import BaseCampinas from "@/pages/bases/BaseCampinas";
@@ -277,6 +278,8 @@ function App() {
           <ProtectedRoute path="/admin/utils" component={AdminUtils} />
           <ProtectedRoute path="/limpar-dados" component={LimparDados} />
           <ProtectedRoute path="/line-hall-shopee" component={LineHallShopeePage} />
+          {/* Página dedicada para solicitações de cartão combustível do Line Hall */}
+          <ProtectedRoute path="/line-hall-fuel-requests" component={LineHallFuelCardRequests} />
           <ProtectedRoute path="/fuel-card-old" component={FuelCardPage} />
           {/* Página principal de solicitações de cartão combustível */}
           <ProtectedRoute path="/fuel-card-requests" component={FuelCardRequestsPanel} />
