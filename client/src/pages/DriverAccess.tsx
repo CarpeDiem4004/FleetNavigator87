@@ -834,6 +834,15 @@ const FuelRequestModal = ({ driver, onClose }: { driver: any; onClose: () => voi
                 </div>
               </div>
 
+              {/* Cartão de Combustível Vinculado */}
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <Label className="text-sm font-medium text-blue-700">Cartão de Combustível Vinculado</Label>
+                <div className="text-lg font-mono font-semibold text-blue-800 mt-1">
+                  SQ3365
+                </div>
+                <div className="text-xs text-blue-600 mt-1">Este cartão está associado ao veículo {driver?.placa_veiculo || 'SYH4260'}</div>
+              </div>
+
               {/* Rota */}
               <div>
                 <Label className="text-sm font-medium text-gray-700">Rota</Label>
