@@ -364,13 +364,13 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Visão Geral dos Postos', href: '/postos/visao-geral', icon: BarChart4 },
       { name: 'Consumo Diário', href: '/postos/consumo-diario', icon: BarChart4 },
       { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 },
-      { name: 'Cartão de Abastecimento', href: '/cartao-abastecimento', icon: CreditCard },
-      { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: TruckIcon }
+      { name: 'Cartão de Abastecimento', href: '/cartao-abastecimento', icon: CreditCard }
     ]},
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
     ]},
     { name: 'Multas', href: '/fines', icon: AlertTriangle },
+    { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: TruckIcon },
     { name: 'Gestão de Frotas', href: '/fleet-management', icon: Truck },
     { name: 'Parceiros de Guincho', href: '#', icon: Truck, subItems: [
       { name: 'Parceiros', href: '/fleet-management/towing-partners', icon: Truck },
