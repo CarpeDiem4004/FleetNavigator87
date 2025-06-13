@@ -392,26 +392,6 @@ const FuelCardRequestsPanel: React.FC = () => {
                 Gerenciamento Terceiros
               </Button>
             )}
-            <Dialog open={isNewRequestDialogOpen} onOpenChange={setIsNewRequestDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Nova Solicitação
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Nova Solicitação de Cartão de Combustível</DialogTitle>
-                </DialogHeader>
-                <FuelCardRequestForm
-                  onRequestCreated={() => {
-                    fetchSolicitations();
-                    setIsNewRequestDialogOpen(false);
-                  }}
-                  onClose={() => setIsNewRequestDialogOpen(false)}
-                />
-              </DialogContent>
-            </Dialog>
             <Button onClick={handleExportExcel} variant="outline" className="flex items-center gap-2">
               <Download className="h-4 w-4" />
               Baixar Relatório Excel
