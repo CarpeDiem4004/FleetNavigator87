@@ -78,21 +78,43 @@ export default function GerenciamentoTerceiros() {
     try {
       setLoading(true);
       
-      // Buscar estatísticas
-      const statsResponse = await fetch('/api/terceiros/admin/stats', {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      // Fazer requisições com XMLHttpRequest para contornar interceptação do Vite
+      const makeRequest = (url: string): Promise<any> => {
+        return new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('GET', url, true);
+          xhr.withCredentials = true;
+          xhr.setRequestHeader('Content-Type', 'application/json');
+          
+          xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+              if (xhr.status === 200) {
+                try {
+                  const data = JSON.parse(xhr.responseText);
+                  resolve(data);
+                } catch (e) {
+                  reject(new Error('Invalid JSON response'));
+                }
+              } else {
+                reject(new Error(`HTTP ${xhr.status}`));
+              }
+            }
+          };
+          
+          xhr.onerror = () => reject(new Error('Network error'));
+          xhr.send();
+        });
+      };
       
-      if (statsResponse.ok) {
-        const statsData = await statsResponse.json();
+      // Buscar estatísticas
+      try {
+        const statsData = await makeRequest('/api/terceiros/admin/stats');
+        console.log('Stats data received:', statsData);
         if (statsData.success && statsData.data) {
           setStats(statsData.data);
         }
-      } else {
-        console.error('Erro ao carregar estatísticas:', statsResponse.status);
+      } catch (error) {
+        console.error('Erro ao carregar estatísticas:', error);
         toast({
           title: "Erro",
           description: "Erro ao carregar estatísticas",
@@ -101,37 +123,25 @@ export default function GerenciamentoTerceiros() {
       }
 
       // Buscar empresas
-      const empresasResponse = await fetch('/api/terceiros/admin/empresas', {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (empresasResponse.ok) {
-        const empresasData = await empresasResponse.json();
+      try {
+        const empresasData = await makeRequest('/api/terceiros/admin/empresas');
+        console.log('Empresas data received:', empresasData);
         if (empresasData.success && empresasData.data) {
           setEmpresas(empresasData.data);
         }
-      } else {
-        console.error('Erro ao carregar empresas:', empresasResponse.status);
+      } catch (error) {
+        console.error('Erro ao carregar empresas:', error);
       }
 
       // Buscar abastecimentos
-      const abastecimentosResponse = await fetch('/api/terceiros/admin/abastecimentos', {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (abastecimentosResponse.ok) {
-        const abastecimentosData = await abastecimentosResponse.json();
+      try {
+        const abastecimentosData = await makeRequest('/api/terceiros/admin/abastecimentos');
+        console.log('Abastecimentos data received:', abastecimentosData);
         if (abastecimentosData.success && abastecimentosData.data) {
           setAbastecimentos(abastecimentosData.data);
         }
-      } else {
-        console.error('Erro ao carregar abastecimentos:', abastecimentosResponse.status);
+      } catch (error) {
+        console.error('Erro ao carregar abastecimentos:', error);
       }
 
     } catch (error) {
