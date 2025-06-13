@@ -13731,6 +13731,201 @@ async function createFuelRequestNotification(fuelRequest) {
     res.json({ success: true, message: 'API routing is working', timestamp: new Date().toISOString() });
   });
 
+  // Rotas administrativas para gerenciar empresas terceiras
+  app.get('/api/terceiros/admin/empresas', authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const user = req.user;
+      
+      // Verificar se o usuário é admin
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Acesso negado. Apenas administradores.' });
+      }
+
+      const query = `
+        SELECT et.*, 
+               COUNT(ut.id) as total_usuarios,
+               COUNT(at.id) as total_abastecimentos,
+               COALESCE(SUM(at.valor), 0) as valor_total
+        FROM empresas_terceiros et
+        LEFT JOIN usuarios_terceiros ut ON et.id = ut.empresa_id
+        LEFT JOIN abastecimentos_terceiros at ON et.id = at.empresa_id
+        GROUP BY et.id
+        ORDER BY et.created_at DESC
+      `;
+      
+      const result = await pool.query(query);
+      
+      res.json({
+        success: true,
+        data: result.rows.map(row => ({
+          id: row.id,
+          nome: row.nome,
+          cnpj: row.cnpj,
+          endereco: row.endereco,
+          telefone: row.telefone,
+          email: row.email,
+          responsavel: row.responsavel_nome,
+          status: row.status,
+          totalUsuarios: parseInt(row.total_usuarios),
+          totalAbastecimentos: parseInt(row.total_abastecimentos),
+          valorTotal: parseFloat(row.valor_total),
+          createdAt: row.created_at
+        }))
+      });
+
+    } catch (error) {
+      console.error('Erro ao buscar empresas terceiras:', error);
+      res.status(500).json({ error: 'Erro interno do servidor.' });
+    }
+  });
+
+  app.post('/api/terceiros/admin/empresas', authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const user = req.user;
+      
+      // Verificar se o usuário é admin
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Acesso negado. Apenas administradores.' });
+      }
+
+      const { nome, cnpj, email, telefone, endereco, senha } = req.body;
+
+      // Validações
+      if (!nome || !cnpj || !email || !senha) {
+        return res.status(400).json({ error: 'Nome, CNPJ, email e senha são obrigatórios.' });
+      }
+
+      // Verificar se CNPJ já existe
+      const existingCompany = await pool.query('SELECT id FROM empresas_terceiros WHERE cnpj = $1', [cnpj]);
+      if (existingCompany.rows.length > 0) {
+        return res.status(400).json({ error: 'CNPJ já cadastrado.' });
+      }
+
+      // Verificar se email já existe
+      const existingEmail = await pool.query('SELECT id FROM usuarios_terceiros WHERE cnpj = $1', [cnpj]);
+      if (existingEmail.rows.length > 0) {
+        return res.status(400).json({ error: 'CNPJ já possui usuário cadastrado.' });
+      }
+
+      // Hash da senha
+      const saltRounds = 10;
+      const senhaHash = await bcrypt.hash(senha, saltRounds);
+
+      // Iniciar transação
+      await pool.query('BEGIN');
+
+      try {
+        // Inserir empresa
+        const empresaQuery = `
+          INSERT INTO empresas_terceiros (nome, cnpj, endereco, telefone, email, responsavel_nome)
+          VALUES ($1, $2, $3, $4, $5, $6)
+          RETURNING *
+        `;
+        const empresaResult = await pool.query(empresaQuery, [nome, cnpj, endereco, telefone, email, nome]);
+        const empresa = empresaResult.rows[0];
+
+        // Inserir usuário para a empresa
+        const usuarioQuery = `
+          INSERT INTO usuarios_terceiros (empresa_id, cnpj, senha, nome, email, cargo)
+          VALUES ($1, $2, $3, $4, $5, $6)
+          RETURNING id
+        `;
+        await pool.query(usuarioQuery, [empresa.id, cnpj, senhaHash, nome, email, 'Administrador']);
+
+        // Commit da transação
+        await pool.query('COMMIT');
+
+        res.status(201).json({
+          success: true,
+          message: 'Empresa cadastrada com sucesso!',
+          data: {
+            id: empresa.id,
+            nome: empresa.nome,
+            cnpj: empresa.cnpj,
+            email: empresa.email
+          }
+        });
+
+      } catch (transactionError) {
+        await pool.query('ROLLBACK');
+        throw transactionError;
+      }
+
+    } catch (error) {
+      console.error('Erro ao cadastrar empresa terceira:', error);
+      res.status(500).json({ error: 'Erro interno do servidor.' });
+    }
+  });
+
+  app.get('/api/terceiros/admin/abastecimentos', authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const user = req.user;
+      
+      // Verificar se o usuário é admin
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Acesso negado. Apenas administradores.' });
+      }
+
+      const query = `
+        SELECT at.*, et.nome as empresa_nome, et.cnpj as empresa_cnpj
+        FROM abastecimentos_terceiros at
+        JOIN empresas_terceiros et ON at.empresa_id = et.id
+        ORDER BY at.data_abastecimento DESC
+        LIMIT 100
+      `;
+      
+      const result = await pool.query(query);
+      
+      res.json({
+        success: true,
+        data: result.rows
+      });
+
+    } catch (error) {
+      console.error('Erro ao buscar abastecimentos de terceiros:', error);
+      res.status(500).json({ error: 'Erro interno do servidor.' });
+    }
+  });
+
+  app.get('/api/terceiros/admin/stats', authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const user = req.user;
+      
+      // Verificar se o usuário é admin
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Acesso negado. Apenas administradores.' });
+      }
+
+      // Estatísticas gerais
+      const statsQuery = `
+        SELECT 
+          (SELECT COUNT(*) FROM empresas_terceiros WHERE status = 'ativo') as empresas_ativas,
+          (SELECT COUNT(*) FROM abastecimentos_terceiros) as total_abastecimentos,
+          (SELECT COALESCE(SUM(litros), 0) FROM abastecimentos_terceiros) as total_litros,
+          (SELECT COALESCE(SUM(valor), 0) FROM abastecimentos_terceiros) as total_valor,
+          (SELECT COUNT(*) FROM abastecimentos_terceiros WHERE DATE(data_abastecimento) = CURRENT_DATE) as abastecimentos_hoje
+      `;
+      
+      const statsResult = await pool.query(statsQuery);
+      const stats = statsResult.rows[0];
+      
+      res.json({
+        success: true,
+        data: {
+          empresasAtivas: parseInt(stats.empresas_ativas),
+          totalAbastecimentos: parseInt(stats.total_abastecimentos),
+          totalLitros: parseFloat(stats.total_litros),
+          totalValor: parseFloat(stats.total_valor),
+          abastecimentosHoje: parseInt(stats.abastecimentos_hoje)
+        }
+      });
+
+    } catch (error) {
+      console.error('Erro ao buscar estatísticas de terceiros:', error);
+      res.status(500).json({ error: 'Erro interno do servidor.' });
+    }
+  });
+
   // Rotas do sistema de abastecimento terceiros integradas
   const bcrypt = require('bcrypt');
   const jwt = require('jsonwebtoken');
