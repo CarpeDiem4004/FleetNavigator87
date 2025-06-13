@@ -13726,9 +13726,255 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
-  // Adicionar rotas do sistema de abastecimento terceiros
-  const abastecimentoTerceirosRouter = require('./routes/abastecimentoTerceiros');
-  app.use('/api/terceiros', abastecimentoTerceirosRouter);
+  // Rotas do sistema de abastecimento terceiros integradas
+  const bcrypt = require('bcrypt');
+  const jwt = require('jsonwebtoken');
+  const multer = require('multer');
+  
+  // Configuração do multer para upload de imagens
+  const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      const uploadDir = 'uploads/notas-fiscais';
+      if (!require('fs').existsSync(uploadDir)) {
+        require('fs').mkdirSync(uploadDir, { recursive: true });
+      }
+      cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, 'nf-' + uniqueSuffix + require('path').extname(file.originalname));
+    }
+  });
+
+  const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Apenas imagens são permitidas!'), false);
+      }
+    }
+  });
+
+  // Middleware para verificar JWT
+  const verifyTokenTerceiros = (req: Request, res: Response, next: NextFunction) => {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ error: 'Acesso negado. Token não fornecido.' });
+    }
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'terceiros_secret_key_2025');
+      req.user = decoded;
+      next();
+    } catch (error) {
+      return res.status(401).json({ error: 'Token inválido.' });
+    }
+  };
+
+  // Rota de login para terceiros
+  app.post('/api/terceiros/login', async (req: Request, res: Response) => {
+    try {
+      const { cnpj, senha } = req.body;
+
+      if (!cnpj || !senha) {
+        return res.status(400).json({ error: 'CNPJ e senha são obrigatórios.' });
+      }
+
+      // Buscar usuário pelo CNPJ
+      const userQuery = `
+        SELECT ut.*, et.nome as empresa_nome 
+        FROM usuarios_terceiros ut
+        JOIN empresas_terceiros et ON ut.empresa_id = et.id
+        WHERE ut.cnpj = $1 AND ut.is_active = true
+      `;
+      const userResult = await pool.query(userQuery, [cnpj]);
+
+      if (userResult.rows.length === 0) {
+        return res.status(401).json({ error: 'Credenciais inválidas.' });
+      }
+
+      const user = userResult.rows[0];
+
+      // Verificar senha
+      const isValidPassword = await bcrypt.compare(senha, user.senha_hash);
+      if (!isValidPassword) {
+        return res.status(401).json({ error: 'Credenciais inválidas.' });
+      }
+
+      // Gerar JWT
+      const token = jwt.sign(
+        { 
+          id: user.id, 
+          cnpj: user.cnpj, 
+          empresaId: user.empresa_id,
+          empresaNome: user.empresa_nome
+        },
+        process.env.JWT_SECRET || 'terceiros_secret_key_2025',
+        { expiresIn: '24h' }
+      );
+
+      // Atualizar último login
+      await pool.query(
+        'UPDATE usuarios_terceiros SET last_login = CURRENT_TIMESTAMP WHERE id = $1',
+        [user.id]
+      );
+
+      res.json({
+        success: true,
+        token,
+        user: {
+          id: user.id,
+          cnpj: user.cnpj,
+          empresaId: user.empresa_id,
+          empresaNome: user.empresa_nome
+        }
+      });
+
+    } catch (error) {
+      console.error('Erro no login terceiros:', error);
+      res.status(500).json({ error: 'Erro interno do servidor.' });
+    }
+  });
+
+  // Rota do dashboard para terceiros
+  app.get('/api/terceiros/dashboard', verifyTokenTerceiros, async (req: Request, res: Response) => {
+    try {
+      const empresaId = req.user.empresaId;
+
+      // Buscar dados da empresa
+      const empresaQuery = 'SELECT nome, cnpj FROM empresas_terceiros WHERE id = $1';
+      const empresaResult = await pool.query(empresaQuery, [empresaId]);
+
+      if (empresaResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Empresa não encontrada.' });
+      }
+
+      const empresa = empresaResult.rows[0];
+
+      // Buscar estatísticas de abastecimento
+      const statsQuery = `
+        SELECT 
+          COUNT(*) as total_abastecimentos,
+          COALESCE(SUM(litros), 0) as total_litros,
+          COALESCE(SUM(valor), 0) as total_valor
+        FROM abastecimentos_terceiros 
+        WHERE empresa_id = $1
+      `;
+      const statsResult = await pool.query(statsQuery, [empresaId]);
+      const stats = statsResult.rows[0];
+
+      // Buscar últimos abastecimentos
+      const abastecimentosQuery = `
+        SELECT * FROM abastecimentos_terceiros 
+        WHERE empresa_id = $1 
+        ORDER BY data_abastecimento DESC 
+        LIMIT 50
+      `;
+      const abastecimentosResult = await pool.query(abastecimentosQuery, [empresaId]);
+
+      res.json({
+        success: true,
+        data: {
+          empresa: {
+            nome: empresa.nome,
+            cnpj: empresa.cnpj
+          },
+          estatisticas: {
+            totalAbastecimentos: parseInt(stats.total_abastecimentos),
+            totalLitros: parseFloat(stats.total_litros),
+            totalValor: parseFloat(stats.total_valor)
+          },
+          abastecimentos: abastecimentosResult.rows
+        }
+      });
+
+    } catch (error) {
+      console.error('Erro no dashboard terceiros:', error);
+      res.status(500).json({ error: 'Erro interno do servidor.' });
+    }
+  });
+
+  // Rota para criar novo abastecimento
+  app.post('/api/terceiros/abastecimentos', verifyTokenTerceiros, upload.single('notaFiscal'), async (req: Request, res: Response) => {
+    try {
+      const empresaId = req.user.empresaId;
+      const { motoristaNome, veiculoPlaca, litros, valor, observacoes } = req.body;
+
+      // Validações
+      if (!motoristaNome || !veiculoPlaca || !litros || !valor) {
+        return res.status(400).json({ error: 'Campos obrigatórios não preenchidos.' });
+      }
+
+      const notaFiscalUrl = req.file ? `/uploads/notas-fiscais/${req.file.filename}` : null;
+
+      // Inserir abastecimento
+      const insertQuery = `
+        INSERT INTO abastecimentos_terceiros 
+        (empresa_id, motorista_nome, veiculo_placa, litros, valor, nota_fiscal_url, observacoes)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *
+      `;
+      
+      const result = await pool.query(insertQuery, [
+        empresaId,
+        motoristaNome,
+        veiculoPlaca.toUpperCase(),
+        parseFloat(litros),
+        parseFloat(valor),
+        notaFiscalUrl,
+        observacoes || null
+      ]);
+
+      res.json({
+        success: true,
+        data: result.rows[0]
+      });
+
+    } catch (error) {
+      console.error('Erro ao criar abastecimento terceiros:', error);
+      res.status(500).json({ error: 'Erro interno do servidor.' });
+    }
+  });
+
+  // Rota para exportar relatório
+  app.get('/api/terceiros/relatorio/export', verifyTokenTerceiros, async (req: Request, res: Response) => {
+    try {
+      const empresaId = req.user.empresaId;
+
+      const query = `
+        SELECT 
+          motorista_nome,
+          veiculo_placa,
+          litros,
+          valor,
+          data_abastecimento,
+          observacoes
+        FROM abastecimentos_terceiros 
+        WHERE empresa_id = $1 
+        ORDER BY data_abastecimento DESC
+      `;
+      
+      const result = await pool.query(query, [empresaId]);
+
+      // Gerar CSV
+      const csvHeader = 'Data,Motorista,Placa,Litros,Valor,Observacoes\n';
+      const csvData = result.rows.map(row => 
+        `${new Date(row.data_abastecimento).toLocaleDateString('pt-BR')},${row.motorista_nome},${row.veiculo_placa},${row.litros},${row.valor},"${row.observacoes || ''}"`
+      ).join('\n');
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename=relatorio_abastecimentos.csv');
+      res.send(csvHeader + csvData);
+
+    } catch (error) {
+      console.error('Erro ao exportar relatório terceiros:', error);
+      res.status(500).json({ error: 'Erro interno do servidor.' });
+    }
+  });
 
   // Servir arquivos estáticos para uploads
   app.use('/uploads', express.static('uploads'));
