@@ -396,6 +396,10 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   console.log(`Tipo de usuário: ${isFleetUser ? 'Gestão de Frotas' : isFuelManager ? 'Gestor de Combustível' : isLineHallUser ? 'Line Hall' : 'Normal'} (${user.role})`);
   console.log(`Menu principal: ${isFleetUser ? 'fleetManagementItems' : isFuelManager ? 'fuelManagerItems' : isLineHallUser ? 'lineHallItems' : 'allNavItems'}`);
   
+  // Debug: Verificar se Gerenciamento Terceiros está em allNavItems
+  const abastecimentosInAllNav = allNavItems.find(item => item.name === 'Abastecimentos');
+  console.log('DEBUG: Abastecimentos em allNavItems:', abastecimentosInAllNav?.subItems?.map(si => si.name));
+  
   // Selecionando os itens de navegação apropriados
   let navItemsBase;
   if (isFleetUser) {
@@ -439,6 +443,12 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
     
     // Sempre incluir menus com submenus (href='#')
     if (item.href === '#') {
+      // Para menus Abastecimentos, sempre incluir independente de permissões específicas
+      if (item.name === 'Abastecimentos') {
+        console.log(`Menu Abastecimentos incluído automaticamente com ${item.subItems?.length} subitens`);
+        return true;
+      }
+      
       // Verificar se pelo menos um submenu é permitido
       const hasSubItemPermission = item.subItems?.some(subItem => {
         console.log(`Verificando permissão para submenu ${subItem.name} (${subItem.href}): ${hasPermission(subItem.href) ? 'PERMITIDO' : 'NEGADO'}`);
