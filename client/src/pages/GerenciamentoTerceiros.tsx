@@ -78,32 +78,32 @@ export default function GerenciamentoTerceiros() {
     try {
       setLoading(true);
       
-      // Fazer requisições com XMLHttpRequest para contornar interceptação do Vite
-      const makeRequest = (url: string): Promise<any> => {
-        return new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open('GET', url, true);
-          xhr.withCredentials = true;
-          xhr.setRequestHeader('Content-Type', 'application/json');
+      // Fazer requisições diretas ao servidor Express (porta 5000) para contornar Vite
+      const makeRequest = async (url: string): Promise<any> => {
+        try {
+          // Usar port 5000 diretamente para contornar o Vite middleware
+          const serverUrl = `http://localhost:5000${url}`;
           
-          xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4) {
-              if (xhr.status === 200) {
-                try {
-                  const data = JSON.parse(xhr.responseText);
-                  resolve(data);
-                } catch (e) {
-                  reject(new Error('Invalid JSON response'));
-                }
-              } else {
-                reject(new Error(`HTTP ${xhr.status}`));
-              }
-            }
-          };
-          
-          xhr.onerror = () => reject(new Error('Network error'));
-          xhr.send();
-        });
+          const response = await fetch(serverUrl, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            credentials: 'include',
+            mode: 'cors',
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error('Erro na requisição:', error);
+          throw error;
+        }
       };
       
       // Buscar estatísticas

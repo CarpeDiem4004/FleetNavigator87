@@ -60,6 +60,90 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// ROTAS DE TERCEIROS - Registrar ANTES de qualquer middleware para evitar interceptação do Vite
+app.get('/api/terceiros/admin/stats', async (req, res) => {
+  try {
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Não autorizado' });
+    }
+
+    const statsQuery = `
+      SELECT 
+        COUNT(DISTINCT e.id) as total_empresas,
+        COUNT(a.id) as total_abastecimentos,
+        COALESCE(SUM(a.litros), 0) as total_litros,
+        COALESCE(SUM(a.valor_total), 0) as total_valor
+      FROM empresas_terceiros e
+      LEFT JOIN abastecimentos_terceiros a ON e.id = a.empresa_id
+    `;
+    
+    const result = await pool.query(statsQuery);
+    const stats = result.rows[0];
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.status(200).json({
+      totalEmpresas: parseInt(stats.total_empresas) || 0,
+      totalAbastecimentos: parseInt(stats.total_abastecimentos) || 0,
+      totalLitros: parseFloat(stats.total_litros) || 0,
+      totalValor: parseFloat(stats.total_valor) || 0
+    });
+  } catch (error) {
+    console.error('Erro ao buscar estatísticas de terceiros:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+app.get('/api/terceiros/admin/empresas', async (req, res) => {
+  try {
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Não autorizado' });
+    }
+
+    const empresasQuery = `
+      SELECT 
+        id, nome, cnpj, endereco, telefone, email, responsavel_nome,
+        created_at
+      FROM empresas_terceiros
+      ORDER BY created_at DESC
+    `;
+    
+    const result = await pool.query(empresasQuery);
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Erro ao buscar empresas de terceiros:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+app.get('/api/terceiros/admin/abastecimentos', async (req, res) => {
+  try {
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Não autorizado' });
+    }
+
+    const abastecimentosQuery = `
+      SELECT 
+        a.id, a.posto, a.combustivel_tipo, a.litros, a.valor_total,
+        a.km_atual, a.created_at, a.placa, a.motorista,
+        e.nome as empresa_nome, e.cnpj as empresa_cnpj
+      FROM abastecimentos_terceiros a
+      JOIN empresas_terceiros e ON a.empresa_id = e.id
+      ORDER BY a.created_at DESC
+      LIMIT 100
+    `;
+    
+    const result = await pool.query(abastecimentosQuery);
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Erro ao buscar abastecimentos de terceiros:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 // ENDPOINT CRÍTICO PARA RECEBIMENTOS - Registrar ANTES de todos os middlewares
 app.post('/fuel-receipts', async (req, res) => {
   try {
@@ -247,6 +331,8 @@ app.use(fixCookieSession);
 // Middlewares padrão do Express
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Remove as rotas duplicadas aqui - serão definidas nas rotas principais
 
 // * IMPORTANTE: É crucial que registerRoutes seja chamado antes dos middlewares de diagnóstico *
 // * pois registerRoutes inicializa o Passport.js com setupAuth, que adiciona o método isAuthenticated *
