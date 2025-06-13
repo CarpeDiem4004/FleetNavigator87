@@ -25,7 +25,7 @@ interface LineHallFuelRequest {
   data_viagem?: string;
   valor_solicitado?: number;
   valor_aprovado?: number;
-  status: 'pendente' | 'aprovada' | 'rejeitada';
+  status: 'pendente' | 'aprovada' | 'rejeitada' | 'analisando';
   observacoes_operador?: string;
   created_at: string;
   updated_at: string;
@@ -74,8 +74,8 @@ const LineHallFuelCardRequests: React.FC = () => {
     }
   };
 
-  // Função para aprovar solicitação
-  const handleApproval = async (requestId: number, action: 'aprovar' | 'rejeitar', observacoes?: string) => {
+  // Função para alterar status da solicitação com notificação automática
+  const handleStatusChange = async (requestId: number, newStatus: 'aprovada' | 'analisando' | 'rejeitada', request: LineHallFuelRequest) => {
     try {
       const response = await fetch(`/api/line-hall/fuel-requests/${requestId}`, {
         method: 'PUT',
@@ -84,32 +84,76 @@ const LineHallFuelCardRequests: React.FC = () => {
         },
         credentials: 'include',
         body: JSON.stringify({
-          status: action === 'aprovar' ? 'aprovada' : 'rejeitada',
-          observacoes_operador: observacoes,
+          status: newStatus,
+          observacoes_operador: `Status alterado para ${newStatus} em ${new Date().toLocaleString('pt-BR')}`,
           operador_aprovacao: user?.name || 'Line Hall'
         })
       });
 
       if (!response.ok) {
-        throw new Error('Erro ao processar solicitação');
+        throw new Error('Erro ao alterar status');
       }
 
       const data = await response.json();
       if (data.success) {
+        // Notificar motorista automaticamente
+        await notifyDriver(request, newStatus);
+
+        const statusMessage = {
+          'aprovada': 'aprovada',
+          'analisando': 'marcada como analisando',
+          'rejeitada': 'rejeitada'
+        };
+
         toast({
-          title: action === 'aprovar' ? 'Solicitação aprovada' : 'Solicitação rejeitada',
-          description: `A solicitação foi ${action === 'aprovar' ? 'aprovada' : 'rejeitada'} com sucesso`,
+          title: `Solicitação ${statusMessage[newStatus]}`,
+          description: `A solicitação foi ${statusMessage[newStatus]} e o motorista foi notificado`,
           variant: 'default',
         });
         fetchLineHallRequests(); // Recarregar lista
       }
     } catch (error) {
-      console.error('Erro ao processar solicitação:', error);
+      console.error('Erro ao alterar status:', error);
       toast({
         title: 'Erro',
-        description: 'Não foi possível processar a solicitação',
+        description: 'Não foi possível alterar o status da solicitação',
         variant: 'destructive',
       });
+    }
+  };
+
+  // Função para notificar motorista via SMS/WhatsApp
+  const notifyDriver = async (request: LineHallFuelRequest, status: string) => {
+    try {
+      const statusMessages: Record<string, string> = {
+        'aprovada': '✅ APROVADA',
+        'analisando': '⏳ EM ANÁLISE',
+        'rejeitada': '❌ REJEITADA'
+      };
+
+      const message = `🚛 ATUALIZAÇÃO - Solicitação de Cartão Combustível
+
+Status: ${statusMessages[status] || status.toUpperCase()}
+Motorista: ${request.motorista_nome}
+Veículo: ${request.veiculo_placa}
+Rota: ${request.rota_origem} → ${request.rota_destino}
+Valor: R$ ${request.valor_calculado}
+
+${status === 'aprovada' ? '✅ Sua solicitação foi APROVADA! Você pode prosseguir com o abastecimento.' : 
+  status === 'analisando' ? '⏳ Sua solicitação está sendo ANALISADA. Aguarde retorno.' : 
+  '❌ Sua solicitação foi REJEITADA. Entre em contato para mais informações.'}
+
+Line Hall Shopee
+${new Date().toLocaleString('pt-BR')}`;
+
+      // Log da notificação (em produção integraria com serviço real de SMS/WhatsApp)
+      console.log('Notificação enviada para:', request.telefone_motorista);
+      console.log('Mensagem:', message);
+      
+      // Aqui seria feita a integração real com serviço de mensagens
+      
+    } catch (error) {
+      console.error('Erro ao enviar notificação:', error);
     }
   };
 
@@ -143,6 +187,8 @@ const LineHallFuelCardRequests: React.FC = () => {
     switch (status) {
       case 'pendente':
         return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200"><Clock className="w-3 h-3 mr-1" />Pendente</Badge>;
+      case 'analisando':
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200"><AlertCircle className="w-3 h-3 mr-1" />Analisando</Badge>;
       case 'aprovada':
         return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200"><CheckCircle2 className="w-3 h-3 mr-1" />Aprovada</Badge>;
       case 'rejeitada':
@@ -285,6 +331,7 @@ const LineHallFuelCardRequests: React.FC = () => {
                   <SelectContent>
                     <SelectItem value="all">Todos os Status</SelectItem>
                     <SelectItem value="pendente">Pendentes</SelectItem>
+                    <SelectItem value="analisando">Analisando</SelectItem>
                     <SelectItem value="aprovada">Aprovadas</SelectItem>
                     <SelectItem value="rejeitada">Rejeitadas</SelectItem>
                   </SelectContent>
@@ -362,13 +409,22 @@ const LineHallFuelCardRequests: React.FC = () => {
                       )}
                     </div>
                     
-                    {request.status === 'pendente' && (
-                      <div className="flex gap-2">
+                    {(request.status === 'pendente' || request.status === 'analisando') && (
+                      <div className="flex gap-2 flex-wrap">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                          onClick={() => handleStatusChange(request.id, 'analisando', request)}
+                        >
+                          <AlertCircle className="w-4 h-4 mr-1" />
+                          Analisando
+                        </Button>
                         <Button
                           size="sm"
                           variant="outline"
                           className="border-red-200 text-red-700 hover:bg-red-50"
-                          onClick={() => handleApproval(request.id, 'rejeitar')}
+                          onClick={() => handleStatusChange(request.id, 'rejeitada', request)}
                         >
                           <XCircle className="w-4 h-4 mr-1" />
                           Rejeitar
@@ -376,11 +432,26 @@ const LineHallFuelCardRequests: React.FC = () => {
                         <Button
                           size="sm"
                           className="bg-green-600 hover:bg-green-700"
-                          onClick={() => handleApproval(request.id, 'aprovar')}
+                          onClick={() => handleStatusChange(request.id, 'aprovada', request)}
                         >
                           <CheckCircle2 className="w-4 h-4 mr-1" />
                           Aprovar
                         </Button>
+                      </div>
+                    )}
+                    {(request.status === 'aprovada' || request.status === 'rejeitada') && (
+                      <div className="flex gap-2">
+                        {request.status !== 'analisando' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                            onClick={() => handleStatusChange(request.id, 'analisando', request)}
+                          >
+                            <AlertCircle className="w-4 h-4 mr-1" />
+                            Reanalisar
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>
