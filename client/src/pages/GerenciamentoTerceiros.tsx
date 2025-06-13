@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Eye, FileText, Building2, Fuel, TrendingUp, Download, RefreshCw } from 'lucide-react';
+import { Search, Eye, FileText, Building2, Fuel, TrendingUp, Download, RefreshCw, Plus, UserPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -60,6 +60,15 @@ export default function GerenciamentoTerceiros() {
   const [activeTab, setActiveTab] = useState<'empresas' | 'abastecimentos'>('abastecimentos');
   const [filterStatus, setFilterStatus] = useState<string>('todos');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isNewCompanyDialogOpen, setIsNewCompanyDialogOpen] = useState(false);
+  const [newCompanyForm, setNewCompanyForm] = useState({
+    nome: '',
+    cnpj: '',
+    email: '',
+    telefone: '',
+    endereco: '',
+    senha: ''
+  });
 
   useEffect(() => {
     fetchData();
@@ -133,6 +142,68 @@ export default function GerenciamentoTerceiros() {
     }
   };
 
+  const handleCreateCompany = async () => {
+    try {
+      // Validação básica
+      if (!newCompanyForm.nome || !newCompanyForm.cnpj || !newCompanyForm.email || !newCompanyForm.senha) {
+        toast({
+          title: "Erro",
+          description: "Preencha todos os campos obrigatórios",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const response = await fetch('/api/terceiros/admin/empresas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nome: newCompanyForm.nome,
+          cnpj: newCompanyForm.cnpj,
+          email: newCompanyForm.email,
+          telefone: newCompanyForm.telefone,
+          endereco: newCompanyForm.endereco,
+          senha: newCompanyForm.senha,
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Sucesso",
+          description: "Empresa cadastrada com sucesso!",
+        });
+        
+        // Limpar formulário
+        setNewCompanyForm({
+          nome: '',
+          cnpj: '',
+          email: '',
+          telefone: '',
+          endereco: '',
+          senha: ''
+        });
+        
+        // Fechar modal
+        setIsNewCompanyDialogOpen(false);
+        
+        // Recarregar dados
+        fetchData();
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao cadastrar empresa');
+      }
+    } catch (error) {
+      console.error('Erro ao cadastrar empresa:', error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro ao cadastrar empresa",
+        variant: "destructive",
+      });
+    }
+  };
+
   const filteredEmpresas = empresas.filter(empresa => {
     const matchesSearch = empresa.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          empresa.cnpj.includes(searchTerm);
@@ -165,6 +236,89 @@ export default function GerenciamentoTerceiros() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Dialog open={isNewCompanyDialogOpen} onOpenChange={setIsNewCompanyDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2 bg-green-600 hover:bg-green-700">
+                <UserPlus className="h-4 w-4" />
+                Cadastrar Nova Empresa
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Cadastrar Nova Empresa Terceira</DialogTitle>
+                <DialogDescription>
+                  Preencha os dados da empresa que terá acesso ao sistema de abastecimento
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Nome da Empresa</label>
+                    <Input
+                      value={newCompanyForm.nome}
+                      onChange={(e) => setNewCompanyForm({...newCompanyForm, nome: e.target.value})}
+                      placeholder="Ex: Transportes Silva Ltda"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">CNPJ</label>
+                    <Input
+                      value={newCompanyForm.cnpj}
+                      onChange={(e) => setNewCompanyForm({...newCompanyForm, cnpj: e.target.value})}
+                      placeholder="00.000.000/0001-00"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Email</label>
+                    <Input
+                      type="email"
+                      value={newCompanyForm.email}
+                      onChange={(e) => setNewCompanyForm({...newCompanyForm, email: e.target.value})}
+                      placeholder="contato@empresa.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Telefone</label>
+                    <Input
+                      value={newCompanyForm.telefone}
+                      onChange={(e) => setNewCompanyForm({...newCompanyForm, telefone: e.target.value})}
+                      placeholder="(11) 99999-9999"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Endereço</label>
+                  <Input
+                    value={newCompanyForm.endereco}
+                    onChange={(e) => setNewCompanyForm({...newCompanyForm, endereco: e.target.value})}
+                    placeholder="Rua, número, bairro, cidade - UF"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Senha de Acesso</label>
+                  <Input
+                    type="password"
+                    value={newCompanyForm.senha}
+                    onChange={(e) => setNewCompanyForm({...newCompanyForm, senha: e.target.value})}
+                    placeholder="Senha para acesso ao sistema"
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsNewCompanyDialogOpen(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleCreateCompany}>
+                    Cadastrar Empresa
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
           <Button onClick={fetchData} variant="outline">
             <RefreshCw className="h-4 w-4 mr-2" />
             Atualizar
