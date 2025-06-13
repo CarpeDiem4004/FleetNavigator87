@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { apiRequest } from '@/lib/queryClient';
-import { CreditCard, Filter, Search, Calendar, CheckCircle2, XCircle, Clock, AlertCircle, TrendingUp, TrendingDown, DollarSign, Download, Plus, Trash2 } from 'lucide-react';
+import { CreditCard, Filter, Search, Calendar, CheckCircle2, XCircle, Clock, AlertCircle, TrendingUp, TrendingDown, DollarSign, Download, Plus, Trash2, Truck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
@@ -19,6 +19,7 @@ import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import FuelCardRequestForm from '@/components/FuelCardRequestForm';
+import { useLocation } from 'wouter';
 
 interface FuelCardSolicitation {
   id: number;
@@ -75,6 +76,7 @@ const FuelCardRequestsPanel: React.FC = () => {
   
   const { toast } = useToast();
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
   
   useEffect(() => {
     fetchSolicitations();
@@ -380,6 +382,14 @@ const FuelCardRequestsPanel: React.FC = () => {
             Painel de Solicitações de Cartão de Abastecimento
           </h1>
           <div className="flex items-center gap-3">
+            <Button 
+              variant="secondary" 
+              className="flex items-center gap-2 bg-blue-100 text-blue-700 hover:bg-blue-200"
+              onClick={() => setLocation('/terceiros/gerenciamento')}
+            >
+              <Truck className="h-4 w-4" />
+              Gerenciamento Terceiros
+            </Button>
             <Dialog open={isNewRequestDialogOpen} onOpenChange={setIsNewRequestDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="flex items-center gap-2">
