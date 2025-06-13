@@ -202,6 +202,7 @@ ${new Date().toLocaleString('pt-BR')}`;
     return {
       total: requests.length,
       pendente: requests.filter(r => r.status === 'pendente').length,
+      analisando: requests.filter(r => r.status === 'analisando').length,
       aprovada: requests.filter(r => r.status === 'aprovada').length,
       rejeitada: requests.filter(r => r.status === 'rejeitada').length,
     };
@@ -258,7 +259,7 @@ ${new Date().toLocaleString('pt-BR')}`;
 
       <div className="max-w-7xl mx-auto p-6">
         {/* Status Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -279,6 +280,18 @@ ${new Date().toLocaleString('pt-BR')}`;
                   <p className="text-2xl font-bold text-yellow-600">{statusCounts.pendente}</p>
                 </div>
                 <Clock className="w-8 h-8 text-yellow-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Analisando</p>
+                  <p className="text-2xl font-bold text-blue-600">{statusCounts.analisando}</p>
+                </div>
+                <AlertCircle className="w-8 h-8 text-blue-600" />
               </div>
             </CardContent>
           </Card>
@@ -441,7 +454,7 @@ ${new Date().toLocaleString('pt-BR')}`;
                     )}
                     {(request.status === 'aprovada' || request.status === 'rejeitada') && (
                       <div className="flex gap-2">
-                        {request.status !== 'analisando' && (
+                        {true && (
                           <Button
                             size="sm"
                             variant="outline"
