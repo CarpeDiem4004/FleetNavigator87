@@ -71,21 +71,14 @@ export default function AbastecimentoTerceirosLogin() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/terceiros/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      const credentials: LoginCredentials = {
+        cnpj: formData.cnpj,
+        senha: formData.senha
+      };
 
-      const data: LoginResponse = await response.json();
+      const data = await terceirosApi.login(credentials);
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro no login');
-      }
-
-      if (data.success) {
+      if (data.success && data.token && data.user) {
         // Salvar token no localStorage
         localStorage.setItem('terceiros_token', data.token);
         localStorage.setItem('terceiros_user', JSON.stringify(data.user));
@@ -97,6 +90,8 @@ export default function AbastecimentoTerceirosLogin() {
 
         // Redirecionar para o dashboard
         setLocation('/terceiros/dashboard');
+      } else {
+        throw new Error(data.error || 'Erro no login');
       }
 
     } catch (error) {
