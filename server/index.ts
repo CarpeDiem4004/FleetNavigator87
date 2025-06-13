@@ -653,7 +653,8 @@ app.use((req, res, next) => {
 
   app.get('/api/terceiros/test', (req, res) => {
     console.log('[TerceirosTest] Rota de teste acessada com sucesso');
-    res.json({ success: true, message: 'Terceiros routes funcionando' });
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ success: true, message: 'Terceiros routes funcionando' }));
   });
 
   app.get('/api/terceiros/admin/stats', terceirosAuthMiddleware, async (req, res) => {
@@ -679,10 +680,12 @@ app.use((req, res, next) => {
       };
       
       console.log('[TerceirosAuth] Stats consultadas com sucesso:', stats);
-      res.json({ success: true, data: stats });
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ success: true, data: stats }));
     } catch (error) {
       console.error('[TerceirosAuth] Erro ao buscar estatísticas:', error);
-      res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+      res.setHeader('Content-Type', 'application/json');
+      res.status(500).end(JSON.stringify({ success: false, error: 'Erro interno do servidor' }));
     }
   });
 
@@ -702,10 +705,12 @@ app.use((req, res, next) => {
       
       const result = await pool.query(empresasQuery);
       console.log('[TerceirosAuth] Empresas consultadas com sucesso:', result.rows.length);
-      res.json({ success: true, data: result.rows });
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ success: true, data: result.rows }));
     } catch (error) {
       console.error('[TerceirosAuth] Erro ao buscar empresas:', error);
-      res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+      res.setHeader('Content-Type', 'application/json');
+      res.status(500).end(JSON.stringify({ success: false, error: 'Erro interno do servidor' }));
     }
   });
 
@@ -725,10 +730,12 @@ app.use((req, res, next) => {
       
       const result = await pool.query(abastecimentosQuery);
       console.log('[TerceirosAuth] Abastecimentos consultados com sucesso:', result.rows.length);
-      res.json({ success: true, data: result.rows });
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ success: true, data: result.rows }));
     } catch (error) {
       console.error('[TerceirosAuth] Erro ao buscar abastecimentos:', error);
-      res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+      res.setHeader('Content-Type', 'application/json');
+      res.status(500).end(JSON.stringify({ success: false, error: 'Erro interno do servidor' }));
     }
   });
   
