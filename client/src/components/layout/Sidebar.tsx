@@ -396,32 +396,31 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   console.log(`Tipo de usuário: ${isFleetUser ? 'Gestão de Frotas' : isFuelManager ? 'Gestor de Combustível' : isLineHallUser ? 'Line Hall' : 'Normal'} (${user.role})`);
   console.log(`Menu principal: ${isFleetUser ? 'fleetManagementItems' : isFuelManager ? 'fuelManagerItems' : isLineHallUser ? 'lineHallItems' : 'allNavItems'}`);
   
-  // Debug: Verificar se Gerenciamento Terceiros está em allNavItems
+  // Debug mais detalhado: Verificar onde está o Gerenciamento Terceiros
+  console.warn('=== DEBUG DETALHADO GERENCIAMENTO TERCEIROS ===');
+  
+  // Verificar em allNavItems
+  const gerenciamentoTerceirosInAllNav = allNavItems.find(item => item.name === 'Gerenciamento Terceiros');
+  console.warn('Gerenciamento Terceiros como item principal em allNavItems:', gerenciamentoTerceirosInAllNav);
+  
+  // Verificar no submenu de Abastecimentos em allNavItems
   const abastecimentosInAllNav = allNavItems.find(item => item.name === 'Abastecimentos');
-  console.log('=== DEBUG MENU ABASTECIMENTOS ===');
-  console.log('abastecimentosInAllNav:', abastecimentosInAllNav);
-  console.log('Subitens:', abastecimentosInAllNav?.subItems?.map(si => `${si.name} (${si.href})`));
-  console.log(`DEBUG: Abastecimentos em allNavItems:`, abastecimentosInAllNav);
-  console.log(`DEBUG: Subitens de Abastecimentos em allNavItems:`, abastecimentosInAllNav?.subItems?.map(si => si.name));
+  const gerenciamentoTerceirosSubitemAllNav = abastecimentosInAllNav?.subItems?.find(si => si.name === 'Gerenciamento Terceiros');
+  console.warn('Gerenciamento Terceiros como subitem de Abastecimentos em allNavItems:', gerenciamentoTerceirosSubitemAllNav);
   
+  // Verificar em fleetManagementItems
+  const gerenciamentoTerceirosInFleet = fleetManagementItems.find(item => item.name === 'Gerenciamento Terceiros');
+  console.warn('Gerenciamento Terceiros como item principal em fleetManagementItems:', gerenciamentoTerceirosInFleet);
+  
+  // Verificar no submenu de Abastecimentos em fleetManagementItems
   const abastecimentosInFleet = fleetManagementItems.find(item => item.name === 'Abastecimentos');
-  console.log(`DEBUG: Abastecimentos em fleetManagementItems:`, abastecimentosInFleet);
-  console.log(`DEBUG: Subitens de Abastecimentos em fleetManagementItems:`, abastecimentosInFleet?.subItems?.map(si => si.name));
+  const gerenciamentoTerceirosSubitemFleet = abastecimentosInFleet?.subItems?.find(si => si.name === 'Gerenciamento Terceiros');
+  console.warn('Gerenciamento Terceiros como subitem de Abastecimentos em fleetManagementItems:', gerenciamentoTerceirosSubitemFleet);
   
-  const abastecimentosInFuel = fuelManagerItems.find(item => item.name === 'Abastecimentos');
-  console.log(`DEBUG: Abastecimentos em fuelManagerItems:`, abastecimentosInFuel);
-  console.log(`DEBUG: Subitens de Abastecimentos em fuelManagerItems:`, abastecimentosInFuel?.subItems?.map(si => si.name));
-  
-  const abastecimentosInLineHall = lineHallItems.find(item => item.name === 'Abastecimentos');
-  console.log(`DEBUG: Abastecimentos em lineHallItems:`, abastecimentosInLineHall);
-  console.log(`DEBUG: Subitens de Abastecimentos em lineHallItems:`, abastecimentosInLineHall?.subItems?.map(si => si.name));
-  
-  // Log mais visível para debug
-  console.warn('=== DEBUG MENU SIDEBAR ===');
   console.warn(`Usuário: ${user.role} (${user.email})`);
-  console.warn(`Tipo de menu: ${isFleetUser ? 'FLEET' : isFuelManager ? 'FUEL' : isLineHallUser ? 'LINEHALL' : 'ALL'}`);
-  console.warn('Gerenciamento Terceiros existe em allNavItems?', !!abastecimentosInAllNav?.subItems?.find(si => si.name === 'Gerenciamento Terceiros'));
-  console.warn('=== FIM DEBUG ===');
+  console.warn(`IsFleetUser: ${isFleetUser}`);
+  console.warn(`Tipo de menu que será usado: ${isFleetUser ? 'FLEET' : isFuelManager ? 'FUEL' : isLineHallUser ? 'LINEHALL' : 'ALL'}`);
+  console.warn('=== FIM DEBUG DETALHADO ===');
   
   // Selecionando os itens de navegação apropriados
   let navItemsBase;

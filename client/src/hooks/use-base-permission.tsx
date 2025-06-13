@@ -74,7 +74,10 @@ const allRoutes = [
   '/bases/goiania/solicitacao-orcamento', // Solicitação de Orçamento Goiânia
   '/bases/goiania/manutencao-frota',   // Manutenção de Frota Goiânia
   '/postos/visao-geral',               // Visão Geral dos Postos
-  '/postos'                            // Postos de Abastecimento
+  '/postos',                           // Postos de Abastecimento
+  '/terceiros/gerenciamento',          // Gerenciamento de Terceiros
+  '/terceiros/dashboard',              // Dashboard de Terceiros
+  '/terceiros/login'                   // Login de Terceiros
 ];
 
 // Regras de correspondência entre bases e rotas específicas
