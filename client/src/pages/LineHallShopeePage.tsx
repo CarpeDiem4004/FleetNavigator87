@@ -1306,10 +1306,10 @@ export default function LineHallShopeePage() {
                 <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-md">
                   <p className="text-sm font-medium text-center">URL de acesso:</p>
                   <p className="text-sm text-center text-purple-600 dark:text-purple-400 break-all">
-                    {window.location.origin}/line-hall-driver
+                    {window.location.origin}/driver-access
                   </p>
                 </div>
-                <Button variant="outline" size="sm" className="w-full" onClick={() => window.open('/line-hall-driver', '_blank')}>
+                <Button variant="outline" size="sm" className="w-full" onClick={() => window.open('/driver-access', '_blank')}>
                   Acessar Interface do Motorista
                 </Button>
               </div>
