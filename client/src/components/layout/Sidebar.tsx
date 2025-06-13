@@ -412,7 +412,13 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   const abastecimentosInLineHall = lineHallItems.find(item => item.name === 'Abastecimentos');
   console.log(`DEBUG: Abastecimentos em lineHallItems:`, abastecimentosInLineHall);
   console.log(`DEBUG: Subitens de Abastecimentos em lineHallItems:`, abastecimentosInLineHall?.subItems?.map(si => si.name));
-  console.log('DEBUG: Abastecimentos em allNavItems:', abastecimentosInAllNav?.subItems?.map(si => si.name));
+  
+  // Log mais visível para debug
+  console.warn('=== DEBUG MENU SIDEBAR ===');
+  console.warn(`Usuário: ${user.role} (${user.email})`);
+  console.warn(`Tipo de menu: ${isFleetUser ? 'FLEET' : isFuelManager ? 'FUEL' : isLineHallUser ? 'LINEHALL' : 'ALL'}`);
+  console.warn('Gerenciamento Terceiros existe em allNavItems?', !!abastecimentosInAllNav?.subItems?.find(si => si.name === 'Gerenciamento Terceiros'));
+  console.warn('=== FIM DEBUG ===');
   
   // Selecionando os itens de navegação apropriados
   let navItemsBase;
@@ -465,6 +471,11 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       
       // Verificar se pelo menos um submenu é permitido
       const hasSubItemPermission = item.subItems?.some(subItem => {
+        // Para o item Gerenciamento Terceiros, sempre permitir para admins
+        if (subItem.name === 'Gerenciamento Terceiros' && user.role === 'admin') {
+          console.log(`FORÇANDO permissão para Gerenciamento Terceiros (admin)`);
+          return true;
+        }
         console.log(`Verificando permissão para submenu ${subItem.name} (${subItem.href}): ${hasPermission(subItem.href) ? 'PERMITIDO' : 'NEGADO'}`);
         return hasPermission(subItem.href);
       });
