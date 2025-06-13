@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Plus, Download, LogOut, Fuel, Building2, TrendingUp, FileText, Eye, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { terceirosApi } from '@/utils/terceirosApi';
 
 interface User {
   id: number;
@@ -38,9 +39,9 @@ interface Abastecimento {
   veiculo_placa: string;
   litros: number;
   valor: number;
-  nota_fiscal_url: string | null;
+  nota_fiscal_url?: string | null;
   data_abastecimento: string;
-  observacoes: string | null;
+  observacoes?: string | null;
 }
 
 export default function AbastecimentoTerceirosDashboard() {
@@ -92,21 +93,13 @@ export default function AbastecimentoTerceirosDashboard() {
   const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem('terceiros_token');
-      const response = await fetch('/api/terceiros/dashboard', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao carregar dashboard');
+      if (!token) {
+        handleLogout();
+        return;
       }
 
-      if (data.success) {
-        setDashboardData(data.data);
-      }
+      const data = await terceirosApi.getDashboard(token);
+      setDashboardData(data);
     } catch (error) {
       console.error('Erro ao carregar dashboard:', error);
       toast({
@@ -164,6 +157,11 @@ export default function AbastecimentoTerceirosDashboard() {
 
     try {
       const token = localStorage.getItem('terceiros_token');
+      if (!token) {
+        handleLogout();
+        return;
+      }
+
       const formDataToSend = new FormData();
       
       formDataToSend.append('motoristaNome', formData.motoristaNome);
@@ -177,19 +175,7 @@ export default function AbastecimentoTerceirosDashboard() {
         formDataToSend.append('notaFiscal', notaFiscalFile);
       }
 
-      const response = await fetch('/api/terceiros/abastecimentos', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formDataToSend
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao registrar abastecimento');
-      }
+      const data = await terceirosApi.createAbastecimento(token, formDataToSend);
 
       if (data.success) {
         toast({
