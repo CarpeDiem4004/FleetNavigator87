@@ -398,6 +398,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   
   // Debug: Verificar se Gerenciamento Terceiros está em allNavItems
   const abastecimentosInAllNav = allNavItems.find(item => item.name === 'Abastecimentos');
+  console.log('=== DEBUG MENU ABASTECIMENTOS ===');
+  console.log('abastecimentosInAllNav:', abastecimentosInAllNav);
+  console.log('Subitens:', abastecimentosInAllNav?.subItems?.map(si => `${si.name} (${si.href})`));
   console.log(`DEBUG: Abastecimentos em allNavItems:`, abastecimentosInAllNav);
   console.log(`DEBUG: Subitens de Abastecimentos em allNavItems:`, abastecimentosInAllNav?.subItems?.map(si => si.name));
   
@@ -466,6 +469,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       // Para menus Abastecimentos, sempre incluir independente de permissões específicas
       if (item.name === 'Abastecimentos') {
         console.log(`Menu Abastecimentos incluído automaticamente com ${item.subItems?.length} subitens`);
+        console.log(`Subitens de Abastecimentos:`, item.subItems?.map(si => `${si.name} (${si.href})`));
         return true;
       }
       
