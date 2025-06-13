@@ -398,6 +398,20 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   
   // Debug: Verificar se Gerenciamento Terceiros está em allNavItems
   const abastecimentosInAllNav = allNavItems.find(item => item.name === 'Abastecimentos');
+  console.log(`DEBUG: Abastecimentos em allNavItems:`, abastecimentosInAllNav);
+  console.log(`DEBUG: Subitens de Abastecimentos em allNavItems:`, abastecimentosInAllNav?.subItems?.map(si => si.name));
+  
+  const abastecimentosInFleet = fleetManagementItems.find(item => item.name === 'Abastecimentos');
+  console.log(`DEBUG: Abastecimentos em fleetManagementItems:`, abastecimentosInFleet);
+  console.log(`DEBUG: Subitens de Abastecimentos em fleetManagementItems:`, abastecimentosInFleet?.subItems?.map(si => si.name));
+  
+  const abastecimentosInFuel = fuelManagerItems.find(item => item.name === 'Abastecimentos');
+  console.log(`DEBUG: Abastecimentos em fuelManagerItems:`, abastecimentosInFuel);
+  console.log(`DEBUG: Subitens de Abastecimentos em fuelManagerItems:`, abastecimentosInFuel?.subItems?.map(si => si.name));
+  
+  const abastecimentosInLineHall = lineHallItems.find(item => item.name === 'Abastecimentos');
+  console.log(`DEBUG: Abastecimentos em lineHallItems:`, abastecimentosInLineHall);
+  console.log(`DEBUG: Subitens de Abastecimentos em lineHallItems:`, abastecimentosInLineHall?.subItems?.map(si => si.name));
   console.log('DEBUG: Abastecimentos em allNavItems:', abastecimentosInAllNav?.subItems?.map(si => si.name));
   
   // Selecionando os itens de navegação apropriados
