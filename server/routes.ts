@@ -14110,8 +14110,18 @@ async function createFuelRequestNotification(fuelRequest) {
 
   // APIs para gerenciamento de terceiros no sistema principal (requer autenticação admin)
   
+  // Middleware simples para rotas de terceiros que verifica autenticação de sessão
+  const terceirosAuthMiddleware = (req: Request, res: Response, next: NextFunction) => {
+    if (req.isAuthenticated() && req.user) {
+      console.log(`[TerceirosAuth] Usuário autenticado: ${req.user.email} (role: ${req.user.role})`);
+      return next();
+    }
+    console.log('[TerceirosAuth] Usuário não autenticado');
+    return res.status(401).json({ error: 'Não autorizado' });
+  };
+
   // Estatísticas gerais de terceiros
-  app.get('/api/terceiros/admin/stats', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/terceiros/admin/stats', terceirosAuthMiddleware, async (req: Request, res: Response) => {
     try {
       const statsQuery = `
         SELECT 
@@ -14145,7 +14155,7 @@ async function createFuelRequestNotification(fuelRequest) {
   });
 
   // Lista de empresas terceiras
-  app.get('/api/terceiros/admin/empresas', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/terceiros/admin/empresas', terceirosAuthMiddleware, async (req: Request, res: Response) => {
     try {
       const empresasQuery = `
         SELECT 
@@ -14175,7 +14185,7 @@ async function createFuelRequestNotification(fuelRequest) {
   });
 
   // Lista de abastecimentos de terceiros
-  app.get('/api/terceiros/admin/abastecimentos', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/terceiros/admin/abastecimentos', terceirosAuthMiddleware, async (req: Request, res: Response) => {
     try {
       const abastecimentosQuery = `
         SELECT 
