@@ -78,32 +78,23 @@ export default function GerenciamentoTerceiros() {
     try {
       setLoading(true);
       
-      // Fazer requisições diretas ao servidor Express (porta 5000) para contornar Vite
+      // Usar requisições normais já que as rotas estão funcionando no servidor
       const makeRequest = async (url: string): Promise<any> => {
-        try {
-          // Usar port 5000 diretamente para contornar o Vite middleware
-          const serverUrl = `http://localhost:5000${url}`;
-          
-          const response = await fetch(serverUrl, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            credentials: 'include',
-            mode: 'cors',
-          });
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          credentials: 'include',
+        });
 
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-
-          const data = await response.json();
-          return data;
-        } catch (error) {
-          console.error('Erro na requisição:', error);
-          throw error;
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
+
+        const data = await response.json();
+        return data;
       };
       
       // Buscar estatísticas
