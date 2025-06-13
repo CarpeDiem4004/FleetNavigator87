@@ -364,9 +364,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Visão Geral dos Postos', href: '/postos/visao-geral', icon: BarChart4 },
       { name: 'Consumo Diário', href: '/postos/consumo-diario', icon: BarChart4 },
       { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 },
-      { name: 'Cartão de Abastecimento', href: '/cartao-abastecimento', icon: CreditCard },
-      { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: TruckIcon }
+      { name: 'Cartão de Abastecimento', href: '/cartao-abastecimento', icon: CreditCard }
     ]},
+    { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: TruckIcon },
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
     ]},
