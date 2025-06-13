@@ -637,6 +637,100 @@ app.use((req, res, next) => {
       timestamp: new Date().toISOString()
     });
   });
+
+  // Rotas de terceiros (gerenciamento administrativo) - registradas antes do Vite
+  const terceirosAuthMiddleware = (req: any, res: any, next: any) => {
+    console.log(`[TerceirosAuth] Rota acessada: ${req.path}, método: ${req.method}`);
+    console.log(`[TerceirosAuth] isAuthenticated: ${req.isAuthenticated?.()}, user: ${req.user ? 'presente' : 'ausente'}`);
+    
+    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+      console.log(`[TerceirosAuth] Usuário autenticado: ${req.user.email} (role: ${req.user.role})`);
+      return next();
+    }
+    console.log('[TerceirosAuth] Usuário não autenticado');
+    return res.status(401).json({ error: 'Não autorizado' });
+  };
+
+  app.get('/api/terceiros/test', (req, res) => {
+    console.log('[TerceirosTest] Rota de teste acessada com sucesso');
+    res.json({ success: true, message: 'Terceiros routes funcionando' });
+  });
+
+  app.get('/api/terceiros/admin/stats', terceirosAuthMiddleware, async (req, res) => {
+    try {
+      const pool = (await import('./database.js')).pool;
+      const statsQuery = `
+        SELECT 
+          COUNT(DISTINCT e.id) as total_empresas,
+          COUNT(a.id) as total_abastecimentos,
+          COALESCE(SUM(a.valor_total::numeric), 0) as valor_total_abastecimentos,
+          COALESCE(SUM(a.litros::numeric), 0) as total_litros
+        FROM empresas_terceiros e
+        LEFT JOIN abastecimentos_terceiros a ON e.id = a.empresa_id
+        WHERE e.is_active = true
+      `;
+      
+      const result = await pool.query(statsQuery);
+      const stats = result.rows[0] || {
+        total_empresas: 0,
+        total_abastecimentos: 0,
+        valor_total_abastecimentos: 0,
+        total_litros: 0
+      };
+      
+      console.log('[TerceirosAuth] Stats consultadas com sucesso:', stats);
+      res.json({ success: true, data: stats });
+    } catch (error) {
+      console.error('[TerceirosAuth] Erro ao buscar estatísticas:', error);
+      res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+    }
+  });
+
+  app.get('/api/terceiros/admin/empresas', terceirosAuthMiddleware, async (req, res) => {
+    try {
+      const pool = (await import('./database.js')).pool;
+      const empresasQuery = `
+        SELECT 
+          e.*,
+          COUNT(a.id) as total_abastecimentos,
+          COALESCE(SUM(a.valor_total::numeric), 0) as valor_total
+        FROM empresas_terceiros e
+        LEFT JOIN abastecimentos_terceiros a ON e.id = a.empresa_id
+        GROUP BY e.id
+        ORDER BY e.created_at DESC
+      `;
+      
+      const result = await pool.query(empresasQuery);
+      console.log('[TerceirosAuth] Empresas consultadas com sucesso:', result.rows.length);
+      res.json({ success: true, data: result.rows });
+    } catch (error) {
+      console.error('[TerceirosAuth] Erro ao buscar empresas:', error);
+      res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+    }
+  });
+
+  app.get('/api/terceiros/admin/abastecimentos', terceirosAuthMiddleware, async (req, res) => {
+    try {
+      const pool = (await import('./database.js')).pool;
+      const abastecimentosQuery = `
+        SELECT 
+          a.*,
+          e.nome as empresa_nome,
+          e.cnpj as empresa_cnpj
+        FROM abastecimentos_terceiros a
+        JOIN empresas_terceiros e ON a.empresa_id = e.id
+        ORDER BY a.created_at DESC
+        LIMIT 100
+      `;
+      
+      const result = await pool.query(abastecimentosQuery);
+      console.log('[TerceirosAuth] Abastecimentos consultados com sucesso:', result.rows.length);
+      res.json({ success: true, data: result.rows });
+    } catch (error) {
+      console.error('[TerceirosAuth] Erro ao buscar abastecimentos:', error);
+      res.status(500).json({ success: false, error: 'Erro interno do servidor' });
+    }
+  });
   
   // Registrar o roteador de API de usuários
   app.use(userApi);
