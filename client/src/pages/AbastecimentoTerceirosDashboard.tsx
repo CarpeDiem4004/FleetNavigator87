@@ -144,10 +144,10 @@ export default function AbastecimentoTerceirosDashboard() {
   const handleSubmitAbastecimento = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.motoristaNome || !formData.veiculoPlaca || !formData.litros || !formData.valor) {
+    if (!formData.motoristaNome || !formData.veiculoPlaca || !formData.litros || !formData.valor || !notaFiscalFile) {
       toast({
         title: "Erro",
-        description: "Preencha todos os campos obrigatórios",
+        description: "Preencha todos os campos obrigatórios, incluindo a nota fiscal",
         variant: "destructive",
       });
       return;
@@ -457,7 +457,7 @@ export default function AbastecimentoTerceirosDashboard() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="notaFiscal">Nota Fiscal (imagem)</Label>
+                    <Label htmlFor="notaFiscal">Nota Fiscal (imagem) *</Label>
                     <div className="flex items-center space-x-2">
                       <Input
                         id="notaFiscal"

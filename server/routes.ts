@@ -13914,7 +13914,12 @@ async function createFuelRequestNotification(fuelRequest) {
         return res.status(400).json({ error: 'Campos obrigatórios não preenchidos.' });
       }
 
-      const notaFiscalUrl = req.file ? `/uploads/notas-fiscais/${req.file.filename}` : null;
+      // Validação obrigatória da nota fiscal
+      if (!req.file) {
+        return res.status(400).json({ error: 'Nota fiscal é obrigatória.' });
+      }
+
+      const notaFiscalUrl = `/uploads/notas-fiscais/${req.file.filename}`;
 
       // Inserir abastecimento
       const insertQuery = `
