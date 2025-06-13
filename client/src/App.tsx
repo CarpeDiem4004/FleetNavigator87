@@ -124,6 +124,7 @@ import LineHallFuelCardRequests from "@/pages/LineHallFuelCardRequests";
 // Importação das páginas de Abastecimento Terceiros
 import AbastecimentoTerceirosLogin from "@/pages/AbastecimentoTerceirosLogin";
 import AbastecimentoTerceirosDashboard from "@/pages/AbastecimentoTerceirosDashboard";
+import GerenciamentoTerceiros from "@/pages/GerenciamentoTerceiros";
 
 // Importação das páginas da Base Campinas
 import BaseCampinas from "@/pages/bases/BaseCampinas";
@@ -284,6 +285,9 @@ function App() {
           <ProtectedRoute path="/line-hall-shopee" component={LineHallShopeePage} />
           {/* Página dedicada para solicitações de cartão combustível do Line Hall */}
           <ProtectedRoute path="/line-hall-fuel-requests" component={LineHallFuelCardRequests} />
+          
+          {/* Página para gerenciamento de terceiros no sistema principal */}
+          <ProtectedRoute path="/terceiros/gerenciamento" component={GerenciamentoTerceiros} />
           <ProtectedRoute path="/fuel-card-old" component={FuelCardPage} />
           {/* Página principal de solicitações de cartão combustível */}
           <ProtectedRoute path="/fuel-card-requests" component={FuelCardRequestsPanel} />

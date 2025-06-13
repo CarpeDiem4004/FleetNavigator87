@@ -13950,7 +13950,156 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
-  // Rota para exportar relatório
+  // APIs para gerenciamento de terceiros no sistema principal (requer autenticação admin)
+  
+  // Estatísticas gerais de terceiros
+  app.get('/api/terceiros/admin/stats', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const statsQuery = `
+        SELECT 
+          COUNT(DISTINCT e.id) as total_empresas,
+          COUNT(a.id) as total_abastecimentos,
+          COALESCE(SUM(a.litros), 0) as total_litros,
+          COALESCE(SUM(a.valor), 0) as total_valor,
+          COUNT(a.id) FILTER (WHERE DATE(a.data_abastecimento) = CURRENT_DATE) as abastecimentos_hoje
+        FROM empresas_terceiros e
+        LEFT JOIN abastecimentos_terceiros a ON e.id = a.empresa_id
+        WHERE e.status = 'ativo'
+      `;
+
+      const result = await pool.query(statsQuery);
+      
+      res.json({
+        success: true,
+        data: {
+          totalEmpresas: parseInt(result.rows[0].total_empresas || '0'),
+          totalAbastecimentos: parseInt(result.rows[0].total_abastecimentos || '0'),
+          totalLitros: parseFloat(result.rows[0].total_litros || '0'),
+          totalValor: parseFloat(result.rows[0].total_valor || '0'),
+          abastecimentosHoje: parseInt(result.rows[0].abastecimentos_hoje || '0')
+        }
+      });
+
+    } catch (error) {
+      console.error('Erro ao buscar estatísticas de terceiros:', error);
+      res.status(500).json({ error: 'Erro interno do servidor.' });
+    }
+  });
+
+  // Lista de empresas terceiras
+  app.get('/api/terceiros/admin/empresas', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const empresasQuery = `
+        SELECT 
+          id,
+          nome,
+          cnpj,
+          email,
+          telefone,
+          endereco,
+          data_cadastro,
+          status
+        FROM empresas_terceiros
+        ORDER BY nome
+      `;
+
+      const result = await pool.query(empresasQuery);
+      
+      res.json({
+        success: true,
+        data: result.rows
+      });
+
+    } catch (error) {
+      console.error('Erro ao buscar empresas terceiras:', error);
+      res.status(500).json({ error: 'Erro interno do servidor.' });
+    }
+  });
+
+  // Lista de abastecimentos de terceiros
+  app.get('/api/terceiros/admin/abastecimentos', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const abastecimentosQuery = `
+        SELECT 
+          a.id,
+          a.empresa_id,
+          e.nome as empresa_nome,
+          e.cnpj as empresa_cnpj,
+          a.motorista_nome,
+          a.veiculo_placa,
+          a.litros,
+          a.valor,
+          a.nota_fiscal_url,
+          a.observacoes,
+          a.data_abastecimento
+        FROM abastecimentos_terceiros a
+        JOIN empresas_terceiros e ON a.empresa_id = e.id
+        ORDER BY a.data_abastecimento DESC
+        LIMIT 1000
+      `;
+
+      const result = await pool.query(abastecimentosQuery);
+      
+      res.json({
+        success: true,
+        data: result.rows
+      });
+
+    } catch (error) {
+      console.error('Erro ao buscar abastecimentos de terceiros:', error);
+      res.status(500).json({ error: 'Erro interno do servidor.' });
+    }
+  });
+
+  // Exportar relatório (admin)
+  app.get('/api/terceiros/admin/relatorio/export', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const XLSX = require('xlsx');
+      
+      const abastecimentosQuery = `
+        SELECT 
+          e.nome as empresa,
+          e.cnpj,
+          a.motorista_nome,
+          a.veiculo_placa,
+          a.litros,
+          a.valor,
+          a.data_abastecimento,
+          a.observacoes
+        FROM abastecimentos_terceiros a
+        JOIN empresas_terceiros e ON a.empresa_id = e.id
+        ORDER BY a.data_abastecimento DESC
+      `;
+
+      const result = await pool.query(abastecimentosQuery);
+      
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(result.rows.map(row => ({
+        'Empresa': row.empresa,
+        'CNPJ': row.cnpj,
+        'Motorista': row.motorista_nome,
+        'Veículo': row.veiculo_placa,
+        'Litros': row.litros,
+        'Valor': `R$ ${row.valor.toFixed(2)}`,
+        'Data': new Date(row.data_abastecimento).toLocaleString('pt-BR'),
+        'Observações': row.observacoes || ''
+      })));
+      
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Abastecimentos');
+      
+      const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+      
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=relatorio_terceiros.xlsx');
+      res.send(buffer);
+
+    } catch (error) {
+      console.error('Erro ao exportar relatório:', error);
+      res.status(500).json({ error: 'Erro interno do servidor.' });
+    }
+  });
+
+  // Rota para exportar relatório (acesso de terceiros)
   app.get('/api/terceiros/relatorio/export', verifyTokenTerceiros, async (req: Request, res: Response) => {
     try {
       const empresaId = req.user.empresaId;
