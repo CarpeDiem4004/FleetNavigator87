@@ -412,7 +412,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         localStorage.removeItem('authToken');
         console.log("Token JWT removido do localStorage");
         
-        const response = await apiRequest('POST', '/api/logout');
+        // Use direct fetch to avoid potential routing issues with apiRequest
+        const response = await fetch('/api/logout', {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
         
         if (!response.ok) {
           const errorData = await response.json();
