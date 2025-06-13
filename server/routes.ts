@@ -14112,13 +14112,22 @@ async function createFuelRequestNotification(fuelRequest) {
   
   // Middleware simples para rotas de terceiros que verifica autenticação de sessão
   const terceirosAuthMiddleware = (req: Request, res: Response, next: NextFunction) => {
-    if (req.isAuthenticated() && req.user) {
+    console.log(`[TerceirosAuth] Rota acessada: ${req.path}, método: ${req.method}`);
+    console.log(`[TerceirosAuth] isAuthenticated: ${req.isAuthenticated?.()}, user: ${req.user ? 'presente' : 'ausente'}`);
+    
+    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
       console.log(`[TerceirosAuth] Usuário autenticado: ${req.user.email} (role: ${req.user.role})`);
       return next();
     }
     console.log('[TerceirosAuth] Usuário não autenticado');
     return res.status(401).json({ error: 'Não autorizado' });
   };
+
+  // Teste simples para verificar se as rotas funcionam
+  app.get('/api/terceiros/test', (req: Request, res: Response) => {
+    console.log('[TerceirosTest] Rota de teste acessada com sucesso');
+    res.json({ success: true, message: 'Terceiros routes funcionando' });
+  });
 
   // Estatísticas gerais de terceiros
   app.get('/api/terceiros/admin/stats', terceirosAuthMiddleware, async (req: Request, res: Response) => {
