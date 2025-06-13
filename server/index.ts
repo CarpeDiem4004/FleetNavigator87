@@ -1316,6 +1316,30 @@ app.use((req, res, next) => {
     throw err;
   });
 
+  // Add specific logout handler before Vite middleware to prevent route interference
+  app.post('/api/logout', async (req, res) => {
+    try {
+      console.log('Direct logout handler - destroying session');
+      
+      if (req.session) {
+        req.session.destroy((err) => {
+          if (err) {
+            console.error('Erro ao destruir sessão:', err);
+          }
+        });
+      }
+      
+      // Clear cookie
+      res.clearCookie('connect.sid');
+      console.log('Session destroyed and cookie cleared');
+      
+      res.status(200).json({ message: 'Logout realizado com sucesso' });
+    } catch (error) {
+      console.error('Erro no logout direto:', error);
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
