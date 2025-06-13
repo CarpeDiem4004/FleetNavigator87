@@ -14,6 +14,7 @@ import { Loader2, Plus, RefreshCcw, Search, Edit, Trash2, Truck, FileText, Check
 import { api } from '@/services/api';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useAuth } from '@/context/AuthContext';
 
 interface LineHallTrip {
   id: number;
@@ -93,6 +94,7 @@ const statusLabels: Record<string, string> = {
 export default function LineHallShopeePage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { user, logout } = useAuth();
   const [trips, setTrips] = useState<LineHallTrip[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
@@ -536,10 +538,28 @@ export default function LineHallShopeePage() {
     }
   };
 
+  // Função para obter saudação baseada no horário
+  const getTimeBasedGreeting = () => {
+    const currentHour = new Date().getHours();
+    if (currentHour < 12) {
+      return 'Bom dia';
+    } else if (currentHour < 18) {
+      return 'Boa tarde';
+    } else {
+      return 'Boa noite';
+    }
+  };
+
   // Função para logout
-  const handleLogout = () => {
-    // Redirecionar para a rota de logout do servidor
-    window.location.href = '/api/logout';
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setLocation('/login');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      // Fallback para logout direto
+      window.location.href = '/api/logout';
+    }
   };
 
   // Função para buscar estatísticas de checklist e manutenção
@@ -626,9 +646,32 @@ export default function LineHallShopeePage() {
         
         {/* Conteúdo principal */}
         <div className="relative z-10 space-y-6 p-6">
+        
+        {/* Header com saudação personalizada */}
+        <div className="flex justify-between items-center bg-white/90 backdrop-blur-sm p-4 rounded-lg shadow-sm border">
+          <div className="flex items-center space-x-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {getTimeBasedGreeting()}, {user?.name || 'Usuário'}!
+              </h1>
+              <p className="text-gray-600">
+                Bem-vindo ao Line Hall Shopee
+              </p>
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={handleLogout}
+            className="flex items-center space-x-2 bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Sair</span>
+          </Button>
+        </div>
+        
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold">Line Hall Shopee</h1>
+            <h2 className="text-xl font-semibold">Painel de Controle</h2>
             <p className="text-muted-foreground">
               Gerenciamento de viagens de Line Hall
             </p>
