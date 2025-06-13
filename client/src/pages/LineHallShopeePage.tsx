@@ -123,7 +123,7 @@ export default function LineHallShopeePage() {
 
   const fetchTrips = async () => {
     try {
-      const response = await api.get('/api/line-hall-shopee');
+      const response = await api.get('/line-hall-shopee');
       if (response.data.success) {
         setTrips(response.data.data || []);
       }
@@ -139,7 +139,7 @@ export default function LineHallShopeePage() {
 
   const fetchRoutes = async () => {
     try {
-      const response = await api.get('/api/line-hall/routes');
+      const response = await api.get('/line-hall/routes');
       if (response.data.success) {
         setRoutes(response.data.data || []);
       }
@@ -150,7 +150,7 @@ export default function LineHallShopeePage() {
 
   const fetchVehicles = async () => {
     try {
-      const response = await api.get('/api/vehicles');
+      const response = await api.get('/vehicles');
       const allVehicles = response.data || [];
       
       console.log('Todos os veículos:', allVehicles);
@@ -169,7 +169,7 @@ export default function LineHallShopeePage() {
 
   const fetchDrivers = async () => {
     try {
-      const response = await api.get('/api/drivers');
+      const response = await api.get('/drivers');
       const allDrivers = response.data || [];
       console.log('Todos os motoristas:', allDrivers);
       setDrivers(allDrivers);
@@ -180,7 +180,7 @@ export default function LineHallShopeePage() {
 
   const fetchFuelRequests = async () => {
     try {
-      const response = await api.get('/api/line-hall/fuel-requests');
+      const response = await api.get('/line-hall/fuel-requests');
       console.log('Solicitações do Line Hall API Response:', response.data);
       if (response.data.success) {
         setFuelRequests(response.data.data || []);
@@ -198,7 +198,7 @@ export default function LineHallShopeePage() {
 
   const fetchMaintenanceStats = async () => {
     try {
-      const response = await api.get('/api/line-hall/maintenance-stats');
+      const response = await api.get('/line-hall/maintenance-stats');
       if (response.data.success) {
         setMaintenanceStats(response.data);
       }
@@ -209,7 +209,7 @@ export default function LineHallShopeePage() {
 
   const fetchGarageStats = async () => {
     try {
-      const response = await api.get('/api/line-hall/garage-stats');
+      const response = await api.get('/line-hall/garage-stats');
       if (response.data.success) {
         setGarageStats(response.data.data || []);
       }
@@ -238,7 +238,7 @@ export default function LineHallShopeePage() {
 
   const handleCreateTrip = async () => {
     try {
-      const response = await api.post('/api/line-hall-shopee', newTrip);
+      const response = await api.post('/line-hall-shopee', newTrip);
       if (response.data.success) {
         toast({
           title: "Sucesso",
@@ -270,7 +270,7 @@ export default function LineHallShopeePage() {
 
   const handleCreateRoute = async () => {
     try {
-      const response = await api.post('/api/line-hall/routes', {
+      const response = await api.post('/line-hall/routes', {
         ...newRoute,
         km_total: parseInt(newRoute.km_total)
       });
@@ -299,7 +299,7 @@ export default function LineHallShopeePage() {
 
   const handleDeleteTrip = async (id: number) => {
     try {
-      const response = await api.delete(`/api/line-hall-shopee/${id}`);
+      const response = await api.delete(`/line-hall-shopee/${id}`);
       if (response.data.success) {
         toast({
           title: "Sucesso",
@@ -326,7 +326,7 @@ export default function LineHallShopeePage() {
     if (!editingTrip) return;
 
     try {
-      const response = await api.put(`/api/line-hall-shopee/${editingTrip.id}`, editingTrip);
+      const response = await api.put(`/line-hall-shopee/${editingTrip.id}`, editingTrip);
       if (response.data.success) {
         toast({
           title: "Sucesso",
