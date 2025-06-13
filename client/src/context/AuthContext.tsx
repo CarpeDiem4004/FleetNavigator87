@@ -3,6 +3,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { supabase } from '@/lib/supabaseClient';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useLocation } from 'wouter';
 
 interface User {
   id: number;
@@ -54,6 +55,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   
   // Usar o hook do Supabase para autenticação
   const {
@@ -433,6 +435,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       // Resetar o estado independentemente do método
       setUser(null);
+      
+      // Redirecionar para a página de login
+      setLocation('/');
       
       toast({
         title: "Logout realizado",
