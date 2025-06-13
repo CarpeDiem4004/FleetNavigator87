@@ -13887,44 +13887,7 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
-  app.get('/api/terceiros/admin/stats', authMiddleware, async (req: Request, res: Response) => {
-    try {
-      const user = req.user;
-      
-      // Verificar se o usuário é admin
-      if (user?.role !== 'admin') {
-        return res.status(403).json({ error: 'Acesso negado. Apenas administradores.' });
-      }
 
-      // Estatísticas gerais
-      const statsQuery = `
-        SELECT 
-          (SELECT COUNT(*) FROM empresas_terceiros WHERE status = 'ativo') as empresas_ativas,
-          (SELECT COUNT(*) FROM abastecimentos_terceiros) as total_abastecimentos,
-          (SELECT COALESCE(SUM(litros), 0) FROM abastecimentos_terceiros) as total_litros,
-          (SELECT COALESCE(SUM(valor), 0) FROM abastecimentos_terceiros) as total_valor,
-          (SELECT COUNT(*) FROM abastecimentos_terceiros WHERE DATE(data_abastecimento) = CURRENT_DATE) as abastecimentos_hoje
-      `;
-      
-      const statsResult = await pool.query(statsQuery);
-      const stats = statsResult.rows[0];
-      
-      res.json({
-        success: true,
-        data: {
-          empresasAtivas: parseInt(stats.empresas_ativas),
-          totalAbastecimentos: parseInt(stats.total_abastecimentos),
-          totalLitros: parseFloat(stats.total_litros),
-          totalValor: parseFloat(stats.total_valor),
-          abastecimentosHoje: parseInt(stats.abastecimentos_hoje)
-        }
-      });
-
-    } catch (error) {
-      console.error('Erro ao buscar estatísticas de terceiros:', error);
-      res.status(500).json({ error: 'Erro interno do servidor.' });
-    }
-  });
 
   // Rotas do sistema de abastecimento terceiros integradas
   const bcrypt = require('bcrypt');

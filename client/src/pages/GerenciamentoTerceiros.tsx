@@ -79,24 +79,59 @@ export default function GerenciamentoTerceiros() {
       setLoading(true);
       
       // Buscar estatísticas
-      const statsResponse = await fetch('/api/terceiros/admin/stats');
+      const statsResponse = await fetch('/api/terceiros/admin/stats', {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
-        setStats(statsData.data);
+        if (statsData.success && statsData.data) {
+          setStats(statsData.data);
+        }
+      } else {
+        console.error('Erro ao carregar estatísticas:', statsResponse.status);
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar estatísticas",
+          variant: "destructive"
+        });
       }
 
       // Buscar empresas
-      const empresasResponse = await fetch('/api/terceiros/admin/empresas');
+      const empresasResponse = await fetch('/api/terceiros/admin/empresas', {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
       if (empresasResponse.ok) {
         const empresasData = await empresasResponse.json();
-        setEmpresas(empresasData.data || []);
+        if (empresasData.success && empresasData.data) {
+          setEmpresas(empresasData.data);
+        }
+      } else {
+        console.error('Erro ao carregar empresas:', empresasResponse.status);
       }
 
       // Buscar abastecimentos
-      const abastecimentosResponse = await fetch('/api/terceiros/admin/abastecimentos');
+      const abastecimentosResponse = await fetch('/api/terceiros/admin/abastecimentos', {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
       if (abastecimentosResponse.ok) {
         const abastecimentosData = await abastecimentosResponse.json();
-        setAbastecimentos(abastecimentosData.data || []);
+        if (abastecimentosData.success && abastecimentosData.data) {
+          setAbastecimentos(abastecimentosData.data);
+        }
+      } else {
+        console.error('Erro ao carregar abastecimentos:', abastecimentosResponse.status);
       }
 
     } catch (error) {
