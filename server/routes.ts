@@ -3193,6 +3193,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Atualizar rota do Line Hall Shopee
+  app.put('/api/line-hall/routes/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { nome_ponto_a, nome_ponto_b, km_total } = req.body;
+      
+      if (!nome_ponto_a || !nome_ponto_b || !km_total) {
+        return res.status(400).json({
+          success: false,
+          message: 'Todos os campos são obrigatórios'
+        });
+      }
+      
+      // Verificar se a rota existe
+      const checkQuery = `SELECT id FROM line_hall_routes WHERE id = $1`;
+      const checkResult = await pool.query(checkQuery, [id]);
+      
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Rota não encontrada'
+        });
+      }
+      
+      // Verificar se outra rota com os mesmos pontos já existe (exceto a atual)
+      const duplicateQuery = `
+        SELECT id FROM line_hall_routes 
+        WHERE nome_ponto_a = $1 AND nome_ponto_b = $2 AND id != $3
+      `;
+      const duplicateResult = await pool.query(duplicateQuery, [nome_ponto_a, nome_ponto_b, id]);
+      
+      if (duplicateResult.rows.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Já existe uma rota com estes pontos'
+        });
+      }
+      
+      const query = `
+        UPDATE line_hall_routes
+        SET nome_ponto_a = $1, nome_ponto_b = $2, km_total = $3, updated_at = NOW()
+        WHERE id = $4
+        RETURNING *
+      `;
+      
+      const result = await pool.query(query, [nome_ponto_a, nome_ponto_b, km_total, id]);
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows[0],
+        message: 'Rota atualizada com sucesso'
+      });
+    } catch (error: any) {
+      console.error('Erro ao atualizar rota:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao atualizar rota',
+        error: error.message
+      });
+    }
+  });
+
   // Listar todas as solicitações de manutenção do Line Hall
   app.get('/api/line-hall/maintenance-requests', isAuthenticated, async (req, res) => {
     try {

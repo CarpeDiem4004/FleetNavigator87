@@ -101,9 +101,11 @@ export default function LineHallShopeePage() {
   
   // Estados para gerenciar rotas
   const [isCreatingRoute, setIsCreatingRoute] = useState(false);
+  const [isEditingRoute, setIsEditingRoute] = useState(false);
   const [showRoutes, setShowRoutes] = useState(false);
   const [routes, setRoutes] = useState<RouteData[]>([]);
   const [currentRoute, setCurrentRoute] = useState({
+    id: 0,
     nome_ponto_a: '',
     nome_ponto_b: '',
     km_total: 0
@@ -402,6 +404,7 @@ export default function LineHallShopeePage() {
         });
         setIsCreatingRoute(false);
         setCurrentRoute({
+          id: 0,
           nome_ponto_a: '',
           nome_ponto_b: '',
           km_total: 0
@@ -413,6 +416,60 @@ export default function LineHallShopeePage() {
       toast({
         title: "Erro ao cadastrar rota",
         description: error.response?.data?.message || "Ocorreu um erro ao cadastrar a rota",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Função para editar uma rota
+  const editRoute = (route: any) => {
+    setCurrentRoute({
+      id: route.id,
+      nome_ponto_a: route.nome_ponto_a,
+      nome_ponto_b: route.nome_ponto_b,
+      km_total: route.km_total
+    });
+    setIsEditingRoute(true);
+  };
+
+  // Função para atualizar uma rota
+  const handleUpdateRoute = async () => {
+    try {
+      if (!currentRoute.nome_ponto_a || !currentRoute.nome_ponto_b || !currentRoute.km_total) {
+        toast({
+          title: "Campos obrigatórios",
+          description: "Preencha todos os campos obrigatórios",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const response = await api.put(`/line-hall/routes/${currentRoute.id}`, {
+        nome_ponto_a: currentRoute.nome_ponto_a,
+        nome_ponto_b: currentRoute.nome_ponto_b,
+        km_total: currentRoute.km_total
+      });
+
+      if (response.data.success) {
+        toast({
+          title: "Rota atualizada",
+          description: "Rota atualizada com sucesso!",
+          variant: "default"
+        });
+        setIsEditingRoute(false);
+        setCurrentRoute({
+          id: 0,
+          nome_ponto_a: '',
+          nome_ponto_b: '',
+          km_total: 0
+        });
+        fetchRoutesData();
+      }
+    } catch (error: any) {
+      console.error("Erro ao atualizar rota:", error);
+      toast({
+        title: "Erro ao atualizar rota",
+        description: error.response?.data?.message || "Ocorreu um erro ao atualizar a rota",
         variant: "destructive"
       });
     }
@@ -1338,18 +1395,29 @@ export default function LineHallShopeePage() {
                             {new Date(route.created_at).toLocaleDateString('pt-BR')}
                           </TableCell>
                           <TableCell>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => {
-                                const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(route.nome_ponto_a)}/${encodeURIComponent(route.nome_ponto_b)}`;
-                                window.open(mapsUrl, '_blank');
-                              }}
-                              className="text-blue-600 hover:text-blue-800"
-                            >
-                              <MapPin className="mr-1 h-3 w-3" />
-                              Ver no Maps
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => {
+                                  const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(route.nome_ponto_a)}/${encodeURIComponent(route.nome_ponto_b)}`;
+                                  window.open(mapsUrl, '_blank');
+                                }}
+                                className="text-blue-600 hover:text-blue-800"
+                              >
+                                <MapPin className="mr-1 h-3 w-3" />
+                                Ver no Maps
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => editRoute(route)}
+                                className="text-green-600 hover:text-green-800"
+                              >
+                                <Edit className="mr-1 h-3 w-3" />
+                                Editar
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -1578,6 +1646,88 @@ export default function LineHallShopeePage() {
             <Button type="button" onClick={handleUpdateTrip}>Atualizar Viagem</Button>
           </DialogFooter>
         </DialogContent>
+        </Dialog>
+
+        {/* Dialog para editar rota */}
+        <Dialog open={isEditingRoute} onOpenChange={setIsEditingRoute}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Editar Rota</DialogTitle>
+              <DialogDescription>
+                Edite os dados da rota do Line Hall Shopee
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit_nome_ponto_a">Ponto A (Origem) *</Label>
+                <Input
+                  id="edit_nome_ponto_a"
+                  placeholder="Ex: São Paulo - SP"
+                  value={currentRoute.nome_ponto_a}
+                  onChange={(e) => setCurrentRoute(prev => ({ ...prev, nome_ponto_a: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_nome_ponto_b">Ponto B (Destino) *</Label>
+                <Input
+                  id="edit_nome_ponto_b"
+                  placeholder="Ex: Rio de Janeiro - RJ"
+                  value={currentRoute.nome_ponto_b}
+                  onChange={(e) => setCurrentRoute(prev => ({ ...prev, nome_ponto_b: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_km_total">Distância Total (KM) *</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="edit_km_total"
+                    type="number"
+                    placeholder="Ex: 450"
+                    value={currentRoute.km_total || ''}
+                    onChange={(e) => setCurrentRoute(prev => ({ ...prev, km_total: parseFloat(e.target.value) || 0 }))}
+                    className="flex-1"
+                  />
+                  {currentRoute.nome_ponto_a && currentRoute.nome_ponto_b && (
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => {
+                        const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(currentRoute.nome_ponto_a)}/${encodeURIComponent(currentRoute.nome_ponto_b)}`;
+                        window.open(mapsUrl, '_blank');
+                      }}
+                      className="text-blue-600 hover:text-blue-800 shrink-0"
+                      title="Ver rota no Google Maps"
+                    >
+                      <MapPin className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+              
+              <div className="text-sm text-muted-foreground text-center">
+                💡 Preencha origem e destino, depois clique no ícone ao lado do campo distância para consultar no Google Maps
+              </div>
+            </div>
+            <DialogFooter className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => setIsEditingRoute(false)}>Cancelar</Button>
+              {currentRoute.nome_ponto_a && currentRoute.nome_ponto_b && (
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  onClick={() => {
+                    const mapsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(currentRoute.nome_ponto_a)}/${encodeURIComponent(currentRoute.nome_ponto_b)}`;
+                    window.open(mapsUrl, '_blank');
+                  }}
+                  className="text-blue-600 hover:text-blue-800"
+                >
+                  <MapPin className="mr-2 h-4 w-4" />
+                  Ver no Maps
+                </Button>
+              )}
+              <Button type="button" onClick={handleUpdateRoute}>Atualizar Rota</Button>
+            </DialogFooter>
+          </DialogContent>
         </Dialog>
         </div>
       </div>
