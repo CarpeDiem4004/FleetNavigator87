@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, RefreshCcw, Search, Edit, Trash2, Truck, FileText, CheckSquare, Wrench, AlertCircle, Car, UserPlus, MapPin, CreditCard } from 'lucide-react';
+import { Loader2, Plus, RefreshCcw, Search, Edit, Trash2, Truck, FileText, CheckSquare, Wrench, AlertCircle, Car, UserPlus, MapPin, CreditCard, LogOut } from 'lucide-react';
 import { api } from '@/services/api';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -479,6 +479,12 @@ export default function LineHallShopeePage() {
     }
   };
 
+  // Função para logout
+  const handleLogout = () => {
+    // Redirecionar para a rota de logout do servidor
+    window.location.href = '/api/logout';
+  };
+
   // Função para buscar estatísticas de checklist e manutenção
   const fetchDriverStats = async () => {
     try {
@@ -593,6 +599,14 @@ export default function LineHallShopeePage() {
             <Button variant="outline" onClick={fetchTrips} className="flex items-center">
               <RefreshCcw className="mr-2 h-4 w-4" />
               Atualizar
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleLogout} 
+              className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sair
             </Button>
             <Dialog open={isCreatingRoute} onOpenChange={setIsCreatingRoute}>
               <DialogContent className="sm:max-w-[500px]">

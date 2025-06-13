@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { apiRequest } from '@/lib/queryClient';
-import { CreditCard, Filter, Search, Calendar, CheckCircle2, XCircle, Clock, AlertCircle, ArrowLeft, Home } from 'lucide-react';
+import { CreditCard, Filter, Search, Calendar, CheckCircle2, XCircle, Clock, AlertCircle, ArrowLeft, Home, LogOut } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
@@ -120,6 +120,11 @@ const LineHallFuelCardRequests: React.FC = () => {
         variant: 'destructive',
       });
     }
+  };
+
+  // Função para logout
+  const handleLogout = () => {
+    window.location.href = '/api/logout';
   };
 
   // Função para notificar motorista via SMS/WhatsApp
@@ -253,6 +258,15 @@ ${new Date().toLocaleString('pt-BR')}`;
                 Dashboard
               </Button>
             </Link>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleLogout} 
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
+            </Button>
           </div>
         </div>
       </div>
