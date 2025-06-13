@@ -1454,9 +1454,7 @@ export default function LineHallShopeePage() {
             )}
           </CardContent>
         </Card>
-      </div>
-
-      <Dialog open={isEditing} onOpenChange={setIsEditing}>
+        <Dialog open={isEditing} onOpenChange={setIsEditing}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Editar Viagem</DialogTitle>
@@ -1580,7 +1578,7 @@ export default function LineHallShopeePage() {
             <Button type="button" onClick={handleUpdateTrip}>Atualizar Viagem</Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+        </Dialog>
         </div>
       </div>
     </MainLayoutSimple>
