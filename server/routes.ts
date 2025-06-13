@@ -13726,6 +13726,11 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
+  // Debug endpoint to verify API routing
+  app.get('/api/terceiros/test', (req: Request, res: Response) => {
+    res.json({ success: true, message: 'API routing is working', timestamp: new Date().toISOString() });
+  });
+
   // Rotas do sistema de abastecimento terceiros integradas
   const bcrypt = require('bcrypt');
   const jwt = require('jsonwebtoken');

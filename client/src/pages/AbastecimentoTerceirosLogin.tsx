@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Building2, Fuel } from 'lucide-react';
+import { terceirosApi, type LoginCredentials } from '@/utils/terceirosApi';
 
 interface LoginResponse {
   success: boolean;
