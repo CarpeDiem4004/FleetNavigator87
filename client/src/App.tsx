@@ -277,8 +277,7 @@ function App() {
           <ProtectedRoute path="/diagnostico/api-tester" component={ApiTester} />
           <ProtectedRoute path="/diagnostico/autenticacao" component={AutenticacaoDiagnostico} />
           <ProtectedRoute path="/diagnostico/budget-attachments-migration" component={BudgetAttachmentsMigration} />
-          <ProtectedRoute path="/diagnostico/migracao-anexos" component={MigracaoAnexosPage} />
-          <ProtectedRoute path="/diagnostico/upload-documento" component={UploadDocumentoPage} />
+
           <ProtectedRoute path="/diagnostico/auto-save-demo" component={AutoSaveDemo} />
           <ProtectedRoute path="/admin/utils" component={AdminUtils} />
           <ProtectedRoute path="/limpar-dados" component={LimparDados} />
