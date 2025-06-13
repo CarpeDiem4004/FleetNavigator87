@@ -26,7 +26,7 @@ import {
   ChevronDown,
   ChevronRight,
   Droplets,
-  TruckIcon
+
 } from 'lucide-react';
 
 // Constantes para itens de menu
@@ -234,7 +234,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Visão Geral dos Postos', href: '/postos/visao-geral', icon: BarChart4 },
       { name: 'Consumo Diário', href: '/postos/consumo-diario', icon: BarChart4 },
       { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 },
-      { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: TruckIcon }
+      { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: Truck }
     ]},
     // Alterado para usar o ícone de posto de gasolina (Droplets) em vez de Warehouse para Postos Externos
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
@@ -284,7 +284,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Visão Geral dos Postos', href: '/postos/visao-geral', icon: BarChart4 },
       { name: 'Consumo Diário', href: '/postos/consumo-diario', icon: BarChart4 },
       { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 },
-      { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: TruckIcon }
+      { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: Truck }
     ]},
     // Corrigido para usar o mesmo ícone e estrutura em ambas as listas de navegação
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
@@ -329,7 +329,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Visão Geral dos Postos', href: '/postos/visao-geral', icon: BarChart4 },
       { name: 'Consumo Diário', href: '/postos/consumo-diario', icon: BarChart4 },
       { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 },
-      { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: TruckIcon }
+      { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: Truck }
     ]},
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
@@ -366,7 +366,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 },
       { name: 'Cartão de Abastecimento', href: '/cartao-abastecimento', icon: CreditCard }
     ]},
-    { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: TruckIcon },
+    { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: Truck },
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
       { name: 'Posto Remédios', href: '/posto-remedios', icon: Fuel }
     ]},
