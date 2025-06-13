@@ -56,35 +56,36 @@ const NavItemWithSubmenu: React.FC<{
 }> = ({ item, isActive, isSubItemActive, onClose, currentLocation }) => {
   // Se isSubItemActive for undefined, defina como false
   const subItemActive = isSubItemActive === true;
-  // Forçar a expansão do menu Bases sempre
+  // Forçar a expansão do menu Bases e Abastecimentos sempre
   const isBases = item.name === 'Bases';
-  // Sempre inicializar expandido se for o menu Bases
-  const [expanded, setExpanded] = useState(isActive || subItemActive || isBases);
+  const isAbastecimentos = item.name === 'Abastecimentos';
+  // Sempre inicializar expandido se for o menu Bases ou Abastecimentos
+  const [expanded, setExpanded] = useState(isActive || subItemActive || isBases || isAbastecimentos);
   
-  // Garantir que o submenu seja expandido quando um subitem estiver ativo ou quando for o menu Bases
+  // Garantir que o submenu seja expandido quando um subitem estiver ativo ou quando for o menu Bases/Abastecimentos
   useEffect(() => {
-    if ((subItemActive && !expanded) || (isBases && !expanded)) {
-      console.log(`Expandindo menu ${item.name} automaticamente: subItemActive=${subItemActive}, isBases=${isBases}`);
+    if ((subItemActive && !expanded) || (isBases && !expanded) || (isAbastecimentos && !expanded)) {
+      console.log(`Expandindo menu ${item.name} automaticamente: subItemActive=${subItemActive}, isBases=${isBases}, isAbastecimentos=${isAbastecimentos}`);
       setExpanded(true);
     }
-  }, [subItemActive, expanded, item.name, isBases]);
+  }, [subItemActive, expanded, item.name, isBases, isAbastecimentos]);
   
-  // Garantir que o menu Bases nunca seja colapsável
+  // Garantir que o menu Bases e Abastecimentos nunca sejam colapsáveis
   useEffect(() => {
-    if (isBases && !expanded) {
-      console.log('Forçando o menu Bases a permanecer aberto');
+    if ((isBases && !expanded) || (isAbastecimentos && !expanded)) {
+      console.log(`Forçando o menu ${item.name} a permanecer aberto`);
       setExpanded(true);
     }
-  }, [expanded, isBases]);
+  }, [expanded, isBases, isAbastecimentos]);
   
   const Icon = item.icon;
 
   const toggleExpanded = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // Se for o menu Bases, não permitir fechá-lo
-    if (isBases && expanded) {
-      console.log('Tentativa de fechar o menu Bases bloqueada');
+    // Se for o menu Bases ou Abastecimentos, não permitir fechá-lo
+    if ((isBases && expanded) || (isAbastecimentos && expanded)) {
+      console.log(`Tentativa de fechar o menu ${item.name} bloqueada`);
       return;
     }
     setExpanded(!expanded);
@@ -232,7 +233,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       { name: 'Histórico Pátio', href: '/abastecimentos', icon: Gauge },
       { name: 'Visão Geral dos Postos', href: '/postos/visao-geral', icon: BarChart4 },
       { name: 'Consumo Diário', href: '/postos/consumo-diario', icon: BarChart4 },
-      { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 }
+      { name: 'Histórico Consolidado', href: '/postos/historico-consolidado', icon: BarChart4 },
+      { name: 'Gerenciamento Terceiros', href: '/terceiros/gerenciamento', icon: TruckIcon }
     ]},
     // Alterado para usar o ícone de posto de gasolina (Droplets) em vez de Warehouse para Postos Externos
     { name: 'Postos Externos', href: '#', icon: Droplets, subItems: [
