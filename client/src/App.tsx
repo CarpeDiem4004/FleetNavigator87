@@ -121,6 +121,10 @@ import DriverMaintenanceRequest from "@/pages/DriverMaintenanceRequest";
 import LineHallVehicleRegistration from "@/pages/LineHallVehicleRegistration";
 import LineHallFuelCardRequests from "@/pages/LineHallFuelCardRequests";
 
+// Importação das páginas de Abastecimento Terceiros
+import AbastecimentoTerceirosLogin from "@/pages/AbastecimentoTerceirosLogin";
+import AbastecimentoTerceirosDashboard from "@/pages/AbastecimentoTerceirosDashboard";
+
 // Importação das páginas da Base Campinas
 import BaseCampinas from "@/pages/bases/BaseCampinas";
 import DespesasCampinas from "@/pages/bases/DespesasCampinas";
@@ -465,6 +469,14 @@ function App() {
               <StationProfile />
             </div>
           )} />
+          
+          {/* Rotas do Sistema de Abastecimento Terceiros - acesso externo sem proteção */}
+          <Route path="/terceiros/login">
+            <AbastecimentoTerceirosLogin />
+          </Route>
+          <Route path="/terceiros/dashboard">
+            <AbastecimentoTerceirosDashboard />
+          </Route>
           
           <Route>
             <NotFound />

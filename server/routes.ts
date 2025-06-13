@@ -13726,6 +13726,13 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
+  // Adicionar rotas do sistema de abastecimento terceiros
+  const abastecimentoTerceirosRouter = require('./routes/abastecimentoTerceiros');
+  app.use('/api/terceiros', abastecimentoTerceirosRouter);
+
+  // Servir arquivos estáticos para uploads
+  app.use('/uploads', express.static('uploads'));
+
   const httpServer = createServer(app);
   return httpServer;
 }
