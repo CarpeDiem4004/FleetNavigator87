@@ -88,6 +88,7 @@ const NavItemWithSubmenu: React.FC<{
       console.log(`Tentativa de fechar o menu ${item.name} bloqueada`);
       return;
     }
+    console.log(`Alternando estado do menu ${item.name}: ${expanded} -> ${!expanded}`);
     setExpanded(!expanded);
   };
 
