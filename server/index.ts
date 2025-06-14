@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { configureBrazilTimezone, timezoneMiddleware } from './utils/timezone.js';
 // Importar cronJobs para tarefas agendadas
 import { initCronJobs } from "./cronJobs";
 // Importar migrações
@@ -54,11 +55,17 @@ process.env.SUPABASE_URL = process.env.SUPABASE_URL || 'https://hvsmxxqkuyjhpsio
 process.env.SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';
 process.env.SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
 
+// Configurar timezone do Brasil ANTES de qualquer operação
+configureBrazilTimezone();
+
 const app = express();
 
 // Middleware para processar JSON ANTES dos endpoints críticos
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Aplicar middleware de timezone para todas as rotas
+app.use(timezoneMiddleware);
 
 // ROTAS DE TERCEIROS - Registrar ANTES de qualquer middleware para evitar interceptação do Vite
 app.get('/api/terceiros/admin/stats', async (req, res) => {

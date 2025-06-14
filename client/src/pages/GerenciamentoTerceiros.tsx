@@ -8,8 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Search, Eye, FileText, Building2, Fuel, TrendingUp, Download, RefreshCw, Plus, UserPlus } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { useBrazilTimezone, useTableTimezone } from '@/hooks/useBrazilTimezone';
 
 interface Empresa {
   id: number;
