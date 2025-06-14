@@ -132,64 +132,107 @@ export function validateTimezoneInUrl(url: string): boolean {
  * Corrige timezone em uma URL existente
  */
 export function fixTimezoneInUrl(url: string): string {
-  const urlObj = new URL(url);
-  
-  // Remove parâmetros de timezone antigos
-  urlObj.searchParams.delete('timezone');
-  urlObj.searchParams.delete('date');
-  urlObj.searchParams.delete('time');
-  urlObj.searchParams.delete('datetime');
-  urlObj.searchParams.delete('timestamp');
-  
-  // Adiciona timezone correto
-  return addTimezoneToUrl(urlObj.toString());
+  try {
+    // Validar se é uma URL válida
+    if (!url || typeof url !== 'string') {
+      return url;
+    }
+    
+    // Se não tem protocolo, assume http
+    let validUrl = url;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      validUrl = 'https://' + url;
+    }
+    
+    const urlObj = new URL(validUrl);
+    
+    // Remove parâmetros de timezone antigos
+    urlObj.searchParams.delete('timezone');
+    urlObj.searchParams.delete('date');
+    urlObj.searchParams.delete('time');
+    urlObj.searchParams.delete('datetime');
+    urlObj.searchParams.delete('timestamp');
+    
+    // Adiciona timezone correto
+    return addTimezoneToUrl(urlObj.toString());
+  } catch (error) {
+    console.warn('[TimezoneURL] URL inválida ignorada:', url);
+    return url; // Retorna URL original se inválida
+  }
 }
 
 /**
  * Middleware para interceptar e corrigir URLs com timezone
  */
 export function interceptAndFixUrls(): void {
-  // Intercepta cliques em links
-  document.addEventListener('click', (event) => {
-    const target = event.target as HTMLElement;
-    const link = target.closest('a');
+  try {
+    console.log('[TimezoneURL] Configurando interceptadores de URL');
     
-    if (link && link.href) {
-      const url = new URL(link.href);
-      
-      // Verifica se é um link externo do sistema
-      if (url.hostname === window.location.hostname) {
-        const timezoneData = parseTimezoneFromUrl(link.href);
+    // Intercepta cliques em links
+    document.addEventListener('click', (event) => {
+      try {
+        const target = event.target as HTMLElement;
+        const link = target.closest('a');
         
-        // Se não tem timezone ou está incorreto, corrige
-        if (!timezoneData.timezone || timezoneData.timezone !== BRAZIL_TIMEZONE) {
-          event.preventDefault();
-          const correctedUrl = fixTimezoneInUrl(link.href);
-          window.open(correctedUrl, link.target || '_self');
+        if (link && link.href) {
+          // Validar URL antes de processar
+          if (!link.href.startsWith('http://') && !link.href.startsWith('https://')) {
+            return; // Ignorar URLs relativas ou inválidas
+          }
+          
+          const url = new URL(link.href);
+          
+          // Verifica se é um link externo do sistema
+          if (url.hostname === window.location.hostname) {
+            const timezoneData = parseTimezoneFromUrl(link.href);
+            
+            // Se não tem timezone ou está incorreto, corrige
+            if (!timezoneData.timezone || timezoneData.timezone !== BRAZIL_TIMEZONE) {
+              event.preventDefault();
+              const correctedUrl = fixTimezoneInUrl(link.href);
+              window.open(correctedUrl, link.target || '_self');
+            }
+          }
         }
+      } catch (error) {
+        console.warn('[TimezoneURL] Erro ao interceptar clique:', error);
       }
-    }
-  });
-  
-  // Intercepta mudanças de localização
-  const originalPushState = history.pushState;
-  const originalReplaceState = history.replaceState;
-  
-  history.pushState = function(state, title, url) {
-    if (url) {
-      const correctedUrl = fixTimezoneInUrl(url.toString());
-      return originalPushState.call(this, state, title, correctedUrl);
-    }
-    return originalPushState.call(this, state, title, url);
-  };
-  
-  history.replaceState = function(state, title, url) {
-    if (url) {
-      const correctedUrl = fixTimezoneInUrl(url.toString());
-      return originalReplaceState.call(this, state, title, correctedUrl);
-    }
-    return originalReplaceState.call(this, state, title, url);
-  };
+    });
+    
+    // Intercepta mudanças de localização
+    const originalPushState = history.pushState;
+    const originalReplaceState = history.replaceState;
+    
+    history.pushState = function(state, title, url) {
+      try {
+        if (url) {
+          const correctedUrl = fixTimezoneInUrl(url.toString());
+          return originalPushState.call(this, state, title, correctedUrl);
+        }
+        return originalPushState.call(this, state, title, url);
+      } catch (error) {
+        console.warn('[TimezoneURL] Erro no pushState:', error);
+        return originalPushState.call(this, state, title, url);
+      }
+    };
+    
+    history.replaceState = function(state, title, url) {
+      try {
+        if (url) {
+          const correctedUrl = fixTimezoneInUrl(url.toString());
+          return originalReplaceState.call(this, state, title, correctedUrl);
+        }
+        return originalReplaceState.call(this, state, title, url);
+      } catch (error) {
+        console.warn('[TimezoneURL] Erro no replaceState:', error);
+        return originalReplaceState.call(this, state, title, url);
+      }
+    };
+    
+    console.log('[TimezoneURL] Interceptadores configurados com sucesso');
+  } catch (error) {
+    console.error('[TimezoneURL] Erro ao configurar interceptadores:', error);
+  }
 }
 
 /**
