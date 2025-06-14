@@ -667,12 +667,15 @@ app.use((req, res, next) => {
   app.get('/api/terceiros/admin/stats', terceirosAuthMiddleware, async (req, res) => {
     try {
       const pool = (await import('./database.js')).pool;
+      const { processDatabaseDates, nowInBrazil } = await import('./utils/timezone.js');
+      
       const statsQuery = `
         SELECT 
           COUNT(DISTINCT e.id) as total_empresas,
           COUNT(a.id) as total_abastecimentos,
           COALESCE(SUM(a.valor_total::numeric), 0) as valor_total_abastecimentos,
-          COALESCE(SUM(a.litros::numeric), 0) as total_litros
+          COALESCE(SUM(a.litros::numeric), 0) as total_litros,
+          COUNT(CASE WHEN DATE(a.data_abastecimento AT TIME ZONE 'America/Sao_Paulo') = DATE(NOW() AT TIME ZONE 'America/Sao_Paulo') THEN 1 END) as abastecimentos_hoje
         FROM empresas_terceiros e
         LEFT JOIN abastecimentos_terceiros a ON e.id = a.empresa_id
         WHERE e.is_active = true
@@ -683,10 +686,14 @@ app.use((req, res, next) => {
         total_empresas: 0,
         total_abastecimentos: 0,
         valor_total_abastecimentos: 0,
-        total_litros: 0
+        total_litros: 0,
+        abastecimentos_hoje: 0
       };
       
-      console.log('[TerceirosAuth] Stats consultadas com sucesso:', stats);
+      // Adicionar timestamp atual no timezone do Brasil
+      stats.data_atualizacao = nowInBrazil();
+      
+      console.log('[TerceirosAuth] Stats consultadas com sucesso (Brasil timezone):', stats);
       res.setHeader('Content-Type', 'application/json');
       res.end(JSON.stringify({ success: true, data: stats }));
     } catch (error) {

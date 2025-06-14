@@ -45,6 +45,8 @@ interface DashboardStats {
 
 export default function GerenciamentoTerceiros() {
   const { toast } = useToast();
+  const tz = useBrazilTimezone();
+  const tableTimezone = useTableTimezone();
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
@@ -158,7 +160,7 @@ export default function GerenciamentoTerceiros() {
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
-      a.download = `relatorio_terceiros_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+      a.download = `relatorio_terceiros_${tz.toDateInput(tz.now())}.xlsx`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -496,9 +498,7 @@ export default function GerenciamentoTerceiros() {
                 {filteredAbastecimentos.map((abastecimento) => (
                   <TableRow key={abastecimento.id}>
                     <TableCell>
-                      {format(new Date(abastecimento.data_abastecimento), 'dd/MM/yyyy HH:mm', {
-                        locale: ptBR,
-                      })}
+                      {tableTimezone.formatTableDateTime(abastecimento.data_abastecimento)}
                     </TableCell>
                     <TableCell>
                       <div>
@@ -638,9 +638,7 @@ export default function GerenciamentoTerceiros() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {format(new Date(empresa.data_cadastro), 'dd/MM/yyyy', {
-                        locale: ptBR,
-                      })}
+                      {tableTimezone.formatTableDate(empresa.data_cadastro)}
                     </TableCell>
                     <TableCell>
                       <Badge variant={empresa.status === 'ativo' ? 'default' : 'secondary'}>
