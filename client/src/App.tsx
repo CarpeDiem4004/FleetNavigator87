@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { initializeTimezoneUrlFix } from "@/utils/externalTimezone";
 import NotFound from "@/pages/not-found";
 import DashboardNew from "@/pages/DashboardNew";
 import Dashboard from "@/pages/index";
@@ -165,6 +166,11 @@ import FuelCardRedirect from "@/components/FuelCardRedirect";
 function App() {
   // Ativar o hook de injeção automática de token JWT em todas as requisições fetch
   useFetchWithAuth();
+  
+  // Inicializar correção automática de timezone em URLs
+  useEffect(() => {
+    initializeTimezoneUrlFix();
+  }, []);
   
   return (
     <QueryClientProvider client={queryClient}>

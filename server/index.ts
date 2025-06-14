@@ -706,21 +706,28 @@ app.use((req, res, next) => {
   app.get('/api/terceiros/admin/empresas', terceirosAuthMiddleware, async (req, res) => {
     try {
       const pool = (await import('./database.js')).pool;
+      const { processDatabaseDates } = await import('./utils/timezone.js');
+      
       const empresasQuery = `
         SELECT 
           e.*,
           COUNT(a.id) as total_abastecimentos,
-          COALESCE(SUM(a.valor_total::numeric), 0) as valor_total
+          COALESCE(SUM(a.valor_total::numeric), 0) as valor_total,
+          e.created_at AT TIME ZONE 'America/Sao_Paulo' as data_cadastro
         FROM empresas_terceiros e
         LEFT JOIN abastecimentos_terceiros a ON e.id = a.empresa_id
-        GROUP BY e.id
+        GROUP BY e.id, e.created_at
         ORDER BY e.created_at DESC
       `;
       
       const result = await pool.query(empresasQuery);
-      console.log('[TerceirosAuth] Empresas consultadas com sucesso:', result.rows.length);
+      
+      // Processar datas com timezone do Brasil
+      const processedData = processDatabaseDates(result.rows, ['created_at', 'data_cadastro']);
+      
+      console.log('[TerceirosAuth] Empresas consultadas com sucesso (Brasil timezone):', processedData.length);
       res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ success: true, data: result.rows }));
+      res.end(JSON.stringify({ success: true, data: processedData }));
     } catch (error) {
       console.error('[TerceirosAuth] Erro ao buscar empresas:', error);
       res.setHeader('Content-Type', 'application/json');
@@ -731,21 +738,34 @@ app.use((req, res, next) => {
   app.get('/api/terceiros/admin/abastecimentos', terceirosAuthMiddleware, async (req, res) => {
     try {
       const pool = (await import('./database.js')).pool;
+      const { processDatabaseDates } = await import('./utils/timezone.js');
+      
       const abastecimentosQuery = `
         SELECT 
           a.*,
           e.nome as empresa_nome,
-          e.cnpj as empresa_cnpj
+          e.cnpj as empresa_cnpj,
+          a.data_abastecimento AT TIME ZONE 'America/Sao_Paulo' as data_abastecimento_brasil,
+          a.created_at AT TIME ZONE 'America/Sao_Paulo' as data_registro
         FROM abastecimentos_terceiros a
         JOIN empresas_terceiros e ON a.empresa_id = e.id
-        ORDER BY a.created_at DESC
+        ORDER BY a.data_abastecimento DESC
         LIMIT 100
       `;
       
       const result = await pool.query(abastecimentosQuery);
-      console.log('[TerceirosAuth] Abastecimentos consultados com sucesso:', result.rows.length);
+      
+      // Processar datas com timezone do Brasil
+      const processedData = processDatabaseDates(result.rows, [
+        'data_abastecimento', 
+        'data_abastecimento_brasil', 
+        'created_at', 
+        'data_registro'
+      ]);
+      
+      console.log('[TerceirosAuth] Abastecimentos consultados com sucesso (Brasil timezone):', processedData.length);
       res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ success: true, data: result.rows }));
+      res.end(JSON.stringify({ success: true, data: processedData }));
     } catch (error) {
       console.error('[TerceirosAuth] Erro ao buscar abastecimentos:', error);
       res.setHeader('Content-Type', 'application/json');
