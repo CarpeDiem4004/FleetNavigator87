@@ -723,8 +723,8 @@ export class DatabaseStorage implements IStorage {
     try {
       // Usar SQL direto em vez de Drizzle ORM para evitar problemas com colunas que podem não existir
       const query = `
-        SELECT id, vehicle_plate as "vehiclePlate", description, status, 
-               workshop_id as "workshopId", request_base_id as "requestBaseId"
+        SELECT id, vehicle_plate as "vehiclePlate", descricao as description, status, 
+               oficina_id as "workshopId", request_base_id as "requestBaseId"
         FROM manutencao
         WHERE id = $1
       `;
@@ -762,18 +762,18 @@ export class DatabaseStorage implements IStorage {
       // Mapear os resultados para o formato esperado pelo frontend
       return result.rows.map(row => ({
         id: row.id,
-        vehiclePlate: row.vehicle_plate,
-        description: row.description,
+        vehiclePlate: row.vehicle_plate || row.placa,
+        description: row.descricao,
         status: row.status,
         priority: row.priority || "média",
-        maintenanceType: row.maintenance_type,
-        workshopId: row.workshop_id,
-        requestBaseId: row.request_base_id,
-        entryDate: row.entry_date,
-        estimatedCompletion: row.estimated_completion,
-        completionDate: row.completion_date,
+        maintenanceType: row.tipo,
+        workshopId: row.oficina_id,
+        requestBaseId: row.request_base_id || row.base_id,
+        entryDate: row.entry_date || row.data_solicitacao,
+        estimatedCompletion: row.data_agendada,
+        completionDate: row.data_conclusao,
         responsiblePerson: row.responsible_person,
-        cost: row.cost,
+        cost: row.custo,
         initialBudget: row.initial_budget,
         created_at: row.created_at,
         updated_at: row.updated_at
@@ -860,28 +860,25 @@ export class DatabaseStorage implements IStorage {
       // Usar SQL direto para garantir compatibilidade com a estrutura atual da tabela
       const query = `
         INSERT INTO manutencao (
-          vehicle_plate, description, status, priority, 
-          maintenance_type, workshop_id, request_base_id, 
-          entry_date, estimated_completion, responsible_person,
-          cost, initial_budget
+          vehicle_plate, descricao, status, tipo, 
+          oficina_id, request_base_id, 
+          entry_date, data_agendada,
+          custo
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+          $1, $2, $3, $4, $5, $6, $7, $8, $9
         ) RETURNING *
       `;
       
       const values = [
         maintenanceData.vehiclePlate,
         maintenanceData.description,
-        maintenanceData.status,
-        maintenanceData.priority || "média",
-        maintenanceData.maintenanceType,
+        maintenanceData.status || 'pendente',
+        maintenanceData.maintenanceType || 'preventiva',
         maintenanceData.workshopId,
         maintenanceData.requestBaseId,
-        maintenanceData.entryDate,
+        maintenanceData.entryDate || new Date(),
         maintenanceData.estimatedCompletion,
-        maintenanceData.responsiblePerson || "Técnico responsável",
-        maintenanceData.cost,
-        maintenanceData.initialBudget
+        maintenanceData.cost || 0
       ];
       
       const result = await pool.query(query, values);
@@ -907,17 +904,18 @@ export class DatabaseStorage implements IStorage {
       return {
         id: newMaintenance.id,
         vehiclePlate: newMaintenance.vehicle_plate,
-        description: newMaintenance.description,
+        description: newMaintenance.descricao,
         status: newMaintenance.status,
-        priority: newMaintenance.priority,
-        maintenanceType: newMaintenance.maintenance_type,
-        workshopId: newMaintenance.workshop_id,
+        priority: 'média',
+        maintenanceType: newMaintenance.tipo,
+        workshopId: newMaintenance.oficina_id,
         requestBaseId: newMaintenance.request_base_id,
         entryDate: newMaintenance.entry_date,
-        estimatedCompletion: newMaintenance.estimated_completion,
-        responsiblePerson: newMaintenance.responsible_person,
-        cost: newMaintenance.cost,
-        initialBudget: newMaintenance.initial_budget,
+        estimatedCompletion: newMaintenance.data_agendada,
+        completionDate: null,
+        responsiblePerson: 'Técnico responsável',
+        cost: newMaintenance.custo,
+        initialBudget: newMaintenance.custo,
         created_at: newMaintenance.created_at,
         updated_at: newMaintenance.updated_at
       };
