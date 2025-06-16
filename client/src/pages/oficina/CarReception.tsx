@@ -40,12 +40,23 @@ interface Base {
   id: number;
   name: string;
   location: string;
+  basename?: string;
 }
 
-interface Project {
+interface ProjectBase {
+  id: number;
+  base_name: string;
+  base_code?: string;
+  description?: string;
+  is_active: boolean;
+}
+
+interface ProjectWithBases {
   id: number;
   name: string;
-  baseId: number;
+  description?: string;
+  is_active: boolean;
+  bases: ProjectBase[];
 }
 
 export default function CarReception() {
@@ -99,10 +110,26 @@ export default function CarReception() {
 
   // Filtrar bases por projeto selecionado
   useEffect(() => {
+    console.log("🔍 Debug filtro bases:", {
+      selectedProjectId,
+      allProjects: allProjects.length,
+      allBases: allBases.length
+    });
+    
     if (selectedProjectId) {
       const selectedProject = allProjects.find(p => p.id === selectedProjectId);
-      if (selectedProject) {
-        const basesForProject = allBases.filter(base => base.id === selectedProject.baseId);
+      console.log("📋 Projeto selecionado:", selectedProject);
+      
+      if (selectedProject && selectedProject.bases) {
+        // As bases vêm aninhadas no projeto
+        const basesForProject = selectedProject.bases.map(projectBase => ({
+          id: projectBase.id,
+          name: projectBase.base_name,
+          location: projectBase.base_code || '',
+          basename: projectBase.base_name
+        }));
+        console.log("🏢 Bases encontradas para o projeto:", basesForProject);
+        
         setAvailableBases(basesForProject);
         // Auto-selecionar a base se houver apenas uma
         if (basesForProject.length === 1) {
@@ -115,7 +142,7 @@ export default function CarReception() {
       setAvailableBases([]);
       form.setValue("baseId", undefined as any);
     }
-  }, [selectedProjectId, allProjects, allBases, form]);
+  }, [selectedProjectId, allProjects, form]);
 
   const calculateTotalCost = () => {
     const laborCost = form.getValues("laborCost") || 0;
