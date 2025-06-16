@@ -5803,6 +5803,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Server error" });
     }
   });
+
+  // Rota para buscar templates de manutenção
+  app.get("/api/maintenance/templates", hasMaintenanceAccess, async (req, res) => {
+    try {
+      console.log(`Requisição GET /api/maintenance/templates recebida.`);
+      console.log(`Usuário: ${req.user?.email} Papel: ${req.user?.role}`);
+      
+      const query = `
+        SELECT 
+          id,
+          nome as name,
+          descricao as description,
+          categoria as category,
+          prazo_estimado_horas as estimated_hours,
+          custo_estimado as estimated_cost,
+          is_active,
+          created_at,
+          updated_at
+        FROM maintenance_templates 
+        WHERE is_active = true
+        ORDER BY categoria, nome
+      `;
+      
+      const result = await pool.query(query);
+      
+      console.log(`Encontrados ${result.rows.length} templates no total`);
+      
+      const templates = result.rows.map(row => ({
+        id: row.id,
+        nome: row.name,
+        descricao: row.description,
+        categoria: row.category,
+        prazo_estimado_horas: row.estimated_hours,
+        custo_estimado: row.estimated_cost,
+        is_active: row.is_active,
+        created_at: row.created_at,
+        updated_at: row.updated_at
+      }));
+      
+      res.status(200).json({
+        success: true,
+        templates: templates
+      });
+    } catch (error) {
+      console.error("Erro ao buscar templates:", error);
+      res.status(500).json({ 
+        message: "Erro ao buscar templates de manutenção",
+        error: error instanceof Error ? error.message : "Erro desconhecido" 
+      });
+    }
+  });
   
   app.post("/api/maintenance", hasMaintenanceAccess, async (req, res) => {
     try {
