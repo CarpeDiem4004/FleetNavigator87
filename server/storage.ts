@@ -913,7 +913,7 @@ export class DatabaseStorage implements IStorage {
           m.*,
           v.modelo as veiculo_modelo,
           v.marca as veiculo_marca,
-          o.nome as oficina_nome,
+          o.razao_social as oficina_nome,
           b.name as base_nome
         FROM manutencao m
         LEFT JOIN veiculos v ON m.placa = v.placa
