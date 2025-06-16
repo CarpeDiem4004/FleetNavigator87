@@ -98,7 +98,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           -- Incluir cartão combustível do veículo
           COALESCE(v.cartao_abastecimento, s.numero_cartao, '') as cartao_combustivel
         FROM solicitacoes_fuel_card s
-        LEFT JOIN veiculos v ON s.placa = v.plate
+        LEFT JOIN veiculos v ON s.placa = v.placa
 
         UNION ALL
 
@@ -151,7 +151,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           COALESCE(lhv.cartao_combustivel, v.cartao_abastecimento, lh.numero_cartao, '') as cartao_combustivel
         FROM linehall_fuel_card_requests lh
         LEFT JOIN linehall_vehicles lhv ON lh.veiculo_placa = lhv.placa
-        LEFT JOIN veiculos v ON lh.veiculo_placa = v.plate
+        LEFT JOIN veiculos v ON lh.veiculo_placa = v.placa
       ) unified_requests
       ORDER BY 
         CASE 
