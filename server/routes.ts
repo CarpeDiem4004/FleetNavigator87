@@ -4832,19 +4832,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Mapear os resultados para o formato esperado pelo frontend
             maintenanceRecords = result.rows.map(row => ({
               id: row.id,
-              vehiclePlate: row.vehicle_plate,
-              description: row.description,
+              vehiclePlate: row.vehicle_plate || row.placa,
+              description: row.descricao || row.description,
               status: row.status,
               priority: row.priority || "média",
-              maintenanceType: row.maintenance_type,
-              workshopId: row.workshop_id,
-              requestBaseId: row.request_base_id,
-              entryDate: row.entry_date,
-              estimatedCompletion: row.estimated_completion,
-              completionDate: row.completion_date,
-              responsiblePerson: row.responsible_person,
-              cost: row.cost,
-              initialBudget: row.initial_budget,
+              maintenanceType: row.tipo || row.maintenance_type,
+              workshopId: row.oficina_id || row.workshop_id,
+              requestBaseId: row.base_id || row.request_base_id,
+              entryDate: row.data_solicitacao || row.entry_date,
+              estimatedCompletion: row.data_agendada || row.estimated_completion,
+              completionDate: row.data_conclusao || row.completion_date,
+              responsiblePerson: row.responsible_person || 'Técnico responsável',
+              cost: row.custo || row.cost,
+              initialBudget: row.custo || row.initial_budget,
               created_at: row.created_at,
               updated_at: row.updated_at
             }));
@@ -5709,6 +5709,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Erro ao atualizar datas da manutenção:", error);
       return res.status(500).json({ message: "Erro ao atualizar datas da manutenção" });
+    }
+  });
+
+  // Rota específica para buscar todas as ordens de manutenção
+  app.get("/api/maintenance/orders", hasMaintenanceAccess, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      console.log("Requisição GET /api/maintenance/orders recebida.");
+      console.log("Usuário:", req.user.email, "Papel:", req.user.role);
+      
+      // Usar getAllMaintenance do storage que já foi corrigido
+      const maintenanceRecords = await storage.getAllMaintenance();
+      console.log(`Encontradas ${maintenanceRecords.length} manutenções no total`);
+      
+      return res.status(200).json(maintenanceRecords);
+    } catch (error) {
+      console.error("Erro ao buscar ordens de manutenção:", error);
+      return res.status(500).json({ 
+        message: "Erro ao buscar dados de manutenção",
+        error: error instanceof Error ? error.message : "Erro desconhecido" 
+      });
     }
   });
 
