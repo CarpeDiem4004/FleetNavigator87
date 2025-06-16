@@ -227,7 +227,7 @@ function App() {
           <ProtectedRoute path="/fleet-management/inventory" component={InventoryPage} />
           <ProtectedRoute path="/fleet-management/parts-inventory" component={PartsInventoryPage} />
           <ProtectedRoute path="/fleet-management/workshops" component={WorkshopsPage} />
-          <ProtectedRoute path="/fleet-management/maintenance" component={MaintenancePage} />
+          <ProtectedRoute path="/fleet-management/maintenance" component={MaintenanceManagement} />
           <ProtectedRoute path="/fleet-management/budgets" component={BudgetManagementPage} />
           <ProtectedRoute path="/fleet-management/towing-partners" component={TowingPartnersPage} />
           <ProtectedRoute path="/fleet-management/towing-partners/new" component={NewTowingPartnerPage} />
