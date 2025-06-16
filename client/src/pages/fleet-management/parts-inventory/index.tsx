@@ -75,6 +75,18 @@ const formatCurrencyInput = (value: string): string => {
   }).format(numberValue);
 };
 
+
+
+// Função para converter entrada formatada para número
+const parseCurrencyInput = (value: string): number => {
+  if (!value) return 0;
+  
+  // Remove pontos (separadores de milhares) e substitui vírgula por ponto
+  const cleanValue = value.replace(/\./g, '').replace(',', '.');
+  
+  return parseFloat(cleanValue) || 0;
+};
+
 // Interfaces
 interface Part {
   id: number;
@@ -672,7 +684,7 @@ export default function PartsInventory() {
                   {isLoadingSummary ? (
                     <Loader2 className="h-6 w-6 animate-spin" />
                   ) : (
-                    `R$ ${(summary?.valor_total_estoque || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                    formatCurrency(summary?.valor_total_estoque || 0)
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">Valor do estoque</p>
@@ -778,10 +790,10 @@ export default function PartsInventory() {
                             </TableCell>
                             <TableCell className="text-right">{part.estoque_minimo}</TableCell>
                             <TableCell className="text-right">
-                              R$ {part.valor_unitario.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              {formatCurrency(part.valor_unitario)}
                             </TableCell>
                             <TableCell className="text-right">
-                              R$ {part.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              {formatCurrency(part.valor_total)}
                             </TableCell>
                             <TableCell className="text-center">
                               {part.quantidade <= 0 ? (
