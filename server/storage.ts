@@ -695,14 +695,14 @@ export class DatabaseStorage implements IStorage {
       
       return result.rows.map(row => ({
         id: row.id,
-        name: row.razao_social,
+        name: row.razao_social || row.nome_fantasia,
         cnpj: row.cnpj,
         address: row.endereco,
         phone: row.telefone,
         email: row.email,
         contactPerson: row.responsavel,
         workshopType: row.tipo,
-        isActive: row.status === 'ativa',
+        isActive: row.status === 'ativo',
         created_at: row.created_at,
         updated_at: row.updated_at
       }));
@@ -714,7 +714,7 @@ export class DatabaseStorage implements IStorage {
 
   async getActiveWorkshops(): Promise<Workshop[]> {
     try {
-      const query = `SELECT * FROM oficinas WHERE status = 'ativa' ORDER BY created_at DESC`;
+      const query = `SELECT * FROM oficinas WHERE status = 'ativo' ORDER BY created_at DESC`;
       const result = await pool.query(query);
       
       return result.rows.map(row => ({
