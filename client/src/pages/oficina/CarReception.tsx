@@ -48,9 +48,9 @@ interface Project {
 
 export default function CarReception() {
   const [isLoading, setIsLoading] = useState(false);
-  const [bases, setBases] = useState<Base[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
+  const [allBases, setAllBases] = useState<Base[]>([]);
+  const [allProjects, setAllProjects] = useState<Project[]>([]);
+  const [availableBases, setAvailableBases] = useState<Base[]>([]);
   const { toast } = useToast();
 
   const form = useForm<CarReceptionForm>({
@@ -67,7 +67,7 @@ export default function CarReception() {
     },
   });
 
-  const selectedBaseId = form.watch("baseId");
+  const selectedProjectId = form.watch("projectId");
 
   // Carregar bases e projetos
   useEffect(() => {
@@ -77,14 +77,16 @@ export default function CarReception() {
         const basesResponse = await fetch("/api/bases");
         if (basesResponse.ok) {
           const basesData = await basesResponse.json();
-          setBases(basesData);
+          setAllBases(basesData);
         }
 
         // Carregar projetos do sistema
         const projectsResponse = await fetch("/api/projects");
         if (projectsResponse.ok) {
           const projectsData = await projectsResponse.json();
-          setProjects(projectsData);
+          if (projectsData.success) {
+            setAllProjects(projectsData.data);
+          }
         }
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
@@ -93,15 +95,25 @@ export default function CarReception() {
     loadData();
   }, []);
 
-  // Filtrar projetos por base selecionada
+  // Filtrar bases por projeto selecionado
   useEffect(() => {
-    if (selectedBaseId) {
-      const filtered = projects.filter(project => project.baseId === selectedBaseId);
-      setFilteredProjects(filtered);
+    if (selectedProjectId) {
+      const selectedProject = allProjects.find(p => p.id === selectedProjectId);
+      if (selectedProject) {
+        const basesForProject = allBases.filter(base => base.id === selectedProject.baseId);
+        setAvailableBases(basesForProject);
+        // Auto-selecionar a base se houver apenas uma
+        if (basesForProject.length === 1) {
+          form.setValue("baseId", basesForProject[0].id);
+        } else {
+          form.setValue("baseId", undefined as any);
+        }
+      }
     } else {
-      setFilteredProjects([]);
+      setAvailableBases([]);
+      form.setValue("baseId", undefined as any);
     }
-  }, [selectedBaseId, projects]);
+  }, [selectedProjectId, allProjects, allBases, form]);
 
   const calculateTotalCost = () => {
     const laborCost = form.getValues("laborCost") || 0;
