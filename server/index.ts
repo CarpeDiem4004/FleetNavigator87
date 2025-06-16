@@ -48,6 +48,19 @@ import { iniciarScheduler } from './services/consumoDiarioScheduler.js';
 // Importar rotas de histórico de consumo diário
 import consumoDiarioHistorico from './routes/consumoDiarioHistorico.js';
 import consumoDiarioTabela from './routes/consumoDiarioTabela.js';
+// Importar API de manutenção veicular
+import { 
+  loginMaintenance, 
+  authenticateMaintenanceToken,
+  getOrdensServico,
+  createOrdemServico,
+  updateStatusOrdemServico,
+  getPecasOS,
+  addPecaOS,
+  getVeiculos,
+  getOficinas,
+  getRelatorios
+} from './maintenance-api.js';
 
 // Configuração das variáveis de ambiente do Supabase
 // Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
@@ -785,6 +798,27 @@ app.use((req, res, next) => {
   
   // Registrar as rotas de emergência para acesso externo de parceiros de guincho
   app.use('/api/towing/simple-external', towingServiceEmergency);
+  
+  // === ROTAS DO SISTEMA DE MANUTENÇÃO VEICULAR ===
+  
+  // Login para oficinas e usuários internos
+  app.post('/api/maintenance/auth/login', loginMaintenance);
+  
+  // Rotas protegidas do sistema de manutenção
+  app.get('/api/maintenance/ordens-servico', authenticateMaintenanceToken, getOrdensServico);
+  app.post('/api/maintenance/ordens-servico', authenticateMaintenanceToken, createOrdemServico);
+  app.patch('/api/maintenance/ordens-servico/:id/status', authenticateMaintenanceToken, updateStatusOrdemServico);
+  
+  // Rotas de peças
+  app.get('/api/maintenance/ordens-servico/:ordem_servico_id/pecas', authenticateMaintenanceToken, getPecasOS);
+  app.post('/api/maintenance/ordens-servico/:ordem_servico_id/pecas', authenticateMaintenanceToken, addPecaOS);
+  
+  // Rotas de dados básicos
+  app.get('/api/maintenance/veiculos', authenticateMaintenanceToken, getVeiculos);
+  app.get('/api/maintenance/oficinas', authenticateMaintenanceToken, getOficinas);
+  
+  // Rotas de relatórios
+  app.get('/api/maintenance/relatorios', authenticateMaintenanceToken, getRelatorios);
   
   // Registrar as rotas de gestão financeira para serviços de guincho
   app.use('/api/towing/payments', towingPaymentsRoutes);
