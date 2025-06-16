@@ -15,6 +15,18 @@ import { Loader2, Check, RefreshCw, AlertTriangle, Smartphone, Plus } from "luci
 import { useMobileDetection } from "@/hooks/useMobileDetection";
 import { MobileSelect } from "@/components/ui/mobile-select";
 import { useAuth } from "@/context/AuthContext";
+// Função para formatar data com timezone do Brasil
+const formatToBrazilTimezone = (date: Date): string => {
+  return new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  }).format(date).replace(' ', 'T') + '-03:00';
+};
 
 // Schema de validação base
 const baseAbastecimentoSchema = z.object({
@@ -422,7 +434,8 @@ export const FormularioAbastecimentoMobileFixed: React.FC<FormularioAbasteciment
         posto_id: postId,
         device_type: deviceType,
         is_mobile: isMobile,
-        timestamp: new Date().toISOString()
+        timestamp: formatToBrazilTimezone(new Date()),
+        data_abastecimento: formatToBrazilTimezone(new Date())
       };
 
       const response = await fetch(`/api/abastecimentos/${postId}`, {
