@@ -55,6 +55,7 @@ export interface IStorage {
   
   // Workshop operations
   getWorkshop(id: number): Promise<Workshop | undefined>;
+  getWorkshopByCnpj(cnpj: string): Promise<Workshop | undefined>;
   getAllWorkshops(): Promise<Workshop[]>;
   getActiveWorkshops(): Promise<Workshop[]>;
   createWorkshop(workshop: InsertWorkshop): Promise<Workshop>;
@@ -65,6 +66,7 @@ export interface IStorage {
   getMaintenance(id: number): Promise<Maintenance | undefined>;
   getMaintenanceByVehicle(vehiclePlate: string): Promise<Maintenance[]>;
   getMaintenanceByBaseAndStatus(baseId: number, status: string): Promise<Maintenance[]>;
+  getMaintenanceByWorkshop(workshopId: number): Promise<Maintenance[]>;
   getAllMaintenance(): Promise<Maintenance[]>;
   createMaintenance(maintenance: InsertMaintenance): Promise<Maintenance>;
   updateMaintenanceStatus(id: number, status: string): Promise<Maintenance | undefined>;
@@ -688,6 +690,36 @@ export class DatabaseStorage implements IStorage {
     return workshop || undefined;
   }
 
+  async getWorkshopByCnpj(cnpj: string): Promise<Workshop | undefined> {
+    try {
+      const query = `SELECT * FROM oficinas WHERE cnpj = $1`;
+      const result = await pool.query(query, [cnpj]);
+      
+      if (result.rows.length === 0) {
+        return undefined;
+      }
+
+      const row = result.rows[0];
+      return {
+        id: row.id,
+        razao_social: row.razao_social,
+        cnpj: row.cnpj,
+        endereco: row.endereco,
+        telefone: row.telefone,
+        email: row.email,
+        responsavel: row.responsavel,
+        tipo: row.tipo,
+        status: row.status,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        nome_fantasia: row.nome_fantasia
+      };
+    } catch (error) {
+      console.error("Erro ao buscar oficina por CNPJ:", error);
+      return undefined;
+    }
+  }
+
   async getAllWorkshops(): Promise<Workshop[]> {
     try {
       const query = `SELECT * FROM oficinas ORDER BY created_at DESC`;
@@ -866,6 +898,43 @@ export class DatabaseStorage implements IStorage {
       }));
     } catch (error) {
       console.error("Erro ao buscar manutenções por base e status:", error);
+      return [];
+    }
+  }
+
+  async getMaintenanceByWorkshop(workshopId: number): Promise<Maintenance[]> {
+    try {
+      console.log(`Buscando manutenções para oficina ID: ${workshopId}`);
+      
+      const query = `
+        SELECT * FROM manutencao
+        WHERE oficina_id = $1
+        ORDER BY entry_date DESC
+      `;
+      
+      const result = await pool.query(query, [workshopId]);
+      console.log(`Encontradas ${result.rows.length} manutenções para oficina ${workshopId}`);
+      
+      return result.rows.map(row => ({
+        id: row.id,
+        vehiclePlate: row.vehicle_plate || row.placa,
+        description: row.descricao,
+        status: row.status,
+        priority: row.priority || "média",
+        maintenanceType: row.tipo || row.maintenance_type,
+        workshopId: row.oficina_id,
+        requestBaseId: row.request_base_id || row.base_id,
+        entryDate: row.entry_date || row.data_solicitacao,
+        estimatedCompletion: row.data_agendada,
+        completionDate: row.data_conclusao,
+        responsiblePerson: row.responsible_person,
+        cost: row.custo,
+        initialBudget: row.initial_budget,
+        created_at: row.created_at,
+        updated_at: row.updated_at
+      }));
+    } catch (error) {
+      console.error("Erro ao buscar manutenções por oficina:", error);
       return [];
     }
   }

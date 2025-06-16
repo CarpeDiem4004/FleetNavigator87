@@ -1,4 +1,11 @@
 import type { Express, Request, Response, NextFunction } from "express";
+
+// Extend Request interface to include oficina property
+declare module 'express-serve-static-core' {
+  interface Request {
+    oficina?: any;
+  }
+}
 import express from "express";
 import { createServer, type Server } from "http";
 import multer from "multer";
