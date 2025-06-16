@@ -129,11 +129,17 @@ export const vehicles = pgTable("veiculos", {
 // Create the workshops table (oficinas)
 export const workshops = pgTable("oficinas", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  address: text("address"),
-  phone: text("phone"),
-  isActive: boolean("is_active").default(true),
+  cnpj: text("cnpj").notNull(),
+  razao_social: text("razao_social").notNull(),
+  nome_fantasia: text("nome_fantasia"),
+  endereco: text("endereco"),
+  telefone: text("telefone"),
+  email: text("email"),
+  responsavel: text("responsavel"),
+  status: text("status").default("ativo"),
+  tipo: text("tipo").default("parceira"),
   created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 // Create the users table

@@ -752,14 +752,14 @@ export class DatabaseStorage implements IStorage {
       
       const values = [
         workshop.cnpj,
-        workshop.name,
-        workshop.name,
-        workshop.address,
-        workshop.phone,
+        workshop.razao_social,
+        workshop.nome_fantasia || workshop.razao_social,
+        workshop.endereco,
+        workshop.telefone,
         workshop.email,
-        workshop.contactPerson || 'Responsável',
-        workshop.isActive ? 'ativa' : 'inativa',
-        workshop.workshopType || 'geral'
+        workshop.responsavel || 'Responsável',
+        workshop.status || 'ativo',
+        workshop.tipo || 'parceira'
       ];
       
       const result = await pool.query(query, values);

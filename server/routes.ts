@@ -5778,10 +5778,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Criar nova oficina usando o método do storage
       const newWorkshop = await storage.createWorkshop({
-        name: nome,
-        address: endereco,
-        phone: telefone,
-        isActive: is_active !== false
+        cnpj: cnpj,
+        razao_social: nome,
+        nome_fantasia: nome,
+        endereco: endereco,
+        telefone: telefone,
+        email: email,
+        responsavel: responsavel,
+        tipo: tipo,
+        status: is_active !== false ? 'ativo' : 'inativo'
       });
 
       console.log("Nova oficina criada:", newWorkshop);
