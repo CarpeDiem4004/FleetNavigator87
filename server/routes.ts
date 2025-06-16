@@ -4360,7 +4360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Buscar veículos com status "parado" e informações detalhadas
       const stoppedVehiclesQuery = `
         SELECT 
-          v.plate,
+          v.placa,
           v.model,
           v.vehicle_type,
           v.status,
@@ -12771,7 +12771,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           lr.valor_calculado,
           v.cartao_abastecimento as cartao_combustivel
         FROM linehall_fuel_card_requests lr
-        LEFT JOIN veiculos v ON lr.veiculo_placa = v.plate
+        LEFT JOIN veiculos v ON lr.veiculo_placa = v.placa
         WHERE 1=1
       `;
       const params = [];
@@ -12999,7 +12999,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           lr.valor_calculado,
           v.cartao_abastecimento as cartao_combustivel
         FROM linehall_fuel_card_requests lr
-        LEFT JOIN veiculos v ON lr.veiculo_placa = v.plate
+        LEFT JOIN veiculos v ON lr.veiculo_placa = v.placa
         WHERE 1=1
       `;
       const params = [];
