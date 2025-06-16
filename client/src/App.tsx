@@ -128,6 +128,9 @@ import AbastecimentoTerceirosDashboard from "@/pages/AbastecimentoTerceirosDashb
 import GerenciamentoTerceiros from "@/pages/GerenciamentoTerceiros";
 
 // Importação das páginas da Base Campinas
+
+// Importação do Sistema de Manutenção Veicular
+import MaintenanceSystem from "@/pages/maintenance";
 import BaseCampinas from "@/pages/bases/BaseCampinas";
 import DespesasCampinas from "@/pages/bases/DespesasCampinas";
 import MultasCampinas from "@/pages/bases/MultasCampinas";
@@ -442,6 +445,11 @@ function App() {
           {/* Acesso externo para o Posto Remédios */}
           <Route path="/posto-remedios-externo">
             <PostoRemediosStandalone />
+          </Route>
+          
+          {/* Sistema de Manutenção Veicular - Acesso público para oficinas */}
+          <Route path="/maintenance">
+            <MaintenanceSystem />
           </Route>
           
           {/* URL que o usuário estava tentando acessar */}
