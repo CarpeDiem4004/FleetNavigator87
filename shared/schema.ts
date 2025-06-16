@@ -21,6 +21,7 @@ export const refuelingCardStatusEnum = pgEnum('refueling_card_status', ['pendent
 export const messageAuthorEnum = pgEnum('message_author', ['oficina', 'frota']);
 export const vehicleOwnershipEnum = pgEnum('vehicle_ownership', ['murici', 'locado']);
 export const paymentStatusEnum = pgEnum('payment_status', ['pendente', 'pago', 'em_processamento', 'cancelado']);
+export const carReceptionStatusEnum = pgEnum('car_reception_status', ['recebido', 'em_analise', 'aguardando_pecas', 'em_reparo', 'pronto', 'entregue']);
 
 // Enums para sistema de estoque
 export const inventoryMovementTypeEnum = pgEnum('inventory_movement_type', [
@@ -154,6 +155,32 @@ export const users = pgTable("users", {
   oficina_id: integer("oficina_id").references(() => workshops.id),
   lastLogin: timestamp("last_login", { mode: "date" }),
   isActive: boolean("is_active").default(true),
+});
+
+// Tabela para recebimento de carros na oficina
+export const carReceptions = pgTable("car_receptions", {
+  id: serial("id").primaryKey(),
+  vehiclePlate: text("vehicle_plate").notNull(),
+  vehicleModel: text("vehicle_model").notNull(),
+  vehicleType: vehicleTypeEnum("vehicle_type").notNull(),
+  currentKm: integer("current_km").notNull(),
+  baseId: integer("base_id").notNull().references(() => bases.id),
+  projectId: integer("project_id"), // Referência aos projetos existentes no sistema
+  projectName: text("project_name"), // Nome do projeto selecionado
+  serviceDescription: text("service_description").notNull(),
+  replacedParts: text("replaced_parts"), // JSON string das peças trocadas
+  laborCost: decimal("labor_cost", { precision: 10, scale: 2 }),
+  partsCost: decimal("parts_cost", { precision: 10, scale: 2 }),
+  totalCost: decimal("total_cost", { precision: 10, scale: 2 }),
+  deliveryDeadline: date("delivery_deadline"),
+  status: carReceptionStatusEnum("status").notNull().default('recebido'),
+  workshopId: integer("workshop_id").notNull().references(() => workshops.id),
+  receivedDate: timestamp("received_date").defaultNow(),
+  completedDate: timestamp("completed_date"),
+  deliveredDate: timestamp("delivered_date"),
+  notes: text("notes"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 // Create the maintenance table (manutencao)
@@ -445,6 +472,17 @@ export const refuelingCardRequestRelations = relations(refuelingCardRequest, ({ 
   }),
 }));
 
+export const carReceptionsRelations = relations(carReceptions, ({ one }) => ({
+  base: one(bases, {
+    fields: [carReceptions.baseId],
+    references: [bases.id],
+  }),
+  workshop: one(workshops, {
+    fields: [carReceptions.workshopId],
+    references: [workshops.id],
+  }),
+}));
+
 // Insert schemas
 export const insertBaseSchema = createInsertSchema(bases);
 export const insertVehicleSchema = createInsertSchema(vehicles);
@@ -462,6 +500,7 @@ export const insertPainelPrincipalSchema = createInsertSchema(painelPrincipal);
 export const insertMaintenanceChatSchema = createInsertSchema(maintenanceChat);
 export const insertChatMessageSchema = createInsertSchema(chatMessages);
 export const insertMaintenanceLifecycleSchema = createInsertSchema(maintenanceLifecycle);
+export const insertCarReceptionSchema = createInsertSchema(carReceptions);
 export const insertUserSchema = createInsertSchema(users).pick({
   name: true,
   email: true,
