@@ -270,10 +270,20 @@ export default function MaintenanceManagement() {
       } else {
         throw new Error("Erro ao cadastrar oficina");
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Erro ao cadastrar oficina:", error);
+      
+      // Extrair mensagem de erro específica
+      let errorMessage = "Não foi possível cadastrar a oficina";
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Erro",
-        description: "Não foi possível cadastrar a oficina",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {

@@ -5794,6 +5794,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     } catch (error) {
       console.error("Erro ao criar oficina:", error);
+      
+      // Tratamento específico para erro de CNPJ duplicado
+      if (error instanceof Error && error.message.includes('duplicate key value violates unique constraint "oficinas_cnpj_key"')) {
+        return res.status(400).json({ 
+          message: "Já existe uma oficina cadastrada com este CNPJ",
+          error: "CNPJ duplicado" 
+        });
+      }
+      
       return res.status(500).json({ 
         message: "Erro ao criar oficina",
         error: error instanceof Error ? error.message : "Erro desconhecido" 
