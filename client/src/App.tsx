@@ -130,8 +130,6 @@ import GerenciamentoTerceiros from "@/pages/GerenciamentoTerceiros";
 
 // Importação das páginas da Base Campinas
 
-// Importação do Sistema de Manutenção Veicular
-import MaintenanceSystem from "@/pages/maintenance";
 import BaseCampinas from "@/pages/bases/BaseCampinas";
 import DespesasCampinas from "@/pages/bases/DespesasCampinas";
 import MultasCampinas from "@/pages/bases/MultasCampinas";
@@ -166,6 +164,7 @@ import LinksExternosPostos from "@/pages/postos/LinksExternosPostos";
 import PartnerLogin from "@/pages/partner-login";
 import PartnerDashboard from "@/pages/partner-dashboard";
 import FuelCardRedirect from "@/components/FuelCardRedirect";
+import MaintenanceSystem from "@/pages/maintenance";
 
 function App() {
   // Ativar o hook de injeção automática de token JWT em todas as requisições fetch
@@ -494,6 +493,11 @@ function App() {
           </Route>
           <Route path="/terceiros/dashboard">
             <AbastecimentoTerceirosDashboard />
+          </Route>
+
+          {/* Sistema de Manutenção - Acesso exclusivo para oficinas */}
+          <Route path="/maintenance*">
+            <MaintenanceSystem />
           </Route>
           
           <Route>
