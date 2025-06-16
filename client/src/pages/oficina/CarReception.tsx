@@ -22,7 +22,9 @@ const carReceptionSchema = z.object({
   baseId: z.number({
     required_error: "Base é obrigatória",
   }),
-  projectId: z.number().optional(),
+  projectId: z.number({
+    required_error: "Projeto é obrigatório",
+  }),
   projectName: z.string().optional(),
   serviceDescription: z.string().min(1, "Descrição do serviço é obrigatória"),
   replacedParts: z.string().optional(),
@@ -124,7 +126,7 @@ export default function CarReception() {
   const onSubmit = async (data: CarReceptionForm) => {
     setIsLoading(true);
     try {
-      const selectedProject = filteredProjects.find(p => p.id === data.projectId);
+      const selectedProject = allProjects.find(p => p.id === data.projectId);
       
       const submissionData = {
         ...data,
@@ -266,20 +268,23 @@ export default function CarReception() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="baseId"
+                  name="projectId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Base</FormLabel>
-                      <Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={field.value?.toString()}>
+                      <FormLabel>Projeto</FormLabel>
+                      <Select 
+                        onValueChange={(value) => field.onChange(value ? Number(value) : undefined)} 
+                        defaultValue={field.value?.toString()}
+                      >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione a base" />
+                            <SelectValue placeholder="Selecione o projeto" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {bases.map((base) => (
-                            <SelectItem key={base.id} value={base.id.toString()}>
-                              {base.name} - {base.location}
+                          {allProjects.map((project) => (
+                            <SelectItem key={project.id} value={project.id.toString()}>
+                              {project.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -291,24 +296,24 @@ export default function CarReception() {
 
                 <FormField
                   control={form.control}
-                  name="projectId"
+                  name="baseId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Projeto (Opcional)</FormLabel>
+                      <FormLabel>Base</FormLabel>
                       <Select 
-                        onValueChange={(value) => field.onChange(value ? Number(value) : undefined)} 
+                        onValueChange={(value) => field.onChange(Number(value))} 
                         defaultValue={field.value?.toString()}
-                        disabled={!selectedBaseId}
+                        disabled={availableBases.length === 0}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione o projeto" />
+                            <SelectValue placeholder={selectedProjectId ? "Selecione a base" : "Primeiro selecione um projeto"} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {filteredProjects.map((project) => (
-                            <SelectItem key={project.id} value={project.id.toString()}>
-                              {project.name}
+                          {availableBases.map((base) => (
+                            <SelectItem key={base.id} value={base.id.toString()}>
+                              {base.name} - {base.location}
                             </SelectItem>
                           ))}
                         </SelectContent>
