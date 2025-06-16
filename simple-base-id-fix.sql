@@ -1,11 +1,27 @@
--- ============================================================================
--- SOLUÇÃO SIMPLES PARA O PROBLEMA DE base_id
--- Este script resolve o problema sem criar foreign keys problemáticas
--- ============================================================================
+-- Simple fix for base_id column issue without foreign key constraints
+-- This avoids the UUID/integer operator error
 
--- 1. Verificar se a consulta funciona sem foreign key constraint
+-- 1. Ensure bases table exists with correct structure
+CREATE TABLE IF NOT EXISTS bases (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL
+);
+
+-- 2. Insert basic data if empty
+INSERT INTO bases (id, name) VALUES 
+(1, 'Base São Paulo'),
+(2, 'Campinas'),
+(3, 'Guarulhos')
+ON CONFLICT (id) DO NOTHING;
+
+-- 3. Ensure manutencao table has base_id column
+ALTER TABLE manutencao ADD COLUMN IF NOT EXISTS base_id INTEGER;
+
+-- 4. Update null values with valid base_id
+UPDATE manutencao SET base_id = 1 WHERE base_id IS NULL;
+
+-- 5. Test the query that was failing
 SELECT 
-    'TESTE SEM CONSTRAINT' as teste,
     m.id,
     m.placa,
     m.descricao,
@@ -14,42 +30,5 @@ SELECT
     b.name as base_nome
 FROM manutencao m
 LEFT JOIN bases b ON m.base_id = b.id
-LIMIT 3;
-
--- 2. Se o JOIN não funcionar, atualizar base_id para valores válidos
--- Primeiro, verificar quais IDs de bases existem
-SELECT 'BASES DISPONÍVEIS' as info, id, name FROM bases ORDER BY id;
-
--- 3. Atualizar todos os registros de manutenção com base_id válido
-UPDATE manutencao 
-SET base_id = (
-    SELECT id FROM bases 
-    WHERE bases.id IS NOT NULL 
-    ORDER BY id 
-    LIMIT 1
-)
-WHERE base_id IS NULL OR base_id NOT IN (SELECT id FROM bases);
-
--- 4. Verificar quantos registros foram atualizados
-SELECT 
-    'REGISTROS ATUALIZADOS' as status,
-    COUNT(*) as total_manutencoes,
-    COUNT(CASE WHEN base_id IS NOT NULL THEN 1 END) as com_base_id,
-    COUNT(CASE WHEN base_id IS NULL THEN 1 END) as sem_base_id
-FROM manutencao;
-
--- 5. Teste final da consulta completa
-SELECT 
-    m.id,
-    m.placa,
-    m.descricao,
-    m.status,
-    m.prioridade,
-    m.responsavel,
-    m.custo,
-    o.razao_social as oficina_nome,
-    b.name as base_nome
-FROM manutencao m
-LEFT JOIN oficinas o ON m.oficina_id = o.id
-LEFT JOIN bases b ON m.base_id = b.id
-ORDER BY m.data_solicitacao DESC;
+ORDER BY m.id
+LIMIT 5;
