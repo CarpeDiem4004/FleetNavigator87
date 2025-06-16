@@ -97,7 +97,9 @@ export default function CarReception() {
         const projectsResponse = await fetch("/api/projects");
         if (projectsResponse.ok) {
           const projectsData = await projectsResponse.json();
+          console.log("📋 Resposta completa da API de projetos:", projectsData);
           if (projectsData.success) {
+            console.log("📋 Dados dos projetos carregados:", projectsData.data);
             setAllProjects(projectsData.data);
           }
         }
@@ -110,10 +112,16 @@ export default function CarReception() {
 
   // Filtrar bases por projeto selecionado
   useEffect(() => {
+    console.log("🔍 Filtrando bases para projeto:", selectedProjectId);
+    console.log("📋 Projetos disponíveis:", allProjects);
+    
     if (selectedProjectId) {
       const selectedProject = allProjects.find(p => p.id === selectedProjectId);
+      console.log("📋 Projeto encontrado:", selectedProject);
       
       if (selectedProject && selectedProject.bases) {
+        console.log("🏢 Bases do projeto:", selectedProject.bases);
+        
         // As bases vêm aninhadas no projeto
         const basesForProject = selectedProject.bases.map((projectBase: ProjectBase) => ({
           id: projectBase.id,
@@ -122,15 +130,21 @@ export default function CarReception() {
           basename: projectBase.base_name
         }));
         
+        console.log("🏢 Bases mapeadas:", basesForProject);
         setAvailableBases(basesForProject);
+        
         // Auto-selecionar a base se houver apenas uma
         if (basesForProject.length === 1) {
           form.setValue("baseId", basesForProject[0].id);
         } else {
           form.setValue("baseId", undefined as any);
         }
+      } else {
+        console.log("❌ Projeto não tem bases ou não foi encontrado");
+        setAvailableBases([]);
       }
     } else {
+      console.log("📋 Nenhum projeto selecionado");
       setAvailableBases([]);
       form.setValue("baseId", undefined as any);
     }
@@ -292,7 +306,12 @@ export default function CarReception() {
                     <FormItem>
                       <FormLabel>Projeto</FormLabel>
                       <Select 
-                        onValueChange={(value) => field.onChange(value ? Number(value) : undefined)} 
+                        onValueChange={(value) => {
+                          const numValue = value ? Number(value) : undefined;
+                          console.log("🔄 Projeto selecionado (string):", value);
+                          console.log("🔄 Projeto selecionado (number):", numValue);
+                          field.onChange(numValue);
+                        }} 
                         defaultValue={field.value?.toString()}
                       >
                         <FormControl>
