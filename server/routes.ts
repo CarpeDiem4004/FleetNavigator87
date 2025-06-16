@@ -5736,6 +5736,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rota específica para buscar todas as oficinas no contexto de manutenção
+  app.get("/api/maintenance/workshops", hasMaintenanceAccess, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      console.log("Requisição GET /api/maintenance/workshops recebida.");
+      console.log("Usuário:", req.user.email, "Papel:", req.user.role);
+      
+      // Usar getAllWorkshops do storage que já foi corrigido
+      const workshops = await storage.getAllWorkshops();
+      console.log(`Encontradas ${workshops.length} oficinas no total`);
+      
+      return res.status(200).json(workshops);
+    } catch (error) {
+      console.error("Erro ao buscar oficinas:", error);
+      return res.status(500).json({ 
+        message: "Erro ao buscar dados de oficinas",
+        error: error instanceof Error ? error.message : "Erro desconhecido" 
+      });
+    }
+  });
+
   app.get("/api/maintenance/:id", hasMaintenanceAccess, async (req, res) => {
     try {
       const maintenanceId = parseInt(req.params.id);
