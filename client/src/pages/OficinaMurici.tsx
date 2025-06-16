@@ -465,7 +465,7 @@ const OficinaMurici: React.FC = () => {
         pdf.setFontSize(12);
         pdf.setTextColor(0, 0, 0);
         pdf.text(`Oficina: ${manutencao.partner_workshop_name}`, 20, yPosition + 35);
-        pdf.text(`Valor da Mão de Obra: R$ ${Number(manutencao.labor_cost || 0).toFixed(2)}`, 20, yPosition + 45);
+        pdf.text(`Valor da Mão de Obra: ${formatCurrency(manutencao.labor_cost || 0)}`, 20, yPosition + 45);
         
         yPosition += 55;
       }
@@ -478,7 +478,7 @@ const OficinaMurici: React.FC = () => {
       pdf.setFontSize(12);
       pdf.setTextColor(0, 0, 0);
       const custoTotal = Number(manutencao.custo_total || 0);
-      pdf.text(`Custo Total da Manutenção: R$ ${custoTotal.toFixed(2)}`, 20, yPosition + 35);
+      pdf.text(`Custo Total da Manutenção: ${formatCurrency(custoTotal)}`, 20, yPosition + 35);
       
       // Observações se houver
       if (manutencao.observacoes) {
