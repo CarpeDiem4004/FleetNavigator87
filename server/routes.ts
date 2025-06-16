@@ -5760,6 +5760,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rota para criar nova oficina
+  app.post("/api/maintenance/workshops", hasMaintenanceAccess, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { nome, cnpj, endereco, telefone, email, responsavel, tipo, is_active } = req.body;
+
+      // Validar campos obrigatórios
+      if (!nome || !cnpj || !endereco || !telefone || !email || !responsavel || !tipo) {
+        return res.status(400).json({ 
+          message: "Todos os campos são obrigatórios: nome, cnpj, endereco, telefone, email, responsavel, tipo" 
+        });
+      }
+
+      // Criar nova oficina usando o método do storage
+      const newWorkshop = await storage.createWorkshop({
+        name: nome,
+        address: endereco,
+        phone: telefone,
+        isActive: is_active !== false
+      });
+
+      console.log("Nova oficina criada:", newWorkshop);
+      return res.status(201).json(newWorkshop);
+
+    } catch (error) {
+      console.error("Erro ao criar oficina:", error);
+      return res.status(500).json({ 
+        message: "Erro ao criar oficina",
+        error: error instanceof Error ? error.message : "Erro desconhecido" 
+      });
+    }
+  });
+
   app.get("/api/maintenance/:id", hasMaintenanceAccess, async (req, res) => {
     try {
       const maintenanceId = parseInt(req.params.id);

@@ -687,10 +687,157 @@ export default function MaintenanceManagement() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Cadastrar Oficina
-                </Button>
+                <Dialog open={isWorkshopModalOpen} onOpenChange={setIsWorkshopModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Cadastrar Oficina
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader>
+                      <DialogTitle>Cadastrar Nova Oficina</DialogTitle>
+                      <DialogDescription>
+                        Cadastre uma nova oficina parceira para prestação de serviços de manutenção.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <Form {...workshopForm}>
+                      <form onSubmit={workshopForm.handleSubmit(handleCreateWorkshop)} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={workshopForm.control}
+                            name="nome"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Nome da Oficina *</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Ex: Oficina do João" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={workshopForm.control}
+                            name="cnpj"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>CNPJ *</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="00.000.000/0000-00" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={workshopForm.control}
+                            name="responsavel"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Responsável *</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Nome do responsável" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={workshopForm.control}
+                            name="telefone"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Telefone *</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="(11) 99999-9999" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={workshopForm.control}
+                            name="email"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Email *</FormLabel>
+                                <FormControl>
+                                  <Input type="email" placeholder="oficina@exemplo.com" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={workshopForm.control}
+                            name="tipo"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Tipo de Oficina *</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Selecione o tipo" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="mecanica">Mecânica Geral</SelectItem>
+                                    <SelectItem value="eletrica">Elétrica/Eletrônica</SelectItem>
+                                    <SelectItem value="pintura">Pintura e Funilaria</SelectItem>
+                                    <SelectItem value="pneus">Pneus e Balanceamento</SelectItem>
+                                    <SelectItem value="diesel">Especializada em Diesel</SelectItem>
+                                    <SelectItem value="transmissao">Transmissão/Câmbio</SelectItem>
+                                    <SelectItem value="freios">Sistema de Freios</SelectItem>
+                                    <SelectItem value="ar_condicionado">Ar Condicionado</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <FormField
+                          control={workshopForm.control}
+                          name="endereco"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Endereço Completo *</FormLabel>
+                              <FormControl>
+                                <Textarea 
+                                  placeholder="Rua, número, bairro, cidade, CEP..." 
+                                  className="min-h-[80px]"
+                                  {...field} 
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => setIsWorkshopModalOpen(false)}
+                            disabled={isCreatingWorkshop}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button type="submit" disabled={isCreatingWorkshop}>
+                            {isCreatingWorkshop ? "Cadastrando..." : "Cadastrar Oficina"}
+                          </Button>
+                        </div>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
               </div>
 
               <div className="grid gap-4">
