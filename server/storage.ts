@@ -1930,6 +1930,62 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
+
+  // Car Reception operations
+  async getCarReception(id: number): Promise<CarReception | undefined> {
+    try {
+      const [reception] = await db.select().from(carReceptions).where(eq(carReceptions.id, id));
+      return reception || undefined;
+    } catch (error) {
+      console.error("Erro ao buscar recebimento:", error);
+      return undefined;
+    }
+  }
+
+  async getCarReceptionsByWorkshop(workshopId: number): Promise<CarReception[]> {
+    try {
+      const receptions = await db.select().from(carReceptions)
+        .where(eq(carReceptions.workshopId, workshopId))
+        .orderBy(desc(carReceptions.created_at));
+      return receptions;
+    } catch (error) {
+      console.error("Erro ao buscar recebimentos da oficina:", error);
+      return [];
+    }
+  }
+
+  async createCarReception(reception: InsertCarReception): Promise<CarReception> {
+    try {
+      const [newReception] = await db.insert(carReceptions).values(reception).returning();
+      return newReception;
+    } catch (error) {
+      console.error("Erro ao criar recebimento:", error);
+      throw error;
+    }
+  }
+
+  async updateCarReception(id: number, reception: Partial<InsertCarReception>): Promise<CarReception | undefined> {
+    try {
+      const [updatedReception] = await db.update(carReceptions)
+        .set(reception)
+        .where(eq(carReceptions.id, id))
+        .returning();
+      return updatedReception || undefined;
+    } catch (error) {
+      console.error("Erro ao atualizar recebimento:", error);
+      return undefined;
+    }
+  }
+
+  async deleteCarReception(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(carReceptions).where(eq(carReceptions.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error("Erro ao excluir recebimento:", error);
+      return false;
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

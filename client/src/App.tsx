@@ -113,6 +113,7 @@ import TratativaManutencaoPage from "@/pages/TratativaManutencaoPage";
 import OficinasExternaPage from "@/pages/OficinasExternaPage";
 import OficinaDashboard from "@/pages/oficina/OficinaDashboard";
 import OficinaLogin from "@/pages/oficina/OficinaLogin";
+import CarReception from "@/pages/oficina/CarReception";
 import OficinaMurici from "@/pages/OficinaMurici";
 import BaseRequests from "@/pages/BaseRequests";
 import CartaoAbastecimentoPage from "@/pages/CartaoAbastecimentoPage";
@@ -461,6 +462,11 @@ function App() {
           {/* Dashboard da Oficina */}
           <Route path="/maintenance/dashboard-oficina">
             <OficinaDashboard />
+          </Route>
+          
+          {/* Sistema de Recebimento de Carros */}
+          <Route path="/maintenance/car-reception">
+            <CarReception />
           </Route>
           
           {/* URL que o usuário estava tentando acessar */}
