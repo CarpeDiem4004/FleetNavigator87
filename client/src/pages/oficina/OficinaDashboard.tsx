@@ -36,6 +36,7 @@ interface Maintenance {
   requestBaseId: number;
   maintenanceType: string;
   vehicleModel?: string;
+  cost?: number;
 }
 
 // Função para formatar data
@@ -43,6 +44,17 @@ const formatDate = (dateStr: string | null) => {
   if (!dateStr) return "-";
   const date = new Date(dateStr);
   return date.toLocaleDateString('pt-BR');
+};
+
+// Função para formatar moeda brasileira
+const formatCurrency = (value: number | string): string => {
+  const numberValue = typeof value === 'string' ? parseFloat(value) || 0 : value;
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(numberValue);
 };
 
 // Tradução dos status para exibição
@@ -533,6 +545,7 @@ export default function OficinaDashboard() {
                     <TableHead className="w-[180px]">Tipo</TableHead>
                     <TableHead>Descrição</TableHead>
                     <TableHead className="w-[120px]">Data</TableHead>
+                    <TableHead className="w-[120px]">Custo</TableHead>
                     <TableHead className="w-[150px]">Status</TableHead>
                     <TableHead className="w-[200px]">Ações</TableHead>
                   </TableRow>
@@ -545,6 +558,9 @@ export default function OficinaDashboard() {
                       <TableCell>{maintenance.maintenanceType}</TableCell>
                       <TableCell>{maintenance.description}</TableCell>
                       <TableCell>{formatDate(maintenance.createdAt)}</TableCell>
+                      <TableCell className="font-medium">
+                        {maintenance.cost ? formatCurrency(maintenance.cost) : "-"}
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
                           <StatusIcon status={maintenance.status} />
