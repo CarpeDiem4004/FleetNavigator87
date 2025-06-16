@@ -85,6 +85,7 @@ import Accidents from "@/pages/accidents";
 import WorkSafety from "@/pages/work-safety";
 import WorkshopsPage from "@/pages/fleet-management/WorkshopsPage";
 import MaintenancePage from "@/pages/fleet-management/MaintenancePage";
+import MaintenanceManagement from "@/pages/fleet-management/maintenance-management";
 import BudgetManagementPage from "@/pages/fleet-management/BudgetManagementPage";
 import InventoryPage from "@/pages/fleet-management/InventoryPage";
 import PartsInventoryPage from "@/pages/fleet-management/parts-inventory";
