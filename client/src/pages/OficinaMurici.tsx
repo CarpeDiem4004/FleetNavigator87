@@ -718,6 +718,13 @@ const OficinaMurici: React.FC = () => {
     aguardando_peca: manutencoes.filter(m => m.status === 'aguardando_peca').length,
     finalizado: manutencoes.filter(m => m.status === 'finalizado').length
   };
+
+  // Calcular valor total em manutenção
+  const valorTotalManutencao = manutencoes.reduce((total, manutencao) => {
+    const custoTotal = Number(manutencao.custo_total || 0);
+    const custoMaoObra = Number(manutencao.labor_cost || 0);
+    return total + custoTotal + custoMaoObra;
+  }, 0);
   
   return (
     <MainLayoutSimple>
@@ -760,7 +767,7 @@ const OficinaMurici: React.FC = () => {
         </div>
         
         {/* Cards de estatísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
           <Card>
             <CardContent className="p-6">
               <div className="flex justify-between items-center">
@@ -812,6 +819,20 @@ const OficinaMurici: React.FC = () => {
                 </div>
                 <div className="p-3 bg-green-100 rounded-full">
                   <CheckCircle className="h-6 w-6 text-green-700" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="lg:col-span-1">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-muted-foreground">Valor Total</p>
+                  <h3 className="text-2xl font-bold text-red-600">{formatCurrency(valorTotalManutencao)}</h3>
+                </div>
+                <div className="p-3 bg-red-100 rounded-full">
+                  <span className="text-red-700 font-bold text-lg">R$</span>
                 </div>
               </div>
             </CardContent>
