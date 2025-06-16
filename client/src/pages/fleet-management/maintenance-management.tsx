@@ -4,6 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Search, 
   Building2, 
@@ -22,6 +26,9 @@ import {
 import AppLayout from "@/components/layout/AppLayout";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
 interface ServiceOrder {
   id: number;
@@ -62,9 +69,37 @@ interface MaintenanceStats {
   average_cost: number;
 }
 
+interface Vehicle {
+  id: number;
+  placa: string;
+  modelo: string;
+  marca: string;
+  tipo: string;
+}
+
+interface MaintenanceTemplate {
+  id: number;
+  nome: string;
+  descricao: string;
+  categoria: string;
+}
+
+// Schema de validação para nova ordem de serviço
+const newServiceOrderSchema = z.object({
+  placa: z.string().min(1, "Placa é obrigatória"),
+  oficina_id: z.string().min(1, "Oficina é obrigatória"),
+  template_id: z.string().min(1, "Tipo de serviço é obrigatório"),
+  descricao: z.string().min(10, "Descrição deve ter pelo menos 10 caracteres"),
+  data_prevista: z.string().min(1, "Data prevista é obrigatória"),
+  prioridade: z.enum(['baixa', 'media', 'alta', 'urgente']),
+  observacoes: z.string().optional()
+});
+
 export default function MaintenanceManagement() {
   const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [templates, setTemplates] = useState<MaintenanceTemplate[]>([]);
   const [stats, setStats] = useState<MaintenanceStats>({
     total_orders: 0,
     orders_in_progress: 0,
@@ -75,7 +110,23 @@ export default function MaintenanceManagement() {
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
+
+  // Form para nova ordem de serviço
+  const form = useForm<z.infer<typeof newServiceOrderSchema>>({
+    resolver: zodResolver(newServiceOrderSchema),
+    defaultValues: {
+      placa: "",
+      oficina_id: "",
+      template_id: "",
+      descricao: "",
+      data_prevista: "",
+      prioridade: "media",
+      observacoes: ""
+    }
+  });
 
   useEffect(() => {
     loadData();
@@ -94,6 +145,16 @@ export default function MaintenanceManagement() {
       const workshopsResponse = await apiRequest("GET", "/api/maintenance/workshops");
       const workshopsData = await workshopsResponse.json();
       setWorkshops(workshopsData.workshops || []);
+
+      // Carregar veículos
+      const vehiclesResponse = await apiRequest("GET", "/api/vehicles");
+      const vehiclesData = await vehiclesResponse.json();
+      setVehicles(vehiclesData || []);
+
+      // Carregar templates de manutenção
+      const templatesResponse = await apiRequest("GET", "/api/maintenance/templates");
+      const templatesData = await templatesResponse.json();
+      setTemplates(templatesData.templates || []);
 
       // Calcular estatísticas
       const orders = ordersData.orders || [];
@@ -117,6 +178,40 @@ export default function MaintenanceManagement() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Função para criar nova ordem de serviço
+  const handleCreateServiceOrder = async (values: z.infer<typeof newServiceOrderSchema>) => {
+    try {
+      setIsCreating(true);
+      
+      const response = await apiRequest("POST", "/api/maintenance/orders", {
+        ...values,
+        oficina_id: parseInt(values.oficina_id),
+        template_id: parseInt(values.template_id)
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Sucesso",
+          description: "Ordem de serviço criada com sucesso!"
+        });
+        
+        setIsModalOpen(false);
+        form.reset();
+        loadData(); // Recarregar dados
+      } else {
+        throw new Error("Erro ao criar ordem de serviço");
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível criar a ordem de serviço",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -166,10 +261,191 @@ export default function MaintenanceManagement() {
                 Controle completo sobre ordens de serviço e oficinas parceiras
               </p>
             </div>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Nova Ordem de Serviço
-            </Button>
+            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nova Ordem de Serviço
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Nova Ordem de Serviço</DialogTitle>
+                  <DialogDescription>
+                    Crie uma nova ordem de serviço para manutenção veicular
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(handleCreateServiceOrder)} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="placa"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Placa do Veículo</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione a placa" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {vehicles.map((vehicle) => (
+                                  <SelectItem key={vehicle.id} value={vehicle.placa}>
+                                    {vehicle.placa} - {vehicle.modelo}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="oficina_id"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Oficina</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione a oficina" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {workshops.map((workshop) => (
+                                  <SelectItem key={workshop.id} value={workshop.id.toString()}>
+                                    {workshop.razao_social}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="template_id"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tipo de Serviço</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione o tipo" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {templates.map((template) => (
+                                  <SelectItem key={template.id} value={template.id.toString()}>
+                                    {template.nome}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="prioridade"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Prioridade</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione a prioridade" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="baixa">Baixa</SelectItem>
+                                <SelectItem value="media">Média</SelectItem>
+                                <SelectItem value="alta">Alta</SelectItem>
+                                <SelectItem value="urgente">Urgente</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="data_prevista"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Data Prevista</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="descricao"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Descrição do Problema</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Descreva o problema ou serviço necessário..." 
+                              className="min-h-[100px]"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="observacoes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Observações (Opcional)</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Observações adicionais..." 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setIsModalOpen(false)}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button type="submit" disabled={isCreating}>
+                        {isCreating ? "Criando..." : "Criar Ordem de Serviço"}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
           </div>
 
           {/* Estatísticas */}
