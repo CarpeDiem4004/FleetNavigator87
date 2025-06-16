@@ -49,6 +49,17 @@ import { Textarea } from '@/components/ui/textarea';
 import * as XLSX from 'xlsx';
 import SeletorPecasEstoque from '@/components/SeletorPecasEstoque';
 
+// Função para formatar moeda brasileira
+const formatCurrency = (value: number | string): string => {
+  const numberValue = typeof value === 'string' ? parseFloat(value) || 0 : value;
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(numberValue);
+};
+
 // Interface para a manutenção
 interface Manutencao {
   id?: number;
@@ -891,7 +902,7 @@ const OficinaMurici: React.FC = () => {
                           {manutencao.data_hora_inicio ? formatDateTime(manutencao.data_hora_inicio) : '-'}
                         </TableCell>
                         <TableCell>
-                          {manutencao.custo_total ? `R$ ${manutencao.custo_total.toFixed(2)}` : '-'}
+                          {manutencao.custo_total ? formatCurrency(manutencao.custo_total) : '-'}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
@@ -1101,18 +1112,18 @@ const OficinaMurici: React.FC = () => {
                   {currentManutencao.custo_total && currentManutencao.custo_total > 0 && (
                     <div className="flex justify-between">
                       <span>Total das Peças:</span>
-                      <span className="font-medium">R$ {Number(currentManutencao.custo_total || 0).toFixed(2)}</span>
+                      <span className="font-medium">{formatCurrency(currentManutencao.custo_total)}</span>
                     </div>
                   )}
                   {currentManutencao.labor_cost && currentManutencao.labor_cost > 0 && (
                     <div className="flex justify-between">
                       <span>Mão de Obra:</span>
-                      <span className="font-medium">R$ {Number(currentManutencao.labor_cost || 0).toFixed(2)}</span>
+                      <span className="font-medium">{formatCurrency(currentManutencao.labor_cost)}</span>
                     </div>
                   )}
                   <div className="flex justify-between border-t pt-1 font-bold text-green-800">
                     <span>Custo Total:</span>
-                    <span>R$ {(Number(currentManutencao.custo_total || 0) + Number(currentManutencao.labor_cost || 0)).toFixed(2)}</span>
+                    <span>{formatCurrency(Number(currentManutencao.custo_total || 0) + Number(currentManutencao.labor_cost || 0))}</span>
                   </div>
                 </div>
               </div>
