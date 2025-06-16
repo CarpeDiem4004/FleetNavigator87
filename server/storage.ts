@@ -689,16 +689,102 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllWorkshops(): Promise<Workshop[]> {
-    return await db.select().from(workshops);
+    try {
+      const query = `SELECT * FROM oficinas ORDER BY created_at DESC`;
+      const result = await pool.query(query);
+      
+      return result.rows.map(row => ({
+        id: row.id,
+        name: row.razao_social,
+        cnpj: row.cnpj,
+        address: row.endereco,
+        phone: row.telefone,
+        email: row.email,
+        contactPerson: row.responsavel,
+        workshopType: row.tipo,
+        isActive: row.status === 'ativa',
+        created_at: row.created_at,
+        updated_at: row.updated_at
+      }));
+    } catch (error) {
+      console.error("Erro ao buscar oficinas:", error);
+      return [];
+    }
   }
 
   async getActiveWorkshops(): Promise<Workshop[]> {
-    return await db.select().from(workshops).where(eq(workshops.isActive, true));
+    try {
+      const query = `SELECT * FROM oficinas WHERE status = 'ativa' ORDER BY created_at DESC`;
+      const result = await pool.query(query);
+      
+      return result.rows.map(row => ({
+        id: row.id,
+        name: row.razao_social,
+        cnpj: row.cnpj,
+        address: row.endereco,
+        phone: row.telefone,
+        email: row.email,
+        contactPerson: row.responsavel,
+        workshopType: row.tipo,
+        isActive: true,
+        created_at: row.created_at,
+        updated_at: row.updated_at
+      }));
+    } catch (error) {
+      console.error("Erro ao buscar oficinas ativas:", error);
+      return [];
+    }
   }
 
   async createWorkshop(workshop: InsertWorkshop): Promise<Workshop> {
-    const [newWorkshop] = await db.insert(workshops).values(workshop).returning();
-    return newWorkshop;
+    try {
+      console.log("Criando oficina com dados:", JSON.stringify(workshop, null, 2));
+      
+      // Usar SQL direto para garantir compatibilidade com a estrutura da tabela oficinas
+      const query = `
+        INSERT INTO oficinas (
+          cnpj, razao_social, nome_fantasia, endereco, 
+          telefone, email, responsavel, status, tipo
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9
+        ) RETURNING *
+      `;
+      
+      const values = [
+        workshop.cnpj,
+        workshop.name,
+        workshop.name,
+        workshop.address,
+        workshop.phone,
+        workshop.email,
+        workshop.contactPerson || 'Responsável',
+        workshop.isActive ? 'ativa' : 'inativa',
+        workshop.workshopType || 'geral'
+      ];
+      
+      const result = await pool.query(query, values);
+      const newWorkshop = result.rows[0];
+      
+      console.log("Oficina criada com sucesso:", newWorkshop);
+      
+      // Converter para o formato esperado
+      return {
+        id: newWorkshop.id,
+        name: newWorkshop.razao_social,
+        cnpj: newWorkshop.cnpj,
+        address: newWorkshop.endereco,
+        phone: newWorkshop.telefone,
+        email: newWorkshop.email,
+        contactPerson: newWorkshop.responsavel,
+        workshopType: newWorkshop.tipo,
+        isActive: newWorkshop.status === 'ativa',
+        created_at: newWorkshop.created_at,
+        updated_at: newWorkshop.updated_at
+      };
+    } catch (error) {
+      console.error("Erro ao criar oficina:", error);
+      throw error;
+    }
   }
 
   async updateWorkshop(id: number, workshop: Partial<InsertWorkshop>): Promise<Workshop | undefined> {
@@ -832,20 +918,21 @@ export class DatabaseStorage implements IStorage {
       
       return result.rows.map(row => ({
         id: row.id,
-        vehiclePlate: row.vehicle_plate,
-        description: row.description,
+        vehiclePlate: row.vehicle_plate || row.placa,
+        description: row.descricao,
         status: row.status,
-        workshopId: row.workshop_id,
-        requestBaseId: row.request_base_id, 
-        entryDate: row.entry_date,
-        expectedExitDate: row.expected_exit_date,
-        actualExitDate: row.actual_exit_date,
-        maintenanceType: row.maintenance_type,
-        initialCost: row.initial_cost,
-        finalCost: row.final_cost,
+        priority: 'média',
+        maintenanceType: row.tipo,
+        workshopId: row.oficina_id,
+        requestBaseId: row.request_base_id || row.base_id,
+        entryDate: row.entry_date || row.data_solicitacao,
+        estimatedCompletion: row.data_agendada,
+        completionDate: row.data_conclusao,
+        responsiblePerson: 'Técnico responsável',
+        cost: row.custo,
+        initialBudget: row.custo,
         created_at: row.created_at,
-        updated_at: row.updated_at,
-        responsiblePerson: row.responsible_person
+        updated_at: row.updated_at
       }));
     } catch (error) {
       console.error("Erro ao buscar todas as manutenções:", error);

@@ -5715,6 +5715,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/maintenance/:id", hasMaintenanceAccess, async (req, res) => {
     try {
       const maintenanceId = parseInt(req.params.id);
+      
+      // Validar se o ID é um número válido
+      if (isNaN(maintenanceId) || maintenanceId <= 0) {
+        return res.status(400).json({ message: "Invalid maintenance ID" });
+      }
+      
       const maintenanceRecord = await storage.getMaintenance(maintenanceId);
       
       if (!maintenanceRecord) {
