@@ -112,6 +112,7 @@ import ManutencaoPage from "@/pages/ManutencaoPage";
 import TratativaManutencaoPage from "@/pages/TratativaManutencaoPage";
 import OficinasExternaPage from "@/pages/OficinasExternaPage";
 import OficinaDashboard from "@/pages/oficina/OficinaDashboard";
+import OficinaLogin from "@/pages/oficina/OficinaLogin";
 import OficinaMurici from "@/pages/OficinaMurici";
 import BaseRequests from "@/pages/BaseRequests";
 import CartaoAbastecimentoPage from "@/pages/CartaoAbastecimentoPage";
@@ -450,6 +451,16 @@ function App() {
           {/* Sistema de Manutenção Veicular - Acesso público para oficinas */}
           <Route path="/maintenance">
             <MaintenanceSystem />
+          </Route>
+          
+          {/* Login da Oficina */}
+          <Route path="/maintenance/login-oficina">
+            <OficinaLogin />
+          </Route>
+          
+          {/* Dashboard da Oficina */}
+          <Route path="/maintenance/dashboard-oficina">
+            <OficinaDashboard />
           </Route>
           
           {/* URL que o usuário estava tentando acessar */}

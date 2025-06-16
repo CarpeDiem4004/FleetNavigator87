@@ -5810,6 +5810,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== ROTAS DA API DA OFICINA =====
+  
+  // Middleware para verificar token da oficina
+  const verificarTokenOficina = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ message: 'Token não fornecido' });
+      }
+
+      const token = authHeader.substring(7);
+      
+      // Verificar se o token é válido (aqui seria uma verificação JWT real)
+      // Por simplicidade, vou usar o CNPJ como token base64
+      const decoded = Buffer.from(token, 'base64').toString();
+      const oficina = await storage.getWorkshopByCnpj(decoded);
+      
+      if (!oficina) {
+        return res.status(401).json({ message: 'Token inválido' });
+      }
+
+      req.oficina = oficina;
+      next();
+    } catch (error) {
+      return res.status(401).json({ message: 'Token inválido' });
+    }
+  };
+
+  // Login da oficina
+  app.post("/api/oficina/login", async (req, res) => {
+    try {
+      const { cnpj, password } = req.body;
+
+      if (!cnpj || !password) {
+        return res.status(400).json({ message: 'CNPJ e senha são obrigatórios' });
+      }
+
+      const oficina = await storage.getWorkshopByCnpj(cnpj);
+      if (!oficina) {
+        return res.status(401).json({ message: 'CNPJ não encontrado' });
+      }
+
+      // Verificar senha (aqui seria uma verificação hash real)
+      if (password !== 'secret') {
+        return res.status(401).json({ message: 'Senha incorreta' });
+      }
+
+      // Gerar token (aqui seria um JWT real)
+      const token = Buffer.from(cnpj).toString('base64');
+
+      res.json({
+        token,
+        oficina: {
+          id: oficina.id,
+          razao_social: oficina.razao_social,
+          cnpj: oficina.cnpj,
+          email: oficina.email,
+          telefone: oficina.telefone
+        }
+      });
+    } catch (error) {
+      console.error("Erro no login da oficina:", error);
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
+  // Perfil da oficina
+  app.get("/api/oficina/profile", verificarTokenOficina, async (req, res) => {
+    res.json(req.oficina);
+  });
+
+  // Listar ordens de serviço da oficina
+  app.get("/api/oficina/orders", verificarTokenOficina, async (req, res) => {
+    try {
+      const orders = await storage.getMaintenanceByWorkshop(req.oficina.id);
+      res.json(orders);
+    } catch (error) {
+      console.error("Erro ao listar ordens:", error);
+      res.status(500).json({ message: 'Erro ao carregar ordens de serviço' });
+    }
+  });
+
+  // Atualizar status de ordem de serviço
+  app.put("/api/oficina/orders/:id/status", verificarTokenOficina, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      if (!status) {
+        return res.status(400).json({ message: 'Status é obrigatório' });
+      }
+
+      const updated = await storage.updateMaintenanceStatus(parseInt(id), status);
+      if (!updated) {
+        return res.status(404).json({ message: 'Ordem de serviço não encontrada' });
+      }
+
+      res.json({ message: 'Status atualizado com sucesso' });
+    } catch (error) {
+      console.error("Erro ao atualizar status:", error);
+      res.status(500).json({ message: 'Erro ao atualizar status' });
+    }
+  });
+
   app.get("/api/maintenance/:id", hasMaintenanceAccess, async (req, res) => {
     try {
       const maintenanceId = parseInt(req.params.id);
