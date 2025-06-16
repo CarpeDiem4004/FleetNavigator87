@@ -907,32 +907,46 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllMaintenance(): Promise<Maintenance[]> {
-    // Usar SQL direto para evitar problemas de colunas que podem não existir no banco
     try {
       const query = `
-        SELECT * FROM manutencao
-        ORDER BY entry_date DESC
+        SELECT 
+          m.*,
+          v.modelo as veiculo_modelo,
+          v.marca as veiculo_marca,
+          o.nome as oficina_nome,
+          b.name as base_nome
+        FROM manutencao m
+        LEFT JOIN veiculos v ON m.placa = v.placa
+        LEFT JOIN oficinas o ON m.oficina_id = o.id
+        LEFT JOIN bases b ON m.base_id = b.id
+        ORDER BY m.data_solicitacao DESC
       `;
       
       const result = await pool.query(query);
+      console.log(`Encontradas ${result.rows.length} manutenções no total`);
       
       return result.rows.map(row => ({
         id: row.id,
-        vehiclePlate: row.vehicle_plate || row.placa,
+        vehiclePlate: row.placa,
         description: row.descricao,
         status: row.status,
-        priority: 'média',
+        priority: row.prioridade || 'media',
         maintenanceType: row.tipo,
         workshopId: row.oficina_id,
-        requestBaseId: row.request_base_id || row.base_id,
-        entryDate: row.entry_date || row.data_solicitacao,
+        requestBaseId: row.base_id,
+        entryDate: row.data_solicitacao,
         estimatedCompletion: row.data_agendada,
         completionDate: row.data_conclusao,
-        responsiblePerson: 'Técnico responsável',
+        responsiblePerson: row.responsavel || 'Não informado',
         cost: row.custo,
         initialBudget: row.custo,
         created_at: row.created_at,
-        updated_at: row.updated_at
+        updated_at: row.updated_at,
+        vehicleModel: row.veiculo_modelo,
+        vehicleBrand: row.veiculo_marca,
+        workshopName: row.oficina_nome,
+        baseName: row.base_nome,
+        currentKm: row.km_atual
       }));
     } catch (error) {
       console.error("Erro ao buscar todas as manutenções:", error);
