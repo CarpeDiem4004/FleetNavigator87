@@ -958,15 +958,15 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log("Criando manutenção com dados:", JSON.stringify(maintenanceData, null, 2));
       
-      // Usar SQL direto para garantir compatibilidade com a estrutura atual da tabela
+      // Usar SQL direto com a estrutura corrigida da tabela
       const query = `
         INSERT INTO manutencao (
-          vehicle_plate, descricao, status, tipo, 
-          oficina_id, request_base_id, 
-          entry_date, data_agendada,
-          custo
+          placa, descricao, status, tipo, 
+          oficina_id, base_id, 
+          data_solicitacao, data_agendada,
+          custo, prioridade, responsavel
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
         ) RETURNING *
       `;
       
@@ -979,7 +979,9 @@ export class DatabaseStorage implements IStorage {
         maintenanceData.requestBaseId,
         maintenanceData.entryDate || new Date(),
         maintenanceData.estimatedCompletion,
-        maintenanceData.cost || 0
+        maintenanceData.cost || 0,
+        maintenanceData.priority || 'media',
+        maintenanceData.responsiblePerson || 'Sistema'
       ];
       
       const result = await pool.query(query, values);
@@ -992,7 +994,7 @@ export class DatabaseStorage implements IStorage {
         const updateVehicleQuery = `
           UPDATE veiculos 
           SET status = 'em_manutencao' 
-          WHERE plate = $1
+          WHERE placa = $1
         `;
         await pool.query(updateVehicleQuery, [maintenanceData.vehiclePlate]);
         console.log(`Status do veículo ${maintenanceData.vehiclePlate} atualizado para em_manutencao`);
@@ -1004,17 +1006,17 @@ export class DatabaseStorage implements IStorage {
       // Converter o objeto retornado pelo banco para o formato esperado
       return {
         id: newMaintenance.id,
-        vehiclePlate: newMaintenance.vehicle_plate,
+        vehiclePlate: newMaintenance.placa,
         description: newMaintenance.descricao,
         status: newMaintenance.status,
-        priority: 'média',
+        priority: newMaintenance.prioridade || 'media',
         maintenanceType: newMaintenance.tipo,
         workshopId: newMaintenance.oficina_id,
-        requestBaseId: newMaintenance.request_base_id,
-        entryDate: newMaintenance.entry_date,
+        requestBaseId: newMaintenance.base_id,
+        entryDate: newMaintenance.data_solicitacao,
         estimatedCompletion: newMaintenance.data_agendada,
-        completionDate: null,
-        responsiblePerson: 'Técnico responsável',
+        completionDate: newMaintenance.data_conclusao,
+        responsiblePerson: newMaintenance.responsavel || 'Sistema',
         cost: newMaintenance.custo,
         initialBudget: newMaintenance.custo,
         created_at: newMaintenance.created_at,
