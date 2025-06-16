@@ -62,7 +62,7 @@ interface ProjectWithBases {
 export default function CarReception() {
   const [isLoading, setIsLoading] = useState(false);
   const [allBases, setAllBases] = useState<Base[]>([]);
-  const [allProjects, setAllProjects] = useState<Project[]>([]);
+  const [allProjects, setAllProjects] = useState<ProjectWithBases[]>([]);
   const [availableBases, setAvailableBases] = useState<Base[]>([]);
   const { toast } = useToast();
 
@@ -110,25 +110,17 @@ export default function CarReception() {
 
   // Filtrar bases por projeto selecionado
   useEffect(() => {
-    console.log("🔍 Debug filtro bases:", {
-      selectedProjectId,
-      allProjects: allProjects.length,
-      allBases: allBases.length
-    });
-    
     if (selectedProjectId) {
       const selectedProject = allProjects.find(p => p.id === selectedProjectId);
-      console.log("📋 Projeto selecionado:", selectedProject);
       
       if (selectedProject && selectedProject.bases) {
         // As bases vêm aninhadas no projeto
-        const basesForProject = selectedProject.bases.map(projectBase => ({
+        const basesForProject = selectedProject.bases.map((projectBase: ProjectBase) => ({
           id: projectBase.id,
           name: projectBase.base_name,
           location: projectBase.base_code || '',
           basename: projectBase.base_name
         }));
-        console.log("🏢 Bases encontradas para o projeto:", basesForProject);
         
         setAvailableBases(basesForProject);
         // Auto-selecionar a base se houver apenas uma
