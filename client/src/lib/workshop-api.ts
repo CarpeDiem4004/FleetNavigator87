@@ -87,6 +87,24 @@ class WorkshopAPI {
     });
   }
 
+  async createCarReception(data: any) {
+    return this.request('/car-receptions', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getCarReceptions() {
+    return this.request('/car-receptions');
+  }
+
+  async updateCarReception(id: number, data: any) {
+    return this.request(`/car-receptions/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
   isAuthenticated(): boolean {
     return !!this.token;
   }

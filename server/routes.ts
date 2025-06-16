@@ -5921,6 +5921,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Criar recebimento de veículo
+  app.post("/api/oficina/car-receptions", verificarTokenOficina, async (req, res) => {
+    try {
+      const data = req.body;
+      
+      // Validar dados obrigatórios
+      if (!data.vehiclePlate || !data.vehicleModel || !data.vehicleType || !data.baseId || !data.serviceDescription) {
+        return res.status(400).json({ message: 'Dados obrigatórios não informados' });
+      }
+
+      // Criar objeto de recebimento com dados da oficina
+      const carReceptionData = {
+        vehiclePlate: data.vehiclePlate,
+        vehicleModel: data.vehicleModel,
+        vehicleType: data.vehicleType,
+        currentKm: data.currentKm || 0,
+        baseId: data.baseId,
+        projectId: data.projectId || null,
+        projectName: data.projectName || '',
+        serviceDescription: data.serviceDescription,
+        replacedParts: data.replacedParts || '',
+        laborCost: data.laborCost || 0,
+        partsCost: data.partsCost || 0,
+        totalCost: (data.laborCost || 0) + (data.partsCost || 0),
+        deliveryDeadline: data.deliveryDeadline || null,
+        notes: data.notes || '',
+        workshopId: req.oficina.id,
+        status: 'recebido',
+        createdAt: new Date()
+      };
+
+      const reception = await storage.createCarReception(carReceptionData);
+      res.status(201).json(reception);
+    } catch (error) {
+      console.error("Erro ao criar recebimento:", error);
+      res.status(500).json({ message: 'Erro ao registrar recebimento' });
+    }
+  });
+
+  // Listar recebimentos da oficina
+  app.get("/api/oficina/car-receptions", verificarTokenOficina, async (req, res) => {
+    try {
+      const receptions = await storage.getCarReceptionsByWorkshop(req.oficina.id);
+      res.json(receptions);
+    } catch (error) {
+      console.error("Erro ao listar recebimentos:", error);
+      res.status(500).json({ message: 'Erro ao carregar recebimentos' });
+    }
+  });
+
+  // Atualizar recebimento
+  app.put("/api/oficina/car-receptions/:id", verificarTokenOficina, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const data = req.body;
+
+      const updated = await storage.updateCarReception(parseInt(id), data);
+      if (!updated) {
+        return res.status(404).json({ message: 'Recebimento não encontrado' });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Erro ao atualizar recebimento:", error);
+      res.status(500).json({ message: 'Erro ao atualizar recebimento' });
+    }
+  });
+
   app.get("/api/maintenance/:id", hasMaintenanceAccess, async (req, res) => {
     try {
       const maintenanceId = parseInt(req.params.id);

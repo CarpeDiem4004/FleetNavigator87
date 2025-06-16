@@ -539,6 +539,9 @@ export type InsertFine = z.infer<typeof insertFineSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
+export type CarReception = typeof carReceptions.$inferSelect;
+export type InsertCarReception = z.infer<typeof insertCarReceptionSchema>;
+
 export type Operation = typeof operations.$inferSelect;
 export type InsertOperation = z.infer<typeof insertOperationSchema>;
 

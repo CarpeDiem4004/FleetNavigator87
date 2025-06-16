@@ -1,6 +1,6 @@
 import { 
   users, vehicles as veiculos, maintenance, tires, refueling, fines, bases, workshops, painelPrincipal, operations,
-  maintenanceChat, chatMessages, baseRequests, baseRequestUpdates,
+  maintenanceChat, chatMessages, baseRequests, baseRequestUpdates, carReceptions,
   type User, type InsertUser, type Vehicle, type InsertVehicle,
   type Maintenance, type InsertMaintenance, type Tire, type InsertTire,
   type Refueling, type InsertRefueling, type Fine, type InsertFine,
@@ -8,7 +8,7 @@ import {
   type Workshop, type InsertWorkshop, type Operation, type InsertOperation,
   type PainelPrincipal, type InsertPainelPrincipal, type MaintenanceChat, type InsertMaintenanceChat,
   type ChatMessage, type InsertChatMessage, type BaseRequest, type InsertBaseRequest,
-  type BaseRequestUpdate, type InsertBaseRequestUpdate
+  type BaseRequestUpdate, type InsertBaseRequestUpdate, type CarReception, type InsertCarReception
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, like, desc, sql } from "drizzle-orm";
@@ -112,6 +112,13 @@ export interface IStorage {
   getChatMessage(id: number): Promise<ChatMessage | undefined>;
   getChatMessagesByChatId(chatId: number): Promise<ChatMessage[]>;
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  
+  // Car Reception operations
+  getCarReception(id: number): Promise<CarReception | undefined>;
+  getCarReceptionsByWorkshop(workshopId: number): Promise<CarReception[]>;
+  createCarReception(reception: InsertCarReception): Promise<CarReception>;
+  updateCarReception(id: number, reception: Partial<InsertCarReception>): Promise<CarReception | undefined>;
+  deleteCarReception(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
