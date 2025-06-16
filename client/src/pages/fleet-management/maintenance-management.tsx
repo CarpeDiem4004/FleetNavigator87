@@ -95,6 +95,17 @@ const newServiceOrderSchema = z.object({
   observacoes: z.string().optional()
 });
 
+// Schema de validação para cadastro de oficina
+const newWorkshopSchema = z.object({
+  nome: z.string().min(1, "Nome da oficina é obrigatório"),
+  cnpj: z.string().min(14, "CNPJ deve ter pelo menos 14 caracteres"),
+  endereco: z.string().min(1, "Endereço é obrigatório"),
+  telefone: z.string().min(1, "Telefone é obrigatório"),
+  email: z.string().email("Email inválido").min(1, "Email é obrigatório"),
+  responsavel: z.string().min(1, "Nome do responsável é obrigatório"),
+  tipo: z.string().min(1, "Tipo de oficina é obrigatório")
+});
+
 export default function MaintenanceManagement() {
   const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
@@ -111,7 +122,9 @@ export default function MaintenanceManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isWorkshopModalOpen, setIsWorkshopModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [isCreatingWorkshop, setIsCreatingWorkshop] = useState(false);
   const { toast } = useToast();
 
   // Form para nova ordem de serviço
@@ -125,6 +138,20 @@ export default function MaintenanceManagement() {
       data_prevista: "",
       prioridade: "media",
       observacoes: ""
+    }
+  });
+
+  // Form para cadastro de oficina
+  const workshopForm = useForm<z.infer<typeof newWorkshopSchema>>({
+    resolver: zodResolver(newWorkshopSchema),
+    defaultValues: {
+      nome: "",
+      cnpj: "",
+      endereco: "",
+      telefone: "",
+      email: "",
+      responsavel: "",
+      tipo: ""
     }
   });
 
@@ -212,6 +239,45 @@ export default function MaintenanceManagement() {
       });
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  // Função para cadastrar nova oficina
+  const handleCreateWorkshop = async (values: z.infer<typeof newWorkshopSchema>) => {
+    try {
+      setIsCreatingWorkshop(true);
+      
+      const response = await apiRequest("POST", "/api/maintenance/workshops", {
+        nome: values.nome,
+        cnpj: values.cnpj,
+        endereco: values.endereco,
+        telefone: values.telefone,
+        email: values.email,
+        responsavel: values.responsavel,
+        tipo: values.tipo,
+        is_active: true
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Sucesso",
+          description: "Oficina cadastrada com sucesso!"
+        });
+        
+        setIsWorkshopModalOpen(false);
+        workshopForm.reset();
+        loadData(); // Recarregar dados
+      } else {
+        throw new Error("Erro ao cadastrar oficina");
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível cadastrar a oficina",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreatingWorkshop(false);
     }
   };
 
