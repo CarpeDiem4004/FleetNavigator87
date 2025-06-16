@@ -112,14 +112,16 @@ export default function CarReception() {
 
   // Filtrar bases por projeto selecionado
   useEffect(() => {
-    console.log("🔍 Filtrando bases para projeto:", selectedProjectId);
+    console.log("🔍 Filtrando bases para projeto ID:", selectedProjectId, "tipo:", typeof selectedProjectId);
     console.log("📋 Projetos disponíveis:", allProjects);
     
-    if (selectedProjectId) {
-      const selectedProject = allProjects.find(p => p.id === selectedProjectId);
+    if (selectedProjectId && allProjects.length > 0) {
+      // Garantir que estamos comparando números com números
+      const projectId = Number(selectedProjectId);
+      const selectedProject = allProjects.find(p => Number(p.id) === projectId);
       console.log("📋 Projeto encontrado:", selectedProject);
       
-      if (selectedProject && selectedProject.bases) {
+      if (selectedProject && selectedProject.bases && selectedProject.bases.length > 0) {
         console.log("🏢 Bases do projeto:", selectedProject.bases);
         
         // As bases vêm aninhadas no projeto
@@ -141,10 +143,13 @@ export default function CarReception() {
         }
       } else {
         console.log("❌ Projeto não tem bases ou não foi encontrado");
+        console.log("- selectedProject:", selectedProject);
+        console.log("- tem bases?", selectedProject?.bases);
+        console.log("- quantidade de bases:", selectedProject?.bases?.length);
         setAvailableBases([]);
       }
     } else {
-      console.log("📋 Nenhum projeto selecionado");
+      console.log("📋 Nenhum projeto selecionado ou projetos não carregados ainda");
       setAvailableBases([]);
       form.setValue("baseId", undefined as any);
     }
