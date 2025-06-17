@@ -1111,7 +1111,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Usar SQL direto para buscar manutenção e evitar erro com colunas que podem não existir
       const getQuery = `
-        SELECT id, vehicle_plate as "vehiclePlate", status, actual_exit_date as "actualExitDate"
+        SELECT id, placa as "vehiclePlate", status, data_conclusao as "actualExitDate"
         FROM manutencao
         WHERE id = $1
       `;
@@ -1135,12 +1135,12 @@ export class DatabaseStorage implements IStorage {
       // Se status for "concluida", adicionar data de saída real
       if (status === 'concluida' && !currentMaintenance.actualExitDate) {
         // Adicionar parâmetro de data de saída
-        updateSQL += `, actual_exit_date = $3`;
+        updateSQL += `, data_conclusao = $3`;
         params.push(new Date().toISOString().split('T')[0]);
         
         // Atualizar o status do veículo para em_operacao
         await pool.query(
-          `UPDATE veiculos SET status = 'em_operacao' WHERE plate = $1`,
+          `UPDATE veiculos SET status = 'em_operacao' WHERE placa = $1`,
           [currentMaintenance.vehiclePlate]
         );
       }
@@ -1148,7 +1148,7 @@ export class DatabaseStorage implements IStorage {
       // Se status for "cancelada", também deve atualizar veículo
       if (status === 'cancelada') {
         await pool.query(
-          `UPDATE veiculos SET status = 'em_operacao' WHERE plate = $1`,
+          `UPDATE veiculos SET status = 'em_operacao' WHERE placa = $1`,
           [currentMaintenance.vehiclePlate]
         );
       }

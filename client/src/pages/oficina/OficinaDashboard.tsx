@@ -3,6 +3,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Wrench, 
   Clock, 
@@ -11,7 +29,10 @@ import {
   Car,
   LogOut,
   FileText,
-  DollarSign
+  DollarSign,
+  Plus,
+  Trash2,
+  Settings
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -36,11 +57,46 @@ interface OficinaInfo {
   telefone: string;
 }
 
+interface WorkPart {
+  id: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
+interface WorkDetails {
+  orderId: number;
+  workDescription: string;
+  partsUsed: WorkPart[];
+  laborHours: number;
+  laborRate: number;
+  laborCost: number;
+  partsCost: number;
+  totalCost: number;
+  completedDate: string;
+  notes: string;
+}
+
 export default function OficinaDashboard() {
   const [, setLocation] = useLocation();
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [oficina, setOficina] = useState<OficinaInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isWorkModalOpen, setIsWorkModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<ServiceOrder | null>(null);
+  const [workDetails, setWorkDetails] = useState<WorkDetails>({
+    orderId: 0,
+    workDescription: '',
+    partsUsed: [],
+    laborHours: 0,
+    laborRate: 50,
+    laborCost: 0,
+    partsCost: 0,
+    totalCost: 0,
+    completedDate: new Date().toISOString().split('T')[0],
+    notes: ''
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -111,6 +167,118 @@ export default function OficinaDashboard() {
       toast({
         title: "Erro",
         description: "Não foi possível atualizar o status",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const openWorkModal = (order: ServiceOrder) => {
+    setSelectedOrder(order);
+    setWorkDetails({
+      orderId: order.id,
+      workDescription: '',
+      partsUsed: [],
+      laborHours: 0,
+      laborRate: 50,
+      laborCost: 0,
+      partsCost: 0,
+      totalCost: 0,
+      completedDate: new Date().toISOString().split('T')[0],
+      notes: ''
+    });
+    setIsWorkModalOpen(true);
+  };
+
+  const addPart = () => {
+    const newPart: WorkPart = {
+      id: Date.now().toString(),
+      name: '',
+      quantity: 1,
+      unitPrice: 0,
+      total: 0
+    };
+    setWorkDetails(prev => ({
+      ...prev,
+      partsUsed: [...prev.partsUsed, newPart]
+    }));
+  };
+
+  const updatePart = (partId: string, field: keyof WorkPart, value: string | number) => {
+    setWorkDetails(prev => ({
+      ...prev,
+      partsUsed: prev.partsUsed.map(part => {
+        if (part.id === partId) {
+          const updatedPart = { ...part, [field]: value };
+          if (field === 'quantity' || field === 'unitPrice') {
+            updatedPart.total = updatedPart.quantity * updatedPart.unitPrice;
+          }
+          return updatedPart;
+        }
+        return part;
+      })
+    }));
+  };
+
+  const removePart = (partId: string) => {
+    setWorkDetails(prev => ({
+      ...prev,
+      partsUsed: prev.partsUsed.filter(part => part.id !== partId)
+    }));
+  };
+
+  const calculateTotals = () => {
+    const partsCost = workDetails.partsUsed.reduce((sum, part) => sum + part.total, 0);
+    const laborCost = workDetails.laborHours * workDetails.laborRate;
+    const totalCost = partsCost + laborCost;
+    
+    setWorkDetails(prev => ({
+      ...prev,
+      partsCost,
+      laborCost,
+      totalCost
+    }));
+  };
+
+  // Recalcular totais quando partes ou trabalho mudarem
+  useEffect(() => {
+    calculateTotals();
+  }, [workDetails.partsUsed, workDetails.laborHours, workDetails.laborRate]);
+
+  const submitWorkDetails = async () => {
+    try {
+      const token = localStorage.getItem("oficina_token");
+      const response = await fetch(`/api/oficina/orders/${workDetails.orderId}/complete`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          workDescription: workDetails.workDescription,
+          partsUsed: workDetails.partsUsed,
+          laborHours: workDetails.laborHours,
+          laborRate: workDetails.laborRate,
+          totalCost: workDetails.totalCost,
+          completedDate: workDetails.completedDate,
+          notes: workDetails.notes,
+          status: 'concluido'
+        })
+      });
+
+      if (response.ok) {
+        setIsWorkModalOpen(false);
+        await loadData();
+        toast({
+          title: "Trabalho registrado",
+          description: "Detalhes do trabalho salvos e ordem concluída com sucesso"
+        });
+      } else {
+        throw new Error("Erro ao salvar detalhes do trabalho");
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar os detalhes do trabalho",
         variant: "destructive"
       });
     }
