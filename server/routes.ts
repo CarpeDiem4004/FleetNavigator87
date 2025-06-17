@@ -6060,109 +6060,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Rota para buscar templates de manutenção
-  app.get("/api/maintenance/templates", hasMaintenanceAccess, async (req, res) => {
-    try {
-      console.log(`Requisição GET /api/maintenance/templates recebida.`);
-      console.log(`Usuário: ${req.user?.email} Papel: ${req.user?.role}`);
-      
-      // Simplified hardcoded templates for now to ensure form works
-      const templates = [
-        {
-          id: 1,
-          nome: "Troca de Óleo",
-          descricao: "Troca de óleo do motor e filtro",
-          categoria: "preventiva",
-          prazo_estimado_horas: 2,
-          custo_estimado: 150.00,
-          is_active: true,
-          created_at: new Date()
-        },
-        {
-          id: 2,
-          nome: "Revisão Geral",
-          descricao: "Revisão completa do veículo",
-          categoria: "preventiva", 
-          prazo_estimado_horas: 8,
-          custo_estimado: 500.00,
-          is_active: true,
-          created_at: new Date()
-        },
-        {
-          id: 3,
-          nome: "Reparo de Motor",
-          descricao: "Reparos diversos no motor",
-          categoria: "corretiva",
-          prazo_estimado_horas: 16,
-          custo_estimado: 1200.00,
-          is_active: true,
-          created_at: new Date()
-        },
-        {
-          id: 4,
-          nome: "Troca de Pneus",
-          descricao: "Substituição de pneus",
-          categoria: "preventiva",
-          prazo_estimado_horas: 3,
-          custo_estimado: 800.00,
-          is_active: true,
-          created_at: new Date()
-        },
-        {
-          id: 5,
-          nome: "Reparo de Freios",
-          descricao: "Manutenção do sistema de freios",
-          categoria: "corretiva",
-          prazo_estimado_horas: 4,
-          custo_estimado: 400.00,
-          is_active: true,
-          created_at: new Date()
-        },
-        {
-          id: 6,
-          nome: "Troca de Bateria",
-          descricao: "Substituição da bateria",
-          categoria: "preventiva",
-          prazo_estimado_horas: 1,
-          custo_estimado: 300.00,
-          is_active: true,
-          created_at: new Date()
-        },
-        {
-          id: 7,
-          nome: "Reparo Elétrico",
-          descricao: "Reparos no sistema elétrico",
-          categoria: "corretiva",
-          prazo_estimado_horas: 6,
-          custo_estimado: 600.00,
-          is_active: true,
-          created_at: new Date()
-        },
-        {
-          id: 8,
-          nome: "Alinhamento e Balanceamento",
-          descricao: "Alinhamento e balanceamento das rodas",
-          categoria: "preventiva",
-          prazo_estimado_horas: 2,
-          custo_estimado: 120.00,
-          is_active: true,
-          created_at: new Date()
-        }
-      ];
-      
-      console.log(`Retornando ${templates.length} templates`);
-      
-      res.status(200).json({
-        success: true,
-        templates: templates
-      });
-    } catch (error) {
-      console.error("Erro ao buscar templates:", error);
-      res.status(400).json({ 
-        message: "Invalid maintenance templates request",
-        error: error instanceof Error ? error.message : "Erro desconhecido" 
-      });
-    }
+  // Rota simplificada para buscar templates de manutenção
+  app.get("/api/maintenance/templates", (req, res) => {
+    console.log("[TEMPLATES-SIMPLE] Endpoint acessado diretamente");
+    
+    const templates = [
+      { id: 1, nome: "Troca de Óleo", descricao: "Troca de óleo do motor e filtro", categoria: "preventiva" },
+      { id: 2, nome: "Revisão Geral", descricao: "Revisão completa do veículo", categoria: "preventiva" },
+      { id: 3, nome: "Reparo de Motor", descricao: "Reparos diversos no motor", categoria: "corretiva" },
+      { id: 4, nome: "Troca de Pneus", descricao: "Substituição de pneus", categoria: "preventiva" },
+      { id: 5, nome: "Reparo de Freios", descricao: "Manutenção do sistema de freios", categoria: "corretiva" },
+      { id: 6, nome: "Troca de Bateria", descricao: "Substituição da bateria", categoria: "preventiva" },
+      { id: 7, nome: "Reparo Elétrico", descricao: "Reparos no sistema elétrico", categoria: "corretiva" },
+      { id: 8, nome: "Alinhamento e Balanceamento", descricao: "Alinhamento e balanceamento das rodas", categoria: "preventiva" }
+    ];
+    
+    console.log(`[TEMPLATES-SIMPLE] Retornando ${templates.length} templates`);
+    
+    res.status(200).json({
+      success: true,
+      templates: templates
+    });
   });
   
   app.post("/api/maintenance", hasMaintenanceAccess, async (req, res) => {
