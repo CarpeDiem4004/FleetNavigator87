@@ -91,10 +91,8 @@ interface MaintenanceTemplate {
 const newServiceOrderSchema = z.object({
   placa: z.string().min(1, "Placa é obrigatória"),
   oficina_id: z.string().min(1, "Oficina é obrigatória"),
-  template_id: z.string().min(1, "Tipo de serviço é obrigatório"),
   descricao: z.string().min(10, "Descrição deve ter pelo menos 10 caracteres"),
   data_prevista: z.string().min(1, "Data prevista é obrigatória"),
-  prioridade: z.enum(['baixa', 'media', 'alta', 'urgente']),
   observacoes: z.string().optional()
 });
 
@@ -136,10 +134,8 @@ export default function MaintenanceManagement() {
     defaultValues: {
       placa: "",
       oficina_id: "",
-      template_id: "",
       descricao: "",
       data_prevista: "",
-      prioridade: "media",
       observacoes: ""
     }
   });
@@ -182,10 +178,7 @@ export default function MaintenanceManagement() {
       const vehiclesData = await vehiclesResponse.json();
       setVehicles(vehiclesData || []);
 
-      // Carregar templates de manutenção
-      const templatesResponse = await apiRequest("GET", "/api/maintenance/templates");
-      const templatesData = await templatesResponse.json();
-      setTemplates(templatesData.templates || []);
+
 
       // Calcular estatísticas
       const orders = ordersData.orders || [];
@@ -219,8 +212,7 @@ export default function MaintenanceManagement() {
       
       const response = await apiRequest("POST", "/api/maintenance/orders", {
         ...values,
-        oficina_id: parseInt(values.oficina_id),
-        template_id: parseInt(values.template_id)
+        oficina_id: parseInt(values.oficina_id)
       });
 
       if (response.ok) {
@@ -402,56 +394,7 @@ export default function MaintenanceManagement() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="template_id"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Tipo de Serviço</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione o tipo" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {templates.map((template) => (
-                                  <SelectItem key={template.id} value={template.id.toString()}>
-                                    {template.nome}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
 
-                      <FormField
-                        control={form.control}
-                        name="prioridade"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Prioridade</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione a prioridade" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="baixa">Baixa</SelectItem>
-                                <SelectItem value="media">Média</SelectItem>
-                                <SelectItem value="alta">Alta</SelectItem>
-                                <SelectItem value="urgente">Urgente</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
 
                     <FormField
                       control={form.control}
