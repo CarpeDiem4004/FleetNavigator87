@@ -146,6 +146,8 @@ export default function CarReception() {
         console.log("- selectedProject:", selectedProject);
         console.log("- tem bases?", selectedProject?.bases);
         console.log("- quantidade de bases:", selectedProject?.bases?.length);
+        console.log("- propriedades do projeto:", Object.keys(selectedProject || {}));
+        console.log("- projeto completo:", JSON.stringify(selectedProject, null, 2));
         setAvailableBases([]);
       }
     } else {
