@@ -166,6 +166,16 @@ export default function CarReception() {
     }
   }, [selectedProjectId, allProjects, form]);
 
+  // Função para formatar moeda brasileira
+  const formatCurrency = (value: number): string => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(value);
+  };
+
   // Função para adicionar uma nova peça
   const addPart = () => {
     if (!newPartName.trim() || !newPartPrice) {
@@ -494,7 +504,7 @@ export default function CarReception() {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-green-600">
-                            R$ {part.price.toFixed(2)}
+                            {formatCurrency(part.price)}
                           </span>
                           <Button
                             type="button"
@@ -514,7 +524,7 @@ export default function CarReception() {
                       <div className="text-sm">
                         <span className="text-muted-foreground">Total peças: </span>
                         <span className="font-semibold text-green-600">
-                          R$ {parts.reduce((sum, part) => sum + part.price, 0).toFixed(2)}
+                          {formatCurrency(parts.reduce((sum, part) => sum + part.price, 0))}
                         </span>
                       </div>
                     </div>
@@ -548,10 +558,10 @@ export default function CarReception() {
                 />
 
                 <div>
-                  <FormLabel>Custo das Peças (R$)</FormLabel>
+                  <FormLabel>Custo das Peças</FormLabel>
                   <div className="h-10 flex items-center justify-start bg-gray-50 border rounded-md px-3">
                     <span className="text-sm text-muted-foreground">
-                      R$ {parts.reduce((sum, part) => sum + part.price, 0).toFixed(2)}
+                      {formatCurrency(parts.reduce((sum, part) => sum + part.price, 0))}
                     </span>
                     <span className="text-xs text-muted-foreground ml-2">
                       (calculado automaticamente)
@@ -561,10 +571,10 @@ export default function CarReception() {
 
                 <div className="flex items-end">
                   <div className="w-full">
-                    <FormLabel>Total Estimado (R$)</FormLabel>
+                    <FormLabel>Total Estimado</FormLabel>
                     <div className="h-10 flex items-center justify-center bg-gray-50 border rounded-md px-3">
                       <span className="font-semibold text-green-600">
-                        R$ {calculateTotalCost().toFixed(2)}
+                        {formatCurrency(calculateTotalCost())}
                       </span>
                     </div>
                   </div>
