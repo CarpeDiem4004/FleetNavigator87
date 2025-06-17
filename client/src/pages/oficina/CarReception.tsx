@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Car, Plus, Save, Calendar, Calculator, Package2, Trash2 } from "lucide-react";
 import { workshopAPI } from "@/lib/workshop-api";
+import WorkshopAuth from "@/components/auth/WorkshopAuth";
 
 const carReceptionSchema = z.object({
   vehiclePlate: z.string().min(1, "Placa é obrigatória"),
@@ -65,7 +66,7 @@ interface Part {
   price: number;
 }
 
-export default function CarReception() {
+function CarReception() {
   const [isLoading, setIsLoading] = useState(false);
   const [allBases, setAllBases] = useState<Base[]>([]);
   const [allProjects, setAllProjects] = useState<ProjectWithBases[]>([]);
@@ -627,5 +628,13 @@ export default function CarReception() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function CarReceptionPage() {
+  return (
+    <WorkshopAuth workshopName="Sistema de Manutenção">
+      <CarReception />
+    </WorkshopAuth>
   );
 }
