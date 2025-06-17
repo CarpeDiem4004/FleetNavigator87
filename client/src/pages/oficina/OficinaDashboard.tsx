@@ -248,7 +248,7 @@ export default function OficinaDashboard() {
     try {
       const token = localStorage.getItem("oficina_token");
       const response = await fetch(`/api/oficina/orders/${workDetails.orderId}/complete`, {
-        method: "PUT",
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
@@ -469,22 +469,44 @@ export default function OficinaDashboard() {
                           </Button>
                         )}
                         {order.status === "em_andamento" && (
-                          <Button 
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateOrderStatus(order.id, "aguardando_pecas")}
-                          >
-                            Aguardar Peças
-                          </Button>
+                          <>
+                            <Button 
+                              size="sm"
+                              variant="outline"
+                              onClick={() => updateOrderStatus(order.id, "aguardando_pecas")}
+                            >
+                              Aguardar Peças
+                            </Button>
+                            <Button 
+                              size="sm"
+                              variant="default"
+                              onClick={() => openWorkModal(order)}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <Settings className="h-4 w-4 mr-1" />
+                              Registrar Trabalho
+                            </Button>
+                          </>
                         )}
-                        {(order.status === "em_andamento" || order.status === "aguardando_pecas") && (
-                          <Button 
-                            size="sm"
-                            variant="default"
-                            onClick={() => updateOrderStatus(order.id, "concluido")}
-                          >
-                            Concluir
-                          </Button>
+                        {order.status === "aguardando_pecas" && (
+                          <>
+                            <Button 
+                              size="sm"
+                              variant="outline"
+                              onClick={() => updateOrderStatus(order.id, "em_andamento")}
+                            >
+                              Retomar
+                            </Button>
+                            <Button 
+                              size="sm"
+                              variant="default"
+                              onClick={() => openWorkModal(order)}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <Settings className="h-4 w-4 mr-1" />
+                              Registrar Trabalho
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -512,6 +534,193 @@ export default function OficinaDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Work Details Modal */}
+      <Dialog open={isWorkModalOpen} onOpenChange={setIsWorkModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Registrar Trabalho Realizado
+            </DialogTitle>
+            <DialogDescription>
+              Registre os detalhes do trabalho realizado no veículo {selectedOrder?.vehiclePlate}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Descrição do Trabalho */}
+            <div>
+              <Label htmlFor="workDescription">Descrição do Trabalho Realizado *</Label>
+              <Textarea
+                id="workDescription"
+                placeholder="Descreva detalhadamente o trabalho realizado..."
+                value={workDetails.workDescription}
+                onChange={(e) => setWorkDetails(prev => ({ ...prev, workDescription: e.target.value }))}
+                rows={3}
+              />
+            </div>
+
+            {/* Peças Utilizadas */}
+            <div>
+              <div className="flex justify-between items-center mb-3">
+                <Label>Peças Utilizadas</Label>
+                <Button type="button" variant="outline" size="sm" onClick={addPart}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Adicionar Peça
+                </Button>
+              </div>
+              
+              {workDetails.partsUsed.length === 0 ? (
+                <div className="text-center py-4 text-gray-500 border-2 border-dashed rounded-lg">
+                  Nenhuma peça adicionada. Clique em "Adicionar Peça" para registrar peças utilizadas.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {workDetails.partsUsed.map((part) => (
+                    <div key={part.id} className="grid grid-cols-12 gap-2 items-center p-3 border rounded-lg">
+                      <div className="col-span-5">
+                        <Input
+                          placeholder="Nome da peça"
+                          value={part.name}
+                          onChange={(e) => updatePart(part.id, 'name', e.target.value)}
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <Input
+                          type="number"
+                          placeholder="Qtd"
+                          value={part.quantity}
+                          onChange={(e) => updatePart(part.id, 'quantity', Number(e.target.value))}
+                          min="1"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <Input
+                          type="number"
+                          placeholder="Valor unit."
+                          value={part.unitPrice}
+                          onChange={(e) => updatePart(part.id, 'unitPrice', Number(e.target.value))}
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <Input
+                          value={`R$ ${part.total.toFixed(2)}`}
+                          readOnly
+                          className="bg-gray-50"
+                        />
+                      </div>
+                      <div className="col-span-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removePart(part.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Mão de Obra */}
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="laborHours">Horas Trabalhadas</Label>
+                <Input
+                  id="laborHours"
+                  type="number"
+                  placeholder="8.5"
+                  value={workDetails.laborHours}
+                  onChange={(e) => setWorkDetails(prev => ({ ...prev, laborHours: Number(e.target.value) }))}
+                  min="0"
+                  step="0.5"
+                />
+              </div>
+              <div>
+                <Label htmlFor="laborRate">Valor por Hora (R$)</Label>
+                <Input
+                  id="laborRate"
+                  type="number"
+                  placeholder="50.00"
+                  value={workDetails.laborRate}
+                  onChange={(e) => setWorkDetails(prev => ({ ...prev, laborRate: Number(e.target.value) }))}
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <div>
+                <Label>Total Mão de Obra</Label>
+                <Input
+                  value={`R$ ${workDetails.laborCost.toFixed(2)}`}
+                  readOnly
+                  className="bg-gray-50"
+                />
+              </div>
+            </div>
+
+            {/* Data de Conclusão */}
+            <div>
+              <Label htmlFor="completedDate">Data de Conclusão</Label>
+              <Input
+                id="completedDate"
+                type="date"
+                value={workDetails.completedDate}
+                onChange={(e) => setWorkDetails(prev => ({ ...prev, completedDate: e.target.value }))}
+              />
+            </div>
+
+            {/* Observações */}
+            <div>
+              <Label htmlFor="notes">Observações Adicionais</Label>
+              <Textarea
+                id="notes"
+                placeholder="Observações, recomendações para próximas manutenções..."
+                value={workDetails.notes}
+                onChange={(e) => setWorkDetails(prev => ({ ...prev, notes: e.target.value }))}
+                rows={3}
+              />
+            </div>
+
+            {/* Resumo dos Custos */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="font-semibold mb-3">Resumo dos Custos</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>Total Peças:</span>
+                  <span>R$ {workDetails.partsCost.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Total Mão de Obra:</span>
+                  <span>R$ {workDetails.laborCost.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between font-bold text-lg border-t pt-2">
+                  <span>Total Geral:</span>
+                  <span>R$ {workDetails.totalCost.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsWorkModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={submitWorkDetails}
+              disabled={!workDetails.workDescription.trim()}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Finalizar e Concluir Ordem
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

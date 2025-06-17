@@ -5992,6 +5992,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Completar ordem de serviço com detalhes do trabalho
+  app.post("/api/oficina/orders/:id/complete", verificarTokenOficina, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { 
+        workDescription, 
+        partsUsed, 
+        laborHours, 
+        laborRate, 
+        completedDate, 
+        notes 
+      } = req.body;
+
+      if (!workDescription) {
+        return res.status(400).json({ message: 'Descrição do trabalho é obrigatória' });
+      }
+
+      // Calcular custos
+      const laborCost = (laborHours || 0) * (laborRate || 0);
+      const partsCost = (partsUsed || []).reduce((total: number, part: any) => {
+        return total + (part.quantity || 0) * (part.unitPrice || 0);
+      }, 0);
+      const totalCost = laborCost + partsCost;
+
+      // Atualizar a manutenção com status "concluido" e custo final
+      const maintenanceUpdate = {
+        status: 'concluido',
+        completionDate: completedDate || new Date().toISOString().split('T')[0],
+        cost: totalCost.toString(),
+        finalCost: totalCost.toString()
+      };
+
+      const updated = await storage.updateMaintenance(parseInt(id), maintenanceUpdate);
+      if (!updated) {
+        return res.status(404).json({ message: 'Ordem de serviço não encontrada' });
+      }
+
+      // Salvar detalhes do trabalho em uma tabela auxiliar (se necessário)
+      // Por enquanto, retornamos sucesso com os dados processados
+
+      res.json({ 
+        message: 'Ordem de serviço concluída com sucesso',
+        workDetails: {
+          orderId: parseInt(id),
+          workDescription,
+          partsUsed: partsUsed || [],
+          laborHours: laborHours || 0,
+          laborRate: laborRate || 0,
+          laborCost,
+          partsCost,
+          totalCost,
+          completedDate: completedDate || new Date().toISOString().split('T')[0],
+          notes: notes || ''
+        }
+      });
+    } catch (error) {
+      console.error("Erro ao completar ordem de serviço:", error);
+      res.status(500).json({ message: 'Erro ao completar ordem de serviço' });
+    }
+  });
+
   // Criar recebimento de veículo
   app.post("/api/oficina/car-receptions", verificarTokenOficina, async (req, res) => {
     try {
