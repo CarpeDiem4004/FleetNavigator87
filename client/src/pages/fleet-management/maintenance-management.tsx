@@ -361,20 +361,12 @@ export default function MaintenanceManagement() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Placa do Veículo</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione a placa" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {vehicles.map((vehicle) => (
-                                  <SelectItem key={vehicle.id} value={vehicle.placa}>
-                                    {vehicle.placa} - {vehicle.modelo}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <FormControl>
+                              <Input 
+                                placeholder="Digite a placa do veículo (ex: ABC-1234)" 
+                                {...field} 
+                              />
+                            </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
