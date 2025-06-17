@@ -544,17 +544,17 @@ export class DatabaseStorage implements IStorage {
 
   async getAllVehicles(): Promise<Vehicle[]> {
     try {
-      // Usar SQL bruto com os nomes corretos das colunas (sem referenciar make)
+      // Use the correct vehicles table with proper column names
       const result = await db.execute(sql`
-        SELECT id, placa as plate, 
-               COALESCE(modelo, '') as model,
-               COALESCE(marca, '') as make,
-               tipo as "vehicleType", 
+        SELECT id, plate, 
+               COALESCE(model, '') as model,
+               COALESCE(make, '') as make,
+               vehicle_type as "vehicleType", 
                status, base_id as "baseId",
-               COALESCE(fuel_type, 'Diesel') as "fuelType",
+               COALESCE(fuel_type, 'diesel') as "fuelType",
                year, 
-               COALESCE(media_consumo_combustivel, 0) as "mediaConsumoCombutivel"
-        FROM veiculos
+               COALESCE(consumo_medio_km_l, 0) as "mediaConsumoCombutivel"
+        FROM vehicles
       `);
       
       // Map the result to match the Vehicle interface
