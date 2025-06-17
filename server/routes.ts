@@ -5885,7 +5885,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Buscar oficina pelo ID do token
       const result = await pool.query(
-        'SELECT * FROM workshops WHERE id = $1 AND status = $2',
+        'SELECT * FROM oficinas WHERE id = $1 AND status = $2',
         [decoded.id, 'ativo']
       );
       
