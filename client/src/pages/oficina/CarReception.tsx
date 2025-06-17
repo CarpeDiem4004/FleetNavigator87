@@ -226,7 +226,7 @@ export default function CarReception() {
 
   // Calcular o custo total (mão de obra + peças)
   const calculateTotalCost = () => {
-    const laborCost = form.getValues("laborCost") || 0;
+    const laborCost = form.watch("laborCost") || 0;
     const partsCost = parts.reduce((sum, part) => sum + part.price, 0);
     return laborCost + partsCost;
   };
