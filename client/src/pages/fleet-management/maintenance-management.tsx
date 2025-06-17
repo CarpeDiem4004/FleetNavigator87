@@ -32,21 +32,26 @@ import * as z from "zod";
 
 interface ServiceOrder {
   id: number;
-  numero_ordem: string;
-  placa: string;
-  modelo: string;
-  tipo_servico: string;
-  descricao: string;
+  vehiclePlate: string;
+  description: string;
   status: string;
-  data_entrada: string;
-  data_prevista: string;
-  data_conclusao?: string;
-  valor_pecas: number;
-  valor_mao_obra: number;
-  valor_total: number;
-  oficina_id: number;
-  oficina_nome: string;
-  oficina_cnpj: string;
+  priority: string;
+  maintenanceType: string;
+  workshopId: number;
+  requestBaseId: number;
+  entryDate: string;
+  estimatedCompletion: string;
+  completionDate?: string;
+  responsiblePerson: string;
+  cost: string;
+  initialBudget: string;
+  created_at: string;
+  updated_at: string;
+  vehicleModel?: string;
+  vehicleBrand?: string;
+  workshopName?: string;
+  baseName?: string;
+  currentKm?: number;
 }
 
 interface Workshop {
@@ -165,6 +170,9 @@ export default function MaintenanceManagement() {
       // Carregar ordens de serviço
       const ordersResponse = await apiRequest("GET", "/api/maintenance/orders");
       const ordersData = await ordersResponse.json();
+      console.log("API Response for orders:", ordersData);
+      console.log("Orders array:", ordersData.orders);
+      console.log("Setting service orders to:", ordersData.orders || []);
       setServiceOrders(ordersData.orders || []);
 
       // Carregar oficinas
@@ -182,13 +190,17 @@ export default function MaintenanceManagement() {
 
       // Calcular estatísticas
       const orders = ordersData.orders || [];
-      const totalCost = orders.reduce((sum: number, order: ServiceOrder) => sum + order.valor_total, 0);
+      console.log("Orders received for stats:", orders);
+      const totalCost = orders.reduce((sum: number, order: any) => {
+        const cost = parseFloat(order.cost || order.valor_total || '0');
+        return sum + cost;
+      }, 0);
       
       setStats({
         total_orders: orders.length,
-        orders_in_progress: orders.filter((o: ServiceOrder) => o.status === 'em_andamento').length,
-        orders_completed: orders.filter((o: ServiceOrder) => o.status === 'concluido').length,
-        orders_pending: orders.filter((o: ServiceOrder) => o.status === 'aguardando_orcamento').length,
+        orders_in_progress: orders.filter((o: any) => o.status === 'em_andamento').length,
+        orders_completed: orders.filter((o: any) => o.status === 'concluida' || o.status === 'concluido').length,
+        orders_pending: orders.filter((o: any) => o.status === 'pendente' || o.status === 'aguardando_orcamento').length,
         total_cost: totalCost,
         average_cost: orders.length > 0 ? totalCost / orders.length : 0
       });
@@ -306,10 +318,10 @@ export default function MaintenanceManagement() {
   };
 
   const filteredOrders = serviceOrders.filter(order =>
-    order.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.modelo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.oficina_nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.numero_ordem?.toLowerCase().includes(searchTerm.toLowerCase())
+    order.vehiclePlate?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.vehicleModel?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.workshopName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredWorkshops = workshops.filter(workshop =>
@@ -572,10 +584,10 @@ export default function MaintenanceManagement() {
                           <div>
                             <CardTitle className="flex items-center gap-2">
                               <Car className="h-5 w-5" />
-                              OS #{order.numero_ordem} - {order.placa}
+                              OS #{order.id} - {order.vehiclePlate}
                             </CardTitle>
                             <CardDescription>
-                              {order.modelo} • {order.tipo_servico}
+                              {order.vehicleModel || 'Modelo não informado'} • {order.maintenanceType}
                             </CardDescription>
                           </div>
                           {getStatusBadge(order.status)}
@@ -585,13 +597,13 @@ export default function MaintenanceManagement() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">Oficina</p>
-                            <p className="font-medium">{order.oficina_nome}</p>
-                            <p className="text-sm text-muted-foreground">{order.oficina_cnpj}</p>
+                            <p className="font-medium">{order.workshopName || 'Oficina não informada'}</p>
+                            <p className="text-sm text-muted-foreground">Responsável: {order.responsiblePerson}</p>
                           </div>
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">Datas</p>
-                            <p className="text-sm">Entrada: {new Date(order.data_entrada).toLocaleDateString('pt-BR')}</p>
-                            <p className="text-sm">Previsão: {new Date(order.data_prevista).toLocaleDateString('pt-BR')}</p>
+                            <p className="text-sm">Entrada: {new Date(order.entryDate).toLocaleDateString('pt-BR')}</p>
+                            <p className="text-sm">Previsão: {new Date(order.estimatedCompletion).toLocaleDateString('pt-BR')}</p>
                           </div>
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">Valor Total</p>
@@ -599,13 +611,13 @@ export default function MaintenanceManagement() {
                               {new Intl.NumberFormat('pt-BR', { 
                                 style: 'currency', 
                                 currency: 'BRL' 
-                              }).format(order.valor_total)}
+                              }).format(parseFloat(order.cost || '0'))}
                             </p>
                           </div>
                         </div>
                         <div className="mt-4">
                           <p className="text-sm font-medium text-muted-foreground mb-1">Descrição</p>
-                          <p className="text-sm">{order.descricao}</p>
+                          <p className="text-sm">{order.description}</p>
                         </div>
                         <div className="flex gap-2 mt-4">
                           <Button variant="outline" size="sm">
