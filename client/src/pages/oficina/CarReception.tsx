@@ -93,8 +93,8 @@ export default function CarReception() {
           setAllBases(basesData);
         }
 
-        // Carregar projetos do sistema
-        const projectsResponse = await fetch("/api/projects");
+        // Carregar projetos com bases usando a mesma API dos postos externos
+        const projectsResponse = await fetch("/api/public/projects-with-bases");
         if (projectsResponse.ok) {
           const projectsData = await projectsResponse.json();
           console.log("📋 Resposta completa da API de projetos:", projectsData);
