@@ -310,16 +310,16 @@ export default function MaintenanceManagement() {
   };
 
   const filteredOrders = serviceOrders.filter(order =>
-    order.placa.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.oficina_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.numero_ordem.toLowerCase().includes(searchTerm.toLowerCase())
+    order.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.modelo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.oficina_nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.numero_ordem?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredWorkshops = workshops.filter(workshop =>
-    workshop.nome_fantasia.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    workshop.razao_social.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    workshop.cnpj.includes(searchTerm)
+    workshop.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    workshop.razao_social?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    workshop.cnpj?.includes(searchTerm)
   );
 
   return (
