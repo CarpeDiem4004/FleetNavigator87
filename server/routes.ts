@@ -5829,18 +5829,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const token = authHeader.substring(7);
       
-      // Verificar se o token é válido (aqui seria uma verificação JWT real)
-      // Por simplicidade, vou usar o CNPJ como token base64
-      const decoded = Buffer.from(token, 'base64').toString();
-      const oficina = await storage.getWorkshopByCnpj(decoded);
+      // Verificar se o token é válido usando decodificação base64
+      let cnpj: string;
+      try {
+        cnpj = Buffer.from(token, 'base64').toString();
+      } catch (error) {
+        return res.status(401).json({ message: 'Token inválido' });
+      }
       
-      if (!oficina) {
+      // Buscar oficina pelo CNPJ usando query direta
+      const result = await pool.query(
+        'SELECT * FROM workshops WHERE cnpj = $1 AND status = $2',
+        [cnpj, 'ativo']
+      );
+      
+      if (result.rows.length === 0) {
         return res.status(401).json({ message: 'Token inválido' });
       }
 
-      req.oficina = oficina;
+      req.oficina = result.rows[0];
       next();
     } catch (error) {
+      console.error('Erro no middleware de autenticação da oficina:', error);
       return res.status(401).json({ message: 'Token inválido' });
     }
   };
@@ -5854,27 +5864,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'CNPJ e senha são obrigatórios' });
       }
 
-      const oficina = await storage.getWorkshopByCnpj(cnpj);
-      if (!oficina) {
+      // Buscar oficina pelo CNPJ usando query direta
+      const result = await pool.query(
+        'SELECT * FROM workshops WHERE cnpj = $1 AND is_active = true',
+        [cnpj]
+      );
+
+      if (result.rows.length === 0) {
         return res.status(401).json({ message: 'CNPJ não encontrado' });
       }
 
-      // Verificar senha (aqui seria uma verificação hash real)
-      if (password !== 'secret') {
+      const oficina = result.rows[0];
+
+      // Verificar senha - usando senha padrão para teste
+      if (password !== 'senha123') {
         return res.status(401).json({ message: 'Senha incorreta' });
       }
 
-      // Gerar token (aqui seria um JWT real)
+      // Gerar token usando CNPJ codificado em base64
       const token = Buffer.from(cnpj).toString('base64');
 
       res.json({
         token,
         oficina: {
           id: oficina.id,
-          razao_social: oficina.razao_social,
+          razao_social: oficina.name,
           cnpj: oficina.cnpj,
           email: oficina.email,
-          telefone: oficina.telefone
+          telefone: oficina.phone
         }
       });
     } catch (error) {
