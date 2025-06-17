@@ -5732,7 +5732,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Usar getAllMaintenance do storage que já foi corrigido
       const maintenanceRecords = await storage.getAllMaintenance();
-      console.log(`Encontradas ${maintenanceRecords.length} manutenções no total`);
+      console.log(`[DEBUG] Encontradas ${maintenanceRecords.length} manutenções no total`);
+      console.log(`[DEBUG] Primeiras 2 manutenções:`, JSON.stringify(maintenanceRecords.slice(0, 2), null, 2));
       
       return res.status(200).json({ orders: maintenanceRecords });
     } catch (error) {
