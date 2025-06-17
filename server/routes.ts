@@ -11,6 +11,7 @@ import { createServer, type Server } from "http";
 import multer from "multer";
 import path from "path";
 import { promises as fs } from "fs";
+import jwt from "jsonwebtoken";
 
 // Função utilitária para obter data/hora no fuso horário de Brasília (UTC-3)
 function getCurrentDateBrasilia() {
@@ -5829,22 +5830,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const token = authHeader.substring(7);
       
-      // Verificar se o token é válido usando decodificação base64
-      let cnpj: string;
+      // Verificar se o token JWT é válido
+      let decoded: any;
       try {
-        cnpj = Buffer.from(token, 'base64').toString();
+        decoded = jwt.verify(token, process.env.JWT_SECRET || 'oficina_secret_key_2025');
       } catch (error) {
+        console.error('Erro ao verificar token JWT da oficina:', error);
         return res.status(401).json({ message: 'Token inválido' });
       }
       
-      // Buscar oficina pelo CNPJ usando query direta
+      // Buscar oficina pelo ID do token
       const result = await pool.query(
-        'SELECT * FROM workshops WHERE cnpj = $1 AND status = $2',
-        [cnpj, 'ativo']
+        'SELECT * FROM workshops WHERE id = $1 AND status = $2',
+        [decoded.id, 'ativo']
       );
       
       if (result.rows.length === 0) {
-        return res.status(401).json({ message: 'Token inválido' });
+        return res.status(401).json({ message: 'Oficina não encontrada ou inativa' });
       }
 
       req.oficina = result.rows[0];
@@ -5881,8 +5883,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'Senha incorreta' });
       }
 
-      // Gerar token usando CNPJ codificado em base64
-      const token = Buffer.from(cnpj).toString('base64');
+      // Gerar token JWT para a oficina
+      const token = jwt.sign(
+        { 
+          id: oficina.id,
+          cnpj: oficina.cnpj,
+          type: 'oficina'
+        },
+        process.env.JWT_SECRET || 'oficina_secret_key_2025',
+        { expiresIn: '24h' }
+      );
 
       res.json({
         token,

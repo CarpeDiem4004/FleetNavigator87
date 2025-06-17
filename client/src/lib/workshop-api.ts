@@ -28,19 +28,19 @@ export interface ServiceOrder {
 
 class WorkshopAPI {
   private baseURL = '/api/oficina';
-  private token: string | null = null;
 
-  constructor() {
-    this.token = localStorage.getItem('workshop_token');
+  private getToken(): string | null {
+    return localStorage.getItem('workshop_token');
   }
 
   private async request(endpoint: string, options: RequestInit = {}) {
+    const token = this.getToken(); // Always get fresh token
     const url = `${this.baseURL}${endpoint}`;
     const config: RequestInit = {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        ...(this.token && { Authorization: `Bearer ${this.token}` }),
+        ...(token && { Authorization: `Bearer ${token}` }),
         ...options.headers,
       },
     };
@@ -61,14 +61,12 @@ class WorkshopAPI {
       body: JSON.stringify({ cnpj, password }),
     });
 
-    this.token = response.token;
-    localStorage.setItem('workshop_token', this.token!);
+    localStorage.setItem('workshop_token', response.token);
     
     return response;
   }
 
   async logout() {
-    this.token = null;
     localStorage.removeItem('workshop_token');
   }
 
@@ -106,7 +104,7 @@ class WorkshopAPI {
   }
 
   isAuthenticated(): boolean {
-    return !!this.token;
+    return !!this.getToken();
   }
 }
 
