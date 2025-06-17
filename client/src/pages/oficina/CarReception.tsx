@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Car, Plus, Save, Calendar, Calculator, Package2 } from "lucide-react";
+import { Car, Plus, Save, Calendar, Calculator, Package2, Trash2 } from "lucide-react";
 import { workshopAPI } from "@/lib/workshop-api";
 
 const carReceptionSchema = z.object({
@@ -59,11 +59,20 @@ interface ProjectWithBases {
   bases: ProjectBase[];
 }
 
+interface Part {
+  id: string;
+  name: string;
+  price: number;
+}
+
 export default function CarReception() {
   const [isLoading, setIsLoading] = useState(false);
   const [allBases, setAllBases] = useState<Base[]>([]);
   const [allProjects, setAllProjects] = useState<ProjectWithBases[]>([]);
   const [availableBases, setAvailableBases] = useState<Base[]>([]);
+  const [parts, setParts] = useState<Part[]>([]);
+  const [newPartName, setNewPartName] = useState("");
+  const [newPartPrice, setNewPartPrice] = useState("");
   const { toast } = useToast();
 
   const form = useForm<CarReceptionForm>({
@@ -157,9 +166,58 @@ export default function CarReception() {
     }
   }, [selectedProjectId, allProjects, form]);
 
+  // Função para adicionar uma nova peça
+  const addPart = () => {
+    if (!newPartName.trim() || !newPartPrice) {
+      toast({
+        title: "Erro",
+        description: "Preencha o nome e valor da peça",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const price = parseFloat(newPartPrice);
+    if (isNaN(price) || price <= 0) {
+      toast({
+        title: "Erro",
+        description: "Valor da peça deve ser um número positivo",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newPart: Part = {
+      id: Date.now().toString(),
+      name: newPartName.trim(),
+      price: price,
+    };
+
+    setParts(prev => [...prev, newPart]);
+    setNewPartName("");
+    setNewPartPrice("");
+    
+    // Atualizar o valor total das peças no formulário
+    updatePartsCost([...parts, newPart]);
+  };
+
+  // Função para remover uma peça
+  const removePart = (partId: string) => {
+    const updatedParts = parts.filter(part => part.id !== partId);
+    setParts(updatedParts);
+    updatePartsCost(updatedParts);
+  };
+
+  // Função para atualizar o custo total das peças
+  const updatePartsCost = (partsList: Part[]) => {
+    const total = partsList.reduce((sum, part) => sum + part.price, 0);
+    form.setValue("partsCost", total);
+  };
+
+  // Calcular o custo total (mão de obra + peças)
   const calculateTotalCost = () => {
     const laborCost = form.getValues("laborCost") || 0;
-    const partsCost = form.getValues("partsCost") || 0;
+    const partsCost = parts.reduce((sum, part) => sum + part.price, 0);
     return laborCost + partsCost;
   };
 
@@ -388,27 +446,81 @@ export default function CarReception() {
                 )}
               />
 
-              {/* Peças Trocadas */}
-              <FormField
-                control={form.control}
-                name="replacedParts"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      <Package2 className="h-4 w-4" />
-                      Peças a Trocar (Opcional)
-                    </FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Liste as peças que serão trocadas..."
-                        rows={2}
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+              {/* Sistema de Peças Individuais */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Package2 className="h-4 w-4" />
+                  <h3 className="text-sm font-medium">Peças e Valores</h3>
+                </div>
+                
+                {/* Adicionar Nova Peça */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                  <Input
+                    placeholder="Nome da peça"
+                    value={newPartName}
+                    onChange={(e) => setNewPartName(e.target.value)}
+                    className="md:col-span-2"
+                  />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="Valor (R$)"
+                    value={newPartPrice}
+                    onChange={(e) => setNewPartPrice(e.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    onClick={addPart}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1"
+                  >
+                    <Plus className="h-3 w-3" />
+                    Adicionar
+                  </Button>
+                </div>
+
+                {/* Lista de Peças Adicionadas */}
+                {parts.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-medium text-muted-foreground">Peças adicionadas:</h4>
+                    {parts.map((part) => (
+                      <div
+                        key={part.id}
+                        className="flex items-center justify-between p-2 bg-muted rounded border"
+                      >
+                        <div className="flex-1">
+                          <span className="text-sm font-medium">{part.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-green-600">
+                            R$ {part.price.toFixed(2)}
+                          </span>
+                          <Button
+                            type="button"
+                            onClick={() => removePart(part.id)}
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 hover:bg-red-100"
+                          >
+                            <Trash2 className="h-3 w-3 text-red-500" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* Total das Peças */}
+                    <div className="flex justify-end pt-2 border-t">
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Total peças: </span>
+                        <span className="font-semibold text-green-600">
+                          R$ {parts.reduce((sum, part) => sum + part.price, 0).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 )}
-              />
+              </div>
 
               {/* Custos */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -435,25 +547,17 @@ export default function CarReception() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="partsCost"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Custo das Peças (R$)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.01"
-                          placeholder="0.00" 
-                          {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div>
+                  <FormLabel>Custo das Peças (R$)</FormLabel>
+                  <div className="h-10 flex items-center justify-start bg-gray-50 border rounded-md px-3">
+                    <span className="text-sm text-muted-foreground">
+                      R$ {parts.reduce((sum, part) => sum + part.price, 0).toFixed(2)}
+                    </span>
+                    <span className="text-xs text-muted-foreground ml-2">
+                      (calculado automaticamente)
+                    </span>
+                  </div>
+                </div>
 
                 <div className="flex items-end">
                   <div className="w-full">
