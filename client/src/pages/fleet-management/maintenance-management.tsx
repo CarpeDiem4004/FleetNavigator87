@@ -171,6 +171,7 @@ export default function MaintenanceManagement() {
       // Carregar oficinas
       const workshopsResponse = await apiRequest("GET", "/api/maintenance/workshops");
       const workshopsData = await workshopsResponse.json();
+      console.log("Workshop data received:", workshopsData);
       setWorkshops(workshopsData.workshops || []);
 
       // Carregar veículos
