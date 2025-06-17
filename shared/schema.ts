@@ -112,19 +112,25 @@ export const baseRequestUpdates = pgTable("base_request_updates", {
   attachmentUrl: text("attachment_url"), // URL para anexo (se houver)
 });
 
-// Create the vehicles table (veiculos)
-export const vehicles = pgTable("veiculos", {
+// Create the vehicles table
+export const vehicles = pgTable("vehicles", {
   id: serial("id").primaryKey(),
   plate: text("plate").notNull().unique(),
-  model: text("model").notNull(),
+  model: text("model"),
+  make: text("make"),
+  year: integer("year"),
   vehicleType: vehicleTypeEnum("vehicle_type").notNull(),
   status: vehicleStatusEnum("status").notNull(),
-  baseId: integer("base_id").notNull().references(() => bases.id),
+  baseId: integer("base_id").references(() => bases.id),
+  fuelType: text("fuel_type"),
+  cartaoAbastecimento: text("cartao_abastecimento"),
+  kmAtual: integer("km_atual"),
+  consumoMedioKmL: decimal("consumo_medio_km_l", { precision: 5, scale: 2 }),
   ownership: vehicleOwnershipEnum("ownership").notNull().default('murici'),
-  rentalCompany: text("rental_company"), // Empresa de locação, quando aplicável
-  crlvUrl: text("crlv_url"), // URL para o documento CRLV (Certificado de Registro e Licenciamento de Veículo)
-  anttUrl: text("antt_url"), // URL para o documento ANTT (Agência Nacional de Transportes Terrestres)
-  cartaoAbastecimento: text("cartao_abastecimento"), // Número do cartão de abastecimento para veículos Line Hall
+  crlvUrl: text("crlv_url"),
+  anttUrl: text("antt_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Create the workshops table (oficinas)
