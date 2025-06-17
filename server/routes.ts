@@ -5866,8 +5866,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Buscar oficina pelo CNPJ usando query direta
       const result = await pool.query(
-        'SELECT * FROM workshops WHERE cnpj = $1 AND is_active = true',
-        [cnpj]
+        'SELECT * FROM workshops WHERE cnpj = $1 AND status = $2',
+        [cnpj, 'ativo']
       );
 
       if (result.rows.length === 0) {
@@ -5888,10 +5888,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         token,
         oficina: {
           id: oficina.id,
-          razao_social: oficina.name,
+          razao_social: oficina.razao_social || oficina.nome,
           cnpj: oficina.cnpj,
           email: oficina.email,
-          telefone: oficina.phone
+          telefone: oficina.telefone
         }
       });
     } catch (error) {
