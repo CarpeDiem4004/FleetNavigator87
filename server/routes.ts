@@ -6069,17 +6069,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const query = `
         SELECT 
           id,
-          nome as name,
-          descricao as description,
-          categoria as category,
-          prazo_estimado_horas as estimated_hours,
-          custo_estimado as estimated_cost,
+          template_name as nome,
+          description as descricao,
+          service_category as categoria,
+          estimated_duration_hours as estimated_hours,
+          estimated_cost,
           is_active,
-          created_at,
-          updated_at
+          created_at
         FROM maintenance_templates 
         WHERE is_active = true
-        ORDER BY categoria, nome
+        ORDER BY service_category, template_name
       `;
       
       const result = await pool.query(query);
@@ -6088,14 +6087,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const templates = result.rows.map(row => ({
         id: row.id,
-        nome: row.name,
-        descricao: row.description,
-        categoria: row.category,
+        nome: row.nome,
+        descricao: row.descricao,
+        categoria: row.categoria,
         prazo_estimado_horas: row.estimated_hours,
         custo_estimado: row.estimated_cost,
         is_active: row.is_active,
-        created_at: row.created_at,
-        updated_at: row.updated_at
+        created_at: row.created_at
       }));
       
       res.status(200).json({
