@@ -51,13 +51,16 @@ interface ServiceOrder {
 
 interface Workshop {
   id: number;
+  name: string;
   cnpj: string;
-  razao_social: string;
-  nome_fantasia: string;
-  telefone: string;
+  address: string;
+  phone: string;
   email: string;
-  endereco: string;
-  is_active: boolean;
+  contactPerson: string;
+  workshopType: string;
+  isActive: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 interface MaintenanceStats {
@@ -318,9 +321,9 @@ export default function MaintenanceManagement() {
   );
 
   const filteredWorkshops = workshops.filter(workshop =>
-    workshop.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    workshop.razao_social?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    workshop.cnpj?.includes(searchTerm)
+    workshop.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    workshop.cnpj?.includes(searchTerm) ||
+    workshop.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -388,7 +391,7 @@ export default function MaintenanceManagement() {
                               <SelectContent>
                                 {workshops.map((workshop) => (
                                   <SelectItem key={workshop.id} value={workshop.id.toString()}>
-                                    {workshop.razao_social}
+                                    {workshop.name}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -858,14 +861,14 @@ export default function MaintenanceManagement() {
                           <div>
                             <CardTitle className="flex items-center gap-2">
                               <Building2 className="h-5 w-5" />
-                              {workshop.nome_fantasia}
+                              {workshop.name}
                             </CardTitle>
                             <CardDescription>
-                              {workshop.razao_social}
+                              {workshop.workshopType}
                             </CardDescription>
                           </div>
-                          <Badge className={workshop.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                            {workshop.is_active ? 'Ativa' : 'Inativa'}
+                          <Badge className={workshop.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                            {workshop.isActive ? 'Ativa' : 'Inativa'}
                           </Badge>
                         </div>
                       </CardHeader>
@@ -877,7 +880,7 @@ export default function MaintenanceManagement() {
                           </div>
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">Telefone</p>
-                            <p className="font-medium">{workshop.telefone}</p>
+                            <p className="font-medium">{workshop.phone}</p>
                           </div>
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">Email</p>
@@ -885,7 +888,7 @@ export default function MaintenanceManagement() {
                           </div>
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">Endereço</p>
-                            <p className="font-medium">{workshop.endereco}</p>
+                            <p className="font-medium">{workshop.address}</p>
                           </div>
                         </div>
                         <div className="flex gap-2 mt-4">
