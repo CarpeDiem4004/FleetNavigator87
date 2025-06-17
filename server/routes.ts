@@ -5734,11 +5734,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const maintenanceRecords = await storage.getAllMaintenance();
       console.log(`Encontradas ${maintenanceRecords.length} manutenções no total`);
       
-      return res.status(200).json(maintenanceRecords);
+      return res.status(200).json({ orders: maintenanceRecords });
     } catch (error) {
       console.error("Erro ao buscar ordens de manutenção:", error);
       return res.status(500).json({ 
         message: "Erro ao buscar dados de manutenção",
+        error: error instanceof Error ? error.message : "Erro desconhecido" 
+      });
+    }
+  });
+
+  // Rota para criar nova ordem de serviço de manutenção
+  app.post("/api/maintenance/orders", hasMaintenanceAccess, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      console.log("POST /api/maintenance/orders - Dados recebidos:", req.body);
+      
+      // Mapear os dados do formulário para o formato esperado
+      const maintenanceData = {
+        vehiclePlate: req.body.placa,
+        workshopId: parseInt(req.body.oficina_id),
+        description: req.body.descricao,
+        entryDate: req.body.data_prevista,
+        observations: req.body.observacoes || "",
+        maintenanceType: "corretiva",
+        priority: "media",
+        status: "pendente",
+        requestBaseId: req.user.baseId || 1,
+        vehicleType: "van" // Tipo padrão
+      };
+      
+      console.log("Dados formatados para criação:", maintenanceData);
+      
+      // Criar a manutenção usando a função existente
+      const newMaintenance = await storage.createMaintenance(maintenanceData);
+      console.log("Manutenção criada com sucesso:", newMaintenance);
+      
+      return res.status(201).json({
+        message: "Ordem de serviço criada com sucesso",
+        order: newMaintenance
+      });
+      
+    } catch (error) {
+      console.error("Erro ao criar ordem de manutenção:", error);
+      return res.status(500).json({ 
+        message: "Erro ao criar ordem de manutenção",
         error: error instanceof Error ? error.message : "Erro desconhecido" 
       });
     }
