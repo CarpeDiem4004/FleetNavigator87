@@ -950,11 +950,11 @@ export class DatabaseStorage implements IStorage {
     try {
       // Usar SQL direto para buscar dados de manutenção e juntar informações do veículo
       const query = `
-        SELECT m.*, v.model as "vehicleModel"
+        SELECT m.*, v.modelo as "vehicleModel"
         FROM manutencao m
-        LEFT JOIN veiculos v ON m.vehicle_plate = v.plate
-        WHERE m.workshop_id = $1
-        ORDER BY m.entry_date DESC
+        LEFT JOIN veiculos v ON m.placa = v.placa
+        WHERE m.oficina_id = $1
+        ORDER BY m.data_solicitacao DESC
       `;
       
       const result = await pool.query(query, [workshopId]);
@@ -962,19 +962,22 @@ export class DatabaseStorage implements IStorage {
       // Mapear os resultados para o formato correto do objeto Maintenance
       return result.rows.map(row => ({
         id: row.id,
-        vehiclePlate: row.vehicle_plate,
+        vehiclePlate: row.placa,
         vehicleModel: row.vehicleModel || "",
-        description: row.description,
+        description: row.descricao,
         status: row.status,
-        priority: row.priority,
-        maintenanceType: row.maintenance_type,
-        entryDate: row.entry_date,
-        estimatedExitDate: row.estimated_exit_date,
-        actualExitDate: row.actual_exit_date,
-        workshopId: row.workshop_id,
-        requestBaseId: row.request_base_id,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at
+        priority: row.prioridade || 'media',
+        maintenanceType: row.tipo,
+        entryDate: row.data_solicitacao,
+        estimatedCompletion: row.data_agendada,
+        completionDate: row.data_conclusao,
+        workshopId: row.oficina_id,
+        requestBaseId: row.base_id,
+        responsiblePerson: row.responsavel || 'Não informado',
+        cost: row.custo,
+        initialBudget: row.custo,
+        created_at: row.created_at,
+        updated_at: row.updated_at
       }));
     } catch (error) {
       console.error("Erro ao buscar manutenções da oficina:", error);
