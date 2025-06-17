@@ -5758,7 +5758,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const workshops = await storage.getAllWorkshops();
       console.log(`Encontradas ${workshops.length} oficinas no total`);
       
-      return res.status(200).json(workshops);
+      return res.status(200).json({ workshops });
     } catch (error) {
       console.error("Erro ao buscar oficinas:", error);
       return res.status(500).json({ 
