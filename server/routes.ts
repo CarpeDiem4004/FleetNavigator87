@@ -12,6 +12,7 @@ import multer from "multer";
 import path from "path";
 import { promises as fs } from "fs";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
 // Função utilitária para obter data/hora no fuso horário de Brasília (UTC-3)
 function getCurrentDateBrasilia() {
@@ -6153,9 +6154,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'CNPJ e senha são obrigatórios' });
       }
 
-      // Buscar oficina pelo CNPJ usando query direta
+      // Buscar oficina pelo CNPJ
       const result = await pool.query(
-        'SELECT * FROM workshops WHERE cnpj = $1 AND status = $2',
+        'SELECT * FROM workshops WHERE cnpj = $1 AND (status = $2 OR status IS NULL)',
         [cnpj, 'ativo']
       );
 
@@ -6165,10 +6166,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const oficina = result.rows[0];
 
-      // Verificar senha - usando senha padrão para teste
-      if (password !== 'senha123') {
+      // Verificar se a oficina tem senha configurada
+      if (!oficina.password) {
+        return res.status(401).json({ message: 'Senha não configurada para esta oficina. Entre em contato com o administrador.' });
+      }
+
+      // Verificar senha usando bcrypt
+      const senhaValida = await bcrypt.compare(password, oficina.password);
+      if (!senhaValida) {
         return res.status(401).json({ message: 'Senha incorreta' });
       }
+
+      // Atualizar último login
+      await pool.query(
+        'UPDATE workshops SET last_login = NOW() WHERE id = $1',
+        [oficina.id]
+      );
 
       // Gerar token JWT para a oficina
       const token = jwt.sign(
@@ -6185,15 +6198,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
         token,
         oficina: {
           id: oficina.id,
-          razao_social: oficina.razao_social || oficina.nome,
+          razao_social: oficina.name,
           cnpj: oficina.cnpj,
           email: oficina.email,
-          telefone: oficina.telefone
+          telefone: oficina.phone
         }
       });
     } catch (error) {
       console.error("Erro no login da oficina:", error);
       res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
+  // API para gerenciar credenciais das oficinas (apenas admins)
+  app.get("/api/maintenance/workshops/credentials", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const query = `
+        SELECT 
+          w.id,
+          w.name,
+          w.cnpj,
+          w.email,
+          w.phone,
+          w.last_login,
+          CASE 
+            WHEN w.password IS NOT NULL AND w.password != '' THEN true 
+            ELSE false 
+          END as has_credentials,
+          COALESCE(w.status, 'active') as status
+        FROM workshops w
+        ORDER BY w.name ASC
+      `;
+      
+      const result = await pool.query(query);
+      
+      console.log(`[Credenciais Oficinas] Encontradas ${result.rows.length} oficinas`);
+      
+      res.json({
+        success: true,
+        workshops: result.rows.map(workshop => ({
+          id: workshop.id,
+          name: workshop.name,
+          cnpj: workshop.cnpj || '',
+          email: workshop.email || '',
+          phone: workshop.phone || '',
+          hasCredentials: workshop.has_credentials,
+          lastLogin: workshop.last_login,
+          status: workshop.status
+        }))
+      });
+    } catch (error) {
+      console.error("Erro ao buscar credenciais das oficinas:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Erro ao buscar credenciais das oficinas" 
+      });
+    }
+  });
+
+  // API para atualizar senha de uma oficina (apenas admins)
+  app.put("/api/maintenance/workshops/:id/password", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const workshopId = parseInt(req.params.id);
+      const { password } = req.body;
+
+      if (!workshopId || !password) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "ID da oficina e senha são obrigatórios" 
+        });
+      }
+
+      // Verificar se a oficina existe
+      const checkQuery = 'SELECT id, name FROM workshops WHERE id = $1';
+      const checkResult = await pool.query(checkQuery, [workshopId]);
+
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "Oficina não encontrada" 
+        });
+      }
+
+      // Criptografar a nova senha
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Atualizar a senha da oficina
+      const updateQuery = `
+        UPDATE workshops 
+        SET password = $1, updated_at = NOW()
+        WHERE id = $2
+        RETURNING id, name
+      `;
+      
+      const updateResult = await pool.query(updateQuery, [hashedPassword, workshopId]);
+      
+      console.log(`[Credenciais] Senha atualizada para oficina: ${updateResult.rows[0].name}`);
+      
+      res.json({
+        success: true,
+        message: "Senha atualizada com sucesso",
+        workshop: updateResult.rows[0]
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar senha da oficina:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Erro ao atualizar senha da oficina" 
+      });
     }
   });
 
