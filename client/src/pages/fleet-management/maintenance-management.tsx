@@ -1474,6 +1474,77 @@ export default function MaintenanceManagement() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Alertas de Veículos Atrasados */}
+      <Dialog open={isAlertModalOpen} onOpenChange={setIsAlertModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-800">
+              <AlertTriangle className="h-5 w-5" />
+              Veículos com Atraso na Manutenção
+            </DialogTitle>
+            <DialogDescription>
+              Lista de veículos há mais de 3 dias sem atualização
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {overdueVehicles.orders.length > 0 && (
+              <div>
+                <h3 className="font-semibold text-red-800 mb-2">Ordens de Serviço em Atraso</h3>
+                <div className="space-y-2">
+                  {overdueVehicles.orders.map((order) => (
+                    <div key={order.id} className="p-3 bg-red-50 border border-red-200 rounded">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="font-medium text-red-800">Placa: {order.vehiclePlate}</span>
+                          <p className="text-sm text-red-600">
+                            OS #{order.id} • {order.workshopName || 'Oficina não informada'}
+                          </p>
+                          <p className="text-xs text-red-500">
+                            Última atualização: {new Date(order.updated_at).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                        <Badge variant="destructive">{order.status}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {overdueVehicles.receptions.length > 0 && (
+              <div>
+                <h3 className="font-semibold text-red-800 mb-2">Recebimentos de Veículos em Atraso</h3>
+                <div className="space-y-2">
+                  {overdueVehicles.receptions.map((reception) => (
+                    <div key={reception.id} className="p-3 bg-red-50 border border-red-200 rounded">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="font-medium text-red-800">Placa: {reception.vehiclePlate}</span>
+                          <p className="text-sm text-red-600">
+                            {reception.vehicleModel} • {reception.workshopName || 'Oficina não informada'}
+                          </p>
+                          <p className="text-xs text-red-500">
+                            Recebido em: {new Date(reception.receivedDate).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                        <Badge variant="destructive">{reception.status}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {overdueVehicles.orders.length === 0 && overdueVehicles.receptions.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                Nenhum veículo em atraso encontrado
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
