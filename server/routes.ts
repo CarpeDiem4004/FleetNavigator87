@@ -5170,14 +5170,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           END as negotiation_type,
           -- Buscar informações da ordem de serviço se aplicável
           m.status as maintenance_status,
-          m.estimatedCompletion as maintenance_deadline,
+          m.completed_at as maintenance_deadline,
           -- Buscar informações do recebimento se aplicável
           cr.status as reception_status,
           cr.delivery_deadline as reception_deadline
         FROM maintenance_negotiations mn
         LEFT JOIN oficinas o ON mn.workshop_id = o.id
         LEFT JOIN users u ON mn.fleet_manager_id = u.id
-        LEFT JOIN manutencao m ON mn.maintenance_id = m.id
+        LEFT JOIN maintenance m ON mn.maintenance_id = m.id
         LEFT JOIN car_receptions cr ON mn.car_reception_id = cr.id
         WHERE mn.vehicle_plate = $1
         ORDER BY mn.created_at ASC
