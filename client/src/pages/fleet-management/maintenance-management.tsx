@@ -30,7 +30,8 @@ import {
   Phone,
   Mail,
   User,
-  Calendar
+  Calendar,
+  Key
 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useToast } from "@/hooks/use-toast";
