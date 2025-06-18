@@ -152,6 +152,7 @@ import GuarulhosPublic from "@/pages/postos/public/GuarulhosPublic";
 // Importação das páginas de postos externos V2 (renomeadas para evitar conflitos)
 import PostoABCV2External from "@/pages/postos-externos/PostoABCV2";
 import PostoCampinasV2External from "@/pages/postos-externos/PostoCampinasV2";
+import PostosExternosIndex from "@/pages/postos-externos/index";
 import GuarulhosV2Public from "@/pages/postos/public/GuarulhosV2Public";
 import AlairV2Public from "@/pages/postos/public/AlairV2Public";
 import SaoPauloPublic from "@/pages/postos/public/SaoPauloPublic";
@@ -445,6 +446,9 @@ function App() {
           </Route>
           
           {/* Rotas externas para postos V2 - Registro de recebimentos de combustível */}
+          <Route path="/postos-externos">
+            <PostosExternosIndex />
+          </Route>
           <Route path="/posto-externo/abc-v2">
             <PostoABCV2External />
           </Route>
