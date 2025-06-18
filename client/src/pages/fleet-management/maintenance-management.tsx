@@ -242,9 +242,10 @@ export default function MaintenanceManagement() {
       });
 
       // Check for overdue vehicles after loading all data
+      // Use the loaded data directly instead of relying on state
       setTimeout(() => {
-        checkOverdueVehicles();
-      }, 100);
+        checkOverdueVehiclesWithData(ordersData.orders || [], receptionsData.receptions || []);
+      }, 500);
 
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
@@ -345,17 +346,17 @@ export default function MaintenanceManagement() {
     setIsDetailsModalOpen(true);
   };
 
-  const checkOverdueVehicles = () => {
+  const checkOverdueVehiclesWithData = (orders: ServiceOrder[], receptions: CarReception[]) => {
     const threeDaysAgo = new Date();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
-    console.log("Checking for overdue vehicles...");
+    console.log("Checking for overdue vehicles with direct data...");
     console.log("Three days ago:", threeDaysAgo.toLocaleDateString('pt-BR'));
-    console.log("Service orders:", serviceOrders);
-    console.log("Car receptions:", carReceptions);
+    console.log("Service orders count:", orders.length);
+    console.log("Car receptions count:", receptions.length);
 
     // Check service orders that are overdue
-    const overdueOrders = serviceOrders.filter(order => {
+    const overdueOrders = orders.filter(order => {
       const lastUpdate = new Date(order.updated_at);
       const isInProgress = order.status === 'em_andamento' || order.status === 'aguardando_orcamento' || order.status === 'pendente';
       const isOverdue = lastUpdate < threeDaysAgo;
@@ -366,7 +367,7 @@ export default function MaintenanceManagement() {
     });
 
     // Check vehicle receptions that are overdue
-    const overdueReceptions = carReceptions.filter(reception => {
+    const overdueReceptions = receptions.filter(reception => {
       const receivedDate = new Date(reception.receivedDate);
       const isNotCompleted = reception.status !== 'entregue';
       const isOverdue = receivedDate < threeDaysAgo;
@@ -381,10 +382,10 @@ export default function MaintenanceManagement() {
 
     // For testing purposes, let's include some vehicles as overdue to demonstrate the feature
     // In production, you can remove this testing logic
-    const testOverdueOrders = serviceOrders.filter(order => 
+    const testOverdueOrders = orders.filter(order => 
       order.status === 'em_andamento' || order.status === 'aguardando_orcamento' || order.status === 'pendente'
     );
-    const testOverdueReceptions = carReceptions.filter(reception => 
+    const testOverdueReceptions = receptions.filter(reception => 
       reception.status !== 'entregue'
     );
 
@@ -395,6 +396,10 @@ export default function MaintenanceManagement() {
       orders: testOverdueOrders,
       receptions: testOverdueReceptions
     });
+  };
+
+  const checkOverdueVehicles = () => {
+    checkOverdueVehiclesWithData(serviceOrders, carReceptions);
   };
 
   const generateServiceOrderPDF = (order: ServiceOrder) => {
