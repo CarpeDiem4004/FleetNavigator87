@@ -1267,6 +1267,18 @@ export default function MaintenanceManagement() {
                             <Button 
                               variant="outline" 
                               size="sm"
+                              onClick={() => handleOpenNegotiation({
+                                plate: reception.vehiclePlate,
+                                workshopId: reception.workshopId,
+                                carReceptionId: reception.id
+                              })}
+                            >
+                              <MessageSquare className="mr-2 h-4 w-4" />
+                              Tratativas
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
                               onClick={() => generateReceptionPDF(reception)}
                             >
                               <Download className="mr-2 h-4 w-4" />
@@ -1728,6 +1740,207 @@ export default function MaintenanceManagement() {
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Tratativas de Manutenção */}
+      <Dialog open={isNegotiationModalOpen} onOpenChange={setIsNegotiationModalOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Nova Tratativa de Manutenção
+            </DialogTitle>
+            <DialogDescription>
+              Registre uma nova tratativa para negociar prazos e condições com a oficina
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...negotiationForm}>
+            <form onSubmit={negotiationForm.handleSubmit(handleCreateNegotiation)} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={negotiationForm.control}
+                  name="vehiclePlate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Placa do Veículo</FormLabel>
+                      <FormControl>
+                        <Input {...field} disabled />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={negotiationForm.control}
+                  name="priority"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Prioridade</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a prioridade" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="baixa">Baixa</SelectItem>
+                          <SelectItem value="media">Média</SelectItem>
+                          <SelectItem value="alta">Alta</SelectItem>
+                          <SelectItem value="critica">Crítica</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={negotiationForm.control}
+                  name="originalDeadline"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Prazo Original</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={negotiationForm.control}
+                  name="newDeadline"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Novo Prazo Proposto</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={negotiationForm.control}
+                name="contactMethod"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Método de Contato</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o método de contato" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="telefone">
+                          <div className="flex items-center">
+                            <Phone className="mr-2 h-4 w-4" />
+                            Telefone
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="email">
+                          <div className="flex items-center">
+                            <Mail className="mr-2 h-4 w-4" />
+                            Email
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="presencial">
+                          <div className="flex items-center">
+                            <Building2 className="mr-2 h-4 w-4" />
+                            Presencial
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={negotiationForm.control}
+                name="negotiationReason"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Motivo da Negociação</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Descreva o motivo da negociação (ex: atraso na entrega de peças, complexidade do serviço, etc.)"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={negotiationForm.control}
+                name="fleetComments"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Comentários da Gestão de Frota</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Adicione comentários, instruções ou observações para a oficina"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={negotiationForm.control}
+                name="followUpDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data de Acompanhamento</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Data para próximo contato ou acompanhamento da negociação
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end gap-3 pt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsNegotiationModalOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isCreatingNegotiation}>
+                  {isCreatingNegotiation ? (
+                    <>
+                      <Calendar className="mr-2 h-4 w-4 animate-spin" />
+                      Criando...
+                    </>
+                  ) : (
+                    <>
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      Criar Tratativa
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </AppLayout>
