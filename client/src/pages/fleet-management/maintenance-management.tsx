@@ -776,20 +776,7 @@ export default function MaintenanceManagement() {
     const description = reception.serviceDescription || 'Não informado';
     const splitDescription = doc.splitTextToSize(description, 170);
     doc.text(splitDescription, 20, yPos);
-    
-    // Peças Substituídas
-    yPos += splitDescription.length * 5 + 15;
-    if (reception.replacedParts) {
-      doc.setFontSize(14);
-      doc.text('PEÇAS SUBSTITUÍDAS', 20, yPos);
-      
-      yPos += 10;
-      doc.setFontSize(11);
-      const parts = reception.replacedParts;
-      const splitParts = doc.splitTextToSize(parts, 170);
-      doc.text(splitParts, 20, yPos);
-      yPos += splitParts.length * 5;
-    }
+    yPos += splitDescription.length * 5;
     
     // Observações
     yPos += 15;
@@ -805,25 +792,95 @@ export default function MaintenanceManagement() {
       yPos += splitNotes.length * 5;
     }
     
-    // Custos
+    // Check if we need a new page for costs section
+    if (yPos > 220) {
+      doc.addPage();
+      yPos = 30;
+    }
+    
+    // Custos - detalhamento completo
     yPos += 15;
     doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
     doc.text('DETALHAMENTO DE CUSTOS', 20, yPos);
+    doc.setFont(undefined, 'normal');
+    
+    yPos += 15;
+    doc.setFontSize(11);
+    
+    // Mão de obra
+    doc.text('Mão de Obra:', 25, yPos);
+    doc.text(`R$ ${Number(reception.laborCost || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 120, yPos);
     
     yPos += 10;
-    doc.setFontSize(11);
-    doc.text(`Mão de Obra: R$ ${Number(reception.laborCost || 0).toFixed(2)}`, 20, yPos);
     
-    yPos += 8;
-    doc.text(`Peças: R$ ${Number(reception.partsCost || 0).toFixed(2)}`, 20, yPos);
+    // Peças
+    doc.text('Peças:', 25, yPos);
+    doc.text(`R$ ${Number(reception.partsCost || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 120, yPos);
     
+    yPos += 10;
+    
+    // Linha separadora para total
+    doc.line(25, yPos, 170, yPos);
     yPos += 8;
+    
+    // Total
     doc.setFontSize(12);
-    doc.text(`TOTAL: R$ ${Number(reception.totalCost || 0).toFixed(2)}`, 20, yPos);
+    doc.setFont(undefined, 'bold');
+    doc.text('TOTAL GERAL:', 25, yPos);
+    doc.text(`R$ ${Number(reception.totalCost || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 120, yPos);
+    doc.setFont(undefined, 'normal');
+    
+    // Peças Substituídas (se houver)
+    if (reception.replacedParts && reception.replacedParts.trim()) {
+      yPos += 20;
+      doc.setFontSize(14);
+      doc.setFont(undefined, 'bold');
+      doc.text('PEÇAS SUBSTITUÍDAS', 20, yPos);
+      doc.setFont(undefined, 'normal');
+      
+      yPos += 10;
+      doc.setFontSize(11);
+      const parts = reception.replacedParts;
+      const splitParts = doc.splitTextToSize(parts, 170);
+      doc.text(splitParts, 20, yPos);
+    }
+    
+    // Informações de entrega (se veículo foi entregue)
+    if (reception.status === 'entregue' && reception.deliveryPersonName) {
+      yPos += 25;
+      
+      // Check if we need a new page
+      if (yPos > 240) {
+        doc.addPage();
+        yPos = 30;
+      }
+      
+      doc.setFontSize(14);
+      doc.setFont(undefined, 'bold');
+      doc.text('DADOS DA ENTREGA', 20, yPos);
+      doc.setFont(undefined, 'normal');
+      
+      yPos += 15;
+      doc.setFontSize(11);
+      doc.text(`Nome Completo: ${reception.deliveryPersonName}`, 25, yPos);
+      
+      yPos += 8;
+      doc.text(`CPF: ${reception.deliveryPersonCpf}`, 25, yPos);
+      
+      yPos += 8;
+      doc.text(`Telefone: ${reception.deliveryPersonPhone}`, 25, yPos);
+      
+      if (reception.deliveredDate) {
+        yPos += 8;
+        doc.text(`Data de Entrega: ${new Date(reception.deliveredDate).toLocaleDateString('pt-BR')} às ${new Date(reception.deliveredDate).toLocaleTimeString('pt-BR')}`, 25, yPos);
+      }
+    }
     
     // Footer
+    const pageHeight = doc.internal.pageSize.height;
     doc.setFontSize(10);
-    doc.text('Sistema de Gestão de Frota - Muricion Fleet', 105, 280, { align: 'center' });
+    doc.text('Sistema de Gestão de Frota - Muricion Fleet', 105, pageHeight - 15, { align: 'center' });
     
     doc.save(`recebimento-${reception.vehiclePlate}-${reception.id}.pdf`);
   };
