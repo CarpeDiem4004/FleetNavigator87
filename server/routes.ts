@@ -15125,6 +15125,417 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
+  // =====================================================================
+  // ROTAS PARA POSTOS EXTERNOS - REGISTRO DE RECEBIMENTOS DE COMBUSTÍVEL
+  // =====================================================================
+
+  // Posto ABC V2 - Registrar recebimento
+  app.post('/api/postos-externos/abc-v2/recebimentos', async (req, res) => {
+    try {
+      const { 
+        tipo_produto, 
+        litros_recebidos, 
+        valor_total, 
+        nome_fornecedor, 
+        nome_operador, 
+        observacoes 
+      } = req.body;
+
+      // Validação dos campos obrigatórios
+      if (!tipo_produto || !litros_recebidos || !valor_total || !nome_fornecedor || !nome_operador) {
+        return res.status(400).json({
+          success: false,
+          message: 'Todos os campos obrigatórios devem ser preenchidos'
+        });
+      }
+
+      const query = `
+        INSERT INTO recebimentos_posto_abc_v2
+        (tipo_produto, litros_recebidos, valor_total, nome_fornecedor, nome_operador, observacoes, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+        RETURNING *
+      `;
+
+      const result = await pool.query(query, [
+        tipo_produto,
+        parseFloat(litros_recebidos),
+        parseFloat(valor_total),
+        nome_fornecedor,
+        nome_operador,
+        observacoes || ''
+      ]);
+
+      console.log(`[POSTO ABC V2] Novo recebimento registrado: ${litros_recebidos}L de ${tipo_produto} - R$ ${valor_total}`);
+
+      return res.status(201).json({
+        success: true,
+        data: result.rows[0],
+        message: 'Recebimento registrado com sucesso'
+      });
+    } catch (error: any) {
+      console.error('[POSTO ABC V2] Erro ao registrar recebimento:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error.message
+      });
+    }
+  });
+
+  // Posto Campinas V2 - Registrar recebimento
+  app.post('/api/postos-externos/campinas-v2/recebimentos', async (req, res) => {
+    try {
+      const { 
+        tipo_produto, 
+        litros_recebidos, 
+        valor_total, 
+        nome_fornecedor, 
+        nome_operador, 
+        observacoes 
+      } = req.body;
+
+      if (!tipo_produto || !litros_recebidos || !valor_total || !nome_fornecedor || !nome_operador) {
+        return res.status(400).json({
+          success: false,
+          message: 'Todos os campos obrigatórios devem ser preenchidos'
+        });
+      }
+
+      const query = `
+        INSERT INTO recebimentos_posto_campinas_v2
+        (tipo_produto, litros_recebidos, valor_total, nome_fornecedor, nome_operador, observacoes, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+        RETURNING *
+      `;
+
+      const result = await pool.query(query, [
+        tipo_produto,
+        parseFloat(litros_recebidos),
+        parseFloat(valor_total),
+        nome_fornecedor,
+        nome_operador,
+        observacoes || ''
+      ]);
+
+      console.log(`[POSTO CAMPINAS V2] Novo recebimento registrado: ${litros_recebidos}L de ${tipo_produto} - R$ ${valor_total}`);
+
+      return res.status(201).json({
+        success: true,
+        data: result.rows[0],
+        message: 'Recebimento registrado com sucesso'
+      });
+    } catch (error: any) {
+      console.error('[POSTO CAMPINAS V2] Erro ao registrar recebimento:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error.message
+      });
+    }
+  });
+
+  // Posto Guarulhos V2 - Registrar recebimento
+  app.post('/api/postos-externos/guarulhos-v2/recebimentos', async (req, res) => {
+    try {
+      const { 
+        tipo_produto, 
+        litros_recebidos, 
+        valor_total, 
+        nome_fornecedor, 
+        nome_operador, 
+        observacoes 
+      } = req.body;
+
+      if (!tipo_produto || !litros_recebidos || !valor_total || !nome_fornecedor || !nome_operador) {
+        return res.status(400).json({
+          success: false,
+          message: 'Todos os campos obrigatórios devem ser preenchidos'
+        });
+      }
+
+      const query = `
+        INSERT INTO recebimentos_posto_guarulhos_v2
+        (tipo_produto, litros_recebidos, valor_total, nome_fornecedor, nome_operador, observacoes, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+        RETURNING *
+      `;
+
+      const result = await pool.query(query, [
+        tipo_produto,
+        parseFloat(litros_recebidos),
+        parseFloat(valor_total),
+        nome_fornecedor,
+        nome_operador,
+        observacoes || ''
+      ]);
+
+      console.log(`[POSTO GUARULHOS V2] Novo recebimento registrado: ${litros_recebidos}L de ${tipo_produto} - R$ ${valor_total}`);
+
+      return res.status(201).json({
+        success: true,
+        data: result.rows[0],
+        message: 'Recebimento registrado com sucesso'
+      });
+    } catch (error: any) {
+      console.error('[POSTO GUARULHOS V2] Erro ao registrar recebimento:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error.message
+      });
+    }
+  });
+
+  // Posto Osasco V2 - Registrar recebimento
+  app.post('/api/postos-externos/osasco-v2/recebimentos', async (req, res) => {
+    try {
+      const { 
+        tipo_produto, 
+        litros_recebidos, 
+        valor_total, 
+        nome_fornecedor, 
+        nome_operador, 
+        observacoes 
+      } = req.body;
+
+      if (!tipo_produto || !litros_recebidos || !valor_total || !nome_fornecedor || !nome_operador) {
+        return res.status(400).json({
+          success: false,
+          message: 'Todos os campos obrigatórios devem ser preenchidos'
+        });
+      }
+
+      const query = `
+        INSERT INTO recebimentos_posto_osasco_v2
+        (tipo_produto, litros_recebidos, valor_total, nome_fornecedor, nome_operador, observacoes, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+        RETURNING *
+      `;
+
+      const result = await pool.query(query, [
+        tipo_produto,
+        parseFloat(litros_recebidos),
+        parseFloat(valor_total),
+        nome_fornecedor,
+        nome_operador,
+        observacoes || ''
+      ]);
+
+      console.log(`[POSTO OSASCO V2] Novo recebimento registrado: ${litros_recebidos}L de ${tipo_produto} - R$ ${valor_total}`);
+
+      return res.status(201).json({
+        success: true,
+        data: result.rows[0],
+        message: 'Recebimento registrado com sucesso'
+      });
+    } catch (error: any) {
+      console.error('[POSTO OSASCO V2] Erro ao registrar recebimento:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error.message
+      });
+    }
+  });
+
+  // Posto Socorro V2 - Registrar recebimento
+  app.post('/api/postos-externos/socorro-v2/recebimentos', async (req, res) => {
+    try {
+      const { 
+        tipo_produto, 
+        litros_recebidos, 
+        valor_total, 
+        nome_fornecedor, 
+        nome_operador, 
+        observacoes 
+      } = req.body;
+
+      if (!tipo_produto || !litros_recebidos || !valor_total || !nome_fornecedor || !nome_operador) {
+        return res.status(400).json({
+          success: false,
+          message: 'Todos os campos obrigatórios devem ser preenchidos'
+        });
+      }
+
+      const query = `
+        INSERT INTO recebimentos_posto_socorro_v2
+        (tipo_produto, litros_recebidos, valor_total, nome_fornecedor, nome_operador, observacoes, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+        RETURNING *
+      `;
+
+      const result = await pool.query(query, [
+        tipo_produto,
+        parseFloat(litros_recebidos),
+        parseFloat(valor_total),
+        nome_fornecedor,
+        nome_operador,
+        observacoes || ''
+      ]);
+
+      console.log(`[POSTO SOCORRO V2] Novo recebimento registrado: ${litros_recebidos}L de ${tipo_produto} - R$ ${valor_total}`);
+
+      return res.status(201).json({
+        success: true,
+        data: result.rows[0],
+        message: 'Recebimento registrado com sucesso'
+      });
+    } catch (error: any) {
+      console.error('[POSTO SOCORRO V2] Erro ao registrar recebimento:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error.message
+      });
+    }
+  });
+
+  // Posto Sorocaba V2 - Registrar recebimento
+  app.post('/api/postos-externos/sorocaba-v2/recebimentos', async (req, res) => {
+    try {
+      const { 
+        tipo_produto, 
+        litros_recebidos, 
+        valor_total, 
+        nome_fornecedor, 
+        nome_operador, 
+        observacoes 
+      } = req.body;
+
+      if (!tipo_produto || !litros_recebidos || !valor_total || !nome_fornecedor || !nome_operador) {
+        return res.status(400).json({
+          success: false,
+          message: 'Todos os campos obrigatórios devem ser preenchidos'
+        });
+      }
+
+      const query = `
+        INSERT INTO recebimentos_posto_sorocaba_v2
+        (tipo_produto, litros_recebidos, valor_total, nome_fornecedor, nome_operador, observacoes, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+        RETURNING *
+      `;
+
+      const result = await pool.query(query, [
+        tipo_produto,
+        parseFloat(litros_recebidos),
+        parseFloat(valor_total),
+        nome_fornecedor,
+        nome_operador,
+        observacoes || ''
+      ]);
+
+      console.log(`[POSTO SOROCABA V2] Novo recebimento registrado: ${litros_recebidos}L de ${tipo_produto} - R$ ${valor_total}`);
+
+      return res.status(201).json({
+        success: true,
+        data: result.rows[0],
+        message: 'Recebimento registrado com sucesso'
+      });
+    } catch (error: any) {
+      console.error('[POSTO SOROCABA V2] Erro ao registrar recebimento:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error.message
+      });
+    }
+  });
+
+  // Posto Alair V2 - Registrar recebimento
+  app.post('/api/postos-externos/alair-v2/recebimentos', async (req, res) => {
+    try {
+      const { 
+        tipo_produto, 
+        litros_recebidos, 
+        valor_total, 
+        nome_fornecedor, 
+        nome_operador, 
+        observacoes 
+      } = req.body;
+
+      if (!tipo_produto || !litros_recebidos || !valor_total || !nome_fornecedor || !nome_operador) {
+        return res.status(400).json({
+          success: false,
+          message: 'Todos os campos obrigatórios devem ser preenchidos'
+        });
+      }
+
+      const query = `
+        INSERT INTO recebimentos_posto_alair_v2
+        (tipo_produto, litros_recebidos, valor_total, nome_fornecedor, nome_operador, observacoes, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+        RETURNING *
+      `;
+
+      const result = await pool.query(query, [
+        tipo_produto,
+        parseFloat(litros_recebidos),
+        parseFloat(valor_total),
+        nome_fornecedor,
+        nome_operador,
+        observacoes || ''
+      ]);
+
+      console.log(`[POSTO ALAIR V2] Novo recebimento registrado: ${litros_recebidos}L de ${tipo_produto} - R$ ${valor_total}`);
+
+      return res.status(201).json({
+        success: true,
+        data: result.rows[0],
+        message: 'Recebimento registrado com sucesso'
+      });
+    } catch (error: any) {
+      console.error('[POSTO ALAIR V2] Erro ao registrar recebimento:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error.message
+      });
+    }
+  });
+
+  // Rota para listar histórico consolidado dos postos V2
+  app.get('/api/postos-externos/historico-consolidado', async (req, res) => {
+    try {
+      const { limit = 50, offset = 0 } = req.query;
+
+      const query = `
+        SELECT 
+          nome_posto,
+          codigo_posto,
+          id,
+          tipo_produto,
+          litros_recebidos,
+          valor_total,
+          nome_fornecedor,
+          nome_operador,
+          observacoes,
+          created_at,
+          updated_at
+        FROM historico_consolidado_postos_v2_corrigido
+        ORDER BY created_at DESC
+        LIMIT $1 OFFSET $2
+      `;
+
+      const result = await pool.query(query, [parseInt(limit as string), parseInt(offset as string)]);
+
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        total: result.rows.length,
+        limit: parseInt(limit as string),
+        offset: parseInt(offset as string)
+      });
+    } catch (error: any) {
+      console.error('Erro ao buscar histórico consolidado:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar histórico',
+        error: error.message
+      });
+    }
+  });
+
   // Servir arquivos estáticos para uploads
   app.use('/uploads', express.static('uploads'));
 
