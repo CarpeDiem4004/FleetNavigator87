@@ -6227,7 +6227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           END as has_credentials,
           COALESCE(w.status, 'active') as status
         FROM workshops w
-        ORDER BY COALESCE(w.nome, w.razao_social, w.name) ASC
+        ORDER BY COALESCE(w.nome, w.razao_social) ASC
       `;
       
       const result = await pool.query(query);
