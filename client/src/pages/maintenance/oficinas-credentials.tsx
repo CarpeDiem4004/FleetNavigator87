@@ -60,9 +60,18 @@ export default function OficinasCredentialsPage() {
   const fetchWorkshops = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/maintenance/workshops/credentials');
+      const response = await fetch('/api/maintenance/workshops/credentials', {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       if (response.ok) {
         const data = await response.json();
+        console.log('Frontend: Dados recebidos das oficinas:', data.workshops);
+        const alairData = data.workshops?.find((w: any) => w.name === 'Oficina Alair');
+        console.log('Frontend: Dados da Oficina Alair:', alairData);
         setWorkshops(data.workshops || []);
       } else {
         toast({
