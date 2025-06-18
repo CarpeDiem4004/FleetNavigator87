@@ -124,6 +124,9 @@ interface CarReception {
   workshopName?: string;
   baseName?: string;
   updatedAt?: string;
+  deliveryPersonName?: string;
+  deliveryPersonCpf?: string;
+  deliveryPersonPhone?: string;
 }
 
 // Schema de validação para nova ordem de serviço

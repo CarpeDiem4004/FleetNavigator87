@@ -185,6 +185,10 @@ export const carReceptions = pgTable("car_receptions", {
   receivedDate: timestamp("received_date").defaultNow(),
   completedDate: timestamp("completed_date"),
   deliveredDate: timestamp("delivered_date"),
+  // Dados de quem retira o veículo
+  deliveryPersonName: text("delivery_person_name"), // Nome completo
+  deliveryPersonCpf: text("delivery_person_cpf"), // CPF
+  deliveryPersonPhone: text("delivery_person_phone"), // Telefone
   notes: text("notes"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),

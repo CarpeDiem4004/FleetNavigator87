@@ -17,7 +17,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Wrench, 
-  Clock, 
+  Clock,
+  User,
+  Phone,
+  CreditCard, 
   CheckCircle, 
   AlertCircle, 
   Car,
@@ -64,6 +67,9 @@ interface CarReception {
   deliveredDate?: string;
   deliveryDeadline?: string;
   completedDate?: string;
+  deliveryPersonName?: string;
+  deliveryPersonCpf?: string;
+  deliveryPersonPhone?: string;
 }
 
 interface OficinaInfo {
