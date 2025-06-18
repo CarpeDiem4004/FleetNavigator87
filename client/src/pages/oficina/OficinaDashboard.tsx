@@ -118,6 +118,8 @@ export default function OficinaDashboard() {
   
   const [selectedReception, setSelectedReception] = useState<CarReception | null>(null);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [isEditFormOpen, setIsEditFormOpen] = useState(false);
+  const [editingReception, setEditingReception] = useState<CarReception | null>(null);
   const [receptionUpdate, setReceptionUpdate] = useState({
     status: "",
     notes: "",
@@ -205,14 +207,10 @@ export default function OficinaDashboard() {
   };
 
   const openUpdateModal = (reception: CarReception) => {
-    setSelectedReception(reception);
-    setReceptionUpdate({
-      status: reception.status,
-      notes: reception.notes || "",
-      estimatedCompletion: reception.deliveryDeadline ? 
-        new Date(reception.deliveryDeadline).toISOString().split('T')[0] : ""
-    });
-    setIsUpdateModalOpen(true);
+    // Salvar dados do recebimento no localStorage para edição
+    localStorage.setItem('editingReception', JSON.stringify(reception));
+    // Redirecionar para o formulário de recebimento em modo de edição
+    setLocation('/maintenance/car-reception?edit=true&id=' + reception.id);
   };
 
   const updateReception = async () => {

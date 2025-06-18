@@ -9,9 +9,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Car, Plus, Save, Calendar, Calculator, Package2, Trash2 } from "lucide-react";
+import { Car, Plus, Save, Calendar, Calculator, Package2, Trash2, Edit, ArrowLeft } from "lucide-react";
 import { workshopAPI } from "@/lib/workshop-api";
 import WorkshopAuth from "@/components/auth/WorkshopAuth";
+import { useLocation } from "wouter";
 
 const carReceptionSchema = z.object({
   vehiclePlate: z.string().min(1, "Placa é obrigatória"),
@@ -67,6 +68,7 @@ interface Part {
 }
 
 function CarReception() {
+  const [, setLocation] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [allBases, setAllBases] = useState<Base[]>([]);
   const [allProjects, setAllProjects] = useState<ProjectWithBases[]>([]);
@@ -74,7 +76,11 @@ function CarReception() {
   const [parts, setParts] = useState<Part[]>([]);
   const [newPartName, setNewPartName] = useState("");
   const [newPartPrice, setNewPartPrice] = useState("");
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const { toast } = useToast();
+
+
 
   const form = useForm<CarReceptionForm>({
     resolver: zodResolver(carReceptionSchema),
@@ -91,6 +97,40 @@ function CarReception() {
   });
 
   const selectedProjectId = form.watch("projectId");
+
+  // Função para carregar dados do recebimento para edição
+  const loadReceptionForEdit = (receptionData: any) => {
+    form.reset({
+      vehiclePlate: receptionData.vehiclePlate || "",
+      vehicleModel: receptionData.vehicleModel || "",
+      vehicleType: receptionData.vehicleType || "van",
+      currentKm: receptionData.currentKm || 0,
+      baseId: receptionData.baseId,
+      projectId: receptionData.projectId,
+      projectName: receptionData.projectName || "",
+      serviceDescription: receptionData.serviceDescription || "",
+      replacedParts: receptionData.replacedParts || "",
+      laborCost: Number(receptionData.laborCost || 0),
+      partsCost: Number(receptionData.partsCost || 0),
+      deliveryDeadline: receptionData.deliveryDeadline ? 
+        new Date(receptionData.deliveryDeadline).toISOString().split('T')[0] : "",
+      notes: receptionData.notes || "",
+    });
+
+    // Se houver peças, carregá-las no estado
+    if (receptionData.replacedParts) {
+      try {
+        const partsData = typeof receptionData.replacedParts === 'string' 
+          ? JSON.parse(receptionData.replacedParts) 
+          : receptionData.replacedParts;
+        if (Array.isArray(partsData)) {
+          setParts(partsData);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar peças:', error);
+      }
+    }
+  };
 
   // Carregar bases e projetos
   useEffect(() => {
