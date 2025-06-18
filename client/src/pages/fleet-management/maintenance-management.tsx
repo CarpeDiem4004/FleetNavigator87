@@ -1177,10 +1177,6 @@ export default function MaintenanceManagement() {
                             <Eye className="mr-2 h-4 w-4" />
                             Detalhes
                           </Button>
-                          <Button variant="outline" size="sm">
-                            <Edit className="mr-2 h-4 w-4" />
-                            Editar
-                          </Button>
                           <Button 
                             variant="outline" 
                             size="sm"

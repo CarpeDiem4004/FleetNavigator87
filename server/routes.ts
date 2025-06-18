@@ -5170,7 +5170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           END as negotiation_type,
           -- Buscar informações da ordem de serviço se aplicável
           m.status as maintenance_status,
-          m.estimated_completion as maintenance_deadline,
+          m.estimatedCompletion as maintenance_deadline,
           -- Buscar informações do recebimento se aplicável
           cr.status as reception_status,
           cr.delivery_deadline as reception_deadline
