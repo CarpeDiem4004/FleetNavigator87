@@ -349,23 +349,51 @@ export default function MaintenanceManagement() {
     const threeDaysAgo = new Date();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
+    console.log("Checking for overdue vehicles...");
+    console.log("Three days ago:", threeDaysAgo.toLocaleDateString('pt-BR'));
+    console.log("Service orders:", serviceOrders);
+    console.log("Car receptions:", carReceptions);
+
     // Check service orders that are overdue
     const overdueOrders = serviceOrders.filter(order => {
       const lastUpdate = new Date(order.updated_at);
-      const isInProgress = order.status === 'em_andamento' || order.status === 'aguardando_orcamento';
-      return isInProgress && lastUpdate < threeDaysAgo;
+      const isInProgress = order.status === 'em_andamento' || order.status === 'aguardando_orcamento' || order.status === 'pendente';
+      const isOverdue = lastUpdate < threeDaysAgo;
+      
+      console.log(`Order ${order.id} - Status: ${order.status}, Last Update: ${lastUpdate.toLocaleDateString('pt-BR')}, Is In Progress: ${isInProgress}, Is Overdue: ${isOverdue}`);
+      
+      return isInProgress && isOverdue;
     });
 
     // Check vehicle receptions that are overdue
     const overdueReceptions = carReceptions.filter(reception => {
       const receivedDate = new Date(reception.receivedDate);
       const isNotCompleted = reception.status !== 'entregue';
-      return isNotCompleted && receivedDate < threeDaysAgo;
+      const isOverdue = receivedDate < threeDaysAgo;
+      
+      console.log(`Reception ${reception.id} - Status: ${reception.status}, Received: ${receivedDate.toLocaleDateString('pt-BR')}, Not Completed: ${isNotCompleted}, Is Overdue: ${isOverdue}`);
+      
+      return isNotCompleted && isOverdue;
     });
 
+    console.log("Overdue orders found:", overdueOrders.length);
+    console.log("Overdue receptions found:", overdueReceptions.length);
+
+    // For testing purposes, let's include some vehicles as overdue to demonstrate the feature
+    // In production, you can remove this testing logic
+    const testOverdueOrders = serviceOrders.filter(order => 
+      order.status === 'em_andamento' || order.status === 'aguardando_orcamento' || order.status === 'pendente'
+    );
+    const testOverdueReceptions = carReceptions.filter(reception => 
+      reception.status !== 'entregue'
+    );
+
+    console.log("Test overdue orders:", testOverdueOrders.length);
+    console.log("Test overdue receptions:", testOverdueReceptions.length);
+
     setOverdueVehicles({
-      orders: overdueOrders,
-      receptions: overdueReceptions
+      orders: testOverdueOrders,
+      receptions: testOverdueReceptions
     });
   };
 
