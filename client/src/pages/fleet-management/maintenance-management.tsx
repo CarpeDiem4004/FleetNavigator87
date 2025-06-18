@@ -21,7 +21,9 @@ import {
   FileText,
   Settings,
   Users,
-  TrendingUp
+  TrendingUp,
+  Download,
+  Printer
 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +31,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import jsPDF from 'jspdf';
 
 interface ServiceOrder {
   id: number;
@@ -332,6 +335,243 @@ export default function MaintenanceManagement() {
   const handleOpenDetails = (reception: CarReception) => {
     setSelectedReception(reception);
     setIsDetailsModalOpen(true);
+  };
+
+  const generateServiceOrderPDF = (order: ServiceOrder) => {
+    const doc = new jsPDF();
+    const currentDate = new Date().toLocaleDateString('pt-BR');
+    
+    // Header
+    doc.setFontSize(20);
+    doc.text('ORDEM DE SERVIÇO', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(12);
+    doc.text(`Gerado em: ${currentDate}`, 20, 35);
+    doc.text(`ID: #${order.id}`, 170, 35);
+    
+    // Linha separadora
+    doc.line(20, 40, 190, 40);
+    
+    // Informações do Veículo
+    let yPos = 55;
+    doc.setFontSize(14);
+    doc.text('INFORMAÇÕES DO VEÍCULO', 20, yPos);
+    
+    yPos += 10;
+    doc.setFontSize(11);
+    doc.text(`Placa: ${order.vehiclePlate}`, 20, yPos);
+    doc.text(`Modelo: ${order.vehicleModel || 'Não informado'}`, 120, yPos);
+    
+    yPos += 8;
+    doc.text(`Marca: ${order.vehicleBrand || 'Não informado'}`, 20, yPos);
+    doc.text(`KM Atual: ${order.currentKm?.toLocaleString('pt-BR') || 'Não informado'}`, 120, yPos);
+    
+    // Oficina
+    yPos += 20;
+    doc.setFontSize(14);
+    doc.text('OFICINA RESPONSÁVEL', 20, yPos);
+    
+    yPos += 10;
+    doc.setFontSize(11);
+    doc.text(`Nome: ${order.workshopName || 'Não informado'}`, 20, yPos);
+    doc.text(`Base: ${order.baseName || 'Não informado'}`, 120, yPos);
+    
+    yPos += 8;
+    doc.text(`Responsável: ${order.responsiblePerson}`, 20, yPos);
+    
+    // Status e Prioridade
+    yPos += 20;
+    doc.setFontSize(14);
+    doc.text('STATUS E PRIORIDADE', 20, yPos);
+    
+    yPos += 10;
+    doc.setFontSize(11);
+    doc.text(`Status: ${order.status}`, 20, yPos);
+    doc.text(`Prioridade: ${order.priority}`, 120, yPos);
+    
+    yPos += 8;
+    doc.text(`Tipo de Manutenção: ${order.maintenanceType}`, 20, yPos);
+    
+    // Datas
+    yPos += 20;
+    doc.setFontSize(14);
+    doc.text('CRONOGRAMA', 20, yPos);
+    
+    yPos += 10;
+    doc.setFontSize(11);
+    doc.text(`Data de Entrada: ${new Date(order.entryDate).toLocaleDateString('pt-BR')}`, 20, yPos);
+    
+    yPos += 8;
+    doc.text(`Previsão de Conclusão: ${new Date(order.estimatedCompletion).toLocaleDateString('pt-BR')}`, 20, yPos);
+    
+    if (order.completionDate) {
+      yPos += 8;
+      doc.text(`Data de Conclusão: ${new Date(order.completionDate).toLocaleDateString('pt-BR')}`, 20, yPos);
+    }
+    
+    // Descrição
+    yPos += 20;
+    doc.setFontSize(14);
+    doc.text('DESCRIÇÃO DO SERVIÇO', 20, yPos);
+    
+    yPos += 10;
+    doc.setFontSize(11);
+    const description = order.description || 'Não informado';
+    const splitDescription = doc.splitTextToSize(description, 170);
+    doc.text(splitDescription, 20, yPos);
+    
+    // Valores
+    yPos += splitDescription.length * 5 + 20;
+    doc.setFontSize(14);
+    doc.text('VALORES', 20, yPos);
+    
+    yPos += 10;
+    doc.setFontSize(11);
+    doc.text(`Orçamento Inicial: R$ ${parseFloat(order.initialBudget || '0').toFixed(2)}`, 20, yPos);
+    
+    yPos += 8;
+    doc.setFontSize(12);
+    doc.text(`Valor Total: R$ ${parseFloat(order.cost || '0').toFixed(2)}`, 20, yPos);
+    
+    // Footer
+    doc.setFontSize(10);
+    doc.text('Sistema de Gestão de Frota - Muricion Fleet', 105, 280, { align: 'center' });
+    
+    doc.save(`ordem-servico-${order.vehiclePlate}-${order.id}.pdf`);
+  };
+
+  const generateReceptionPDF = (reception: CarReception) => {
+    const doc = new jsPDF();
+    const currentDate = new Date().toLocaleDateString('pt-BR');
+    
+    // Header
+    doc.setFontSize(20);
+    doc.text('RECEBIMENTO DE VEÍCULO', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(12);
+    doc.text(`Gerado em: ${currentDate}`, 20, 35);
+    doc.text(`ID: #${reception.id}`, 170, 35);
+    
+    // Linha separadora
+    doc.line(20, 40, 190, 40);
+    
+    // Informações do Veículo
+    let yPos = 55;
+    doc.setFontSize(14);
+    doc.text('INFORMAÇÕES DO VEÍCULO', 20, yPos);
+    
+    yPos += 10;
+    doc.setFontSize(11);
+    doc.text(`Placa: ${reception.vehiclePlate}`, 20, yPos);
+    doc.text(`Modelo: ${reception.vehicleModel}`, 120, yPos);
+    
+    yPos += 8;
+    doc.text(`Tipo: ${reception.vehicleType}`, 20, yPos);
+    doc.text(`KM Atual: ${reception.currentKm?.toLocaleString('pt-BR')} km`, 120, yPos);
+    
+    // Projeto e Base
+    yPos += 20;
+    doc.setFontSize(14);
+    doc.text('PROJETO E BASE', 20, yPos);
+    
+    yPos += 10;
+    doc.setFontSize(11);
+    doc.text(`Projeto: ${reception.projectName}`, 20, yPos);
+    doc.text(`Base: ${reception.baseName}`, 120, yPos);
+    
+    // Oficina
+    yPos += 20;
+    doc.setFontSize(14);
+    doc.text('OFICINA RESPONSÁVEL', 20, yPos);
+    
+    yPos += 10;
+    doc.setFontSize(11);
+    doc.text(`Nome: ${reception.workshopName}`, 20, yPos);
+    
+    // Status e Prioridade
+    yPos += 20;
+    doc.setFontSize(14);
+    doc.text('STATUS E PRIORIDADE', 20, yPos);
+    
+    yPos += 10;
+    doc.setFontSize(11);
+    doc.text(`Status: ${reception.status}`, 20, yPos);
+    doc.text(`Prioridade: ${reception.priority}`, 120, yPos);
+    
+    // Datas
+    yPos += 20;
+    doc.setFontSize(14);
+    doc.text('CRONOGRAMA', 20, yPos);
+    
+    yPos += 10;
+    doc.setFontSize(11);
+    doc.text(`Data de Recebimento: ${new Date(reception.receivedDate).toLocaleDateString('pt-BR')}`, 20, yPos);
+    
+    if (reception.deliveryDeadline) {
+      yPos += 8;
+      doc.text(`Prazo de Entrega: ${new Date(reception.deliveryDeadline).toLocaleDateString('pt-BR')}`, 20, yPos);
+    }
+    
+    // Descrição do Serviço
+    yPos += 20;
+    doc.setFontSize(14);
+    doc.text('DESCRIÇÃO DO SERVIÇO', 20, yPos);
+    
+    yPos += 10;
+    doc.setFontSize(11);
+    const description = reception.serviceDescription || 'Não informado';
+    const splitDescription = doc.splitTextToSize(description, 170);
+    doc.text(splitDescription, 20, yPos);
+    
+    // Peças Substituídas
+    yPos += splitDescription.length * 5 + 15;
+    if (reception.replacedParts) {
+      doc.setFontSize(14);
+      doc.text('PEÇAS SUBSTITUÍDAS', 20, yPos);
+      
+      yPos += 10;
+      doc.setFontSize(11);
+      const parts = reception.replacedParts;
+      const splitParts = doc.splitTextToSize(parts, 170);
+      doc.text(splitParts, 20, yPos);
+      yPos += splitParts.length * 5;
+    }
+    
+    // Observações
+    yPos += 15;
+    if (reception.notes) {
+      doc.setFontSize(14);
+      doc.text('OBSERVAÇÕES', 20, yPos);
+      
+      yPos += 10;
+      doc.setFontSize(11);
+      const notes = reception.notes;
+      const splitNotes = doc.splitTextToSize(notes, 170);
+      doc.text(splitNotes, 20, yPos);
+      yPos += splitNotes.length * 5;
+    }
+    
+    // Custos
+    yPos += 15;
+    doc.setFontSize(14);
+    doc.text('DETALHAMENTO DE CUSTOS', 20, yPos);
+    
+    yPos += 10;
+    doc.setFontSize(11);
+    doc.text(`Mão de Obra: R$ ${Number(reception.laborCost || 0).toFixed(2)}`, 20, yPos);
+    
+    yPos += 8;
+    doc.text(`Peças: R$ ${Number(reception.partsCost || 0).toFixed(2)}`, 20, yPos);
+    
+    yPos += 8;
+    doc.setFontSize(12);
+    doc.text(`TOTAL: R$ ${Number(reception.totalCost || 0).toFixed(2)}`, 20, yPos);
+    
+    // Footer
+    doc.setFontSize(10);
+    doc.text('Sistema de Gestão de Frota - Muricion Fleet', 105, 280, { align: 'center' });
+    
+    doc.save(`recebimento-${reception.vehiclePlate}-${reception.id}.pdf`);
   };
 
   const getStatusBadge = (status: string) => {
@@ -664,6 +904,14 @@ export default function MaintenanceManagement() {
                             <Edit className="mr-2 h-4 w-4" />
                             Editar
                           </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => generateServiceOrderPDF(order)}
+                          >
+                            <Download className="mr-2 h-4 w-4" />
+                            PDF
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>
@@ -763,6 +1011,14 @@ export default function MaintenanceManagement() {
                             <Button variant="outline" size="sm" onClick={() => handleOpenDetails(reception)}>
                               <Eye className="mr-2 h-4 w-4" />
                               Detalhes
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => generateReceptionPDF(reception)}
+                            >
+                              <Download className="mr-2 h-4 w-4" />
+                              PDF
                             </Button>
                           </div>
                         </CardContent>
