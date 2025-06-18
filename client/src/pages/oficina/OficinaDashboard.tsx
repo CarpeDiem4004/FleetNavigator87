@@ -131,6 +131,15 @@ export default function OficinaDashboard() {
     notes: "",
     estimatedCompletion: ""
   });
+
+  // Estado para o formulário de entrega
+  const [isDeliveryFormOpen, setIsDeliveryFormOpen] = useState(false);
+  const [selectedDeliveryReception, setSelectedDeliveryReception] = useState<CarReception | null>(null);
+  const [deliveryFormData, setDeliveryFormData] = useState({
+    deliveryPersonName: "",
+    deliveryPersonCpf: "",
+    deliveryPersonPhone: ""
+  });
   
   const { toast } = useToast();
 
@@ -213,6 +222,21 @@ export default function OficinaDashboard() {
   };
 
   const updateReceptionStatus = async (receptionId: number, newStatus: string) => {
+    // Se o status for "entregue", abrir o formulário de entrega primeiro
+    if (newStatus === 'entregue') {
+      const reception = carReceptions.find(r => r.id === receptionId);
+      if (reception) {
+        setSelectedDeliveryReception(reception);
+        setDeliveryFormData({
+          deliveryPersonName: "",
+          deliveryPersonCpf: "",
+          deliveryPersonPhone: ""
+        });
+        setIsDeliveryFormOpen(true);
+        return;
+      }
+    }
+
     try {
       const token = localStorage.getItem("oficina_token");
       const response = await fetch(`/api/oficina/car-receptions/${receptionId}/status`, {
@@ -237,6 +261,58 @@ export default function OficinaDashboard() {
       toast({
         title: "Erro",
         description: "Não foi possível atualizar o status do veículo",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Função para processar a entrega com dados da pessoa que está retirando
+  const processDelivery = async () => {
+    if (!selectedDeliveryReception) return;
+
+    // Validar campos obrigatórios
+    if (!deliveryFormData.deliveryPersonName.trim() || 
+        !deliveryFormData.deliveryPersonCpf.trim() || 
+        !deliveryFormData.deliveryPersonPhone.trim()) {
+      toast({
+        title: "Erro",
+        description: "Todos os campos são obrigatórios",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("oficina_token");
+      const response = await fetch(`/api/oficina/car-receptions/${selectedDeliveryReception.id}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          status: 'entregue',
+          deliveryPersonName: deliveryFormData.deliveryPersonName,
+          deliveryPersonCpf: deliveryFormData.deliveryPersonCpf,
+          deliveryPersonPhone: deliveryFormData.deliveryPersonPhone
+        })
+      });
+
+      if (response.ok) {
+        setIsDeliveryFormOpen(false);
+        setSelectedDeliveryReception(null);
+        await loadData();
+        toast({
+          title: "Veículo entregue",
+          description: "Veículo entregue com sucesso. Dados da pessoa que retirou foram registrados."
+        });
+      } else {
+        throw new Error("Erro ao processar entrega");
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível processar a entrega do veículo",
         variant: "destructive"
       });
     }
@@ -1188,6 +1264,105 @@ export default function OficinaDashboard() {
             </Button>
             <Button onClick={updateReception} disabled={!receptionUpdate.status}>
               Atualizar Status
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delivery Form Modal */}
+      <Dialog open={isDeliveryFormOpen} onOpenChange={setIsDeliveryFormOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Dados para Entrega do Veículo
+            </DialogTitle>
+            <DialogDescription>
+              Registre os dados da pessoa que está retirando o veículo {selectedDeliveryReception?.vehiclePlate}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Nome Completo */}
+            <div>
+              <Label htmlFor="deliveryPersonName">Nome Completo *</Label>
+              <Input
+                id="deliveryPersonName"
+                type="text"
+                placeholder="Digite o nome completo"
+                value={deliveryFormData.deliveryPersonName}
+                onChange={(e) => setDeliveryFormData(prev => ({ 
+                  ...prev, 
+                  deliveryPersonName: e.target.value 
+                }))}
+              />
+            </div>
+
+            {/* CPF */}
+            <div>
+              <Label htmlFor="deliveryPersonCpf">CPF *</Label>
+              <Input
+                id="deliveryPersonCpf"
+                type="text"
+                placeholder="000.000.000-00"
+                value={deliveryFormData.deliveryPersonCpf}
+                onChange={(e) => setDeliveryFormData(prev => ({ 
+                  ...prev, 
+                  deliveryPersonCpf: e.target.value 
+                }))}
+              />
+            </div>
+
+            {/* Telefone */}
+            <div>
+              <Label htmlFor="deliveryPersonPhone">Telefone *</Label>
+              <Input
+                id="deliveryPersonPhone"
+                type="text"
+                placeholder="(11) 99999-9999"
+                value={deliveryFormData.deliveryPersonPhone}
+                onChange={(e) => setDeliveryFormData(prev => ({ 
+                  ...prev, 
+                  deliveryPersonPhone: e.target.value 
+                }))}
+              />
+            </div>
+
+            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+              <div className="flex items-center gap-2 text-yellow-800">
+                <AlertCircle className="h-4 w-4" />
+                <span className="text-sm font-medium">Atenção</span>
+              </div>
+              <p className="text-sm text-yellow-700 mt-1">
+                Todos os campos são obrigatórios. Certifique-se de que os dados estão corretos antes de confirmar a entrega.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsDeliveryFormOpen(false);
+                setSelectedDeliveryReception(null);
+                setDeliveryFormData({
+                  deliveryPersonName: "",
+                  deliveryPersonCpf: "",
+                  deliveryPersonPhone: ""
+                });
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={processDelivery}
+              disabled={!deliveryFormData.deliveryPersonName.trim() || 
+                       !deliveryFormData.deliveryPersonCpf.trim() || 
+                       !deliveryFormData.deliveryPersonPhone.trim()}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Confirmar Entrega
             </Button>
           </DialogFooter>
         </DialogContent>

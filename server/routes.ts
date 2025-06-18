@@ -6377,7 +6377,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/oficina/car-receptions/:id/status", verificarTokenOficina, async (req, res) => {
     try {
       const { id } = req.params;
-      const { status } = req.body;
+      const { status, deliveryPersonName, deliveryPersonCpf, deliveryPersonPhone } = req.body;
 
       if (!status) {
         return res.status(400).json({ message: 'Status é obrigatório' });
@@ -6388,11 +6388,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Status inválido' });
       }
 
-      // Update status with timestamp
-      const updated = await storage.updateCarReception(parseInt(id), { 
+      // Se o status for "entregue", validar dados da pessoa que está retirando
+      if (status === 'entregue') {
+        if (!deliveryPersonName || !deliveryPersonCpf || !deliveryPersonPhone) {
+          return res.status(400).json({ 
+            message: 'Para marcar como entregue, é obrigatório informar nome completo, CPF e telefone da pessoa que está retirando o veículo' 
+          });
+        }
+      }
+
+      // Preparar dados para atualização
+      const updateData: any = { 
         status, 
         updated_at: new Date()
-      });
+      };
+
+      // Se for entrega, adicionar dados da pessoa e data de entrega
+      if (status === 'entregue') {
+        updateData.deliveryPersonName = deliveryPersonName;
+        updateData.deliveryPersonCpf = deliveryPersonCpf;
+        updateData.deliveryPersonPhone = deliveryPersonPhone;
+        updateData.deliveredDate = new Date();
+      }
+
+      const updated = await storage.updateCarReception(parseInt(id), updateData);
       if (!updated) {
         return res.status(404).json({ message: 'Recebimento não encontrado' });
       }
