@@ -125,6 +125,10 @@ export default function OficinaDashboard() {
     completedDate: new Date().toISOString().split('T')[0],
     notes: ''
   });
+
+  // Estado para modal de detalhes da ordem de serviço
+  const [isOrderDetailsModalOpen, setIsOrderDetailsModalOpen] = useState(false);
+  const [selectedOrderDetails, setSelectedOrderDetails] = useState<ServiceOrder | null>(null);
   
   const [selectedReception, setSelectedReception] = useState<CarReception | null>(null);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
@@ -397,6 +401,11 @@ export default function OficinaDashboard() {
       notes: ''
     });
     setIsWorkModalOpen(true);
+  };
+
+  const openOrderDetailsModal = (order: ServiceOrder) => {
+    setSelectedOrderDetails(order);
+    setIsOrderDetailsModalOpen(true);
   };
 
   const addPart = () => {
@@ -751,6 +760,18 @@ export default function OficinaDashboard() {
                         </p>
                       </div>
                       <div className="flex flex-col gap-2">
+                        {/* Botões de Ação Padrão */}
+                        <div className="flex gap-2 flex-wrap">
+                          <Button 
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openOrderDetailsModal(order)}
+                            className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                          >
+                            <FileText className="h-4 w-4 mr-1" />
+                            Detalhes
+                          </Button>
+                        </div>
                         {/* Botões de Status - Pendente */}
                         {order.status === "pendente" && (
                           <div className="flex gap-2 flex-wrap">
@@ -1566,6 +1587,113 @@ export default function OficinaDashboard() {
             >
               <CheckCircle className="h-4 w-4 mr-2" />
               Confirmar Entrega
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Detalhes da Ordem de Serviço */}
+      <Dialog open={isOrderDetailsModalOpen} onOpenChange={setIsOrderDetailsModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Detalhes da Ordem de Serviço #{selectedOrderDetails?.id}
+            </DialogTitle>
+            <DialogDescription>
+              Informações completas da ordem de serviço
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedOrderDetails && (
+            <div className="space-y-6">
+              {/* Informações do Veículo */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Placa do Veículo</Label>
+                  <p className="text-lg font-semibold">{selectedOrderDetails.vehiclePlate}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Tipo de Manutenção</Label>
+                  <p className="text-sm">{selectedOrderDetails.maintenanceType}</p>
+                </div>
+              </div>
+
+              {/* Status e Prioridade */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Status</Label>
+                  <div className="mt-1">
+                    {getStatusBadge(selectedOrderDetails.status)}
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Prioridade</Label>
+                  <div className="mt-1">
+                    {getPriorityBadge(selectedOrderDetails.priority)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Descrição */}
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Descrição do Serviço</Label>
+                <p className="text-sm bg-gray-50 p-3 rounded-md mt-1">{selectedOrderDetails.description}</p>
+              </div>
+
+              {/* Datas */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Data de Entrada</Label>
+                  <p className="text-sm">{new Date(selectedOrderDetails.entryDate).toLocaleDateString('pt-BR')}</p>
+                </div>
+                {selectedOrderDetails.estimatedCompletion && (
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Previsão de Conclusão</Label>
+                    <p className="text-sm">{new Date(selectedOrderDetails.estimatedCompletion).toLocaleDateString('pt-BR')}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Valores */}
+              <div className="grid grid-cols-2 gap-4">
+                {selectedOrderDetails.initialBudget && (
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Orçamento Inicial</Label>
+                    <p className="text-lg font-semibold text-blue-600">R$ {selectedOrderDetails.initialBudget}</p>
+                  </div>
+                )}
+                {selectedOrderDetails.finalCost && (
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Custo Final</Label>
+                    <p className="text-lg font-semibold text-green-600">R$ {selectedOrderDetails.finalCost}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Informações de Entrega */}
+              {selectedOrderDetails.status === "entregue" && selectedOrderDetails.deliveryPersonName && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <Label className="text-sm font-medium text-green-800">Informações de Entrega</Label>
+                  <div className="mt-2 space-y-1 text-sm">
+                    <p><strong>Entregue para:</strong> {selectedOrderDetails.deliveryPersonName}</p>
+                    <p><strong>CPF:</strong> {selectedOrderDetails.deliveryPersonCpf}</p>
+                    <p><strong>Telefone:</strong> {selectedOrderDetails.deliveryPersonPhone}</p>
+                    {selectedOrderDetails.deliveredDate && (
+                      <p><strong>Data de Entrega:</strong> {new Date(selectedOrderDetails.deliveredDate).toLocaleDateString('pt-BR')}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsOrderDetailsModalOpen(false)}
+            >
+              Fechar
             </Button>
           </DialogFooter>
         </DialogContent>
