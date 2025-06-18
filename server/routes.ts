@@ -4700,19 +4700,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               // Criar um registro de manutenção pendente
               const novaManutenao: InsertMaintenance = {
-                vehiclePlate: veiculo.plate,
-                vehicleModel: veiculo.model,
-                vehicleType: veiculo.vehicleType,
-                entryDate: new Date(),
+                placa: veiculo.plate,
+                descricao: observacoes || 'Cadastro via portal externo',
                 status: 'pendente',
-                description: observacoes || 'Cadastro via portal externo',
-                type: 'corretiva',
-                workshopId: oficina.id,
-                workshopName: oficina.name,
-                requestBaseId: veiculo.baseId || 1, // Usa a base do veículo ou base padrão
-                maintenanceItems: [],
-                expectedExitDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 dias após
-                totalValue: 0
+                tipo: 'corretiva',
+                oficina_id: oficina.id,
+                base_id: veiculo.baseId || 1, // Usa a base do veículo ou base padrão
+                data_solicitacao: new Date(),
+                data_agendada: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 dias após
+                prioridade: 'normal'
               };
               
               await storage.createMaintenance(novaManutenao);

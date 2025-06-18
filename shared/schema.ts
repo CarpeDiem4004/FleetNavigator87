@@ -193,19 +193,22 @@ export const carReceptions = pgTable("car_receptions", {
 // Create the maintenance table (manutencao)
 export const maintenance = pgTable("manutencao", {
   id: serial("id").primaryKey(),
-  vehiclePlate: text("vehicle_plate").notNull().references(() => vehicles.plate),
-  description: text("description").notNull(),
+  placa: text("placa").notNull().references(() => vehicles.plate),
+  descricao: text("descricao").notNull(),
   status: text("status").notNull(),
-  priority: text("priority"),
-  maintenanceType: text("maintenance_type").notNull(),
-  workshopId: integer("workshop_id"),
-  requestBaseId: integer("request_base_id"),
-  estimatedCompletion: date("estimated_completion"), // equivalente ao expectedExitDate
-  entryDate: date("entry_date").notNull(),
-  completionDate: date("completion_date"), // equivalente ao actualExitDate
-  cost: decimal("cost", { precision: 10, scale: 2 }),
-  responsiblePerson: text("responsible_person"),
-  initialBudget: decimal("initial_budget", { precision: 10, scale: 2 }),
+  prioridade: text("prioridade"),
+  tipo: text("tipo").notNull(),
+  oficina_id: integer("oficina_id"),
+  base_id: integer("base_id"),
+  data_agendada: timestamp("data_agendada"),
+  data_solicitacao: timestamp("data_solicitacao").notNull(),
+  data_conclusao: timestamp("data_conclusao"),
+  custo: decimal("custo", { precision: 10, scale: 2 }),
+  responsavel: text("responsavel"),
+  km_atual: integer("km_atual"),
+  observacoes: text("observacoes"),
+  veiculo_id: integer("veiculo_id"),
+  solicitante_id: integer("solicitante_id"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
@@ -408,15 +411,15 @@ export const basesRelations = relations(bases, ({ many }) => ({
 
 export const maintenanceRelations = relations(maintenance, ({ one, many }) => ({
   vehicle: one(vehicles, {
-    fields: [maintenance.vehiclePlate],
+    fields: [maintenance.placa],
     references: [vehicles.plate],
   }),
   workshop: one(workshops, {
-    fields: [maintenance.workshopId],
+    fields: [maintenance.oficina_id],
     references: [workshops.id],
   }),
   requestBase: one(bases, {
-    fields: [maintenance.requestBaseId],
+    fields: [maintenance.base_id],
     references: [bases.id],
     relationName: "requestedMaintenance"
   }),
