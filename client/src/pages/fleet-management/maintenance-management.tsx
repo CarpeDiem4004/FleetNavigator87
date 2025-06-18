@@ -23,7 +23,8 @@ import {
   Users,
   TrendingUp,
   Download,
-  Printer
+  Printer,
+  AlertTriangle
 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useToast } from "@/hooks/use-toast";
@@ -159,6 +160,8 @@ export default function MaintenanceManagement() {
   const [isWorkshopModalOpen, setIsWorkshopModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedReception, setSelectedReception] = useState<CarReception | null>(null);
+  const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  const [overdueVehicles, setOverdueVehicles] = useState<{orders: ServiceOrder[], receptions: CarReception[]}>({orders: [], receptions: []});
   const [isCreating, setIsCreating] = useState(false);
   const [isCreatingWorkshop, setIsCreatingWorkshop] = useState(false);
   const { toast } = useToast();
@@ -237,6 +240,11 @@ export default function MaintenanceManagement() {
         total_cost: totalCost,
         average_cost: orders.length > 0 ? totalCost / orders.length : 0
       });
+
+      // Check for overdue vehicles after loading all data
+      setTimeout(() => {
+        checkOverdueVehicles();
+      }, 100);
 
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
@@ -335,6 +343,30 @@ export default function MaintenanceManagement() {
   const handleOpenDetails = (reception: CarReception) => {
     setSelectedReception(reception);
     setIsDetailsModalOpen(true);
+  };
+
+  const checkOverdueVehicles = () => {
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+    // Check service orders that are overdue
+    const overdueOrders = serviceOrders.filter(order => {
+      const lastUpdate = new Date(order.updated_at);
+      const isInProgress = order.status === 'em_andamento' || order.status === 'aguardando_orcamento';
+      return isInProgress && lastUpdate < threeDaysAgo;
+    });
+
+    // Check vehicle receptions that are overdue
+    const overdueReceptions = carReceptions.filter(reception => {
+      const receivedDate = new Date(reception.receivedDate);
+      const isNotCompleted = reception.status !== 'entregue';
+      return isNotCompleted && receivedDate < threeDaysAgo;
+    });
+
+    setOverdueVehicles({
+      orders: overdueOrders,
+      receptions: overdueReceptions
+    });
   };
 
   const generateServiceOrderPDF = (order: ServiceOrder) => {
@@ -749,6 +781,41 @@ export default function MaintenanceManagement() {
               </DialogContent>
             </Dialog>
           </div>
+
+          {/* Alerta de Veículos Atrasados */}
+          {(overdueVehicles.orders.length > 0 || overdueVehicles.receptions.length > 0) && (
+            <Card className="border-red-200 bg-red-50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-medium text-red-800 flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5" />
+                  Veículos com Atraso na Manutenção
+                </CardTitle>
+                <CardDescription className="text-red-600">
+                  Veículos há mais de 3 dias sem atualização
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div 
+                    className="flex items-center justify-between cursor-pointer p-2 rounded bg-red-100 hover:bg-red-200 transition-colors"
+                    onClick={() => setIsAlertModalOpen(true)}
+                  >
+                    <div>
+                      <span className="font-medium text-red-800">
+                        {overdueVehicles.orders.length + overdueVehicles.receptions.length} veículo(s) em atraso
+                      </span>
+                      <p className="text-sm text-red-600">
+                        {overdueVehicles.orders.length} ordens de serviço • {overdueVehicles.receptions.length} recebimentos
+                      </p>
+                    </div>
+                    <div className="text-2xl font-bold text-red-600">
+                      {overdueVehicles.orders.length + overdueVehicles.receptions.length}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Estatísticas */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
