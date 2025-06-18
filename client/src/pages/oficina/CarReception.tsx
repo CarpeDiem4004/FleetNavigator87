@@ -132,6 +132,34 @@ function CarReception() {
     }
   };
 
+  // Detectar modo de edição através da URL e localStorage
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isEdit = urlParams.get('edit') === 'true';
+    const id = urlParams.get('id');
+    
+    if (isEdit && id) {
+      setIsEditMode(true);
+      setEditingId(parseInt(id));
+      
+      // Carregar dados do localStorage
+      const savedData = localStorage.getItem('editingReception');
+      if (savedData) {
+        try {
+          const receptionData = JSON.parse(savedData);
+          loadReceptionForEdit(receptionData);
+        } catch (error) {
+          console.error('Erro ao carregar dados de edição:', error);
+          toast({
+            title: "Erro",
+            description: "Erro ao carregar dados para edição",
+            variant: "destructive",
+          });
+        }
+      }
+    }
+  }, []);
+
   // Carregar bases e projetos
   useEffect(() => {
     const loadData = async () => {
@@ -284,21 +312,47 @@ function CarReception() {
         currentKm: Number(data.currentKm),
         laborCost: Number(data.laborCost || 0),
         partsCost: Number(data.partsCost || 0),
+        replacedParts: JSON.stringify(parts), // Incluir as peças
       };
 
-      await workshopAPI.createCarReception(submissionData);
+      if (isEditMode && editingId) {
+        // Atualizar recebimento existente
+        const token = localStorage.getItem("oficina_token");
+        const response = await fetch(`/api/oficina/car-receptions/${editingId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify(submissionData)
+        });
+
+        if (!response.ok) {
+          throw new Error("Erro ao atualizar recebimento");
+        }
+
+        toast({
+          title: "Recebimento atualizado com sucesso",
+          description: `Veículo ${data.vehiclePlate} foi atualizado.`,
+        });
+      } else {
+        // Criar novo recebimento
+        await workshopAPI.createCarReception(submissionData);
+        
+        toast({
+          title: "Recebimento registrado com sucesso",
+          description: `Veículo ${data.vehiclePlate} recebido para manutenção.`,
+        });
+      }
       
-      toast({
-        title: "Recebimento registrado com sucesso",
-        description: `Veículo ${data.vehiclePlate} recebido para manutenção.`,
-      });
-      
-      form.reset();
+      // Limpar localStorage e redirecionar
+      localStorage.removeItem('editingReception');
+      setLocation('/maintenance/dashboard-oficina');
       
     } catch (error) {
-      console.error("Erro ao registrar recebimento:", error);
+      console.error("Erro ao processar recebimento:", error);
       toast({
-        title: "Erro ao registrar recebimento",
+        title: isEditMode ? "Erro ao atualizar recebimento" : "Erro ao registrar recebimento",
         description: error instanceof Error ? error.message : "Tente novamente mais tarde.",
         variant: "destructive",
       });
@@ -319,19 +373,45 @@ function CarReception() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-2 mb-6">
-        <Car className="h-6 w-6 text-blue-600" />
-        <h1 className="text-2xl font-bold">Recebimento de Veículos</h1>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <Car className="h-6 w-6 text-blue-600" />
+          <h1 className="text-2xl font-bold">
+            {isEditMode ? "Editar Recebimento" : "Recebimento de Veículos"}
+          </h1>
+        </div>
+        {isEditMode && (
+          <Button 
+            variant="outline" 
+            onClick={() => setLocation('/maintenance/dashboard-oficina')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar ao Dashboard
+          </Button>
+        )}
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5" />
-            Novo Recebimento
+            {isEditMode ? (
+              <>
+                <Edit className="h-5 w-5" />
+                Editar Recebimento
+              </>
+            ) : (
+              <>
+                <Plus className="h-5 w-5" />
+                Novo Recebimento
+              </>
+            )}
           </CardTitle>
           <CardDescription>
-            Registre a entrada de um veículo para manutenção
+            {isEditMode 
+              ? "Atualize as informações do veículo recebido"
+              : "Registre a entrada de um veículo para manutenção"
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -661,7 +741,10 @@ function CarReception() {
 
               <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
                 <Save className="h-4 w-4 mr-2" />
-                {isLoading ? "Registrando..." : "Registrar Recebimento"}
+                {isLoading ? 
+                  (isEditMode ? "Atualizando..." : "Registrando...") : 
+                  (isEditMode ? "Atualizar Recebimento" : "Registrar Recebimento")
+                }
               </Button>
             </form>
           </Form>
