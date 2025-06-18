@@ -1256,7 +1256,11 @@ export default function MaintenanceManagement() {
                           <p className="text-sm">{order.description}</p>
                         </div>
                         <div className="flex gap-2 mt-4">
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => openOrderDetailsModal(order)}
+                          >
                             <Eye className="mr-2 h-4 w-4" />
                             Detalhes
                           </Button>
@@ -2293,6 +2297,162 @@ export default function MaintenanceManagement() {
               Fechar
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Detalhes da Ordem de Serviço */}
+      <Dialog open={isOrderDetailsModalOpen} onOpenChange={setIsOrderDetailsModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-6 w-6" />
+              Detalhes da Ordem de Serviço #{selectedOrderDetails?.id}
+            </DialogTitle>
+            <DialogDescription>
+              Informações completas da ordem de serviço
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedOrderDetails && (
+            <div className="space-y-6">
+              {/* Informações do Veículo */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Placa do Veículo</Label>
+                    <p className="text-2xl font-bold text-blue-600">{selectedOrderDetails.vehiclePlate}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Modelo do Veículo</Label>
+                    <p className="text-lg">{selectedOrderDetails.vehicleModel || 'Não informado'}</p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Tipo de Manutenção</Label>
+                    <p className="text-lg capitalize">{selectedOrderDetails.maintenanceType}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Status</Label>
+                    <div className="mt-2">
+                      {getStatusBadge(selectedOrderDetails.status)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Oficina e Responsável */}
+              <div className="bg-orange-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-lg mb-3 text-orange-800">Oficina Responsável</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Nome da Oficina</Label>
+                    <p className="font-medium text-lg">{selectedOrderDetails.workshopName || 'Não informado'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Responsável</Label>
+                    <p className="font-medium">{selectedOrderDetails.responsiblePerson}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cronograma */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-lg mb-3 text-blue-800">Cronograma</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Data de Entrada</Label>
+                    <p className="font-medium">{new Date(selectedOrderDetails.entryDate).toLocaleDateString('pt-BR')}</p>
+                    <p className="text-xs text-gray-500">{new Date(selectedOrderDetails.entryDate).toLocaleTimeString('pt-BR')}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Previsão de Conclusão</Label>
+                    <p className="font-medium">{new Date(selectedOrderDetails.estimatedCompletion).toLocaleDateString('pt-BR')}</p>
+                    <p className="text-xs text-gray-500">{new Date(selectedOrderDetails.estimatedCompletion).toLocaleTimeString('pt-BR')}</p>
+                  </div>
+                  {selectedOrderDetails.completionDate && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Data de Conclusão</Label>
+                      <p className="font-medium text-green-600">{new Date(selectedOrderDetails.completionDate).toLocaleDateString('pt-BR')}</p>
+                      <p className="text-xs text-gray-500">{new Date(selectedOrderDetails.completionDate).toLocaleTimeString('pt-BR')}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Descrição do Serviço */}
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Descrição do Serviço</Label>
+                <div className="mt-2 p-4 bg-gray-50 rounded-lg border">
+                  <p className="text-sm leading-relaxed">{selectedOrderDetails.description}</p>
+                </div>
+              </div>
+
+              {/* Informações Financeiras */}
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-lg mb-3 text-green-800">Informações Financeiras</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Orçamento Inicial</Label>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {new Intl.NumberFormat('pt-BR', { 
+                        style: 'currency', 
+                        currency: 'BRL' 
+                      }).format(parseFloat(selectedOrderDetails.initialBudget || '0'))}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Custo Final</Label>
+                    <p className="text-2xl font-bold text-green-600">
+                      {new Intl.NumberFormat('pt-BR', { 
+                        style: 'currency', 
+                        currency: 'BRL' 
+                      }).format(parseFloat(selectedOrderDetails.cost || '0'))}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Base Solicitante */}
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-lg mb-3 text-purple-800">Base Solicitante</h3>
+                <p className="font-medium text-lg">{selectedOrderDetails.baseName || 'Não informado'}</p>
+              </div>
+
+              {/* Histórico de Atualizações */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-lg mb-3">Histórico</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Criado em:</span>
+                    <span className="text-sm">{new Date(selectedOrderDetails.created_at).toLocaleString('pt-BR')}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Última atualização:</span>
+                    <span className="text-sm">{new Date(selectedOrderDetails.updated_at).toLocaleString('pt-BR')}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsOrderDetailsModalOpen(false)}
+            >
+              Fechar
+            </Button>
+            {selectedOrderDetails && (
+              <Button 
+                onClick={() => generateServiceOrderPDF(selectedOrderDetails)}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Gerar PDF
+              </Button>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </AppLayout>
