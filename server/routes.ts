@@ -6121,9 +6121,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'Token inválido' });
       }
       
-      // Buscar oficina pelo ID do token
+      // Buscar oficina pelo ID do token (workshops é a tabela correta)
       const result = await pool.query(
-        'SELECT * FROM oficinas WHERE id = $1 AND status = $2',
+        'SELECT * FROM workshops WHERE id = $1 AND status = $2',
         [decoded.id, 'ativo']
       );
       
@@ -6297,6 +6297,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const orderId = parseInt(req.params.id);
       const { deliveryPersonName, deliveryPersonCpf, deliveryPersonPhone, status } = req.body;
 
+      console.log(`Tentativa de entrega da ordem ${orderId} pela oficina ${req.oficina?.id}`);
+
       // Validar dados obrigatórios
       if (!deliveryPersonName || !deliveryPersonCpf || !deliveryPersonPhone) {
         return res.status(400).json({ 
@@ -6319,7 +6321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const order = checkResult.rows[0];
 
       // Verificar se a ordem pertence à oficina logada
-      if (order.oficina_id !== req.user.oficina_id) {
+      if (order.oficina_id !== req.oficina.id) {
         return res.status(403).json({ message: 'Acesso negado. Esta ordem não pertence à sua oficina' });
       }
 
