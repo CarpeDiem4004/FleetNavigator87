@@ -1706,6 +1706,36 @@ export default function MaintenanceManagement() {
                 </div>
               )}
 
+              {/* Informações de Entrega do Veículo */}
+              {selectedReception.status === 'entregue' && selectedReception.deliveryPersonName && (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <h3 className="font-semibold mb-3 flex items-center gap-2 text-green-800">
+                    <User className="h-4 w-4" />
+                    Dados de Quem Retirou o Veículo
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Nome Completo</p>
+                      <p className="font-medium">{selectedReception.deliveryPersonName}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">CPF</p>
+                      <p className="font-medium">{selectedReception.deliveryPersonCpf}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Telefone</p>
+                      <p className="font-medium">{selectedReception.deliveryPersonPhone}</p>
+                    </div>
+                    {selectedReception.deliveredDate && (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Data de Entrega</p>
+                        <p className="font-medium">{new Date(selectedReception.deliveredDate).toLocaleDateString('pt-BR')} às {new Date(selectedReception.deliveredDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Custos */}
               <div className="p-4 bg-gray-50 rounded-lg">
                 <h3 className="font-semibold mb-3">Detalhamento de Custos</h3>
