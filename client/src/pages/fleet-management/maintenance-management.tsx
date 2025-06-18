@@ -62,6 +62,10 @@ interface ServiceOrder {
   workshopName?: string;
   baseName?: string;
   currentKm?: number;
+  deliveryPersonName?: string;
+  deliveryPersonCpf?: string;
+  deliveryPersonPhone?: string;
+  deliveredDate?: string;
 }
 
 interface Workshop {
@@ -1807,6 +1811,44 @@ export default function MaintenanceManagement() {
                 </div>
               )}
 
+              {/* Dados de Entrega do Veículo */}
+              {(selectedReception.deliveryPersonName || selectedReception.deliveryPersonCpf || selectedReception.deliveryPersonPhone) && (
+                <div className="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
+                  <h3 className="font-semibold text-lg mb-3 text-yellow-800 flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Dados de Quem Retirou o Veículo
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {selectedReception.deliveryPersonName && (
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Nome Completo</Label>
+                        <p className="font-medium text-lg">{selectedReception.deliveryPersonName}</p>
+                      </div>
+                    )}
+                    {selectedReception.deliveryPersonCpf && (
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">CPF</Label>
+                        <p className="font-medium">{selectedReception.deliveryPersonCpf}</p>
+                      </div>
+                    )}
+                    {selectedReception.deliveryPersonPhone && (
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Telefone</Label>
+                        <p className="font-medium">{selectedReception.deliveryPersonPhone}</p>
+                      </div>
+                    )}
+                  </div>
+                  {selectedReception.deliveredDate && (
+                    <div className="mt-3 pt-3 border-t border-yellow-200">
+                      <Label className="text-sm font-medium text-gray-600">Data e Hora da Retirada</Label>
+                      <p className="font-medium text-green-600">
+                        {new Date(selectedReception.deliveredDate).toLocaleString('pt-BR')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Custos */}
               <div className="p-4 bg-gray-50 rounded-lg">
                 <h3 className="font-semibold mb-3">Detalhamento de Custos</h3>
@@ -2419,6 +2461,44 @@ export default function MaintenanceManagement() {
                 <h3 className="font-semibold text-lg mb-3 text-purple-800">Base Solicitante</h3>
                 <p className="font-medium text-lg">{selectedOrderDetails.baseName || 'Não informado'}</p>
               </div>
+
+              {/* Dados de Entrega do Veículo */}
+              {(selectedOrderDetails.deliveryPersonName || selectedOrderDetails.deliveryPersonCpf || selectedOrderDetails.deliveryPersonPhone) && (
+                <div className="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
+                  <h3 className="font-semibold text-lg mb-3 text-yellow-800 flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Dados de Quem Retirou o Veículo
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {selectedOrderDetails.deliveryPersonName && (
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Nome Completo</Label>
+                        <p className="font-medium text-lg">{selectedOrderDetails.deliveryPersonName}</p>
+                      </div>
+                    )}
+                    {selectedOrderDetails.deliveryPersonCpf && (
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">CPF</Label>
+                        <p className="font-medium">{selectedOrderDetails.deliveryPersonCpf}</p>
+                      </div>
+                    )}
+                    {selectedOrderDetails.deliveryPersonPhone && (
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Telefone</Label>
+                        <p className="font-medium">{selectedOrderDetails.deliveryPersonPhone}</p>
+                      </div>
+                    )}
+                  </div>
+                  {selectedOrderDetails.deliveredDate && (
+                    <div className="mt-3 pt-3 border-t border-yellow-200">
+                      <Label className="text-sm font-medium text-gray-600">Data e Hora da Retirada</Label>
+                      <p className="font-medium text-green-600">
+                        {new Date(selectedOrderDetails.deliveredDate).toLocaleString('pt-BR')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Histórico de Atualizações */}
               <div className="bg-gray-50 p-4 rounded-lg">
