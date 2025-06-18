@@ -5925,16 +5925,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Mapear os dados do formulário para o formato esperado
       const maintenanceData = {
-        vehiclePlate: req.body.placa,
-        workshopId: parseInt(req.body.oficina_id),
-        description: req.body.descricao,
-        entryDate: req.body.data_prevista,
-        observations: req.body.observacoes || "",
-        maintenanceType: "corretiva",
-        priority: "media",
+        placa: req.body.placa,
+        oficina_id: parseInt(req.body.oficina_id),
+        descricao: req.body.descricao,
+        data_solicitacao: new Date(),
+        data_agendada: new Date(req.body.data_prevista),
+        observacoes: req.body.observacoes || "",
+        tipo: "corretiva",
+        prioridade: "media",
         status: "pendente",
-        requestBaseId: req.user.baseId || 1,
-        vehicleType: "van" // Tipo padrão
+        base_id: req.user.baseId || 1
       };
       
       console.log("Dados formatados para criação:", maintenanceData);
@@ -6452,20 +6452,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if vehicle exists
-      let vehicle = await storage.getVehicleByPlate(result.data.vehiclePlate);
+      let vehicle = await storage.getVehicleByPlate(result.data.placa);
       
       // Se o veículo não existir, mas a placa for válida, criar um veículo temporário
-      if (!vehicle && /^[A-Z]{3}\d{4}$|^[A-Z]{3}\d[A-Z]\d{2}$/.test(result.data.vehiclePlate)) {
-        console.log(`Veículo com placa ${result.data.vehiclePlate} não encontrado. Criando veículo temporário para a base ${result.data.requestBaseId}.`);
+      if (!vehicle && /^[A-Z]{3}\d{4}$|^[A-Z]{3}\d[A-Z]\d{2}$/.test(result.data.placa)) {
+        console.log(`Veículo com placa ${result.data.placa} não encontrado. Criando veículo temporário para a base ${result.data.base_id}.`);
         
         try {
           // Criando o objeto com tipos corretos
           const newVehicleData = {
-            plate: result.data.vehiclePlate,
+            plate: result.data.placa,
             model: "Veículo registrado via manutenção",
             vehicleType: "van" as "van" | "truck" | "fiorino" | "cavalo_mecanico" | "vuc" | "toco" | "carreta",
             status: "em_operacao" as "em_operacao" | "em_manutencao" | "parado",
-            baseId: result.data.requestBaseId,
+            baseId: result.data.base_id,
             ownership: "murici" as "murici" | "locado",
             crlvUrl: null,
             anttUrl: null
@@ -6481,17 +6481,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if workshop exists, if not, create a default one
-      let workshop = await storage.getWorkshop(result.data.workshopId);
+      let workshop = await storage.getWorkshop(result.data.oficina_id);
       
       if (!workshop) {
-        console.log(`Workshop id=${result.data.workshopId} não encontrado. Criando oficina padrão.`);
+        console.log(`Workshop id=${result.data.oficina_id} não encontrado. Criando oficina padrão.`);
         
         // Create a default workshop
         const defaultWorkshop = {
-          name: "Oficina Padrão",
-          address: "Rua Principal, 123",
-          phone: "11987654321",
-          isActive: true
+          cnpj: "00000000000100",
+          razao_social: "Oficina Padrão LTDA",
+          nome_fantasia: "Oficina Padrão",
+          endereco: "Rua Principal, 123",
+          telefone: "11987654321",
+          status: "ativo"
         };
         
         try {
@@ -6499,8 +6501,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Oficina padrão criada com ID ${workshop.id}`);
           
           // Update workshop ID in request if needed
-          if (result.data.workshopId !== workshop.id) {
-            result.data.workshopId = workshop.id;
+          if (result.data.oficina_id !== workshop.id) {
+            result.data.oficina_id = workshop.id;
           }
         } catch (workshopError) {
           console.error("Erro ao criar oficina padrão:", workshopError);
@@ -6509,8 +6511,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if requesting base exists (if different from user's base)
-      if (result.data.requestBaseId !== req.user.baseId) {
-        const requestBase = await storage.getBase(result.data.requestBaseId);
+      if (result.data.base_id !== req.user.baseId) {
+        const requestBase = await storage.getBase(result.data.base_id);
         if (!requestBase) {
           return res.status(404).json({ message: "Requesting base not found" });
         }
@@ -6523,12 +6525,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Garantindo que todos os campos necessários estejam presentes
         const maintenanceData = {
           ...result.data,
-          // Garantir que campos obrigatórios estejam presentes
-          entryDate: result.data.entryDate || new Date().toISOString().split('T')[0],
+          // Garantir que campos obrigatórios estejam presentes com nomes corretos em português
+          data_solicitacao: result.data.data_solicitacao || new Date(),
           status: result.data.status || "pendente",
-          // Garantir que os tipos estejam corretos
-          priority: result.data.priority || "média",
-          maintenanceType: result.data.maintenanceType
+          prioridade: result.data.prioridade || "media",
+          tipo: result.data.tipo || "corretiva"
         };
         
         const newMaintenance = await storage.createMaintenance(maintenanceData);
