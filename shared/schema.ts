@@ -22,6 +22,7 @@ export const messageAuthorEnum = pgEnum('message_author', ['oficina', 'frota']);
 export const vehicleOwnershipEnum = pgEnum('vehicle_ownership', ['murici', 'locado']);
 export const paymentStatusEnum = pgEnum('payment_status', ['pendente', 'pago', 'em_processamento', 'cancelado']);
 export const carReceptionStatusEnum = pgEnum('car_reception_status', ['recebido', 'em_analise', 'aguardando_pecas', 'em_reparo', 'pronto', 'entregue']);
+export const negotiationStatusEnum = pgEnum('negotiation_status', ['aberta', 'em_negociacao', 'prazo_atualizado', 'concluida']);
 
 // Enums para sistema de estoque
 export const inventoryMovementTypeEnum = pgEnum('inventory_movement_type', [
@@ -696,6 +697,49 @@ export const inventoryMovementsRelations = relations(inventoryMovements, ({ one 
   })
 }));
 
+// Tabela para tratativas da gestão de frota com oficinas
+export const maintenanceNegotiations = pgTable("maintenance_negotiations", {
+  id: serial("id").primaryKey(),
+  vehiclePlate: text("vehicle_plate").notNull(),                                  // Placa do veículo
+  maintenanceId: integer("maintenance_id").references(() => maintenance.id),      // Referência à ordem de serviço (se aplicável)
+  carReceptionId: integer("car_reception_id").references(() => carReceptions.id), // Referência ao recebimento (se aplicável)
+  workshopId: integer("workshop_id").notNull().references(() => workshops.id),    // Oficina responsável
+  fleetManagerId: integer("fleet_manager_id").notNull().references(() => users.id), // Gestor de frota responsável
+  originalDeadline: date("original_deadline"),                                    // Prazo original
+  newDeadline: date("new_deadline"),                                               // Novo prazo negociado
+  negotiationReason: text("negotiation_reason").notNull(),                        // Motivo da negociação
+  fleetComments: text("fleet_comments"),                                           // Comentários da gestão de frota
+  workshopResponse: text("workshop_response"),                                     // Resposta da oficina
+  status: negotiationStatusEnum("status").notNull().default('aberta'),            // Status da negociação
+  priority: text("priority").notNull().default('media'),                          // Prioridade (baixa, media, alta, urgente)
+  contactMethod: text("contact_method"),                                           // Método de contato usado (telefone, email, whatsapp)
+  contactDate: timestamp("contact_date").defaultNow(),                            // Data do contato
+  followUpDate: date("follow_up_date"),                                            // Data para próximo acompanhamento
+  resolved: boolean("resolved").default(false),                                   // Se foi resolvida
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Relações para as tratativas
+export const maintenanceNegotiationsRelations = relations(maintenanceNegotiations, ({ one }) => ({
+  maintenance: one(maintenance, {
+    fields: [maintenanceNegotiations.maintenanceId],
+    references: [maintenance.id]
+  }),
+  carReception: one(carReceptions, {
+    fields: [maintenanceNegotiations.carReceptionId],
+    references: [carReceptions.id]
+  }),
+  workshop: one(workshops, {
+    fields: [maintenanceNegotiations.workshopId],
+    references: [workshops.id]
+  }),
+  fleetManager: one(users, {
+    fields: [maintenanceNegotiations.fleetManagerId],
+    references: [users.id]
+  })
+}));
+
 // Schemas de inserção para o sistema de estoque
 export const insertInventoryItemSchema = createInsertSchema(inventoryItems);
 export const insertInventoryStockSchema = createInsertSchema(inventoryStock);
@@ -732,8 +776,17 @@ export const towingServicePaymentsRelations = relations(towingServicePayments, (
 // Schemas de inserção para pagamentos
 export const insertTowingServicePaymentSchema = createInsertSchema(towingServicePayments);
 
+// Schema de inserção para tratativas
+export const insertMaintenanceNegotiationSchema = createInsertSchema(maintenanceNegotiations).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
 // Tipos para inserção
 export type InsertInventoryItem = z.infer<typeof insertInventoryItemSchema>;
+export type MaintenanceNegotiation = typeof maintenanceNegotiations.$inferSelect;
+export type InsertMaintenanceNegotiation = z.infer<typeof insertMaintenanceNegotiationSchema>;
 export type InsertInventoryStock = z.infer<typeof insertInventoryStockSchema>;
 export type InsertInventoryMovement = z.infer<typeof insertInventoryMovementSchema>;
 export type InsertBaseRequest = z.infer<typeof insertBaseRequestSchema>;

@@ -5081,6 +5081,148 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // TRATATIVAS DE MANUTENÇÃO - Rotas para gestão de frota negociar prazos com oficinas
+  
+  // Criar nova tratativa de manutenção
+  app.post("/api/maintenance/negotiations", hasMaintenanceAccess, async (req, res) => {
+    try {
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Acesso negado. Apenas administradores podem criar tratativas." });
+      }
+
+      const negotiationData = {
+        vehiclePlate: req.body.vehiclePlate,
+        maintenanceId: req.body.maintenanceId || null,
+        carReceptionId: req.body.carReceptionId || null,
+        workshopId: req.body.workshopId,
+        fleetManagerId: req.user.id,
+        originalDeadline: req.body.originalDeadline,
+        newDeadline: req.body.newDeadline,
+        negotiationReason: req.body.negotiationReason,
+        fleetComments: req.body.fleetComments,
+        priority: req.body.priority || 'media',
+        contactMethod: req.body.contactMethod,
+        followUpDate: req.body.followUpDate
+      };
+
+      const query = `
+        INSERT INTO maintenance_negotiations (
+          vehicle_plate, maintenance_id, car_reception_id, workshop_id, fleet_manager_id,
+          original_deadline, new_deadline, negotiation_reason, fleet_comments,
+          priority, contact_method, follow_up_date
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        RETURNING *
+      `;
+
+      const values = [
+        negotiationData.vehiclePlate,
+        negotiationData.maintenanceId,
+        negotiationData.carReceptionId,
+        negotiationData.workshopId,
+        negotiationData.fleetManagerId,
+        negotiationData.originalDeadline,
+        negotiationData.newDeadline,
+        negotiationData.negotiationReason,
+        negotiationData.fleetComments,
+        negotiationData.priority,
+        negotiationData.contactMethod,
+        negotiationData.followUpDate
+      ];
+
+      const result = await pool.query(query, values);
+      
+      console.log(`Nova tratativa criada para veículo ${negotiationData.vehiclePlate}`);
+      return res.status(201).json(result.rows[0]);
+    } catch (error) {
+      console.error("Erro ao criar tratativa:", error);
+      return res.status(500).json({ message: "Erro ao criar tratativa" });
+    }
+  });
+
+  // Buscar tratativas por placa do veículo
+  app.get("/api/maintenance/negotiations/:vehiclePlate", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const vehiclePlate = req.params.vehiclePlate;
+
+      const query = `
+        SELECT 
+          mn.*,
+          o.razao_social as workshop_name,
+          u.name as fleet_manager_name
+        FROM maintenance_negotiations mn
+        LEFT JOIN oficinas o ON mn.workshop_id = o.id
+        LEFT JOIN users u ON mn.fleet_manager_id = u.id
+        WHERE mn.vehicle_plate = $1
+        ORDER BY mn.created_at DESC
+      `;
+
+      const result = await pool.query(query, [vehiclePlate]);
+      return res.status(200).json(result.rows);
+    } catch (error) {
+      console.error("Erro ao buscar tratativas:", error);
+      return res.status(500).json({ message: "Erro ao buscar tratativas" });
+    }
+  });
+
+  // Atualizar status da tratativa
+  app.patch("/api/maintenance/negotiations/:id", hasMaintenanceAccess, async (req, res) => {
+    try {
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+
+      const negotiationId = parseInt(req.params.id);
+      const { status, workshopResponse, newDeadline, resolved } = req.body;
+
+      const query = `
+        UPDATE maintenance_negotiations 
+        SET 
+          status = COALESCE($1, status),
+          workshop_response = COALESCE($2, workshop_response),
+          new_deadline = COALESCE($3, new_deadline),
+          resolved = COALESCE($4, resolved),
+          updated_at = NOW()
+        WHERE id = $5
+        RETURNING *
+      `;
+
+      const result = await pool.query(query, [status, workshopResponse, newDeadline, resolved, negotiationId]);
+      
+      if (result.rowCount === 0) {
+        return res.status(404).json({ message: "Tratativa não encontrada" });
+      }
+
+      return res.status(200).json(result.rows[0]);
+    } catch (error) {
+      console.error("Erro ao atualizar tratativa:", error);
+      return res.status(500).json({ message: "Erro ao atualizar tratativa" });
+    }
+  });
+
+  // Buscar todas as tratativas em aberto
+  app.get("/api/maintenance/negotiations", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const query = `
+        SELECT 
+          mn.*,
+          o.razao_social as workshop_name,
+          u.name as fleet_manager_name
+        FROM maintenance_negotiations mn
+        LEFT JOIN oficinas o ON mn.workshop_id = o.id
+        LEFT JOIN users u ON mn.fleet_manager_id = u.id
+        WHERE mn.resolved = false
+        ORDER BY mn.created_at DESC
+      `;
+
+      const result = await pool.query(query);
+      return res.status(200).json(result.rows);
+    } catch (error) {
+      console.error("Erro ao buscar tratativas:", error);
+      return res.status(500).json({ message: "Erro ao buscar tratativas" });
+    }
+  });
+
   // Rota específica para buscar manutenções de uma base específica
   app.get("/api/maintenance/base/:baseId", hasMaintenanceAccess, async (req, res) => {
     try {
