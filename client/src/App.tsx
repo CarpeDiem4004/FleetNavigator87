@@ -115,6 +115,7 @@ import OficinasExternaPage from "@/pages/OficinasExternaPage";
 import OficinaDashboard from "@/pages/oficina/OficinaDashboard";
 import OficinaLogin from "@/pages/oficina/OficinaLogin";
 import CarReception from "@/pages/oficina/CarReception";
+import OficinasCredentialsPage from "@/pages/maintenance/oficinas-credentials";
 import OficinaMurici from "@/pages/OficinaMurici";
 import BaseRequests from "@/pages/BaseRequests";
 import CartaoAbastecimentoPage from "@/pages/CartaoAbastecimentoPage";
@@ -317,6 +318,7 @@ function App() {
           <ProtectedRoute path="/drivers" component={DriversPage} />
           <ProtectedRoute path="/manutencao" component={ManutencaoPage} />
           <ProtectedRoute path="/tratativa-manutencao" component={TratativaManutencaoPage} />
+          <ProtectedRoute path="/maintenance/oficinas-credentials" component={OficinasCredentialsPage} />
           <ProtectedRoute path="/tires" component={TiresPage} />
           
           {/* Rota pública para checklist do motorista */}

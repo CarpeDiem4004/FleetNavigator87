@@ -8795,6 +8795,170 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // API endpoints for workshop credential management
+  // Get all workshops with credential information
+  app.get("/api/workshops/credentials", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const workshops = await storage.getAllWorkshops();
+      
+      // Get user credentials for each workshop
+      const workshopsWithCredentials = await Promise.all(
+        workshops.map(async (workshop) => {
+          // Find user associated with this workshop
+          const users = await storage.getAllUsers();
+          const workshopUser = users.find(user => user.oficina_id === workshop.id);
+          
+          return {
+            id: workshop.id,
+            name: workshop.name,
+            cnpj: workshop.cnpj || '',
+            email: workshop.email || '',
+            phone: workshop.phone || '',
+            password: workshop.password ? '••••••••' : null, // Mask password if exists
+            hasCredentials: !!(workshop.password && workshopUser),
+            lastLogin: workshop.last_login || null,
+            status: workshop.isActive ? 'active' : 'inactive',
+            userEmail: workshopUser?.email || null
+          };
+        })
+      );
+      
+      res.status(200).json(workshopsWithCredentials);
+    } catch (error: any) {
+      console.error("Erro ao buscar credenciais das oficinas:", error);
+      res.status(500).json({ 
+        message: "Erro ao buscar credenciais das oficinas",
+        error: error.message 
+      });
+    }
+  });
+
+  // Set/update password for a workshop
+  app.post("/api/workshops/:id/password", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const workshopId = parseInt(req.params.id);
+      const { password } = req.body;
+      
+      if (!password || password.length < 6) {
+        return res.status(400).json({ 
+          message: "Senha deve ter pelo menos 6 caracteres" 
+        });
+      }
+      
+      // Hash the password
+      const hashedPassword = await hashPassword(password);
+      
+      // Update workshop password
+      const updateQuery = `
+        UPDATE workshops 
+        SET password = $1, updated_at = NOW() 
+        WHERE id = $2 
+        RETURNING id, name, email
+      `;
+      
+      const result = await pool.query(updateQuery, [hashedPassword, workshopId]);
+      
+      if (result.rowCount === 0) {
+        return res.status(404).json({ message: "Oficina não encontrada" });
+      }
+      
+      const workshop = result.rows[0];
+      
+      // Also create/update user account for this workshop if needed
+      const users = await storage.getAllUsers();
+      const existingUser = users.find(user => user.oficina_id === workshopId);
+      
+      if (!existingUser) {
+        // Create new user account
+        const workshopEmail = `${workshop.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@muricionfleet.com`;
+        
+        const newUser: InsertUser = {
+          name: workshop.name,
+          email: workshopEmail,
+          password: hashedPassword,
+          role: 'oficina',
+          oficina_id: workshopId
+        };
+        
+        await storage.createUser(newUser);
+      } else {
+        // Update existing user password
+        await pool.query(
+          'UPDATE users SET password = $1 WHERE id = $2',
+          [hashedPassword, existingUser.id]
+        );
+      }
+      
+      res.status(200).json({ 
+        message: "Senha atualizada com sucesso",
+        workshop: {
+          id: workshop.id,
+          name: workshop.name,
+          hasCredentials: true
+        }
+      });
+    } catch (error: any) {
+      console.error("Erro ao definir senha da oficina:", error);
+      res.status(500).json({ 
+        message: "Erro ao definir senha da oficina",
+        error: error.message 
+      });
+    }
+  });
+
+  // Reset password for a workshop (generate new random password)
+  app.post("/api/workshops/:id/reset-password", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const workshopId = parseInt(req.params.id);
+      
+      // Generate new random password
+      const newPassword = generateRandomPassword(8);
+      const hashedPassword = await hashPassword(newPassword);
+      
+      // Update workshop password
+      const updateQuery = `
+        UPDATE workshops 
+        SET password = $1, updated_at = NOW() 
+        WHERE id = $2 
+        RETURNING id, name, email
+      `;
+      
+      const result = await pool.query(updateQuery, [hashedPassword, workshopId]);
+      
+      if (result.rowCount === 0) {
+        return res.status(404).json({ message: "Oficina não encontrada" });
+      }
+      
+      const workshop = result.rows[0];
+      
+      // Update user password as well
+      const users = await storage.getAllUsers();
+      const existingUser = users.find(user => user.oficina_id === workshopId);
+      
+      if (existingUser) {
+        await pool.query(
+          'UPDATE users SET password = $1 WHERE id = $2',
+          [hashedPassword, existingUser.id]
+        );
+      }
+      
+      res.status(200).json({ 
+        message: "Senha resetada com sucesso",
+        newPassword: newPassword, // Return the plain password for admin to share
+        workshop: {
+          id: workshop.id,
+          name: workshop.name
+        }
+      });
+    } catch (error: any) {
+      console.error("Erro ao resetar senha da oficina:", error);
+      res.status(500).json({ 
+        message: "Erro ao resetar senha da oficina",
+        error: error.message 
+      });
+    }
+  });
+
   // Criar um novo chat de manutenção
   app.post("/api/workshop/maintenance-chat", hasMaintenanceAccess, async (req, res) => {
     try {
