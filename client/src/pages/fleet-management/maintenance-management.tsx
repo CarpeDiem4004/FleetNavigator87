@@ -2095,19 +2095,19 @@ export default function MaintenanceManagement() {
                         {/* Prazos */}
                         <div>
                           <h4 className="font-medium text-sm text-muted-foreground mb-2">Prazos</h4>
-                          {negotiation.originalDeadline && (
+                          {negotiation.original_deadline && (
                             <p className="text-sm">
-                              <span className="font-medium">Original:</span> {new Date(negotiation.originalDeadline).toLocaleDateString('pt-BR')}
+                              <span className="font-medium">Original:</span> {new Date(negotiation.original_deadline).toLocaleDateString('pt-BR')}
                             </p>
                           )}
-                          {negotiation.newDeadline && (
+                          {negotiation.new_deadline && (
                             <p className="text-sm">
-                              <span className="font-medium">Negociado:</span> {new Date(negotiation.newDeadline).toLocaleDateString('pt-BR')}
+                              <span className="font-medium">Negociado:</span> {new Date(negotiation.new_deadline).toLocaleDateString('pt-BR')}
                             </p>
                           )}
-                          {negotiation.followUpDate && (
+                          {negotiation.follow_up_date && (
                             <p className="text-sm">
-                              <span className="font-medium">Acompanhamento:</span> {new Date(negotiation.followUpDate).toLocaleDateString('pt-BR')}
+                              <span className="font-medium">Acompanhamento:</span> {new Date(negotiation.follow_up_date).toLocaleDateString('pt-BR')}
                             </p>
                           )}
                         </div>
@@ -2116,10 +2116,10 @@ export default function MaintenanceManagement() {
                         <div>
                           <h4 className="font-medium text-sm text-muted-foreground mb-2">Método de Contato</h4>
                           <div className="flex items-center gap-2">
-                            {negotiation.contactMethod === 'telefone' && <Phone className="h-4 w-4" />}
-                            {negotiation.contactMethod === 'email' && <Mail className="h-4 w-4" />}
-                            {negotiation.contactMethod === 'presencial' && <Building2 className="h-4 w-4" />}
-                            <span className="text-sm capitalize">{negotiation.contactMethod || 'Não informado'}</span>
+                            {negotiation.contact_method === 'telefone' && <Phone className="h-4 w-4" />}
+                            {negotiation.contact_method === 'email' && <Mail className="h-4 w-4" />}
+                            {negotiation.contact_method === 'presencial' && <Building2 className="h-4 w-4" />}
+                            <span className="text-sm capitalize">{negotiation.contact_method || 'Não informado'}</span>
                           </div>
                         </div>
 
@@ -2139,29 +2139,29 @@ export default function MaintenanceManagement() {
                       {/* Motivo da Negociação */}
                       <div className="mt-4">
                         <h4 className="font-medium text-sm text-muted-foreground mb-2">Motivo da Negociação</h4>
-                        <p className="text-sm bg-muted p-3 rounded">{negotiation.negotiationReason}</p>
+                        <p className="text-sm bg-muted p-3 rounded">{negotiation.negotiation_reason}</p>
                       </div>
 
                       {/* Comentários da Frota */}
-                      {negotiation.fleetComments && (
+                      {negotiation.fleet_comments && (
                         <div className="mt-4">
                           <h4 className="font-medium text-sm text-muted-foreground mb-2">Comentários da Gestão de Frota</h4>
-                          <p className="text-sm bg-blue-50 border-l-4 border-blue-200 p-3 rounded">{negotiation.fleetComments}</p>
+                          <p className="text-sm bg-blue-50 border-l-4 border-blue-200 p-3 rounded">{negotiation.fleet_comments}</p>
                         </div>
                       )}
 
                       {/* Resposta da Oficina */}
-                      {negotiation.workshopResponse && (
+                      {negotiation.workshop_response && (
                         <div className="mt-4">
                           <h4 className="font-medium text-sm text-muted-foreground mb-2">Resposta da Oficina</h4>
-                          <p className="text-sm bg-green-50 border-l-4 border-green-200 p-3 rounded">{negotiation.workshopResponse}</p>
+                          <p className="text-sm bg-green-50 border-l-4 border-green-200 p-3 rounded">{negotiation.workshop_response}</p>
                         </div>
                       )}
 
                       {/* Indicador de Ordem */}
                       <div className="mt-4 pt-3 border-t flex justify-between items-center text-xs text-muted-foreground">
                         <span>Tratativa {index + 1} de {negotiations.length}</span>
-                        <span>Criada por: {negotiation.fleetManagerName}</span>
+                        <span>Criada por: {negotiation.fleet_manager_name}</span>
                       </div>
                     </CardContent>
                   </Card>
