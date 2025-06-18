@@ -78,6 +78,7 @@ import AutoSaveDemo from "@/pages/diagnostico/AutoSaveDemo";
 import AutenticacaoDiagnostico from "@/pages/diagnostico/AutenticacaoDiagnostico";
 import AdminUtils from "@/pages/AdminUtils";
 import LimparDados from "@/pages/LimparDados";
+import FuelReceiptsPage from "@/pages/fuel-receipts";
 
 // Importação das novas páginas
 import FleetManagement from "@/pages/fleet-management";
@@ -247,6 +248,7 @@ function App() {
           <ProtectedRoute path="/fleet-management/towing-partners/6" component={FordPartnerDetail} />
           <ProtectedRoute path="/fleet-management/towing-partners/:id" component={EditableTowingPartnerDetailPage} />
           <ProtectedRoute path="/accidents" component={Accidents} />
+          <ProtectedRoute path="/fuel-receipts" component={FuelReceiptsPage} />
           <ProtectedRoute path="/work-safety" component={WorkSafety} />
           <ProtectedRoute path="/users" component={UsersNew} />
           <ProtectedRoute path="/bases" component={Bases} />

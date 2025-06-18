@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+import { Pool } from 'pg';
+
 const router = express.Router();
-const { Pool } = require('pg');
 
 // Create pool instance
 const pool = new Pool({
