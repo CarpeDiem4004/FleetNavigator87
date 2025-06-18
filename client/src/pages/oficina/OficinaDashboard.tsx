@@ -684,11 +684,11 @@ export default function OficinaDashboard() {
                       </div>
                       <div className="text-right space-y-2">
                         <div className="text-sm font-semibold text-green-600">
-                          Total: R$ {reception.totalCost.toFixed(2)}
+                          Total: R$ {Number(reception.totalCost || 0).toFixed(2)}
                         </div>
                         <div className="text-xs text-gray-500">
-                          Peças: R$ {reception.partsCost.toFixed(2)} | 
-                          Mão de obra: R$ {reception.laborCost.toFixed(2)}
+                          Peças: R$ {Number(reception.partsCost || 0).toFixed(2)} | 
+                          Mão de obra: R$ {Number(reception.laborCost || 0).toFixed(2)}
                         </div>
                         <Button
                           size="sm"
