@@ -905,6 +905,75 @@ export default function OficinaDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Update Reception Modal */}
+      <Dialog open={isUpdateModalOpen} onOpenChange={setIsUpdateModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5" />
+              Atualizar Status do Veículo
+            </DialogTitle>
+            <DialogDescription>
+              Atualize o status e observações do veículo {selectedReception?.vehiclePlate}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Status */}
+            <div>
+              <Label htmlFor="status">Status *</Label>
+              <Select value={receptionUpdate.status} onValueChange={(value) => 
+                setReceptionUpdate(prev => ({ ...prev, status: value }))
+              }>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recebido">Recebido</SelectItem>
+                  <SelectItem value="em_analise">Em Análise</SelectItem>
+                  <SelectItem value="aguardando_pecas">Aguardando Peças</SelectItem>
+                  <SelectItem value="em_reparo">Em Reparo</SelectItem>
+                  <SelectItem value="pronto">Pronto</SelectItem>
+                  <SelectItem value="entregue">Entregue</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Observações */}
+            <div>
+              <Label htmlFor="notes">Observações</Label>
+              <Textarea
+                id="notes"
+                placeholder="Digite observações sobre o andamento do serviço..."
+                value={receptionUpdate.notes}
+                onChange={(e) => setReceptionUpdate(prev => ({ ...prev, notes: e.target.value }))}
+                rows={3}
+              />
+            </div>
+
+            {/* Previsão de Entrega */}
+            <div>
+              <Label htmlFor="estimatedCompletion">Previsão de Entrega</Label>
+              <Input
+                id="estimatedCompletion"
+                type="date"
+                value={receptionUpdate.estimatedCompletion}
+                onChange={(e) => setReceptionUpdate(prev => ({ ...prev, estimatedCompletion: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsUpdateModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={updateReception} disabled={!receptionUpdate.status}>
+              Atualizar Status
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
