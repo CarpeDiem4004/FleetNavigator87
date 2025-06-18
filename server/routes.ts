@@ -5862,6 +5862,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rota para buscar recebimentos de veículos no sistema principal
+  app.get("/api/maintenance/car-receptions", hasMaintenanceAccess, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Usuário não autenticado" });
+      }
+
+      console.log(`Usuário autenticado: ${req.user.email} buscando recebimentos de veículos`);
+      
+      // Buscar todos os recebimentos com informações das oficinas e bases
+      const query = `
+        SELECT 
+          cr.*,
+          o.name as workshop_name,
+          b.name as base_name
+        FROM car_receptions cr
+        LEFT JOIN oficinas o ON cr.workshop_id = o.id
+        LEFT JOIN bases b ON cr.base_id = b.id
+        ORDER BY cr.received_date DESC
+      `;
+      
+      const result = await pool.query(query);
+      
+      console.log(`Encontrados ${result.rowCount || 0} recebimentos de veículos`);
+      
+      return res.status(200).json({ 
+        receptions: result.rows || [],
+        total: result.rowCount || 0
+      });
+    } catch (error) {
+      console.error("Erro ao buscar recebimentos de veículos:", error);
+      return res.status(500).json({ 
+        message: "Erro ao buscar dados de recebimentos",
+        error: error instanceof Error ? error.message : "Erro desconhecido" 
+      });
+    }
+  });
+
   // ===== ROTAS DA API DA OFICINA =====
   
   // Middleware para verificar token da oficina

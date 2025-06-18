@@ -92,6 +92,30 @@ interface MaintenanceTemplate {
   categoria: string;
 }
 
+interface CarReception {
+  id: number;
+  vehiclePlate: string;
+  vehicleModel: string;
+  vehicleType: string;
+  currentKm: number;
+  baseId: number;
+  projectId: number;
+  projectName: string;
+  serviceDescription: string;
+  replacedParts: string;
+  laborCost: number;
+  partsCost: number;
+  totalCost: number;
+  priority: string;
+  status: string;
+  notes: string;
+  receivedDate: string;
+  deliveryDeadline: string;
+  workshopId: number;
+  workshopName?: string;
+  baseName?: string;
+}
+
 // Schema de validação para nova ordem de serviço
 const newServiceOrderSchema = z.object({
   placa: z.string().min(1, "Placa é obrigatória"),
@@ -117,6 +141,7 @@ export default function MaintenanceManagement() {
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [templates, setTemplates] = useState<MaintenanceTemplate[]>([]);
+  const [carReceptions, setCarReceptions] = useState<CarReception[]>([]);
   const [stats, setStats] = useState<MaintenanceStats>({
     total_orders: 0,
     orders_in_progress: 0,
@@ -186,7 +211,10 @@ export default function MaintenanceManagement() {
       const vehiclesData = await vehiclesResponse.json();
       setVehicles(vehiclesData || []);
 
-
+      // Carregar recebimentos de veículos
+      const receptionsResponse = await apiRequest("GET", "/api/maintenance/car-receptions");
+      const receptionsData = await receptionsResponse.json();
+      setCarReceptions(receptionsData.receptions || []);
 
       // Calcular estatísticas
       const orders = ordersData.orders || [];
