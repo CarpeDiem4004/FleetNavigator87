@@ -224,6 +224,8 @@ export default function MaintenanceManagement() {
   const [isCreatingNegotiation, setIsCreatingNegotiation] = useState(false);
   const [isNegotiationHistoryModalOpen, setIsNegotiationHistoryModalOpen] = useState(false);
   const [selectedVehicleHistory, setSelectedVehicleHistory] = useState<string>("");
+  const [isOrderDetailsModalOpen, setIsOrderDetailsModalOpen] = useState(false);
+  const [selectedOrderDetails, setSelectedOrderDetails] = useState<ServiceOrder | null>(null);
   const { toast } = useToast();
 
   // Form para nova ordem de serviço
@@ -533,6 +535,12 @@ export default function MaintenanceManagement() {
         variant: "destructive"
       });
     }
+  };
+
+  // Função para abrir modal de detalhes da ordem
+  const openOrderDetailsModal = (order: ServiceOrder) => {
+    setSelectedOrderDetails(order);
+    setIsOrderDetailsModalOpen(true);
   };
 
   const checkOverdueVehiclesWithData = (orders: ServiceOrder[], receptions: CarReception[]) => {
