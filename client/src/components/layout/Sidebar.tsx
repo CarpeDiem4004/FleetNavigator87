@@ -18,6 +18,7 @@ import {
   BarChart4,
   Activity,
   ChevronsDown,
+  KeyRound,
   ShieldAlert,
   FileText,
   Package,
