@@ -4951,7 +4951,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Usar SQL direto para garantir compatibilidade
           const query = `
             SELECT * FROM manutencao
-            ORDER BY entry_date DESC
+            ORDER BY data_solicitacao DESC
           `;
           
           const result = await pool.query(query);
