@@ -313,6 +313,9 @@ function CarReception() {
         laborCost: Number(data.laborCost || 0),
         partsCost: Number(data.partsCost || 0),
         replacedParts: JSON.stringify(parts), // Incluir as peças
+        // Sanitizar campos de data - converter strings vazias para null
+        deliveryDeadline: data.deliveryDeadline && data.deliveryDeadline.trim() !== '' ? data.deliveryDeadline : null,
+        completionDate: data.completionDate && data.completionDate.trim() !== '' ? data.completionDate : null,
       };
 
       if (isEditMode && editingId) {

@@ -6147,7 +6147,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const data = req.body;
 
-      const updated = await storage.updateCarReception(parseInt(id), data);
+      // Sanitizar dados de data - converter strings vazias para null
+      const sanitizedData = { ...data };
+      
+      // Lista de campos de data que podem estar vazios
+      const dateFields = ['deliveryDeadline', 'completionDate', 'deliveredDate'];
+      
+      dateFields.forEach(field => {
+        if (sanitizedData[field] === '' || sanitizedData[field] === undefined) {
+          sanitizedData[field] = null;
+        } else if (sanitizedData[field] && typeof sanitizedData[field] === 'string') {
+          // Verificar se é uma data válida
+          const date = new Date(sanitizedData[field]);
+          if (isNaN(date.getTime())) {
+            sanitizedData[field] = null;
+          }
+        }
+      });
+
+      const updated = await storage.updateCarReception(parseInt(id), sanitizedData);
       if (!updated) {
         return res.status(404).json({ message: 'Recebimento não encontrado' });
       }
