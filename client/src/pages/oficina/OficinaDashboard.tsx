@@ -49,6 +49,28 @@ interface ServiceOrder {
   maintenanceType: string;
 }
 
+interface CarReception {
+  id: number;
+  vehiclePlate: string;
+  vehicleModel: string;
+  vehicleType: string;
+  currentKm: number;
+  baseId: number;
+  projectName: string;
+  serviceDescription: string;
+  replacedParts?: string;
+  laborCost: number;
+  partsCost: number;
+  totalCost: number;
+  priority: string;
+  status: string;
+  notes?: string;
+  receivedDate: string;
+  deliveredDate?: string;
+  deliveryDeadline?: string;
+  completedDate?: string;
+}
+
 interface OficinaInfo {
   id: number;
   razao_social: string;
@@ -81,6 +103,7 @@ interface WorkDetails {
 export default function OficinaDashboard() {
   const [, setLocation] = useLocation();
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
+  const [carReceptions, setCarReceptions] = useState<CarReception[]>([]);
   const [oficina, setOficina] = useState<OficinaInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isWorkModalOpen, setIsWorkModalOpen] = useState(false);
@@ -111,25 +134,30 @@ export default function OficinaDashboard() {
         return;
       }
 
-      // Carregar dados da oficina e ordens de serviço
-      const [ordersResponse, oficinaResponse] = await Promise.all([
+      // Carregar dados da oficina, ordens de serviço e recebimentos
+      const [ordersResponse, oficinaResponse, receptionsResponse] = await Promise.all([
         fetch("/api/oficina/orders", {
           headers: { Authorization: `Bearer ${token}` }
         }),
         fetch("/api/oficina/profile", {
           headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch("/api/oficina/car-receptions", {
+          headers: { Authorization: `Bearer ${token}` }
         })
       ]);
 
-      if (!ordersResponse.ok || !oficinaResponse.ok) {
+      if (!ordersResponse.ok || !oficinaResponse.ok || !receptionsResponse.ok) {
         throw new Error("Erro ao carregar dados");
       }
 
       const ordersData = await ordersResponse.json();
       const oficinaData = await oficinaResponse.json();
+      const receptionsData = await receptionsResponse.json();
 
       setOrders(ordersData);
       setOficina(oficinaData);
+      setCarReceptions(receptionsData);
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
       toast({
@@ -350,10 +378,10 @@ export default function OficinaDashboard() {
       description: "Sendo executadas"
     },
     {
-      title: "Concluídas",
-      value: orders.filter(o => o.status === "concluido").length,
-      icon: CheckCircle,
-      description: "Finalizadas"
+      title: "Veículos Recebidos",
+      value: carReceptions.length,
+      icon: Car,
+      description: "Total recebidos"
     },
     {
       title: "Pendentes",
