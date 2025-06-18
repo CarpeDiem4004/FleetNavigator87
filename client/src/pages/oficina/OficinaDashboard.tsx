@@ -120,6 +120,15 @@ export default function OficinaDashboard() {
     completedDate: new Date().toISOString().split('T')[0],
     notes: ''
   });
+  
+  const [selectedReception, setSelectedReception] = useState<CarReception | null>(null);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [receptionUpdate, setReceptionUpdate] = useState({
+    status: "",
+    notes: "",
+    estimatedCompletion: ""
+  });
+  
   const { toast } = useToast();
 
   useEffect(() => {
@@ -353,6 +362,25 @@ export default function OficinaDashboard() {
     );
   };
 
+  const getReceptionStatusBadge = (status: string) => {
+    const statusMap: Record<string, { label: string; className: string }> = {
+      recebido: { label: "Recebido", className: "bg-blue-100 text-blue-800" },
+      em_analise: { label: "Em Análise", className: "bg-yellow-100 text-yellow-800" },
+      aguardando_pecas: { label: "Aguardando Peças", className: "bg-orange-100 text-orange-800" },
+      em_reparo: { label: "Em Reparo", className: "bg-purple-100 text-purple-800" },
+      pronto: { label: "Pronto", className: "bg-green-100 text-green-800" },
+      entregue: { label: "Entregue", className: "bg-gray-100 text-gray-800" }
+    };
+
+    const config = statusMap[status] || { label: status, className: "bg-gray-100 text-gray-800" };
+    
+    return (
+      <Badge className={config.className}>
+        {config.label}
+      </Badge>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -553,6 +581,76 @@ export default function OficinaDashboard() {
                             <span className="text-gray-600">Custo Final: R$ {order.finalCost}</span>
                           </div>
                         )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Veículos Recebidos */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Car className="h-5 w-5" />
+              Veículos Recebidos
+            </CardTitle>
+            <CardDescription>
+              Acompanhe o status dos veículos recebidos para manutenção
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {carReceptions.length === 0 ? (
+              <div className="text-center py-8">
+                <Car className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">Nenhum veículo recebido</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {carReceptions.map((reception) => (
+                  <div key={reception.id} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-3">
+                          <h3 className="font-semibold">Placa: {reception.vehiclePlate}</h3>
+                          {getReceptionStatusBadge(reception.status)}
+                          {getPriorityBadge(reception.priority)}
+                        </div>
+                        <p className="text-sm text-gray-600">{reception.serviceDescription}</p>
+                        <div className="flex gap-4 text-xs text-gray-500">
+                          <span>Modelo: {reception.vehicleModel}</span>
+                          <span>KM: {reception.currentKm?.toLocaleString()}</span>
+                          <span>Projeto: {reception.projectName}</span>
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          Recebido: {new Date(reception.receivedDate).toLocaleDateString('pt-BR')}
+                          {reception.deliveryDeadline && (
+                            <span> | Prazo: {new Date(reception.deliveryDeadline).toLocaleDateString('pt-BR')}</span>
+                          )}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-semibold text-green-600">
+                          Total: R$ {reception.totalCost.toFixed(2)}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Peças: R$ {reception.partsCost.toFixed(2)} | 
+                          Mão de obra: R$ {reception.laborCost.toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {reception.notes && (
+                      <div className="bg-gray-50 p-2 rounded text-sm">
+                        <strong>Observações:</strong> {reception.notes}
+                      </div>
+                    )}
+                    
+                    {reception.replacedParts && (
+                      <div className="bg-blue-50 p-2 rounded text-sm">
+                        <strong>Peças substituídas:</strong> {reception.replacedParts}
                       </div>
                     )}
                   </div>
