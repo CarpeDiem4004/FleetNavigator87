@@ -24,7 +24,11 @@ import {
   TrendingUp,
   Download,
   Printer,
-  AlertTriangle
+  AlertTriangle,
+  MessageSquare,
+  Phone,
+  Mail,
+  Calendar
 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useToast } from "@/hooks/use-toast";
@@ -140,6 +144,45 @@ const newWorkshopSchema = z.object({
   tipo: z.string().min(1, "Tipo de oficina é obrigatório")
 });
 
+// Schema de validação para tratativas de manutenção
+const negotiationSchema = z.object({
+  vehiclePlate: z.string().min(1, "Placa é obrigatória"),
+  workshopId: z.number().min(1, "Oficina é obrigatória"),
+  maintenanceId: z.number().optional(),
+  carReceptionId: z.number().optional(),
+  originalDeadline: z.string().optional(),
+  newDeadline: z.string().min(1, "Novo prazo é obrigatório"),
+  negotiationReason: z.string().min(10, "Motivo deve ter pelo menos 10 caracteres"),
+  fleetComments: z.string().min(1, "Comentários são obrigatórios"),
+  priority: z.string().min(1, "Prioridade é obrigatória"),
+  contactMethod: z.string().min(1, "Método de contato é obrigatório"),
+  followUpDate: z.string().optional()
+});
+
+interface MaintenanceNegotiation {
+  id: number;
+  vehiclePlate: string;
+  maintenanceId?: number;
+  carReceptionId?: number;
+  workshopId: number;
+  workshopName: string;
+  fleetManagerId: number;
+  fleetManagerName: string;
+  originalDeadline?: string;
+  newDeadline?: string;
+  negotiationReason: string;
+  fleetComments?: string;
+  workshopResponse?: string;
+  status: string;
+  priority: string;
+  contactMethod?: string;
+  contactDate: string;
+  followUpDate?: string;
+  resolved: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function MaintenanceManagement() {
   const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
@@ -164,6 +207,10 @@ export default function MaintenanceManagement() {
   const [overdueVehicles, setOverdueVehicles] = useState<{orders: ServiceOrder[], receptions: CarReception[]}>({orders: [], receptions: []});
   const [isCreating, setIsCreating] = useState(false);
   const [isCreatingWorkshop, setIsCreatingWorkshop] = useState(false);
+  const [isNegotiationModalOpen, setIsNegotiationModalOpen] = useState(false);
+  const [selectedVehicleForNegotiation, setSelectedVehicleForNegotiation] = useState<{plate: string, workshopId: number, maintenanceId?: number, carReceptionId?: number} | null>(null);
+  const [negotiations, setNegotiations] = useState<MaintenanceNegotiation[]>([]);
+  const [isCreatingNegotiation, setIsCreatingNegotiation] = useState(false);
   const { toast } = useToast();
 
   // Form para nova ordem de serviço
@@ -192,8 +239,27 @@ export default function MaintenanceManagement() {
     }
   });
 
+  // Form para tratativas de manutenção
+  const negotiationForm = useForm<z.infer<typeof negotiationSchema>>({
+    resolver: zodResolver(negotiationSchema),
+    defaultValues: {
+      vehiclePlate: "",
+      workshopId: 0,
+      maintenanceId: undefined,
+      carReceptionId: undefined,
+      originalDeadline: "",
+      newDeadline: "",
+      negotiationReason: "",
+      fleetComments: "",
+      priority: "media",
+      contactMethod: "telefone",
+      followUpDate: ""
+    }
+  });
+
   useEffect(() => {
     loadData();
+    loadNegotiations();
   }, []);
 
   const loadData = async () => {
@@ -344,6 +410,80 @@ export default function MaintenanceManagement() {
   const handleOpenDetails = (reception: CarReception) => {
     setSelectedReception(reception);
     setIsDetailsModalOpen(true);
+  };
+
+  // Função para abrir modal de tratativas
+  const handleOpenNegotiation = (vehicleData: {plate: string, workshopId: number, maintenanceId?: number, carReceptionId?: number}) => {
+    setSelectedVehicleForNegotiation(vehicleData);
+    
+    // Pré-preencher dados do formulário
+    negotiationForm.setValue("vehiclePlate", vehicleData.plate);
+    negotiationForm.setValue("workshopId", vehicleData.workshopId);
+    if (vehicleData.maintenanceId) {
+      negotiationForm.setValue("maintenanceId", vehicleData.maintenanceId);
+    }
+    if (vehicleData.carReceptionId) {
+      negotiationForm.setValue("carReceptionId", vehicleData.carReceptionId);
+    }
+    
+    setIsNegotiationModalOpen(true);
+  };
+
+  // Função para criar tratativa de manutenção
+  const handleCreateNegotiation = async (values: z.infer<typeof negotiationSchema>) => {
+    try {
+      setIsCreatingNegotiation(true);
+      
+      const response = await apiRequest("POST", "/api/maintenance/negotiations", {
+        vehiclePlate: values.vehiclePlate,
+        workshopId: values.workshopId,
+        maintenanceId: values.maintenanceId,
+        carReceptionId: values.carReceptionId,
+        originalDeadline: values.originalDeadline,
+        newDeadline: values.newDeadline,
+        negotiationReason: values.negotiationReason,
+        fleetComments: values.fleetComments,
+        priority: values.priority,
+        contactMethod: values.contactMethod,
+        followUpDate: values.followUpDate
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Sucesso",
+          description: "Tratativa criada com sucesso!"
+        });
+        
+        setIsNegotiationModalOpen(false);
+        negotiationForm.reset();
+        loadNegotiations(); // Carregar tratativas
+      } else {
+        throw new Error("Erro ao criar tratativa");
+      }
+    } catch (error: any) {
+      console.error("Erro ao criar tratativa:", error);
+      
+      toast({
+        title: "Erro",
+        description: "Não foi possível criar a tratativa",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreatingNegotiation(false);
+    }
+  };
+
+  // Função para carregar tratativas
+  const loadNegotiations = async () => {
+    try {
+      const response = await apiRequest("GET", "/api/maintenance/negotiations");
+      if (response.ok) {
+        const data = await response.json();
+        setNegotiations(data.negotiations || []);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar tratativas:", error);
+    }
   };
 
   const checkOverdueVehiclesWithData = (orders: ServiceOrder[], receptions: CarReception[]) => {
@@ -1003,6 +1143,18 @@ export default function MaintenanceManagement() {
                           <Button variant="outline" size="sm">
                             <Edit className="mr-2 h-4 w-4" />
                             Editar
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleOpenNegotiation({
+                              plate: order.vehiclePlate,
+                              workshopId: order.workshopId,
+                              maintenanceId: order.id
+                            })}
+                          >
+                            <MessageSquare className="mr-2 h-4 w-4" />
+                            Tratativas
                           </Button>
                           <Button 
                             variant="outline" 
