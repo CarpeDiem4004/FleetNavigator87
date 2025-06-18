@@ -5149,15 +5149,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         SELECT 
           mn.*,
           o.razao_social as workshop_name,
-          u.name as fleet_manager_name
+          u.name as fleet_manager_name,
+          mn.created_at,
+          mn.contact_date,
+          mn.follow_up_date,
+          mn.original_deadline,
+          mn.new_deadline,
+          mn.negotiation_reason,
+          mn.fleet_comments,
+          mn.workshop_response,
+          mn.status,
+          mn.priority,
+          mn.contact_method,
+          mn.resolved,
+          -- Verificar se há ordem de serviço ou recebimento associado
+          CASE 
+            WHEN mn.maintenance_id IS NOT NULL THEN 'ordem_servico'
+            WHEN mn.car_reception_id IS NOT NULL THEN 'recebimento'
+            ELSE 'geral'
+          END as negotiation_type,
+          -- Buscar informações da ordem de serviço se aplicável
+          m.status as maintenance_status,
+          m.estimated_completion as maintenance_deadline,
+          -- Buscar informações do recebimento se aplicável
+          cr.status as reception_status,
+          cr.delivery_deadline as reception_deadline
         FROM maintenance_negotiations mn
         LEFT JOIN oficinas o ON mn.workshop_id = o.id
         LEFT JOIN users u ON mn.fleet_manager_id = u.id
+        LEFT JOIN manutencao m ON mn.maintenance_id = m.id
+        LEFT JOIN car_receptions cr ON mn.car_reception_id = cr.id
         WHERE mn.vehicle_plate = $1
-        ORDER BY mn.created_at DESC
+        ORDER BY mn.created_at ASC
       `;
 
       const result = await pool.query(query, [vehiclePlate]);
+      
+      console.log(`Encontradas ${result.rows.length} tratativas para o veículo ${vehiclePlate}`);
       return res.status(200).json(result.rows);
     } catch (error) {
       console.error("Erro ao buscar tratativas:", error);

@@ -28,6 +28,7 @@ import {
   MessageSquare,
   Phone,
   Mail,
+  User,
   Calendar
 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
@@ -161,26 +162,31 @@ const negotiationSchema = z.object({
 
 interface MaintenanceNegotiation {
   id: number;
-  vehiclePlate: string;
-  maintenanceId?: number;
-  carReceptionId?: number;
-  workshopId: number;
-  workshopName: string;
-  fleetManagerId: number;
-  fleetManagerName: string;
-  originalDeadline?: string;
-  newDeadline?: string;
-  negotiationReason: string;
-  fleetComments?: string;
-  workshopResponse?: string;
+  vehicle_plate: string;
+  maintenance_id?: number;
+  car_reception_id?: number;
+  workshop_id: number;
+  workshop_name: string;
+  fleet_manager_id: number;
+  fleet_manager_name: string;
+  original_deadline?: string;
+  new_deadline?: string;
+  negotiation_reason: string;
+  fleet_comments?: string;
+  workshop_response?: string;
   status: string;
   priority: string;
-  contactMethod?: string;
-  contactDate: string;
-  followUpDate?: string;
+  contact_method?: string;
+  contact_date?: string;
+  follow_up_date?: string;
   resolved: boolean;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
+  negotiation_type?: string;
+  maintenance_status?: string;
+  maintenance_deadline?: string;
+  reception_status?: string;
+  reception_deadline?: string;
 }
 
 export default function MaintenanceManagement() {
@@ -1988,6 +1994,190 @@ export default function MaintenanceManagement() {
               </div>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Histórico de Tratativas */}
+      <Dialog open={isNegotiationHistoryModalOpen} onOpenChange={setIsNegotiationHistoryModalOpen}>
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Histórico de Tratativas - {selectedVehicleHistory}
+            </DialogTitle>
+            <DialogDescription>
+              Histórico completo de todas as tratativas realizadas para este veículo, 
+              desde o início até a liberação
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {negotiations.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <MessageSquare className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                <p className="text-lg font-medium">Nenhuma tratativa encontrada</p>
+                <p className="text-sm">Este veículo ainda não possui tratativas registradas.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-semibold text-lg">
+                    {negotiations.length} tratativa{negotiations.length !== 1 ? 's' : ''} encontrada{negotiations.length !== 1 ? 's' : ''}
+                  </h3>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      if (selectedVehicleHistory && negotiations.length > 0) {
+                        const workshop = negotiations[0];
+                        handleOpenNegotiation({
+                          plate: selectedVehicleHistory,
+                          workshopId: workshop.workshop_id,
+                          maintenanceId: workshop.maintenance_id,
+                          carReceptionId: workshop.car_reception_id
+                        });
+                      }
+                    }}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Nova Tratativa
+                  </Button>
+                </div>
+
+                {negotiations.map((negotiation, index) => (
+                  <Card key={negotiation.id} className="border-l-4 border-l-blue-500">
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="flex items-center gap-2 text-lg">
+                            <MessageSquare className="h-5 w-5" />
+                            Tratativa #{negotiation.id}
+                          </CardTitle>
+                          <CardDescription className="flex items-center gap-4 mt-1">
+                            <span className="flex items-center gap-1">
+                              <Building2 className="h-4 w-4" />
+                              {negotiation.workshop_name || 'Oficina não informada'}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <User className="h-4 w-4" />
+                              {negotiation.fleet_manager_name || 'Gestor não informado'}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-4 w-4" />
+                              {new Date(negotiation.contact_date || negotiation.created_at).toLocaleDateString('pt-BR')}
+                            </span>
+                          </CardDescription>
+                        </div>
+                        <div className="flex gap-2">
+                          <Badge 
+                            variant={
+                              negotiation.status === 'concluida' ? 'default' : 
+                              negotiation.status === 'em_negociacao' ? 'secondary' :
+                              negotiation.status === 'prazo_atualizado' ? 'outline' : 'destructive'
+                            }
+                          >
+                            {negotiation.status}
+                          </Badge>
+                          <Badge 
+                            variant={
+                              negotiation.priority === 'critica' ? 'destructive' :
+                              negotiation.priority === 'alta' ? 'default' :
+                              negotiation.priority === 'media' ? 'secondary' : 'outline'
+                            }
+                          >
+                            {negotiation.priority}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {/* Prazos */}
+                        <div>
+                          <h4 className="font-medium text-sm text-muted-foreground mb-2">Prazos</h4>
+                          {negotiation.originalDeadline && (
+                            <p className="text-sm">
+                              <span className="font-medium">Original:</span> {new Date(negotiation.originalDeadline).toLocaleDateString('pt-BR')}
+                            </p>
+                          )}
+                          {negotiation.newDeadline && (
+                            <p className="text-sm">
+                              <span className="font-medium">Negociado:</span> {new Date(negotiation.newDeadline).toLocaleDateString('pt-BR')}
+                            </p>
+                          )}
+                          {negotiation.followUpDate && (
+                            <p className="text-sm">
+                              <span className="font-medium">Acompanhamento:</span> {new Date(negotiation.followUpDate).toLocaleDateString('pt-BR')}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Contato */}
+                        <div>
+                          <h4 className="font-medium text-sm text-muted-foreground mb-2">Método de Contato</h4>
+                          <div className="flex items-center gap-2">
+                            {negotiation.contactMethod === 'telefone' && <Phone className="h-4 w-4" />}
+                            {negotiation.contactMethod === 'email' && <Mail className="h-4 w-4" />}
+                            {negotiation.contactMethod === 'presencial' && <Building2 className="h-4 w-4" />}
+                            <span className="text-sm capitalize">{negotiation.contactMethod || 'Não informado'}</span>
+                          </div>
+                        </div>
+
+                        {/* Status */}
+                        <div>
+                          <h4 className="font-medium text-sm text-muted-foreground mb-2">Status da Negociação</h4>
+                          <p className="text-sm">
+                            {negotiation.resolved ? (
+                              <span className="text-green-600 font-medium">✓ Resolvida</span>
+                            ) : (
+                              <span className="text-orange-600 font-medium">⏳ Em andamento</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Motivo da Negociação */}
+                      <div className="mt-4">
+                        <h4 className="font-medium text-sm text-muted-foreground mb-2">Motivo da Negociação</h4>
+                        <p className="text-sm bg-muted p-3 rounded">{negotiation.negotiationReason}</p>
+                      </div>
+
+                      {/* Comentários da Frota */}
+                      {negotiation.fleetComments && (
+                        <div className="mt-4">
+                          <h4 className="font-medium text-sm text-muted-foreground mb-2">Comentários da Gestão de Frota</h4>
+                          <p className="text-sm bg-blue-50 border-l-4 border-blue-200 p-3 rounded">{negotiation.fleetComments}</p>
+                        </div>
+                      )}
+
+                      {/* Resposta da Oficina */}
+                      {negotiation.workshopResponse && (
+                        <div className="mt-4">
+                          <h4 className="font-medium text-sm text-muted-foreground mb-2">Resposta da Oficina</h4>
+                          <p className="text-sm bg-green-50 border-l-4 border-green-200 p-3 rounded">{negotiation.workshopResponse}</p>
+                        </div>
+                      )}
+
+                      {/* Indicador de Ordem */}
+                      <div className="mt-4 pt-3 border-t flex justify-between items-center text-xs text-muted-foreground">
+                        <span>Tratativa {index + 1} de {negotiations.length}</span>
+                        <span>Criada por: {negotiation.fleetManagerName}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsNegotiationHistoryModalOpen(false)}
+            >
+              Fechar
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </AppLayout>
