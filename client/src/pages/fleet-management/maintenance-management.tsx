@@ -154,6 +154,8 @@ export default function MaintenanceManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isWorkshopModalOpen, setIsWorkshopModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedReception, setSelectedReception] = useState<CarReception | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isCreatingWorkshop, setIsCreatingWorkshop] = useState(false);
   const { toast } = useToast();
@@ -325,6 +327,11 @@ export default function MaintenanceManagement() {
     } finally {
       setIsCreatingWorkshop(false);
     }
+  };
+
+  const handleOpenDetails = (reception: CarReception) => {
+    setSelectedReception(reception);
+    setIsDetailsModalOpen(true);
   };
 
   const getStatusBadge = (status: string) => {
@@ -753,7 +760,7 @@ export default function MaintenanceManagement() {
                             <p className="text-sm">{reception.serviceDescription}</p>
                           </div>
                           <div className="flex gap-2 mt-4">
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" onClick={() => handleOpenDetails(reception)}>
                               <Eye className="mr-2 h-4 w-4" />
                               Detalhes
                             </Button>
@@ -998,6 +1005,152 @@ export default function MaintenanceManagement() {
           </Tabs>
         </div>
       </div>
+
+      {/* Modal de Detalhes do Veículo */}
+      <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Car className="h-5 w-5" />
+              Detalhes do Veículo - {selectedReception?.vehiclePlate}
+            </DialogTitle>
+            <DialogDescription>
+              Informações completas sobre o recebimento e manutenção do veículo
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedReception && (
+            <div className="space-y-6">
+              {/* Informações do Veículo */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Placa</p>
+                  <p className="font-semibold text-lg">{selectedReception.vehiclePlate}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Modelo</p>
+                  <p className="font-medium">{selectedReception.vehicleModel}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Tipo</p>
+                  <p className="font-medium capitalize">{selectedReception.vehicleType}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Quilometragem Atual</p>
+                  <p className="font-medium">{selectedReception.currentKm?.toLocaleString('pt-BR')} km</p>
+                </div>
+              </div>
+
+              {/* Status e Prioridade */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-2">Status</p>
+                  <Badge variant={selectedReception.status === 'recebido' ? 'default' : 
+                               selectedReception.status === 'em_reparo' ? 'secondary' : 
+                               selectedReception.status === 'pronto' ? 'outline' : 'destructive'}>
+                    {selectedReception.status}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-2">Prioridade</p>
+                  <Badge variant={selectedReception.priority === 'alta' ? 'destructive' : 
+                               selectedReception.priority === 'media' ? 'default' : 'secondary'}>
+                    {selectedReception.priority}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Informações do Projeto e Base */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-green-50 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Projeto</p>
+                  <p className="font-medium">{selectedReception.projectName}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Base</p>
+                  <p className="font-medium">{selectedReception.baseName}</p>
+                </div>
+              </div>
+
+              {/* Informações da Oficina */}
+              <div className="p-4 bg-orange-50 rounded-lg">
+                <h3 className="font-semibold mb-2">Oficina Responsável</h3>
+                <p className="font-medium">{selectedReception.workshopName}</p>
+              </div>
+
+              {/* Datas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Data de Recebimento</p>
+                  <p className="font-medium">{new Date(selectedReception.receivedDate).toLocaleDateString('pt-BR')}</p>
+                </div>
+                {selectedReception.deliveryDeadline && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Prazo de Entrega</p>
+                    <p className="font-medium">{new Date(selectedReception.deliveryDeadline).toLocaleDateString('pt-BR')}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Descrição do Serviço */}
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-2">Descrição do Serviço</p>
+                <p className="text-sm bg-gray-50 p-3 rounded-lg">{selectedReception.serviceDescription}</p>
+              </div>
+
+              {/* Peças Substituídas */}
+              {selectedReception.replacedParts && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-2">Peças Substituídas</p>
+                  <p className="text-sm bg-blue-50 p-3 rounded-lg">{selectedReception.replacedParts}</p>
+                </div>
+              )}
+
+              {/* Observações */}
+              {selectedReception.notes && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-2">Observações</p>
+                  <p className="text-sm bg-yellow-50 p-3 rounded-lg">{selectedReception.notes}</p>
+                </div>
+              )}
+
+              {/* Custos */}
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-semibold mb-3">Detalhamento de Custos</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Mão de Obra</p>
+                    <p className="text-lg font-semibold text-blue-600">
+                      {new Intl.NumberFormat('pt-BR', { 
+                        style: 'currency', 
+                        currency: 'BRL' 
+                      }).format(Number(selectedReception.laborCost || 0))}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Peças</p>
+                    <p className="text-lg font-semibold text-orange-600">
+                      {new Intl.NumberFormat('pt-BR', { 
+                        style: 'currency', 
+                        currency: 'BRL' 
+                      }).format(Number(selectedReception.partsCost || 0))}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Total</p>
+                    <p className="text-xl font-bold text-green-600">
+                      {new Intl.NumberFormat('pt-BR', { 
+                        style: 'currency', 
+                        currency: 'BRL' 
+                      }).format(Number(selectedReception.totalCost || 0))}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
