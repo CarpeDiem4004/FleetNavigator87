@@ -123,6 +123,7 @@ interface CarReception {
   workshopId: number;
   workshopName?: string;
   baseName?: string;
+  updatedAt?: string;
 }
 
 // Schema de validação para nova ordem de serviço
@@ -268,6 +269,13 @@ export default function MaintenanceManagement() {
   useEffect(() => {
     loadData();
     loadNegotiations();
+
+    // Set up auto-refresh every 30 seconds to get real-time updates from workshops
+    const intervalId = setInterval(() => {
+      loadData();
+    }, 30000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
   const loadData = async () => {
@@ -1157,6 +1165,12 @@ export default function MaintenanceManagement() {
                             <p className="text-sm font-medium text-muted-foreground">Datas</p>
                             <p className="text-sm">Entrada: {new Date(order.entryDate).toLocaleDateString('pt-BR')}</p>
                             <p className="text-sm">Previsão: {new Date(order.estimatedCompletion).toLocaleDateString('pt-BR')}</p>
+                            {order.updated_at && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                <Clock className="inline h-3 w-3 mr-1" />
+                                Atualizado: {new Date(order.updated_at).toLocaleString('pt-BR')}
+                              </p>
+                            )}
                           </div>
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">Valor Total</p>
@@ -1280,6 +1294,12 @@ export default function MaintenanceManagement() {
                               <p className="text-sm">Recebido: {new Date(reception.receivedDate).toLocaleDateString('pt-BR')}</p>
                               {reception.deliveryDeadline && (
                                 <p className="text-sm">Prazo: {new Date(reception.deliveryDeadline).toLocaleDateString('pt-BR')}</p>
+                              )}
+                              {reception.updatedAt && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  <Clock className="inline h-3 w-3 mr-1" />
+                                  Atualizado: {new Date(reception.updatedAt).toLocaleString('pt-BR')}
+                                </p>
                               )}
                             </div>
                             <div>

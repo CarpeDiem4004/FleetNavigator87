@@ -6388,7 +6388,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Status inválido' });
       }
 
-      const updated = await storage.updateCarReception(parseInt(id), { status });
+      // Update status with timestamp
+      const updated = await storage.updateCarReception(parseInt(id), { 
+        status, 
+        updatedAt: new Date()
+      });
       if (!updated) {
         return res.status(404).json({ message: 'Recebimento não encontrado' });
       }
