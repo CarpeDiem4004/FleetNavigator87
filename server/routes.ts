@@ -6216,10 +6216,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const query = `
         SELECT 
           w.id,
-          w.name,
+          COALESCE(w.nome, w.razao_social, w.name) as name,
           w.cnpj,
           w.email,
-          w.phone,
+          COALESCE(w.telefone, w.phone) as phone,
           w.last_login,
           CASE 
             WHEN w.password IS NOT NULL AND w.password != '' THEN true 
@@ -6227,7 +6227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           END as has_credentials,
           COALESCE(w.status, 'active') as status
         FROM workshops w
-        ORDER BY w.name ASC
+        ORDER BY COALESCE(w.nome, w.razao_social, w.name) ASC
       `;
       
       const result = await pool.query(query);
@@ -6270,7 +6270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Verificar se a oficina existe
-      const checkQuery = 'SELECT id, name FROM workshops WHERE id = $1';
+      const checkQuery = 'SELECT id, COALESCE(nome, razao_social) as name FROM workshops WHERE id = $1';
       const checkResult = await pool.query(checkQuery, [workshopId]);
 
       if (checkResult.rows.length === 0) {
