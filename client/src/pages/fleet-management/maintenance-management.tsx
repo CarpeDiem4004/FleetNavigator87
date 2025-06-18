@@ -120,6 +120,7 @@ interface CarReception {
   notes: string;
   receivedDate: string;
   deliveryDeadline: string;
+  deliveredDate?: string;
   workshopId: number;
   workshopName?: string;
   baseName?: string;
