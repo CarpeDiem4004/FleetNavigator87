@@ -6233,19 +6233,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await pool.query(query);
       
       console.log(`[Credenciais Oficinas] Encontradas ${result.rows.length} oficinas`);
+      console.log('[Credenciais Oficinas] Dados da primeira oficina:', result.rows[0]);
+      
+      const mappedWorkshops = result.rows.map(workshop => ({
+        id: workshop.id,
+        name: workshop.name,
+        cnpj: workshop.cnpj || '',
+        email: workshop.email || '',
+        phone: workshop.phone || '',
+        hasCredentials: workshop.has_credentials,
+        lastLogin: workshop.last_login,
+        status: workshop.status
+      }));
+      
+      console.log('[Credenciais Oficinas] Dados mapeados da primeira oficina:', mappedWorkshops[0]);
       
       res.json({
         success: true,
-        workshops: result.rows.map(workshop => ({
-          id: workshop.id,
-          name: workshop.name,
-          cnpj: workshop.cnpj || '',
-          email: workshop.email || '',
-          phone: workshop.phone || '',
-          hasCredentials: workshop.has_credentials,
-          lastLogin: workshop.last_login,
-          status: workshop.status
-        }))
+        workshops: mappedWorkshops
       });
     } catch (error) {
       console.error("Erro ao buscar credenciais das oficinas:", error);
