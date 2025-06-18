@@ -244,14 +244,16 @@ export default function OficinasCredentialsPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openPasswordDialog(workshop)}
-                    >
-                      <Key className="h-4 w-4 mr-1" />
-                      {workshop.hasCredentials ? 'Alterar' : 'Criar'} Senha
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openPasswordDialog(workshop)}
+                      >
+                        <Key className="h-4 w-4 mr-1" />
+                        Configurar
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
