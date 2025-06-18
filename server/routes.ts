@@ -5147,12 +5147,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const query = `
         SELECT 
-          mn.*,
-          o.razao_social as workshop_name,
-          u.name as fleet_manager_name,
-          mn.created_at,
-          mn.contact_date,
-          mn.follow_up_date,
+          mn.id,
+          mn.vehicle_plate,
+          mn.maintenance_id,
+          mn.car_reception_id,
+          mn.workshop_id,
+          mn.fleet_manager_id,
           mn.original_deadline,
           mn.new_deadline,
           mn.negotiation_reason,
@@ -5161,17 +5161,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           mn.status,
           mn.priority,
           mn.contact_method,
+          mn.contact_date,
+          mn.follow_up_date,
           mn.resolved,
-          -- Verificar se há ordem de serviço ou recebimento associado
+          mn.created_at,
+          mn.updated_at,
+          COALESCE(o.razao_social, 'Oficina não encontrada') as workshop_name,
+          COALESCE(u.name, 'Gestor não encontrado') as fleet_manager_name,
           CASE 
             WHEN mn.maintenance_id IS NOT NULL THEN 'ordem_servico'
             WHEN mn.car_reception_id IS NOT NULL THEN 'recebimento'
             ELSE 'geral'
           END as negotiation_type,
-          -- Buscar informações da ordem de serviço se aplicável
           m.status as maintenance_status,
           m.completed_at as maintenance_deadline,
-          -- Buscar informações do recebimento se aplicável
           cr.status as reception_status,
           cr.delivery_deadline as reception_deadline
         FROM maintenance_negotiations mn
