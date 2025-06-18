@@ -14,13 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Wrench, 
   Clock, 
@@ -32,7 +26,8 @@ import {
   DollarSign,
   Plus,
   Trash2,
-  Settings
+  Settings,
+  Edit
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -205,6 +200,61 @@ export default function OficinaDashboard() {
         title: "Erro",
         description: "Não foi possível atualizar o status",
         variant: "destructive"
+      });
+    }
+  };
+
+  const openUpdateModal = (reception: CarReception) => {
+    setSelectedReception(reception);
+    setReceptionUpdate({
+      status: reception.status,
+      notes: reception.notes || "",
+      estimatedCompletion: reception.deliveryDeadline ? 
+        new Date(reception.deliveryDeadline).toISOString().split('T')[0] : ""
+    });
+    setIsUpdateModalOpen(true);
+  };
+
+  const updateReception = async () => {
+    if (!selectedReception) return;
+
+    try {
+      const token = localStorage.getItem('oficina_token');
+      if (!token) {
+        toast({
+          title: "Erro",
+          description: "Token de autenticação não encontrado",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const response = await fetch(`/api/oficina/car-receptions/${selectedReception.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(receptionUpdate)
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao atualizar recebimento");
+      }
+
+      toast({
+        title: "Sucesso",
+        description: "Status do veículo atualizado com sucesso!",
+      });
+
+      setIsUpdateModalOpen(false);
+      loadData(); // Recarregar dados
+    } catch (error) {
+      console.error("Erro ao atualizar recebimento:", error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar status do veículo",
+        variant: "destructive",
       });
     }
   };
@@ -631,7 +681,7 @@ export default function OficinaDashboard() {
                           )}
                         </p>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right space-y-2">
                         <div className="text-sm font-semibold text-green-600">
                           Total: R$ {reception.totalCost.toFixed(2)}
                         </div>
@@ -639,6 +689,14 @@ export default function OficinaDashboard() {
                           Peças: R$ {reception.partsCost.toFixed(2)} | 
                           Mão de obra: R$ {reception.laborCost.toFixed(2)}
                         </div>
+                        <Button
+                          size="sm"
+                          onClick={() => openUpdateModal(reception)}
+                          className="text-xs"
+                        >
+                          <Edit className="h-3 w-3 mr-1" />
+                          Atualizar
+                        </Button>
                       </div>
                     </div>
                     
