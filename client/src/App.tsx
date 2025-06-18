@@ -148,6 +148,10 @@ import BaseGoiania from "@/pages/bases/BaseGoiania";
 import OsascoPublic from "@/pages/postos/public/OsascoPublic";
 import OsascoV2Public from "@/pages/postos/public/OsascoV2Public";
 import GuarulhosPublic from "@/pages/postos/public/GuarulhosPublic";
+
+// Importação das páginas de postos externos V2 (renomeadas para evitar conflitos)
+import PostoABCV2External from "@/pages/postos-externos/PostoABCV2";
+import PostoCampinasV2External from "@/pages/postos-externos/PostoCampinasV2";
 import GuarulhosV2Public from "@/pages/postos/public/GuarulhosV2Public";
 import AlairV2Public from "@/pages/postos/public/AlairV2Public";
 import SaoPauloPublic from "@/pages/postos/public/SaoPauloPublic";
@@ -438,6 +442,14 @@ function App() {
           </Route>
           <Route path="/posto/sorocaba_v2/public">
             <SorocabaV2Public />
+          </Route>
+          
+          {/* Rotas externas para postos V2 - Registro de recebimentos de combustível */}
+          <Route path="/posto-externo/abc-v2">
+            <PostoABCV2External />
+          </Route>
+          <Route path="/posto-externo/campinas-v2">
+            <PostoCampinasV2External />
           </Route>
           
           {/* Rotas públicas para o Posto Remédios */}
