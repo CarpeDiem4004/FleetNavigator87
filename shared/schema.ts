@@ -213,6 +213,10 @@ export const maintenance = pgTable("manutencao", {
   observacoes: text("observacoes"),
   veiculo_id: integer("veiculo_id"),
   solicitante_id: integer("solicitante_id"),
+  delivery_person_name: text("delivery_person_name"), // Nome da pessoa que retirou
+  delivery_person_cpf: text("delivery_person_cpf"), // CPF
+  delivery_person_phone: text("delivery_person_phone"), // Telefone
+  delivered_date: timestamp("delivered_date"), // Data e hora da entrega
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
