@@ -24,6 +24,10 @@ export interface ServiceOrder {
   initialBudget?: string;
   finalCost?: string;
   maintenanceType: string;
+  deliveryPersonName?: string;
+  deliveryPersonCpf?: string;
+  deliveryPersonPhone?: string;
+  deliveredDate?: string;
 }
 
 class WorkshopAPI {
@@ -82,6 +86,18 @@ class WorkshopAPI {
     return this.request(`/orders/${orderId}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status }),
+    });
+  }
+
+  async deliverOrder(orderId: number, deliveryData: {
+    deliveryPersonName: string;
+    deliveryPersonCpf: string;
+    deliveryPersonPhone: string;
+    status?: string;
+  }) {
+    return this.request(`/orders/${orderId}/deliver`, {
+      method: 'POST',
+      body: JSON.stringify(deliveryData),
     });
   }
 

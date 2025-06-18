@@ -6291,6 +6291,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Registrar entrega de ordem de serviço com dados da pessoa
+  app.post("/api/oficina/orders/:id/deliver", verificarTokenOficina, async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const { deliveryPersonName, deliveryPersonCpf, deliveryPersonPhone, status } = req.body;
+
+      // Validar dados obrigatórios
+      if (!deliveryPersonName || !deliveryPersonCpf || !deliveryPersonPhone) {
+        return res.status(400).json({ 
+          message: 'Nome completo, CPF e telefone da pessoa que está retirando o veículo são obrigatórios' 
+        });
+      }
+
+      // Verificar se a ordem existe
+      const checkQuery = `
+        SELECT id, placa, status, oficina_id 
+        FROM manutencao 
+        WHERE id = $1
+      `;
+      const checkResult = await pool.query(checkQuery, [orderId]);
+
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({ message: 'Ordem de serviço não encontrada' });
+      }
+
+      const order = checkResult.rows[0];
+
+      // Verificar se a ordem pertence à oficina logada
+      if (order.oficina_id !== req.user.oficina_id) {
+        return res.status(403).json({ message: 'Acesso negado. Esta ordem não pertence à sua oficina' });
+      }
+
+      // Atualizar a ordem com dados de entrega
+      const updateQuery = `
+        UPDATE manutencao 
+        SET 
+          status = $1,
+          delivery_person_name = $2,
+          delivery_person_cpf = $3,
+          delivery_person_phone = $4,
+          delivered_date = NOW(),
+          updated_at = NOW()
+        WHERE id = $5
+        RETURNING *
+      `;
+
+      const result = await pool.query(updateQuery, [
+        status || 'entregue',
+        deliveryPersonName,
+        deliveryPersonCpf,
+        deliveryPersonPhone,
+        orderId
+      ]);
+
+      console.log(`Ordem de serviço ${orderId} entregue para ${deliveryPersonName} (CPF: ${deliveryPersonCpf})`);
+
+      res.json({ 
+        message: 'Entrega registrada com sucesso',
+        order: result.rows[0]
+      });
+    } catch (error) {
+      console.error("Erro ao registrar entrega da ordem de serviço:", error);
+      res.status(500).json({ message: 'Erro ao registrar entrega' });
+    }
+  });
+
   // Criar recebimento de veículo
   app.post("/api/oficina/car-receptions", verificarTokenOficina, async (req, res) => {
     try {
