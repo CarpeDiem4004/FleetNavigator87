@@ -6216,10 +6216,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const query = `
         SELECT 
           w.id,
-          COALESCE(w.nome, w.razao_social, w.name) as name,
+          COALESCE(w.nome, w.razao_social) as name,
           w.cnpj,
           w.email,
-          COALESCE(w.telefone, w.phone) as phone,
+          w.telefone as phone,
           w.last_login,
           CASE 
             WHEN w.password IS NOT NULL AND w.password != '' THEN true 
