@@ -6247,6 +6247,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
       
       console.log('[Credenciais Oficinas] Dados mapeados da primeira oficina:', mappedWorkshops[0]);
+      console.log('[Credenciais Oficinas] Dados da Oficina Alair:', mappedWorkshops.find(w => w.name === 'Oficina Alair'));
+      
+      // Add cache-busting headers
+      res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
       
       res.json({
         success: true,
