@@ -5875,7 +5875,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const query = `
         SELECT 
           cr.*,
-          o.name as workshop_name,
+          COALESCE(o.nome_fantasia, o.razao_social) as workshop_name,
           b.name as base_name
         FROM car_receptions cr
         LEFT JOIN oficinas o ON cr.workshop_id = o.id
