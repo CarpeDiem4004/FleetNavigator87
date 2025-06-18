@@ -600,8 +600,8 @@ export default function FuelReceiptsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredReceipts.map((receipt) => (
-                      <TableRow key={receipt.id}>
+                    {filteredReceipts.map((receipt, index) => (
+                      <TableRow key={`${receipt.posto_origem}-${receipt.id}-${index}`}>
                         <TableCell>
                           {format(new Date(receipt.data_recebimento), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                         </TableCell>
