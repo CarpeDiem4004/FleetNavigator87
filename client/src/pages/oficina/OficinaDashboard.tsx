@@ -206,6 +206,36 @@ export default function OficinaDashboard() {
     }
   };
 
+  const updateReceptionStatus = async (receptionId: number, newStatus: string) => {
+    try {
+      const token = localStorage.getItem("oficina_token");
+      const response = await fetch(`/api/oficina/car-receptions/${receptionId}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (response.ok) {
+        await loadData();
+        toast({
+          title: "Status atualizado",
+          description: "Status do veículo atualizado com sucesso"
+        });
+      } else {
+        throw new Error("Erro ao atualizar status");
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o status do veículo",
+        variant: "destructive"
+      });
+    }
+  };
+
   const openUpdateModal = (reception: CarReception) => {
     // Salvar dados do recebimento no localStorage para edição
     localStorage.setItem('editingReception', JSON.stringify(reception));
@@ -565,53 +595,126 @@ export default function OficinaDashboard() {
                         </p>
                       </div>
                       <div className="flex flex-col gap-2">
+                        {/* Botões de Status - Pendente */}
                         {order.status === "pendente" && (
-                          <Button 
-                            size="sm"
-                            onClick={() => updateOrderStatus(order.id, "em_andamento")}
-                          >
-                            Iniciar
-                          </Button>
-                        )}
-                        {order.status === "em_andamento" && (
-                          <>
+                          <div className="flex gap-2 flex-wrap">
+                            <Button 
+                              size="sm"
+                              onClick={() => updateOrderStatus(order.id, "em_andamento")}
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              <Wrench className="h-4 w-4 mr-1" />
+                              Iniciar Trabalho
+                            </Button>
                             <Button 
                               size="sm"
                               variant="outline"
                               onClick={() => updateOrderStatus(order.id, "aguardando_pecas")}
                             >
+                              <Clock className="h-4 w-4 mr-1" />
+                              Aguardar Peças
+                            </Button>
+                          </div>
+                        )}
+                        
+                        {/* Botões de Status - Em Andamento */}
+                        {order.status === "em_andamento" && (
+                          <div className="flex gap-2 flex-wrap">
+                            <Button 
+                              size="sm"
+                              variant="outline"
+                              onClick={() => updateOrderStatus(order.id, "aguardando_pecas")}
+                            >
+                              <Clock className="h-4 w-4 mr-1" />
                               Aguardar Peças
                             </Button>
                             <Button 
                               size="sm"
-                              variant="default"
-                              onClick={() => openWorkModal(order)}
+                              onClick={() => updateOrderStatus(order.id, "concluido")}
                               className="bg-green-600 hover:bg-green-700"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Finalizar Serviço
+                            </Button>
+                            <Button 
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => openWorkModal(order)}
                             >
                               <Settings className="h-4 w-4 mr-1" />
                               Registrar Trabalho
                             </Button>
-                          </>
+                          </div>
                         )}
+                        
+                        {/* Botões de Status - Aguardando Peças */}
                         {order.status === "aguardando_pecas" && (
-                          <>
+                          <div className="flex gap-2 flex-wrap">
+                            <Button 
+                              size="sm"
+                              onClick={() => updateOrderStatus(order.id, "em_andamento")}
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              <Wrench className="h-4 w-4 mr-1" />
+                              Retomar Trabalho
+                            </Button>
+                            <Button 
+                              size="sm"
+                              onClick={() => updateOrderStatus(order.id, "concluido")}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Finalizar Serviço
+                            </Button>
+                          </div>
+                        )}
+                        
+                        {/* Status de Conclusão */}
+                        {(order.status === "concluido" || order.status === "finalizado") && (
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-green-100 text-green-800 flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3" />
+                              Serviço Concluído
+                            </Badge>
                             <Button 
                               size="sm"
                               variant="outline"
                               onClick={() => updateOrderStatus(order.id, "em_andamento")}
                             >
-                              Retomar
+                              Reabrir
                             </Button>
+                          </div>
+                        )}
+                        
+                        {/* Botão de Pausa para todos os status ativos */}
+                        {!["concluido", "finalizado", "pausado"].includes(order.status) && (
+                          <Button 
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => updateOrderStatus(order.id, "pausado")}
+                            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                          >
+                            <AlertCircle className="h-4 w-4 mr-1" />
+                            Pausar Serviço
+                          </Button>
+                        )}
+                        
+                        {/* Status Pausado */}
+                        {order.status === "pausado" && (
+                          <div className="flex gap-2 flex-wrap">
                             <Button 
                               size="sm"
-                              variant="default"
-                              onClick={() => openWorkModal(order)}
-                              className="bg-green-600 hover:bg-green-700"
+                              onClick={() => updateOrderStatus(order.id, "em_andamento")}
+                              className="bg-blue-600 hover:bg-blue-700"
                             >
-                              <Settings className="h-4 w-4 mr-1" />
-                              Registrar Trabalho
+                              <Wrench className="h-4 w-4 mr-1" />
+                              Retomar
                             </Button>
-                          </>
+                            <Badge className="bg-orange-100 text-orange-800 flex items-center gap-1">
+                              <AlertCircle className="h-3 w-3" />
+                              Pausado
+                            </Badge>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -680,22 +783,132 @@ export default function OficinaDashboard() {
                           )}
                         </p>
                       </div>
-                      <div className="text-right space-y-2">
-                        <div className="text-sm font-semibold text-green-600">
-                          Total: R$ {Number(reception.totalCost || 0).toFixed(2)}
+                      <div className="space-y-3">
+                        <div className="text-right">
+                          <div className="text-sm font-semibold text-green-600">
+                            Total: R$ {Number(reception.totalCost || 0).toFixed(2)}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Peças: R$ {Number(reception.partsCost || 0).toFixed(2)} | 
+                            Mão de obra: R$ {Number(reception.laborCost || 0).toFixed(2)}
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-500">
-                          Peças: R$ {Number(reception.partsCost || 0).toFixed(2)} | 
-                          Mão de obra: R$ {Number(reception.laborCost || 0).toFixed(2)}
+                        
+                        {/* Botões de Status para Veículos Recebidos */}
+                        <div className="flex gap-2 flex-wrap justify-end">
+                          {reception.status === "recebido" && (
+                            <>
+                              <Button
+                                size="sm"
+                                onClick={() => updateReceptionStatus(reception.id, "em_analise")}
+                                className="bg-yellow-600 hover:bg-yellow-700 text-xs"
+                              >
+                                <Clock className="h-3 w-3 mr-1" />
+                                Iniciar Análise
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => updateReceptionStatus(reception.id, "aguardando_pecas")}
+                                variant="outline"
+                                className="text-xs"
+                              >
+                                Aguardar Peças
+                              </Button>
+                            </>
+                          )}
+                          
+                          {reception.status === "em_analise" && (
+                            <>
+                              <Button
+                                size="sm"
+                                onClick={() => updateReceptionStatus(reception.id, "em_reparo")}
+                                className="bg-purple-600 hover:bg-purple-700 text-xs"
+                              >
+                                <Wrench className="h-3 w-3 mr-1" />
+                                Iniciar Reparo
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => updateReceptionStatus(reception.id, "aguardando_pecas")}
+                                variant="outline"
+                                className="text-xs"
+                              >
+                                Aguardar Peças
+                              </Button>
+                            </>
+                          )}
+                          
+                          {reception.status === "em_reparo" && (
+                            <>
+                              <Button
+                                size="sm"
+                                onClick={() => updateReceptionStatus(reception.id, "pronto")}
+                                className="bg-green-600 hover:bg-green-700 text-xs"
+                              >
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Concluir Reparo
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => updateReceptionStatus(reception.id, "aguardando_pecas")}
+                                variant="outline"
+                                className="text-xs"
+                              >
+                                Aguardar Peças
+                              </Button>
+                            </>
+                          )}
+                          
+                          {reception.status === "aguardando_pecas" && (
+                            <>
+                              <Button
+                                size="sm"
+                                onClick={() => updateReceptionStatus(reception.id, "em_reparo")}
+                                className="bg-purple-600 hover:bg-purple-700 text-xs"
+                              >
+                                <Wrench className="h-3 w-3 mr-1" />
+                                Retomar Reparo
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => updateReceptionStatus(reception.id, "pronto")}
+                                className="bg-green-600 hover:bg-green-700 text-xs"
+                              >
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Finalizar
+                              </Button>
+                            </>
+                          )}
+                          
+                          {reception.status === "pronto" && (
+                            <Button
+                              size="sm"
+                              onClick={() => updateReceptionStatus(reception.id, "entregue")}
+                              className="bg-blue-600 hover:bg-blue-700 text-xs"
+                            >
+                              <Car className="h-3 w-3 mr-1" />
+                              Marcar como Entregue
+                            </Button>
+                          )}
+                          
+                          {reception.status === "entregue" && (
+                            <Badge className="bg-gray-100 text-gray-800 flex items-center gap-1 text-xs">
+                              <CheckCircle className="h-3 w-3" />
+                              Entregue
+                            </Badge>
+                          )}
+                          
+                          {/* Botão de Edição sempre disponível */}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => openUpdateModal(reception)}
+                            className="text-xs"
+                          >
+                            <Edit className="h-3 w-3 mr-1" />
+                            Editar
+                          </Button>
                         </div>
-                        <Button
-                          size="sm"
-                          onClick={() => openUpdateModal(reception)}
-                          className="text-xs"
-                        >
-                          <Edit className="h-3 w-3 mr-1" />
-                          Atualizar
-                        </Button>
                       </div>
                     </div>
                     

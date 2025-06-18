@@ -6373,6 +6373,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Atualizar status de recebimento de veículo
+  app.put("/api/oficina/car-receptions/:id/status", verificarTokenOficina, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      if (!status) {
+        return res.status(400).json({ message: 'Status é obrigatório' });
+      }
+
+      const validStatuses = ['recebido', 'em_analise', 'aguardando_pecas', 'em_reparo', 'pronto', 'entregue'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ message: 'Status inválido' });
+      }
+
+      const updated = await storage.updateCarReception(parseInt(id), { status });
+      if (!updated) {
+        return res.status(404).json({ message: 'Recebimento não encontrado' });
+      }
+
+      res.json({ message: 'Status atualizado com sucesso' });
+    } catch (error) {
+      console.error("Erro ao atualizar status do recebimento:", error);
+      res.status(500).json({ message: 'Erro ao atualizar status' });
+    }
+  });
+
   app.get("/api/maintenance/:id", hasMaintenanceAccess, async (req, res) => {
     try {
       const maintenanceId = parseInt(req.params.id);
