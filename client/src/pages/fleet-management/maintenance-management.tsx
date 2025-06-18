@@ -231,6 +231,10 @@ export default function MaintenanceManagement() {
   const [selectedVehicleHistory, setSelectedVehicleHistory] = useState<string>("");
   const [isOrderDetailsModalOpen, setIsOrderDetailsModalOpen] = useState(false);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<ServiceOrder | null>(null);
+  const [isWorkshopDetailsModalOpen, setIsWorkshopDetailsModalOpen] = useState(false);
+  const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
+  const [isWorkshopConfigModalOpen, setIsWorkshopConfigModalOpen] = useState(false);
+  const [isWorkshopUsersModalOpen, setIsWorkshopUsersModalOpen] = useState(false);
   const { toast } = useToast();
 
   // Form para nova ordem de serviço
@@ -546,6 +550,21 @@ export default function MaintenanceManagement() {
   const openOrderDetailsModal = (order: ServiceOrder) => {
     setSelectedOrderDetails(order);
     setIsOrderDetailsModalOpen(true);
+  };
+
+  const handleWorkshopDetails = (workshop: Workshop) => {
+    setSelectedWorkshop(workshop);
+    setIsWorkshopDetailsModalOpen(true);
+  };
+
+  const handleWorkshopConfig = (workshop: Workshop) => {
+    setSelectedWorkshop(workshop);
+    setIsWorkshopConfigModalOpen(true);
+  };
+
+  const handleWorkshopUsers = (workshop: Workshop) => {
+    setSelectedWorkshop(workshop);
+    setIsWorkshopUsersModalOpen(true);
   };
 
   const checkOverdueVehiclesWithData = (orders: ServiceOrder[], receptions: CarReception[]) => {
@@ -1650,15 +1669,15 @@ export default function MaintenanceManagement() {
                           </div>
                         </div>
                         <div className="flex gap-2 mt-4">
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" onClick={() => handleWorkshopDetails(workshop)}>
                             <Eye className="mr-2 h-4 w-4" />
                             Detalhes
                           </Button>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" onClick={() => handleWorkshopConfig(workshop)}>
                             <Settings className="mr-2 h-4 w-4" />
                             Configurar
                           </Button>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" onClick={() => handleWorkshopUsers(workshop)}>
                             <Users className="mr-2 h-4 w-4" />
                             Usuários
                           </Button>
@@ -2534,6 +2553,170 @@ export default function MaintenanceManagement() {
               </Button>
             )}
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Detalhes da Oficina */}
+      <Dialog open={isWorkshopDetailsModalOpen} onOpenChange={setIsWorkshopDetailsModalOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Detalhes da Oficina - {selectedWorkshop?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Informações completas sobre a oficina parceira
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedWorkshop && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Nome da Oficina</Label>
+                  <p className="font-medium">{selectedWorkshop.name}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">CNPJ</Label>
+                  <p className="font-medium">{selectedWorkshop.cnpj}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Telefone</Label>
+                  <p className="font-medium">{selectedWorkshop.phone}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Email</Label>
+                  <p className="font-medium">{selectedWorkshop.email}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Responsável</Label>
+                  <p className="font-medium">{selectedWorkshop.contactPerson}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Tipo</Label>
+                  <p className="font-medium capitalize">{selectedWorkshop.workshopType}</p>
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Endereço</Label>
+                <p className="font-medium">{selectedWorkshop.address}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium text-muted-foreground">Status:</Label>
+                <Badge className={selectedWorkshop.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                  {selectedWorkshop.isActive ? 'Ativa' : 'Inativa'}
+                </Badge>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Configuração da Oficina */}
+      <Dialog open={isWorkshopConfigModalOpen} onOpenChange={setIsWorkshopConfigModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Configurações - {selectedWorkshop?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Configure as definições da oficina parceira
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <h3 className="font-semibold mb-2">Configurações Disponíveis</h3>
+              <div className="space-y-2">
+                <Button variant="outline" className="w-full justify-start" onClick={() => {
+                  toast({
+                    title: "Acesso de Credenciais",
+                    description: "Redirecionando para gestão de senhas...",
+                  });
+                  // Redirect to credentials page
+                  window.location.href = '/maintenance/oficinas-credentials';
+                }}>
+                  <Key className="mr-2 h-4 w-4" />
+                  Gerenciar Credenciais de Acesso
+                </Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => {
+                  toast({
+                    title: "Configuração",
+                    description: "Função em desenvolvimento...",
+                  });
+                }}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Preferências da Oficina
+                </Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => {
+                  toast({
+                    title: "Configuração",
+                    description: "Função em desenvolvimento...",
+                  });
+                }}>
+                  <FileText className="mr-2 h-4 w-4" />
+                  Modelos de Relatório
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Usuários da Oficina */}
+      <Dialog open={isWorkshopUsersModalOpen} onOpenChange={setIsWorkshopUsersModalOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Usuários - {selectedWorkshop?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Gerencie os usuários e permissões da oficina
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="p-4 bg-orange-50 rounded-lg">
+              <h3 className="font-semibold mb-2">Gestão de Usuários</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-white rounded border">
+                  <div>
+                    <p className="font-medium">{selectedWorkshop?.contactPerson}</p>
+                    <p className="text-sm text-muted-foreground">Responsável Principal</p>
+                  </div>
+                  <Badge>Ativo</Badge>
+                </div>
+                <Button variant="outline" className="w-full" onClick={() => {
+                  toast({
+                    title: "Usuários",
+                    description: "Função em desenvolvimento...",
+                  });
+                }}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Adicionar Novo Usuário
+                </Button>
+              </div>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <h4 className="font-medium mb-2">Permissões Disponíveis</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>Visualizar ordens de serviço</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span>Atualizar status de manutenção</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                  <span>Enviar relatórios de progresso</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </AppLayout>
