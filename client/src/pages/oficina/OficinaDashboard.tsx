@@ -403,11 +403,12 @@ export default function OficinaDashboard() {
       urgente: "bg-red-100 text-red-800"
     };
 
-    const className = priorityConfig[priority as keyof typeof priorityConfig] || priorityConfig.media;
+    const safePriority = priority || 'media';
+    const className = priorityConfig[safePriority as keyof typeof priorityConfig] || priorityConfig.media;
 
     return (
       <Badge className={className}>
-        {priority.charAt(0).toUpperCase() + priority.slice(1)}
+        {safePriority.charAt(0).toUpperCase() + safePriority.slice(1)}
       </Badge>
     );
   };
