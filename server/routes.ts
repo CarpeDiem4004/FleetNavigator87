@@ -147,6 +147,8 @@ import { resyncSession } from './routes/sessionResyncRoute.js';
 import partnerAuthRouter from './routes/partnerAuth';
 // Importação das novas rotas de JWT
 import jwtAuthRoutes from './jwtAuthRoutes.js';
+// Importação das rotas de recebimento de combustível
+import fuelReceiptRoutes from './routes/fuelReceiptRoutes.js';
 // Importação do cliente Supabase para armazenamento de arquivos
 import { createClient } from '@supabase/supabase-js';
 // Importação das rotas de diagnóstico já feita acima
@@ -1317,6 +1319,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await setupTireActivityTable();
   await criarTabelaLineHallMaintenance();
   await criarTabelaDemoForms();
+  
+  // Registrar rotas de recebimento de combustível
+  app.use('/api/fuel-receipts', fuelReceiptRoutes);
   
   // Registrar rota SQL segura (novo)
   app.use('/api/sql-seguro', sqlSeguroRouter);
