@@ -1025,7 +1025,11 @@ export class DatabaseStorage implements IStorage {
         vehicleBrand: row.veiculo_marca,
         workshopName: row.oficina_nome,
         baseName: row.base_nome,
-        currentKm: row.km_atual
+        currentKm: row.km_atual,
+        deliveryPersonName: row.delivery_person_name,
+        deliveryPersonCpf: row.delivery_person_cpf,
+        deliveryPersonPhone: row.delivery_person_phone,
+        deliveredDate: row.delivered_date
       }));
     } catch (error) {
       console.error("Erro ao buscar todas as manutenções:", error);
