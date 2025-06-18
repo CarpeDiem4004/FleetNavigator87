@@ -578,8 +578,9 @@ export default function MaintenanceManagement() {
 
           {/* Tabs */}
           <Tabs defaultValue="orders" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="orders">Ordens de Serviço</TabsTrigger>
+              <TabsTrigger value="receptions">Recebimentos</TabsTrigger>
               <TabsTrigger value="workshops">Oficinas Credenciadas</TabsTrigger>
             </TabsList>
 
@@ -660,6 +661,106 @@ export default function MaintenanceManagement() {
                       </CardContent>
                     </Card>
                   ))
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Veículos Recebidos */}
+            <TabsContent value="receptions" className="space-y-4">
+              <div className="flex gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por placa, modelo, oficina ou projeto..."
+                    className="pl-8"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4">
+                {isLoading ? (
+                  <div className="text-center py-8">Carregando...</div>
+                ) : carReceptions.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Nenhum veículo recebido encontrado
+                  </div>
+                ) : (
+                  carReceptions
+                    .filter(reception => 
+                      reception.vehiclePlate?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      reception.vehicleModel?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      reception.workshopName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      reception.projectName?.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((reception) => (
+                      <Card key={reception.id}>
+                        <CardHeader>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <CardTitle className="flex items-center gap-2">
+                                <Car className="h-5 w-5" />
+                                {reception.vehiclePlate} - {reception.vehicleModel}
+                              </CardTitle>
+                              <CardDescription>
+                                {reception.vehicleType} • {reception.projectName}
+                              </CardDescription>
+                            </div>
+                            <div className="flex gap-2">
+                              <Badge variant={reception.status === 'recebido' ? 'default' : 
+                                           reception.status === 'em_reparo' ? 'secondary' : 
+                                           reception.status === 'pronto' ? 'outline' : 'destructive'}>
+                                {reception.status}
+                              </Badge>
+                              <Badge variant={reception.priority === 'alta' ? 'destructive' : 
+                                           reception.priority === 'media' ? 'default' : 'secondary'}>
+                                {reception.priority}
+                              </Badge>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Oficina</p>
+                              <p className="font-medium">{reception.workshopName || 'Oficina não informada'}</p>
+                              <p className="text-sm text-muted-foreground">Base: {reception.baseName}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Datas</p>
+                              <p className="text-sm">Recebido: {new Date(reception.receivedDate).toLocaleDateString('pt-BR')}</p>
+                              {reception.deliveryDeadline && (
+                                <p className="text-sm">Prazo: {new Date(reception.deliveryDeadline).toLocaleDateString('pt-BR')}</p>
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Custo Total</p>
+                              <p className="text-lg font-bold">
+                                {new Intl.NumberFormat('pt-BR', { 
+                                  style: 'currency', 
+                                  currency: 'BRL' 
+                                }).format(Number(reception.totalCost || 0))}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Peças: R$ {Number(reception.partsCost || 0).toFixed(2)} | 
+                                Mão de obra: R$ {Number(reception.laborCost || 0).toFixed(2)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="mt-4">
+                            <p className="text-sm font-medium text-muted-foreground mb-1">Descrição</p>
+                            <p className="text-sm">{reception.serviceDescription}</p>
+                          </div>
+                          <div className="flex gap-2 mt-4">
+                            <Button variant="outline" size="sm">
+                              <Eye className="mr-2 h-4 w-4" />
+                              Detalhes
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
                 )}
               </div>
             </TabsContent>
