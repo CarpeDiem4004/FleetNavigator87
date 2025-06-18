@@ -5887,8 +5887,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Encontrados ${result.rowCount || 0} recebimentos de veículos`);
       
+      // Mapear os campos para o formato esperado pelo frontend
+      const mappedReceptions = result.rows.map(row => ({
+        id: row.id,
+        vehiclePlate: row.vehicle_plate,
+        vehicleModel: row.vehicle_model,
+        vehicleType: row.vehicle_type,
+        currentKm: row.current_km,
+        baseId: row.base_id,
+        projectId: row.project_id,
+        projectName: row.project_name,
+        serviceDescription: row.service_description,
+        replacedParts: row.replaced_parts,
+        laborCost: row.labor_cost,
+        partsCost: row.parts_cost,
+        totalCost: row.total_cost,
+        priority: row.priority,
+        status: row.status,
+        notes: row.notes,
+        receivedDate: row.received_date,
+        deliveryDeadline: row.delivery_deadline,
+        workshopId: row.workshop_id,
+        workshopName: row.workshop_name,
+        baseName: row.base_name,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      }));
+
       return res.status(200).json({ 
-        receptions: result.rows || [],
+        receptions: mappedReceptions,
         total: result.rowCount || 0
       });
     } catch (error) {
