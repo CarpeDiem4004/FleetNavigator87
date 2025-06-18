@@ -211,6 +211,8 @@ export default function MaintenanceManagement() {
   const [selectedVehicleForNegotiation, setSelectedVehicleForNegotiation] = useState<{plate: string, workshopId: number, maintenanceId?: number, carReceptionId?: number} | null>(null);
   const [negotiations, setNegotiations] = useState<MaintenanceNegotiation[]>([]);
   const [isCreatingNegotiation, setIsCreatingNegotiation] = useState(false);
+  const [isNegotiationHistoryModalOpen, setIsNegotiationHistoryModalOpen] = useState(false);
+  const [selectedVehicleHistory, setSelectedVehicleHistory] = useState<string>("");
   const { toast } = useToast();
 
   // Form para nova ordem de serviço
@@ -456,7 +458,11 @@ export default function MaintenanceManagement() {
         
         setIsNegotiationModalOpen(false);
         negotiationForm.reset();
-        loadNegotiations(); // Carregar tratativas
+        
+        // Recarregar histórico se estivermos visualizando
+        if (isNegotiationHistoryModalOpen && selectedVehicleHistory === values.vehiclePlate) {
+          loadNegotiationHistory(values.vehiclePlate);
+        }
       } else {
         throw new Error("Erro ao criar tratativa");
       }
@@ -483,6 +489,31 @@ export default function MaintenanceManagement() {
       }
     } catch (error) {
       console.error("Erro ao carregar tratativas:", error);
+    }
+  };
+
+  // Função para abrir histórico de tratativas
+  const handleOpenNegotiationHistory = async (vehiclePlate: string) => {
+    setSelectedVehicleHistory(vehiclePlate);
+    setIsNegotiationHistoryModalOpen(true);
+    loadNegotiationHistory(vehiclePlate);
+  };
+
+  // Função para carregar histórico de tratativas
+  const loadNegotiationHistory = async (vehiclePlate: string) => {
+    try {
+      const response = await apiRequest("GET", `/api/maintenance/negotiations/${vehiclePlate}`);
+      if (response.ok) {
+        const data = await response.json();
+        setNegotiations(data);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar histórico de tratativas:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar o histórico de tratativas.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -1159,6 +1190,14 @@ export default function MaintenanceManagement() {
                           <Button 
                             variant="outline" 
                             size="sm"
+                            onClick={() => handleOpenNegotiationHistory(order.vehiclePlate)}
+                          >
+                            <Clock className="mr-2 h-4 w-4" />
+                            Histórico
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
                             onClick={() => generateServiceOrderPDF(order)}
                           >
                             <Download className="mr-2 h-4 w-4" />
@@ -1275,6 +1314,14 @@ export default function MaintenanceManagement() {
                             >
                               <MessageSquare className="mr-2 h-4 w-4" />
                               Tratativas
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleOpenNegotiationHistory(reception.vehiclePlate)}
+                            >
+                              <Clock className="mr-2 h-4 w-4" />
+                              Histórico
                             </Button>
                             <Button 
                               variant="outline" 
