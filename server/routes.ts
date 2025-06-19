@@ -6301,7 +6301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         UPDATE workshops 
         SET password = $1, updated_at = NOW()
         WHERE id = $2
-        RETURNING id, name
+        RETURNING id, COALESCE(nome, razao_social) as name
       `;
       
       const updateResult = await pool.query(updateQuery, [hashedPassword, workshopId]);
