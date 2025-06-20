@@ -4590,6 +4590,173 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // API para oficinas acessarem suas ordens de serviço (acesso externo)
+  app.get("/api/workshop/:workshopId/orders", async (req, res) => {
+    try {
+      const { workshopId } = req.params;
+      const { token } = req.query;
+
+      // Verificar se o token de acesso é válido
+      if (!token) {
+        return res.status(401).json({ 
+          success: false, 
+          message: "Token de acesso obrigatório" 
+        });
+      }
+
+      // Validar token no banco de dados
+      const tokenQuery = `
+        SELECT wat.workshop_id, o.razao_social as workshop_name
+        FROM workshop_access_tokens wat
+        JOIN oficinas o ON wat.workshop_id = o.id
+        WHERE wat.access_token = $1 AND wat.is_active = true AND wat.expires_at > NOW()
+      `;
+      const tokenResult = await pool.query(tokenQuery, [token]);
+
+      if (tokenResult.rows.length === 0) {
+        return res.status(401).json({
+          success: false,
+          message: "Token inválido ou expirado"
+        });
+      }
+
+      const validWorkshopId = tokenResult.rows[0].workshop_id;
+      if (parseInt(workshopId) !== validWorkshopId) {
+        return res.status(403).json({
+          success: false,
+          message: "Acesso negado para esta oficina"
+        });
+      }
+
+      // Atualizar último uso do token
+      await pool.query(
+        'UPDATE workshop_access_tokens SET last_used = NOW() WHERE access_token = $1',
+        [token]
+      );
+
+      // Buscar ordens de serviço específicas da oficina
+      const query = `
+        SELECT 
+          mo.id,
+          mo.vehicle_plate,
+          mo.description,
+          mo.status,
+          mo.priority,
+          mo.service_type,
+          mo.estimated_cost,
+          mo.actual_cost,
+          mo.start_date,
+          mo.estimated_completion,
+          mo.completion_date,
+          mo.notes,
+          mo.created_at,
+          mo.updated_at,
+          v.modelo as vehicle_model,
+          v.marca as vehicle_brand
+        FROM maintenance_orders mo
+        LEFT JOIN veiculos v ON mo.vehicle_plate = v.placa
+        WHERE mo.workshop_id = $1
+        ORDER BY mo.created_at DESC
+      `;
+
+      const result = await pool.query(query, [workshopId]);
+
+      const orders = result.rows.map(row => ({
+        id: row.id,
+        vehiclePlate: row.vehicle_plate,
+        vehicleModel: row.vehicle_model,
+        vehicleBrand: row.vehicle_brand,
+        description: row.description,
+        status: row.status,
+        priority: row.priority || 'media',
+        serviceType: row.service_type || 'preventiva',
+        estimatedCost: row.estimated_cost,
+        actualCost: row.actual_cost,
+        startDate: row.start_date,
+        estimatedCompletion: row.estimated_completion,
+        completionDate: row.completion_date,
+        notes: row.notes,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      }));
+
+      return res.status(200).json({
+        success: true,
+        workshopId: parseInt(workshopId),
+        orders: orders,
+        total: orders.length
+      });
+
+    } catch (error) {
+      console.error("Erro ao buscar ordens da oficina:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Erro interno do servidor"
+      });
+    }
+  });
+
+  // API para oficina atualizar status de uma ordem
+  app.put("/api/workshop/:workshopId/orders/:orderId", async (req, res) => {
+    try {
+      const { workshopId, orderId } = req.params;
+      const { token } = req.query;
+      const { status, notes, actualCost, completionDate } = req.body;
+
+      // Verificar token
+      if (!token) {
+        return res.status(401).json({ 
+          success: false, 
+          message: "Token de acesso obrigatório" 
+        });
+      }
+
+      // Verificar se a ordem pertence à oficina
+      const checkQuery = `
+        SELECT id FROM maintenance_orders 
+        WHERE id = $1 AND workshop_id = $2
+      `;
+      const checkResult = await pool.query(checkQuery, [orderId, workshopId]);
+
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Ordem de serviço não encontrada"
+        });
+      }
+
+      // Atualizar a ordem
+      const updateQuery = `
+        UPDATE maintenance_orders 
+        SET 
+          status = COALESCE($1, status),
+          notes = COALESCE($2, notes),
+          actual_cost = COALESCE($3, actual_cost),
+          completion_date = CASE WHEN $4::timestamp IS NOT NULL THEN $4 ELSE completion_date END,
+          updated_at = NOW()
+        WHERE id = $5 AND workshop_id = $6
+        RETURNING *
+      `;
+
+      const updateResult = await pool.query(updateQuery, [
+        status, notes, actualCost, completionDate, orderId, workshopId
+      ]);
+
+      return res.status(200).json({
+        success: true,
+        message: "Ordem atualizada com sucesso",
+        order: updateResult.rows[0]
+      });
+
+    } catch (error) {
+      console.error("Erro ao atualizar ordem:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Erro interno do servidor"
+      });
+    }
+  });
+
   // Rota para cadastro externo de oficinas (formulário público)
   app.post("/api/workshops/external", async (req, res) => {
     try {
