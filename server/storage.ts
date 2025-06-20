@@ -989,16 +989,32 @@ export class DatabaseStorage implements IStorage {
     try {
       const query = `
         SELECT 
-          m.*,
+          mo.id,
+          mo.vehicle_plate as placa,
+          mo.description as descricao,
+          mo.status,
+          mo.priority as prioridade,
+          mo.service_type as tipo,
+          mo.workshop_id as oficina_id,
+          mo.start_date as data_solicitacao,
+          mo.estimated_completion as data_agendada,
+          mo.completion_date as data_conclusao,
+          mo.estimated_cost as custo,
+          mo.actual_cost,
+          mo.labor_cost,
+          mo.parts_cost,
+          mo.notes as observacoes,
+          mo.created_at,
+          mo.updated_at,
           v.modelo as veiculo_modelo,
           v.marca as veiculo_marca,
           o.razao_social as oficina_nome,
           b.name as base_nome
-        FROM manutencao m
-        LEFT JOIN veiculos v ON m.placa = v.placa
-        LEFT JOIN oficinas o ON m.oficina_id = o.id
-        LEFT JOIN bases b ON m.base_id = b.id
-        ORDER BY m.data_solicitacao DESC
+        FROM maintenance_orders mo
+        LEFT JOIN veiculos v ON mo.vehicle_plate = v.placa
+        LEFT JOIN oficinas o ON mo.workshop_id = o.id
+        LEFT JOIN bases b ON mo.vehicle_id = b.id
+        ORDER BY mo.created_at DESC
       `;
       
       const result = await pool.query(query);
@@ -1008,28 +1024,28 @@ export class DatabaseStorage implements IStorage {
         id: row.id,
         vehiclePlate: row.placa,
         description: row.descricao,
-        status: row.status,
+        status: row.status || 'pendente',
         priority: row.prioridade || 'media',
-        maintenanceType: row.tipo,
+        maintenanceType: row.tipo || 'preventiva',
         workshopId: row.oficina_id,
-        requestBaseId: row.base_id,
+        requestBaseId: null,
         entryDate: row.data_solicitacao,
         estimatedCompletion: row.data_agendada,
         completionDate: row.data_conclusao,
-        responsiblePerson: row.responsavel || 'Não informado',
-        cost: row.custo,
-        initialBudget: row.custo,
+        responsiblePerson: 'Sistema',
+        cost: row.custo || '0.00',
+        initialBudget: row.custo || '0.00',
         created_at: row.created_at,
         updated_at: row.updated_at,
         vehicleModel: row.veiculo_modelo,
         vehicleBrand: row.veiculo_marca,
         workshopName: row.oficina_nome,
         baseName: row.base_nome,
-        currentKm: row.km_atual,
-        deliveryPersonName: row.delivery_person_name,
-        deliveryPersonCpf: row.delivery_person_cpf,
-        deliveryPersonPhone: row.delivery_person_phone,
-        deliveredDate: row.delivered_date
+        currentKm: null,
+        deliveryPersonName: null,
+        deliveryPersonCpf: null,
+        deliveryPersonPhone: null,
+        deliveredDate: null
       }));
     } catch (error) {
       console.error("Erro ao buscar todas as manutenções:", error);
