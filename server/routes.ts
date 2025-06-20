@@ -6200,6 +6200,160 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para buscar tokens de acesso externo das oficinas
+  app.get("/api/maintenance/workshops/external-tokens", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const query = `
+        SELECT 
+          w.id as workshop_id,
+          COALESCE(w.nome, w.razao_social) as workshop_name,
+          w.cnpj,
+          w.email,
+          w.telefone,
+          wet.token,
+          wet.created_at as token_created,
+          wet.is_active
+        FROM workshops w
+        LEFT JOIN workshop_external_tokens wet ON w.id = wet.workshop_id
+        WHERE w.is_active = true
+        ORDER BY w.id
+      `;
+      
+      const result = await pool.query(query);
+      
+      const tokensData = result.rows.map(row => ({
+        workshopId: row.workshop_id,
+        workshopName: row.workshop_name,
+        cnpj: row.cnpj,
+        email: row.email,
+        telefone: row.telefone,
+        token: row.token,
+        tokenCreated: row.token_created,
+        isActive: row.is_active,
+        hasToken: !!row.token,
+        externalLink: row.token ? `${req.protocol}://${req.get('host')}/workshop/${row.workshop_id}?token=${row.token}` : null
+      }));
+      
+      res.json({
+        success: true,
+        workshops: tokensData
+      });
+    } catch (error: any) {
+      console.error("Erro ao buscar tokens externos:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Erro ao buscar tokens externos",
+        error: error.message 
+      });
+    }
+  });
+
+  // API para gerar/regenerar token de acesso externo para uma oficina
+  app.post("/api/maintenance/workshops/:id/generate-token", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const workshopId = parseInt(req.params.id);
+
+      if (!workshopId) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "ID da oficina é obrigatório" 
+        });
+      }
+
+      // Verificar se a oficina existe
+      const workshopQuery = 'SELECT id, COALESCE(nome, razao_social) as name FROM workshops WHERE id = $1';
+      const workshopResult = await pool.query(workshopQuery, [workshopId]);
+
+      if (workshopResult.rows.length === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "Oficina não encontrada" 
+        });
+      }
+
+      // Gerar novo token
+      const newToken = `workshop_${workshopId}_token_${Date.now()}_secure`;
+
+      // Desativar tokens existentes
+      await pool.query(
+        'UPDATE workshop_external_tokens SET is_active = false WHERE workshop_id = $1',
+        [workshopId]
+      );
+
+      // Inserir novo token
+      const insertQuery = `
+        INSERT INTO workshop_external_tokens (workshop_id, token, is_active, created_at)
+        VALUES ($1, $2, true, NOW())
+        RETURNING *
+      `;
+      
+      const insertResult = await pool.query(insertQuery, [workshopId, newToken]);
+      const tokenRecord = insertResult.rows[0];
+
+      const externalLink = `${req.protocol}://${req.get('host')}/workshop/${workshopId}?token=${newToken}`;
+
+      res.json({
+        success: true,
+        message: "Token gerado com sucesso",
+        workshop: {
+          id: workshopId,
+          name: workshopResult.rows[0].name,
+          token: newToken,
+          externalLink: externalLink,
+          createdAt: tokenRecord.created_at
+        }
+      });
+
+    } catch (error: any) {
+      console.error("Erro ao gerar token:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Erro ao gerar token",
+        error: error.message 
+      });
+    }
+  });
+
+  // API para desativar token de acesso externo de uma oficina
+  app.delete("/api/maintenance/workshops/:id/external-token", hasMaintenanceAccess, async (req, res) => {
+    try {
+      const workshopId = parseInt(req.params.id);
+
+      if (!workshopId) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "ID da oficina é obrigatório" 
+        });
+      }
+
+      // Desativar todos os tokens da oficina
+      const result = await pool.query(
+        'UPDATE workshop_external_tokens SET is_active = false WHERE workshop_id = $1 AND is_active = true',
+        [workshopId]
+      );
+
+      if (result.rowCount === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "Nenhum token ativo encontrado para esta oficina" 
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "Token desativado com sucesso"
+      });
+
+    } catch (error: any) {
+      console.error("Erro ao desativar token:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Erro ao desativar token",
+        error: error.message 
+      });
+    }
+  });
+
   // Rota para criar nova oficina
   app.post("/api/maintenance/workshops", hasMaintenanceAccess, async (req, res) => {
     try {
