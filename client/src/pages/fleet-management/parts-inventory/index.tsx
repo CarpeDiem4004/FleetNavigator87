@@ -182,10 +182,10 @@ export default function PartsInventory() {
         categoria: z.string().optional().nullable(),
         fabricante: z.string().optional().nullable(),
         aplicacao: z.string().optional().nullable(),
-        quantidade: z.number().min(0, "Quantidade deve ser maior ou igual a zero"),
-        valor_unitario: z.number().min(0, "Valor unitário deve ser maior ou igual a zero"),
-        estoque_minimo: z.number().min(0, "Estoque mínimo deve ser maior ou igual a zero"),
-        estoque_maximo: z.number().optional().nullable(),
+        quantidade: z.coerce.number().min(0, "Quantidade deve ser maior ou igual a zero"),
+        valor_unitario: z.coerce.number().min(0, "Valor unitário deve ser maior ou igual a zero"),
+        estoque_minimo: z.coerce.number().min(0, "Estoque mínimo deve ser maior ou igual a zero"),
+        estoque_maximo: z.coerce.number().optional().nullable(),
         localizacao: z.string().optional().nullable(),
         unidade_medida: z.string().min(1, "Unidade de medida é obrigatória"),
       })
@@ -1443,7 +1443,13 @@ export default function PartsInventory() {
                     <FormItem>
                       <FormLabel>Estoque Mínimo</FormLabel>
                       <FormControl>
-                        <Input type="number" min="0" {...field} />
+                        <Input 
+                          type="number" 
+                          min="0" 
+                          {...field}
+                          value={field.value || ''}
+                          onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
