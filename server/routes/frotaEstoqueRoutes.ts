@@ -309,6 +309,7 @@ router.put('/estoque-pecas/:id', verifyAuth, sessionAuth, async (req, res) => {
     categoria,
     fabricante,
     aplicacao,
+    quantidade,
     valor_unitario,
     estoque_minimo,
     estoque_maximo,
@@ -337,7 +338,10 @@ router.put('/estoque-pecas/:id', verifyAuth, sessionAuth, async (req, res) => {
       return res.status(404).json({ message: 'Peça não encontrada' });
     }
 
-    // Atualizar os dados da peça (exceto quantidade que tem rota específica)
+    const pecaAtual = pecaResult.rows[0];
+    const quantidadeAnterior = pecaAtual.quantidade;
+
+    // Atualizar os dados da peça incluindo quantidade
     const updateResult = await pool.query(
       `UPDATE frota_estoque_pecas 
        SET nome = $1, 
@@ -345,20 +349,22 @@ router.put('/estoque-pecas/:id', verifyAuth, sessionAuth, async (req, res) => {
            categoria = $3, 
            fabricante = $4, 
            aplicacao = $5, 
-           valor_unitario = $6, 
-           estoque_minimo = $7, 
-           estoque_maximo = $8, 
-           localizacao = $9, 
-           unidade_medida = $10,
+           quantidade = $6,
+           valor_unitario = $7, 
+           estoque_minimo = $8, 
+           estoque_maximo = $9, 
+           localizacao = $10, 
+           unidade_medida = $11,
            ultima_atualizacao = NOW()
-       WHERE id = $11 
-       RETURNING id, codigo, nome, valor_unitario, estoque_minimo`,
+       WHERE id = $12 
+       RETURNING id, codigo, nome, quantidade, valor_unitario, estoque_minimo`,
       [
         nome,
         descricao || null,
         categoria || null,
         fabricante || null,
         aplicacao || null,
+        quantidade !== undefined ? quantidade : quantidadeAnterior,
         valor_unitario,
         estoque_minimo || 5,
         estoque_maximo || null,
@@ -367,6 +373,38 @@ router.put('/estoque-pecas/:id', verifyAuth, sessionAuth, async (req, res) => {
         id
       ]
     );
+
+    // Se a quantidade foi alterada, registrar movimentação
+    if (quantidade !== undefined && quantidade !== quantidadeAnterior) {
+      const tipoMovimento = quantidade < quantidadeAnterior ? 'saida' : 'entrada';
+      const quantidadeMovimento = Math.abs(quantidade - quantidadeAnterior);
+      
+      await pool.query(`
+        INSERT INTO frota_movimentacao_estoque (
+          peca_id,
+          tipo_movimento,
+          quantidade,
+          quantidade_anterior,
+          quantidade_atual,
+          valor_unitario,
+          motivo,
+          responsavel,
+          responsavel_id,
+          observacoes
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `, [
+        id,
+        tipoMovimento,
+        quantidadeMovimento,
+        quantidadeAnterior,
+        quantidade,
+        valor_unitario,
+        'Edição manual do estoque',
+        req.user?.name || req.supabaseUser?.email || 'Sistema',
+        req.user?.id || req.supabaseUser?.id || null,
+        'Quantidade atualizada via edição de peça'
+      ]);
+    }
 
     res.json({
       success: true,
