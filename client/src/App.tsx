@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { initializeTimezoneUrlFix } from "@/utils/externalTimezone";
 import NotFound from "@/pages/not-found";
+import WorkshopExternal from "@/pages/workshop-external";
 import DashboardNew from "@/pages/DashboardNew";
 import Dashboard from "@/pages/index";
 import ExecutiveDashboard from "@/pages/ExecutiveDashboard";
@@ -344,6 +345,11 @@ function App() {
           {/* Rota para registro de usuários de postos */}
           <Route path="/register-supabase">
             <RegisterPostoUser />
+          </Route>
+          
+          {/* Rota pública para acesso externo das oficinas */}
+          <Route path="/workshop/:workshopId">
+            <WorkshopExternal />
           </Route>
           
           {/* Rota para acesso de motoristas do Line Hall */}

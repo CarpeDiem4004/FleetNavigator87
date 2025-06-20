@@ -4757,6 +4757,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para obter tokens de acesso das oficinas (admin apenas)
+  app.get("/api/workshops/access-tokens", isAuthenticated, async (req, res) => {
+    try {
+      const query = `
+        SELECT 
+          wat.workshop_id,
+          o.razao_social as workshop_name,
+          o.cnpj,
+          wat.access_token,
+          wat.is_active,
+          wat.created_at,
+          wat.last_used,
+          wat.expires_at
+        FROM workshop_access_tokens wat
+        JOIN oficinas o ON wat.workshop_id = o.id
+        ORDER BY wat.workshop_id
+      `;
+
+      const result = await pool.query(query);
+
+      const tokens = result.rows.map(row => ({
+        workshopId: row.workshop_id,
+        workshopName: row.workshop_name,
+        cnpj: row.cnpj,
+        accessToken: row.access_token,
+        isActive: row.is_active,
+        createdAt: row.created_at,
+        lastUsed: row.last_used,
+        expiresAt: row.expires_at,
+        accessUrl: `${req.protocol}://${req.get('host')}/workshop/${row.workshop_id}?token=${row.access_token}`
+      }));
+
+      return res.status(200).json({
+        success: true,
+        tokens: tokens
+      });
+
+    } catch (error) {
+      console.error("Erro ao buscar tokens das oficinas:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Erro interno do servidor"
+      });
+    }
+  });
+
   // Rota para cadastro externo de oficinas (formulário público)
   app.post("/api/workshops/external", async (req, res) => {
     try {
