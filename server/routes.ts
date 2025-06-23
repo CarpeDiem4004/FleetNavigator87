@@ -2636,8 +2636,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.user as any;
       
-      // Verifica se o usuário tem permissão (admin, gestor ou line_hall)
-      if (user.role !== 'admin' && user.role !== 'gestor' && user.role !== 'line_hall') {
+      // Verifica se o usuário tem permissão (admin, gestor, gestor_combustivel ou line_hall)
+      if (user.role !== 'admin' && user.role !== 'gestor' && user.role !== 'gestor_combustivel' && user.role !== 'line_hall') {
         return res.status(403).json({
           success: false,
           message: 'Sem permissão para acessar solicitações pendentes'
@@ -2725,8 +2725,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const user = req.user as any;
       
-      // Verifica se o usuário tem permissão para aprovar (admin, gestor ou line_hall)
-      if (user.role !== 'admin' && user.role !== 'gestor' && user.role !== 'line_hall') {
+      // Verifica se o usuário tem permissão para aprovar (admin, gestor, gestor_combustivel ou line_hall)
+      if (user.role !== 'admin' && user.role !== 'gestor' && user.role !== 'gestor_combustivel' && user.role !== 'line_hall') {
         return res.status(403).json({
           success: false,
           message: 'Sem permissão para aprovar solicitações'
@@ -2794,8 +2794,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { rejectionReason } = req.body;
       const user = req.user as any;
       
-      // Verifica se o usuário tem permissão para rejeitar (admin, gestor ou line_hall)
-      if (user.role !== 'admin' && user.role !== 'gestor' && user.role !== 'line_hall') {
+      // Verifica se o usuário tem permissão para rejeitar (admin, gestor, gestor_combustivel ou line_hall)
+      if (user.role !== 'admin' && user.role !== 'gestor' && user.role !== 'gestor_combustivel' && user.role !== 'line_hall') {
         return res.status(403).json({
           success: false,
           message: 'Sem permissão para rejeitar solicitações'

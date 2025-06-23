@@ -460,7 +460,7 @@ export const useBasePermission = (): BasePermissionHook => {
       return hasAccess;
     }
     
-    // Perfil Gestor de Combustível - acesso apenas às funcionalidades de controle de cartão e visualização dos postos
+    // Perfil Gestor de Combustível - acesso às funcionalidades de controle de cartão e visualização dos postos
     if (user.role === 'gestor_combustivel') {
       // Lista de rotas permitidas para usuários com perfil de Gestor de Combustível
       const gestorCombustivelRoutes = [
@@ -468,6 +468,7 @@ export const useBasePermission = (): BasePermissionHook => {
         '/fuel-card',                      // Cartão de Combustível
         '/fuel-card/dashboard',            // Dashboard de Cartões
         '/fuel-card/requests',             // Solicitações de Cartão
+        '/fuel-card-requests',             // Painel de Solicitações de Cartão de Abastecimento
         '/postos',                         // Postos de Abastecimento
         '/postos/visao-geral',             // Visão Geral dos Postos
         '/postos/historico-consolidado'    // Histórico Consolidado de Abastecimentos
