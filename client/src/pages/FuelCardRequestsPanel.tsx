@@ -563,139 +563,99 @@ const FuelCardRequestsPanel: React.FC = () => {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Placa</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Motorista</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KM</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Operação</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ação</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200 max-h-[400px] overflow-y-auto">
-                    {filteredSolicitations.slice(0, 5).map((solicitacao, index) => (
-                      <tr 
-                        key={`${solicitacao.id}-${solicitacao.origem_tipo}-${index}`} 
-                        className={`hover:bg-gray-50 ${solicitacao.status === 'Pendente' ? 'bg-yellow-50' : ''}`}
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{solicitacao.placa}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">{solicitacao.motorista}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{formatCurrency(solicitacao.valor_solicitado)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">{solicitacao.km_total || solicitacao.km_veiculo || '-'}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <Badge variant="outline" className={
-                            solicitacao.origem_tipo === 'line_hall' 
-                              ? "bg-blue-100 text-blue-800" 
-                              : "bg-green-100 text-green-800"
-                          }>
-                            {solicitacao.origem_tipo === 'line_hall' ? 'Line Hall Shopee' : 'Tradicional'}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">{solicitacao.base || '-'}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">{getStatusBadge(solicitacao.status)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">{formatDate(solicitacao.data_solicitacao).split(',')[0]}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <div className="flex gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleOpenSolicitation(solicitacao)}
-                            >
-                              Visualizar
-                            </Button>
-                            
-                            <WhatsAppResponseButton 
-                              solicitation={solicitacao}
-                              variant="outline"
-                              size="sm"
-                            />
-                            
-                            {user?.role === 'admin' && (
+                <div className="max-h-[600px] overflow-y-auto border border-gray-200 rounded-lg">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50 sticky top-0 z-10">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Placa</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Motorista</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KM</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Operação</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ação</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredSolicitations.map((solicitacao, index) => (
+                        <tr 
+                          key={`${solicitacao.id}-${solicitacao.origem_tipo}-${index}`} 
+                          className={`hover:bg-gray-50 transition-colors ${
+                            index < 5 
+                              ? solicitacao.status === 'Pendente' 
+                                ? 'bg-yellow-50 border-l-4 border-yellow-400' 
+                                : 'bg-blue-50 border-l-4 border-blue-400'
+                              : solicitacao.status === 'Pendente' 
+                                ? 'bg-yellow-25' 
+                                : ''
+                          }`}
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            {index < 5 && <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-2"></span>}
+                            {solicitacao.placa}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">{solicitacao.motorista}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{formatCurrency(solicitacao.valor_solicitado)}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">{solicitacao.km_total || solicitacao.km_veiculo || '-'}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <Badge variant="outline" className={
+                              solicitacao.origem_tipo === 'line_hall' 
+                                ? "bg-blue-100 text-blue-800" 
+                                : "bg-green-100 text-green-800"
+                            }>
+                              {solicitacao.origem_tipo === 'line_hall' ? 'Line Hall Shopee' : 'Tradicional'}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">{solicitacao.base || '-'}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">{getStatusBadge(solicitacao.status)}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">{formatDate(solicitacao.data_solicitacao).split(',')[0]}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <div className="flex gap-2">
                               <Button 
                                 variant="outline" 
                                 size="sm"
-                                onClick={() => handleDeleteSolicitation(solicitacao)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleOpenSolicitation(solicitacao)}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                Visualizar
                               </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                              
+                              <WhatsAppResponseButton 
+                                solicitation={solicitacao}
+                                variant="outline"
+                                size="sm"
+                              />
+                              
+                              {user?.role === 'admin' && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleDeleteSolicitation(solicitacao)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
                 
-                {/* Seção de Rolagem para Solicitações Adicionais */}
+                {/* Indicador visual das primeiras 5 solicitações */}
                 {filteredSolicitations.length > 5 && (
-                  <div className="border-t border-gray-200 bg-gray-50">
-                    <div className="px-6 py-3">
-                      <p className="text-sm text-gray-600 font-medium">
-                        {filteredSolicitations.length - 5} solicitações adicionais
-                      </p>
-                    </div>
-                    <div className="max-h-[300px] overflow-y-auto bg-white">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {filteredSolicitations.slice(5).map((solicitacao, index) => (
-                            <tr 
-                              key={`${solicitacao.id}-${solicitacao.origem_tipo}-${index + 5}`} 
-                              className={`hover:bg-gray-50 ${solicitacao.status === 'Pendente' ? 'bg-yellow-50' : ''}`}
-                            >
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{solicitacao.placa}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm">{solicitacao.motorista}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{formatCurrency(solicitacao.valor_solicitado)}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm">{solicitacao.km_total || solicitacao.km_veiculo || '-'}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                <Badge variant="outline" className={
-                                  solicitacao.origem_tipo === 'line_hall' 
-                                    ? "bg-blue-100 text-blue-800" 
-                                    : "bg-green-100 text-green-800"
-                                }>
-                                  {solicitacao.origem_tipo === 'line_hall' ? 'Line Hall Shopee' : 'Tradicional'}
-                                </Badge>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm">{solicitacao.base || '-'}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm">{getStatusBadge(solicitacao.status)}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm">{formatDate(solicitacao.data_solicitacao).split(',')[0]}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                <div className="flex gap-2">
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => handleOpenSolicitation(solicitacao)}
-                                  >
-                                    Visualizar
-                                  </Button>
-                                  
-                                  <WhatsAppResponseButton 
-                                    solicitation={solicitacao}
-                                    variant="outline"
-                                    size="sm"
-                                  />
-                                  
-                                  {user?.role === 'admin' && (
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={() => handleDeleteSolicitation(solicitacao)}
-                                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                  <div className="mt-3 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center text-blue-700">
+                        <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                        Primeiras 5 solicitações destacadas
+                      </div>
+                      <div className="text-blue-600">
+                        Total: {filteredSolicitations.length} solicitações
+                      </div>
                     </div>
                   </div>
                 )}
