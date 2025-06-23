@@ -16198,8 +16198,20 @@ async function createFuelRequestNotification(fuelRequest) {
   });
 
   // Endpoint para buscar histórico de abastecimentos por placa
-  app.get('/api/fuel-history/:placa', isAuthenticated, async (req, res) => {
+  app.get('/api/fuel-history/:placa', async (req, res) => {
+    // Set JSON headers first
+    res.setHeader('Content-Type', 'application/json');
+    
     try {
+      // Manual authentication check
+      if (!req.isAuthenticated || !req.isAuthenticated()) {
+        console.log('[FUEL-HISTORY] Authentication failed');
+        return res.status(401).json({
+          success: false,
+          message: 'Usuário não autenticado'
+        });
+      }
+
       const { placa } = req.params;
       const { limit = 50 } = req.query;
 
