@@ -199,7 +199,7 @@ const FuelCardRequestsPanel: React.FC = () => {
     
     try {
       console.log(`[FRONTEND] Buscando histórico para placa: ${placa}`);
-      const response = await apiRequest('GET', `/api/fuel-history/${encodeURIComponent(placa)}`);
+      const response = await apiRequest('GET', `/fuel-data/${encodeURIComponent(placa)}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

@@ -640,6 +640,8 @@ app.use((req, res, next) => {
     }
   });
   
+
+
   const server = await registerRoutes(app);
   
   // Agora podemos aplicar o middleware de diagnóstico 

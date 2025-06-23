@@ -16197,7 +16197,71 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
-  // Endpoint para buscar histórico de abastecimentos por placa
+  // WORKING: Endpoint para buscar histórico de abastecimentos por placa (fuel-data route)
+  app.get('/fuel-data/:placa', unifiedAuthMiddleware, async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    
+    try {
+
+      const { placa } = req.params;
+      const { limit = 50 } = req.query;
+
+      if (!placa) {
+        return res.status(400).json({
+          success: false,
+          message: 'Placa do veículo é obrigatória'
+        });
+      }
+
+      console.log(`[FUEL-DATA] Buscando histórico para placa: ${placa}`);
+
+      const query = `
+        SELECT 
+          placa,
+          data_hora as data_abastecimento,
+          nome_posto as posto,
+          nome_motorista as motorista,
+          valor_total as valor,
+          quantidade_litros as litros,
+          COALESCE(hodometro_atual, km) as km_atual,
+          tipo_combustivel,
+          observacoes,
+          created_at,
+          nome_operador,
+          valor_litro,
+          tipo_veiculo,
+          project
+        FROM historico_consolidado_abastecimentos 
+        WHERE UPPER(placa) = UPPER($1)
+        ORDER BY created_at DESC
+        LIMIT $2
+      `;
+
+      const result = await pool.query(query, [placa, parseInt(limit as string)]);
+
+      console.log(`[FUEL-DATA] Encontrados ${result.rows.length} registros para ${placa}`);
+
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        placa: placa.toUpperCase(),
+        total: result.rows.length,
+        message: result.rows.length > 0 
+          ? `${result.rows.length} abastecimentos encontrados` 
+          : 'Nenhum abastecimento encontrado para esta placa'
+      });
+
+    } catch (error: any) {
+      console.error('[FUEL-DATA] Erro:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar histórico de abastecimentos',
+        error: error.message
+      });
+    }
+  });
+
+  // Original endpoint para buscar histórico de abastecimentos por placa
   app.get('/api/fuel-history/:placa', async (req, res) => {
     // Set JSON headers first
     res.setHeader('Content-Type', 'application/json');
