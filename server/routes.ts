@@ -16197,8 +16197,8 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
-  // API endpoint for fuel history that works correctly
-  app.get('/api/fuel-data/:placa', unifiedAuthMiddleware, async (req, res) => {
+  // CRITICAL: Fuel history endpoint - must be registered early
+  app.get('/api/historico-combustivel/:placa', unifiedAuthMiddleware, async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     
     try {
@@ -16213,8 +16213,11 @@ async function createFuelRequestNotification(fuelRequest) {
         });
       }
 
-      console.log(`[FUEL-DATA] Buscando histórico para placa: ${placa}`);
+      console.log(`[FUEL-DATA] ===== INICIO BUSCA HISTORICO =====`);
+      console.log(`[FUEL-DATA] Placa solicitada: ${placa}`);
       console.log(`[FUEL-DATA] User authenticated:`, req.user?.email);
+      console.log(`[FUEL-DATA] Request headers:`, req.headers);
+      console.log(`[FUEL-DATA] Limit parameter:`, limit);
 
       const query = `
         SELECT 
@@ -16238,9 +16241,12 @@ async function createFuelRequestNotification(fuelRequest) {
         LIMIT $2
       `;
 
+      console.log(`[FUEL-DATA] Executando query SQL...`);
       const result = await pool.query(query, [placa, parseInt(limit as string)]);
 
+      console.log(`[FUEL-DATA] Query executada com sucesso`);
       console.log(`[FUEL-DATA] Encontrados ${result.rows.length} registros para ${placa}`);
+      console.log(`[FUEL-DATA] Primeiros 2 resultados:`, result.rows.slice(0, 2));
       
       const response = {
         success: true,
