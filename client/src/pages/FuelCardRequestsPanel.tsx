@@ -80,6 +80,7 @@ const FuelCardRequestsPanel: React.FC = () => {
   const [selectedPlaca, setSelectedPlaca] = useState('');
   const [fuelHistory, setFuelHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [solicitudeCounts, setSolicitudeCounts] = useState<Record<string, number>>({});
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -98,7 +99,7 @@ const FuelCardRequestsPanel: React.FC = () => {
 
   const loadSolicitudeCounts = async () => {
     try {
-      const uniquePlates = [...new Set(solicitations.map(s => s.plate))];
+      const uniquePlates = [...new Set(solicitations.map(s => s.placa))];
       const counts: Record<string, number> = {};
       
       for (const plate of uniquePlates) {
@@ -120,6 +121,8 @@ const FuelCardRequestsPanel: React.FC = () => {
       console.error('Erro ao carregar contagens:', error);
     }
   };
+
+
 
   const fetchSolicitations = async () => {
     try {
@@ -229,10 +232,6 @@ const FuelCardRequestsPanel: React.FC = () => {
     setHistoryModalOpen(true);
     
     try {
-      console.log(`[FRONTEND] ===== INICIO BUSCA HISTORICO FRONTEND =====`);
-      console.log(`[FRONTEND] Placa solicitada: ${placa}`);
-      console.log(`[FRONTEND] URL da requisição: /fuel-data/${encodeURIComponent(placa)}`);
-      
       const response = await fetch(`/fuel-data/${encodeURIComponent(placa)}`, {
         method: 'GET',
         credentials: 'include',
@@ -242,30 +241,22 @@ const FuelCardRequestsPanel: React.FC = () => {
         }
       });
       
-      console.log(`[FRONTEND] Response status: ${response.status}`);
-      console.log(`[FRONTEND] Response ok: ${response.ok}`);
-      console.log(`[FRONTEND] Response headers:`, Object.fromEntries(response.headers.entries()));
-      
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`[FRONTEND] Error response body:`, errorText);
-        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+        throw new Error(`Erro HTTP: ${response.status}`);
       }
       
       const data = await response.json();
-      console.log(`[FRONTEND] Dados recebidos:`, data);
       
       if (data.success) {
         setFuelHistory(data.data || []);
-        console.log(`[FRONTEND] Histórico carregado: ${data.data?.length || 0} registros`);
       } else {
-        throw new Error(data.message || 'Erro desconhecido na API');
+        throw new Error(data.message || 'Erro ao buscar histórico');
       }
     } catch (error) {
-      console.error('[FRONTEND] Erro ao buscar histórico de abastecimentos:', error);
+      console.error('Erro ao buscar histórico:', error);
       toast({
         title: 'Erro ao carregar histórico',
-        description: error instanceof Error ? error.message : 'Não foi possível carregar o histórico de abastecimentos',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
         variant: 'destructive',
       });
       setFuelHistory([]);
@@ -419,7 +410,23 @@ const FuelCardRequestsPanel: React.FC = () => {
   
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
-    return format(new Date(dateString), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: ptBR });
+    try {
+      // Se já está no formato brasileiro (DD/MM/YYYY HH:MM), retorna como está
+      if (dateString.match(/^\d{2}\/\d{2}\/\d{4}\s\d{2}:\d{2}$/)) {
+        return dateString;
+      }
+      
+      // Tenta converter outras datas
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return dateString; // Retorna original se não conseguir converter
+      }
+      
+      return format(date, "dd/MM/yyyy HH:mm", { locale: ptBR });
+    } catch (error) {
+      console.warn('Erro ao formatar data:', dateString, error);
+      return dateString; // Retorna a string original em caso de erro
+    }
   };
   
   const formatCurrency = (value: number) => {
