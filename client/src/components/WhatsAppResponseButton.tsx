@@ -21,7 +21,7 @@ interface WhatsAppResponseButtonProps {
     motorista: string;
     placa: string;
     status: string;
-    valor_solicitado?: number;
+    valor_solicitado?: number | string;
     observacoes?: string;
     telefone_motorista?: string;
     origem_tipo?: string;
@@ -163,7 +163,10 @@ const WhatsAppResponseButton: React.FC<WhatsAppResponseButtonProps> = ({
             </div>
             {solicitation.valor_solicitado && (
               <div className="text-sm text-gray-600">
-                <strong>Valor:</strong> R$ {solicitation.valor_solicitado.toFixed(2)}
+                <strong>Valor:</strong> R$ {(() => {
+                  const valor = parseFloat(solicitation.valor_solicitado.toString());
+                  return isNaN(valor) ? '0.00' : valor.toFixed(2);
+                })()}
               </div>
             )}
           </div>

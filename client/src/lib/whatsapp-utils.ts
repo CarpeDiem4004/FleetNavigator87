@@ -44,17 +44,20 @@ export function generateFuelCardMessage(
   motorista: string,
   placa: string,
   status: string,
-  valorSolicitado?: number,
+  valorSolicitado?: number | string,
   observacoes?: string
 ): string {
   let message = `Olá ${motorista}!\n\n`;
+  
+  // Convert valorSolicitado to number if it's a string
+  const valor = valorSolicitado ? parseFloat(valorSolicitado.toString()) : null;
   
   switch (status.toLowerCase()) {
     case 'recarga efetuada':
       message += `✅ Sua solicitação de recarga foi APROVADA!\n\n`;
       message += `🚛 Veículo: ${placa}\n`;
-      if (valorSolicitado) {
-        message += `💰 Valor: R$ ${valorSolicitado.toFixed(2)}\n`;
+      if (valor && !isNaN(valor)) {
+        message += `💰 Valor: R$ ${valor.toFixed(2)}\n`;
       }
       message += `\n📋 Status: Recarga efetuada com sucesso\n`;
       if (observacoes) {
@@ -66,8 +69,8 @@ export function generateFuelCardMessage(
     case 'em análise':
       message += `⏳ Sua solicitação está EM ANÁLISE\n\n`;
       message += `🚛 Veículo: ${placa}\n`;
-      if (valorSolicitado) {
-        message += `💰 Valor solicitado: R$ ${valorSolicitado.toFixed(2)}\n`;
+      if (valor && !isNaN(valor)) {
+        message += `💰 Valor solicitado: R$ ${valor.toFixed(2)}\n`;
       }
       message += `\n📋 Nossa equipe está analisando sua solicitação.\n`;
       message += `Em breve você receberá uma resposta. 📞`;
@@ -76,8 +79,8 @@ export function generateFuelCardMessage(
     case 'negado':
       message += `❌ Sua solicitação foi NEGADA\n\n`;
       message += `🚛 Veículo: ${placa}\n`;
-      if (valorSolicitado) {
-        message += `💰 Valor solicitado: R$ ${valorSolicitado.toFixed(2)}\n`;
+      if (valor && !isNaN(valor)) {
+        message += `💰 Valor solicitado: R$ ${valor.toFixed(2)}\n`;
       }
       if (observacoes) {
         message += `\n📝 Motivo: ${observacoes}\n`;
@@ -88,8 +91,8 @@ export function generateFuelCardMessage(
     default:
       message += `📋 Atualização sobre sua solicitação de recarga\n\n`;
       message += `🚛 Veículo: ${placa}\n`;
-      if (valorSolicitado) {
-        message += `💰 Valor: R$ ${valorSolicitado.toFixed(2)}\n`;
+      if (valor && !isNaN(valor)) {
+        message += `💰 Valor: R$ ${valor.toFixed(2)}\n`;
       }
       message += `📊 Status: ${status}\n`;
       if (observacoes) {
