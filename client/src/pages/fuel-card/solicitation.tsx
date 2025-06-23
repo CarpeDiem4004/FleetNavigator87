@@ -67,6 +67,9 @@ const solicitacaoSchema = z.object({
     }),
   motorista: z.string()
     .min(3, { message: "O nome do motorista deve ter no mínimo 3 caracteres" }),
+  telefone_celular: z.string()
+    .min(10, { message: "O telefone deve ter no mínimo 10 dígitos" })
+    .regex(/^[\(\)\d\s\-\+]+$/, { message: "Formato de telefone inválido" }),
   projeto_id: z.string()
     .min(1, { message: "Selecione um projeto" }),
   base_id: z.string()
@@ -96,6 +99,7 @@ export default function FuelCardSolicitation() {
       tipo_combustivel: "diesel",
       litros_solicitados: "",
       motorista: "",
+      telefone_celular: "",
       projeto_id: "",
       base_id: "",
       observacoes: ""
@@ -164,6 +168,7 @@ export default function FuelCardSolicitation() {
         tipo_combustivel: values.tipo_combustivel,
         litros_solicitados: parseFloat(values.litros_solicitados.toString()),
         motorista: values.motorista,
+        telefone_celular: values.telefone_celular,
         base: selectedBase?.base_name || "",
         id_rota: selectedBase?.base_code || "",
         observacoes: values.observacoes || "",
@@ -210,10 +215,12 @@ export default function FuelCardSolicitation() {
   }
   
   return (
-    <div className="container mx-auto py-8">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-2">Solicitação de Cartão Combustível</h1>
-        <p className="text-muted-foreground mb-6">Preencha o formulário abaixo para solicitar um cartão de combustível</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-6">
+      <div className="max-w-md mx-auto sm:max-w-2xl lg:max-w-3xl">
+        <div className="text-center mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800">💳 Solicitação de Cartão</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Preencha os dados para solicitar recarga de combustível</p>
+        </div>
         
         {error && (
           <Alert variant="destructive" className="mb-6">
@@ -223,28 +230,32 @@ export default function FuelCardSolicitation() {
           </Alert>
         )}
         
-        <Card>
-          <CardHeader>
-            <CardTitle>Dados da Solicitação</CardTitle>
-            <CardDescription>
+        <Card className="shadow-lg border-0 bg-white/95 backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg sm:text-xl">📋 Dados da Solicitação</CardTitle>
+            <CardDescription className="text-sm">
               Informe os dados do veículo e do cartão desejado
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
                     name="placa"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Placa do Veículo</FormLabel>
+                        <FormLabel className="text-sm font-medium">🚗 Placa do Veículo</FormLabel>
                         <FormControl>
-                          <Input placeholder="ABC1234" {...field} />
+                          <Input 
+                            placeholder="ABC1234" 
+                            className="text-base h-12" 
+                            {...field} 
+                          />
                         </FormControl>
-                        <FormDescription>
-                          Informe a placa do veículo sem traços ou espaços
+                        <FormDescription className="text-xs">
+                          Informe a placa sem traços ou espaços
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -256,11 +267,16 @@ export default function FuelCardSolicitation() {
                     name="km"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Quilometragem Atual</FormLabel>
+                        <FormLabel className="text-sm font-medium">📏 Quilometragem</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="123456" {...field} />
+                          <Input 
+                            type="number" 
+                            placeholder="123456" 
+                            className="text-base h-12" 
+                            {...field} 
+                          />
                         </FormControl>
-                        <FormDescription>
+                        <FormDescription className="text-xs">
                           KM atual do veículo
                         </FormDescription>
                         <FormMessage />
@@ -273,12 +289,18 @@ export default function FuelCardSolicitation() {
                     name="valor_solicitado"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Valor Solicitado (R$)</FormLabel>
+                        <FormLabel className="text-sm font-medium">💰 Valor (R$)</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="150.00" {...field} />
+                          <Input 
+                            type="number" 
+                            step="0.01" 
+                            placeholder="150.00" 
+                            className="text-base h-12" 
+                            {...field} 
+                          />
                         </FormControl>
-                        <FormDescription>
-                          Valor em reais para carregar no cartão
+                        <FormDescription className="text-xs">
+                          Valor em reais para carregar
                         </FormDescription>
                         <FormMessage />
                       </FormItem>

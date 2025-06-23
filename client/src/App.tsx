@@ -313,6 +313,8 @@ function App() {
           {/* Página principal de solicitações de cartão combustível */}
           <ProtectedRoute path="/fuel-card-requests" component={FuelCardRequestsPanel} />
           <ProtectedRoute path="/fuel-card-dashboard" component={FuelCard} />
+          {/* Página otimizada para solicitação mobile */}
+          <Route path="/fuel-card/solicitation" component={FuelCardSolicitation} />
           <ProtectedRoute path="/posto-remedios" component={PostoRemediosPage} />
           <ProtectedRoute path="/cartao-abastecimento" component={CartaoAbastecimentoPage} />
           <ProtectedRoute path="/abastecimento" component={PainelPostosPage} />
