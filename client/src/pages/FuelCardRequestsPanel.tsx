@@ -200,9 +200,16 @@ const FuelCardRequestsPanel: React.FC = () => {
     try {
       console.log(`[FRONTEND] ===== INICIO BUSCA HISTORICO FRONTEND =====`);
       console.log(`[FRONTEND] Placa solicitada: ${placa}`);
-      console.log(`[FRONTEND] URL da requisição: /api/fuel-history-working/${encodeURIComponent(placa)}`);
+      console.log(`[FRONTEND] URL da requisição: /fuel-data/${encodeURIComponent(placa)}`);
       
-      const response = await apiRequest('GET', `/api/fuel-history-working/${encodeURIComponent(placa)}`);
+      const response = await fetch(`/fuel-data/${encodeURIComponent(placa)}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
       
       console.log(`[FRONTEND] Response status: ${response.status}`);
       console.log(`[FRONTEND] Response ok: ${response.ok}`);
@@ -214,18 +221,8 @@ const FuelCardRequestsPanel: React.FC = () => {
         throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
       }
       
-      const responseText = await response.text();
-      console.log(`[FRONTEND] Raw response text:`, responseText);
-      
-      let data;
-      try {
-        data = JSON.parse(responseText);
-        console.log(`[FRONTEND] Parsed JSON data:`, data);
-      } catch (parseError) {
-        console.error(`[FRONTEND] JSON parse error:`, parseError);
-        console.error(`[FRONTEND] Response was not valid JSON:`, responseText);
-        throw new Error('Resposta da API não é um JSON válido');
-      }
+      const data = await response.json();
+      console.log(`[FRONTEND] Dados recebidos:`, data);
       
       if (data.success) {
         setFuelHistory(data.data || []);

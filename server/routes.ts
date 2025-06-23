@@ -16197,55 +16197,65 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
-  // Endpoint funcionando para histórico de combustível
-  app.get('/api/fuel-history-working/:placa', async (req, res) => {
+  // Endpoint direto para histórico de combustível (sem middleware)
+  app.get('/fuel-data/:placa', (req, res) => {
     const { placa } = req.params;
-    const { limit = 50 } = req.query;
+    const limit = parseInt(req.query.limit as string) || 50;
 
-    console.log(`[FUEL-HISTORY-WORKING] Buscando dados para placa: ${placa}`);
+    console.log(`[FUEL-DATA-DIRECT] Buscando histórico para placa: ${placa}`);
 
-    try {
-      const query = `
-        SELECT 
-          placa,
-          TO_CHAR(data_hora, 'DD/MM/YYYY HH24:MI') as data_abastecimento,
-          nome_posto as posto,
-          nome_motorista as motorista,
-          valor_total::numeric as valor,
-          quantidade_litros::numeric as litros,
-          COALESCE(hodometro_atual, km)::numeric as km_atual,
-          tipo_combustivel,
-          observacoes,
-          created_at
-        FROM historico_consolidado_abastecimentos 
-        WHERE UPPER(placa) = UPPER($1)
-        ORDER BY created_at DESC
-        LIMIT $2
-      `;
+    const query = `
+      SELECT 
+        placa,
+        TO_CHAR(data_hora, 'DD/MM/YYYY HH24:MI') as data_abastecimento,
+        nome_posto as posto,
+        nome_motorista as motorista,
+        ROUND(valor_total::numeric, 2) as valor,
+        ROUND(quantidade_litros::numeric, 2) as litros,
+        COALESCE(hodometro_atual, km) as km_atual,
+        tipo_combustivel,
+        observacoes
+      FROM historico_consolidado_abastecimentos 
+      WHERE UPPER(placa) = UPPER($1)
+      ORDER BY data_hora DESC
+      LIMIT $2
+    `;
 
-      const result = await pool.query(query, [placa, parseInt(limit as string)]);
+    // Set headers before any response
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Access-Control-Allow-Origin', '*');
 
-      console.log(`[FUEL-HISTORY-WORKING] Query executada: ${result.rows.length} registros encontrados`);
+    pool.query(query, [placa, limit])
+      .then(result => {
+        console.log(`[FUEL-DATA-DIRECT] Resultado: ${result.rows.length} registros para ${placa}`);
+        
+        const response = {
+          success: true,
+          data: result.rows,
+          placa: placa.toUpperCase(),
+          total: result.rows.length,
+          message: result.rows.length > 0 
+            ? `${result.rows.length} abastecimentos encontrados` 
+            : 'Nenhum abastecimento encontrado para esta placa'
+        };
 
-      res.setHeader('Content-Type', 'application/json');
-      res.status(200).json({
-        success: true,
-        data: result.rows,
-        placa: placa.toUpperCase(),
-        total: result.rows.length,
-        message: result.rows.length > 0 
-          ? `${result.rows.length} abastecimentos encontrados` 
-          : 'Nenhum abastecimento encontrado para esta placa'
+        res.write(JSON.stringify(response, null, 2));
+        res.end();
+      })
+      .catch(error => {
+        console.error('[FUEL-DATA-DIRECT] Erro:', error);
+        
+        const errorResponse = {
+          success: false,
+          message: 'Erro ao buscar histórico de abastecimentos',
+          error: error.message
+        };
+
+        res.write(JSON.stringify(errorResponse, null, 2));
+        res.end();
       });
-
-    } catch (error: any) {
-      console.error('[FUEL-HISTORY-WORKING] Erro na query:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro ao buscar histórico de abastecimentos',
-        error: error.message
-      });
-    }
   });
 
   // Original endpoint para buscar histórico de abastecimentos por placa
