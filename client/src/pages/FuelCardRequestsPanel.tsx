@@ -562,87 +562,96 @@ const FuelCardRequestsPanel: React.FC = () => {
                 Nenhuma solicitação encontrada com os filtros atuais.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <div className="max-h-[600px] overflow-y-auto border border-gray-200 rounded-lg">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50 sticky top-0 z-10">
-                      <tr>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Placa</th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Motorista</th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor</th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KM</th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Operação</th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base</th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ação</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredSolicitations.map((solicitacao, index) => (
-                        <tr 
-                          key={`${solicitacao.id}-${solicitacao.origem_tipo}-${index}`} 
-                          className={`hover:bg-gray-50 transition-colors ${
-                            index < 5 
-                              ? solicitacao.status === 'Pendente' 
-                                ? 'bg-yellow-50 border-l-4 border-yellow-400' 
-                                : 'bg-blue-50 border-l-4 border-blue-400'
-                              : solicitacao.status === 'Pendente' 
-                                ? 'bg-yellow-25' 
-                                : ''
-                          }`}
-                        >
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <div className="space-y-3">
+                <div className="max-h-[600px] overflow-y-auto">
+                  {filteredSolicitations.map((solicitacao, index) => (
+                    <div 
+                      key={`${solicitacao.id}-${solicitacao.origem_tipo}-${index}`} 
+                      className={`p-4 rounded-lg border transition-all duration-200 hover:shadow-md ${
+                        index < 5 
+                          ? solicitacao.status === 'Pendente' 
+                            ? 'bg-yellow-50 border-yellow-200 border-l-4 border-l-yellow-400' 
+                            : 'bg-blue-50 border-blue-200 border-l-4 border-l-blue-400'
+                          : solicitacao.status === 'Pendente' 
+                            ? 'bg-yellow-25 border-yellow-100' 
+                            : 'bg-white border-gray-200'
+                      }`}
+                    >
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+                        {/* Placa e Indicador */}
+                        <div className="lg:col-span-2">
+                          <div className="flex items-center">
                             {index < 5 && <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-2"></span>}
-                            {solicitacao.placa}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">{solicitacao.motorista}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{formatCurrency(solicitacao.valor_solicitado)}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">{solicitacao.km_total || solicitacao.km_veiculo || '-'}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <Badge variant="outline" className={
-                              solicitacao.origem_tipo === 'line_hall' 
-                                ? "bg-blue-100 text-blue-800" 
-                                : "bg-green-100 text-green-800"
-                            }>
-                              {solicitacao.origem_tipo === 'line_hall' ? 'Line Hall Shopee' : 'Tradicional'}
-                            </Badge>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">{solicitacao.base || '-'}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">{getStatusBadge(solicitacao.status)}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">{formatDate(solicitacao.data_solicitacao).split(',')[0]}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <div className="flex gap-2">
+                            <div>
+                              <p className="text-sm font-bold text-gray-900">{solicitacao.placa}</p>
+                              <p className="text-xs text-gray-500">Placa</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Motorista */}
+                        <div className="lg:col-span-2">
+                          <p className="text-sm font-medium text-gray-900 truncate">{solicitacao.motorista}</p>
+                          <p className="text-xs text-gray-500">Motorista</p>
+                        </div>
+
+                        {/* Valor e KM */}
+                        <div className="lg:col-span-2">
+                          <p className="text-sm font-bold text-green-600">{formatCurrency(solicitacao.valor_solicitado)}</p>
+                          <p className="text-xs text-gray-500">{solicitacao.km_total || solicitacao.km_veiculo || '-'} km</p>
+                        </div>
+
+                        {/* Operação e Base */}
+                        <div className="lg:col-span-2">
+                          <Badge variant="outline" className={
+                            solicitacao.origem_tipo === 'line_hall' 
+                              ? "bg-blue-100 text-blue-800 mb-1" 
+                              : "bg-green-100 text-green-800 mb-1"
+                          }>
+                            {solicitacao.origem_tipo === 'line_hall' ? 'Line Hall' : 'Tradicional'}
+                          </Badge>
+                          <p className="text-xs text-gray-500 truncate">{solicitacao.base || '-'}</p>
+                        </div>
+
+                        {/* Status e Data */}
+                        <div className="lg:col-span-2">
+                          {getStatusBadge(solicitacao.status)}
+                          <p className="text-xs text-gray-500 mt-1">{formatDate(solicitacao.data_solicitacao).split(',')[0]}</p>
+                        </div>
+
+                        {/* Ações */}
+                        <div className="lg:col-span-2">
+                          <div className="flex flex-wrap gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleOpenSolicitation(solicitacao)}
+                              className="text-xs"
+                            >
+                              Visualizar
+                            </Button>
+                            
+                            <WhatsAppResponseButton 
+                              solicitation={solicitacao}
+                              variant="outline"
+                              size="sm"
+                            />
+                            
+                            {user?.role === 'admin' && (
                               <Button 
                                 variant="outline" 
                                 size="sm"
-                                onClick={() => handleOpenSolicitation(solicitacao)}
+                                onClick={() => handleDeleteSolicitation(solicitacao)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
                               >
-                                Visualizar
+                                <Trash2 className="h-3 w-3" />
                               </Button>
-                              
-                              <WhatsAppResponseButton 
-                                solicitation={solicitacao}
-                                variant="outline"
-                                size="sm"
-                              />
-                              
-                              {user?.role === 'admin' && (
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => handleDeleteSolicitation(solicitacao)}
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
                 
                 {/* Indicador visual das primeiras 5 solicitações */}
