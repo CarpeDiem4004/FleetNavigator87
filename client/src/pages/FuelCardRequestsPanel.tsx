@@ -577,8 +577,8 @@ const FuelCardRequestsPanel: React.FC = () => {
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ação</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredSolicitations.map((solicitacao, index) => (
+                  <tbody className="bg-white divide-y divide-gray-200 max-h-[400px] overflow-y-auto">
+                    {filteredSolicitations.slice(0, 5).map((solicitacao, index) => (
                       <tr 
                         key={`${solicitacao.id}-${solicitacao.origem_tipo}-${index}`} 
                         className={`hover:bg-gray-50 ${solicitacao.status === 'Pendente' ? 'bg-yellow-50' : ''}`}
@@ -631,6 +631,74 @@ const FuelCardRequestsPanel: React.FC = () => {
                     ))}
                   </tbody>
                 </table>
+                
+                {/* Seção de Rolagem para Solicitações Adicionais */}
+                {filteredSolicitations.length > 5 && (
+                  <div className="border-t border-gray-200 bg-gray-50">
+                    <div className="px-6 py-3">
+                      <p className="text-sm text-gray-600 font-medium">
+                        {filteredSolicitations.length - 5} solicitações adicionais
+                      </p>
+                    </div>
+                    <div className="max-h-[300px] overflow-y-auto bg-white">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {filteredSolicitations.slice(5).map((solicitacao, index) => (
+                            <tr 
+                              key={`${solicitacao.id}-${solicitacao.origem_tipo}-${index + 5}`} 
+                              className={`hover:bg-gray-50 ${solicitacao.status === 'Pendente' ? 'bg-yellow-50' : ''}`}
+                            >
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{solicitacao.placa}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm">{solicitacao.motorista}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{formatCurrency(solicitacao.valor_solicitado)}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm">{solicitacao.km_total || solicitacao.km_veiculo || '-'}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                <Badge variant="outline" className={
+                                  solicitacao.origem_tipo === 'line_hall' 
+                                    ? "bg-blue-100 text-blue-800" 
+                                    : "bg-green-100 text-green-800"
+                                }>
+                                  {solicitacao.origem_tipo === 'line_hall' ? 'Line Hall Shopee' : 'Tradicional'}
+                                </Badge>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm">{solicitacao.base || '-'}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm">{getStatusBadge(solicitacao.status)}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm">{formatDate(solicitacao.data_solicitacao).split(',')[0]}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                <div className="flex gap-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleOpenSolicitation(solicitacao)}
+                                  >
+                                    Visualizar
+                                  </Button>
+                                  
+                                  <WhatsAppResponseButton 
+                                    solicitation={solicitacao}
+                                    variant="outline"
+                                    size="sm"
+                                  />
+                                  
+                                  {user?.role === 'admin' && (
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => handleDeleteSolicitation(solicitacao)}
+                                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
