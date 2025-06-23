@@ -642,75 +642,7 @@ app.use((req, res, next) => {
   
 
 
-  // CRITICAL: Register fuel history endpoint BEFORE all other routes
-  app.get('/api/historico-combustivel/:placa', async (req, res) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Cache-Control', 'no-cache');
-    
-    try {
-      // Check authentication
-      if (!req.isAuthenticated || !req.isAuthenticated()) {
-        return res.status(401).json({
-          success: false,
-          message: 'Usuário não autenticado'
-        });
-      }
 
-      const { placa } = req.params;
-      const { limit = 50 } = req.query;
-
-      if (!placa) {
-        return res.status(400).json({
-          success: false,
-          message: 'Placa do veículo é obrigatória'
-        });
-      }
-
-      console.log(`[HISTORICO-COMBUSTIVEL] Buscando para placa: ${placa}`);
-
-      const query = `
-        SELECT 
-          placa,
-          data_hora as data_abastecimento,
-          nome_posto as posto,
-          nome_motorista as motorista,
-          valor_total as valor,
-          quantidade_litros as litros,
-          COALESCE(hodometro_atual, km) as km_atual,
-          tipo_combustivel,
-          observacoes,
-          created_at
-        FROM historico_consolidado_abastecimentos 
-        WHERE UPPER(placa) = UPPER($1)
-        ORDER BY created_at DESC
-        LIMIT $2
-      `;
-
-      const result = await pool.query(query, [placa, parseInt(limit as string)]);
-
-      console.log(`[HISTORICO-COMBUSTIVEL] Encontrados ${result.rows.length} registros`);
-
-      const response = {
-        success: true,
-        data: result.rows,
-        placa: placa.toUpperCase(),
-        total: result.rows.length,
-        message: result.rows.length > 0 
-          ? `${result.rows.length} abastecimentos encontrados` 
-          : 'Nenhum abastecimento encontrado para esta placa'
-      };
-
-      return res.status(200).json(response);
-
-    } catch (error: any) {
-      console.error('[HISTORICO-COMBUSTIVEL] Erro:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Erro ao buscar histórico de abastecimentos',
-        error: error.message
-      });
-    }
-  });
 
   const server = await registerRoutes(app);
   
