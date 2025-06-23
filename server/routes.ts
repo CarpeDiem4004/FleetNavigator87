@@ -16276,6 +16276,33 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
+  // Test endpoint to verify authentication is working
+  app.get('/api/test-auth', async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    try {
+      if (!req.isAuthenticated || !req.isAuthenticated()) {
+        return res.status(401).json({
+          success: false,
+          message: 'Não autenticado',
+          isAuthenticated: false
+        });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Autenticado com sucesso',
+        user: req.user?.email || 'unknown',
+        isAuthenticated: true
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno',
+        error: error.message
+      });
+    }
+  });
+
   // Servir arquivos estáticos para uploads
   app.use('/uploads', express.static('uploads'));
 

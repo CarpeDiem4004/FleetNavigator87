@@ -1,0 +1,99 @@
+O erro exibido na imagem indica que a resposta da API para o histórico de abastecimentos não está vindo como um JSON válido, e sim como um HTML (provavelmente uma página de erro ou redirecionamento). O erro específico é:
+
+```
+SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+```
+
+Isso geralmente acontece quando:
+
+---
+
+### ✅ **Causas Possíveis:**
+
+1. **A rota `/api/fuel-history/ABC1234` está quebrada ou não existe:**
+
+   * Pode estar retornando uma página HTML de erro 404 ou 500, ao invés de JSON.
+
+2. **O backend não está configurado corretamente para essa rota:**
+
+   * Pode estar faltando a definição da rota no Express ou o endpoint pode estar com erro interno.
+
+3. **Erro de autenticação ou autorização:**
+
+   * O token pode estar expirado ou inválido, e a requisição pode estar sendo redirecionada para uma página de login HTML.
+
+---
+
+### ✅ **Como Resolver:**
+
+#### 1. **Verifique a Rota no Backend:**
+
+No seu backend Express.js (possivelmente em `routes/fuel-history.js` ou `server.js`):
+
+```js
+app.get('/api/fuel-history/:placa', async (req, res) => {
+  const { placa } = req.params;
+  try {
+    const dados = await buscarAbastecimentosPorPlaca(placa); // ou seu método
+    res.json(dados);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Erro ao buscar abastecimentos' });
+  }
+});
+```
+
+Certifique-se de que:
+
+* A rota está implementada.
+* A função `buscarAbastecimentosPorPlaca` está funcionando corretamente.
+* Está retornando `res.json()` e **não** `res.sendFile()`, `res.redirect()`, ou `res.render()`.
+
+---
+
+#### 2. **Teste a rota manualmente:**
+
+* Acesse diretamente no navegador ou com Postman:
+
+```
+https://<seu-domínio>/api/fuel-history/ABC1234
+```
+
+Se aparecer uma página HTML (com `<DOCTYPE html>`), é erro de rota ou redirecionamento.
+
+---
+
+#### 3. **Verifique o token JWT:**
+
+Você está usando um token com `useFetchWithAuth.ts`. Se esse token estiver inválido ou expirado, pode estar redirecionando para o login.
+
+Garanta que a autenticação está correta:
+
+```ts
+fetch(`/api/fuel-history/${placa}`, {
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+});
+```
+
+---
+
+#### 4. **Corrigir o front caso precise tratar esse erro:**
+
+No seu `FuelCardRequestsPanel.tsx:218`, onde dá o erro, você pode colocar um `try/catch` melhorado:
+
+```ts
+try {
+  const response = await fetchComToken(`/api/fuel-history/${placa}`);
+  const json = await response.json();
+  setHistorico(json);
+} catch (error) {
+  console.error("Erro ao buscar histórico:", error);
+  toast.error("Erro ao carregar histórico. Verifique se a placa está correta ou se há registros.");
+}
+```
+
+---
+
+Se quiser que eu revise seu backend (Express.js), posso ajudar linha por linha. Basta colar aqui ou subir o arquivo com as rotas. Deseja isso?
