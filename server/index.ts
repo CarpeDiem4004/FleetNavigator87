@@ -644,26 +644,19 @@ app.use((req, res, next) => {
 
 
 
-  // CRITICAL: Add fuel history endpoint BEFORE registerRoutes to avoid Vite interception
+  // Fuel history endpoint 
   app.get('/fuel-data/:placa', (req, res) => {
     const { placa } = req.params;
-    const limit = parseInt(req.query.limit as string) || 50;
+    console.log(`[FUEL-DATA] Buscando placa: ${placa}`);
 
-    console.log(`[FUEL-DATA-INDEX] Buscando histórico para placa: ${placa}`);
-
-    res.writeHead(200, {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'no-cache',
-      'Access-Control-Allow-Origin': '*'
-    });
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Origin', '*');
 
     const query = `
       SELECT 
         placa,
-        CASE 
-          WHEN data_hora::text IS NOT NULL THEN data_hora::text
-          ELSE created_at::text
-        END as data_abastecimento,
+        data_hora as data_abastecimento,
         nome_posto as posto,
         nome_motorista as motorista,
         valor_total as valor,
@@ -672,20 +665,15 @@ app.use((req, res, next) => {
         tipo_combustivel,
         observacoes
       FROM historico_consolidado_abastecimentos 
-      WHERE UPPER(placa) = UPPER($1)
-      ORDER BY 
-        CASE 
-          WHEN data_hora IS NOT NULL THEN data_hora 
-          ELSE created_at 
-        END DESC
-      LIMIT $2
+      WHERE placa = $1 
+      ORDER BY created_at DESC 
+      LIMIT 50
     `;
 
-    pool.query(query, [placa, limit])
+    pool.query(query, [placa])
       .then(result => {
-        console.log(`[FUEL-DATA-INDEX] Resultado: ${result.rows.length} registros para ${placa}`);
-        
-        const response = {
+        console.log(`[FUEL-DATA] Encontrados ${result.rows.length} registros`);
+        res.end(JSON.stringify({
           success: true,
           data: result.rows,
           placa: placa.toUpperCase(),
@@ -693,22 +681,51 @@ app.use((req, res, next) => {
           message: result.rows.length > 0 
             ? `${result.rows.length} abastecimentos encontrados` 
             : 'Nenhum abastecimento encontrado para esta placa'
-        };
-
-        res.write(JSON.stringify(response, null, 2));
-        res.end();
+        }));
       })
       .catch(error => {
-        console.error('[FUEL-DATA-INDEX] Erro:', error);
-        
-        const errorResponse = {
+        console.error('[FUEL-DATA] Erro:', error);
+        res.end(JSON.stringify({
           success: false,
-          message: 'Erro ao buscar histórico de abastecimentos',
           error: error.message
-        };
+        }));
+      });
+  });
 
-        res.write(JSON.stringify(errorResponse, null, 2));
-        res.end();
+  // Fuel card solicitation count endpoint
+  app.get('/fuel-requests-count/:plate', (req, res) => {
+    const { plate } = req.params;
+    console.log(`[FUEL-REQUESTS] Contando solicitações para placa: ${plate}`);
+
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+
+    const query = `
+      SELECT 
+        plate,
+        COUNT(*) as total_solicitations,
+        MAX(created_at) as ultima_solicitacao
+      FROM fuel_card_requests 
+      WHERE UPPER(plate) = UPPER($1)
+      GROUP BY plate
+    `;
+
+    pool.query(query, [plate])
+      .then(result => {
+        console.log(`[FUEL-REQUESTS] Encontrados ${result.rows.length} registros`);
+        const data = result.rows[0] || { plate: plate.toUpperCase(), total_solicitations: 0, ultima_solicitacao: null };
+        res.end(JSON.stringify({
+          success: true,
+          data: data
+        }));
+      })
+      .catch(error => {
+        console.error('[FUEL-REQUESTS] Erro:', error);
+        res.end(JSON.stringify({
+          success: false,
+          error: error.message
+        }));
       });
   });
 

@@ -90,6 +90,37 @@ const FuelCardRequestsPanel: React.FC = () => {
     fetchProjects();
   }, []);
 
+  useEffect(() => {
+    if (solicitations.length > 0) {
+      loadSolicitudeCounts();
+    }
+  }, [solicitations]);
+
+  const loadSolicitudeCounts = async () => {
+    try {
+      const uniquePlates = [...new Set(solicitations.map(s => s.plate))];
+      const counts: Record<string, number> = {};
+      
+      for (const plate of uniquePlates) {
+        try {
+          const response = await fetch(`/fuel-requests-count/${encodeURIComponent(plate)}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+              counts[plate] = data.data.total_solicitations || 0;
+            }
+          }
+        } catch (error) {
+          console.error(`Erro ao buscar contagem para ${plate}:`, error);
+        }
+      }
+      
+      setSolicitudeCounts(counts);
+    } catch (error) {
+      console.error('Erro ao carregar contagens:', error);
+    }
+  };
+
   const fetchSolicitations = async () => {
     try {
       setLoading(true);
