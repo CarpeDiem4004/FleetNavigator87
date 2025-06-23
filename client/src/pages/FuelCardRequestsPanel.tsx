@@ -19,6 +19,7 @@ import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import FuelCardRequestForm from '@/components/FuelCardRequestForm';
+import WhatsAppResponseButton from '@/components/WhatsAppResponseButton';
 import { useLocation } from 'wouter';
 
 interface FuelCardSolicitation {
@@ -607,6 +608,13 @@ const FuelCardRequestsPanel: React.FC = () => {
                             >
                               Visualizar
                             </Button>
+                            
+                            <WhatsAppResponseButton 
+                              solicitation={solicitacao}
+                              variant="outline"
+                              size="sm"
+                            />
+                            
                             {user?.role === 'admin' && (
                               <Button 
                                 variant="outline" 
@@ -829,14 +837,23 @@ const FuelCardRequestsPanel: React.FC = () => {
                         </Select>
                       </div>
                       
-                      <Button 
-                        onClick={handleStatusUpdate} 
-                        className="w-full bg-blue-600 hover:bg-blue-700" 
-                        disabled={updatingStatus || editedStatus === selectedSolicitation.status}
-                        size="lg"
-                      >
-                        {updatingStatus ? 'Salvando...' : 'Salvar Alterações'}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={handleStatusUpdate} 
+                          className="flex-1 bg-blue-600 hover:bg-blue-700" 
+                          disabled={updatingStatus || editedStatus === selectedSolicitation.status}
+                          size="lg"
+                        >
+                          {updatingStatus ? 'Salvando...' : 'Salvar Alterações'}
+                        </Button>
+                        
+                        <WhatsAppResponseButton 
+                          solicitation={selectedSolicitation}
+                          variant="outline"
+                          size="lg"
+                          className="px-4"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
