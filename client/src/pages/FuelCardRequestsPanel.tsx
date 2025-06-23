@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { apiRequest } from '@/lib/queryClient';
-import { CreditCard, Filter, Search, Calendar, CheckCircle2, XCircle, Clock, AlertCircle, TrendingUp, TrendingDown, DollarSign, Download, Plus, Trash2, Truck } from 'lucide-react';
+import { CreditCard, Filter, Search, Calendar, CheckCircle2, XCircle, Clock, AlertCircle, TrendingUp, TrendingDown, DollarSign, Download, Plus, Trash2, Truck, History } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
@@ -74,6 +74,12 @@ const FuelCardRequestsPanel: React.FC = () => {
   const [editedStatus, setEditedStatus] = useState<string>('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [isNewRequestDialogOpen, setIsNewRequestDialogOpen] = useState(false);
+  
+  // Estados para o modal de histórico de abastecimentos
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [selectedPlaca, setSelectedPlaca] = useState('');
+  const [fuelHistory, setFuelHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -183,6 +189,38 @@ const FuelCardRequestsPanel: React.FC = () => {
         description: error instanceof Error ? error.message : 'Erro desconhecido',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleViewFuelHistory = async (placa: string) => {
+    setSelectedPlaca(placa);
+    setLoadingHistory(true);
+    setHistoryModalOpen(true);
+    
+    try {
+      const response = await apiRequest('GET', `/api/fuel-history/${encodeURIComponent(placa)}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setFuelHistory(data.data);
+      } else {
+        toast({
+          title: 'Erro ao carregar histórico',
+          description: data.message || 'Não foi possível carregar o histórico de abastecimentos',
+          variant: 'destructive',
+        });
+        setFuelHistory([]);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar histórico de abastecimentos:', error);
+      toast({
+        title: 'Erro ao carregar histórico',
+        description: 'Não foi possível carregar o histórico de abastecimentos',
+        variant: 'destructive',
+      });
+      setFuelHistory([]);
+    } finally {
+      setLoadingHistory(false);
     }
   };
   
@@ -631,6 +669,17 @@ const FuelCardRequestsPanel: React.FC = () => {
                               Visualizar
                             </Button>
                             
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleViewFuelHistory(solicitacao.placa)}
+                              className="text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              title={`Ver histórico de abastecimentos da placa ${solicitacao.placa}`}
+                            >
+                              <History className="h-3 w-3 mr-1" />
+                              Histórico
+                            </Button>
+                            
                             <WhatsAppResponseButton 
                               solicitation={solicitacao}
                               variant="outline"
@@ -902,6 +951,101 @@ const FuelCardRequestsPanel: React.FC = () => {
             )}
           </SheetContent>
         </Sheet>
+
+        {/* Modal de Histórico de Abastecimentos */}
+        <Dialog open={historyModalOpen} onOpenChange={setHistoryModalOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center">
+                <History className="mr-2 h-5 w-5 text-blue-600" />
+                Histórico de Abastecimentos - Placa {selectedPlaca}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {loadingHistory ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center space-x-4">
+                      <Skeleton className="h-12 w-12 rounded" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-[250px]" />
+                        <Skeleton className="h-4 w-[200px]" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : fuelHistory.length === 0 ? (
+                <div className="text-center py-8">
+                  <History className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Nenhum abastecimento encontrado
+                  </h3>
+                  <p className="text-gray-500">
+                    Não há registros de abastecimentos para a placa {selectedPlaca}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="text-sm text-gray-600 mb-4">
+                    Total de abastecimentos encontrados: {fuelHistory.length}
+                  </div>
+                  
+                  {fuelHistory.map((item, index) => (
+                    <div key={index} className="p-4 border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                          <Label className="text-xs text-gray-500">Data</Label>
+                          <div className="font-medium">
+                            {item.data_abastecimento ? formatDate(item.data_abastecimento) : 'Não informado'}
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <Label className="text-xs text-gray-500">Posto/Local</Label>
+                          <div className="font-medium">
+                            {item.posto || item.local || item.nome_posto || 'Não informado'}
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <Label className="text-xs text-gray-500">Valor</Label>
+                          <div className="font-medium text-green-600">
+                            {item.valor ? formatCurrency(parseFloat(item.valor.toString())) : 'Não informado'}
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <Label className="text-xs text-gray-500">Litros</Label>
+                          <div className="font-medium">
+                            {item.litros ? `${item.litros}L` : 'Não informado'}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {(item.motorista || item.km_atual) && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            {item.motorista && (
+                              <div>
+                                <span className="text-gray-500">Motorista:</span> {item.motorista}
+                              </div>
+                            )}
+                            {item.km_atual && (
+                              <div>
+                                <span className="text-gray-500">KM:</span> {item.km_atual}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
