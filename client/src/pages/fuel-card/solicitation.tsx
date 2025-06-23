@@ -58,13 +58,7 @@ const solicitacaoSchema = z.object({
   tipo_combustivel: z.enum(["gasolina", "alcool", "diesel", "arla"], {
     required_error: "Selecione o tipo de combustível"
   }),
-  litros_solicitados: z.string()
-    .min(1, { message: "A quantidade de litros é obrigatória" })
-    .transform(val => parseFloat(val))
-    .refine(val => !isNaN(val) && val > 0, {
-      message: "A quantidade de litros deve ser um número positivo",
-      path: ["litros_solicitados"]
-    }),
+
   motorista: z.string()
     .min(3, { message: "O nome do motorista deve ter no mínimo 3 caracteres" }),
   telefone_celular: z.string()
@@ -97,7 +91,6 @@ export default function FuelCardSolicitation() {
       provedor_cartao: "Ticket",
       numero_cartao: "",
       tipo_combustivel: "diesel",
-      litros_solicitados: "",
       motorista: "",
       telefone_celular: "",
       projeto_id: "",
@@ -166,7 +159,6 @@ export default function FuelCardSolicitation() {
         provedor_cartao: values.provedor_cartao,
         numero_cartao: values.numero_cartao || "",
         tipo_combustivel: values.tipo_combustivel,
-        litros_solicitados: parseFloat(values.litros_solicitados.toString()),
         motorista: values.motorista,
         telefone_celular: values.telefone_celular,
         base: selectedBase?.base_name || "",
@@ -395,29 +387,7 @@ export default function FuelCardSolicitation() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="litros_solicitados"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">⛽ Quantidade de Litros</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.01"
-                          min="0.1"
-                          placeholder="Ex: 50.00" 
-                          className="text-base h-12"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormDescription className="text-xs">
-                        Quantidade de litros necessária
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+
                 
                 {tipoCartao === "numero" && (
                   <FormField
