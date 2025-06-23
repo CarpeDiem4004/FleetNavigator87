@@ -644,6 +644,74 @@ app.use((req, res, next) => {
 
 
 
+  // CRITICAL: Add fuel history endpoint BEFORE registerRoutes to avoid Vite interception
+  app.get('/fuel-data/:placa', (req, res) => {
+    const { placa } = req.params;
+    const limit = parseInt(req.query.limit as string) || 50;
+
+    console.log(`[FUEL-DATA-INDEX] Buscando histórico para placa: ${placa}`);
+
+    res.writeHead(200, {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-cache',
+      'Access-Control-Allow-Origin': '*'
+    });
+
+    const query = `
+      SELECT 
+        placa,
+        CASE 
+          WHEN data_hora::text IS NOT NULL THEN data_hora::text
+          ELSE created_at::text
+        END as data_abastecimento,
+        nome_posto as posto,
+        nome_motorista as motorista,
+        valor_total as valor,
+        quantidade_litros as litros,
+        COALESCE(hodometro_atual, km) as km_atual,
+        tipo_combustivel,
+        observacoes
+      FROM historico_consolidado_abastecimentos 
+      WHERE UPPER(placa) = UPPER($1)
+      ORDER BY 
+        CASE 
+          WHEN data_hora IS NOT NULL THEN data_hora 
+          ELSE created_at 
+        END DESC
+      LIMIT $2
+    `;
+
+    pool.query(query, [placa, limit])
+      .then(result => {
+        console.log(`[FUEL-DATA-INDEX] Resultado: ${result.rows.length} registros para ${placa}`);
+        
+        const response = {
+          success: true,
+          data: result.rows,
+          placa: placa.toUpperCase(),
+          total: result.rows.length,
+          message: result.rows.length > 0 
+            ? `${result.rows.length} abastecimentos encontrados` 
+            : 'Nenhum abastecimento encontrado para esta placa'
+        };
+
+        res.write(JSON.stringify(response, null, 2));
+        res.end();
+      })
+      .catch(error => {
+        console.error('[FUEL-DATA-INDEX] Erro:', error);
+        
+        const errorResponse = {
+          success: false,
+          message: 'Erro ao buscar histórico de abastecimentos',
+          error: error.message
+        };
+
+        res.write(JSON.stringify(errorResponse, null, 2));
+        res.end();
+      });
+  });
+
   const server = await registerRoutes(app);
   
   // Agora podemos aplicar o middleware de diagnóstico 
