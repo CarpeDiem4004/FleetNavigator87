@@ -315,9 +315,9 @@ export async function createFuelCardSolicitation(req: Request, res: Response) {
     
     const query = `
       INSERT INTO solicitacoes_fuel_card
-        (placa, km, tipo_cartao, provedor_cartao, numero_cartao, motorista, observacoes, status, data_solicitacao, valor_solicitado, tipo_combustivel, litros_solicitados, base, id_rota)
+        (placa, km, tipo_cartao, provedor_cartao, numero_cartao, motorista, telefone_celular, observacoes, status, data_solicitacao, valor_solicitado, tipo_combustivel, litros_solicitados, base, id_rota)
       VALUES
-        ($1, $2, $3, $4, $5, $6, $7, 'pendente', NOW(), $8, $9, $10, $11, $12)
+        ($1, $2, $3, $4, $5, $6, $7, $8, 'pendente', NOW(), $9, $10, $11, $12, $13)
       RETURNING *
     `;
     

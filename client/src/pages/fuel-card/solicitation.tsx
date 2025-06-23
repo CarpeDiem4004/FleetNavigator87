@@ -400,18 +400,19 @@ export default function FuelCardSolicitation() {
                   name="litros_solicitados"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Quantidade de Litros</FormLabel>
+                      <FormLabel className="text-sm font-medium">⛽ Quantidade de Litros</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
                           step="0.01"
                           min="0.1"
                           placeholder="Ex: 50.00" 
+                          className="text-base h-12"
                           {...field} 
                         />
                       </FormControl>
-                      <FormDescription>
-                        Quantidade de litros de combustível necessária
+                      <FormDescription className="text-xs">
+                        Quantidade de litros necessária
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -437,24 +438,51 @@ export default function FuelCardSolicitation() {
                   />
                 )}
                 
-                <FormField
-                  control={form.control}
-                  name="motorista"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome do Motorista</FormLabel>
-                      <FormControl>
-                        <Input placeholder="João da Silva" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Nome completo do motorista solicitante
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="motorista"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">👤 Nome do Motorista</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="João da Silva" 
+                            className="text-base h-12" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription className="text-xs">
+                          Nome completo do motorista
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="telefone_celular"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">📱 Celular (WhatsApp)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="(11) 99999-9999" 
+                            className="text-base h-12" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription className="text-xs">
+                          Para receber notificação quando aprovado
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="projeto_id"
@@ -540,29 +568,35 @@ export default function FuelCardSolicitation() {
                   )}
                 />
                 
-                <CardFooter className="px-0 flex justify-between">
+                <div className="pt-6 space-y-3">
+                  <Button 
+                    type="submit" 
+                    className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700" 
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Enviando solicitação...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="mr-2 h-5 w-5" />
+                        Solicitar Recarga
+                      </>
+                    )}
+                  </Button>
+                  
                   <Button 
                     variant="outline" 
                     type="button" 
-                    onClick={() => setLocation("/dashboard")}
+                    className="w-full h-10"
+                    onClick={() => setLocation("/")}
                     disabled={isSubmitting}
                   >
                     Cancelar
                   </Button>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Enviando...
-                      </>
-                    ) : (
-                      <>
-                        <CreditCard className="mr-2 h-4 w-4" />
-                        Solicitar Cartão
-                      </>
-                    )}
-                  </Button>
-                </CardFooter>
+                </div>
               </form>
             </Form>
           </CardContent>
