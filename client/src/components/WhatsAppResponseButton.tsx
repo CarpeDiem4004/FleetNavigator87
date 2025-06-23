@@ -24,6 +24,7 @@ interface WhatsAppResponseButtonProps {
     valor_solicitado?: number | string;
     observacoes?: string;
     telefone_motorista?: string;
+    telefone_celular?: string;
     origem_tipo?: string;
     base?: string;
     tipo_cartao?: string;
@@ -50,8 +51,8 @@ const WhatsAppResponseButton: React.FC<WhatsAppResponseButtonProps> = ({
   }
 
   const handleOpenDialog = () => {
-    // Tentar extrair telefone das observações ou usar telefone_motorista
-    let extractedPhone = solicitation.telefone_motorista || '';
+    // Priorizar telefone_celular da solicitação, depois telefone_motorista, depois extrair das observações
+    let extractedPhone = solicitation.telefone_celular || solicitation.telefone_motorista || '';
     
     if (!extractedPhone && solicitation.observacoes) {
       const phoneFromText = extractPhoneFromText(solicitation.observacoes);

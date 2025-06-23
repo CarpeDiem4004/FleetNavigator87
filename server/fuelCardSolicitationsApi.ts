@@ -73,6 +73,7 @@ export async function getFuelCardSolicitations(req: Request, res: Response) {
           COALESCE(s.provedor_cartao, 'Padrão') as provedor_cartao,
           COALESCE(s.numero_cartao, '') as numero_cartao,
           COALESCE(s.motorista, 'Motorista não informado') as motorista,
+          COALESCE(s.telefone_celular, '') as telefone_celular,
           COALESCE(s.observacoes, 'Sem observações') as observacoes,
           s.status,
           s.data_solicitacao,
