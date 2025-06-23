@@ -198,24 +198,27 @@ const FuelCardRequestsPanel: React.FC = () => {
     setHistoryModalOpen(true);
     
     try {
+      console.log(`[FRONTEND] Buscando histórico para placa: ${placa}`);
       const response = await apiRequest('GET', `/api/fuel-history/${encodeURIComponent(placa)}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
+      console.log(`[FRONTEND] Resposta da API:`, data);
       
       if (data.success) {
-        setFuelHistory(data.data);
+        setFuelHistory(data.data || []);
+        console.log(`[FRONTEND] Histórico carregado: ${data.data?.length || 0} registros`);
       } else {
-        toast({
-          title: 'Erro ao carregar histórico',
-          description: data.message || 'Não foi possível carregar o histórico de abastecimentos',
-          variant: 'destructive',
-        });
-        setFuelHistory([]);
+        throw new Error(data.message || 'Erro desconhecido na API');
       }
     } catch (error) {
-      console.error('Erro ao buscar histórico de abastecimentos:', error);
+      console.error('[FRONTEND] Erro ao buscar histórico de abastecimentos:', error);
       toast({
         title: 'Erro ao carregar histórico',
-        description: 'Não foi possível carregar o histórico de abastecimentos',
+        description: error instanceof Error ? error.message : 'Não foi possível carregar o histórico de abastecimentos',
         variant: 'destructive',
       });
       setFuelHistory([]);

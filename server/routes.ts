@@ -16238,6 +16238,11 @@ async function createFuelRequestNotification(fuelRequest) {
       const result = await pool.query(query, [placa, parseInt(limit as string)]);
 
       console.log(`[FUEL-HISTORY] Encontrados ${result.rows.length} registros para placa ${placa}`);
+      
+      // Log the actual data being returned for debugging
+      if (result.rows.length > 0) {
+        console.log(`[FUEL-HISTORY] Sample data:`, JSON.stringify(result.rows[0], null, 2));
+      }
 
       return res.status(200).json({
         success: true,
