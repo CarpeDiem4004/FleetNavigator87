@@ -16197,8 +16197,8 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
-  // WORKING: Endpoint para buscar histórico de abastecimentos por placa (fuel-data route)
-  app.get('/fuel-data/:placa', unifiedAuthMiddleware, async (req, res) => {
+  // API endpoint for fuel history that works correctly
+  app.get('/api/fuel-data/:placa', unifiedAuthMiddleware, async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     
     try {
@@ -16214,6 +16214,7 @@ async function createFuelRequestNotification(fuelRequest) {
       }
 
       console.log(`[FUEL-DATA] Buscando histórico para placa: ${placa}`);
+      console.log(`[FUEL-DATA] User authenticated:`, req.user?.email);
 
       const query = `
         SELECT 
@@ -16240,8 +16241,8 @@ async function createFuelRequestNotification(fuelRequest) {
       const result = await pool.query(query, [placa, parseInt(limit as string)]);
 
       console.log(`[FUEL-DATA] Encontrados ${result.rows.length} registros para ${placa}`);
-
-      return res.status(200).json({
+      
+      const response = {
         success: true,
         data: result.rows,
         placa: placa.toUpperCase(),
@@ -16249,7 +16250,10 @@ async function createFuelRequestNotification(fuelRequest) {
         message: result.rows.length > 0 
           ? `${result.rows.length} abastecimentos encontrados` 
           : 'Nenhum abastecimento encontrado para esta placa'
-      });
+      };
+
+      console.log(`[FUEL-DATA] Sending response:`, JSON.stringify(response, null, 2));
+      return res.status(200).json(response);
 
     } catch (error: any) {
       console.error('[FUEL-DATA] Erro:', error);
