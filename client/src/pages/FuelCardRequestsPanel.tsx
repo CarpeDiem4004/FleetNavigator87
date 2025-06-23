@@ -680,6 +680,11 @@ const FuelCardRequestsPanel: React.FC = () => {
                             <div>
                               <p className="text-sm font-bold text-gray-900">{solicitacao.placa}</p>
                               <p className="text-xs text-gray-500">Placa</p>
+                              {solicitudeCounts[solicitacao.placa] > 1 && (
+                                <Badge variant="secondary" className="text-xs mt-1">
+                                  {solicitudeCounts[solicitacao.placa]}x
+                                </Badge>
+                              )}
                             </div>
                           </div>
                         </div>
