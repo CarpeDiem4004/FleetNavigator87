@@ -16197,6 +16197,68 @@ async function createFuelRequestNotification(fuelRequest) {
     }
   });
 
+  // Endpoint para buscar histórico de abastecimentos por placa
+  app.get('/api/fuel-history/:placa', isAuthenticated, async (req, res) => {
+    try {
+      const { placa } = req.params;
+      const { limit = 50 } = req.query;
+
+      if (!placa) {
+        return res.status(400).json({
+          success: false,
+          message: 'Placa do veículo é obrigatória'
+        });
+      }
+
+      console.log(`[FUEL-HISTORY] Buscando histórico de abastecimentos para placa: ${placa}`);
+
+      // Buscar dados do histórico consolidado de abastecimentos
+      const query = `
+        SELECT 
+          placa,
+          data_hora as data_abastecimento,
+          nome_posto as posto,
+          nome_motorista as motorista,
+          valor_total as valor,
+          quantidade_litros as litros,
+          COALESCE(hodometro_atual, km) as km_atual,
+          tipo_combustivel,
+          observacoes,
+          created_at,
+          nome_operador,
+          valor_litro,
+          tipo_veiculo,
+          project
+        FROM historico_consolidado_abastecimentos 
+        WHERE UPPER(placa) = UPPER($1)
+        ORDER BY created_at DESC
+        LIMIT $2
+      `;
+
+      const result = await pool.query(query, [placa, parseInt(limit as string)]);
+
+      console.log(`[FUEL-HISTORY] Encontrados ${result.rows.length} registros para placa ${placa}`);
+
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        placa: placa.toUpperCase(),
+        total: result.rows.length,
+        message: result.rows.length > 0 
+          ? `${result.rows.length} abastecimentos encontrados` 
+          : 'Nenhum abastecimento encontrado para esta placa'
+      });
+
+    } catch (error: any) {
+      console.error('[FUEL-HISTORY] Erro ao buscar histórico de abastecimentos:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar histórico de abastecimentos',
+        error: error.message
+      });
+    }
+  });
+
   // Servir arquivos estáticos para uploads
   app.use('/uploads', express.static('uploads'));
 
