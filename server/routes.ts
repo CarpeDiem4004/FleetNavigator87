@@ -6209,16 +6209,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const query = `
         SELECT 
           w.id as workshop_id,
-          COALESCE(w.nome, w.razao_social) as workshop_name,
+          w.razao_social as workshop_name,
           w.cnpj,
           w.email,
           w.telefone,
           wet.token,
           wet.created_at as token_created,
-          wet.is_active
-        FROM workshops w
+          wet.is_active,
+          wet.expires_at,
+          wet.usage_count
+        FROM oficinas w
         LEFT JOIN workshop_external_tokens wet ON w.id = wet.workshop_id
-        WHERE w.is_active = true
+        WHERE w.status = 'ativo' OR w.status IS NULL
         ORDER BY w.id
       `;
       
@@ -6234,7 +6236,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tokenCreated: row.token_created,
         isActive: row.is_active,
         hasToken: !!row.token,
-        externalLink: row.token ? `${req.protocol}://${req.get('host')}/workshop/${row.workshop_id}?token=${row.token}` : null
+        externalLink: row.token ? `${req.protocol}://${req.get('host')}/maintenance/workshop-external-access?token=${row.token}` : null,
+        loginLink: `${req.protocol}://${req.get('host')}/oficina/login`
       }));
       
       res.json({
