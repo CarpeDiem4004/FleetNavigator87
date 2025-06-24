@@ -13,7 +13,8 @@ import {
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useToast } from '@/hooks/use-toast'
-import { Upload, FileText } from 'lucide-react'
+import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react'
+import { validateAndFormatPlate, applyPlateMask, getPlateFormatHint } from '@/lib/plate-utils'
 
 interface Props {
   onVehicleAdded?: () => void;
@@ -22,6 +23,7 @@ interface Props {
 export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
   const { toast } = useToast()
   const [placa, setPlaca] = useState('')
+  const [plateValidation, setPlateValidation] = useState<ReturnType<typeof validateAndFormatPlate> | null>(null)
   const [marca, setMarca] = useState('')
   const [marcaCustomizada, setMarcaCustomizada] = useState('')
   const [modeloVeiculo, setModeloVeiculo] = useState('')
@@ -81,6 +83,16 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
     'Scania': 2.7,
     'Daf': 2.7
   }
+
+  // Função para lidar com mudanças na placa
+  const handlePlacaChange = (value: string) => {
+    const maskedValue = applyPlateMask(value);
+    setPlaca(maskedValue);
+    
+    // Validar a placa em tempo real
+    const validation = validateAndFormatPlate(maskedValue);
+    setPlateValidation(validation);
+  };
 
   // Função para atualizar consumo quando marca for selecionada
   const handleMarcaChange = (novaMarca: string) => {
@@ -269,6 +281,16 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
       return
     }
     
+    // Validar formato da placa
+    if (!plateValidation?.isValid) {
+      toast({
+        title: 'Placa inválida',
+        description: 'Digite uma placa válida no formato antigo (ABC1234) ou Mercosul (ABC1D23).',
+        variant: 'destructive'
+      })
+      return
+    }
+    
     // Validar empresa de locação para veículos locados
     if (ownership === 'locado' && !leasingCompany) {
       toast({
@@ -300,7 +322,7 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          plate: placa,
+          plate: plateValidation.formatted, // Usar a placa formatada
           model: modeloVeiculo, // Modelo do veículo (ex: Cargo 2422)
           make: marca === "Outros" ? marcaCustomizada : marca, // Marca do veículo (ex: Ford)
           vehicleType: tipoVeiculo, // Tipo de veículo (carreta, cavalo_mecanico, etc)
@@ -376,15 +398,40 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="placa">Placa *</Label>
-            <Input
-              id="placa"
-              type="text"
-              placeholder="Ex: ABC1234"
-              value={placa}
-              onChange={(e) => setPlaca(e.target.value.toUpperCase())}
-              required
-              className="uppercase"
-            />
+            <div className="relative">
+              <Input
+                id="placa"
+                type="text"
+                placeholder="ABC1234 ou ABC1D23"
+                value={placa}
+                onChange={(e) => handlePlacaChange(e.target.value)}
+                required
+                className={`uppercase pr-10 ${
+                  plateValidation?.isValid === true ? 'border-green-500' : 
+                  plateValidation?.isValid === false && placa.length > 0 ? 'border-red-500' : ''
+                }`}
+                maxLength={8}
+              />
+              {plateValidation && placa.length > 0 && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  {plateValidation.isValid ? (
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                  )}
+                </div>
+              )}
+            </div>
+            {placa.length > 0 && (
+              <p className={`text-xs ${
+                plateValidation?.isValid ? 'text-green-600' : 'text-gray-600'
+              }`}>
+                {plateValidation?.isValid ? 
+                  `✓ Placa válida - Formato ${plateValidation.type}${plateValidation.type === 'antiga' ? ' (ABC-1234)' : ' (ABC1D23)'}` :
+                  getPlateFormatHint(placa)
+                }
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">

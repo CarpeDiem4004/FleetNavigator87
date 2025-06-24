@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
-import { Plus, Search, Edit, Eye, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Search, Edit, Eye, Trash2, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
+import { validateAndFormatPlate, applyPlateMask, getPlateFormatHint } from '@/lib/plate-utils';
 import { 
   Card, 
   CardContent 
