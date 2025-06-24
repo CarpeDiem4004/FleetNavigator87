@@ -796,8 +796,10 @@ export async function exportFuelCardSolicitationsToExcel(req: Request, res: Resp
       'Motorista': sol.motorista,
       'Valor Solicitado (R$)': parseFloat(sol.valor_solicitado) || 0,
       'KM': sol.km || sol.km_total || 0,
-      'Tipo Cartão': sol.tipo_cartao || 'Padrão',
-      'Número Cartão': sol.numero_cartao || sol.cartao_combustivel || '',
+      'Tipo Cartão': sol.tipo_cartao === 'numero' ? 'Cartão Numerado' : 
+                     sol.tipo_cartao === 'placa' ? 'Cartão por Placa' : 
+                     sol.tipo_cartao || 'Padrão',
+      'Número Cartão': sol.numero_cartao || '',
       'Provedor': sol.provedor_cartao || 'Padrão',
       'Status': sol.status,
       'Data Solicitação': sol.data_solicitacao ? new Date(sol.data_solicitacao).toLocaleDateString('pt-BR') : '',
