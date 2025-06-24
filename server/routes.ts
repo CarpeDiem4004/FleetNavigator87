@@ -6913,19 +6913,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const query = `
         SELECT 
-          w.id,
-          COALESCE(w.nome, w.razao_social) as name,
-          w.cnpj,
-          w.email,
-          w.telefone as phone,
-          w.last_login,
+          o.id,
+          COALESCE(o.nome_fantasia, o.razao_social) as name,
+          o.cnpj,
+          o.email,
+          o.telefone as phone,
+          NULL as last_login,
           CASE 
-            WHEN w.password IS NOT NULL AND w.password != '' THEN true 
+            WHEN o.password IS NOT NULL AND o.password != '' THEN true 
             ELSE false 
           END as has_credentials,
-          COALESCE(w.status, 'active') as status
-        FROM workshops w
-        ORDER BY COALESCE(w.nome, w.razao_social) ASC
+          COALESCE(o.status, 'ativo') as status,
+          o.external_token
+        FROM oficinas o
+        ORDER BY COALESCE(o.nome_fantasia, o.razao_social) ASC
       `;
       
       const result = await pool.query(query);
@@ -6941,7 +6942,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         phone: workshop.phone || '',
         hasCredentials: workshop.has_credentials,
         lastLogin: workshop.last_login,
-        status: workshop.status
+        status: workshop.status === 'ativo' ? 'active' : 'inactive',
+        externalToken: workshop.external_token
       }));
       
       console.log('[Credenciais Oficinas] Dados mapeados da primeira oficina:', mappedWorkshops[0]);
