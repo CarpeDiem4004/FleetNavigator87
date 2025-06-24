@@ -129,6 +129,13 @@ This is a comprehensive fleet management system built with React (frontend) and 
   - Added vehicle plate display for plate-based cards
   - Maintained fuel card balance response functionality
 
+- June 24, 2025: Fixed external workshop login system
+  - Corrected database table reference from 'workshops' to 'oficinas'
+  - Implemented CNPJ normalization for login (accepts formatted or unformatted)
+  - Added bcrypt password hashing for workshop authentication
+  - Configured working credentials: CNPJ 12.345.678/0001-90, password "secret"
+  - Login endpoint: /oficina/login with JWT token generation
+
 ## Changelog
 
 - June 24, 2025. Initial setup
