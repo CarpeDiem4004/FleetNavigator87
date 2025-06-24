@@ -13910,6 +13910,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para buscar projetos com bases para o formulário da oficina
+  app.get("/api/projects-with-bases", async (req, res) => {
+    try {
+      const query = `
+        SELECT 
+          p.id as project_id, 
+          p.name as project_name,
+          b.id as base_id,
+          b.name as base_name
+        FROM projects p
+        JOIN project_bases pb ON p.id = pb.project_id
+        JOIN bases b ON pb.base_id = b.id
+        ORDER BY p.name, b.name
+      `;
+      
+      const result = await pool.query(query);
+      
+      // Agrupar bases por projeto
+      const projectsMap = new Map();
+      
+      result.rows.forEach(row => {
+        if (!projectsMap.has(row.project_id)) {
+          projectsMap.set(row.project_id, {
+            id: row.project_id,
+            name: row.project_name,
+            bases: []
+          });
+        }
+        
+        projectsMap.get(row.project_id).bases.push({
+          id: row.base_id,
+          name: row.base_name
+        });
+      });
+      
+      const projects = Array.from(projectsMap.values());
+      
+      res.json({
+        success: true,
+        projects
+      });
+
+    } catch (error: any) {
+      console.error("Erro ao buscar projetos:", error);
+      res.status(500).json({
+        success: false,
+        message: "Erro ao buscar projetos",
+        error: error.message
+      });
+    }
+  });
+
   // API para receber veículo na oficina externa
   app.post("/api/oficina/receive-car", async (req, res) => {
     try {
@@ -13919,7 +13971,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const token = authHeader.replace('Bearer ', '');
-      const { workshopId, vehiclePlate, vehicleModel, vehicleType, currentKm, serviceDescription, priority } = req.body;
+      const { workshopId, vehiclePlate, vehicleModel, vehicleType, currentKm, serviceDescription, priority, projectId, baseId } = req.body;
 
       // Verificar se o token é válido
       const tokenQuery = `
@@ -13937,14 +13989,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const insertQuery = `
         INSERT INTO car_receptions (
           workshop_id, vehicle_plate, vehicle_model, vehicle_type, current_km, 
-          service_description, priority, status, received_date, created_at, base_id
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_DATE, NOW(), 1)
+          service_description, priority, status, received_date, created_at, base_id, project_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_DATE, NOW(), $9, $10)
         RETURNING *
       `;
       
       const result = await pool.query(insertQuery, [
         workshopId, vehiclePlate, vehicleModel, vehicleType, currentKm,
-        serviceDescription, priority, 'recebido'
+        serviceDescription, priority, 'recebido', baseId, projectId
       ]);
 
       res.json({

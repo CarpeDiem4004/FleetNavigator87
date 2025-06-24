@@ -29,6 +29,17 @@ interface WorkshopData {
   telefone: string;
 }
 
+interface Project {
+  id: number;
+  name: string;
+  bases: Base[];
+}
+
+interface Base {
+  id: number;
+  name: string;
+}
+
 interface MaintenanceRequest {
   id: number;
   vehiclePlate: string;
@@ -61,8 +72,12 @@ export default function OficinaExternalDashboard() {
     vehicleType: '',
     currentKm: '',
     serviceDescription: '',
-    priority: 'media'
+    priority: 'media',
+    projectId: '',
+    baseId: ''
   });
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectBases, setSelectedProjectBases] = useState<Base[]>([]);
   const [osFormData, setOSFormData] = useState({
     vehiclePlate: '',
     description: '',
@@ -82,6 +97,7 @@ export default function OficinaExternalDashboard() {
     }
 
     validateTokenAndLoadData(token);
+    loadProjects();
   }, []);
 
   const validateTokenAndLoadData = async (token: string) => {
@@ -127,6 +143,24 @@ export default function OficinaExternalDashboard() {
     }
   };
 
+  const loadProjects = async () => {
+    try {
+      const response = await fetch('/api/projects-with-bases');
+      if (response.ok) {
+        const data = await response.json();
+        setProjects(data.projects || []);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar projetos:', error);
+    }
+  };
+
+  const handleProjectChange = (projectId: string) => {
+    setCarFormData(prev => ({ ...prev, projectId, baseId: '' }));
+    const selectedProject = projects.find(p => p.id.toString() === projectId);
+    setSelectedProjectBases(selectedProject?.bases || []);
+  };
+
   const handleReceiveCar = async () => {
     try {
       const urlParams = new URLSearchParams(window.location.search);
@@ -150,7 +184,9 @@ export default function OficinaExternalDashboard() {
         body: JSON.stringify({
           workshopId: workshopData.id,
           ...carFormData,
-          currentKm: parseInt(carFormData.currentKm) || 0
+          currentKm: parseInt(carFormData.currentKm) || 0,
+          projectId: parseInt(carFormData.projectId) || null,
+          baseId: parseInt(carFormData.baseId) || null
         })
       });
 
@@ -166,8 +202,11 @@ export default function OficinaExternalDashboard() {
           vehicleType: '',
           currentKm: '',
           serviceDescription: '',
-          priority: 'media'
+          priority: 'media',
+          projectId: '',
+          baseId: ''
         });
+        setSelectedProjectBases([]);
         // Recarregar dados
         await loadWorkshopData(workshopData.id, token);
       } else {
@@ -385,49 +424,53 @@ export default function OficinaExternalDashboard() {
                   <DialogHeader>
                     <DialogTitle>Receber Veículo</DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="vehiclePlate">Placa do Veículo</Label>
-                      <Input
-                        id="vehiclePlate"
-                        value={carFormData.vehiclePlate}
-                        onChange={(e) => setCarFormData(prev => ({ ...prev, vehiclePlate: e.target.value.toUpperCase() }))}
-                        placeholder="ABC1234"
-                      />
+                  <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="vehiclePlate">Placa do Veículo</Label>
+                        <Input
+                          id="vehiclePlate"
+                          value={carFormData.vehiclePlate}
+                          onChange={(e) => setCarFormData(prev => ({ ...prev, vehiclePlate: e.target.value.toUpperCase() }))}
+                          placeholder="ABC1234"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="currentKm">Quilometragem Atual</Label>
+                        <Input
+                          id="currentKm"
+                          type="number"
+                          value={carFormData.currentKm}
+                          onChange={(e) => setCarFormData(prev => ({ ...prev, currentKm: e.target.value }))}
+                          placeholder="85000"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <Label htmlFor="vehicleModel">Modelo do Veículo</Label>
-                      <Input
-                        id="vehicleModel"
-                        value={carFormData.vehicleModel}
-                        onChange={(e) => setCarFormData(prev => ({ ...prev, vehicleModel: e.target.value }))}
-                        placeholder="Ford Ka, Fiat Uno..."
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="vehicleType">Tipo do Veículo</Label>
-                      <Select onValueChange={(value) => setCarFormData(prev => ({ ...prev, vehicleType: value }))}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Hatch">Hatch</SelectItem>
-                          <SelectItem value="Sedan">Sedan</SelectItem>
-                          <SelectItem value="SUV">SUV</SelectItem>
-                          <SelectItem value="Pickup">Pickup</SelectItem>
-                          <SelectItem value="Van">Van</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="currentKm">Quilometragem Atual</Label>
-                      <Input
-                        id="currentKm"
-                        type="number"
-                        value={carFormData.currentKm}
-                        onChange={(e) => setCarFormData(prev => ({ ...prev, currentKm: e.target.value }))}
-                        placeholder="85000"
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="vehicleModel">Modelo do Veículo</Label>
+                        <Input
+                          id="vehicleModel"
+                          value={carFormData.vehicleModel}
+                          onChange={(e) => setCarFormData(prev => ({ ...prev, vehicleModel: e.target.value }))}
+                          placeholder="Ford Ka, Fiat Uno..."
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="vehicleType">Tipo do Veículo</Label>
+                        <Select onValueChange={(value) => setCarFormData(prev => ({ ...prev, vehicleType: value }))}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Hatch">Hatch</SelectItem>
+                            <SelectItem value="Sedan">Sedan</SelectItem>
+                            <SelectItem value="SUV">SUV</SelectItem>
+                            <SelectItem value="Pickup">Pickup</SelectItem>
+                            <SelectItem value="Van">Van</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                     <div>
                       <Label htmlFor="serviceDescription">Descrição do Serviço</Label>
@@ -438,6 +481,41 @@ export default function OficinaExternalDashboard() {
                         placeholder="Descreva o serviço a ser realizado..."
                         rows={3}
                       />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="projectId">Projeto</Label>
+                        <Select onValueChange={handleProjectChange}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o projeto" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {projects.map((project) => (
+                              <SelectItem key={project.id} value={project.id.toString()}>
+                                {project.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="baseId">Base</Label>
+                        <Select 
+                          disabled={!carFormData.projectId}
+                          onValueChange={(value) => setCarFormData(prev => ({ ...prev, baseId: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a base" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {selectedProjectBases.map((base) => (
+                              <SelectItem key={base.id} value={base.id.toString()}>
+                                {base.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                     <div>
                       <Label htmlFor="priority">Prioridade</Label>
