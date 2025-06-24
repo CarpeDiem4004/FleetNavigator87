@@ -70,9 +70,8 @@ export default function OficinaExternalDashboard() {
     const token = urlParams.get('token');
     
     if (!token) {
-      setError('Token de acesso não fornecido');
+      setError('Token de acesso obrigatório. Use o link fornecido pela oficina.');
       setIsLoading(false);
-      window.location.href = '/oficina/login';
       return;
     }
 

@@ -500,6 +500,11 @@ function App() {
             <OficinaDashboard />
           </Route>
           
+          {/* Acesso Externo da Oficina via Token - SEM CNPJ */}
+          <Route path="/oficina/external">
+            <OficinaExternalDashboard />
+          </Route>
+          
           {/* Sistema de Recebimento de Carros */}
           <Route path="/maintenance/car-reception">
             <CarReception />
