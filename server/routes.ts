@@ -13910,6 +13910,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para receber veículo na oficina externa
+  app.post("/api/oficina/receive-car", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        return res.status(401).json({ message: 'Token de autorização necessário' });
+      }
+
+      const token = authHeader.replace('Bearer ', '');
+      const { workshopId, vehiclePlate, vehicleModel, vehicleType, currentKm, serviceDescription, priority } = req.body;
+
+      // Verificar se o token é válido
+      const tokenQuery = `
+        SELECT workshop_id FROM workshop_external_tokens 
+        WHERE token = $1 AND workshop_id = $2 AND is_active = true AND expires_at > NOW()
+      `;
+      
+      const tokenResult = await pool.query(tokenQuery, [token, workshopId]);
+      
+      if (tokenResult.rows.length === 0) {
+        return res.status(401).json({ message: 'Token inválido para esta oficina' });
+      }
+
+      // Inserir recepção de carro
+      const insertQuery = `
+        INSERT INTO car_receptions (
+          workshop_id, vehicle_plate, vehicle_model, vehicle_type, current_km, 
+          service_description, priority, status, received_date, created_at, base_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_DATE, NOW(), 1)
+        RETURNING *
+      `;
+      
+      const result = await pool.query(insertQuery, [
+        workshopId, vehiclePlate, vehicleModel, vehicleType, currentKm,
+        serviceDescription, priority, 'recebido'
+      ]);
+
+      res.json({
+        success: true,
+        reception: result.rows[0]
+      });
+
+    } catch (error: any) {
+      console.error("Erro ao receber veículo:", error);
+      res.status(500).json({
+        success: false,
+        message: "Erro ao receber veículo",
+        error: error.message
+      });
+    }
+  });
+
+  // API para criar ordem de serviço na oficina externa
+  app.post("/api/oficina/create-service-order", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        return res.status(401).json({ message: 'Token de autorização necessário' });
+      }
+
+      const token = authHeader.replace('Bearer ', '');
+      const { workshopId, vehiclePlate, description, priority, estimatedCost } = req.body;
+
+      // Verificar se o token é válido
+      const tokenQuery = `
+        SELECT workshop_id FROM workshop_external_tokens 
+        WHERE token = $1 AND workshop_id = $2 AND is_active = true AND expires_at > NOW()
+      `;
+      
+      const tokenResult = await pool.query(tokenQuery, [token, workshopId]);
+      
+      if (tokenResult.rows.length === 0) {
+        return res.status(401).json({ message: 'Token inválido para esta oficina' });
+      }
+
+      // Inserir ordem de serviço
+      const insertQuery = `
+        INSERT INTO manutencao (
+          placa, descricao, status, prioridade, data_solicitacao, oficina_id, 
+          custo, data_agendada, created_at, tipo
+        ) VALUES ($1, $2, 'pendente', $3, NOW(), $4, $5, NOW() + INTERVAL '1 day', NOW(), 'corretiva')
+        RETURNING *
+      `;
+      
+      const result = await pool.query(insertQuery, [
+        vehiclePlate, description, priority, workshopId, estimatedCost
+      ]);
+
+      res.json({
+        success: true,
+        serviceOrder: result.rows[0]
+      });
+
+    } catch (error: any) {
+      console.error("Erro ao criar ordem de serviço:", error);
+      res.status(500).json({
+        success: false,
+        message: "Erro ao criar ordem de serviço",
+        error: error.message
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   // ===========================================
   // ROTAS PARA RECEBIMENTO DE COMBUSTÍVEL (EXTERNOS)

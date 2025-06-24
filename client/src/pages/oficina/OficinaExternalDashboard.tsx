@@ -2,6 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Car, 
@@ -48,6 +53,22 @@ export default function OficinaExternalDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [maintenanceRequests, setMaintenanceRequests] = useState<MaintenanceRequest[]>([]);
   const [carReceptions, setCarReceptions] = useState<CarReception[]>([]);
+  const [isReceiveCarOpen, setIsReceiveCarOpen] = useState(false);
+  const [isNewOSOpen, setIsNewOSOpen] = useState(false);
+  const [carFormData, setCarFormData] = useState({
+    vehiclePlate: '',
+    vehicleModel: '',
+    vehicleType: '',
+    currentKm: '',
+    serviceDescription: '',
+    priority: 'media'
+  });
+  const [osFormData, setOSFormData] = useState({
+    vehiclePlate: '',
+    description: '',
+    priority: 'media',
+    estimatedCost: ''
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -103,6 +124,124 @@ export default function OficinaExternalDashboard() {
       }
     } catch (err) {
       console.error('Erro ao carregar dados da oficina:', err);
+    }
+  };
+
+  const handleReceiveCar = async () => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      
+      if (!token || !workshopData) {
+        toast({
+          title: "Erro",
+          description: "Token de acesso não encontrado",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const response = await fetch('/api/oficina/receive-car', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          workshopId: workshopData.id,
+          ...carFormData,
+          currentKm: parseInt(carFormData.currentKm) || 0
+        })
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Sucesso",
+          description: "Veículo recebido com sucesso!",
+        });
+        setIsReceiveCarOpen(false);
+        setCarFormData({
+          vehiclePlate: '',
+          vehicleModel: '',
+          vehicleType: '',
+          currentKm: '',
+          serviceDescription: '',
+          priority: 'media'
+        });
+        // Recarregar dados
+        await loadWorkshopData(workshopData.id, token);
+      } else {
+        const error = await response.json();
+        toast({
+          title: "Erro",
+          description: error.message || "Erro ao receber veículo",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro de conexão",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCreateOS = async () => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      
+      if (!token || !workshopData) {
+        toast({
+          title: "Erro",
+          description: "Token de acesso não encontrado",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const response = await fetch('/api/oficina/create-service-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          workshopId: workshopData.id,
+          ...osFormData,
+          estimatedCost: parseFloat(osFormData.estimatedCost) || 0
+        })
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Sucesso",
+          description: "Ordem de serviço criada com sucesso!",
+        });
+        setIsNewOSOpen(false);
+        setOSFormData({
+          vehiclePlate: '',
+          description: '',
+          priority: 'media',
+          estimatedCost: ''
+        });
+        // Recarregar dados
+        await loadWorkshopData(workshopData.id, token);
+      } else {
+        const error = await response.json();
+        toast({
+          title: "Erro",
+          description: error.message || "Erro ao criar ordem de serviço",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro de conexão",
+        variant: "destructive",
+      });
     }
   };
 
@@ -231,22 +370,174 @@ export default function OficinaExternalDashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 md:grid-cols-3">
-              <Button className="flex items-center gap-2 h-auto p-4 justify-start">
-                <Car className="h-5 w-5" />
-                <div className="text-left">
-                  <p className="font-medium">Receber Veículo</p>
-                  <p className="text-sm opacity-80">Registrar entrada na oficina</p>
-                </div>
-              </Button>
+              {/* Botão Receber Veículo */}
+              <Dialog open={isReceiveCarOpen} onOpenChange={setIsReceiveCarOpen}>
+                <DialogTrigger asChild>
+                  <Button className="flex items-center gap-2 h-auto p-4 justify-start">
+                    <Car className="h-5 w-5" />
+                    <div className="text-left">
+                      <p className="font-medium">Receber Veículo</p>
+                      <p className="text-sm opacity-80">Registrar entrada na oficina</p>
+                    </div>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Receber Veículo</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="vehiclePlate">Placa do Veículo</Label>
+                      <Input
+                        id="vehiclePlate"
+                        value={carFormData.vehiclePlate}
+                        onChange={(e) => setCarFormData(prev => ({ ...prev, vehiclePlate: e.target.value.toUpperCase() }))}
+                        placeholder="ABC1234"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="vehicleModel">Modelo do Veículo</Label>
+                      <Input
+                        id="vehicleModel"
+                        value={carFormData.vehicleModel}
+                        onChange={(e) => setCarFormData(prev => ({ ...prev, vehicleModel: e.target.value }))}
+                        placeholder="Ford Ka, Fiat Uno..."
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="vehicleType">Tipo do Veículo</Label>
+                      <Select onValueChange={(value) => setCarFormData(prev => ({ ...prev, vehicleType: value }))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Hatch">Hatch</SelectItem>
+                          <SelectItem value="Sedan">Sedan</SelectItem>
+                          <SelectItem value="SUV">SUV</SelectItem>
+                          <SelectItem value="Pickup">Pickup</SelectItem>
+                          <SelectItem value="Van">Van</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="currentKm">Quilometragem Atual</Label>
+                      <Input
+                        id="currentKm"
+                        type="number"
+                        value={carFormData.currentKm}
+                        onChange={(e) => setCarFormData(prev => ({ ...prev, currentKm: e.target.value }))}
+                        placeholder="85000"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="serviceDescription">Descrição do Serviço</Label>
+                      <Textarea
+                        id="serviceDescription"
+                        value={carFormData.serviceDescription}
+                        onChange={(e) => setCarFormData(prev => ({ ...prev, serviceDescription: e.target.value }))}
+                        placeholder="Descreva o serviço a ser realizado..."
+                        rows={3}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="priority">Prioridade</Label>
+                      <Select onValueChange={(value) => setCarFormData(prev => ({ ...prev, priority: value }))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a prioridade" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="baixa">Baixa</SelectItem>
+                          <SelectItem value="media">Média</SelectItem>
+                          <SelectItem value="alta">Alta</SelectItem>
+                          <SelectItem value="urgente">Urgente</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex gap-2 pt-4">
+                      <Button onClick={handleReceiveCar} className="flex-1">
+                        Receber Veículo
+                      </Button>
+                      <Button variant="outline" onClick={() => setIsReceiveCarOpen(false)}>
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
               
-              <Button variant="outline" className="flex items-center gap-2 h-auto p-4 justify-start">
-                <FileText className="h-5 w-5" />
-                <div className="text-left">
-                  <p className="font-medium">Nova OS</p>
-                  <p className="text-sm opacity-80">Criar ordem de serviço</p>
-                </div>
-              </Button>
+              {/* Botão Nova OS */}
+              <Dialog open={isNewOSOpen} onOpenChange={setIsNewOSOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2 h-auto p-4 justify-start">
+                    <FileText className="h-5 w-5" />
+                    <div className="text-left">
+                      <p className="font-medium">Nova OS</p>
+                      <p className="text-sm opacity-80">Criar ordem de serviço</p>
+                    </div>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Nova Ordem de Serviço</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="osVehiclePlate">Placa do Veículo</Label>
+                      <Input
+                        id="osVehiclePlate"
+                        value={osFormData.vehiclePlate}
+                        onChange={(e) => setOSFormData(prev => ({ ...prev, vehiclePlate: e.target.value.toUpperCase() }))}
+                        placeholder="ABC1234"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="osDescription">Descrição do Serviço</Label>
+                      <Textarea
+                        id="osDescription"
+                        value={osFormData.description}
+                        onChange={(e) => setOSFormData(prev => ({ ...prev, description: e.target.value }))}
+                        placeholder="Descreva detalhadamente o serviço..."
+                        rows={4}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="osPriority">Prioridade</Label>
+                      <Select onValueChange={(value) => setOSFormData(prev => ({ ...prev, priority: value }))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a prioridade" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="baixa">Baixa</SelectItem>
+                          <SelectItem value="media">Média</SelectItem>
+                          <SelectItem value="alta">Alta</SelectItem>
+                          <SelectItem value="urgente">Urgente</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="estimatedCost">Custo Estimado (R$)</Label>
+                      <Input
+                        id="estimatedCost"
+                        type="number"
+                        step="0.01"
+                        value={osFormData.estimatedCost}
+                        onChange={(e) => setOSFormData(prev => ({ ...prev, estimatedCost: e.target.value }))}
+                        placeholder="150.00"
+                      />
+                    </div>
+                    <div className="flex gap-2 pt-4">
+                      <Button onClick={handleCreateOS} className="flex-1">
+                        Criar OS
+                      </Button>
+                      <Button variant="outline" onClick={() => setIsNewOSOpen(false)}>
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
               
+              {/* Botão Finalizar Serviço */}
               <Button variant="outline" className="flex items-center gap-2 h-auto p-4 justify-start">
                 <CheckCircle className="h-5 w-5" />
                 <div className="text-left">
@@ -269,10 +560,14 @@ export default function OficinaExternalDashboard() {
                 <Car className="h-5 w-5" />
                 Recepção de Veículos
               </CardTitle>
-              <Button size="sm" className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Receber Veículo
-              </Button>
+              <Dialog open={isReceiveCarOpen} onOpenChange={setIsReceiveCarOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Receber Veículo
+                  </Button>
+                </DialogTrigger>
+              </Dialog>
             </div>
             <CardDescription>
               Veículos recebidos para manutenção
@@ -323,10 +618,14 @@ export default function OficinaExternalDashboard() {
                 <FileText className="h-5 w-5" />
                 Ordens de Serviço
               </CardTitle>
-              <Button size="sm" className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Nova OS
-              </Button>
+              <Dialog open={isNewOSOpen} onOpenChange={setIsNewOSOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Nova OS
+                  </Button>
+                </DialogTrigger>
+              </Dialog>
             </div>
             <CardDescription>
               Serviços em andamento e pendentes
