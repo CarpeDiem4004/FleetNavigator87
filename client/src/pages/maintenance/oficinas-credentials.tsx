@@ -228,7 +228,7 @@ export default function OficinasCredentialsPage() {
                 <TableHead>Status</TableHead>
                 <TableHead>Credenciais</TableHead>
                 <TableHead>Último Acesso</TableHead>
-                <TableHead>Ações</TableHead>
+                <TableHead className="w-[200px]">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -277,6 +277,17 @@ export default function OficinasCredentialsPage() {
                         <Info className="h-4 w-4 mr-1" />
                         Detalhes
                       </Button>
+                      {workshop.externalToken && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(`${window.location.origin}/oficina/external?token=${workshop.externalToken}`, '_blank')}
+                          className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                        >
+                          <ExternalLink className="h-4 w-4 mr-1" />
+                          Abrir
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
@@ -427,6 +438,42 @@ export default function OficinasCredentialsPage() {
                 </Badge>
               </div>
             </div>
+
+            {/* Link de Acesso Externo - Destaque */}
+            {selectedWorkshop?.externalToken && (
+              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <ExternalLink className="h-5 w-5 text-blue-600" />
+                  <Label className="text-sm font-semibold text-blue-800">Link de Acesso Externo</Label>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Input 
+                      value={selectedWorkshop.externalLink || `${window.location.origin}/oficina/external?token=${selectedWorkshop.externalToken}`}
+                      readOnly 
+                      className="text-xs bg-white"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => copyToClipboard(selectedWorkshop.externalLink || `${window.location.origin}/oficina/external?token=${selectedWorkshop.externalToken}`, 'link')}
+                    >
+                      {copiedLink ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => window.open(selectedWorkshop.externalLink || `${window.location.origin}/oficina/external?token=${selectedWorkshop.externalToken}`, '_blank')}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-blue-700">
+                    Link direto para o painel da oficina (não requer login)
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Links de Acesso */}
             <div className="space-y-4">
