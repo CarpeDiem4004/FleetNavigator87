@@ -6524,11 +6524,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'CNPJ e senha são obrigatórios' });
       }
 
-      // Buscar oficina pelo CNPJ
+      // Buscar oficina pelo CNPJ (normalizar formato)
+      const cnpjLimpo = cnpj.replace(/[^\d]/g, ''); // Remove formatação
+      
+      console.log(`[Login Oficina] Tentativa de login com CNPJ: ${cnpj} (limpo: ${cnpjLimpo})`);
+      
       const result = await pool.query(
-        'SELECT * FROM workshops WHERE cnpj = $1 AND (status = $2 OR status IS NULL)',
-        [cnpj, 'ativo']
+        `SELECT * FROM oficinas WHERE 
+         REPLACE(REPLACE(REPLACE(cnpj, '.', ''), '/', ''), '-', '') = $1 
+         AND (status = $2 OR status IS NULL OR status = 'ativo')`,
+        [cnpjLimpo, 'ativo']
       );
+      
+      console.log(`[Login Oficina] Resultado da busca: ${result.rows.length} oficinas encontradas`);
+      if (result.rows.length > 0) {
+        console.log(`[Login Oficina] Primeira oficina encontrada:`, result.rows[0]);
+      }
 
       if (result.rows.length === 0) {
         return res.status(401).json({ message: 'CNPJ não encontrado' });
@@ -6568,10 +6579,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         token,
         oficina: {
           id: oficina.id,
-          razao_social: oficina.name,
+          razao_social: oficina.razao_social,
           cnpj: oficina.cnpj,
           email: oficina.email,
-          telefone: oficina.phone
+          telefone: oficina.telefone
         }
       });
     } catch (error) {
