@@ -6419,8 +6419,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Verificar se o token é válido para esta oficina
       const tokenQuery = `
-        SELECT workshop_id FROM workshop_external_tokens 
-        WHERE token = $1 AND workshop_id = $2 AND is_active = true AND expires_at > NOW()
+        SELECT id FROM oficinas 
+        WHERE external_token = $1 AND id = $2 AND status = 'ativo'
       `;
       
       const tokenResult = await pool.query(tokenQuery, [token, workshopId]);
@@ -6431,11 +6431,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Buscar solicitações de manutenção
       const requestsQuery = `
-        SELECT id, placa as vehicle_plate, descricao as description, status, prioridade as priority, 
-               data_solicitacao as entry_date, data_agendada as estimated_completion, custo as cost
-        FROM manutencao
-        WHERE oficina_id = $1
-        ORDER BY data_solicitacao DESC
+        SELECT id, vehicle_plate, description, status, priority, 
+               created_at as entry_date, estimated_completion, estimated_cost as cost
+        FROM maintenance_orders
+        WHERE workshop_id = $1
+        ORDER BY created_at DESC
         LIMIT 20
       `;
       
@@ -6802,18 +6802,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'Token de acesso não fornecido' });
       }
 
-      // Verificar se o token existe e está ativo no banco
+      // Verificar se o token existe e está ativo no banco (nova estrutura)
       const query = `
         SELECT 
-          w.id,
-          COALESCE(w.nome, w.razao_social) as name,
-          w.cnpj,
-          w.email,
-          w.telefone as phone,
-          wet.workshop_id
-        FROM workshop_external_tokens wet
-        JOIN workshops w ON wet.workshop_id = w.id
-        WHERE wet.token = $1 AND wet.is_active = true
+          o.id,
+          COALESCE(o.nome_fantasia, o.razao_social) as name,
+          o.cnpj,
+          o.email,
+          o.telefone as phone
+        FROM oficinas o
+        WHERE o.external_token = $1 AND o.status = 'ativo'
       `;
 
       const result = await pool.query(query, [token]);
