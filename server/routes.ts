@@ -4453,16 +4453,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Ajustar os dados para o esquema da tabela se necessário
       const vehicleData = {
-        plate: req.body.plate,
-        model: req.body.model,
-        vehicleType: req.body.vehicleType,
-        status: req.body.status,
-        baseId: req.body.baseId || 12, // Usar 12 (Gestão de Frotas) como fallback
-        ownership: req.body.ownership || 'proprio', // Valor padrão: próprio
-        rentalCompany: req.body.rentalCompany || null, // Empresa de locação, nullable
-        crlvUrl: req.body.crlvUrl || null, // URL do documento CRLV
-        anttUrl: req.body.anttUrl || null, // URL do documento ANTT
-        cartaoAbastecimento: req.body.cartaoAbastecimento || null // Cartão de abastecimento para Line Hall
+        plate: req.body.plate?.toString().trim(),
+        model: req.body.model?.toString().trim() || null,
+        make: req.body.make?.toString().trim() || null,
+        year: req.body.year ? parseInt(req.body.year) : null,
+        vehicleType: req.body.vehicleType || 'cavalo_mecanico',
+        status: req.body.status || 'em_operacao',
+        baseId: req.body.baseId ? parseInt(req.body.baseId) : 12,
+        fuelType: req.body.fuelType?.toString().trim() || null,
+        consumoMedioKmL: req.body.mediaConsumoCombutivel ? parseFloat(req.body.mediaConsumoCombutivel) : null,
+        ownership: req.body.ownership === 'proprio' ? 'murici' : (req.body.ownership || 'murici'),
+        crlvUrl: req.body.crlvUrl || null,
+        anttUrl: req.body.anttUrl || null,
+        cartaoAbastecimento: req.body.cartaoAbastecimento || null
       };
       
       console.log("Dados ajustados:", JSON.stringify(vehicleData, null, 2));
