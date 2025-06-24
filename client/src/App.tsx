@@ -116,6 +116,7 @@ import OficinasExternaPage from "@/pages/OficinasExternaPage";
 import OficinaDashboard from "@/pages/oficina/OficinaDashboard";
 import OficinaLogin from "@/pages/oficina/OficinaLogin";
 import CarReception from "@/pages/oficina/CarReception";
+import OficinaExternalDashboard from "@/pages/oficina/OficinaExternalDashboard";
 import OficinasCredentialsPage from "@/pages/maintenance/oficinas-credentials";
 import WorkshopExternalAccess from "@/pages/maintenance/workshop-external-access";
 import CadastroOficina from "@/pages/maintenance/CadastroOficina";

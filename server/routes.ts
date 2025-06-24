@@ -6236,7 +6236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tokenCreated: row.token_created,
         isActive: row.is_active,
         hasToken: !!row.token,
-        externalLink: row.token ? `${req.protocol}://${req.get('host')}/maintenance/workshop-external-access?token=${row.token}` : null,
+        externalLink: row.token ? `${req.protocol}://${req.get('host')}/oficina/external?token=${row.token}` : null,
         loginLink: `${req.protocol}://${req.get('host')}/oficina/login`
       }));
       
@@ -6329,7 +6329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         access: {
           token: token,
           loginLink: `${req.protocol}://${req.get('host')}/oficina/login`,
-          directLink: token ? `${req.protocol}://${req.get('host')}/maintenance/workshop-external-access?token=${token}` : null,
+          directLink: token ? `${req.protocol}://${req.get('host')}/oficina/external?token=${token}` : null,
           credentials: {
             cnpj: cnpj,
             password: 'secret'
@@ -6342,6 +6342,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         message: "Erro ao cadastrar oficina",
+        error: error.message
+      });
+    }
+  });
+
+  // API para validar token e obter dados da oficina
+  app.get("/api/maintenance/workshops/validate-token", async (req, res) => {
+    try {
+      const { token } = req.query;
+
+      if (!token) {
+        return res.status(400).json({
+          success: false,
+          message: 'Token não fornecido'
+        });
+      }
+
+      // Buscar token válido
+      const tokenQuery = `
+        SELECT wet.*, o.id, o.razao_social as name, o.cnpj, o.email, o.telefone 
+        FROM workshop_external_tokens wet
+        JOIN oficinas o ON wet.workshop_id = o.id
+        WHERE wet.token = $1 AND wet.is_active = true AND wet.expires_at > NOW()
+      `;
+      
+      const result = await pool.query(tokenQuery, [token]);
+
+      if (result.rows.length === 0) {
+        return res.status(401).json({
+          success: false,
+          message: 'Token inválido ou expirado'
+        });
+      }
+
+      const tokenData = result.rows[0];
+
+      // Atualizar último uso
+      await pool.query(
+        'UPDATE workshop_external_tokens SET last_used_at = NOW(), usage_count = usage_count + 1 WHERE token = $1',
+        [token]
+      );
+
+      res.json({
+        success: true,
+        workshop: {
+          id: tokenData.id,
+          name: tokenData.name,
+          cnpj: tokenData.cnpj,
+          email: tokenData.email,
+          telefone: tokenData.telefone
+        }
+      });
+
+    } catch (error: any) {
+      console.error("Erro ao validar token:", error);
+      res.status(500).json({
+        success: false,
+        message: "Erro ao validar token",
+        error: error.message
+      });
+    }
+  });
+
+  // API para obter solicitações de manutenção de uma oficina
+  app.get("/api/maintenance/workshop/:id/requests", async (req, res) => {
+    try {
+      const workshopId = parseInt(req.params.id);
+      const authHeader = req.headers.authorization;
+      
+      if (!authHeader) {
+        return res.status(401).json({ message: 'Token de autorização necessário' });
+      }
+
+      const token = authHeader.replace('Bearer ', '');
+      
+      // Verificar se o token é válido para esta oficina
+      const tokenQuery = `
+        SELECT workshop_id FROM workshop_external_tokens 
+        WHERE token = $1 AND workshop_id = $2 AND is_active = true AND expires_at > NOW()
+      `;
+      
+      const tokenResult = await pool.query(tokenQuery, [token, workshopId]);
+      
+      if (tokenResult.rows.length === 0) {
+        return res.status(401).json({ message: 'Token inválido para esta oficina' });
+      }
+
+      // Buscar solicitações de manutenção
+      const requestsQuery = `
+        SELECT id, vehicle_plate, description, status, priority, entry_date, estimated_completion, cost
+        FROM manutencao
+        WHERE workshop_id = $1
+        ORDER BY entry_date DESC
+        LIMIT 20
+      `;
+      
+      const requestsResult = await pool.query(requestsQuery, [workshopId]);
+
+      res.json({
+        success: true,
+        requests: requestsResult.rows.map(row => ({
+          id: row.id,
+          vehiclePlate: row.vehicle_plate,
+          description: row.description,
+          status: row.status,
+          priority: row.priority,
+          entryDate: row.entry_date,
+          estimatedCompletion: row.estimated_completion,
+          cost: row.cost
+        }))
+      });
+
+    } catch (error: any) {
+      console.error("Erro ao buscar solicitações:", error);
+      res.status(500).json({
+        success: false,
+        message: "Erro ao buscar solicitações",
         error: error.message
       });
     }
