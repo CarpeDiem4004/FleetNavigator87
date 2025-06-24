@@ -109,10 +109,8 @@ export default function OficinaExternalDashboard() {
         setMaintenanceRequests(maintenanceData.requests || []);
       }
 
-      // Carregar recepções de carros
-      const receptionResponse = await fetch(`/api/oficina/car-receptions?workshop=${workshopId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      // Carregar recepções de carros com token externo
+      const receptionResponse = await fetch(`/api/oficina/car-receptions?token=${token}&workshop=${workshopId}`);
       if (receptionResponse.ok) {
         const receptionData = await receptionResponse.json();
         setCarReceptions(receptionData.receptions || []);
