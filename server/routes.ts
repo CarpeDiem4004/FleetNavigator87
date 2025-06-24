@@ -7131,13 +7131,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Criar recebimento de veículo
-  app.post("/api/oficina/car-receptions", verificarTokenExterno, async (req, res) => {
+  app.post("/api/oficina/car-receptions", async (req, res) => {
     try {
+      const { token } = req.query;
       const data = req.body;
+      
+      // Validar token de acesso externo
+      if (!token) {
+        return res.status(401).json({ 
+          success: false,
+          message: 'Token de acesso obrigatório' 
+        });
+      }
+
+      // Verificar se o token é válido
+      const tokenQuery = `
+        SELECT 
+          o.id,
+          COALESCE(o.nome_fantasia, o.razao_social) as name,
+          o.cnpj,
+          o.email,
+          o.telefone as phone,
+          o.external_token as token,
+          o.created_at as token_created
+        FROM oficinas o
+        WHERE o.external_token = $1 AND o.status = 'ativo'
+      `;
+
+      const result = await pool.query(tokenQuery, [token]);
+
+      if (result.rows.length === 0) {
+        return res.status(401).json({
+          success: false,
+          message: "Token inválido ou expirado"
+        });
+      }
+
+      const workshop = result.rows[0];
       
       // Validar dados obrigatórios
       if (!data.vehiclePlate || !data.vehicleModel || !data.vehicleType || !data.baseId || !data.serviceDescription) {
-        return res.status(400).json({ message: 'Dados obrigatórios não informados' });
+        return res.status(400).json({ 
+          success: false,
+          message: 'Dados obrigatórios não informados' 
+        });
       }
 
       // Criar objeto de recebimento com dados da oficina
@@ -7156,13 +7193,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalCost: (data.laborCost || 0) + (data.partsCost || 0),
         deliveryDeadline: data.deliveryDeadline || null,
         notes: data.notes || '',
-        workshopId: req.oficina.id,
-        status: 'recebido',
-        createdAt: new Date()
+        workshopId: workshop.id,
+        status: 'recebido'
       };
 
       const reception = await storage.createCarReception(carReceptionData);
-      res.status(201).json(reception);
+      res.status(201).json({ 
+        success: true,
+        message: 'Recebimento registrado com sucesso',
+        reception: reception
+      });
     } catch (error) {
       console.error("Erro ao criar recebimento:", error);
       res.status(500).json({ message: 'Erro ao registrar recebimento' });

@@ -117,6 +117,13 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- June 24, 2025: Fixed external workshop access system
+  - Resolved duplicate endpoint issue causing wrong workshop identification
+  - Token auto_token_bb6ba89be514 now correctly routes to Oficina Alair (ID=5)
+  - Created direct access route /oficina/external without CNPJ requirement
+  - Fixed CORS issues in car reception registration endpoint
+  - External links now work directly via token parameter
+
 - June 24, 2025: Added comprehensive support for Brazilian license plates
   - Implemented validation for both old format (ABC1234) and Mercosul format (ABC1D23)
   - Added real-time plate validation with visual feedback
