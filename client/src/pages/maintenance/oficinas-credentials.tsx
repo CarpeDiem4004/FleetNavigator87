@@ -463,21 +463,21 @@ export default function OficinasCredentialsPage() {
                   <Label className="text-sm font-medium">Link Direto com Token</Label>
                   <div className="flex items-center gap-2 mt-1">
                     <Input 
-                      value={`${window.location.origin}/oficina/external?token=${selectedWorkshop.externalToken}`}
+                      value={selectedWorkshop.externalLink || `${window.location.origin}/oficina/external?token=${selectedWorkshop.externalToken}`}
                       readOnly 
                       className="text-xs"
                     />
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => copyToClipboard(`${window.location.origin}/oficina/external?token=${selectedWorkshop.externalToken}`, 'link')}
+                      onClick={() => copyToClipboard(selectedWorkshop.externalLink || `${window.location.origin}/oficina/external?token=${selectedWorkshop.externalToken}`, 'link')}
                     >
                       {copiedLink ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => window.open(`${window.location.origin}/oficina/external?token=${selectedWorkshop.externalToken}`, '_blank')}
+                      onClick={() => window.open(selectedWorkshop.externalLink || `${window.location.origin}/oficina/external?token=${selectedWorkshop.externalToken}`, '_blank')}
                     >
                       <ExternalLink className="h-4 w-4" />
                     </Button>
@@ -485,6 +485,20 @@ export default function OficinasCredentialsPage() {
                   <p className="text-xs text-muted-foreground mt-1">
                     Link direto que não requer login (use com cuidado)
                   </p>
+                </div>
+              )}
+
+              {!selectedWorkshop?.externalToken && (
+                <div>
+                  <Label className="text-sm font-medium">Token de Acesso Direto</Label>
+                  <div className="bg-amber-50 p-3 rounded-md mt-1">
+                    <p className="text-sm text-amber-700">
+                      Nenhum token de acesso direto configurado para esta oficina.
+                    </p>
+                    <p className="text-xs text-amber-600 mt-1">
+                      Use a página "Acesso Externo" para gerar um token de acesso direto se necessário.
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
