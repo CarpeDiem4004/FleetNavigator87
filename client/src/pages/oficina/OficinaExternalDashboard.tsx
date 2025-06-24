@@ -29,16 +29,7 @@ interface WorkshopData {
   telefone: string;
 }
 
-interface Project {
-  id: number;
-  name: string;
-  bases: Base[];
-}
 
-interface Base {
-  id: number;
-  name: string;
-}
 
 interface MaintenanceRequest {
   id: number;
@@ -64,20 +55,9 @@ export default function OficinaExternalDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [maintenanceRequests, setMaintenanceRequests] = useState<MaintenanceRequest[]>([]);
   const [carReceptions, setCarReceptions] = useState<CarReception[]>([]);
-  const [isReceiveCarOpen, setIsReceiveCarOpen] = useState(false);
+
   const [isNewOSOpen, setIsNewOSOpen] = useState(false);
-  const [carFormData, setCarFormData] = useState({
-    vehiclePlate: '',
-    vehicleModel: '',
-    vehicleType: '',
-    currentKm: '',
-    serviceDescription: '',
-    priority: 'media',
-    projectId: '',
-    baseId: ''
-  });
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProjectBases, setSelectedProjectBases] = useState<Base[]>([]);
+
   const [osFormData, setOSFormData] = useState({
     vehiclePlate: '',
     description: '',
@@ -97,7 +77,6 @@ export default function OficinaExternalDashboard() {
     }
 
     validateTokenAndLoadData(token);
-    loadProjects();
   }, []);
 
   const validateTokenAndLoadData = async (token: string) => {
@@ -420,129 +399,6 @@ export default function OficinaExternalDashboard() {
                     </div>
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Receber Veículo</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 max-h-[70vh] overflow-y-auto">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="vehiclePlate">Placa do Veículo</Label>
-                        <Input
-                          id="vehiclePlate"
-                          value={carFormData.vehiclePlate}
-                          onChange={(e) => setCarFormData(prev => ({ ...prev, vehiclePlate: e.target.value.toUpperCase() }))}
-                          placeholder="ABC1234"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="currentKm">Quilometragem Atual</Label>
-                        <Input
-                          id="currentKm"
-                          type="number"
-                          value={carFormData.currentKm}
-                          onChange={(e) => setCarFormData(prev => ({ ...prev, currentKm: e.target.value }))}
-                          placeholder="85000"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="vehicleModel">Modelo do Veículo</Label>
-                        <Input
-                          id="vehicleModel"
-                          value={carFormData.vehicleModel}
-                          onChange={(e) => setCarFormData(prev => ({ ...prev, vehicleModel: e.target.value }))}
-                          placeholder="Ford Ka, Fiat Uno..."
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="vehicleType">Tipo do Veículo</Label>
-                        <Select onValueChange={(value) => setCarFormData(prev => ({ ...prev, vehicleType: value }))}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o tipo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Hatch">Hatch</SelectItem>
-                            <SelectItem value="Sedan">Sedan</SelectItem>
-                            <SelectItem value="SUV">SUV</SelectItem>
-                            <SelectItem value="Pickup">Pickup</SelectItem>
-                            <SelectItem value="Van">Van</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="serviceDescription">Descrição do Serviço</Label>
-                      <Textarea
-                        id="serviceDescription"
-                        value={carFormData.serviceDescription}
-                        onChange={(e) => setCarFormData(prev => ({ ...prev, serviceDescription: e.target.value }))}
-                        placeholder="Descreva o serviço a ser realizado..."
-                        rows={3}
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="projectId">Projeto</Label>
-                        <Select onValueChange={handleProjectChange}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o projeto" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {projects.map((project) => (
-                              <SelectItem key={project.id} value={project.id.toString()}>
-                                {project.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="baseId">Base</Label>
-                        <Select 
-                          disabled={!carFormData.projectId}
-                          onValueChange={(value) => setCarFormData(prev => ({ ...prev, baseId: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione a base" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {selectedProjectBases.map((base) => (
-                              <SelectItem key={base.id} value={base.id.toString()}>
-                                {base.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="priority">Prioridade</Label>
-                      <Select onValueChange={(value) => setCarFormData(prev => ({ ...prev, priority: value }))}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione a prioridade" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="baixa">Baixa</SelectItem>
-                          <SelectItem value="media">Média</SelectItem>
-                          <SelectItem value="alta">Alta</SelectItem>
-                          <SelectItem value="urgente">Urgente</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex gap-2 pt-4">
-                      <Button onClick={handleReceiveCar} className="flex-1">
-                        Receber Veículo
-                      </Button>
-                      <Button variant="outline" onClick={() => setIsReceiveCarOpen(false)}>
-                        Cancelar
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-              
               {/* Botão Nova OS */}
               <Dialog open={isNewOSOpen} onOpenChange={setIsNewOSOpen}>
                 <DialogTrigger asChild>

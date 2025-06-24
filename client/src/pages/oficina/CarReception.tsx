@@ -350,7 +350,12 @@ function CarReception() {
       
       // Limpar localStorage e redirecionar
       localStorage.removeItem('editingReception');
-      setLocation('/maintenance/dashboard-oficina');
+      
+      if (isExternalAccess && token) {
+        setLocation(`/oficina/external?token=${token}`);
+      } else {
+        setLocation('/maintenance/dashboard-oficina');
+      }
       
     } catch (error) {
       console.error("Erro ao processar recebimento:", error);
@@ -374,6 +379,11 @@ function CarReception() {
     { value: "carreta", label: "Carreta" },
   ];
 
+  // Verificar se é acesso externo
+  const urlParams = new URLSearchParams(window.location.search);
+  const isExternalAccess = urlParams.get('external') === 'true';
+  const token = urlParams.get('token');
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between mb-6">
@@ -383,10 +393,16 @@ function CarReception() {
             {isEditMode ? "Editar Recebimento" : "Recebimento de Veículos"}
           </h1>
         </div>
-        {isEditMode && (
+        {(isEditMode || isExternalAccess) && (
           <Button 
             variant="outline" 
-            onClick={() => setLocation('/maintenance/dashboard-oficina')}
+            onClick={() => {
+              if (isExternalAccess && token) {
+                setLocation(`/oficina/external?token=${token}`);
+              } else {
+                setLocation('/maintenance/dashboard-oficina');
+              }
+            }}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
