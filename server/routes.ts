@@ -6431,10 +6431,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Buscar solicitações de manutenção
       const requestsQuery = `
-        SELECT id, vehicle_plate, description, status, priority, entry_date, estimated_completion, cost
+        SELECT id, placa as vehicle_plate, descricao as description, status, prioridade as priority, 
+               data_solicitacao as entry_date, data_agendada as estimated_completion, custo as cost
         FROM manutencao
-        WHERE workshop_id = $1
-        ORDER BY entry_date DESC
+        WHERE oficina_id = $1
+        ORDER BY data_solicitacao DESC
         LIMIT 20
       `;
       
@@ -6445,9 +6446,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         requests: requestsResult.rows.map(row => ({
           id: row.id,
           vehiclePlate: row.vehicle_plate,
-          description: row.description,
-          status: row.status,
-          priority: row.priority,
+          description: row.description || 'Manutenção programada',
+          status: row.status || 'pendente',
+          priority: row.priority || 'media',
           entryDate: row.entry_date,
           estimatedCompletion: row.estimated_completion,
           cost: row.cost
