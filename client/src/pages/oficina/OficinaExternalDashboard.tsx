@@ -55,7 +55,6 @@ export default function OficinaExternalDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [maintenanceRequests, setMaintenanceRequests] = useState<MaintenanceRequest[]>([]);
   const [carReceptions, setCarReceptions] = useState<CarReception[]>([]);
-
   const [isNewOSOpen, setIsNewOSOpen] = useState(false);
 
   const [osFormData, setOSFormData] = useState({
@@ -495,14 +494,14 @@ export default function OficinaExternalDashboard() {
                 <Car className="h-5 w-5" />
                 Recepção de Veículos
               </CardTitle>
-              <Dialog open={isReceiveCarOpen} onOpenChange={setIsReceiveCarOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    Receber Veículo
-                  </Button>
-                </DialogTrigger>
-              </Dialog>
+              <Button 
+                size="sm" 
+                onClick={() => window.location.href = `/maintenance/car-reception?external=true&token=${new URLSearchParams(window.location.search).get('token')}`}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Receber Veículo
+              </Button>
             </div>
             <CardDescription>
               Veículos recebidos para manutenção
