@@ -28,7 +28,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Eye, EyeOff, RefreshCw, Key, Building2, Copy, Check } from 'lucide-react';
+import { Eye, EyeOff, RefreshCw, Key, Building2, Copy, Check, ExternalLink, Info } from 'lucide-react';
 
 interface WorkshopCredential {
   id: number;
@@ -40,6 +40,9 @@ interface WorkshopCredential {
   hasCredentials: boolean;
   lastLogin?: string;
   status: 'active' | 'inactive';
+  externalToken?: string;
+  externalLink?: string;
+  loginLink?: string;
 }
 
 export default function OficinasCredentialsPage() {
@@ -52,6 +55,8 @@ export default function OficinasCredentialsPage() {
   const [generatingPassword, setGeneratingPassword] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [copiedPassword, setCopiedPassword] = useState(false);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
     fetchWorkshops();
@@ -150,14 +155,19 @@ export default function OficinasCredentialsPage() {
     }
   };
 
-  const copyToClipboard = async (text: string) => {
+  const copyToClipboard = async (text: string, type: 'password' | 'link' = 'password') => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopiedPassword(true);
-      setTimeout(() => setCopiedPassword(false), 2000);
+      if (type === 'password') {
+        setCopiedPassword(true);
+        setTimeout(() => setCopiedPassword(false), 2000);
+      } else {
+        setCopiedLink(true);
+        setTimeout(() => setCopiedLink(false), 2000);
+      }
       toast({
         title: "Copiado",
-        description: "Senha copiada para a área de transferência",
+        description: type === 'password' ? "Senha copiada para a área de transferência" : "Link copiado para a área de transferência",
       });
     } catch (error) {
       console.error('Erro ao copiar:', error);
@@ -168,6 +178,11 @@ export default function OficinasCredentialsPage() {
     setSelectedWorkshop(workshop);
     setNewPassword('');
     setIsDialogOpen(true);
+  };
+
+  const openDetailsDialog = (workshop: WorkshopCredential) => {
+    setSelectedWorkshop(workshop);
+    setIsDetailsDialogOpen(true);
   };
 
   if (loading) {
@@ -254,6 +269,14 @@ export default function OficinasCredentialsPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openDetailsDialog(workshop)}
+                      >
+                        <Info className="h-4 w-4 mr-1" />
+                        Detalhes
+                      </Button>
                       <Button
                         size="sm"
                         variant="outline"
@@ -362,6 +385,141 @@ export default function OficinasCredentialsPage() {
               ) : (
                 'Salvar Senha'
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Detalhes da Oficina */}
+      <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              {selectedWorkshop?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Informações detalhadas e links de acesso da oficina
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Informações da Oficina */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">CNPJ</Label>
+                <p className="font-medium">{selectedWorkshop?.cnpj || 'Não informado'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Email</Label>
+                <p className="font-medium">{selectedWorkshop?.email || 'Não informado'}</p>
+              </div>
+              {selectedWorkshop?.phone && (
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Telefone</Label>
+                  <p className="font-medium">{selectedWorkshop.phone}</p>
+                </div>
+              )}
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Status</Label>
+                <Badge variant={selectedWorkshop?.status === 'active' ? 'default' : 'secondary'}>
+                  {selectedWorkshop?.status === 'active' ? 'Ativa' : 'Inativa'}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Links de Acesso */}
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium">Link de Login (Recomendado)</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Input 
+                    value={`${window.location.origin}/oficina/login`}
+                    readOnly 
+                    className="text-xs"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyToClipboard(`${window.location.origin}/oficina/login`, 'link')}
+                  >
+                    {copiedLink ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => window.open(`${window.location.origin}/oficina/login`, '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  A oficina deve usar CNPJ e senha para fazer login
+                </p>
+              </div>
+
+              {selectedWorkshop?.externalToken && (
+                <div>
+                  <Label className="text-sm font-medium">Link Direto com Token</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input 
+                      value={`${window.location.origin}/oficina/external?token=${selectedWorkshop.externalToken}`}
+                      readOnly 
+                      className="text-xs"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => copyToClipboard(`${window.location.origin}/oficina/external?token=${selectedWorkshop.externalToken}`, 'link')}
+                    >
+                      {copiedLink ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => window.open(`${window.location.origin}/oficina/external?token=${selectedWorkshop.externalToken}`, '_blank')}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Link direto que não requer login (use com cuidado)
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Credenciais de Acesso */}
+            <div className="bg-muted p-4 rounded-md">
+              <Label className="text-sm font-medium">Credenciais de Acesso</Label>
+              <div className="mt-2 space-y-1 text-sm">
+                <p><strong>CNPJ:</strong> {selectedWorkshop?.cnpj || 'Não informado'}</p>
+                <p><strong>Senha:</strong> {selectedWorkshop?.hasCredentials ? 'Configurada' : 'Não configurada'}</p>
+              </div>
+              {!selectedWorkshop?.hasCredentials && (
+                <p className="text-xs text-amber-600 mt-2">
+                  Configure uma senha para permitir que a oficina acesse o sistema
+                </p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDetailsDialogOpen(false)}
+            >
+              Fechar
+            </Button>
+            <Button
+              onClick={() => {
+                setIsDetailsDialogOpen(false);
+                openPasswordDialog(selectedWorkshop!);
+              }}
+              disabled={!selectedWorkshop}
+            >
+              <Key className="h-4 w-4 mr-2" />
+              Configurar Senha
             </Button>
           </DialogFooter>
         </DialogContent>
