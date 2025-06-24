@@ -78,6 +78,9 @@ function CarReception() {
   const [newPartPrice, setNewPartPrice] = useState("");
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [isExternalAccess, setIsExternalAccess] = useState(false);
+  const [externalToken, setExternalToken] = useState<string | null>(null);
+  const [workshopId, setWorkshopId] = useState<number | null>(null);
   const { toast } = useToast();
 
 
@@ -390,11 +393,6 @@ function CarReception() {
     { value: "cavalo", label: "Cavalo Mecânico" },
     { value: "carreta", label: "Carreta" },
   ];
-
-  // Verificar se é acesso externo
-  const urlParams = new URLSearchParams(window.location.search);
-  const isExternalAccess = urlParams.get('external') === 'true';
-  const token = urlParams.get('token');
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -786,6 +784,17 @@ function CarReception() {
 }
 
 export default function CarReceptionPage() {
+  // Verificar se é acesso externo
+  const urlParams = new URLSearchParams(window.location.search);
+  const isExternal = urlParams.get('external') === 'true';
+  const hasToken = urlParams.get('token');
+
+  // Se é acesso externo com token, não usar WorkshopAuth
+  if (isExternal && hasToken) {
+    return <CarReception />;
+  }
+
+  // Caso contrário, usar autenticação normal
   return (
     <WorkshopAuth workshopName="Sistema de Manutenção">
       <CarReception />
