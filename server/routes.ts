@@ -6571,6 +6571,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para validar token de acesso externo e retornar dados da oficina
+  app.get("/api/maintenance/workshops/validate-token", async (req, res) => {
+    try {
+      const { token } = req.query;
+
+      if (!token) {
+        return res.status(400).json({
+          success: false,
+          message: "Token é obrigatório"
+        });
+      }
+
+      // Verificar se o token existe e está ativo
+      const query = `
+        SELECT 
+          w.id,
+          COALESCE(w.nome, w.razao_social) as name,
+          w.cnpj,
+          w.email,
+          w.telefone as phone,
+          wet.token,
+          wet.created_at as token_created
+        FROM workshop_external_tokens wet
+        JOIN workshops w ON wet.workshop_id = w.id
+        WHERE wet.token = $1 AND wet.is_active = true
+      `;
+
+      const result = await pool.query(query, [token]);
+
+      if (result.rows.length === 0) {
+        return res.status(401).json({
+          success: false,
+          message: "Token inválido ou expirado"
+        });
+      }
+
+      const workshop = result.rows[0];
+
+      res.json({
+        success: true,
+        workshop: {
+          id: workshop.id,
+          name: workshop.name,
+          cnpj: workshop.cnpj,
+          email: workshop.email,
+          phone: workshop.phone,
+          tokenCreated: workshop.token_created
+        }
+      });
+
+    } catch (error: any) {
+      console.error("Erro ao validar token:", error);
+      res.status(500).json({
+        success: false,
+        message: "Erro ao validar token",
+        error: error.message
+      });
+    }
+  });
+
   // Rota para criar nova oficina
   app.post("/api/maintenance/workshops", hasMaintenanceAccess, async (req, res) => {
     try {

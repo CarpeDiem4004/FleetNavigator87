@@ -72,6 +72,7 @@ export default function OficinaExternalDashboard() {
     if (!token) {
       setError('Token de acesso não fornecido');
       setIsLoading(false);
+      window.location.href = '/oficina/login';
       return;
     }
 
