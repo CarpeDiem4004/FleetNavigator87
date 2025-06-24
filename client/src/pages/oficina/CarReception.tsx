@@ -132,11 +132,23 @@ function CarReception() {
     }
   };
 
-  // Detectar modo de edição através da URL e localStorage
+  // Detectar modo de edição e acesso externo através da URL
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const isEdit = urlParams.get('edit') === 'true';
     const id = urlParams.get('id');
+    const external = urlParams.get('external') === 'true';
+    const token = urlParams.get('token');
+    const workshop_id = urlParams.get('workshop_id');
+    
+    // Configurar acesso externo se presente
+    if (external && token) {
+      setIsExternalAccess(true);
+      setExternalToken(token);
+      if (workshop_id) {
+        setWorkshopId(parseInt(workshop_id));
+      }
+    }
     
     if (isEdit && id) {
       setIsEditMode(true);

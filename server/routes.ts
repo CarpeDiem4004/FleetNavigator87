@@ -6789,6 +6789,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
 
+  // Middleware para verificar token externo (string simples)
+  const verificarTokenExterno = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      let token = req.headers.authorization?.substring(7); // Bearer token
+      
+      // Se não tem no header, tenta pegar da query string
+      if (!token) {
+        token = req.query.token as string;
+      }
+
+      if (!token) {
+        return res.status(401).json({ message: 'Token de acesso não fornecido' });
+      }
+
+      // Verificar se o token existe e está ativo no banco
+      const query = `
+        SELECT 
+          w.id,
+          COALESCE(w.nome, w.razao_social) as name,
+          w.cnpj,
+          w.email,
+          w.telefone as phone,
+          wet.workshop_id
+        FROM workshop_external_tokens wet
+        JOIN workshops w ON wet.workshop_id = w.id
+        WHERE wet.token = $1 AND wet.is_active = true
+      `;
+
+      const result = await pool.query(query, [token]);
+
+      if (result.rows.length === 0) {
+        return res.status(401).json({ message: 'Token externo inválido ou expirado' });
+      }
+
+      // Adiciona dados da oficina ao request
+      req.oficina = result.rows[0];
+      next();
+    } catch (error) {
+      console.error('Erro ao verificar token externo:', error);
+      return res.status(401).json({ message: 'Erro ao validar token externo' });
+    }
+  };
+
   // Login da oficina
   app.post("/api/oficina/login", async (req, res) => {
     try {
@@ -7145,7 +7188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Criar recebimento de veículo
-  app.post("/api/oficina/car-receptions", verificarTokenOficina, async (req, res) => {
+  app.post("/api/oficina/car-receptions", verificarTokenExterno, async (req, res) => {
     try {
       const data = req.body;
       
@@ -7184,7 +7227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Listar recebimentos da oficina
-  app.get("/api/oficina/car-receptions", verificarTokenOficina, async (req, res) => {
+  app.get("/api/oficina/car-receptions", verificarTokenExterno, async (req, res) => {
     try {
       const receptions = await storage.getCarReceptionsByWorkshop(req.oficina.id);
       res.json(receptions);
