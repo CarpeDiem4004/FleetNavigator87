@@ -6586,16 +6586,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verificar se o token existe e está ativo
       const query = `
         SELECT 
-          w.id,
-          COALESCE(w.nome, w.razao_social) as name,
-          w.cnpj,
-          w.email,
-          w.telefone as phone,
-          wet.token,
-          wet.created_at as token_created
-        FROM workshop_external_tokens wet
-        JOIN workshops w ON wet.workshop_id = w.id
-        WHERE wet.token = $1 AND wet.is_active = true
+          o.id,
+          COALESCE(o.nome_fantasia, o.razao_social) as name,
+          o.cnpj,
+          o.email,
+          o.telefone as phone,
+          o.external_token as token,
+          o.created_at as token_created
+        FROM oficinas o
+        WHERE o.external_token = $1 AND o.status = 'ativo'
       `;
 
       const result = await pool.query(query, [token]);
