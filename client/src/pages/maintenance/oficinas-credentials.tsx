@@ -228,7 +228,7 @@ export default function OficinasCredentialsPage() {
                 <TableHead>Status</TableHead>
                 <TableHead>Credenciais</TableHead>
                 <TableHead>Último Acesso</TableHead>
-                <TableHead className="w-[200px]">Ações</TableHead>
+                <TableHead className="w-[220px]">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -268,7 +268,7 @@ export default function OficinasCredentialsPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1">
                       <Button
                         size="sm"
                         variant="outline"
@@ -285,7 +285,7 @@ export default function OficinasCredentialsPage() {
                           className="text-blue-600 border-blue-200 hover:bg-blue-50"
                         >
                           <ExternalLink className="h-4 w-4 mr-1" />
-                          Abrir
+                          Link
                         </Button>
                       )}
                       <Button
