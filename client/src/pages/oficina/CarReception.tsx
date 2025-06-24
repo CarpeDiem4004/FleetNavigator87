@@ -355,7 +355,24 @@ function CarReception() {
         });
       } else {
         // Criar novo recebimento
-        await workshopAPI.createCarReception(submissionData);
+        let response;
+        if (isExternalAccess && externalToken) {
+          // Usar API externa com token na query string
+          response = await fetch(`/api/oficina/car-receptions?token=${externalToken}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(submissionData)
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Erro ao criar recebimento");
+          }
+        } else {
+          await workshopAPI.createCarReception(submissionData);
+        }
         
         toast({
           title: "Recebimento registrado com sucesso",
@@ -366,8 +383,15 @@ function CarReception() {
       // Limpar localStorage e redirecionar
       localStorage.removeItem('editingReception');
       
-      if (isExternalAccess && token) {
-        setLocation(`/oficina/external?token=${token}`);
+      if (isExternalAccess && externalToken) {
+        // Se é acesso externo, mostrar mensagem de sucesso e opção de novo registro
+        setTimeout(() => {
+          if (confirm("Deseja registrar outro veículo?")) {
+            window.location.reload();
+          } else {
+            window.close();
+          }
+        }, 2000);
       } else {
         setLocation('/maintenance/dashboard-oficina');
       }
