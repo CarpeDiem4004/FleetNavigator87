@@ -13917,11 +13917,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         SELECT 
           p.id as project_id, 
           p.name as project_name,
+          p.base_id,
           b.id as base_id,
           b.name as base_name
         FROM projects p
-        JOIN project_bases pb ON p.id = pb.project_id
-        JOIN bases b ON pb.base_id = b.id
+        LEFT JOIN bases b ON p.base_id = b.id
         ORDER BY p.name, b.name
       `;
       
