@@ -115,6 +115,19 @@ This is a comprehensive fleet management system built with React (frontend) and 
 - **Port Configuration**: Port 5000 mapped to external port 80
 - **Health Checks**: Built-in health monitoring and restart capabilities
 
+## Recent Changes
+
+- June 24, 2025: Added comprehensive support for Brazilian license plates
+  - Implemented validation for both old format (ABC1234) and Mercosul format (ABC1D23)
+  - Added real-time plate validation with visual feedback
+  - Enhanced vehicle registration forms with smart plate formatting
+  - Fixed vehicle registration API validation errors
+
+- June 24, 2025: Enhanced fuel card management system
+  - Improved Excel export to show correct card types and numbers
+  - Added vehicle plate display for plate-based cards
+  - Maintained fuel card balance response functionality
+
 ## Changelog
 
 - June 24, 2025. Initial setup

@@ -105,6 +105,7 @@ const Vehicles: React.FC = () => {
     fuelType: 'Diesel',
     mediaConsumoCombutivel: undefined,
   });
+  const [plateValidation, setPlateValidation] = useState<ReturnType<typeof validateAndFormatPlate> | null>(null);
   
   // Obter veículos da API real
   const { data: vehicles, isLoading } = useQuery({
@@ -153,6 +154,7 @@ const Vehicles: React.FC = () => {
         fuelType: 'Diesel',
         mediaConsumoCombutivel: undefined,
       });
+      setPlateValidation(null);
       
       toast({
         title: "Veículo adicionado com sucesso",
@@ -466,12 +468,44 @@ const Vehicles: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col space-y-1.5">
                 <label htmlFor="plate" className="text-sm font-medium">Placa *</label>
-                <Input 
-                  id="plate" 
-                  placeholder="Ex: ABC1234" 
-                  value={newVehicle.plate}
-                  onChange={(e) => setNewVehicle({...newVehicle, plate: e.target.value})}
-                />
+                <div className="relative">
+                  <Input 
+                    id="plate" 
+                    placeholder="ABC1234 ou ABC1D23" 
+                    value={newVehicle.plate}
+                    onChange={(e) => {
+                      const maskedValue = applyPlateMask(e.target.value);
+                      setNewVehicle({...newVehicle, plate: maskedValue});
+                      
+                      const validation = validateAndFormatPlate(maskedValue);
+                      setPlateValidation(validation);
+                    }}
+                    className={`uppercase pr-10 ${
+                      plateValidation?.isValid === true ? 'border-green-500' : 
+                      plateValidation?.isValid === false && newVehicle.plate.length > 0 ? 'border-red-500' : ''
+                    }`}
+                    maxLength={8}
+                  />
+                  {plateValidation && newVehicle.plate.length > 0 && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      {plateValidation.isValid ? (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 text-red-500" />
+                      )}
+                    </div>
+                  )}
+                </div>
+                {newVehicle.plate.length > 0 && (
+                  <p className={`text-xs ${
+                    plateValidation?.isValid ? 'text-green-600' : 'text-gray-600'
+                  }`}>
+                    {plateValidation?.isValid ? 
+                      `✓ Placa válida - Formato ${plateValidation.type}${plateValidation.type === 'antiga' ? ' (ABC-1234)' : ' (ABC1D23)'}` :
+                      getPlateFormatHint(newVehicle.plate)
+                    }
+                  </p>
+                )}
               </div>
               <div className="flex flex-col space-y-1.5">
                 <label htmlFor="make" className="text-sm font-medium">Marca *</label>
@@ -611,15 +645,26 @@ const Vehicles: React.FC = () => {
             </Button>
             <Button 
               onClick={() => {
+                // Validar placa antes de enviar
+                if (!plateValidation?.isValid) {
+                  toast({
+                    title: 'Placa inválida',
+                    description: 'Digite uma placa válida no formato antigo (ABC1234) ou Mercosul (ABC1D23).',
+                    variant: 'destructive'
+                  });
+                  return;
+                }
+                
                 // Garantir que temos um baseId válido (baseId: 12 para "Gestão de Frotas")
                 const vehicleData = {
                   ...newVehicle,
+                  plate: plateValidation.formatted, // Usar a placa formatada
                   baseId: newVehicle.baseId || 12
                 };
                 console.log("Enviando veículo para a API:", vehicleData);
                 addVehicleMutation.mutate(vehicleData);
               }}
-              disabled={!newVehicle.plate || !newVehicle.make}
+              disabled={!newVehicle.plate || !newVehicle.make || !plateValidation?.isValid}
             >
               {addVehicleMutation.isPending ? 'Salvando...' : 'Salvar'}
             </Button>
