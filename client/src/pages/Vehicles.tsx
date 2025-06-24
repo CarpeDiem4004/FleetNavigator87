@@ -106,6 +106,24 @@ const Vehicles: React.FC = () => {
     mediaConsumoCombutivel: undefined,
   });
   const [plateValidation, setPlateValidation] = useState<ReturnType<typeof validateAndFormatPlate> | null>(null);
+
+  // Função para lidar com mudança de base e definir consumo automático para Line Hall
+  const handleBaseChange = (baseId: string) => {
+    const baseIdNumber = parseInt(baseId);
+    setNewVehicle(prev => ({
+      ...prev, 
+      baseId: baseIdNumber,
+      // Se for Line Hall Shopee (base_id 3), definir consumo automático de 2.5 km/l
+      mediaConsumoCombutivel: baseIdNumber === 3 ? 2.5 : prev.mediaConsumoCombutivel
+    }));
+    
+    if (baseIdNumber === 3) {
+      toast({
+        title: "Consumo definido automaticamente",
+        description: "Média de 2.5 km/l aplicada para veículos do Line Hall Shopee",
+      });
+    }
+  };
   
   // Obter veículos da API real
   const { data: vehicles, isLoading } = useQuery({
@@ -618,7 +636,7 @@ const Vehicles: React.FC = () => {
               <label htmlFor="base" className="text-sm font-medium">Base</label>
               <Select
                 value={newVehicle.baseId ? newVehicle.baseId.toString() : "12"}
-                onValueChange={(value) => setNewVehicle({...newVehicle, baseId: parseInt(value)})}
+                onValueChange={handleBaseChange}
               >
                 <SelectTrigger id="base" className="w-full">
                   <SelectValue placeholder="Selecione a base" />

@@ -122,6 +122,7 @@ This is a comprehensive fleet management system built with React (frontend) and 
   - Added real-time plate validation with visual feedback
   - Enhanced vehicle registration forms with smart plate formatting
   - Fixed vehicle registration API validation errors
+  - Configured automatic 2.5 km/l fuel consumption for Line Hall Shopee vehicles
 
 - June 24, 2025: Enhanced fuel card management system
   - Improved Excel export to show correct card types and numbers

@@ -136,6 +136,20 @@ export default function CadastroFrota({ onVehicleAdded }: Props = {}) {
     return baseId === '3' && tipoVeiculo !== 'carreta'
   }
 
+  // Função para definir consumo automático para Line Hall
+  const handleBaseChange = (novaBase: string) => {
+    setBaseId(novaBase)
+    
+    // Se for Line Hall Shopee (base_id 3), definir consumo automático de 2.5 km/l
+    if (novaBase === '3') {
+      setMediaConsumo(2.5)
+      toast({
+        title: "Consumo definido automaticamente",
+        description: "Média de 2.5 km/l aplicada para veículos do Line Hall Shopee",
+      })
+    }
+  }
+
   // Função para fazer upload de arquivos via API do servidor
   const uploadFileToServer = async (file: File, folder: string, vehiclePlate: string): Promise<string | null> => {
     if (!file) return null;
