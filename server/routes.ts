@@ -6347,63 +6347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // API para validar token e obter dados da oficina
-  app.get("/api/maintenance/workshops/validate-token", async (req, res) => {
-    try {
-      const { token } = req.query;
-
-      if (!token) {
-        return res.status(400).json({
-          success: false,
-          message: 'Token não fornecido'
-        });
-      }
-
-      // Buscar token válido
-      const tokenQuery = `
-        SELECT wet.*, o.id, o.razao_social as name, o.cnpj, o.email, o.telefone 
-        FROM workshop_external_tokens wet
-        JOIN oficinas o ON wet.workshop_id = o.id
-        WHERE wet.token = $1 AND wet.is_active = true AND wet.expires_at > NOW()
-      `;
-      
-      const result = await pool.query(tokenQuery, [token]);
-
-      if (result.rows.length === 0) {
-        return res.status(401).json({
-          success: false,
-          message: 'Token inválido ou expirado'
-        });
-      }
-
-      const tokenData = result.rows[0];
-
-      // Atualizar último uso
-      await pool.query(
-        'UPDATE workshop_external_tokens SET last_used_at = NOW(), usage_count = usage_count + 1 WHERE token = $1',
-        [token]
-      );
-
-      res.json({
-        success: true,
-        workshop: {
-          id: tokenData.id,
-          name: tokenData.name,
-          cnpj: tokenData.cnpj,
-          email: tokenData.email,
-          telefone: tokenData.telefone
-        }
-      });
-
-    } catch (error: any) {
-      console.error("Erro ao validar token:", error);
-      res.status(500).json({
-        success: false,
-        message: "Erro ao validar token",
-        error: error.message
-      });
-    }
-  });
+  // ENDPOINT REMOVIDO - ESTAVA DUPLICADO E USANDO ESTRUTURA ANTIGA
 
   // API para obter solicitações de manutenção de uma oficina
   app.get("/api/maintenance/workshop/:id/requests", async (req, res) => {
