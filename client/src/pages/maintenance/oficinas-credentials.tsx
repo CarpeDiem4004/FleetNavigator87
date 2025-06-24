@@ -439,41 +439,55 @@ export default function OficinasCredentialsPage() {
               </div>
             </div>
 
-            {/* Link de Acesso Externo - Destaque */}
-            {selectedWorkshop?.externalToken && (
-              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <ExternalLink className="h-5 w-5 text-blue-600" />
-                  <Label className="text-sm font-semibold text-blue-800">Link de Acesso Externo</Label>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Input 
-                      value={selectedWorkshop.externalLink || `${window.location.origin}/oficina/external?token=${selectedWorkshop.externalToken}`}
-                      readOnly 
-                      className="text-xs bg-white"
-                    />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => copyToClipboard(selectedWorkshop.externalLink || `${window.location.origin}/oficina/external?token=${selectedWorkshop.externalToken}`, 'link')}
-                    >
-                      {copiedLink ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => window.open(selectedWorkshop.externalLink || `${window.location.origin}/oficina/external?token=${selectedWorkshop.externalToken}`, '_blank')}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
+            {/* Token de Acesso Direto */}
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium">Token de Acesso Direto</Label>
+                {selectedWorkshop?.externalToken ? (
+                  <div className="mt-2 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <ExternalLink className="h-5 w-5 text-blue-600" />
+                      <Label className="text-sm font-semibold text-blue-800">Link de Acesso Externo</Label>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Input 
+                          value={`${window.location.origin}/oficina/external?token=${selectedWorkshop.externalToken}`}
+                          readOnly 
+                          className="text-xs bg-white"
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => copyToClipboard(`${window.location.origin}/oficina/external?token=${selectedWorkshop.externalToken}`, 'link')}
+                        >
+                          {copiedLink ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => window.open(`${window.location.origin}/oficina/external?token=${selectedWorkshop.externalToken}`, '_blank')}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-blue-700">
+                        Link direto para o painel da oficina (não requer login)
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-xs text-blue-700">
-                    Link direto para o painel da oficina (não requer login)
-                  </p>
-                </div>
+                ) : (
+                  <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800">
+                      Nenhum token de acesso direto configurado para esta oficina.
+                    </p>
+                    <p className="text-xs text-yellow-700 mt-1">
+                      Use a página "Acesso Externo" para gerar um token de acesso direto se necessário.
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Links de Acesso */}
             <div className="space-y-4">
