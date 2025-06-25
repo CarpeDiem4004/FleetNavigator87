@@ -45,6 +45,19 @@ const createOSSchema = z.object({
   observacoes_internas: z.string().optional()
 });
 
+const editOSSchema = z.object({
+  tipo_manutencao: z.enum(['preventiva', 'corretiva', 'preditiva', 'emergencial']),
+  descricao_problema: z.string().min(10, "Descrição deve ter pelo menos 10 caracteres"),
+  status: z.enum(['pendente', 'recebido', 'em_execucao', 'aguardando_peca', 'finalizado', 'cancelado']),
+  km_veiculo: z.string().optional(),
+  data_agendamento: z.string().optional(),
+  data_previsao_entrega: z.string().optional(),
+  valor_mao_obra: z.string().optional(),
+  valor_total_pecas: z.string().optional(),
+  observacoes_oficina: z.string().optional(),
+  observacoes_internas: z.string().optional()
+});
+
 const statusColors = {
   pendente: "bg-yellow-100 text-yellow-800",
   recebido: "bg-blue-100 text-blue-800", 
@@ -78,6 +91,8 @@ export default function DashboardInterno() {
   const queryClient = useQueryClient();
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingOS, setEditingOS] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("ordens");
   
   // Verificar se é administrador
@@ -122,6 +137,22 @@ export default function DashboardInterno() {
     }
   });
 
+  const editOSForm = useForm<z.infer<typeof editOSSchema>>({
+    resolver: zodResolver(editOSSchema),
+    defaultValues: {
+      tipo_manutencao: 'preventiva',
+      descricao_problema: '',
+      status: 'pendente',
+      km_veiculo: '',
+      data_agendamento: '',
+      data_previsao_entrega: '',
+      valor_mao_obra: '',
+      valor_total_pecas: '',
+      observacoes_oficina: '',
+      observacoes_internas: ''
+    }
+  });
+
   // Mutation para criar OS
   const createOSMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -160,6 +191,42 @@ export default function DashboardInterno() {
     };
 
     createOSMutation.mutate(osData);
+  };
+
+  const onEditOS = (values: z.infer<typeof editOSSchema>) => {
+    if (!editingOS) return;
+    
+    const osData = {
+      tipo_manutencao: values.tipo_manutencao,
+      descricao_problema: values.descricao_problema,
+      status: values.status,
+      km_veiculo: values.km_veiculo ? parseInt(values.km_veiculo) : null,
+      data_agendamento: values.data_agendamento || null,
+      data_previsao_entrega: values.data_previsao_entrega || null,
+      valor_mao_obra: values.valor_mao_obra ? parseFloat(values.valor_mao_obra) : null,
+      valor_total_pecas: values.valor_total_pecas ? parseFloat(values.valor_total_pecas) : null,
+      observacoes_oficina: values.observacoes_oficina || null,
+      observacoes_internas: values.observacoes_internas || null
+    };
+
+    editOSMutation.mutate({ id: editingOS.id, data: osData });
+  };
+
+  const handleEditOS = (os: any) => {
+    setEditingOS(os);
+    editOSForm.reset({
+      tipo_manutencao: os.tipo_manutencao,
+      descricao_problema: os.descricao_problema,
+      status: os.status,
+      km_veiculo: os.km_veiculo ? os.km_veiculo.toString() : '',
+      data_agendamento: os.data_agendamento ? new Date(os.data_agendamento).toISOString().split('T')[0] : '',
+      data_previsao_entrega: os.data_previsao_entrega ? new Date(os.data_previsao_entrega).toISOString().split('T')[0] : '',
+      valor_mao_obra: os.valor_mao_obra ? os.valor_mao_obra.toString() : '',
+      valor_total_pecas: os.valor_total_pecas ? os.valor_total_pecas.toString() : '',
+      observacoes_oficina: os.observacoes_oficina || '',
+      observacoes_internas: os.observacoes_internas || ''
+    });
+    setShowEditDialog(true);
   };
 
   // Função para excluir ordem de serviço (apenas para administradores)
@@ -378,7 +445,11 @@ export default function DashboardInterno() {
                             <Eye className="h-4 w-4 mr-1" />
                             Detalhes
                           </Button>
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEditOS(os)}
+                          >
                             <Edit className="h-4 w-4 mr-1" />
                             Editar
                           </Button>
@@ -742,6 +813,232 @@ export default function DashboardInterno() {
               <DialogFooter>
                 <Button type="submit" disabled={createOSMutation.isPending}>
                   {createOSMutation.isPending ? "Criando..." : "Criar Ordem"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para editar OS */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>Editar Ordem de Serviço</DialogTitle>
+            <DialogDescription>
+              Edite os detalhes da ordem de serviço {editingOS?.numero_os}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...editOSForm}>
+            <form onSubmit={editOSForm.handleSubmit(onEditOS)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editOSForm.control}
+                  name="tipo_manutencao"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de Manutenção</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="preventiva">Preventiva</SelectItem>
+                          <SelectItem value="corretiva">Corretiva</SelectItem>
+                          <SelectItem value="preditiva">Preditiva</SelectItem>
+                          <SelectItem value="emergencial">Emergencial</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editOSForm.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="pendente">Pendente</SelectItem>
+                          <SelectItem value="recebido">Recebido</SelectItem>
+                          <SelectItem value="em_execucao">Em Execução</SelectItem>
+                          <SelectItem value="aguardando_peca">Aguardando Peça</SelectItem>
+                          <SelectItem value="finalizado">Finalizado</SelectItem>
+                          <SelectItem value="cancelado">Cancelado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={editOSForm.control}
+                name="descricao_problema"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descrição do Problema</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Descreva o problema ou serviço necessário..."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-3 gap-4">
+                <FormField
+                  control={editOSForm.control}
+                  name="km_veiculo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>KM do Veículo</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number"
+                          placeholder="Ex: 45000"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editOSForm.control}
+                  name="data_agendamento"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data Agendamento</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="date"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editOSForm.control}
+                  name="data_previsao_entrega"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Previsão de Entrega</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="date"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editOSForm.control}
+                  name="valor_mao_obra"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor Mão de Obra (R$)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number"
+                          step="0.01"
+                          placeholder="Ex: 150.00"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editOSForm.control}
+                  name="valor_total_pecas"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor Total Peças (R$)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number"
+                          step="0.01"
+                          placeholder="Ex: 85.50"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={editOSForm.control}
+                name="observacoes_oficina"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Observações da Oficina</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Observações e comentários da oficina..."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editOSForm.control}
+                name="observacoes_internas"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Observações Internas</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Observações para uso interno..."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowEditDialog(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={editOSMutation.isPending}>
+                  {editOSMutation.isPending ? "Salvando..." : "Salvar Alterações"}
                 </Button>
               </DialogFooter>
             </form>
