@@ -117,6 +117,13 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- June 25, 2025: Enhanced maintenance order creation with project and base assignment
+  - Added project and base selection fields to new service order form
+  - Integrated dynamic loading of 16 projects and 100+ bases from database
+  - Implemented responsive grid layout with optional field validation
+  - Added proper data handling for API requests with ID conversion
+  - Fixed array validation and error handling for project/base data loading
+
 - June 25, 2025: Completely resolved maintenance system database inconsistencies and workshop order updates
   - Fixed critical database table inconsistency between maintenance_orders and manutencao tables
   - Standardized all endpoints and storage methods to use maintenance_orders table exclusively

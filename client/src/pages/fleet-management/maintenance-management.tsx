@@ -334,11 +334,13 @@ export default function MaintenanceManagement() {
       // Carregar projetos
       const projectsResponse = await apiRequest("GET", "/api/projects");
       const projectsData = await projectsResponse.json();
-      setProjects(projectsData || []);
+      console.log("Projects API response:", projectsData);
+      setProjects(projectsData.data || projectsData || []);
 
       // Carregar bases
       const basesResponse = await apiRequest("GET", "/api/bases");
       const basesData = await basesResponse.json();
+      console.log("Bases API response:", basesData);
       setBases(basesData || []);
 
       // Calcular estatísticas
@@ -1210,7 +1212,7 @@ export default function MaintenanceManagement() {
                               </FormControl>
                               <SelectContent>
                                 <SelectItem value="">Nenhum projeto</SelectItem>
-                                {projects.map((project) => (
+                                {projects && Array.isArray(projects) && projects.map((project) => (
                                   <SelectItem key={project.id} value={project.id.toString()}>
                                     {project.name}
                                   </SelectItem>
@@ -1236,7 +1238,7 @@ export default function MaintenanceManagement() {
                               </FormControl>
                               <SelectContent>
                                 <SelectItem value="">Nenhuma base</SelectItem>
-                                {bases.map((base) => (
+                                {bases && Array.isArray(bases) && bases.map((base) => (
                                   <SelectItem key={base.id} value={base.id.toString()}>
                                     {base.name}
                                   </SelectItem>
