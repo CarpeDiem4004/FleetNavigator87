@@ -43,6 +43,7 @@ import { FileSpreadsheet, Plus, Search, FileEdit, Trash2, Download as FileDownlo
 import { createSupabaseClient } from '@/lib/supabase-compat';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { useAuth } from '@/hooks/use-auth';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Textarea } from '@/components/ui/textarea';
@@ -105,6 +106,9 @@ const OficinaMurici: React.FC = () => {
   const [activeTab, setActiveTab] = useState('todas');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  
+  // Hook de autenticação para verificar permissões
+  const { user } = useAuth();
   const [currentManutencao, setCurrentManutencao] = useState<Manutencao>({
     placa: '',
     km: 0,
@@ -339,9 +343,22 @@ const OficinaMurici: React.FC = () => {
     }
   };
   
-  // Exclusão de manutenção
+  // Verificar se o usuário é administrador
+  const isAdmin = user?.role === 'admin';
+  
+  // Exclusão de manutenção (apenas para administradores)
   const handleDeleteManutencao = async (id: number) => {
-    if (!confirm('Tem certeza que deseja excluir esta manutenção?')) return;
+    // Verificar permissão de administrador
+    if (!isAdmin) {
+      toast({
+        title: 'Acesso negado',
+        description: 'Apenas administradores podem excluir registros de manutenção.',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    if (!confirm('Tem certeza que deseja excluir esta manutenção? Esta ação não pode ser desfeita.')) return;
     
     try {
       const supabase = createSupabaseClient();
@@ -943,14 +960,16 @@ const OficinaMurici: React.FC = () => {
                             >
                               <Printer className="h-4 w-4" />
                             </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              onClick={() => manutencao.id && handleDeleteManutencao(manutencao.id)}
-                              title="Excluir"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {isAdmin && (
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => manutencao.id && handleDeleteManutencao(manutencao.id)}
+                                title="Excluir (Apenas Administradores)"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
