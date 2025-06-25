@@ -178,7 +178,6 @@ import PartnerLogin from "@/pages/partner-login";
 import PartnerDashboard from "@/pages/partner-dashboard";
 import FuelCardRedirect from "@/components/FuelCardRedirect";
 import MaintenanceSystem from "@/pages/maintenance";
-import OficinaExternalDashboard from "@/pages/oficina/OficinaExternalDashboard";
 
 function App() {
   // Ativar o hook de injeção automática de token JWT em todas as requisições fetch
