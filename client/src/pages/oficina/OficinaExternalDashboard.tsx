@@ -140,7 +140,15 @@ export default function OficinaExternalDashboard() {
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
+    let token = urlParams.get('token');
+    
+    // Tentar obter token da URL também (formato /oficina/:token)
+    if (!token) {
+      const pathParts = window.location.pathname.split('/');
+      if (pathParts[1] === 'oficina' && pathParts[2] && pathParts[2] !== 'external') {
+        token = pathParts[2];
+      }
+    }
     
     if (!token) {
       setError('Token de acesso obrigatório. Use o link fornecido pela oficina.');
@@ -1324,11 +1332,13 @@ export default function OficinaExternalDashboard() {
                         <SelectValue placeholder="Selecione o projeto" />
                       </SelectTrigger>
                       <SelectContent>
-                        {projects.map((project) => (
+                        {projects.length > 0 ? projects.map((project) => (
                           <SelectItem key={project.id} value={project.id.toString()}>
                             {project.name}
                           </SelectItem>
-                        ))}
+                        )) : (
+                          <SelectItem value="" disabled>Carregando projetos...</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1338,17 +1348,27 @@ export default function OficinaExternalDashboard() {
                     <Select 
                       value={carFormData.baseId} 
                       onValueChange={(value) => setCarFormData(prev => ({ ...prev, baseId: value }))}
-                      disabled={!carFormData.projectId}
+                      disabled={!carFormData.projectId || selectedProjectBases.length === 0}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Primeiro selecione um projeto" />
+                        <SelectValue placeholder={
+                          !carFormData.projectId 
+                            ? "Primeiro selecione um projeto" 
+                            : selectedProjectBases.length === 0 
+                              ? "Nenhuma base disponível" 
+                              : "Selecione uma base"
+                        } />
                       </SelectTrigger>
                       <SelectContent>
-                        {selectedProjectBases.map((base) => (
+                        {selectedProjectBases.length > 0 ? selectedProjectBases.map((base) => (
                           <SelectItem key={base.id} value={base.id.toString()}>
-                            {base.name}
+                            {base.base_name || base.name}
                           </SelectItem>
-                        ))}
+                        )) : (
+                          <SelectItem value="" disabled>
+                            {!carFormData.projectId ? "Primeiro selecione um projeto" : "Nenhuma base disponível"}
+                          </SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
