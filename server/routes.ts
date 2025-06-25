@@ -5348,10 +5348,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deliveryDeadline,
         status,
         notes,
-        currentKm
+        currentKm,
+        deliveryPersonName,
+        deliveryPersonCpf,
+        deliveryPersonPhone,
+        deliveredDate
       } = req.body;
 
-      // Atualizar recepção de veículo com todos os campos
+      // Validações específicas para entrega
+      if (status === 'entregue') {
+        if (!deliveryPersonName || !deliveryPersonCpf || !deliveryPersonPhone) {
+          return res.status(400).json({
+            error: 'Para status "entregue" é obrigatório informar nome, CPF e telefone da pessoa que retira o veículo'
+          });
+        }
+      }
+
+      // Atualizar recepção de veículo com todos os campos incluindo dados da pessoa que retira
       const updateQuery = `
         UPDATE car_receptions 
         SET 
@@ -5368,8 +5381,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           delivery_deadline = COALESCE($11, delivery_deadline),
           status = COALESCE($12, status),
           notes = COALESCE($13, notes),
+          delivery_person_name = COALESCE($14, delivery_person_name),
+          delivery_person_cpf = COALESCE($15, delivery_person_cpf),
+          delivery_person_phone = COALESCE($16, delivery_person_phone),
+          delivered_date = COALESCE($17, delivered_date),
           updated_at = NOW()
-        WHERE id = $14 AND workshop_id = $15
+        WHERE id = $18 AND workshop_id = $19
         RETURNING *
       `;
 

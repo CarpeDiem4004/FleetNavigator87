@@ -100,7 +100,10 @@ export default function OficinaExternalDashboard() {
     partsCost: '',
     deliveryDeadline: '',
     status: 'recebido',
-    notes: ''
+    notes: '',
+    deliveryPersonName: '',
+    deliveryPersonCpf: '',
+    deliveryPersonPhone: ''
   });
   const [parts, setParts] = useState<{ name: string; price: string }[]>([]);
   const [newPartName, setNewPartName] = useState('');
@@ -209,6 +212,34 @@ export default function OficinaExternalDashboard() {
 
   const handleCarSubmit = async () => {
     try {
+      // Validações específicas para entrega
+      if (carFormData.status === 'entregue') {
+        if (!carFormData.deliveryPersonName.trim()) {
+          toast({
+            title: "Erro",
+            description: "Nome da pessoa que retira o veículo é obrigatório para status 'Entregue'",
+            variant: "destructive",
+          });
+          return;
+        }
+        if (!carFormData.deliveryPersonCpf.trim()) {
+          toast({
+            title: "Erro",
+            description: "CPF da pessoa que retira o veículo é obrigatório para status 'Entregue'",
+            variant: "destructive",
+          });
+          return;
+        }
+        if (!carFormData.deliveryPersonPhone.trim()) {
+          toast({
+            title: "Erro",
+            description: "Telefone da pessoa que retira o veículo é obrigatório para status 'Entregue'",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
       const urlParams = new URLSearchParams(window.location.search);
       const token = urlParams.get('token');
       
@@ -220,7 +251,12 @@ export default function OficinaExternalDashboard() {
         laborCost: parseFloat(carFormData.laborCost) || 0,
         partsCost: calculateTotalParts(),
         workshopId: workshopData?.id,
-        replacedParts: JSON.stringify(parts)
+        replacedParts: JSON.stringify(parts),
+        // Incluir dados da pessoa que retira apenas se status for entregue
+        deliveryPersonName: carFormData.status === 'entregue' ? carFormData.deliveryPersonName : null,
+        deliveryPersonCpf: carFormData.status === 'entregue' ? carFormData.deliveryPersonCpf : null,
+        deliveryPersonPhone: carFormData.status === 'entregue' ? carFormData.deliveryPersonPhone : null,
+        deliveredDate: carFormData.status === 'entregue' ? new Date().toISOString() : null
       };
 
       // Se estamos editando, usar PUT, senão POST
@@ -254,7 +290,10 @@ export default function OficinaExternalDashboard() {
           partsCost: '',
           deliveryDeadline: '',
           status: 'recebido',
-          notes: ''
+          notes: '',
+          deliveryPersonName: '',
+          deliveryPersonCpf: '',
+          deliveryPersonPhone: ''
         });
         setParts([]);
         
@@ -807,7 +846,10 @@ export default function OficinaExternalDashboard() {
                                   partsCost: (reception as any).partsCost?.toString() || '',
                                   deliveryDeadline: (reception as any).deliveryDeadline ? new Date((reception as any).deliveryDeadline).toISOString().split('T')[0] : '',
                                   status: reception.status || 'recebido',
-                                  notes: (reception as any).notes || ''
+                                  notes: (reception as any).notes || '',
+                                  deliveryPersonName: (reception as any).deliveryPersonName || '',
+                                  deliveryPersonCpf: (reception as any).deliveryPersonCpf || '',
+                                  deliveryPersonPhone: (reception as any).deliveryPersonPhone || ''
                                 });
                                 // Carregar peças existentes
                                 try {
@@ -1309,6 +1351,79 @@ export default function OficinaExternalDashboard() {
                     />
                   </div>
                 </div>
+
+                {/* Seção de dados da pessoa que retira - aparece apenas quando status é "entregue" */}
+                {carFormData.status === 'entregue' && (
+                  <div className="space-y-4 bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                    <div className="flex items-center gap-2">
+                      <User className="h-5 w-5 text-yellow-600" />
+                      <h4 className="text-md font-semibold text-yellow-800">Dados da Pessoa que Retira o Veículo</h4>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="deliveryPersonName">Nome Completo *</Label>
+                        <Input
+                          id="deliveryPersonName"
+                          value={carFormData.deliveryPersonName}
+                          onChange={(e) => setCarFormData(prev => ({ ...prev, deliveryPersonName: e.target.value }))}
+                          placeholder="Nome completo da pessoa"
+                          required={carFormData.status === 'entregue'}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="deliveryPersonCpf">CPF *</Label>
+                        <Input
+                          id="deliveryPersonCpf"
+                          value={carFormData.deliveryPersonCpf}
+                          onChange={(e) => {
+                            // Formatação básica do CPF
+                            let value = e.target.value.replace(/\D/g, '');
+                            if (value.length <= 11) {
+                              value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                              value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                              value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                            }
+                            setCarFormData(prev => ({ ...prev, deliveryPersonCpf: value }));
+                          }}
+                          placeholder="000.000.000-00"
+                          maxLength={14}
+                          required={carFormData.status === 'entregue'}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="deliveryPersonPhone">Telefone *</Label>
+                        <Input
+                          id="deliveryPersonPhone"
+                          value={carFormData.deliveryPersonPhone}
+                          onChange={(e) => {
+                            // Formatação básica do telefone
+                            let value = e.target.value.replace(/\D/g, '');
+                            if (value.length <= 11) {
+                              if (value.length <= 10) {
+                                value = value.replace(/(\d{2})(\d)/, '($1) $2');
+                                value = value.replace(/(\d{4})(\d)/, '$1-$2');
+                              } else {
+                                value = value.replace(/(\d{2})(\d)/, '($1) $2');
+                                value = value.replace(/(\d{5})(\d)/, '$1-$2');
+                              }
+                            }
+                            setCarFormData(prev => ({ ...prev, deliveryPersonPhone: value }));
+                          }}
+                          placeholder="(11) 99999-9999"
+                          maxLength={15}
+                          required={carFormData.status === 'entregue'}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="text-sm text-yellow-700">
+                      <strong>Atenção:</strong> Estes dados são obrigatórios para registrar a entrega do veículo.
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Seção 3: Peças e Valores */}
