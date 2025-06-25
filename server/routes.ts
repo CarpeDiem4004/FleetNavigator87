@@ -4798,46 +4798,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { workshopId, orderId } = req.params;
       const { token } = req.query;
-      const { status, notes, actualCost, completionDate } = req.body;
+      const { status, notes, actualCost, completionDate, laborCost, partsCost } = req.body;
+
+      console.log(`[Workshop Update] Recebida atualização da oficina ${workshopId} para ordem ${orderId}`);
+      console.log('[Workshop Update] Dados recebidos:', { status, notes, actualCost, completionDate, laborCost, partsCost });
 
       // Verificar token
       if (!token) {
+        console.log('[Workshop Update] Token não fornecido');
         return res.status(401).json({ 
           success: false, 
           message: "Token de acesso obrigatório" 
         });
       }
 
+      // Validar token no banco de dados
+      const tokenQuery = `
+        SELECT wat.workshop_id, o.razao_social as workshop_name
+        FROM workshop_access_tokens wat
+        JOIN oficinas o ON wat.workshop_id = o.id
+        WHERE wat.access_token = $1 AND wat.is_active = true AND wat.expires_at > NOW()
+      `;
+      const tokenResult = await pool.query(tokenQuery, [token]);
+
+      if (tokenResult.rows.length === 0) {
+        console.log('[Workshop Update] Token inválido ou expirado');
+        return res.status(401).json({
+          success: false,
+          message: "Token inválido ou expirado"
+        });
+      }
+
+      const validWorkshopId = tokenResult.rows[0].workshop_id;
+      if (parseInt(workshopId) !== validWorkshopId) {
+        console.log(`[Workshop Update] Acesso negado - Workshop ID ${workshopId} não corresponde ao token (${validWorkshopId})`);
+        return res.status(403).json({
+          success: false,
+          message: "Acesso negado para esta oficina"
+        });
+      }
+
+      // Atualizar último uso do token
+      await pool.query(
+        'UPDATE workshop_access_tokens SET last_used = NOW() WHERE access_token = $1',
+        [token]
+      );
+
       // Verificar se a ordem pertence à oficina
       const checkQuery = `
-        SELECT id FROM maintenance_orders 
+        SELECT * FROM maintenance_orders 
         WHERE id = $1 AND workshop_id = $2
       `;
       const checkResult = await pool.query(checkQuery, [orderId, workshopId]);
 
       if (checkResult.rows.length === 0) {
+        console.log(`[Workshop Update] Ordem ${orderId} não encontrada para oficina ${workshopId}`);
         return res.status(404).json({
           success: false,
           message: "Ordem de serviço não encontrada"
         });
       }
 
-      // Atualizar a ordem
+      console.log('[Workshop Update] Ordem encontrada, procedendo com atualização');
+
+      // Atualizar a ordem com todos os campos possíveis
       const updateQuery = `
         UPDATE maintenance_orders 
         SET 
           status = COALESCE($1, status),
           notes = COALESCE($2, notes),
-          actual_cost = COALESCE($3, actual_cost),
-          completion_date = CASE WHEN $4::timestamp IS NOT NULL THEN $4 ELSE completion_date END,
+          actual_cost = CASE WHEN $3::text != '' AND $3 IS NOT NULL THEN $3::numeric ELSE actual_cost END,
+          labor_cost = CASE WHEN $4::text != '' AND $4 IS NOT NULL THEN $4::numeric ELSE labor_cost END,
+          parts_cost = CASE WHEN $5::text != '' AND $5 IS NOT NULL THEN $5::numeric ELSE parts_cost END,
+          completion_date = CASE 
+            WHEN $1 = 'concluido' OR $1 = 'completed' THEN COALESCE($6::timestamp, NOW()) 
+            WHEN $6::timestamp IS NOT NULL THEN $6::timestamp 
+            ELSE completion_date 
+          END,
           updated_at = NOW()
-        WHERE id = $5 AND workshop_id = $6
+        WHERE id = $7 AND workshop_id = $8
         RETURNING *
       `;
 
       const updateResult = await pool.query(updateQuery, [
-        status, notes, actualCost, completionDate, orderId, workshopId
+        status, 
+        notes, 
+        actualCost, 
+        laborCost, 
+        partsCost, 
+        completionDate, 
+        orderId, 
+        workshopId
       ]);
+
+      console.log('[Workshop Update] Ordem atualizada com sucesso:', updateResult.rows[0]);
 
       return res.status(200).json({
         success: true,
@@ -4846,10 +4900,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error) {
-      console.error("Erro ao atualizar ordem:", error);
+      console.error("Erro ao atualizar ordem da oficina:", error);
       return res.status(500).json({
         success: false,
-        message: "Erro interno do servidor"
+        message: "Erro interno do servidor",
+        error: error instanceof Error ? error.message : "Erro desconhecido"
       });
     }
   });
