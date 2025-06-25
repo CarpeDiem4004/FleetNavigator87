@@ -922,27 +922,46 @@ export default function MaintenanceManagement() {
     yPos += 15;
     doc.setFontSize(11);
     
+    // Calcular custos antes de exibir
+    const laborCost = Number(reception.laborCost || 0);
+    const partsCost = Number(reception.partsCost || 0);
+    
+    // Se temos peças substituídas em JSON, calcular o total das peças a partir do JSON
+    let calculatedPartsCost = partsCost;
+    if (reception.replacedParts && reception.replacedParts.trim() && reception.replacedParts.startsWith('[')) {
+      try {
+        const partsArray = JSON.parse(reception.replacedParts);
+        calculatedPartsCost = partsArray.reduce((total: number, part: any) => {
+          return total + (Number(part.price) || 0);
+        }, 0);
+      } catch (e) {
+        // Se não conseguir fazer parse, usar o valor do campo partsCost
+        calculatedPartsCost = partsCost;
+      }
+    }
+    
+    const totalCost = laborCost + calculatedPartsCost;
+    
     // Mão de obra
     doc.text('Mão de Obra:', 25, yPos);
-    doc.text(`R$ ${Number(reception.laborCost || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 120, yPos);
+    doc.text(`R$ ${laborCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 120, yPos);
     
     yPos += 10;
     
-    // Peças
+    // Peças (usar o valor calculado se houver JSON)
     doc.text('Peças:', 25, yPos);
-    doc.text(`R$ ${Number(reception.partsCost || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 120, yPos);
+    doc.text(`R$ ${calculatedPartsCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 120, yPos);
     
     yPos += 10;
     
     // Linha separadora para total
     doc.line(25, yPos, 170, yPos);
     yPos += 8;
-    
     // Total
     doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
     doc.text('TOTAL GERAL:', 25, yPos);
-    doc.text(`R$ ${Number(reception.totalCost || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 120, yPos);
+    doc.text(`R$ ${totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 120, yPos);
     doc.setFont(undefined, 'normal');
     
     // Peças Substituídas (se houver)
@@ -955,9 +974,25 @@ export default function MaintenanceManagement() {
       
       yPos += 10;
       doc.setFontSize(11);
-      const parts = reception.replacedParts;
-      const splitParts = doc.splitTextToSize(parts, 170);
+      
+      // Verificar se é JSON ou texto simples
+      let partsText = '';
+      if (reception.replacedParts.startsWith('[')) {
+        try {
+          const partsArray = JSON.parse(reception.replacedParts);
+          partsText = partsArray.map((part: any, index: number) => 
+            `${index + 1}. ${part.name || 'Peça não especificada'} - R$ ${Number(part.price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          ).join('\n');
+        } catch (e) {
+          partsText = reception.replacedParts;
+        }
+      } else {
+        partsText = reception.replacedParts;
+      }
+      
+      const splitParts = doc.splitTextToSize(partsText, 170);
       doc.text(splitParts, 20, yPos);
+      yPos += splitParts.length * 5;
     }
     
     // Informações de entrega (se veículo foi entregue)

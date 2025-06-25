@@ -117,6 +117,13 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- June 25, 2025: Fixed PDF generation for maintenance records with accurate totals and readable parts display
+  - Corrected total cost calculation to dynamically sum labor costs and parts from JSON data
+  - Enhanced parts display in PDF to show readable format: "1. Part Name - R$ Price" instead of raw JSON
+  - Fixed zero total value issue by calculating from actual parts data rather than stored fields
+  - Improved Brazilian currency formatting throughout PDF generation
+  - Added proper parsing of replaced parts JSON for accurate cost calculations
+
 - June 25, 2025: Implemented admin-only deletion functionality for maintenance records
   - Added DELETE endpoints for maintenance orders and car receptions with admin-only access
   - Implemented frontend deletion buttons visible only to admin users
