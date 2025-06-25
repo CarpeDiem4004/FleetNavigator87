@@ -215,8 +215,9 @@ export default function OficinaExternalDashboard() {
 
   const addPart = () => {
     if (newPartName.trim() && newPartPrice.trim()) {
-      const newPart = { name: newPartName.trim(), price: newPartPrice.trim() };
-      setParts([...parts, newPart]);
+      // Converte o valor formatado para número antes de salvar
+      const numericPrice = parseCurrency(newPartPrice);
+      setParts([...parts, { name: newPartName.trim(), price: numericPrice.toString() }]);
       setNewPartName('');
       setNewPartPrice('');
     }
@@ -231,9 +232,17 @@ export default function OficinaExternalDashboard() {
   };
 
   const calculateTotalEstimated = () => {
-    const laborCost = parseFloat(carFormData.laborCost || '0');
+    const laborCost = parseCurrency(carFormData.laborCost) || 0;
     const totalParts = calculateTotalParts();
     return laborCost + totalParts;
+  };
+
+  // Função para formatar valores para exibição em moeda brasileira
+  const formatDisplayCurrency = (value: number) => {
+    return value.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    });
   };
 
   const handleCarSubmit = async () => {

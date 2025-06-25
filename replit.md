@@ -117,6 +117,15 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
+- June 25, 2025: Implemented Brazilian currency formatting and delivery person data collection
+  - Added automatic Brazilian currency formatting (R$ 1.234,56) for all value fields
+  - Values automatically format with proper thousands separators (.) and decimal separator (,)
+  - Implemented delivery person data collection when vehicle status changes to "delivered"
+  - Added required fields for name, CPF, and phone number with automatic formatting
+  - CPF format: 000.000.000-00, Phone format: (11) 99999-9999
+  - Enhanced form organization with 4 clear sections: Vehicle Data, Service Details, Parts & Values, Additional Notes
+  - Improved form layout with 900px modal width for better visualization
+
 - June 25, 2025: Implemented admin-only deletion restrictions for maintenance history
   - Added role-based access control for maintenance record deletion
   - Only administrators can now delete orders and maintenance records
