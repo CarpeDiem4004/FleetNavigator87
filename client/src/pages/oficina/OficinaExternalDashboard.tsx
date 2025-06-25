@@ -670,7 +670,25 @@ export default function OficinaExternalDashboard() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleEditReception(reception)}
+                              onClick={() => {
+                                setEditingReception(reception);
+                                setCarFormData({
+                                  vehiclePlate: reception.vehiclePlate,
+                                  vehicleModel: reception.vehicleModel,
+                                  vehicleType: reception.vehicleType,
+                                  currentKm: reception.currentKm?.toString() || '',
+                                  baseId: reception.baseId?.toString() || '',
+                                  projectId: reception.projectId?.toString() || '',
+                                  serviceDescription: reception.serviceDescription,
+                                  replacedParts: reception.replacedParts || '',
+                                  laborCost: reception.laborCost?.toString() || '',
+                                  partsCost: reception.partsCost?.toString() || '',
+                                  deliveryDeadline: reception.deliveryDeadline ? new Date(reception.deliveryDeadline).toISOString().split('T')[0] : '',
+                                  status: reception.status || 'recebido',
+                                  notes: reception.notes || ''
+                                });
+                                setIsCarFormOpen(true);
+                              }}
                             >
                               <Edit className="h-4 w-4 mr-1" />
                               Editar
@@ -993,115 +1011,7 @@ export default function OficinaExternalDashboard() {
         </Dialog>
       )}
 
-      {/* Modal de Edição de Recepção de Veículo */}
-      {editingReception && (
-        <Dialog open={true} onOpenChange={() => setEditingReception(null)}>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Editar Recepção de Veículo - {editingReception.vehiclePlate}</DialogTitle>
-            </DialogHeader>
-            
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="reception_status" className="text-right">Status</Label>
-                <Select 
-                  value={receptionEditForm.status} 
-                  onValueChange={(value) => setReceptionEditForm({...receptionEditForm, status: value})}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Selecione o status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="recebido">Recebido</SelectItem>
-                    <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                    <SelectItem value="concluido">Concluído</SelectItem>
-                    <SelectItem value="entregue">Entregue</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
 
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="delivery_deadline" className="text-right">Previsão Entrega</Label>
-                <Input
-                  id="delivery_deadline"
-                  type="date"
-                  value={receptionEditForm.deliveryDeadline}
-                  onChange={(e) => setReceptionEditForm({...receptionEditForm, deliveryDeadline: e.target.value})}
-                  className="col-span-3"
-                />
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="current_km" className="text-right">KM Atual</Label>
-                <Input
-                  id="current_km"
-                  type="number"
-                  value={receptionEditForm.currentKm}
-                  onChange={(e) => setReceptionEditForm({...receptionEditForm, currentKm: e.target.value})}
-                  className="col-span-3"
-                />
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="labor_cost" className="text-right">Valor Mão de Obra</Label>
-                <Input
-                  id="labor_cost"
-                  type="number"
-                  step="0.01"
-                  value={receptionEditForm.laborCost}
-                  onChange={(e) => setReceptionEditForm({...receptionEditForm, laborCost: e.target.value})}
-                  className="col-span-3"
-                />
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="parts_cost" className="text-right">Valor Peças</Label>
-                <Input
-                  id="parts_cost"
-                  type="number"
-                  step="0.01"
-                  value={receptionEditForm.partsCost}
-                  onChange={(e) => setReceptionEditForm({...receptionEditForm, partsCost: e.target.value})}
-                  className="col-span-3"
-                />
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="replaced_parts" className="text-right">Peças Substituídas</Label>
-                <Textarea
-                  id="replaced_parts"
-                  value={receptionEditForm.replacedParts}
-                  onChange={(e) => setReceptionEditForm({...receptionEditForm, replacedParts: e.target.value})}
-                  className="col-span-3"
-                  rows={2}
-                  placeholder="Lista das peças substituídas..."
-                />
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="reception_notes" className="text-right">Observações</Label>
-                <Textarea
-                  id="reception_notes"
-                  value={receptionEditForm.notes}
-                  onChange={(e) => setReceptionEditForm({...receptionEditForm, notes: e.target.value})}
-                  className="col-span-3"
-                  rows={3}
-                  placeholder="Observações sobre o serviço..."
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setEditingReception(null)}>
-                Cancelar
-              </Button>
-              <Button onClick={updateCarReception}>
-                Salvar Alterações
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 }

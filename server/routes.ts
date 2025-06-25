@@ -5336,39 +5336,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const {
-        status,
-        deliveryDeadline,
+        vehiclePlate,
+        vehicleModel,
+        vehicleType,
+        baseId,
+        projectId,
+        serviceDescription,
+        replacedParts,
         laborCost,
         partsCost,
+        deliveryDeadline,
+        status,
         notes,
-        currentKm,
-        replacedParts
+        currentKm
       } = req.body;
 
-      // Atualizar recepção de veículo
+      // Atualizar recepção de veículo com todos os campos
       const updateQuery = `
         UPDATE car_receptions 
         SET 
-          status = COALESCE($1, status),
-          delivery_deadline = COALESCE($2, delivery_deadline),
-          labor_cost = COALESCE($3, labor_cost),
-          parts_cost = COALESCE($4, parts_cost),
-          notes = COALESCE($5, notes),
-          current_km = COALESCE($6, current_km),
-          replaced_parts = COALESCE($7, replaced_parts),
+          vehicle_plate = COALESCE($1, vehicle_plate),
+          vehicle_model = COALESCE($2, vehicle_model),
+          vehicle_type = COALESCE($3, vehicle_type),
+          current_km = COALESCE($4, current_km),
+          base_id = COALESCE($5, base_id),
+          project_id = COALESCE($6, project_id),
+          service_description = COALESCE($7, service_description),
+          replaced_parts = COALESCE($8, replaced_parts),
+          labor_cost = COALESCE($9, labor_cost),
+          parts_cost = COALESCE($10, parts_cost),
+          delivery_deadline = COALESCE($11, delivery_deadline),
+          status = COALESCE($12, status),
+          notes = COALESCE($13, notes),
           updated_at = NOW()
-        WHERE id = $8 AND workshop_id = $9
+        WHERE id = $14 AND workshop_id = $15
         RETURNING *
       `;
 
       const updateResult = await pool.query(updateQuery, [
-        status,
-        deliveryDeadline,
+        vehiclePlate,
+        vehicleModel,
+        vehicleType,
+        currentKm,
+        baseId,
+        projectId,
+        serviceDescription,
+        replacedParts,
         laborCost,
         partsCost,
+        deliveryDeadline,
+        status,
         notes,
-        currentKm,
-        replacedParts,
         receptionId,
         oficina.id
       ]);
