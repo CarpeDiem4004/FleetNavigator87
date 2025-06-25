@@ -117,7 +117,9 @@ This is a comprehensive fleet management system built with React (frontend) and 
 
 ## Recent Changes
 
-- June 25, 2025: Fixed PDF generation for maintenance records with accurate totals and readable parts display
+- June 25, 2025: Fixed workshop name inconsistency and PDF generation issues
+  - Resolved Alair workshop name divergence between tables (workshops and oficinas)
+  - Standardized name to "Alair Manutenção e Serviços Automotivos Ltda" across both tables
   - Corrected total cost calculation to dynamically sum labor costs and parts from JSON data
   - Enhanced parts display in PDF to show readable format: "1. Part Name - R$ Price" instead of raw JSON
   - Fixed zero total value issue by calculating from actual parts data rather than stored fields
