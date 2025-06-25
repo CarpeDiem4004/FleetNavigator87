@@ -108,6 +108,32 @@ export default function OficinaExternalDashboard() {
   const [parts, setParts] = useState<{ name: string; price: string }[]>([]);
   const [newPartName, setNewPartName] = useState('');
   const [newPartPrice, setNewPartPrice] = useState('');
+
+  // Função para formatar valores em moeda brasileira
+  const formatCurrency = (value: string) => {
+    // Remove tudo que não é dígito
+    const numbers = value.replace(/\D/g, '');
+    
+    // Se vazio, retorna vazio
+    if (!numbers) return '';
+    
+    // Converte para número e divide por 100 para ter centavos
+    const amount = parseInt(numbers) / 100;
+    
+    // Formata como moeda brasileira
+    return amount.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
+  // Função para converter valor formatado de volta para número
+  const parseCurrency = (value: string) => {
+    if (!value) return 0;
+    // Remove R$, espaços e pontos, substitui vírgula por ponto
+    const cleanValue = value.replace(/[R$\s.]/g, '').replace(',', '.');
+    return parseFloat(cleanValue) || 0;
+  };
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProjectBases, setSelectedProjectBases] = useState<any[]>([]);
   const { toast } = useToast();
@@ -248,7 +274,7 @@ export default function OficinaExternalDashboard() {
         currentKm: parseInt(carFormData.currentKm) || 0,
         baseId: parseInt(carFormData.baseId) || null,
         projectId: parseInt(carFormData.projectId) || null,
-        laborCost: parseFloat(carFormData.laborCost) || 0,
+        laborCost: parseCurrency(carFormData.laborCost) || 0,
         partsCost: calculateTotalParts(),
         workshopId: workshopData?.id,
         replacedParts: JSON.stringify(parts),
@@ -842,7 +868,7 @@ export default function OficinaExternalDashboard() {
                                   projectId: (reception as any).projectId?.toString() || '',
                                   serviceDescription: reception.serviceDescription,
                                   replacedParts: (reception as any).replacedParts || '',
-                                  laborCost: (reception as any).laborCost?.toString() || '',
+                                  laborCost: (reception as any).laborCost ? formatCurrency(((reception as any).laborCost * 100).toString()) : '',
                                   partsCost: (reception as any).partsCost?.toString() || '',
                                   deliveryDeadline: (reception as any).deliveryDeadline ? new Date((reception as any).deliveryDeadline).toISOString().split('T')[0] : '',
                                   status: reception.status || 'recebido',
@@ -1447,11 +1473,12 @@ export default function OficinaExternalDashboard() {
                     <div className="md:col-span-2 space-y-2">
                       <Label className="text-sm font-medium">Valor (R$)</Label>
                       <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="0,00"
+                        placeholder="R$ 0,00"
                         value={newPartPrice}
-                        onChange={(e) => setNewPartPrice(e.target.value)}
+                        onChange={(e) => {
+                          const formatted = formatCurrency(e.target.value);
+                          setNewPartPrice(formatted);
+                        }}
                       />
                     </div>
                     <div className="md:col-span-2">
@@ -1477,7 +1504,7 @@ export default function OficinaExternalDashboard() {
                         <div key={index} className="flex items-center justify-between p-3 bg-white border rounded-lg shadow-sm">
                           <span className="font-medium">{part.name}</span>
                           <div className="flex items-center gap-3">
-                            <span className="text-lg font-semibold text-green-600">R$ {parseFloat(part.price).toFixed(2)}</span>
+                            <span className="text-lg font-semibold text-green-600">{formatDisplayCurrency(parseFloat(part.price))}</span>
                             <Button
                               type="button"
                               variant="ghost"
@@ -1501,11 +1528,12 @@ export default function OficinaExternalDashboard() {
                       <Label htmlFor="laborCost">Custo Mão de Obra (R$)</Label>
                       <Input
                         id="laborCost"
-                        type="number"
-                        step="0.01"
+                        placeholder="R$ 0,00"
                         value={carFormData.laborCost}
-                        onChange={(e) => setCarFormData(prev => ({ ...prev, laborCost: e.target.value }))}
-                        placeholder="0"
+                        onChange={(e) => {
+                          const formatted = formatCurrency(e.target.value);
+                          setCarFormData(prev => ({ ...prev, laborCost: formatted }));
+                        }}
                       />
                     </div>
 
@@ -1513,7 +1541,7 @@ export default function OficinaExternalDashboard() {
                       <Label>Custo das Peças</Label>
                       <Input
                         type="text"
-                        value={`R$ ${calculateTotalParts().toFixed(2)}`}
+                        value={formatDisplayCurrency(calculateTotalParts())}
                         disabled
                         className="bg-gray-100 font-medium"
                       />
@@ -1524,7 +1552,7 @@ export default function OficinaExternalDashboard() {
                     <div className="flex justify-between items-center">
                       <Label className="text-lg font-semibold">Total Estimado</Label>
                       <div className="text-2xl font-bold text-green-600">
-                        R$ {calculateTotalEstimated().toFixed(2)}
+                        {formatDisplayCurrency(calculateTotalEstimated())}
                       </div>
                     </div>
                   </div>
