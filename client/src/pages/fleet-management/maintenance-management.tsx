@@ -1916,19 +1916,58 @@ export default function MaintenanceManagement() {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Peças</p>
                     <p className="text-lg font-semibold text-orange-600">
-                      {new Intl.NumberFormat('pt-BR', { 
-                        style: 'currency', 
-                        currency: 'BRL' 
-                      }).format(Number(selectedReception.partsCost || 0))}
+                      {(() => {
+                        try {
+                          if (selectedReception.replacedParts) {
+                            const parts = JSON.parse(selectedReception.replacedParts);
+                            if (Array.isArray(parts)) {
+                              const partsTotal = parts.reduce((sum, part) => sum + parseFloat(part.price || 0), 0);
+                              return new Intl.NumberFormat('pt-BR', { 
+                                style: 'currency', 
+                                currency: 'BRL' 
+                              }).format(partsTotal);
+                            }
+                          }
+                          return new Intl.NumberFormat('pt-BR', { 
+                            style: 'currency', 
+                            currency: 'BRL' 
+                          }).format(Number(selectedReception.partsCost || 0));
+                        } catch (e) {
+                          return new Intl.NumberFormat('pt-BR', { 
+                            style: 'currency', 
+                            currency: 'BRL' 
+                          }).format(Number(selectedReception.partsCost || 0));
+                        }
+                      })()}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Total</p>
                     <p className="text-xl font-bold text-green-600">
-                      {new Intl.NumberFormat('pt-BR', { 
-                        style: 'currency', 
-                        currency: 'BRL' 
-                      }).format(Number(selectedReception.totalCost || 0))}
+                      {(() => {
+                        const laborCost = Number(selectedReception.laborCost || 0);
+                        let partsCost = 0;
+                        
+                        try {
+                          if (selectedReception.replacedParts) {
+                            const parts = JSON.parse(selectedReception.replacedParts);
+                            if (Array.isArray(parts)) {
+                              partsCost = parts.reduce((sum, part) => sum + parseFloat(part.price || 0), 0);
+                            }
+                          }
+                          if (partsCost === 0) {
+                            partsCost = Number(selectedReception.partsCost || 0);
+                          }
+                        } catch (e) {
+                          partsCost = Number(selectedReception.partsCost || 0);
+                        }
+                        
+                        const total = laborCost + partsCost;
+                        return new Intl.NumberFormat('pt-BR', { 
+                          style: 'currency', 
+                          currency: 'BRL' 
+                        }).format(total);
+                      })()}
                     </p>
                   </div>
                 </div>
